@@ -1,0 +1,105 @@
+#include "AmpGen/Simplify.h"
+#include "AmpGen/MsgService.h"
+using namespace AmpGen;
+
+void NormalOrderedExpression::Term::addExpression( const Expression& expression){
+  if( is<IBinaryExpression>(expression) ){
+    auto argAsBin = dynamic_cast<IBinaryExpression*>(expression.get());
+    auto l = argAsBin->l(); 
+    auto r = argAsBin->r(); 
+    if( is<Product>(expression) ){
+      addExpression(l);
+      addExpression(r);
+    }
+    if( is<Sum>(expression) || is<Sub>(expression) ) ERROR("I never should get here, brackets should be pre-expanded [" << expression << "] " );
+    if( is<Divide>(expression) ){ 
+      addExpression( l );
+      m_divisor = r ;  
+    }
+  } 
+  else if( is<Constant>(expression) ) m_prefactor *= expression();
+  else m_terms.push_back( expression );
+}
+
+NormalOrderedExpression::Term::Term( const Expression& expression ) : m_prefactor(1), m_divisor(1), m_markForRemoval(false) {
+  addExpression(expression);
+  std::sort( m_terms.begin(), m_terms.end(), [](auto& t1, auto& t2 ){ return t1.to_string() > t2.to_string() ; } ) ;
+  for(size_t i = 0 ; i < m_terms.size() ; ++i ) 
+    m_expressionAsString += m_terms[i].to_string() + (i==m_terms.size()-1 ? "" : "*" ); 
+}
+NormalOrderedExpression::Term::operator Expression() { 
+  Expression pf = m_prefactor;
+  for( auto& t : m_terms ){ pf = pf * t ; };
+  return pf / m_divisor; 
+}
+
+NormalOrderedExpression::NormalOrderedExpression( const Expression& expression )
+{
+  auto expanded = ExpandBrackets(expression);
+  for( auto& t : expanded ) m_terms.emplace_back( t );
+  
+  std::sort( m_terms.begin(), m_terms.end() , [](auto& t1, auto&t2 ){ return t1.m_expressionAsString > t2.m_expressionAsString ; });
+  groupExpressions();
+}
+
+void NormalOrderedExpression::groupExpressions(){
+  for( size_t i= 0 ; i < m_terms.size() -1; ++i ){
+    if( m_terms[i].m_markForRemoval ) continue; 
+    for( size_t j = i + 1; j < m_terms.size(); ++j ){
+      if( m_terms[i].m_expressionAsString != m_terms[j].m_expressionAsString ) break;
+      m_terms[i].m_prefactor += m_terms[j].m_prefactor; 
+      m_terms[j].m_markForRemoval = true; 
+    }
+  }
+  m_terms.erase( std::remove_if( m_terms.begin(), m_terms.end(), [=]( auto& it ){ return it.m_markForRemoval ; }  ) , m_terms.end() );
+}
+
+NormalOrderedExpression::operator Expression(){
+  Expression total = 0; 
+  for( auto& t : m_terms ) total = total + t;  
+  return total;
+}
+
+std::vector<Expression> NormalOrderedExpression::ExpandBrackets( const Expression& expression )
+{
+  if( is<IBinaryExpression>(expression) )
+  {
+    std::vector<Expression> rt; 
+    if( is<Sum>(expression) ){
+      auto left  = ExpandBrackets( cast<Sum>(expression).l() );
+      auto right = ExpandBrackets( cast<Sum>(expression).r() );
+      for( auto& l : left ) rt.emplace_back(l);
+      for( auto& r : right ) rt.emplace_back(r);
+      return rt; 
+    }
+    if( is<Sub>(expression) ){
+      auto left  = ExpandBrackets( cast<Sub>(expression).l() );
+      auto right = ExpandBrackets( cast<Sub>(expression).r() );
+      for( auto& l : left ) rt.emplace_back(l);
+      for( auto& r : right ) rt.emplace_back((-1)*r);
+      return rt; 
+    }
+    if( is<Product>(expression) ){
+      auto left  = ExpandBrackets( cast<Product>(expression).l() );
+      auto right = ExpandBrackets( cast<Product>(expression).r() );
+      for( auto& l : left ){
+        for( auto& r : right ){
+          rt.emplace_back(l*r);
+        }
+      }
+      return rt; 
+    }
+    if( is<Divide>(expression) ){
+      auto left  = ExpandBrackets( cast<Divide>(expression).l() );
+      auto right = ExpandBrackets( cast<Divide>(expression).r() );
+      Expression sum = 0;
+      for( auto& r : right ) sum = sum + r; 
+      for( auto& l : left ){
+        rt.emplace_back(l/sum);
+      }
+      return rt; 
+    }
+  }
+  return {expression}; 
+}
+
