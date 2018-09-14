@@ -19,28 +19,29 @@ namespace AmpGen
   class GaussErrorPropagator
   {
   public:
-    GaussErrorPropagator( const std::vector<AmpGen::MinuitParameter*>& params, const TMatrixD& reducedCovariance,
+    GaussErrorPropagator( const TMatrixD& reducedCovariance,
+                          const std::vector<MinuitParameter*>& params, 
                           TRandom3* rnd );
     void perturb();
     void reset();
     void transpose();
 
   private:
-    std::vector<AmpGen::MinuitParameter*> m_parameters;
-    std::vector<double> m_startingValues;
-    TRandom3* m_rand;
-    TMatrixD m_decomposedCholesky;
+    std::vector<MinuitParameter*>         m_parameters;
+    std::vector<double>                   m_startingValues;
+    TRandom3*                             m_rand;
+    TMatrixD                              m_decomposedCholesky;
   };
 
   class LinearErrorPropagator
   {
 
   public:
+    LinearErrorPropagator( const std::vector<MinuitParameter*>& params );
+    LinearErrorPropagator( const MinuitParameterSet& params );
+
     LinearErrorPropagator( const TMatrixD& reducedCovarianceMatrix,
-                           const std::vector<AmpGen::MinuitParameter*>& params )
-        : m_cov( reducedCovarianceMatrix ), m_parameters( params )
-    {
-    }
+                           const std::vector<MinuitParameter*>& params );
     template <class FCN> double derivative( FCN fcn, const size_t& i ) const
     {
       double startingValue = m_parameters[i]->mean();
@@ -52,8 +53,7 @@ namespace AmpGen
       return ( plus_variation - minus_variation ) / ( 2 * sqrt( m_cov( i, i ) ) );
     }
 
-    template <class FCN>
-    double getError( FCN fcn ) const
+    template <class FCN> double getError( FCN fcn ) const
     {
       unsigned int N = m_cov.GetNrows();
       TVectorD errorVec( N );
@@ -65,8 +65,7 @@ namespace AmpGen
       }
       return sqrt( errorVec * ( m_cov * errorVec ) );
     }
-    template <size_t RANK, class FCN>
-    std::array<double, RANK> getVectorError( FCN fcn ) const
+    template <size_t RANK, class FCN> std::array<double, RANK> getVectorError( FCN fcn ) const
     {
       unsigned int N = m_cov.GetNrows();
       std::array<TVectorD, RANK> errorVec;
@@ -93,8 +92,7 @@ namespace AmpGen
 
       return rt;
     }
-    template <class FCN>
-    std::vector<double> getVectorError( FCN fcn, size_t RANK ) const
+    template <class FCN> std::vector<double> getVectorError( FCN fcn, size_t RANK ) const
     {
       unsigned int N = m_cov.GetNrows();
       std::vector<TVectorD> errorVec( RANK, TVectorD( N ) );
@@ -120,31 +118,10 @@ namespace AmpGen
       return rt;
     }
 
-    TMatrixD propagatedCovarianceMatrix(const std::vector<std::function<double(void)>>& functions ){
-      size_t M = functions.size();
-      size_t N = size();
-      TMatrixD A(M,N);
-      for( size_t k = 0 ; k < M; ++k )
-        for( size_t i = 0 ; i < N; ++i ) 
-          A(k,i) = derivative( functions[k], i );
-    
-      TMatrixD vci( M,M);
-    
-      for( size_t i = 0; i < M ; ++i ){
-        for( size_t j = 0; j < M ; ++j ){
-          for(size_t k = 0 ; k < N ; ++k ){
-            for(size_t l = 0 ; l < N ; ++l ){
-              vci(i,j) += A(i,k) * m_cov(k,l) * A(j,l);
-            }
-          }
-        }
-      }
-      return vci;
-    }
+    TMatrixD propagatedCovarianceMatrix(const std::vector<std::function<double(void)>>& functions ) ;
+    std::pair<double,double> combinationCovWeighted(const std::vector<std::function<double(void)>>& functions ) ;
 
-
-    template <class FCN>
-    double operator()( FCN fcn ) const
+    template <class FCN> double operator()( FCN fcn ) const
     {
       return getError( fcn );
     }
@@ -153,21 +130,14 @@ namespace AmpGen
 
     void reset();
    
-    size_t size() const { return m_parameters.size(); }
-    const TMatrixD& cov() const { return m_cov; }
-    const std::map<std::string, size_t> posMap() const
-    {
-      std::map<std::string, size_t> pMap;
-      for ( size_t pos = 0; pos != m_parameters.size(); ++pos ) {
-        pMap[m_parameters[pos]->name()] = pos;
-      }
-      return pMap;
-    }
-    const std::vector<AmpGen::MinuitParameter*>& params() const { return m_parameters; }
+    size_t size() const ;
+    const TMatrixD& cov() const ;
+    const std::map<std::string, size_t> posMap() const;
+    const std::vector<MinuitParameter*>& params() const; 
 
   private:
-    TMatrixD m_cov;
-    std::vector<AmpGen::MinuitParameter*> m_parameters;
+    TMatrixD                              m_cov;
+    std::vector<MinuitParameter*>         m_parameters;
   };
 } // namespace AmpGen
 #endif

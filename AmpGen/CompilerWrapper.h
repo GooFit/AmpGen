@@ -20,20 +20,11 @@ namespace AmpGen
   private:
     std::vector<std::string> m_includes; 
     bool                     m_verbose;
-
-    std::string generateFilename()
-    {
-      char buffer[] = "/tmp/libAmpGen-XXXXXX";
-      int status    = mkstemp( buffer );
-      if ( status == -1 ) {
-        ERROR( "Failed to generate temporary filename " << status );
-      }
-      return buffer;
-    }
-
+    std::string              m_cxx;
+    std::string generateFilename();
   public:
 
-    CompilerWrapper( const bool& verbose=false) : m_includes( {"array", "complex", "math.h", "vector"} ), m_verbose(verbose) {};
+    CompilerWrapper( const bool& verbose=false) ;
 
     void generateSource( const CompiledExpressionBase& expression, const std::string& fname);
     bool compile( CompiledExpressionBase& expression, const std::string& fname=""); 

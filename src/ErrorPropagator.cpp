@@ -1,9 +1,9 @@
 #include "AmpGen/ErrorPropagator.h"
+#include "AmpGen/MinuitParameterSet.h"
 
 using namespace AmpGen;
 
-GaussErrorPropagator::GaussErrorPropagator( const std::vector<AmpGen::MinuitParameter*>& params, const TMatrixD& reducedCovariance,
-    TRandom3* rnd )
+GaussErrorPropagator::GaussErrorPropagator( const TMatrixD& reducedCovariance, const std::vector<AmpGen::MinuitParameter*>& params, TRandom3* rnd )
   : m_parameters( params ), m_rand( rnd ), m_decomposedCholesky( params.size(), params.size() )
 {
 
@@ -45,6 +45,36 @@ void GaussErrorPropagator::transpose()
       m_decomposedCholesky( i, j ) = tmp;
     }
   }
+}
+LinearErrorPropagator::LinearErrorPropagator( const TMatrixD& reducedCovarianceMatrix,
+    const std::vector<MinuitParameter*>& params )
+  : m_cov( reducedCovarianceMatrix ), m_parameters( params )
+{
+}
+
+LinearErrorPropagator::LinearErrorPropagator( const std::vector<MinuitParameter*>& params )
+{
+  for( auto& param : params ){
+    if( param->iFixInit() != MinuitParameter::Float ) continue; 
+    if( param->err() == 0 ) continue;
+    m_parameters.push_back( param );
+  }
+  m_cov.ResizeTo( m_parameters.size(), m_parameters.size() );
+  for( size_t i = 0 ; i < m_parameters.size(); ++i ) 
+    m_cov(i,i) = m_parameters[i]->err() * m_parameters[i]->err();
+}
+
+LinearErrorPropagator::LinearErrorPropagator( const MinuitParameterSet& mps )
+{
+  for( size_t i = 0 ; i < mps.size(); ++i ){
+    MinuitParameter* param = mps.getParPtr(i);
+    if( param->iFixInit() != MinuitParameter::Float ) continue; 
+    if( param->err() == 0 ) continue;
+    m_parameters.push_back( param );
+  }
+  m_cov.ResizeTo( m_parameters.size(), m_parameters.size() );
+  for( size_t i = 0 ; i < m_parameters.size(); ++i ) 
+    m_cov(i,i) = m_parameters[i]->err() * m_parameters[i]->err();
 }
 
 void LinearErrorPropagator::add( const LinearErrorPropagator& p2 )
@@ -90,3 +120,66 @@ void LinearErrorPropagator::reset()
   }
   m_parameters.clear();
 }
+
+TMatrixD LinearErrorPropagator::propagatedCovarianceMatrix(const std::vector<std::function<double(void)>>& functions ){
+  size_t M = functions.size();
+  size_t N = size();
+  TMatrixD A(M,N);
+  for( size_t k = 0 ; k < M; ++k )
+    for( size_t i = 0 ; i < N; ++i ) 
+      A(k,i) = derivative( functions[k], i );
+
+  TMatrixD vci( M,M);
+
+  for( size_t i = 0; i < M ; ++i ){
+    for( size_t j = 0; j < M ; ++j ){
+      for(size_t k = 0 ; k < N ; ++k ){
+        for(size_t l = 0 ; l < N ; ++l ){
+          vci(i,j) += A(i,k) * m_cov(k,l) * A(j,l);
+        }
+      }
+    }
+  }
+  return vci;
+}
+
+std::pair<double, double> LinearErrorPropagator::combinationCovWeighted( 
+    const std::vector<std::function<double(void)>>& functions)
+{
+  auto cov = propagatedCovarianceMatrix( functions );
+  TMatrixD covInverse = cov; 
+
+  covInverse.Invert();
+  double wt     = 0;
+  double pred   = 0;
+  double sigma2 = 0;
+  for( size_t i = 0 ; i < functions.size(); ++i ){
+    for( size_t j = 0 ; j < functions.size(); ++j ){
+      wt += covInverse(i,j);
+    }
+  }
+  std::vector<double> weights( functions.size() );
+  for( size_t i = 0 ; i < functions.size(); ++i ){
+    for( size_t j = 0 ; j < functions.size(); ++j ) weights[i] += covInverse(i,j);
+    pred += functions[i]() * weights[i] / wt; 
+  }
+  
+  for( size_t i = 0 ; i < functions.size(); ++i ){
+    for( size_t j = 0 ; j < functions.size(); ++j ){
+      sigma2 += weights[i] * weights[j] * cov(i,j) / (wt*wt);
+    }
+  }
+  return std::make_pair( pred, sqrt(sigma2) );
+}
+
+size_t LinearErrorPropagator::size() const { return m_parameters.size(); }
+const TMatrixD& LinearErrorPropagator::cov() const { return m_cov; }
+const std::map<std::string, size_t> LinearErrorPropagator::posMap() const
+{
+  std::map<std::string, size_t> pMap;
+  for ( size_t pos = 0; pos != m_parameters.size(); ++pos ) {
+    pMap[m_parameters[pos]->name()] = pos;
+  }
+  return pMap;
+}
+const std::vector<AmpGen::MinuitParameter*>& LinearErrorPropagator::params() const { return m_parameters; }

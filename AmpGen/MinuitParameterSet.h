@@ -45,13 +45,12 @@ namespace AmpGen
     void resetToInit();
     unsigned int size() const;
 
-    MinuitParameter* getParPtr( unsigned int i );
-    const MinuitParameter* getParPtr( unsigned int i ) const;
+    MinuitParameter* getParPtr( unsigned int i ) const;
 
     std::map<std::string, MinuitParameter*>& map() { return _keyAccess; }
     const std::map<std::string, MinuitParameter*>& const_map() const { return _keyAccess; }
     std::vector<MinuitParameter*>::const_iterator cbegin() const { return _parPtrList.cbegin(); }
-    std::vector<MinuitParameter*>::const_iterator cend() const { return _parPtrList.cend(); }
+    std::vector<MinuitParameter*>::const_iterator cend()   const { return _parPtrList.cend(); }
 
     std::vector<MinuitParameter*> parPtrs() { return _parPtrList; }
     std::vector<MinuitParameter*>::iterator begin() { return _parPtrList.begin(); }

@@ -72,13 +72,7 @@ bool MinuitParameterSet::unregister( MinuitParameter* parPtr )
 
 unsigned int MinuitParameterSet::size() const { return _parPtrList.size(); }
 
-MinuitParameter* MinuitParameterSet::getParPtr( unsigned int i )
-{
-  if ( i >= _parPtrList.size() ) return nullptr;
-  return _parPtrList[i];
-}
-
-const MinuitParameter* MinuitParameterSet::getParPtr( unsigned int i ) const
+MinuitParameter* MinuitParameterSet::getParPtr( unsigned int i ) const
 {
   if ( i >= _parPtrList.size() ) return nullptr;
   return _parPtrList[i];

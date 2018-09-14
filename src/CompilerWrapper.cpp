@@ -15,6 +15,22 @@
 
 using namespace AmpGen;
 
+CompilerWrapper::CompilerWrapper( const bool& verbose) : 
+  m_includes( {"array", "complex", "math.h", "vector"} ), 
+  m_verbose(verbose) 
+{
+  m_cxx = getenv("CXX") != nullptr ? std::string( getenv( "CXX" ) ) : "";
+  if ( m_cxx == "" ) {
+#ifdef AMPGEN_CXX
+    if( m_verbose ) 
+      INFO( "Using original compiler; set global variable CXX if another needed: " << AMPGEN_CXX );
+    m_cxx = AMPGEN_CXX;
+#else
+    ERROR( "No configured compiler; set global variable CXX" );
+#endif
+  }
+}
+
 void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, const std::string& filename )
 {
   std::ofstream output( filename );
@@ -23,6 +39,15 @@ void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, 
   output.close();
 }
 
+std::string CompilerWrapper::generateFilename()
+{
+  char buffer[] = "/tmp/libAmpGen-XXXXXX";
+  int status    = mkstemp( buffer );
+  if ( status == -1 ) {
+    ERROR( "Failed to generate temporary filename " << status );
+  }
+  return buffer;
+}
 long GetFileSize(std::string filename)
 {
   struct stat stat_buf;
@@ -54,11 +79,10 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
 
 bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions, const std::string& fname )
 {
-  bool print_all = true ; // m_verbose || NamedParameter<bool>("CompilerWrapper::Verbose",false);
+  bool print_all = m_verbose || NamedParameter<bool>("CompilerWrapper::Verbose",false);
 
   std::string name = fname;
-  if ( name == "" ) 
-    name = name == "" ? generateFilename() : expandGlobals( name );
+  if ( name == "" ) name = name == "" ? generateFilename() : expandGlobals( name );
   std::string cname = name +".cpp";
   std::string oname = name +".so";
   if( print_all ) INFO("Generating source: " << cname );
@@ -67,7 +91,7 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
   for ( auto& include : m_includes ) output << "#include <" << include << ">\n";
   for ( auto& expression : expressions ) output << *expression << std::endl; 
   output.close();
-  
+
   compileSource( cname, oname );
   for( auto& expression : expressions ) expression->link( oname );
   auto twall_end  = std::chrono::high_resolution_clock::now();
@@ -78,21 +102,10 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
 
 void CompilerWrapper::compileSource( const std::string& fname, const std::string& oname )
 {
-  bool print_all = m_verbose || NamedParameter<bool>("CompilerWrapper::Verbose",false);
-  const char* cxx            = getenv( "CXX" );
-  if ( cxx == nullptr ) {
-#ifdef AMPGEN_CXX
-    if( print_all ) INFO( "Using original compiler; set global variable CXX if another needed: " << AMPGEN_CXX );
-    cxx = AMPGEN_CXX;
-#else
-    ERROR( "No configured compiler; set global variable CXX" );
-    return 0;
-#endif
-  }
   std::vector<pid_t> pids;
   pid_t childPID = 0; 
   using namespace std::chrono_literals;
-  std::vector<const char*> argp = { cxx, 
+  std::vector<const char*> argp = { m_cxx.c_str(), 
     "-Ofast", 
     "-shared", 
     "-rdynamic", 
@@ -107,10 +120,8 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     perror( "execl()" );
     exit( 0 );
   }
-
   int status = 0;   
   waitpid( childPID, &status, 0 );
-
 }
 
 
