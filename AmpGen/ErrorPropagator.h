@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <functional>
 
 #include "TDecompChol.h"
 #include "TMatrixD.h"
@@ -40,22 +41,26 @@ namespace AmpGen
         : m_cov( reducedCovarianceMatrix ), m_parameters( params )
     {
     }
+    template <class FCN> double derivative( FCN fcn, const size_t& i ) const
+    {
+      double startingValue = m_parameters[i]->mean();
+      m_parameters[i]->setCurrentFitVal( startingValue + sqrt( m_cov( i, i ) ) );
+      double plus_variation = fcn();
+      m_parameters[i]->setCurrentFitVal( startingValue - sqrt( m_cov( i, i ) ) );
+      double minus_variation = fcn();
+      m_parameters[i]->setCurrentFitVal( startingValue );
+      return ( plus_variation - minus_variation ) / ( 2 * sqrt( m_cov( i, i ) ) );
+    }
+
     template <class FCN>
     double getError( FCN fcn ) const
     {
       unsigned int N = m_cov.GetNrows();
       TVectorD errorVec( N );
       for ( unsigned int i = 0; i < N; ++i ) {
-
-        double startingValue = m_parameters[i]->mean();
         DEBUG( "Perturbing parameter: [" << m_parameters[i]->name() << "] " << startingValue << " by "
                                          << sqrt( m_cov( i, i ) ) << " " << m_parameters[i] );
-        m_parameters[i]->setCurrentFitVal( startingValue + sqrt( m_cov( i, i ) ) );
-        double plus_variation = fcn();
-        m_parameters[i]->setCurrentFitVal( startingValue - sqrt( m_cov( i, i ) ) );
-        double minus_variation = fcn();
-        m_parameters[i]->setCurrentFitVal( startingValue );
-        errorVec( i ) = ( plus_variation - minus_variation ) / ( 2 * sqrt( m_cov( i, i ) ) );
+        errorVec(i) = derivative(fcn,i);
         fcn(); /// ensure any cache state is okay still ///
       }
       return sqrt( errorVec * ( m_cov * errorVec ) );
@@ -114,6 +119,29 @@ namespace AmpGen
       for ( unsigned int j = 0; j < RANK; ++j ) rt[j] = sqrt( errorVec[j] * ( m_cov * errorVec[j] ) );
       return rt;
     }
+
+    TMatrixD propagatedCovarianceMatrix(const std::vector<std::function<double(void)>>& functions ){
+      size_t M = functions.size();
+      size_t N = size();
+      TMatrixD A(M,N);
+      for( size_t k = 0 ; k < M; ++k )
+        for( size_t i = 0 ; i < N; ++i ) 
+          A(k,i) = derivative( functions[k], i );
+    
+      TMatrixD vci( M,M);
+    
+      for( size_t i = 0; i < M ; ++i ){
+        for( size_t j = 0; j < M ; ++j ){
+          for(size_t k = 0 ; k < N ; ++k ){
+            for(size_t l = 0 ; l < N ; ++l ){
+              vci(i,j) += A(i,k) * m_cov(k,l) * A(j,l);
+            }
+          }
+        }
+      }
+      return vci;
+    }
+
 
     template <class FCN>
     double operator()( FCN fcn ) const

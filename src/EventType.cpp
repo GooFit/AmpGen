@@ -21,9 +21,9 @@
 
 using namespace AmpGen;
 
-std::map<std::string, unsigned int> EventType::getEventFormat( const bool& outputNames ) const
+std::map<std::string, size_t> EventType::getEventFormat( const bool& outputNames ) const
 {
-  std::map<std::string, unsigned int> returnValue;
+  std::map<std::string, size_t> returnValue;
 
   for ( unsigned int ip = 0; ip < size(); ++ip ) {
     std::string stub =

@@ -53,20 +53,20 @@ Conj::Conj( const Expression& other ) : IUnaryExpression( other ) {}
 Real::Real( const Expression& other ) : IUnaryExpression( other ) {}
 Imag::Imag( const Expression& other ) : IUnaryExpression( other ) {}
 
-std::string Log::to_string() const { return "log(" + m_expression.to_string() + ")"; }
-std::string Sqrt::to_string() const { return "sqrt(" + m_expression.to_string() + ")"; }
-std::string Exp::to_string() const { return "exp(" + m_expression.to_string() + ")"; }
-std::string Abs::to_string() const { return "fabs(" + m_expression.to_string() + ")"; }
-std::string Sin::to_string() const { return "sin(" + m_expression.to_string() + ")"; }
-std::string Cos::to_string() const { return "cos(" + m_expression.to_string() + ")"; }
-std::string Tan::to_string() const { return "tan(" + m_expression.to_string() + ")"; }
-std::string ASin::to_string() const { return "asin(" + m_expression.to_string() + ")"; }
-std::string ACos::to_string() const { return "acos(" + m_expression.to_string() + ")"; }
-std::string ATan::to_string() const { return "atan(" + m_expression.to_string() + ")"; }
-std::string Norm::to_string() const { return "std::norm(" + m_expression.to_string() + ")" ;}
-std::string Conj::to_string() const { return "std::conj(" + m_expression.to_string() + ")" ;}
-std::string Real::to_string() const { return "std::real(" + m_expression.to_string() + ")" ;}
-std::string Imag::to_string() const { return "std::imag(" + m_expression.to_string() + ")" ;}
+std::string Log::to_string( const ASTResolver* resolver) const { return "log("       + m_expression.to_string(resolver) + ")"; }
+std::string Sqrt::to_string(const ASTResolver* resolver) const { return "sqrt("      + m_expression.to_string(resolver) + ")"; }
+std::string Exp::to_string( const ASTResolver* resolver) const { return "exp("       + m_expression.to_string(resolver) + ")"; }
+std::string Abs::to_string( const ASTResolver* resolver) const { return "fabs("      + m_expression.to_string(resolver) + ")"; }
+std::string Sin::to_string( const ASTResolver* resolver) const { return "sin("       + m_expression.to_string(resolver) + ")"; }
+std::string Cos::to_string( const ASTResolver* resolver) const { return "cos("       + m_expression.to_string(resolver) + ")"; }
+std::string Tan::to_string( const ASTResolver* resolver) const { return "tan("       + m_expression.to_string(resolver) + ")"; }
+std::string ASin::to_string(const ASTResolver* resolver) const { return "asin("      + m_expression.to_string(resolver) + ")"; }
+std::string ACos::to_string(const ASTResolver* resolver) const { return "acos("      + m_expression.to_string(resolver) + ")"; }
+std::string ATan::to_string(const ASTResolver* resolver) const { return "atan("      + m_expression.to_string(resolver) + ")"; }
+std::string Norm::to_string(const ASTResolver* resolver) const { return "std::norm(" + m_expression.to_string(resolver) + ")" ;}
+std::string Conj::to_string(const ASTResolver* resolver) const { return "std::conj(" + m_expression.to_string(resolver) + ")" ;}
+std::string Real::to_string(const ASTResolver* resolver) const { return "std::real(" + m_expression.to_string(resolver) + ")" ;}
+std::string Imag::to_string(const ASTResolver* resolver) const { return "std::imag(" + m_expression.to_string(resolver) + ")" ;}
 
 Expression Log::d()  const { return 1. / arg(); }
 Expression Sqrt::d() const { return 1. / ( 2 * fcn::sqrt( arg() ) ); }

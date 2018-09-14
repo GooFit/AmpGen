@@ -37,7 +37,7 @@ namespace AmpGen
 
     CompiledExpression( const Expression& expression, 
                         const std::string& name,
-                        const std::map<std::string, unsigned int>& evtMapping = std::map<std::string, unsigned int>(),
+                        const std::map<std::string, size_t>& evtMapping = std::map<std::string, size_t>(),
                         const DebugSymbols& db = {},
                         const MinuitParameterSet* mps = nullptr )
       : CompiledExpressionBase( expression, name, db, evtMapping ), 
@@ -84,8 +84,9 @@ namespace AmpGen
     {
       INFO( "Name     = " << name() );
       INFO( "Hash     = " << hash() );
+      INFO( "IsReady? = " << isReady() << " IsLinked? " << (m_fcn.isLinked() ) );
       INFO( "args     = ["<< vectorToString( m_externals, ", ") <<"]");
-      for( auto& elem : m_cacheTransfers ) elem->print();
+      // for( auto& elem : m_cacheTransfers ) elem->print();
       //   INFO( "cacheSize= " << m_cacheTransfers.size() );
     }
 

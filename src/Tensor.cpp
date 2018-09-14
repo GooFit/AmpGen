@@ -52,11 +52,11 @@ Expression Tensor::get( const size_t& co ) const
   return ( m_elements[m_symmetrisedCoordinates[co]] );
 }
 
-std::string Tensor::to_string() const {
+std::string Tensor::to_string(const ASTResolver* resolver) const {
   std::string value = "{";
   for(size_t i = 0 ; i < size(); ++i )
   {
-    value += Tensor::operator[](i).to_string() + (i == size() -1  ? "}" : ", " ) ; 
+    value += Tensor::operator[](i).to_string(resolver) + (i == size() -1  ? "}" : ", " ) ; 
   }
   return value;
 }

@@ -21,20 +21,27 @@ namespace AmpGen
   class MinuitParameterLink : public IExpression {
     public:
       MinuitParameterLink( MinuitParameter* param ) ;
-      std::string to_string() const override ;
+      std::string to_string(const ASTResolver* resolver=nullptr) const override ;
       void resolve( ASTResolver& resolver ) override ;
       std::complex<double> operator()() const override ;
       operator Expression() const ;
+      Expression clone() const { return MinuitParameterLink( m_parameter ) ; } 
     private: 
       MinuitParameter* m_parameter;
   };
   class ExpressionPack : public IExpression {
     public:
+    ExpressionPack( const std::vector<Expression>& expressions ){ m_expressions = expressions ; }
     ExpressionPack( const Expression& A, const Expression& B );
-    std::string to_string() const override;
+    std::string to_string(const ASTResolver* resolver=nullptr) const override;
     void resolve( ASTResolver& resolver ) override;
     std::complex<double> operator()() const override;
     operator Expression() const ;
+    Expression clone() const { 
+      std::vector<Expression> cloned; 
+      for( auto& expression : m_expressions ) cloned.push_back( expression.clone() );
+      return ExpressionPack( cloned );
+    }
     private:
     std::vector<Expression> m_expressions;
   };

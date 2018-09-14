@@ -66,7 +66,6 @@ namespace AmpGen
       m_minInit = min;
       m_maxInit = max;
     }
-
     void setResult( double fitMean, double fitErr, double fitErrPos, double fitErrNeg );
     void resetToInit();
 

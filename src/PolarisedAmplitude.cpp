@@ -173,7 +173,7 @@ void PolarisedAmplitude::build_probunnormalised()
 {
   Expression prob = probExpression( transitionMatrix() , { Parameter("Px"), Parameter("Py"), Parameter("Pz") } );
   m_probExpression = CompiledExpression< double, const real_t*, const complex_t*>( 
-      prob, "prob_unnormalised", std::map< std::string, unsigned int>(), {}, m_mps );
+      prob, "prob_unnormalised", std::map<std::string, size_t>(), {}, m_mps );
   CompilerWrapper(true).compile( m_probExpression );
 }
 

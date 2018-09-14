@@ -1,4 +1,5 @@
 #include "AmpGen/Array.h"
+#include "AmpGen/ASTResolver.h"
 
 using namespace AmpGen; 
 
@@ -22,7 +23,7 @@ void Array::resolve( ASTResolver& resolver )
   }
 }
 
-std::string ArrayExpression::to_string() const
+std::string ArrayExpression::to_string(const ASTResolver* resolver) const
 {
   auto& top = m_parent->m_top;
 
@@ -36,7 +37,7 @@ std::string ArrayExpression::to_string() const
       return top_name + "["+ std::to_string( m_parent->m_address ) + "+int("+m_addressOffset.to_string() +")]"; 
   }
   else {
-    if( is<Constant>(m_addressOffset ) ) return top.to_string() + "["+std::to_string( int(std::real(m_addressOffset())) ) + "]";
-    else return top.to_string() + "[int("+m_addressOffset.to_string() +")]";
+    if( is<Constant>(m_addressOffset ) ) return top.to_string(resolver) + "["+std::to_string( int(std::real(m_addressOffset())) ) + "]";
+    else return top.to_string(resolver) + "[int("+m_addressOffset.to_string() +")]";
   }
 }

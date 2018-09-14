@@ -5,6 +5,7 @@
 
 #include "AmpGen/Expression.h"
 #include "AmpGen/CompiledExpressionBase.h"
+#include "AmpGen/ASTResolver.h"
 #include "AmpGen/Types.h"
 
 using namespace AmpGen;
@@ -32,8 +33,8 @@ GreaterThan::GreaterThan( const Expression& lval, const Expression& rval ) : IBi
 Equal::Equal( const Expression& lval, const Expression& rval ) : IBinaryExpression( lval, rval ) {}
 
 template < class condition > 
-std::string bracketed( const Expression& expression, condition&& use_brackets ){
-  return use_brackets(expression) ? "(" + expression.to_string() +")" : expression.to_string();  
+std::string bracketed( const Expression& expression, condition&& use_brackets, const ASTResolver* resolver=nullptr ){
+  return use_brackets(expression) ? "(" + expression.to_string(resolver) +")" : expression.to_string(resolver);  
 }
 
 complex_t Sum::operator()()         const { return lval() + rval(); }
@@ -47,28 +48,29 @@ complex_t Pow::operator()()         const { return pow( lval(), rval() ); }
 complex_t Fmod::operator()()        const { return 0; }
 complex_t Equal::operator()()       const { return lval() == rval() ; } 
 
-std::string Sum::to_string()         const { 
-  return lval.to_string() + " + " + rval.to_string() ;
+std::string Sum::to_string(const ASTResolver* resolver)         const { 
+  return lval.to_string(resolver) + " + " + rval.to_string(resolver) ;
 }
-std::string Sub::to_string()         const { return lval.to_string() + "-"   + bracketed( rval, [](auto& expression){ return is<Sum>(expression) || is<Sub>(expression) ; } ) ; }
-
-std::string Equal::to_string()       const { return "("     + lval.to_string() + " == "+ rval.to_string() +")"; }
-std::string Product::to_string()     const { 
+std::string Sub::to_string(const ASTResolver* resolver)         const { 
+  return lval.to_string(resolver) + "-"   + bracketed( rval, [](auto& expression){ return is<Sum>(expression) || is<Sub>(expression) ; } , resolver ) ; 
+}
+std::string Equal::to_string(const ASTResolver* resolver)       const { return "("     + lval.to_string(resolver) + " == "+ rval.to_string(resolver) +")"; }
+std::string Product::to_string(const ASTResolver* resolver)     const { 
   auto use_brackets = [](auto& expression){ return is<Sum>(expression) || is<Sub>(expression); };
-  return bracketed( lval,use_brackets) + "*" + bracketed(rval,use_brackets);
+  return bracketed( lval,use_brackets,resolver) + "*" + bracketed(rval,use_brackets,resolver);
 }
 
-std::string Divide::to_string()      const { 
+std::string Divide::to_string(const ASTResolver* resolver)      const { 
   auto use_brackets = [](auto& expression){ return is<Sum>(expression) || is<Sub>(expression); };
   auto use_brackets_r = [](auto& expression){ return is<IBinaryExpression>(expression) ; };
-  return bracketed( lval, use_brackets) + "/"+ bracketed(rval, use_brackets_r);
+  return bracketed( lval, use_brackets,resolver) + "/"+ bracketed(rval, use_brackets_r,resolver);
 }
 
-std::string LessThan::to_string()    const { return "("     + lval.to_string() + "<"   + rval.to_string() +")"; }
-std::string GreaterThan::to_string() const { return "("     + lval.to_string() + ">"   + rval.to_string() +")"; }
-std::string And::to_string()         const { return "("     + lval.to_string() + "&&"  + rval.to_string() +")"; }
-std::string Pow::to_string()         const { return "pow("  + lval.to_string() + ", "  + rval.to_string() +")"; }
-std::string Fmod::to_string()        const { return "fmod(" + lval.to_string() + ","   + rval.to_string() +")"; }
+std::string LessThan::to_string(const ASTResolver* resolver)    const { return "("     + lval.to_string(resolver) + "<"   + rval.to_string(resolver) +")"; }
+std::string GreaterThan::to_string(const ASTResolver* resolver) const { return "("     + lval.to_string(resolver) + ">"   + rval.to_string(resolver) +")"; }
+std::string And::to_string(const ASTResolver* resolver)         const { return "("     + lval.to_string(resolver) + "&&"  + rval.to_string(resolver) +")"; }
+std::string Pow::to_string(const ASTResolver* resolver)         const { return "pow("  + lval.to_string(resolver) + ", "  + rval.to_string(resolver) +")"; }
+std::string Fmod::to_string(const ASTResolver* resolver)        const { return "fmod(" + lval.to_string(resolver) + ","   + rval.to_string(resolver) +")"; }
 
 void IBinaryExpression::resolve( ASTResolver& resolver )
 {

@@ -37,6 +37,9 @@ namespace AmpGen
 
     void generateSource( const CompiledExpressionBase& expression, const std::string& fname);
     bool compile( CompiledExpressionBase& expression, const std::string& fname=""); 
+    bool compile( std::vector<CompiledExpressionBase*>& expression, const std::string& fname=""); 
+    void compileSource(const std::string& fname, const std::string& oname );
+
     void setVerbose() { m_verbose = true ; } 
   };
 } // namespace AmpGen

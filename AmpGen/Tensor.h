@@ -85,7 +85,7 @@ namespace AmpGen
     void imposeSymmetry( std::vector<size_t> indices );
 
     Tensor Invert() const;
-    std::string to_string() const ;
+    std::string to_string(const ASTResolver* resolver=nullptr) const ;
 
     int metricSgn( const std::vector<size_t>& coordinates ) const;
     int metricSgn( const size_t& index ) const;
@@ -149,13 +149,14 @@ namespace AmpGen
       Tensor m_tensor; 
     public:
       TensorExpression( const Tensor& tensor ) : m_tensor(tensor) {}
-      virtual std::string to_string() const {
-        return m_tensor.to_string();
+      std::string to_string(const ASTResolver* resolver) const {
+        return m_tensor.to_string(resolver);
       }
-      virtual void resolve( ASTResolver& resolver ){ 
+      void resolve( ASTResolver& resolver ){ 
         for( unsigned int i = 0 ; i < m_tensor.size(); ++i ) m_tensor[i].resolve( resolver );
       }
-      virtual std::complex<double> operator()() const { return 0 ; } 
+      std::complex<double> operator()() const { return 0 ; } 
+      Expression clone() const { return TensorExpression( m_tensor ) ; }  
       operator Expression() { return Expression( std::make_shared<TensorExpression>( *this ) ); }  
   };
 

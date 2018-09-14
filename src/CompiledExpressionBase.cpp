@@ -11,6 +11,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/ThreadPool.h"
 #include "AmpGen/CompilerWrapper.h"
+#include "AmpGen/ASTResolver.h"
 
 using namespace AmpGen;
 
@@ -30,30 +31,6 @@ std::string AmpGen::programatic_name( std::string s )
   std::replace( s.begin(), s.end(), ':', '_' );
   std::replace( s.begin(), s.end(), '\'', '_' );
   return s;
-}
-ASTResolver::ASTResolver(const std::map<std::string, unsigned int>& evtMap, 
-    const MinuitParameterSet* mps ) : evtMap(evtMap), mps(mps), nParameters(0) {}
-
-bool ASTResolver::hasSubExpressions() const { return subTrees.size() != 0; }
-void ASTResolver::clearSubTrees() { subTrees.clear(); }
-
-void ASTResolver::reduceSubTrees()
-{
-  subTrees.clear();
-  for( auto& t : tempTrees ){
-    auto expr = t.first->m_expression;
-    uint64_t key = t.first->key(); 
-    if( subTrees.count( key ) == 0 ){
-      subTrees[ key ] = t.first->m_expression ;
-    }
-  }
-  tempTrees.clear();
-}
-
-std::vector<MinuitParameter*> CompiledExpressionBase::getDependentParameters() const
-{
-  std::vector<MinuitParameter*> params;
-  return params;
 }
 
 void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
@@ -99,7 +76,7 @@ void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
 CompiledExpressionBase::CompiledExpressionBase( const Expression& expression, 
     const std::string& name, 
     const DebugSymbols& db,
-    const std::map<std::string, unsigned int>& evtMapping )
+    const std::map<std::string, size_t>& evtMapping )
   : m_obj( expression ), 
   m_name( name ),
   m_db(db),

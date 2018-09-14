@@ -14,45 +14,11 @@
 
 namespace AmpGen
 {
-
   std::string programatic_name( std::string s );
   
   class MinuitParameter;
   class MinuitParameterSet;
-
-  /**
-   * @class ASTResolver
-   * Traverses trees in IExpression::resolveDependencies()
-   * to keep track of the dependencies of the tree
-   * such as sub-trees, external parameters and the event type map.
-   */
-  struct ASTResolver {
-    std::map<std::string, std::shared_ptr<CacheTransfer>> cacheFunctions;
-    std::map<std::string, unsigned int> evtMap;    /// event specification 
-    const MinuitParameterSet* mps;                 /// Set of MinuitParameters 
-    std::map< SubTree*, int >       tempTrees;     /// temporary store of sub-trees for performing cse reduction 
-    std::map< uint64_t, Expression> subTrees;      /// Unordered sub-trees 
-
-    unsigned int nParameters; 
-    bool useCompileTimeConstants;
-    ASTResolver(const std::map<std::string, unsigned int>& evtMap = {} , 
-                const MinuitParameterSet* mps = nullptr );
-    bool hasSubExpressions() const;
-    void clearSubTrees();
-
-    unsigned int resolveParameter( const std::string& name, const double& defaultValue );
-    void reduceSubTrees(); 
-    void cleanup();
-    template < class TYPE, class ...ARGS > size_t addCacheFunction( const std::string& name, ARGS&... args )
-    {
-      auto it = cacheFunctions.find(name);
-      if( it != cacheFunctions.end() ) return it->second->address();
-      auto cacheFunction = std::make_shared<TYPE>(nParameters, args... );
-      cacheFunctions[name] = cacheFunction;
-      nParameters += cacheFunction->size();
-      return nParameters - cacheFunction->size();
-    }
-  };
+  class ASTResolver; 
 
   /** @class CompiledExpressionBase
    *  Base class for compiled expressions, i.e. expressions that are (almost) ready to be evaluated.
@@ -63,18 +29,18 @@ namespace AmpGen
   class CompiledExpressionBase
   {
   protected:
-    Expression   m_obj;
-    std::string  m_name;
-    DebugSymbols m_db;
-    std::map<std::string, unsigned int > m_evtMap;
-    std::shared_future<bool>* m_readyFlag;
+    Expression                                      m_obj;
+    std::string                                     m_name;
+    DebugSymbols                                    m_db;
+    std::map<std::string, size_t>                   m_evtMap;
+    std::shared_future<bool>*                       m_readyFlag;
     std::vector<std::pair<std::string, Expression>> m_dependentSubexpressions;
-    std::vector<std::shared_ptr<CacheTransfer>> m_cacheTransfers;
+    std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;
   public:
     CompiledExpressionBase( const Expression& expression, 
                             const std::string& name,
                             const DebugSymbols& db=DebugSymbols(), 
-                            const std::map<std::string,unsigned int>& evtMapping = {} );
+                            const std::map<std::string,size_t>& evtMapping = {} );
     CompiledExpressionBase( const std::string& name );
     CompiledExpressionBase() : m_readyFlag(nullptr) {}
 
@@ -84,8 +50,6 @@ namespace AmpGen
     void to_stream( std::ostream& stream ) const;
     unsigned int hash() const;
     std::string name() const;
-    std::vector<MinuitParameter*> getDependentParameters() const;
-
     virtual bool link( void* handle              )          = 0;
     virtual bool link( const std::string& handle )          = 0;
     virtual void setExternal( const double& value, const unsigned int& address ) = 0;

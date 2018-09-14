@@ -7,6 +7,8 @@
 #include "AmpGen/CacheTransfer.h"
 #include "AmpGen/Simplify.h"
 #include "AmpGen/NamedParameter.h"
+#include "AmpGen/ASTResolver.h"
+
 using namespace AmpGen;
 
 DEFINE_CAST( Constant)
@@ -15,14 +17,14 @@ DEFINE_CAST( SubTree )
 DEFINE_CAST( Ternary )
 DEFINE_CAST( Function )
 
-  Expression::Expression( const std::shared_ptr<IExpression>& expression ) : m_expression( expression ) {}
+Expression::Expression( const std::shared_ptr<IExpression>& expression ) : m_expression( expression ) {}
 
-  std::string Expression::to_string() const
+std::string Expression::to_string(const ASTResolver* resolver) const
 {
   if ( m_expression == nullptr || get() == nullptr ) {
     ERROR( "No expression contained in this node!" );
   }
-  return m_expression->to_string();
+  return m_expression->to_string(resolver);
 }
 IExpression* Expression::get() const { return m_expression.get(); }
 
@@ -37,7 +39,7 @@ bool isZero( const std::complex<double>& A ){
   return fabs(std::real(A)) < std::numeric_limits<double>::epsilon() && fabs(std::imag(A)) < std::numeric_limits<double>::epsilon();
 }
 
-std::string Constant::to_string() const {  
+std::string Constant::to_string(const ASTResolver* resolver) const {  
   auto rounded_string = [](const double& val ){
     std::string str = std::to_string (val);
     str.erase ( str.find_last_not_of('0') + 1, std::string::npos );  
@@ -162,13 +164,26 @@ Parameter::Parameter( const std::string& name, const double& defaultValue, const
 {
 }
 
-std::string Parameter::to_string() const
+std::string Parameter::to_string(const ASTResolver* resolver) const
 {
   if ( m_resolved ) return m_name;
   if ( m_compileTimeConstant ) return "(" + std::to_string(m_defaultValue) + ")" ;
   if ( m_address != 9999 ) return "x" + std::to_string( m_fromArg ) + "[" + std::to_string( m_address ) + "]";
   else return m_name; 
 }
+
+Expression Parameter::clone() const 
+{
+  Parameter par; 
+  par.m_name     = m_name; 
+  par.m_resolved = m_resolved; 
+  par.m_compileTimeConstant = m_compileTimeConstant; 
+  par.m_fromArg = m_fromArg; 
+  par.m_address = m_address; 
+  par.m_defaultValue = m_defaultValue; 
+  return par; 
+}
+
 
 Expression AmpGen::operator<( const Expression& A, const Expression& B ) { return Expression( LessThan( A, B ) ); }
 Expression AmpGen::operator>( const Expression& A, const Expression& B ) { return Expression( GreaterThan( A, B ) ); }
@@ -219,7 +234,7 @@ Ternary::Ternary( const Expression& cond, const Expression& v1, const Expression
   : m_cond( cond ), m_v1( v1 ), m_v2( v2 )
 {
 }
-std::string Ternary::to_string() const
+std::string Ternary::to_string(const ASTResolver* resolver) const
 {
   return "(" + m_cond.to_string() + "?" + m_v1.to_string() + ":" + m_v2.to_string() + ")";
 }
@@ -243,15 +258,15 @@ Function::Function( const std::string& name, const std::vector<Expression>& args
 { 
 }
 
-std::string Function::to_string() const { 
+std::string Function::to_string(const ASTResolver* resolver) const { 
   std::string rt = m_name + "(";
   if( m_args.size() == 0 ) return rt + ")";
-  for( auto& arg : m_args ) rt += arg.to_string() + ", ";
+  for( auto& arg : m_args ) rt += arg.to_string(resolver) + ", ";
   return rt.substr(0,rt.size()-2) + ")";
 }
 void Function::resolve( ASTResolver& resolver ) {}
 
-std::string SubTree::to_string() const 
+std::string SubTree::to_string(const ASTResolver* /*resolver*/) const 
 {
   std::string name = m_name == "" ? "v"+ std::to_string( FNV1a_hash( m_expression.to_string() ) ) : m_name ; 
   return name;
@@ -259,9 +274,7 @@ std::string SubTree::to_string() const
 
 void SubTree::resolve( ASTResolver& resolver ) 
 { 
-  if( resolver.tempTrees.count( this ) != 0 ){
-    return;
-  }
+  if( resolver.tempTrees.count( this ) != 0 ) return;
   resolver.tempTrees[this] = 1;
   m_expression.resolve( resolver );
 }

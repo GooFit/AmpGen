@@ -118,7 +118,7 @@ Expression ExpressionParser::processEndPoint( const std::string& name )
   return Parameter( name, 0, true );
 }
 MinuitParameterLink::MinuitParameterLink( MinuitParameter* param ) : m_parameter( param ) {}
-std::string MinuitParameterLink::to_string() const { return m_parameter->name(); }
+std::string MinuitParameterLink::to_string(const ASTResolver* /*resolver*/ ) const { return m_parameter->name(); }
 
 void MinuitParameterLink::resolve( ASTResolver& resolver ){}
 std::complex<double> MinuitParameterLink::operator()() const { return m_parameter->mean(); }
@@ -136,11 +136,11 @@ ExpressionPack::ExpressionPack( const Expression& A, const Expression& B )
   } else
     m_expressions.push_back( B );
 }
-std::string ExpressionPack::to_string() const
+std::string ExpressionPack::to_string(const ASTResolver* resolver) const
 {
   std::string rt = "";
   for ( auto expr : m_expressions ) {
-    rt += expr.to_string() + ", ";
+    rt += expr.to_string(resolver) + ", ";
   }
   return rt.substr( 0, rt.length() - 2 );
 }

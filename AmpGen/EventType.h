@@ -29,7 +29,7 @@ namespace AmpGen
   public:
     EventType() = default;
     EventType( const std::vector<std::string>&, const bool& isTD = false );
-    std::map<std::string, unsigned int> getEventFormat( const bool& outputNames = false ) const;
+    std::map<std::string, size_t> getEventFormat( const bool& outputNames = false ) const;
 
     std::pair<double, double> minmax( const std::vector<size_t>& indices, bool isGeV = false ) const;
     std::vector<std::vector<unsigned int>> getBosePairs() const;

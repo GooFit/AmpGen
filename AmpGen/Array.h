@@ -20,11 +20,18 @@ namespace AmpGen
     Expression operator[]( const Expression& address );
     virtual ~Array() = default;
     void resolve( ASTResolver& resolver ) ;
+    Array clone() const { 
+      return Array( m_top.clone(), m_size );
+    }
   };
 
   struct ArrayExpression : public IExpression {
     std::shared_ptr<Array> m_parent;
     Expression m_addressOffset;
+    Expression clone() const {
+      return ArrayExpression( m_parent->clone(), m_addressOffset.clone() );
+    }
+
     ArrayExpression( const Array& parent, const Expression& address )
         : m_parent( std::make_shared<Array>( parent ) ), m_addressOffset( address )
     {
@@ -33,7 +40,7 @@ namespace AmpGen
         : m_parent(parent), m_addressOffset( address )
     {
     }
-    std::string to_string() const override ;
+    std::string to_string(const ASTResolver* resolver=nullptr) const override ;
 
     void resolve( ASTResolver& resolver ) override
     {
