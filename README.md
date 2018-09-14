@@ -4,7 +4,6 @@
 
 AmpGen builds as part of Gauss in the LHCb framework.
 
-
 ## Local builds
 
 AmpGen can also be built locally. The procedure is the standard one for CMake packages:
@@ -48,7 +47,6 @@ Add:
 ```shell
 -DCMAKE_CXX_CLANG_TIDY="clang-tidy;-fix"
 ```
-
 to the cmake configure line, and *do not* build in parallel! `make -j1`
 
 #### Clang-format
@@ -92,32 +90,32 @@ You may need to convert `bits/shared_ptr.h` into `memory`.
 
 ## Using the stand-alone programs
 
-All of the programs expect a file piped to stdin. They all support `--help` as well,
-but unlike most command line programs, you must also run the program, and variable names and settings will be printed as
-it runs (this is due to the fact that options are not pre-declared, but are declared where they are used).
+All standalone programs can accept both options files and command line arguments. 
+They also support `--help` to print help for key arguments to the program. 
+This will also run the program, as arguments can be defined throughout each of the programs rather than all defined at the beginning. 
 
 ### Generator
 
-You can run a generator with:
+The standalone generator for models can be used as
 
 ```shell
 ./Generator MyOpts.opt --nEvents=1000 --output=output.root
 ```
 
-This JIT compiles the model, and then generates `1000` events.
+Which generates 1000 events of the model described in MyOpts.opt and saves them to output.root.
 
 ### ConvertToSourceCode
 
-This produces the source code that you can compile (and also compiles it for you if you monitor the logs). This is used like this:
+This produces source code to evalute the PDF, and normalises for use with other generators such as EvtGen, i.e. P(max) < 1. This can be used as
 
 ```shell
 ./ConvertToSourceCode MyOpts.opt --sourceFile=MyFile.cpp
 ```
 
-You can compile this file (use the same commands given in the info statement printed out):
+This can then be a compiled to a shared library using
 
 ```shell
-/usr/bin/c++ -Ofast -shared -rdynamic --std=c++14 -fPIC MyFile.cpp -o MyFile.so
+g++ -Ofast -shared -rdynamic --std=c++14 -fPIC MyFile.cpp -o MyFile.so
 ```
 
 You can then check the file by opening it it Python3, using the utility class provided:
