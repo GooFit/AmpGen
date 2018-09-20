@@ -157,7 +157,6 @@ namespace AmpGen
 
     /// Spline based lineshapes
     DECLARE_LINESHAPE( MIPWA );
-    DECLARE_LINESHAPE( WidthSpline );
     DECLARE_LINESHAPE( GSpline );
     DECLARE_LINESHAPE( FormFactorSpline );
     DECLARE_LINESHAPE( DecaySpline );

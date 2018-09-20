@@ -36,40 +36,11 @@ std::string AmpGen::programatic_name( std::string s )
 void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
 {
   ASTResolver resolver( m_evtMap, mps );
-  resolver.mps = mps;
   resolver.useCompileTimeConstants = 
     NamedParameter<bool>( "CompiledExpression::UseCompileTimeConstants", false ); 
-  m_obj.resolve( resolver );
-  std::map< uint64_t , unsigned int> used_functions;
-  do { 
-    resolver.reduceSubTrees();
-    auto subexpressions = resolver.subTrees;
-    for( auto& expression : subexpressions ) {     
-      expression.second.resolve( resolver );
-      auto stack_pos = used_functions.find( expression.first );
-      if ( stack_pos == used_functions.end() ) {
-        m_dependentSubexpressions.emplace_back( "v"+std::to_string( expression.first ) , expression.second );
-        used_functions[expression.first] = m_dependentSubexpressions.size() - 1;
-        continue;
-      }
-      unsigned int oldPos = stack_pos->second;
-      auto it             = m_dependentSubexpressions.begin() + oldPos;
-      if ( it == m_dependentSubexpressions.end() - 1 ) continue;
-
-      std::rotate( it, it + 1, m_dependentSubexpressions.end() );
-
-      for ( auto uf = used_functions.begin(); uf != used_functions.end(); ++uf ) {
-        if ( uf->second >= oldPos ) uf->second = uf->second - 1;
-      }
-      used_functions[expression.first] = m_dependentSubexpressions.size() - 1;
-    }
-  } while ( resolver.hasSubExpressions() );
-  std::reverse( m_dependentSubexpressions.begin(), m_dependentSubexpressions.end() );
-
-  for ( auto& sym : m_db ) {
-    sym.second.resolve( resolver );
-    sym.second.resolve( resolver );
-  }
+  resolver.getOrderedSubExpressions( m_obj,  m_dependentSubexpressions );
+  for ( auto& sym : m_db ) 
+    resolver.getOrderedSubExpressions( sym.second, m_dependentSubexpressions  );
   resolveParameters(resolver);
 }
 
@@ -94,9 +65,9 @@ void CompiledExpressionBase::resolveParameters( ASTResolver& resolver )
 {
   auto ppdf = this;
   m_cacheTransfers.clear();
-  for( auto& expression : resolver.cacheFunctions ) 
+  for( auto& expression : resolver.cacheFunctions() ) 
     m_cacheTransfers.emplace_back( expression.second ); 
-  ppdf->resizeExternalCache(resolver.nParameters); 
+  ppdf->resizeExternalCache(resolver.nParams() ); 
   prepare();
 }
 
@@ -108,7 +79,7 @@ void CompiledExpressionBase::prepare()
 void CompiledExpressionBase::addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const
 {
   for ( auto& dep : m_dependentSubexpressions ) {
-    std::string rt = "auto " + dep.first + " = " + dep.second.to_string() +";"; 
+    std::string rt = "auto v" + std::to_string(dep.first) + " = " + dep.second.to_string() +";"; 
     stream << rt << "\n";
     sizeOfStream += sizeof(char) * rt.size(); /// bytes /// 
   }
@@ -162,6 +133,7 @@ void CompiledExpressionBase::compile(const std::string& fname, const bool& wait 
 
 void CompiledExpressionBase::addDebug( std::ostream& stream ) const
 {
+  /*
   stream << "extern \"C\" void " << m_name << "_DB(" << fcnSignature() << "){\n";
   size_t sizeOf = 0 ; 
   addDependentExpressions( stream, sizeOf );
@@ -172,9 +144,20 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
       stream << "std::cout << \"\\033[1m\" << \"" << name << "\" << \"\\033[0m\" << std::endl ;" << std::endl;
     else {
       name.resize( 20, ' ' );
-      stream << "std::cout << \"  \" << \"" << name << "\" << \"=  \"<< " << expression.to_string() << "<< std::endl ;"
-        << std::endl;
+      stream << "std::cout << \"  \" << \"" << name << "\" << \"=  \"<< " << expression << "<< std::endl ;" << std::endl;
     }
   }
   stream << "}" << std::endl;
+  */ 
+  stream << "extern \"C\" std::vector<std::complex<double>> " << m_name << "_DB(" << fcnSignature() << "){\n";
+  size_t sizeOf = 0 ; 
+  addDependentExpressions( stream, sizeOf );
+  stream << "return {";
+  for ( unsigned int i = 0 ; i < m_db.size(); ++i ) {
+    std::string comma = (i!=m_db.size()-1)?", " :"};\n}\n";
+    const auto expression = m_db[i].second; 
+    if ( expression.to_string() != "NULL" )
+    stream << std::endl << expression << comma;
+    else stream << std::endl << "0." << comma ;
+  }
 }

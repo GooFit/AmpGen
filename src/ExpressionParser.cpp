@@ -29,7 +29,7 @@ void ExpressionParser::processUnaryOperators( std::vector<std::string>& opCodes,
 {
   for ( int pos = 0; pos < (int)opCodes.size(); ++pos ) {
     auto fcn = m_unaryFunctions.find( opCodes[pos] );
-    INFO( " op = " << opCodes[pos] << " pos = " << pos );
+    DEBUG( " op = " << opCodes[pos] << " pos = " << pos );
     if ( fcn == m_unaryFunctions.end() ) continue;
     expressions[pos] = ( fcn )->second( expressions[pos] );
     opCodes.erase( opCodes.begin() + pos );
@@ -121,7 +121,9 @@ MinuitParameterLink::MinuitParameterLink( MinuitParameter* param ) : m_parameter
 std::string MinuitParameterLink::to_string(const ASTResolver* /*resolver*/ ) const { return m_parameter->name(); }
 
 void MinuitParameterLink::resolve( ASTResolver& resolver ){}
-std::complex<double> MinuitParameterLink::operator()() const { return m_parameter->mean(); }
+std::complex<double> MinuitParameterLink::operator()() const { 
+  if( m_parameter == nullptr ) ERROR("Parameter does not have end-point");
+  return m_parameter->mean(); }
 
 ExpressionPack::ExpressionPack( const Expression& A, const Expression& B )
 {

@@ -8,7 +8,7 @@ using namespace AmpGen;
 std::vector<int> polarisations( const std::string& name ){
   auto props = *ParticlePropertiesList::get( name );
   std::vector<int> rt( props.twoSpin() + 1 );
-  
+
   if( props.isFermion() ) return {1,-1};    
   if( props.twoSpin() == 0 ) return {0};
   if( props.twoSpin() == 2 ) 
@@ -67,7 +67,7 @@ PolarisedAmplitude::PolarisedAmplitude( const EventType& type, AmpGen::MinuitPar
         TensorExpression( thisExpression), 
         "p"+std::to_string( FNV1a_hash( matrix_element.first.uniqueString() ) ) , 
         type.getEventFormat(),debug ? syms : DebugSymbols() ,&mps ); 
-    INFO( matrix_element.first.uniqueString() << " FNV1a = " << std::to_string(FNV1a_hash( matrix_element.first.uniqueString() ) ) ); 
+    INFO( matrix_element.first.uniqueString() ); 
     m_matrixElements.emplace_back( std::make_shared<Particle>(matrix_element.first), matrix_element.second, expression );
   } 
   for( auto& polState : all_polarisation_states){
@@ -95,16 +95,20 @@ void   PolarisedAmplitude::prepare()
 {
   bool isReady = 0 ; 
   auto dim = m_eventType.dim();
-  for( auto& t : m_matrixElements ){
+  std::vector<size_t> changedPdfIndices; 
+  for( size_t i = 0; i < m_matrixElements.size(); ++i ){
+    auto& t = m_matrixElements[i];
     if( m_nCalls == 0 ) isReady &= t.pdf.isReady(); 
     t.pdf.prepare();
-    if( m_nCalls != 0 && !t.pdf.hasExternalsChanged() ) continue ; 
+    if( m_nCalls != 0 && !t.pdf.hasExternalsChanged() ) continue; 
     if( t.addressData == 999 ){
       DEBUG("Registering expression: " << t.decayTree->uniqueString() << " = " << t.addressData );
       t.addressData = m_events->registerExpression( t.pdf , dim.first * dim.second );
     }
     m_events->updateCache( t.pdf, t.addressData );
-    DEBUG("Updated cache for PDF: " << t.decayTree->uniqueString() << " " << t.addressData << " " << t.pdf.isLinked() );
+    INFO("Updated cache for PDF: " << t.decayTree->uniqueString() << " " << t.addressData << " " << t.pdf.isLinked() << " " << m_nCalls << " work to do? " << t.pdf.hasExternalsChanged() );
+    t.pdf.resetExternals();
+    changedPdfIndices.push_back(i);
   }
 
   DEBUG("Building prob expression");
@@ -115,7 +119,7 @@ void   PolarisedAmplitude::prepare()
   m_weight = m_weightParam == nullptr ? 1 : m_weightParam->mean();
   if( m_integralDispatch.sim != nullptr )
   {
-    if( m_nCalls == 0 ) calculateNorms();
+    if( changedPdfIndices.size() != 0 ) calculateNorms(changedPdfIndices);
     double px = m_productionParameters[0];
     double py = m_productionParameters[1];
     double pz = m_productionParameters[2];
@@ -135,26 +139,27 @@ void   PolarisedAmplitude::prepare()
       + z * ( std::conj( acc[4] + acc[5] ) );
 
     m_norm = std::real(total);
-    if( m_nCalls == 0 ){
-      double norm = 0;
-      
-      for( auto& evt : * m_integralDispatch.sim ){
-        norm += evt.weight() * prob_unnormalised(evt) / evt.genPdf(); 
-        if( prob_unnormalised(evt) > 1e6 ){
-          WARNING("Event has very high probability: " << prob_unnormalised(evt) );
-          evt.print();
-        }
-      }
-      INFO("Average = " << m_norm );
-      auto evt = (*m_integralDispatch.sim)[0];
-      evt.print();
-      INFO("Check one event: " << prob_unnormalised(evt) << " " << getValNoCache(evt) );
-      INFO("Cross-checking normalisation: " << m_norm << " vs " << norm / m_integralDispatch.sim->norm() << " sample_norm = " << m_integralDispatch.sim->norm() );
-    } 
   }
   m_nCalls++;
 }
 
+void PolarisedAmplitude::debug_norm()
+{
+  double norm = 0;
+  for( auto& evt : * m_integralDispatch.sim ){
+    norm += evt.weight() * prob_unnormalised(evt) / evt.genPdf(); 
+    if( prob_unnormalised(evt) > 1e6 ){
+      WARNING("Event has very high probability: " << prob_unnormalised(evt) );
+      evt.print();
+    }
+  }
+  INFO("Average = " << m_norm );
+  auto evt = (*m_integralDispatch.sim)[0];
+  evt.print();
+  INFO("Check one event: " << prob_unnormalised(evt) << " " << getValNoCache(evt) );
+  INFO("Cross-checking normalisation: " << m_norm << " vs " << norm / m_integralDispatch.sim->norm() << " sample_norm = " << m_integralDispatch.sim->norm() );
+
+}
 void   PolarisedAmplitude::setEvents( AmpGen::EventList& events )
 { 
   reset();
@@ -177,8 +182,8 @@ void PolarisedAmplitude::build_probunnormalised()
   CompilerWrapper(true).compile( m_probExpression );
 }
 
-Tensor PolarisedAmplitude::transitionMatrix(){
-
+Tensor PolarisedAmplitude::transitionMatrix()
+{
   auto dim = m_eventType.dim();
   auto size = dim.first * dim.second ; 
   std::vector< Expression > expressions( size, 0);
@@ -200,27 +205,26 @@ double PolarisedAmplitude::prob_unnormalised( const AmpGen::Event& evt ) const
   return m_probExpression( evt.getCachePtr(0) );
 }
 
-double PolarisedAmplitude::norm() const {
+double PolarisedAmplitude::norm() const 
+{
   return m_norm;
 }
 
-void PolarisedAmplitude::calculateNorms() 
+void PolarisedAmplitude::calculateNorms(const std::vector<size_t>& changedPdfIndices ) 
 {
   size_t size_of = size() / m_matrixElements.size();
   for( auto& expression : m_matrixElements ){
     m_integralDispatch.prepareExpression( expression.pdf , size_of );
   }
-  for(size_t i = 0; i < m_matrixElements.size(); ++i ){
+  for( auto& i : changedPdfIndices ){
     auto ai = m_integralDispatch.sim->getCacheIndex( m_matrixElements[i].pdf );
-    for(size_t j = i; j < m_matrixElements.size(); ++j ){
+    for(size_t jt = 0; jt < m_matrixElements.size(); ++jt ){
+      size_t j = jt;  
       auto aj = m_integralDispatch.sim->getCacheIndex( m_matrixElements[j].pdf );
-      m_integralDispatch.addIntegralKeyed(ai+0, aj+0, [i,j,this](const complex_t& val){this->m_norms[0].set(i,j,val); this->m_norms[0].set(j,i,std::conj(val));});
-      m_integralDispatch.addIntegralKeyed(ai+1, aj+1, [i,j,this](const complex_t& val){this->m_norms[1].set(i,j,val); this->m_norms[1].set(j,i,std::conj(val));});
-      m_integralDispatch.addIntegralKeyed(ai+2, aj+2, [i,j,this](const complex_t& val){this->m_norms[2].set(i,j,val); this->m_norms[2].set(j,i,std::conj(val));});
-      m_integralDispatch.addIntegralKeyed(ai+3, aj+3, [i,j,this](const complex_t& val){this->m_norms[3].set(i,j,val); this->m_norms[3].set(j,i,std::conj(val));});
-    }
-    for( size_t j = 0 ; j < m_matrixElements.size(); ++j ){
-      auto aj = m_integralDispatch.sim->getCacheIndex( m_matrixElements[j].pdf );
+      m_integralDispatch.addIntegralKeyed(ai+0, aj+0, [i,j,this](const complex_t& val){this->m_norms[0].set(i,j,val); if( i != j ) this->m_norms[0].set(j,i,std::conj(val));});
+      m_integralDispatch.addIntegralKeyed(ai+1, aj+1, [i,j,this](const complex_t& val){this->m_norms[1].set(i,j,val); if( i != j ) this->m_norms[1].set(j,i,std::conj(val));});
+      m_integralDispatch.addIntegralKeyed(ai+2, aj+2, [i,j,this](const complex_t& val){this->m_norms[2].set(i,j,val); if( i != j ) this->m_norms[2].set(j,i,std::conj(val));});
+      m_integralDispatch.addIntegralKeyed(ai+3, aj+3, [i,j,this](const complex_t& val){this->m_norms[3].set(i,j,val); if( i != j ) this->m_norms[3].set(j,i,std::conj(val));});
       m_integralDispatch.addIntegralKeyed(ai+0, aj+2, [i,j,this](const complex_t& val){this->m_norms[4].set(i,j,val); }); 
       m_integralDispatch.addIntegralKeyed(ai+1, aj+3, [i,j,this](const complex_t& val){this->m_norms[5].set(i,j,val); }); 
     }
@@ -297,7 +301,11 @@ std::vector<FitFraction> PolarisedAmplitude::fitFractions( const LinearErrorProp
   return std::vector<FitFraction>();
 }
 
-void PolarisedAmplitude::transferParameters(){ m_probExpression.prepare(); for( auto& me : m_matrixElements ) me.pdf.prepare() ; }  
+void PolarisedAmplitude::transferParameters()
+{ 
+  m_probExpression.prepare(); 
+  for( auto& me : m_matrixElements ) me.pdf.prepare();
+}
 
 real_t PolarisedAmplitude::getValNoCache( const AmpGen::Event& evt )  {
   transferParameters();

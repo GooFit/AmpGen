@@ -1,4 +1,3 @@
-#include <cmath>
 #include <string>
 
 #include "AmpGen/Expression.h"
@@ -9,51 +8,41 @@
 
 //// implementation of Gounaris Sakurai Lineshape ///
 using namespace AmpGen;
+using namespace AmpGen::fcn;
 
-Expression safe_sqrt( const Expression& expression )
+Expression q2( const Expression& s )
 {
-  return Ternary( expression > 0 , Sqrt(expression) , 0 );
+  double mpi = ParticlePropertiesList::get("pi+")->mass();
+  return s - 4*mpi*mpi;
 }
 
-Expression k( Expression mpipi )
+Expression q( const Expression& s )
 {
-  Constant mpi( 139.57018 );
-  return safe_sqrt( 0.25 * mpipi - Pow( mpi, 2 ) );
+  return safe_sqrt(q2(s));
 }
 
-Expression k2( Expression mpipi )
+Expression L( const Expression& s )
 {
-  Constant mpi( 139.57018 );
-  return 0.25 * mpipi - Pow( mpi, 2 );
+  double mpi = ParticlePropertiesList::get("pi+")->mass();
+  return log( ( sqrt(s) + safe_sqrt(q2(s)) ) / ( 2*mpi ) );
 }
 
-Expression kprime( Expression mpipi )
+Expression h( const Expression& s )
 {
-  Constant mpi( 139.57018 );
-  return 1.0 / ( 8.0 * safe_sqrt( 0.25 * mpipi - Pow( mpi, 2 ) ) );
+  return  q(s) * L(s) / (M_PI * sqrt(s) );
+}
+Expression hprime( const Expression& s )
+{
+  double mpi = ParticlePropertiesList::get("pi+")->mass();
+  return ( L(s) * 4 * mpi * mpi /(q(s) * sqrt(s)) + 1) / (2*M_PI*s);
+}
+Expression M( const Expression& s, const Expression& width, const Expression& s0, const Expression& pion_mass ) {
+  Expression pf = 2.*width*s0/pow(q(s0),3);
+  Expression t1 = q2(s)  * ( h(s) - h(s0));
+  Expression t2 = q2(s0) * ( L(s0) * 4 * pion_mass * pion_mass/(q(s0) * sqrt(s0)) + 1) ;
+  return s0 + pf*(t1+t2*(s0-s)/(2.*M_PI*s0)); 
 }
 
-Expression h( Expression mpipi )
-{
-  Constant mpi( 139.57018 );
-  Expression Logterm = Log( ( Sqrt( mpipi ) + 2.0 * k( mpipi ) ) / ( 2.0 * mpi ) );
-  return ( 2.0 * k( mpipi ) * Logterm ) / ( M_PI * Sqrt( mpipi ) );
-}
-Expression hprime( Expression mpipi )
-{
-  return h( mpipi ) * ( 0.125 / ( k( mpipi ) * k( mpipi ) ) - 0.5 / mpipi ) + 0.5 / ( M_PI * mpipi );
-}
-
-Expression d( const Expression& mpipi, const Expression& m, DebugSymbols* dbexpressions = nullptr )
-{
-  Constant mpi( 139.57018 );
-  Expression Logfactor = Log( ( m + 2 * k( m * m ) ) / ( 2.0 * mpi ) );
-  Expression term1     = ( 3.0 / M_PI ) * Pow( mpi / k( m * m ), 2 ) * Logfactor;
-  Expression term2     = m / ( 2.0 * M_PI * k( m * m ) );
-  Expression term3     = Pow( mpi, 2 ) * m / ( M_PI * Pow( k( m * m ), 3 ) );
-
-  return term1 + term2 - term3;
-}
 DEFINE_LINESHAPE( GounarisSakurai )
 {
   auto props        = ParticlePropertiesList::get( particleName );
@@ -62,24 +51,17 @@ DEFINE_LINESHAPE( GounarisSakurai )
   Expression width0 = Parameter( particleName + "_width", props->width() );
 
   Expression s0        = mass * mass;
-  Expression GsTerm    = k2( s ) * ( h( s ) - h( s0 ) ) + k2( s0 ) * hprime( s0 ) * ( s0 - s );
-  Expression BWReal    = s0 - s + width0 * s0 * GsTerm / ( k( s0 ) * k( s0 ) * k( s0 ) );
-  Expression BWIm      = -mass * width( s, s1, s2, mass, width0, radius, L );
-  const Expression q2  = Abs( Q2( s, s1, s2 ) );
-  const Expression q20 = Abs( Q2( mass * mass, s1, s2 ) );
+    
+  Expression BWIm      = -mass * width( s, s1, s2, mass, width0, 0, L );
+  Expression BWRe      = M(s, width0, s0, ParticlePropertiesList::get("pi+")->mass() ) - s;
+  const Expression q2  = abs( Q2( s, s1, s2 ) );
   const Expression J   = Constant(0,1);
-  Expression BF = Sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
-  ADD_DEBUG( BF, dbexpressions );
-  ADD_DEBUG( Sqrt( s ), dbexpressions );
-  ADD_DEBUG( Sqrt( s0 ), dbexpressions );
-  ADD_DEBUG( GsTerm, dbexpressions );
-  ADD_DEBUG( BWReal, dbexpressions );
-  ADD_DEBUG( BWIm, dbexpressions );
-  ADD_DEBUG( h( s ), dbexpressions );
-  ADD_DEBUG( h( s0 ), dbexpressions );
-  ADD_DEBUG( k( s ), dbexpressions );
-  ADD_DEBUG( k( s0 ), dbexpressions );
-  ADD_DEBUG( d( s, mass ), dbexpressions );
-  ADD_DEBUG( d( s0, mass ), dbexpressions );
-  return  1000. * 1000. * kFactor( mass, width0, dbexpressions ) * BF / ( BWReal + J* BWIm );
+  Expression BF = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
+  ADD_DEBUG( BF   , dbexpressions);
+  ADD_DEBUG( BWRe , dbexpressions);
+  ADD_DEBUG( BWIm , dbexpressions);
+  ADD_DEBUG( h(s) , dbexpressions);
+  ADD_DEBUG( h(s0), dbexpressions);
+  //return 1./( BWRe + J * BWIm );
+  return kFactor( mass, width0, dbexpressions ) * BF / ( BWRe + J* BWIm );
 }

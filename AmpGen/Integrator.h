@@ -14,7 +14,6 @@
 
 namespace AmpGen
 {
-  /// internally used structs ///
   struct Bilinears {
     size_t rows;
     size_t cols;

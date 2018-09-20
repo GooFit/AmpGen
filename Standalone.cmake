@@ -62,7 +62,7 @@ target_compile_definitions(AmpGen
 
 target_compile_options(AmpGen
   PUBLIC
-  -Wall -Wextra -Wpedantic
+  -Wall -Wextra -Wpedantic -g3
   -Wno-unused-parameter
   -Wno-unknown-pragmas
   $<$<CONFIG:Release>:-Ofast>)

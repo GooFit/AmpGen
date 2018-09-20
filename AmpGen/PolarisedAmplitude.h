@@ -52,9 +52,10 @@ namespace AmpGen
       void setEvents( AmpGen::EventList& events );
       void setMC( AmpGen::EventList& events );
       void reset( const bool& flag = false );
-      void debug(const AmpGen::Event& event ); 
+      void debug(const AmpGen::Event& event );
+      void debug_norm(); 
       void setWeight( MinuitParameter* param ){ m_weightParam = param ; } 
-      void calculateNorms(); 
+      void calculateNorms( const std::vector<size_t>& changedPdfIndices); 
       void generateSourceCode( const std::string& fname, const double& normalisation = 1, bool add_mt = false );
       void build_probunnormalised();
       Expression probExpression( const Tensor& T_matrix, const std::vector<Expression>& p ) const; 

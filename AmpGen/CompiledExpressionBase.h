@@ -34,7 +34,7 @@ namespace AmpGen
     DebugSymbols                                    m_db;
     std::map<std::string, size_t>                   m_evtMap;
     std::shared_future<bool>*                       m_readyFlag;
-    std::vector<std::pair<std::string, Expression>> m_dependentSubexpressions;
+    std::vector<std::pair<uint64_t, Expression>>    m_dependentSubexpressions;
     std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;
   public:
     CompiledExpressionBase( const Expression& expression, 

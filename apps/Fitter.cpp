@@ -73,11 +73,10 @@ unsigned int count_amplitudes( const AmpGen::MinuitParameterSet& mps )
   return counter;
 }
 
-  template <typename SIGPDF>
+template <typename SIGPDF>
 void addExtendedTerms( Minimiser& mini, SIGPDF& pdf, MinuitParameterSet& mps )
 {
-
-  std::vector<std::string> llConfigs = NamedParameter<std::string>::getVectorArgument( "LLExtend", std::string( "" ) );
+  std::vector<std::string> llConfigs = NamedParameter<std::string>( "LLExtend" ).getVector();
 
   for ( auto& ll_config : llConfigs ) {
     auto ll_name = split( ll_config, ' ' )[0];
@@ -91,10 +90,9 @@ void addExtendedTerms( Minimiser& mini, SIGPDF& pdf, MinuitParameterSet& mps )
   }
 }
 
-  template <typename PDF>
+template <typename PDF>
 FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS )
 {
-
   INFO( "Type = " << typeof<PDF>() );
   const std::string fLib = NamedParameter<std::string>( "Lib", std::string( "" ) ).getVal();
 
@@ -105,7 +103,7 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
   INFO( "Fitting PDF with " << pdf.nPDFs() << " components" );
 
   Minimiser mini( pdf, &MPS );
-  addExtendedTerms( mini, std::get<0>( pdf.pdfs() ), MPS );
+  //addExtendedTerms( mini, std::get<0>( pdf.pdfs() ), MPS );
   auto threeBodyShapes     = threeBodyCalculators( MPS );
   unsigned int updateWidth = NamedParameter<unsigned int>( "UpdateWidth", 0 );
   if ( updateWidth ) {
@@ -145,9 +143,6 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
     for_each( pdf.m_pdfs, [&]( auto& f ) {
         auto tStartIntegral2 = std::chrono::high_resolution_clock::now();
         auto mc_plot3        = bandPlot<100>( mc, "tMC_Category" + std::to_string( counter ) + "_", f, ep );
-        //      std::function<double(const Event&)> FCN = [&](const Event& evt){ return f.prob(evt) ; };
-        //      auto mc_plot3 = mc.makeDefaultPlotsWeighted( FCN, "tMC_Category"+std::to_string(counter)+"_", 50, 1 );
-
         auto tEndIntegral2 = std::chrono::high_resolution_clock::now();
         double t2          = std::chrono::duration<double, std::milli>( tEndIntegral2 - tStartIntegral2 ).count();
         INFO( "Time for plots = " << t2 );
@@ -175,33 +170,26 @@ int main( int argc, char* argv[] )
 {
   OptionsParser::setArgs( argc, argv );
 
-  const std::string dataFile = NamedParameter<std::string>( "SigFileName", "", "Name of file containing data sample to fit." );
-  const std::string mcFile   = NamedParameter<std::string>( "SgIntegratorFname", "", "Name of file containing normalisation sample." );
+  const std::string dataFile = NamedParameter<std::string>("DataSample", ""          , "Name of file containing data sample to fit." );
+  const std::string mcFile   = NamedParameter<std::string>("SimSample" , ""          , "Name of file containing normalisation sample." );
+  const std::string fmcFile  = NamedParameter<std::string>("FlatMC"    , ""          , "Name of file containing events for computing physics integrals" );
+  const std::string logFile  = NamedParameter<std::string>("LogFile"   , "Fitter.log", "Name of the output log file");
+  const std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
 
-
-  const std::string fmcFile  = NamedParameter<std::string>( "FlatMC", "" , "Name of file containing events for computing physics integrals" );
-  const std::string logFile  = NamedParameter<std::string>( "LogFile", "Fitter.log" , "Name of the output log file");
-  const std::string plotFile = NamedParameter<std::string>( "Plots", "plots.root" , "Name of the output plot file");
-
-  INFO( "Output : " << logFile << " plots = " << plotFile );
-  unsigned int NBins   = NamedParameter<unsigned int>( "nBins", 100 , "Number of bins used for plotting.");
-  bool perturb = NamedParameter<bool>( "Perturb", 0 , "Flag to randomise starting parameters.");
-  unsigned int seed = NamedParameter<unsigned int>( "Seed", 0, "Random seed used" );
+  const size_t      nThreads = NamedParameter<size_t>     ("nCores"    , 8           , "Number of threads to use" );
+  const size_t      NBins    = NamedParameter<size_t>     ("nBins"     , 100         , "Number of bins used for plotting.");
+  const bool        perturb  = NamedParameter<bool>       ("Perturb"   , 0           , "Flag to randomise starting parameters.");
+  const size_t      seed     = NamedParameter<size_t>     ("Seed"      , 0           , "Random seed used" );
 
   std::vector<std::string> evtType_particles =  NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
-  unsigned int doCoherence = NamedParameter<unsigned int>( "DoCoherence", 0 );
-  // double globalPhase       = (M_PI/180.) * NamedParameter<double>     ("Coherence::GlobalPhase",-128);
-  std::string binningName = NamedParameter<std::string>( "Coherence::BinningName", "test.dat" );
-  // unsigned int co_nBins    = NamedParameter<unsigned int>("Coherence::nBins"      ,4);
-  // unsigned int makeBins   = NamedParameter<unsigned int>("Coherence::MakeBinning",0);
 
+  INFO( "Output : " << logFile << " plots = " << plotFile );
+  
   TRandom3 rndm;
   rndm.SetSeed( seed );
   gRandom = &rndm;
 
 #ifdef _OPENMP
-  unsigned int concurentThreadsSupported = std::thread::hardware_concurrency();
-  unsigned int nThreads                  = NamedParameter<unsigned int>( "nCores", concurentThreadsSupported );
   omp_set_num_threads( nThreads );
   INFO( "Setting " << nThreads << " fixed threads for OpenMP" );
   omp_set_dynamic( 0 );
@@ -213,9 +201,7 @@ int main( int argc, char* argv[] )
     ERROR( "No input data selected" );
     return -1;
   }
-  if ( mcFile == "" ) {
-    WARNING( "No input simulation selected; using PHSP sample" );
-  }
+  if ( mcFile == "" ) WARNING( "No input simulation selected; using PHSP sample" );
 
   if ( perturb ) {
     for ( auto& param : MPS ) {
@@ -225,7 +211,6 @@ int main( int argc, char* argv[] )
   }
   EventType evtType( evtType_particles );
 
-  //FastCoherentSum sig( evtType, MPS );
   FastCoherentSum   sig( evtType, MPS );
   FastIncoherentSum bkg( evtType, MPS, "Inco" );
   FastCoherentSum misID( evtType, MPS, "MisID" );
@@ -248,17 +233,23 @@ int main( int argc, char* argv[] )
 
   EventList events( dataFile, evtType, CacheSize(defaultCacheSize), Filter(cut) );
   EventList eventsMC = mcFile == "" ? EventList( evtType) : EventList( mcFile, evtType, CacheSize(defaultCacheSize), Filter(simCut) ) ;
+  auto scale_transform = [](auto& event){ for( size_t x = 0 ; x < event.size(); ++x ) event[x] /= 1000.; };
+  INFO("Changing units from MeV -> GeV");
+  events.transform( scale_transform );
+  eventsMC.transform( scale_transform );
+  INFO( "Data events: " << events.size() );  
+  INFO( "MC events  : " << eventsMC.size() );
   if( mcFile == "" ){
     Generator<>( evtType, &rndm ).fillEventListPhaseSpace( eventsMC, 5e6 );
     INFO("Generated: " << eventsMC.size() << " events for integrals" );
   }
+
   sig.setMC( eventsMC );
   bkg.setMC( eventsMC );
   misID.setMC( eventsMC );
 
   TFile* output = TFile::Open( plotFile.c_str(), "RECREATE" );
   output->cd();
-
   AmpGen::FitResult* fr = nullptr;
 
   if ( MPS["fPDF"]->mean() == 1.0 )
@@ -291,22 +282,9 @@ int main( int argc, char* argv[] )
   else
     fr->addFractions( bkg.fitFractions( fr->getErrorPropagator() ) );
 
-  if ( doCoherence ) {
-    misID.reset( true );
-    misID.setMC( flatMC );
-
-    CoherenceFactor rk3pi( &sig, &misID, &flatMC );
-    // auto global_hadronicParameters = rk3pi.getVal();
-    LinearErrorPropagator linProp = fr->getErrorPropagator();
-    double rG                     = rk3pi();
-    double rGE                    = linProp( rk3pi );
-    INFO( "cGlobal = " << rG << " +/- " << rGE );
-    fr->addObservable( "R_g", rG );
-    fr->addObservable( "R_gE", rGE );
-  }
   fr->writeToFile( logFile );
   output->cd();
-  std::vector<TH1D*> plots = events.makeDefaultPlots( Prefix( "Data_" ), Bins( NBins ) );
+  auto plots = events.makeDefaultPlots( Prefix( "Data_" ), Bins( NBins ) );
   for ( auto& plot : plots ) plot->Write();
 
   output->Write();

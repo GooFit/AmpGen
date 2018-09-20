@@ -33,6 +33,7 @@ namespace AmpGen
     static OptionsParser* getMe();
     static bool printHelp() { return getMe()->m_printHelp ; }   
     static void setArgs( int argc, char** argv ){ getMe()->setCommandLineArgs(argc, argv ) ; } 
+    void addArg( const std::string& arg );
     void setCommandLineArgs( int argc, char** argv );
      
     auto find( const std::string& name )  { return m_parsedLines.find( name ); }

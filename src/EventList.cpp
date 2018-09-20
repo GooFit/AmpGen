@@ -34,7 +34,7 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
 {
   auto pdfSize      = args.getArg<CacheSize>().val;
   auto filter       = args.getArg<Filter>().val;
-  auto getGenPdf    = args.getArg<GetGenPdf>().val;
+  auto getGenPdf    = args.getArg<GetGenPdf>(true).val;
   auto weightBranch = args.getArg<WeightBranch>().val;
   auto branches     = args.getArg<Branches>().val;
   auto applySym     = args.getArg<ApplySym>().val;

@@ -21,68 +21,38 @@ DEFINE_LINESHAPE( DecaySpline )
   return getSpline( particleName, q2, "FF" );
 }
 
-DEFINE_LINESHAPE( WidthSpline )
-{
-  auto props          = ParticlePropertiesList::get( particleName );
-  Expression mass     = Parameter( particleName + "_mass", props->mass() );
-  Expression radius   = Parameter( particleName + "_radius", props->radius() );
-  Expression width0   = Parameter( particleName + "_width", props->width() );
-  const Expression q2 = Abs( Q2( s, s1, s2 ) );
-  const Expression BF = BlattWeisskopf_Norm( q2 * radius * radius, 0, L ); // :
-  const Expression runningWidthRe =
-    ( width0 / GeV ) * getSpline( particleName, s / ( GeV * GeV ), "Gamma", dbexpressions, true );
-  const Expression norm      = kFactor( mass, width0 ) * Sqrt( BF );
-  const Expression massInGeV = mass / GeV;
-  const Expression sInGeV    = s / ( GeV * GeV );
-  const Expression J = Constant(0,1);
-  const Expression iBW       = massInGeV * massInGeV - sInGeV - J * massInGeV * runningWidthRe;
-  const Expression BW = norm / iBW;
-
-  ADD_DEBUG( mass, dbexpressions );
-  ADD_DEBUG( q2, dbexpressions );
-  ADD_DEBUG( BF, dbexpressions );
-  ADD_DEBUG( s, dbexpressions );
-  ADD_DEBUG( runningWidthRe, dbexpressions );
-  ADD_DEBUG( kFactor( mass, width0 ), dbexpressions );
-  ADD_DEBUG( BW, dbexpressions );
-  return BW;
-}
-
 DEFINE_LINESHAPE( GSpline )
 {
 
   auto props        = ParticlePropertiesList::get( particleName );
-  Expression mass   = Parameter( particleName + "_mass", props->mass() );
-  Expression radius = Parameter( particleName + "_radius", props->radius() );
-  Expression width0 = Parameter( particleName + "_width", props->width() );
+  Expression mass   = Parameter( particleName + "_mass", props->mass() ) * GeV ;
+  Expression radius = Parameter( particleName + "_radius", props->radius() ) * GeV ;
+  Expression width0 = Parameter( particleName + "_width", props->width() ) * GeV;
 
   const Expression q2     = Abs( Q2( s, s1, s2 ) );
-  Expression massInGeV    = mass / GeV;
   const Expression sInGeV = s / ( GeV * GeV );
 
   bool useEFF            = lineshapeModifier.find( "EFF" ) != std::string::npos;
   bool useDispersiveTerm = lineshapeModifier.find( "Dis" ) != std::string::npos;
   bool useGFF            = lineshapeModifier.find( "GFF" ) != std::string::npos;
 
-  Expression BF = useEFF ? Expression( Exp( -q2 * radius * radius / 2. ) )
-    : Expression( Sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) ) ); // :
-
+  Expression BF = fcn::sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) ) ;
+  if( useEFF ) BF =  fcn::exp( -q2 * radius * radius / 2. );
   if ( useGFF ) {
     const Expression alpha = Parameter( particleName + "_alpha" );
-    BF = Exp( -( sInGeV - massInGeV * massInGeV ) * ( sInGeV - massInGeV * massInGeV ) / ( 2 * alpha * alpha ) );
+    BF = fcn::exp( -( sInGeV - mass*mass ) * ( sInGeV - mass*mass )/( 2*alpha*alpha ) );
   }
 
-  const Expression width_shape  = getSpline( particleName, sInGeV, "Gamma", dbexpressions, true );
-  const Expression width_norm   = getSpline( particleName, massInGeV * massInGeV, "Gamma", dbexpressions );
+  const Expression width_shape  = getSpline( particleName, sInGeV   , "Gamma", dbexpressions, true );
+  const Expression width_norm   = getSpline( particleName, mass*mass, "Gamma", dbexpressions, true );
   const Expression norm         = kFactor( mass, width0 ) * BF;
-  const Expression runningWidth = ( width0 / GeV ) * width_shape / width_norm;
+  const Expression runningWidth = width0 * width_shape / width_norm;
 
-  const Expression dispersiveTerm =
-    useDispersiveTerm ? getSpline( particleName, sInGeV, "dm2", dbexpressions, true ) : 0;
+  Expression real_part    = mass * mass;
+  if( useDispersiveTerm ) real_part = real_part + getSpline( particleName, sInGeV, "dm2", dbexpressions, true ) - getSpline( particleName, mass*mass, "dm2", dbexpressions, true );
+  const Expression self_energy = real_part - Constant(0,1) * mass * runningWidth; 
 
-  const Expression real_part = massInGeV * massInGeV + dispersiveTerm - sInGeV;
-  const Expression imag_part = -massInGeV * runningWidth;
-  const Expression BW        = norm / ( real_part + Constant(0,1)* imag_part );
+  const Expression BW        = norm / ( self_energy - s );
 
   ADD_DEBUG( mass, dbexpressions );
   ADD_DEBUG( q2, dbexpressions );
@@ -124,7 +94,6 @@ DEFINE_LINESHAPE( MIPWA )
 
 DEFINE_LINESHAPE( InelasticSpline )
 {
-  //  bool cont =  lineshapeModifier.find("continue") != std::string::npos;
   Expression inelasticity = getSpline( particleName, s / ( GeV* GeV), "Eta", dbexpressions, true );
   Expression phaseShift   = getSpline( particleName, s / ( GeV* GeV), "Delta", dbexpressions, true );
   Expression J = Constant(0,1);

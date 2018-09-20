@@ -52,7 +52,11 @@ namespace AmpGen
   {
     return typeHelper<R, RT, ARGS>( 0 );
   }
-
+  template <typename T, typename R> constexpr bool hasConstructor()
+  {
+    return std::is_constructible<T,R>::value && (false == std::is_same<T, R>::value);
+  }
+   
   template <typename arg=void, typename... args> std::vector<std::string> typelist()
   {
     std::vector< std::string > rt;

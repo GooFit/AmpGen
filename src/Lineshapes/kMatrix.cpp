@@ -87,8 +87,7 @@ Tensor AmpGen::constructKMatrix(
 
 DEFINE_LINESHAPE( kMatrix )
 {
-
-  Expression sInGeV = SubTree( s / ( GeV*GeV ) );
+  Expression sInGeV = SubTree(s) / (GeV*GeV);
   DEBUG( "kMatrix modifier " << lineshapeModifier << " particle = " << particleName );
   auto tokens = split( lineshapeModifier, '.' );
 
@@ -109,7 +108,7 @@ DEFINE_LINESHAPE( kMatrix )
   Expression s0_scatt = Parameter( "s0_scatt", -3.92637 );
 
   std::vector<Parameter> fScatt = paramVector( "f_scatt", nChannels );
-  std::vector<poleConfig> poleConfigs; //(nPoles,std::vector<Parameter>(nChannels));
+  std::vector<poleConfig> poleConfigs; 
 
   for ( unsigned int pole = 1; pole <= nPoles; ++pole ) {
     std::string stub = "IS_p" + std::to_string( pole ) + "_";
@@ -191,7 +190,6 @@ DEFINE_LINESHAPE( kMatrix )
     DEBUG( "Returning bkg term" );
     return F[{1, pTerm}] * ( 1 - s0_prod ) / ( sInGeV - s0_prod );
   }
-
   ERROR( "Lineshape not found: " << lineshapeModifier );
   return Expression( 0 );
 }

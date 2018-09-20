@@ -78,9 +78,9 @@ template <class MatrixElements>
 void print( const Event& event, const MatrixElements& matrixElements, bool verbose )
 {
   for ( auto& mE : matrixElements ) {
+    INFO( mE.decayTree->uniqueString() << " " << mE.coupling() );
     //INFO( mE.decayTree->uniqueString() << " " << mE.coupling() * mE.pdf( event ) << "  ( = coupling x amplitude = " << mE.coupling() << " x " << mE.pdf( event ) << ")" );
-    //mE.pdf.print();
-
+    
     auto terms = mE.coupling.couplings;
     if ( verbose ) {
       for ( auto& term : terms ) {
@@ -97,7 +97,7 @@ template < class FCN > void debug( FCN& sig, EventList& accepted, bool verbose, 
   sig.setEvents( accepted );
   sig.prepare();
   sig.debug( accepted[0] );
-  print( accepted[0], sig.matrixElements(), verbose );
+  //print( accepted[0], sig.matrixElements(), verbose );
   Event accepted_boosted = accepted[0];
   boost( accepted_boosted,  { rndm->Uniform(-1,1), rndm->Uniform(-1,1), rndm->Uniform(-1,1)}, 0.99 );
 //  boost( accepted_boosted,  {  ,0., 0}, 0.99 );
@@ -194,5 +194,8 @@ int main( int argc, char** argv )
   if( type == "FastCoherentSum" ){
     FastCoherentSum sig( eventType, MPS );  
     debug( sig, accepted, verbose, rndm , MPS );
+    print( accepted[0], sig.matrixElements() , false ); 
+    //    for( auto& amp : 
+
   }
 }

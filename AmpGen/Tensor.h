@@ -184,6 +184,7 @@ namespace AmpGen
   TensorProxy operator*( const TensorProxy& t1, const double& t2 );
 
   Tensor Identity( const size_t& rank = 4 );
+  
   const Tensor LeviCivita( const size_t& rank = 4);
   Expression dot( const Tensor& A, const Tensor& B );
 

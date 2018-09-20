@@ -23,8 +23,7 @@ void GaussErrorPropagator::perturb()
   const unsigned int N = m_decomposedCholesky.GetNrows();
   TVectorD e( N );
   for ( unsigned int i = 0; i < N; ++i ) e[i] = m_rand->Gaus( 0, 1 );
-
-  TVectorD p = m_decomposedCholesky * e; // perturbation in the usual parameter basis
+  TVectorD p = m_decomposedCholesky * e; 
   for ( int j = 0; j < p.GetNrows(); ++j ) {
     auto f = m_parameters[j];
     f->setCurrentFitVal( m_startingValues[j] + p[j] );
@@ -121,7 +120,7 @@ void LinearErrorPropagator::reset()
   m_parameters.clear();
 }
 
-TMatrixD LinearErrorPropagator::propagatedCovarianceMatrix(const std::vector<std::function<double(void)>>& functions ){
+TMatrixD LinearErrorPropagator::covarianceMatrix(const std::vector<std::function<double(void)>>& functions ){
   size_t M = functions.size();
   size_t N = size();
   TMatrixD A(M,N);
@@ -146,9 +145,8 @@ TMatrixD LinearErrorPropagator::propagatedCovarianceMatrix(const std::vector<std
 std::pair<double, double> LinearErrorPropagator::combinationCovWeighted( 
     const std::vector<std::function<double(void)>>& functions)
 {
-  auto cov = propagatedCovarianceMatrix( functions );
+  auto cov = covarianceMatrix( functions );
   TMatrixD covInverse = cov; 
-
   covInverse.Invert();
   double wt     = 0;
   double pred   = 0;
@@ -172,6 +170,24 @@ std::pair<double, double> LinearErrorPropagator::combinationCovWeighted(
   return std::make_pair( pred, sqrt(sigma2) );
 }
 
+std::vector<double> LinearErrorPropagator::combinationWeights( const std::vector< std::function<double(void)>>& estimators )
+{
+  auto cov = covarianceMatrix( estimators );
+  TMatrixD covInverse = cov; 
+  covInverse.Invert();
+  double wt     = 0;
+  for( size_t i = 0 ; i < estimators.size(); ++i ){
+    for( size_t j = 0 ; j < estimators.size(); ++j ){
+      wt += covInverse(i,j);
+    }
+  }
+  std::vector<double> weights( estimators.size() );
+  for( size_t i = 0 ; i < estimators.size(); ++i ){
+    for( size_t j = 0 ; j < estimators.size(); ++j ) weights[i] += covInverse(i,j)/wt;
+  }
+  return weights; 
+}
+
 size_t LinearErrorPropagator::size() const { return m_parameters.size(); }
 const TMatrixD& LinearErrorPropagator::cov() const { return m_cov; }
 const std::map<std::string, size_t> LinearErrorPropagator::posMap() const
@@ -182,4 +198,18 @@ const std::map<std::string, size_t> LinearErrorPropagator::posMap() const
   }
   return pMap;
 }
+
+TMatrixD LinearErrorPropagator::correlationMatrix(const std::vector<std::function<double(void)>>& functions )
+{
+  auto cov_matrix = covarianceMatrix( functions );
+  std::vector<double> diag(functions.size());
+  for( size_t i = 0; i < functions.size(); ++i) diag[i] = cov_matrix(i,i);
+  for( size_t i = 0; i < functions.size(); ++i ){
+    for( size_t j = 0; j < functions.size(); ++j ){
+      cov_matrix(i,j) = cov_matrix(i,j) / sqrt( diag[i] * diag[j] );
+    }
+  }
+  return cov_matrix;
+}
+
 const std::vector<AmpGen::MinuitParameter*>& LinearErrorPropagator::params() const { return m_parameters; }

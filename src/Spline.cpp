@@ -138,14 +138,15 @@ void SplineTransfer::transfer( CompiledExpressionBase* destination )
 
 void Spline::resolve( ASTResolver& resolver )
 {
-  m_points.m_address = resolver.addCacheFunction<SplineTransfer>(m_name,m_nKnots,m_min,m_max);
-  auto splineTransfer = dynamic_cast<SplineTransfer*>( resolver.cacheFunctions[m_name].get() );
-  if( resolver.mps == nullptr ) ERROR("Fix me!");
-  if( m_values.size() == 0 ){
-    for( unsigned int i = 0 ; i < m_nKnots; ++i ) 
-      splineTransfer->set(i, resolver.mps->find(m_name+"::"+std::to_string(i)) );
-  }
-  else for( unsigned int i = 0 ; i < m_nKnots; ++i ) splineTransfer->set(i,m_values[i]) ;
+  resolver.resolve(*this);
+  // m_points.m_address = resolver.addCacheFunction<SplineTransfer>(m_name,m_nKnots,m_min,m_max);
+ // auto splineTransfer = dynamic_cast<SplineTransfer*>( resolver.cacheFunctions[m_name].get() );
+ // if( resolver.mps == nullptr ) ERROR("Fix me!");
+ // if( m_values.size() == 0 ){
+ //   for( unsigned int i = 0 ; i < m_nKnots; ++i ) 
+ //     splineTransfer->set(i, resolver.mps->find(m_name+"::"+std::to_string(i)) );
+ // }
+ // else for( unsigned int i = 0 ; i < m_nKnots; ++i ) splineTransfer->set(i,m_values[i]) ;
 }
 
 SplineExpression::SplineExpression( const Spline& parent, const Expression& x , DebugSymbols* db) : 

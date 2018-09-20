@@ -70,7 +70,7 @@
 #include <vector>
 #include <functional>
 #include "AmpGen/MsgService.h"
-
+#include "AmpGen/MetaUtils.h"
 namespace AmpGen
 {
   struct ASTResolver;
@@ -131,6 +131,7 @@ namespace AmpGen
   /// Class to contain a complex valued complex 
   class Constant : public IExpression {
     public:
+    Constant( const int& real, const int& imag=0 ) : m_value(real,imag) {}
     Constant( const double& real, const double& imag=0) : m_value( real, imag ) {}
     Constant( const std::complex<double>& cmplx ) : m_value( cmplx) {}
     std::string to_string(const ASTResolver* resolver = nullptr) const override;
@@ -176,7 +177,7 @@ namespace AmpGen
     std::string to_string(const ASTResolver* resolver=nullptr) const override;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const ;
-    std::complex<double> operator()() const override { return 0; }
+    std::complex<double> operator()() const override { return std::real(m_cond()) ? m_v1() : m_v2(); }
     Expression clone() const override { return Ternary( m_cond.clone(), m_v1.clone(), m_v2.clone() ) ; } 
     Expression m_cond;
     Expression m_v1;
@@ -341,15 +342,23 @@ namespace AmpGen
   Expression operator*( const Expression& A, const Expression& B );
   Expression operator/( const Expression& A, const Expression& B );
 
-  Expression operator+( const Expression& A, const double& B );
-  Expression operator-( const Expression& A, const double& B );
-  Expression operator*( const Expression& A, const double& B );
-  Expression operator/( const Expression& A, const double& B );
+  template < class T, typename std::enable_if_t< hasConstructor<Constant, T>() > >
+  Expression operator+( const Expression& A, const T& B ){ return A + Constant(B); }
+  template < class T, typename std::enable_if_t< hasConstructor<Constant, T>() > >
+  Expression operator-( const Expression& A, const T& B ){ return A - Constant(B); }
+  template < class T, typename std::enable_if_t< hasConstructor<Constant, T>() > >
+  Expression operator*( const Expression& A, const T& B ){ return A * Constant(B); } 
+  template < class T, typename std::enable_if_t< hasConstructor<Constant, T>() > >
+  Expression operator/( const Expression& A, const T& B ){ return A / Constant(B); }
 
-  Expression operator+( const double& A, const Expression& B );
-  Expression operator-( const double& A, const Expression& B );
-  Expression operator*( const double& A, const Expression& B );
-  Expression operator/( const double& A, const Expression& B );
+  template < class T, typename std::enable_if_t< hasConstructor<Constant, T>() > >
+  Expression operator+( const T& A, const Expression& B ){ return Constant(A) + B; }
+  template < class T, typename std::enable_if_t< hasConstructor<Constant, T>() > >
+  Expression operator-( const T& A, const Expression& B ){ return Constant(A) - B; }
+  template < class T, typename std::enable_if_t< hasConstructor<Constant, T>() > >
+  Expression operator*( const T& A, const Expression& B ){ return Constant(A) * B; }
+  template < class T, typename std::enable_if_t< hasConstructor<Constant, T>() > >
+  Expression operator/( const T& A, const Expression& B ){ return Constant(A) / B; }
 
   Expression operator&&( const Expression& A, const Expression& B );
   Expression operator==( const Expression& A, const Expression& B );

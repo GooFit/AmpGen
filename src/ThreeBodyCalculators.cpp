@@ -1,7 +1,14 @@
 #include <Math/AllIntegrationTypes.h>
 #include <Math/IFunctionfwd.h>
 #include <Math/ParamFunctor.h>
+#include <Math/GSLIntegrator.h>
+#include <Math/WrappedTF1.h>
+
 #include <TH2.h>
+#include <TF1.h>
+#include <TGraph.h>
+#include <TRandom3.h>
+
 #include <algorithm>
 #include <cmath>
 #include <complex>
@@ -27,94 +34,132 @@
 #include "AmpGen/Projection.h"
 #include "AmpGen/Tensor.h"
 #include "AmpGen/ThreeBodyCalculators.h"
-#include "Math/GSLIntegrator.h"
-#include "Math/WrappedTF1.h"
-#include "TF1.h"
-#include "TGraph.h"
-#include "TRandom3.h"
+#include "AmpGen/CompilerWrapper.h"
 
 using namespace AmpGen;
 
-TGraph* ThreeBodyCalculator::runningMass( const double& min, const double& max, const unsigned int& nSteps,
-                                          const double& norm )
+template <class FCN>
+double dispersive( FCN& fcn , const double& s, double min , double max )
 {
-
-  setNorm( norm );
-
-  TF1 kk = TF1( "kK",
-                [&]( double* x, double* p ) {
-                  double s = *x;
-                  return getWidth( sqrt( s ) * 1000 );
-                },
-                min, 10000, 0 );
-  ROOT::Math::WrappedTF1* wf1 = new ROOT::Math::WrappedTF1( kk );
+  TF1 fcn_tf1 = TF1( "fcn_tf1",fcn, min, max, 0 );
+  ROOT::Math::WrappedTF1* wf1 = new ROOT::Math::WrappedTF1( fcn_tf1 );
   ROOT::Math::GSLIntegrator ig( ROOT::Math::IntegrationOneDim::kADAPTIVE );
   ROOT::Math::IGenFunction& stupid = *( wf1->Clone() );
   ig.SetFunction( stupid );
   ig.SetRelTolerance( 0.001 );
+  double rt = ig.IntegralCauchy(stupid,min,max,s);
+  delete wf1;
+  return rt;
+}
+
+TGraph* ThreeBodyCalculator::runningMass(
+    const double& mass,
+    const double& min, 
+    const double& max, 
+    const size_t& nSteps, 
+    const size_t& nSubtractions )
+{
+  auto fSubtracted = [&](const double* x, const double* p){return getWidth(*x)/pow(*x,nSubtractions);};
+  double maxI = 1000;
+  auto integral_term = [&](const double& s){
+    return dispersive(fSubtracted,s,min,maxI) * mass * pow(s,nSubtractions) / M_PI;
+  };  
   TGraph* dispersiveTerm = new TGraph();
-  for ( unsigned int ind = 0; ind < nSteps; ++ind ) {
+  double s0 = mass*mass;
+  double g1 = integral_term( s0 - 0.001 );
+  double g2 = integral_term( s0 + 0.001 );
+  
+  double A1 = (g2-g1)/(2*0.001);
+  if( nSubtractions == 1 ) A1 = 0;
+  double A0 = s0 - A1*s0 + integral_term(s0);
+  if( nSubtractions == 0 ) A0 = 0;
+  INFO("Calculated subtraction constants = [" << A0 << ", " << A1 << "]" );
+
+  for ( size_t ind = 0; ind < nSteps; ++ind ) 
+  {
     double s  = min + ( max - min ) * ind / double( nSteps );
-    double ms = ig.IntegralCauchy( min, 10000, s );
-    INFO( "Im(D[s=" << s << " = " << s << "]) = " << ms );
-    dispersiveTerm->SetPoint( ind, s, ms );
+    dispersiveTerm->SetPoint( ind, s,  A0 + A1 * s -integral_term(s)  );
+    INFO( "Calculated dispersion relation as: " << A0 + A1 * s - integral_term(s) );
   }
   return dispersiveTerm;
 }
 
-Tensor ThreeBodyCalculator::PartialWidth::zipTensor( const Tensor& tensor )
+TGraph* ThreeBodyCalculator::widthGraph( const size_t& steps, const double& min, const double& max )
 {
-  Tensor zipped_tensor( tensor.dims() );
-  for ( unsigned int i = 0; i < zipped_tensor.size(); ++i ) zipped_tensor[i] = SubTree( tensor[i] );
-  return zipped_tensor;
+  TGraph* g = new TGraph();
+  double st = (max-min)/double(steps-1);
+  for ( size_t c = 0; c < steps; ++c ) {
+    double s = m_min + double( c ) * st;
+    g->SetPoint( g->GetN(), s, getWidth(s) );
+  }
+  return g;
 }
 
-double ThreeBodyCalculator::PartialWidth::getWidth( const double& m )
+TGraph* ThreeBodyCalculator::fastRunningMass(
+    const double& mass,
+    const double& min, 
+    const double& max, 
+    const size_t& nSteps, 
+    const size_t& nSubtractions )
 {
-  integrator.setMother( m );
-  double G = integrator.integrate( totalWidth );
-  return G;
+  double maxI = 100 * GeV * GeV;
+  double s0   = mass*mass;
+  auto   g    = widthGraph(1000,min,maxI);
+  INFO("Generated high-resolution width graph...");
+  double gNorm = g->Eval(s0);
+  double width = ParticlePropertiesList::get(m_name)->width();
+
+  auto fSubtracted = [&](const double* x, const double* p){return g->Eval(*x)/(pow(*x,nSubtractions) ) ;};
+  auto integral_term = [&](const double& s){
+    return dispersive(fSubtracted,s,min,maxI) * width * mass * pow(s,nSubtractions) / ( gNorm * M_PI );
+  };  
+  TGraph* dispersiveTerm = new TGraph();
+  double g1 = integral_term( s0 - 0.001 );
+  double g2 = integral_term( s0 + 0.001 );
+  
+  double A1 = (g2-g1)/(2*0.001);
+  if( nSubtractions == 1 ) A1 = 0;
+  double A0 = s0 - A1*s0 + integral_term(s0);
+  if( nSubtractions == 0 ) A0 = 0;
+  for ( size_t ind = 0; ind < nSteps; ++ind ) 
+  {
+    double s  = min + ( max - min ) * ind / double( nSteps );
+    dispersiveTerm->SetPoint( ind, s,  A0 + A1 * s -integral_term(s)  );
+    INFO( "Calculated dispersion relation as: " << A0 + A1 * s - integral_term(s) );
+  }
+  return dispersiveTerm;
+}
+
+
+double ThreeBodyCalculator::PartialWidth::getWidth( const double& s )
+{
+  integrator.setMother( s );
+  return integrator.integrate(totalWidth);
 }
 
 Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(
-    const std::vector<TransitionMatrix<std::complex<real_t>>>& elements, DebugSymbols* msym )
+    const std::vector<TransitionMatrix<complex_t>>& elements, DebugSymbols* msym )
 {
-  struct Current {
-    Expression propagator;
-    Tensor spin_current;
-  };
-  std::vector<Current> currents;
+  std::vector<Tensor> currents;
 
   for ( auto& element : elements ) {
     auto perm = element.decayTree->identicalDaughterOrderings();
     for ( auto& p : perm ) {
       element.decayTree->setOrdering( p );
-      Current c;
       std::string current_lineshape = element.decayTree->lineshape();
       element.decayTree->setLineshape( "FormFactor" );
-
-      c.propagator = SubTree( element.coupling.to_expression() ) * SubTree( element.decayTree->Lineshape( msym ) );
+      Expression prop = make_cse( element.coupling.to_expression() ) * make_cse( element.decayTree->Lineshape( msym ) );
       if ( msym != nullptr ) msym->emplace_back( element.decayTree->name() + "_g", element.coupling.to_expression() );
       if ( msym != nullptr ) msym->emplace_back( element.decayTree->name() + "_p", element.decayTree->Lineshape() );
-      c.spin_current = zipTensor( element.decayTree->SpinTensor( msym ) );
-      currents.push_back( c );
+      Tensor zt = element.decayTree->SpinTensor( msym );
+      zt.st() ;
+      currents.push_back( zt * prop );
       element.decayTree->setLineshape( current_lineshape );
     }
   }
   Expression total;
   for ( auto& j_a : currents ) {
-    if ( j_a.spin_current.size() == 4 ) {
-      ADD_DEBUG( j_a.spin_current[0], msym );
-      ADD_DEBUG( j_a.spin_current[1], msym );
-      ADD_DEBUG( j_a.spin_current[2], msym );
-      ADD_DEBUG( j_a.spin_current[3], msym );
-    }
-    for ( auto& j_b : currents ) {
-      ADD_DEBUG( dot(j_a.spin_current,j_b.spin_current), msym );
-      ADD_DEBUG( j_a.propagator * fcn::conj( j_b.propagator ) , msym );
-      auto term = j_a.propagator * fcn::conj( j_b.propagator ) * dot( j_a.spin_current, j_b.spin_current );
-      total     = total + term;
-    }
+    for ( auto& j_b : currents ) total     = total + dot( j_a, j_b.conjugate() );
   }
   ADD_DEBUG( total, msym );
   return -total;
@@ -139,8 +184,7 @@ ThreeBodyCalculator::ThreeBodyCalculator( const std::string& head, MinuitParamet
   for ( auto& type : finalStates ) m_widths.emplace_back( type, mps );
 
   bool isReady = true; 
-  for( auto& width : m_widths ) isReady &= width.totalWidth.isReady();
-  
+  for( auto& width : m_widths ) isReady &= width.totalWidth.isReady();  
   m_name                   = head;
   if( nKnots != 999) setAxis( nKnots, min, max ); 
 }
@@ -157,10 +201,10 @@ void ThreeBodyCalculator::updateRunningWidth( MinuitParameterSet& mps, const dou
 {
   prepare();
   setNorm( mNorm == 0 ? mps[m_name + "_mass"]->mean() : mNorm );
-  
+ 
   for ( size_t c = 0; c < m_nKnots; ++c ) {
     double s                   = m_min + double( c ) * m_step;
-    double I                   = getWidth( sqrt( s ) * 1000 );
+    double I                   = getWidth( s );
     const std::string knotName = m_name + "::Spline::Gamma::" + std::to_string( c );
     if ( mps.map().find( knotName ) != mps.map().end() ) mps[knotName]->setCurrentFitVal( I );
     INFO( knotName << " = " << I );
@@ -178,40 +222,39 @@ TGraph* ThreeBodyCalculator::widthGraph( const double& mNorm )
   TGraph* g = new TGraph();
   for ( size_t c = 0; c < m_nKnots; ++c ) {
     double s = m_min + double( c ) * m_step;
-    g->SetPoint( g->GetN(), s, getWidth( sqrt( s ) * 1000 ) );
+    double G = getWidth(s);
+    INFO("Calculating width for " << c << " " << G );
+    g->SetPoint( g->GetN(), s, G );
   }
   return g;
 }
 
-ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitParameterSet& mps )
-    :
+ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitParameterSet& mps ) :
     fcs( evt, mps, "" )
-    , integrator( 1000, evt.mass( 0 ), evt.mass( 1 ), evt.mass( 2 ) )
+    , integrator( 1, evt.mass( 0 ) * evt.mass(0) , evt.mass( 1 ) * evt.mass(1) , evt.mass( 2 ) * evt.mass(2) )
     , type( evt )
 {
   DebugSymbols msym;
   Expression matrixElementTotal = spinAverageMatrixElement( fcs.matrixElements(), &msym );
   std::string name              = "";
   auto evtFormat = evt.getEventFormat();
-
   for ( auto& p : fcs.matrixElements() ) {
     name += p.decayTree->uniqueString();
     partialWidths.emplace_back( spinAverageMatrixElement( {p}, &msym ), p.decayTree->uniqueString(), evtFormat, DebugSymbols(), &mps );
   }
-  totalWidth = CompiledExpression< std::complex<real_t>, const real_t*, const real_t* > ( matrixElementTotal, name, evtFormat, msym, &mps );
+  totalWidth = CompiledExpression< std::complex<real_t>, const real_t*, const real_t* > ( matrixElementTotal, "width", evtFormat, {} , &mps );
+  CompilerWrapper(true).compile( totalWidth, "");
 }
 
 double ThreeBodyCalculator::getWidth( const double& m )
 {
   double G = 0;
   for ( auto& w : m_widths ){
-    double wp = w.getWidth( m );
-    
+    double wp = w.getWidth( m ); 
     if( std::isnan( wp) ) continue; 
-    
     G += wp;
   }
-  return G ; // / m_norm;
+  return G ; 
 }
 
 void ThreeBodyCalculator::setNorm( const double& mNorm )
@@ -220,7 +263,7 @@ void ThreeBodyCalculator::setNorm( const double& mNorm )
   m_norm = getWidth( mNorm );
 }
 
-void ThreeBodyCalculator::makePlots(const double& mass)
+void ThreeBodyCalculator::makePlots(const double& mass, const size_t& x, const size_t& y)
 {
 
   auto& sq      = m_widths[0].integrator;
@@ -231,7 +274,6 @@ void ThreeBodyCalculator::makePlots(const double& mass)
   auto projection_operators = evtType.defaultProjections( 500 );
   int points = NamedParameter<int>( "nPoints", 50000000 );
 
-  sq.setRandom( new TRandom3() );
   sq.setMother( evtType.motherMass() );
 
   prepare();
@@ -240,7 +282,7 @@ void ThreeBodyCalculator::makePlots(const double& mass)
     return std::real( fcs( evt ) );
   };
 
-  sq.makePlot( fcn, Projection2D( projection_operators[0], projection_operators[1] ), "s01_vs_s02", points )->Write();
+  sq.makePlot( fcn, Projection2D( projection_operators[x], projection_operators[y] ), "s01_vs_s02", points )->Write();
 
 //  Projection sqDp1( [&]( const Event& evt ) { return sq.sqDp1( evt ); }, "m", "m^{'}", 500, 0, 1 );
 //  Projection sqDp2( [&]( const Event& evt ) { return sq.sqDp2( evt ); }, "theta", "#theta^{'}", 500, 0, 1 );

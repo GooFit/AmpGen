@@ -104,6 +104,14 @@ void OptionsParser::import( const std::string& fName )
 
 }
 
+void OptionsParser::addArg( const std::string& arg )
+{
+  int bc = 0 ; 
+  auto tokens = makeParsedStrings( arg, bc );
+  auto name = tokens[0];
+  m_parsedLines[name] = tokens; 
+}
+
 std::vector<std::string> OptionsParser::makeParsedStrings( const std::string& line, int& braceDepth ) const
 {
   std::string s = line;

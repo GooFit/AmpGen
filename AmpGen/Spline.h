@@ -50,6 +50,7 @@ namespace AmpGen{
     void set( const std::vector<double>& values );
     Spline clone() const { return Spline(m_name,m_nKnots,m_min,m_max) ; } 
   };
+  
   struct SplineExpression : public IExpression { 
     std::shared_ptr<Spline> m_parent; 
     Expression                   m_x; 

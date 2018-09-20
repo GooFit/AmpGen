@@ -116,8 +116,7 @@ void FastCoherentSum::prepare()
   } else if ( m_verbosity ) {
     WARNING( "No simulated sample specified for " << this );
   }
-  m_norm = norm(); /// update normalisation
-
+  m_norm = norm(); 
   if ( m_verbosity && printed ) {
     auto tNow        = std::chrono::high_resolution_clock::now();
     double timeEval  = std::chrono::duration<double, std::milli>( tStartIntegral - tStartEval ).count();
@@ -135,7 +134,6 @@ void FastCoherentSum::prepare()
 void FastCoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIndices )
 {
   std::vector<bool> integralHasChanged( size() * size(), 0 );
-  // INFO( "PDFs to update : " << vectorToString( changedPdfIndices ) );
   for ( auto& i : changedPdfIndices ) {
     auto& pdf = m_matrixElements[i].pdf;
     m_integralDispatch.prepareExpression( pdf );
@@ -153,24 +151,53 @@ void FastCoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIn
           } );
     }
   }
-  m_integralDispatch.flush(); /// compute remaining integrals in the buffer ///
+  m_integralDispatch.flush(); 
+  /*
+  if( m_prepareCalls == 0 ){
+    for( unsigned int i = 0 ; i < size(); ++i ){
+      for( unsigned int j = 0 ; j < size(); ++j ){
+        INFO( "N["<<i<<", " << j << "] = " << m_normalisations.get(i,j) << " x " << m_matrixElements[i].coefficient << " x " << std::conj( m_matrixElements[j].coefficient ) );
+      }
+    }
+    auto& event = m_integralDispatch.sim->at(0);
+    event.print();
+    event.printCache();
+    INFO( "evt-prop: " << event.weight() << " " << event.genPdf() );
+    double N = norm();
+    for( unsigned int i = 0 ; i < size(); ++i){
+      auto val = m_normalisations.get( i, i ) * m_matrixElements[i].coefficient * std::conj( m_matrixElements[i].coefficient );
+      INFO( "Fraction [ " << m_matrixElements[i].decayTree->uniqueString() << " ] = " << val / N );
+    }
+    double n2 = 0 ;
+    for( auto& evt : * m_integralDispatch.sim ){
+      n2 += evt.weight() * prob_unnormalised(evt) / evt.genPdf(); 
+      if( prob_unnormalised(evt) > 1e6 ){
+        WARNING("Event has very high probability: " << prob_unnormalised(evt) );
+        evt.print();
+      }
+    }
+    INFO( "Cross-check normalisation: " << N << " -vs- " << n2 / m_integralDispatch.sim->norm() );
+  }
+  */
 }
 
 void FastCoherentSum::debug( const Event& evt, const std::string& nameMustContain )
 {
+  prepare();
   for ( auto& pdf : m_matrixElements ) pdf.pdf.resetExternals();
   if ( nameMustContain == "" )
     for ( auto& pdf : m_matrixElements ) {
       auto v = pdf(evt);
-      INFO( std::setw(90) << pdf.decayTree->uniqueString() << " = " <<  std::real(v) << " " << std::imag(v) );
+      INFO( std::setw(90) << pdf.decayTree->uniqueString() << " = " <<  std::real(v) << " " << std::imag(v) << " cached = " << 
+          evt.getCache(  pdf.addressData ) 
+          );
       if( m_dbThis ) pdf.pdf.debug( evt );
     }
   else
     for ( auto& pdf : m_matrixElements )
       if ( pdf.pdf.name().find( nameMustContain ) != std::string::npos ) pdf.pdf.debug( evt );
 
-  prepare();
-  INFO( "Pdf = " << prob( evt ) );
+  INFO( "Pdf = " << prob_unnormalised( evt ) );
 }
 
 std::map<std::string, std::vector<unsigned int>> FastCoherentSum::getGroupedAmplitudes()

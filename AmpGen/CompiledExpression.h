@@ -29,7 +29,7 @@ namespace AmpGen
 
   private:
     DynamicFCN<RETURN_TYPE( ARGS... )> m_fcn;
-    DynamicFCN<void( ARGS... )> m_fdb;
+    DynamicFCN<std::vector<std::complex<double>>( ARGS... )> m_fdb;
     std::vector<real_t> m_externals;
     bool m_hasExternalsChanged;
    
@@ -159,7 +159,12 @@ namespace AmpGen
       if ( !m_fdb.isLinked() ) {
         ERROR( "Function" << name() << " debugging symbols not linked" );
       }
-      return m_fdb( &( m_externals[0] ), event );
+      std::vector<complex_t> vals = m_fdb( &( m_externals[0] ), event );
+      for( size_t i = 0 ; i < vals.size(); ++i ){ 
+        if( std::abs(vals[i]) == 0 ) std::cout << bold_on << std::setw(50) << std::left << m_db[i].first << bold_off << std::endl; 
+        else if( std::imag(vals[i]) == 0 ) std::cout << "  " << std::setw(50) << std::left << m_db[i].first << " " << std::real(vals[i]) << std::endl; 
+        else std::cout <<"  " <<  std::setw(50) << std::left << m_db[i].first << " " << vals[i] << std::endl; 
+      }
     }
 
     bool link( void* handle ) override

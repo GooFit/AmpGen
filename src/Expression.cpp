@@ -11,7 +11,7 @@
 
 using namespace AmpGen;
 
-DEFINE_CAST( Constant)
+DEFINE_CAST( Constant )
 DEFINE_CAST( Parameter )
 DEFINE_CAST( SubTree )
 DEFINE_CAST( Ternary )
@@ -139,16 +139,6 @@ Expression AmpGen::operator/( const Expression& A, const Expression& B )
 }
 Expression AmpGen::operator&&( const Expression& A, const Expression& B ) { return Expression( And( A, B ) ); }
 
-Expression AmpGen::operator+( const Expression& A, const double& B ) { return Constant(B) + A ; }
-Expression AmpGen::operator-( const Expression& A, const double& B ) { return A - Constant( B ); }
-Expression AmpGen::operator*( const Expression& A, const double& B ) { return Constant(B) * A ; }
-Expression AmpGen::operator/( const Expression& A, const double& B ) { return A / Constant( B ); }
-
-Expression AmpGen::operator+( const double& A, const Expression& B ) { return Constant( A ) + B; }
-Expression AmpGen::operator-( const double& A, const Expression& B ) { return Constant( A ) - B; }
-Expression AmpGen::operator*( const double& A, const Expression& B ) { return Constant( A ) * B; }
-Expression AmpGen::operator/( const double& A, const Expression& B ) { return Constant( A ) / B; }
-
 Expression AmpGen::operator==( const Expression& A, const Expression& B ){ return Equal(A,B) ; } 
 Expression AmpGen::operator==( const double& A, const Expression& B ){ return Constant(A) == B ; } 
 Expression AmpGen::operator==( const Expression& A, const double& B ){ return A == Constant(B) ; } 
@@ -206,28 +196,7 @@ void Constant::resolve( ASTResolver& resolver ) {}
 
 void Parameter::resolve( ASTResolver& resolver )
 {
-  if( m_resolved ) return;
-  auto res = resolver.evtMap.find(m_name);
-  if( res != resolver.evtMap.end() ){
-    m_address = res->second; 
-    return;
-  }
-  else if( resolver.mps != nullptr ){
-    auto it = resolver.mps->find(m_name);
-    if( it != nullptr ){
-      if( resolver.useCompileTimeConstants && it->iFixInit() == MinuitParameter::Flag::CompileTimeConstant ){
-        m_defaultValue = it->mean();
-        m_compileTimeConstant = true; 
-      }
-      else m_address = resolver.addCacheFunction<ParameterTransfer>( m_name, it );
-      return;
-    }
-  }
-  else if( resolver.useCompileTimeConstants ){
-    m_compileTimeConstant = true; 
-    return; 
-  }
-  m_address = resolver.addCacheFunction<CacheTransfer>( m_name, m_defaultValue );
+  if( !m_resolved ) resolver.resolve(*this);
 }
 
 Ternary::Ternary( const Expression& cond, const Expression& v1, const Expression& v2 )
@@ -274,8 +243,7 @@ std::string SubTree::to_string(const ASTResolver* /*resolver*/) const
 
 void SubTree::resolve( ASTResolver& resolver ) 
 { 
-  if( resolver.tempTrees.count( this ) != 0 ) return;
-  resolver.tempTrees[this] = 1;
+  resolver.resolve( *this );
   m_expression.resolve( resolver );
 }
 
@@ -284,7 +252,6 @@ Expression AmpGen::make_cse( const Expression& A , bool simplify )
   if( is<Constant>(A) || is<Parameter>(A) || is<SubTree>(A) ) return A;
   SubTree cse = SubTree(A);
   if( !simplify ) return Expression(cse);
-
   auto ordered = Expression( NormalOrderedExpression(A) );
   cse.setKey( FNV1a_hash(ordered.to_string()) );
   return Expression(cse);

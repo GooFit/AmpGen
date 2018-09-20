@@ -26,8 +26,6 @@ namespace AmpGen
       PartialWidth( const EventType& type, MinuitParameterSet& mps );
       Expression spinAverageMatrixElement( const std::vector<TransitionMatrix<std::complex<double>>>& elements,
                                            DebugSymbols* msym );
-      Tensor zipTensor( const Tensor& tensor );
-   
     };
     Expression calculateSAME( const std::string& particle );
 
@@ -43,15 +41,17 @@ namespace AmpGen
     ThreeBodyCalculator( const std::string& head, MinuitParameterSet& mps, const size_t& nKnots=999, const double& min=-1, const double& max=-1 );
 
     TGraph* widthGraph( const double& mNorm=-1 );
-    TGraph* runningMass( const double& min, const double& max, const unsigned int& nSteps, const double& norm );
-  
+    TGraph* widthGraph( const size_t& steps, const double& min, const double& max );
+    TGraph* runningMass( const double& mass, const double& min, const double& max, const size_t& nSteps, const size_t& nSubtractions=2 );
+    TGraph* fastRunningMass( const double& mass, const double& min, const double& max, const size_t& nSteps, const size_t& nSubtractions=2 );
+
     double getWidth( const double& m );
 
     void updateRunningWidth( MinuitParameterSet& mps, const double& mNorm = 0 );    
     void setNorm( const double& mNorm );
     void setAxis( const size_t& nKnots, const double& min, const double& max );
     void prepare();
-    void makePlots(const double& mass=-1);
+    void makePlots(const double& mass=-1, const size_t& x=0, const size_t& y=0);
     void debug( const double& m, const double& theta );
   };
 } // namespace AmpGen

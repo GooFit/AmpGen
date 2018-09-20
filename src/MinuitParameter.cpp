@@ -6,6 +6,7 @@
 using namespace AmpGen;
 
 MinuitParameter::Flag MinuitParameter::iFixInit() const { return m_iFixInit; }
+
 double MinuitParameter::meanInit() const { return m_meanInit; }
 double MinuitParameter::stepInit() const { return m_stepInit; }
 double MinuitParameter::minInit() const { return m_minInit; }

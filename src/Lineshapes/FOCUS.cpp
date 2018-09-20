@@ -22,7 +22,7 @@ DEFINE_LINESHAPE( FOCUS )
   const double mEtap      = ParticlePropertiesList::get( "eta'(958)0" )->mass();
 
   const Expression sNorm     = ( mK * mK + mPi * mPi );
-  const Expression s12       = 0.23; //
+  const Expression s12       = 0.23;
   const Expression s32       = 0.27;
   const Expression I12_adler = ( sInGeV - s12 ) / sNorm;
   const Expression I32_adler = ( sInGeV - s32 ) / sNorm;
@@ -32,18 +32,17 @@ DEFINE_LINESHAPE( FOCUS )
   Expression rho2                     = phsp_FOCUS( sInGeV, mK, mEtap );
 
   Tensor kMatrix = constructKMatrix( sInGeV, 2, poleConfigs,
-                                     [&]( const unsigned int& i, const unsigned int& j, const Expression& sInGeV ) {
-                                       const Expression X = ( sInGeV / sNorm ) - 1;
-                                       Expression nr = 0;
-
-                                       if ( i == 0 && j == 0 )
-                                         return pol( X, {0.79299, -0.15099, 0.00811} );
-                                       else if ( i == 1 && j == 1 )
-                                         return pol( X, {0.17054, -0.0219, 0.00085655} );
-                                       else
-                                         return pol( X, {0.15040, -0.038266, 0.0022596} );
-                                     },
-                                     dbexpressions );
+    [&]( const unsigned int& i, const unsigned int& j, const Expression& sInGeV ) {
+      const Expression X = ( sInGeV / sNorm ) - 1;
+      Expression nr = 0;
+      if ( i == 0 && j == 0 )
+        return pol( X, {0.79299, -0.15099, 0.00811} );
+      else if ( i == 1 && j == 1 )
+        return pol( X, {0.17054, -0.0219, 0.00085655} );
+      else
+        return pol( X, {0.15040, -0.038266, 0.0022596} );
+    },
+    dbexpressions );
 
   const Expression K11 = I12_adler * kMatrix[{0, 0}];
   const Expression K12 = I12_adler * kMatrix[{0, 1}];
