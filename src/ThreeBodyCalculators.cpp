@@ -59,13 +59,14 @@ TGraph* ThreeBodyCalculator::runningMass(
     const size_t& nSteps, 
     const size_t& nSubtractions )
 {
-  auto fSubtracted = [&](const double* x, const double* p){return getWidth(*x)/pow(*x,nSubtractions);};
+  double s0 = mass*mass;
+  auto width0 = (*m_mps)[m_name+ "_width"]->mean() / getWidth(s0);
+  auto fSubtracted = [&](const double* x, const double* p){return width0 * getWidth(*x)/pow(*x,nSubtractions);};
   double maxI = 1000;
   auto integral_term = [&](const double& s){
     return dispersive(fSubtracted,s,min,maxI) * mass * pow(s,nSubtractions) / M_PI;
   };  
   TGraph* dispersiveTerm = new TGraph();
-  double s0 = mass*mass;
   double g1 = integral_term( s0 - 0.001 );
   double g2 = integral_term( s0 + 0.001 );
   
@@ -162,10 +163,15 @@ Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(
     for ( auto& j_b : currents ) total     = total + dot( j_a, j_b.conjugate() );
   }
   ADD_DEBUG( total, msym );
-  return -total;
+  return pow(-1, ParticlePropertiesList::get(type.mother())->twoSpin() /2. ) * total;
 }
 
 ThreeBodyCalculator::ThreeBodyCalculator( const std::string& head, MinuitParameterSet& mps, const size_t& nKnots, const double& min, const double& max)
+  : m_min(min),
+    m_max(max),
+    m_nKnots(nKnots),
+    m_name(head),
+    m_mps(&mps)
 {
   std::vector<EventType> finalStates;
   auto rules                = AmplitudeRules( mps );
@@ -185,7 +191,6 @@ ThreeBodyCalculator::ThreeBodyCalculator( const std::string& head, MinuitParamet
 
   bool isReady = true; 
   for( auto& width : m_widths ) isReady &= width.totalWidth.isReady();  
-  m_name                   = head;
   if( nKnots != 999) setAxis( nKnots, min, max ); 
 }
 

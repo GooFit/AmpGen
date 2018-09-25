@@ -132,13 +132,13 @@ void   PolarisedAmplitude::prepare()
         for( size_t k = 0 ; k < 6 ; ++k ) acc[k] += c * m_norms[k].get(i,j);
       }
     }
-    complex_t z(px,py);
+    complex_t z(px,-py);
     complex_t total = (1+pz)*( acc[0] + acc[1] )
       + (1-pz)*( acc[2] + acc[3] ) 
       + std::conj(z)*( acc[4] +acc[5] ) 
       + z * ( std::conj( acc[4] + acc[5] ) );
-
     m_norm = std::real(total);
+    if( m_nCalls == 0 ) debug_norm();
   }
   m_nCalls++;
 }
@@ -171,7 +171,11 @@ void   PolarisedAmplitude::setMC( AmpGen::EventList& events )
   m_nCalls = 0;
   m_integralDispatch.sim = &events;
 }
-size_t PolarisedAmplitude::size() const { auto dim = m_eventType.dim() ; return dim.first * dim.second * m_matrixElements.size(); }
+size_t PolarisedAmplitude::size() const 
+{ 
+  auto dim = m_eventType.dim() ; 
+  return dim.first * dim.second * m_matrixElements.size(); 
+}
 void   PolarisedAmplitude::reset( const bool& flag ){ m_nCalls = 0 ; }
 
 void PolarisedAmplitude::build_probunnormalised()
@@ -298,7 +302,11 @@ Expression PolarisedAmplitude::probExpression( const Tensor& T_matrix, const std
 
 std::vector<FitFraction> PolarisedAmplitude::fitFractions( const LinearErrorPropagator& prop )
 {
-  return std::vector<FitFraction>();
+  //for( auto& p : m_matrixElements )
+  //{
+  //  
+  //} 
+    return std::vector<FitFraction>();
 }
 
 void PolarisedAmplitude::transferParameters()

@@ -158,6 +158,6 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
     const auto expression = m_db[i].second; 
     if ( expression.to_string() != "NULL" )
     stream << std::endl << expression << comma;
-    else stream << std::endl << "0." << comma ;
+    else stream << std::endl << "-999" << comma ;
   }
 }

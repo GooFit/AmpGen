@@ -9,102 +9,114 @@
 #include "AmpGen/Expression.h"
 #include "AmpGen/Factory.h"
 
-namespace AmpGen
-{
-  struct ILineshape;
-} // namespace AmpGen
+/**
+  @defgroup Lineshapes Lineshapes
+  @brief Lineshapes are semi-empirical complex functions for describing the propagation and decay of short-lived resonances. 
+  The lineshapes are stored in a static factory and can be accessed by key from anywhere in the program.
+ */
 
-#define DECLARE_LINESHAPE( X )                                                                                         \
-  struct X : public AmpGen::ILineshape {                                                                               \
-    static std::string _id;                                                                                            \
-    X(){ DEBUG("Constructing lineshape") ;} \
-    virtual AmpGen::Expression get( const AmpGen::Expression& s, const AmpGen::Expression& s1,                         \
-                                    const AmpGen::Expression& s2, const std::string& particleName,                     \
-                                    const unsigned int& L, const std::string& lineshapeModifier,                       \
-                                    DebugSymbols* dbexpressions = 0 );                                                 \
+#define DECLARE_LINESHAPE( X )                                                                                  \
+  class X : public AmpGen::ILineshape {                                                                         \
+    static std::string _id;                                                                                     \
+    public:                                                                                                     \
+    X(){ DEBUG("Constructing lineshape") ;}                                                                     \
+    AmpGen::Expression get( const AmpGen::Expression& s, const AmpGen::Expression& s1,                          \
+                                    const AmpGen::Expression& s2, const std::string& particleName,              \
+                                    const unsigned int& L, const std::string& lineshapeModifier,                \
+                                    DebugSymbols* dbexpressions = 0 ) const override;                           \
   }
 
-#define DECLARE_GENERIC_SHAPE( X )                                                                                     \
-  struct X : public AmpGen::ILineshape {                                                                               \
-    static std::string _id;                                                                                            \
-    virtual AmpGen::Expression get( const std::vector<AmpGen::Tensor>& p, const std::string& particleName,             \
-                                    const unsigned int& L, const std::string& lineshapeModifier,                       \
-                                    AmpGen::DebugSymbols* dbexpressions = 0 );                                         \
+#define DECLARE_GENERIC_SHAPE( X )                                                                              \
+  class X : public AmpGen::ILineshape {                                                                         \
+    static std::string _id;                                                                                     \
+    public:                                                                                                     \
+    AmpGen::Expression get( const std::vector<AmpGen::Tensor>& p, const std::string& particleName,              \
+                                    const unsigned int& L, const std::string& lineshapeModifier,                \
+                                    AmpGen::DebugSymbols* dbexpressions = 0 ) const override ;                  \
   }
 
-#define DEFINE_LINESHAPE( X )                                                                                          \
-  REGISTER_WITH_KEY( ILineshape, Lineshape::X, #X, std::string );                                                      \
-  AmpGen::Expression Lineshape::X::get( const AmpGen::Expression& s, const AmpGen::Expression& s1,                     \
-                                        const AmpGen::Expression& s2, const std::string& particleName,                 \
-                                        const unsigned int& L, const std::string& lineshapeModifier,                   \
-                                        AmpGen::DebugSymbols* dbexpressions )
+#define DEFINE_LINESHAPE( X )                                                                                   \
+  REGISTER_WITH_KEY( ILineshape, Lineshape::X, #X, std::string );                                               \
+  AmpGen::Expression Lineshape::X::get( const AmpGen::Expression& s, const AmpGen::Expression& s1,              \
+                                        const AmpGen::Expression& s2, const std::string& particleName,          \
+                                        const unsigned int& L, const std::string& lineshapeModifier,            \
+                                        AmpGen::DebugSymbols* dbexpressions ) const
 
-#define DEFINE_GENERIC_SHAPE( X )                                                                                      \
-  REGISTER_WITH_KEY( ILineshape, Lineshape::X, #X, std::string );                                                      \
-  AmpGen::Expression Lineshape::X::get( const std::vector<AmpGen::Tensor>& p, const std::string& particleName,         \
-                                        const unsigned int& L, const std::string& lineshapeModifier,                   \
-                                        AmpGen::DebugSymbols* dbexpressions )
+#define DEFINE_GENERIC_SHAPE( X )                                                                               \
+  REGISTER_WITH_KEY( ILineshape, Lineshape::X, #X, std::string );                                               \
+  AmpGen::Expression Lineshape::X::get( const std::vector<AmpGen::Tensor>& p, const std::string& particleName,  \
+                                        const unsigned int& L, const std::string& lineshapeModifier,            \
+                                        AmpGen::DebugSymbols* dbexpressions ) const 
 
 namespace AmpGen
 {
   class Tensor;
 
-  /// some general helper functions ///
-  Expression Q2( const Expression& Msq, const Expression& M1sq, const Expression& M2sq );
-
-  Expression kFactor( const Expression& mass, const Expression& width,
-                      std::vector<std::pair<std::string, Expression>>* dbexpressions = nullptr );
-  Expression BlattWeisskopf_Norm( const Expression& z2, const Expression& z02, unsigned int L );
-
-  Expression BL( const Expression& s, const Expression& s0, const Expression& s1, const Expression& s2,
-                 const Expression& radius, const unsigned int& L );
-  Expression BlattWeisskopf( const Expression& z2, unsigned int L );
-
-  Expression pol( const AmpGen::Expression& X, const std::vector<Expression>& p );
-
-  std::vector<Expression> parameterVector( const std::string& name, const unsigned int& nParam );
-
-  Expression width( const Expression& s, const Expression& s1, const Expression& s2, const Expression& mass,
-                    const Expression& width, const Expression& radius, unsigned int L,
-                    DebugSymbols* dbexpressions = nullptr );
-
-  /// Shape base class
-  struct ILineshape {
-
+  class  ILineshape {
+    public:
     virtual ~ILineshape() = default;
     virtual Expression get( const Expression& s, const Expression& s1, const Expression& s2,
                             const std::string& particleName, const unsigned int& L,
-                            const std::string& lineshapeModifier, DebugSymbols* dbexpressions = nullptr )
+                            const std::string& lineshapeModifier, DebugSymbols* dbexpressions = nullptr ) const 
     {
       return 1;
     }
 
     virtual Expression get( const std::vector<AmpGen::Tensor>& p, const std::string& particleName,
                             const unsigned int& L, const std::string& lineshapeModifier,
-                            AmpGen::DebugSymbols* dbexpressions = nullptr )
+                            AmpGen::DebugSymbols* dbexpressions = nullptr ) const 
     {
       return 1;
     }
     ILineshape* create() { return this; }
   };
 
-  /// static, global lineshape factory ///
-  class LineshapeFactory : public Factory<ILineshape>
-  {
-  public:
-    static Expression getLineshape( const std::string& lineshape, const Expression& s, const Expression& s1,
-                                    const Expression& s2, const std::string& particleName, const unsigned int& L,
-                                    std::vector<std::pair<std::string, Expression>>* dbexpressions = nullptr );
-    static Expression getGenericShape( const std::string& lineshape,
-                                       const std::vector<Tensor>& p, const std::string& particleName,
-                                       const unsigned int& L, AmpGen::DebugSymbols* dbexpressions );
-    static bool isLineshape( const std::string& lineshape );
-  };
+  /** @ingroup Lineshapes namespace Lineshape 
+      Namespace that contains all lineshapes, i.e. propagators for describing amplitudes and phases for resonances (and nonresonant) contributions to a total amplitude. 
+   */
 
-  namespace Lineshape
+   namespace Lineshape
   {
-    /// Two-body Breit-Wigner lineshape
+    class LineshapeFactory : public AmpGen::Factory<ILineshape>
+    {
+    public:
+      static Expression getLineshape( const std::string& lineshape, const Expression& s, const Expression& s1,
+                                      const Expression& s2, const std::string& particleName, const unsigned int& L,
+                                      std::vector<std::pair<std::string, Expression>>* dbexpressions = nullptr );
+      static Expression getGenericShape( const std::string& lineshape,
+                                         const std::vector<Tensor>& p, const std::string& particleName,
+                                         const unsigned int& L, AmpGen::DebugSymbols* dbexpressions );
+      static bool isLineshape( const std::string& lineshape );
+    };
+    
+    /** @ingroup Lineshapes class BW 
+    @brief Simple two-body Breit-Wigner lineshape that describes relatively narrow, isolated resonances that couple to a single channel / orbital configuration.
+    
+    The propagator as a function of the invariant-mass squared @f$s@f$ for a two-body final state with relative orbital angular momentum @f$l@f$ is given by
+    @f[
+        \mathcal{A}(s) = \frac{ k(m,\Gamma_0) B_L(q(s),0) }{ m^2 - s - i m_0 \Gamma_{l}(s) },
+    @f] <br> 
+    <B> Parameters: </B> <br>  
+    <DD>
+         @f$m@f$        : <EM>particleName_</EM>mass   Breit-Wigner mass, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
+         @f$\Gamma_0@f$ : <EM>particleName_</EM>width   Breit-Wigner width, defined as the width of resonance at the Breit-Wigner mass <br>
+         @f$r@f$        : <EM>particleName_</EM>radius   Hadronic radius for Blatt-Weisskopf form-factor (defaults to 1.5GeV for light resonances, 3.5GeV for charm) <br>
+    </DD> <br>
+    <B> Modifiers: </B> <br>
+    <DD>
+    <EM> BL </EM> : Use Blatt-Weisskopf factors normalised at @f$ \sqrt{s}=m @f$ (by default, normalised at @f$\sqrt{s}=0@f$)
+    </DD>
+    \image html figs/BW_combined.png "Modulus and phase of the Relativistic Breit-Wigner propagator, for @f$l={0,4}@f$, using the mass and nominal width of the @f$\rho@f$ meson" width=6cm
+    */
     DECLARE_LINESHAPE( BW );
+
+    /** @ingroup Lineshapes class LBW
+       Mixed-spin Breit-Wigner lineshape, with the orbital substates specified by particleName_waves, then coupling constants specified by free parameters particleName_gi 
+     */ 
+    DECLARE_LINESHAPE( LBW );
+    
+    DECLARE_LINESHAPE( CoupledChannel );
+
     /// Breit-Wigner lineshape with fixed width
     DECLARE_LINESHAPE( SBW );
     /// Non-relativistic Breit-Wigner lineshape
@@ -132,7 +144,10 @@ namespace AmpGen
     /// Gaussian lineshape \f$ = e^{ -(x-\mu)^2 / 2\sigma^{2} } \f$
     DECLARE_LINESHAPE( Gaussian );
 
-    /// Polynominal shape
+    /* @ingroup Lineshapes class Poly
+     * Polynominal shape \f$ \mathcal{A}(s) = \sum^n_i c_i s^{i} \f$ where the sum is to lineshapeModifier::Degree, and the free parameters of the shape are lineshapeModifier_ci 
+     *
+     */
     DECLARE_LINESHAPE( Poly );
 
     /// Anisovich-Sarantsev Isoscalar K-matrix from https://arxiv.org/abs/hep-ph/0204328
@@ -154,8 +169,21 @@ namespace AmpGen
     DECLARE_LINESHAPE( AxialKaon );
     /// Flexible K matrix implementation that accepts a variable number of scalar channels and pole terms
     DECLARE_LINESHAPE( kMatrixSimple );
-
-    /// Spline based lineshapes
+    
+    /** @ingroup Lineshapes class MIPWA
+     *  @brief Model-Independent Partial Wave parameterisation using cubic splines.
+     *
+     *  The real and imaginary (or amplitude and phase) of the lineshape are fixed at \f$ N \f$ discrete positions to independent pairs of free parameters to be determined in a fit, 
+     *  and the value of the lineshape determined elsewhere by interpolating between these values using cubic splines. 
+     *  Based on techniques first used by the E791 collaboration in studying @f$ K \pi @f$ scalars, see https://arxiv.org/abs/hep-ex/0510045. <br>
+     * 
+     * <B> Parameters: </B> <br>
+      <DD>
+         @f$\mathcal{R}_j@f$ : <EM>particleName</EM>::Spline::Re::j  The real value of the lineshape evaluated at the @f$ j @f$th knot. <br>
+         @f$\mathcal{I}_j@f$ : <EM>particleName</EM>::Spline::Im::j  The imaginary value of the lineshape evaluated at the @f$ j @f$th knot.  <br>
+    </DD> <br>
+     *  
+     */
     DECLARE_LINESHAPE( MIPWA );
     DECLARE_LINESHAPE( GSpline );
     DECLARE_LINESHAPE( FormFactorSpline );
@@ -166,5 +194,25 @@ namespace AmpGen
     DECLARE_GENERIC_SHAPE( EtaDalitz );
 
   } // namespace Lineshape
+  
+  Expression Q2( const Expression& Msq, const Expression& M1sq, const Expression& M2sq );
+
+  Expression kFactor( const Expression& mass, const Expression& width,
+                      std::vector<std::pair<std::string, Expression>>* dbexpressions = nullptr );
+  Expression BlattWeisskopf_Norm( const Expression& z, const Expression& z0, unsigned int L );
+
+  Expression BL( const Expression& s, const Expression& s0, const Expression& s1, const Expression& s2,
+                 const Expression& radius, const unsigned int& L );
+
+  Expression BlattWeisskopf( const Expression& z, unsigned int L );
+
+  Expression pol( const AmpGen::Expression& X, const std::vector<Expression>& p );
+
+  std::vector<Expression> parameterVector( const std::string& name, const unsigned int& nParam );
+
+  Expression width( const Expression& s, const Expression& s1, const Expression& s2, const Expression& mass,
+                    const Expression& width, const Expression& radius, unsigned int L,
+                    DebugSymbols* dbexpressions = nullptr );
+
 } // namespace AmpGen
 #endif

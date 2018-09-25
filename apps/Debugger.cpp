@@ -79,8 +79,6 @@ void print( const Event& event, const MatrixElements& matrixElements, bool verbo
 {
   for ( auto& mE : matrixElements ) {
     INFO( mE.decayTree->uniqueString() << " " << mE.coupling() );
-    //INFO( mE.decayTree->uniqueString() << " " << mE.coupling() * mE.pdf( event ) << "  ( = coupling x amplitude = " << mE.coupling() << " x " << mE.pdf( event ) << ")" );
-    
     auto terms = mE.coupling.couplings;
     if ( verbose ) {
       for ( auto& term : terms ) {
@@ -195,7 +193,5 @@ int main( int argc, char** argv )
     FastCoherentSum sig( eventType, MPS );  
     debug( sig, accepted, verbose, rndm , MPS );
     print( accepted[0], sig.matrixElements() , false ); 
-    //    for( auto& amp : 
-
   }
 }

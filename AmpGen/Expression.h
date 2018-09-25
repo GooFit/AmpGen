@@ -83,7 +83,6 @@ namespace AmpGen
   /// \ingroup ExpressionEngine class IExpression 
   ///  Virtual base class for other expression tree components.
   ///  Implementations must permit the following operations on nodes.
-  
   class IExpression {
     public:
       /// Called to convert the Expression tree into source code.
@@ -374,6 +373,7 @@ namespace AmpGen
     Expression sin( const Expression& expression );
     Expression abs( const Expression& expression );
     Expression pow( const Expression& expression, const Expression& co );
+    Expression fpow( const Expression& expression, const int& n );
     Expression norm( const Expression& expression );
     Expression conj( const Expression& expression );
     Expression exp( const Expression& expression );

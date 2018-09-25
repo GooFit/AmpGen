@@ -25,7 +25,7 @@
 #include "AmpGen/Units.h"
 
 using namespace AmpGen;
-
+using AmpGen::Lineshape::LineshapeFactory;
 
 Particle::Particle()
   : m_lineshape( "BW" )
@@ -330,7 +330,7 @@ Particle Particle::quasiStableTree() const
 
 Expression Particle::Lineshape( DebugSymbols* db ) const
 {
-  if ( db != nullptr && !isStable() ) db->emplace_back( uniqueString(), Parameter( "NULL", 0, true ) );
+  if ( db != nullptr && !isStable() ) db->emplace_back( uniqueString() +" lineshape", Parameter( "NULL", 0, true ) );
   if ( m_daughters.size() == 0 ) return 1;
   
   Expression total( 1. );
@@ -348,7 +348,7 @@ Expression Particle::Lineshape( DebugSymbols* db ) const
     total = total * propagator ;  
   }  
   for ( auto& d : m_daughters ) total = total * make_cse( d->Lineshape( db ) );
-  if ( db != nullptr ) db->emplace_back( uniqueString() + "_total", total );
+  if ( db != nullptr ) db->emplace_back( "A(" + uniqueString() + ")", total );
   return total;
 }
 
@@ -382,7 +382,7 @@ void Particle::addDaughter( const std::shared_ptr<Particle>& particle ) { m_daug
 Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index )
 {
   if ( db != nullptr && !isStable() ) 
-    db->emplace_back( uniqueString(), Parameter( "NULL", 0, true ) );
+    db->emplace_back( uniqueString() , Parameter( "NULL", 0, true ) );
 
   Expression total( 0 );
   auto finalStateParticles = getFinalStateParticles();
@@ -501,10 +501,17 @@ Tensor Particle::ExternalSpinTensor(const int& polState, DebugSymbols* db ) cons
     Expression xi01    = make_cse(Ternary( aligned,  0, (pP+pZ)/n ));
     Expression xi10    = make_cse(Ternary( aligned,  0, (pP+pZ)/n ));
     Expression xi11    = make_cse(Ternary( aligned,  1, z/n ));
-    if(id > 0 && polState ==  1 ) return Tensor({  fm*xi10,  fm*xi11,  fp*xi10,  fp*xi11 } );
-    if(id > 0 && polState == -1 ) return Tensor({  fp*xi00,  fp*xi01,  fm*xi00,  fm*xi01 } );
+//    if(id > 0 && polState ==  1 ) return Tensor({  fm*xi10,  fm*xi11,  fp*xi10,  fp*xi11 } );
+//    if(id > 0 && polState == -1 ) return Tensor({  fp*xi00,  fp*xi01,  fm*xi00,  fm*xi01 } );
+//    if(id < 0 && polState ==  1 ) return Tensor({ -fp*xi00, -fp*xi01,  fm*xi00,  fm*xi01 } );
+//    if(id < 0 && polState == -1 ) return Tensor({  fm*xi10,  fm*xi11, -fp*xi01, -fp*xi11 } );     
+    Expression fa = (fm+fp)/sqrt(2);
+    Expression fb = (fm-fp)/sqrt(2);
+    if(id > 0 && polState ==  1 ) return Tensor({  fa*xi10,  fa*xi11,  fb*xi10,  fb*xi11 } );
+    if(id > 0 && polState == -1 ) return Tensor({  fa*xi00,  fa*xi01,  -fb*xi00,  -fb*xi01 } );
     if(id < 0 && polState ==  1 ) return Tensor({ -fp*xi00, -fp*xi01,  fm*xi00,  fm*xi01 } );
     if(id < 0 && polState == -1 ) return Tensor({  fm*xi10,  fm*xi11, -fp*xi01, -fp*xi11 } ); 
+
   } 
   if ( m_props->twoSpin() == 1 && basis == "Dirac" )
   {

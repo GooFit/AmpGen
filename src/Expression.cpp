@@ -298,3 +298,9 @@ Expression AmpGen::fcn::complex_sqrt( const Expression& expression )
   return Ternary( st > 0, Sqrt(st), Constant(0,1)*Sqrt(-st) );
 }
 
+Expression AmpGen::fcn::fpow( const Expression& x, const int& n){
+  if( n < 0 ) return 1./fpow(x,-n);
+  Expression rt = 1;
+  for( int y=0;y<n;++y) rt = rt * x;
+  return rt;
+}

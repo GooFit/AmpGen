@@ -251,7 +251,6 @@ void AmpGen::Tensor::operator+=( const Tensor& rhs ){ *this = *this + rhs; }
 void AmpGen::Tensor::operator-=( const Tensor& rhs ){ *this = *this - rhs; }
 Expression AmpGen::dot( const Tensor& A, const Tensor& B )
 {
-
   if ( A.nElements() == 1 && B.nElements() == 1 ) return A[0] * B[0];
 
   if ( A.rank() != B.rank() || A.nElements() != B.nElements() ) {

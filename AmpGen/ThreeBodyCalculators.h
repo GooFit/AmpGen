@@ -36,7 +36,7 @@ namespace AmpGen
     size_t       m_nKnots;
     std::string  m_name;
     std::vector<PartialWidth> m_widths;
-
+    MinuitParameterSet* m_mps; 
   public:
     ThreeBodyCalculator( const std::string& head, MinuitParameterSet& mps, const size_t& nKnots=999, const double& min=-1, const double& max=-1 );
 

@@ -430,12 +430,14 @@ BinDT::Decision::Decision( const unsigned int& index, const double& value, std::
   if ( m_left != nullptr ) m_left->m_parent   = this;
   if ( m_right != nullptr ) m_right->m_parent = this;
 }
+
 void BinDT::Decision::serialize( std::ostream& stream ) const
 {
   stream << this << " " << m_index << " " << m_value << " " << m_left.get() << " " << m_right.get() << std::endl;
   m_left->serialize( stream );
   m_right->serialize( stream );
 }
+
 void BinDT::Decision::setChildren( std::shared_ptr<INode> l, std::shared_ptr<INode> r )
 {
   m_left            = l;

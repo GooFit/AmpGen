@@ -207,6 +207,17 @@ void AmpGen::rotate( Event& evt, const std::tuple<double,double,double>& n, cons
   }
 }
 
+/*
+Tensor AmpGen::rotate( const Tensor& tensor, const RepresentationType& type ){
+  if( type == scalar ) return tensor; 
+  if( type == vector ){
+    
+  }
+
+}
+*/
+
+
 void AmpGen::rotateBasis( Event& evt, const TVector3& p1, const TVector3& p2, const TVector3& p3 )
 {
   for(size_t i = 0 ; i < evt.size()/4;++i)
