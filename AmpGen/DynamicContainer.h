@@ -4,17 +4,16 @@
 #include <functional>
 #include <vector>
 
-/** @file AmpGen/DynamicContainer.h
-  @author T.Evans
-  DynamicContainer header
-  */
-
 namespace AmpGen
 {
   /**@class DynamicContainer
    *  Template class for a DynamicContainer, containing a temporary buffer of objects and
-   *  a generator function that refreshes the buffer once the current buffer is exhausted
-   *  can be navigated using quasi foward-iterators
+   *  a generator function that refreshes the buffer once the current buffer is exhausted.
+   *  Can only be navigated using quasi foward-iterators.
+   *  Designed such that very large sets can be operated on if only some value from the set is 
+   *  required at the end of the computation, for example, 
+   *  for computing large sets of multidimensional integral is is more efficient to tranch 
+   *  the computation onto blocks of events.
    */
   template <class TYPE, class CONTAINER_TYPE = std::vector<TYPE>>
   class DynamicContainer

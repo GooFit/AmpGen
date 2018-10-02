@@ -117,9 +117,10 @@ Expression simplify_sub_multiplication( const Sub& sum, const Expression& expres
 
 Expression AmpGen::operator*( const Expression& A, const Expression& B )
 {
-  if ( is<Constant>(A) ) return simplify_multiplication( cast<Constant>(A) , B );
+  if ( is<Constant>(A) ) return simplify_multiplication( cast<Constant>(A), B );
   if ( is<Constant>(B) ) return simplify_multiplication( cast<Constant>(B), A );
-  if ( is<Divide>(A) )   return ( cast<Divide>(A).l() * B ) / ( cast<Divide>(A).r() ) ; 
+  if ( is<Divide>(A) )   return ( cast<Divide>(A).l() * B ) / ( cast<Divide>(A).r());
+  if ( is<Divide>(B) )   return ( A * cast<Divide>(B).l() ) / ( cast<Divide>(B).r());
   if ( is<Sum>(A) || is<Sub>(A) ) return Expression( Product(B,A) );
   return Expression( Product( A, B ) );
 }
@@ -132,8 +133,19 @@ Expression AmpGen::operator/( const Expression& A, const Expression& B )
     else return A * Constant( 1. / B() ) ; 
   }
   else if( is<Constant>(A) && is<Constant>(B) ) return Constant( A() / B() );
-  else if( is<Product>(B)  && is<Constant>( cast<Product>(B).l() ) ) 
-    return ( A * 1./cast<Product>(B).l()() ) / cast<Product>(B).r() ; 
+  else if( is<Product>(B)  ){
+    auto as_prod = cast<Product>(B);
+    if( is<Constant>( as_prod.l() ) ) return ( Constant( 1./as_prod.l()() ) * A )/ as_prod.r();
+    if( is<Constant>( as_prod.r() ) ) return ( Constant( 1./as_prod.r()() ) * A )/ as_prod.l();
+  }
+//  else if( is<Divide>(A) ) {
+//    auto A_divide = cast<Divide>(A);
+//    if( is<Divide>(B) ){
+//      auto B_divide = cast<Divide>(B);
+//      return Divide( A_divide.l() * B_divide.r() , ( A_divide.r() * B_divide.l() ) );
+//    }
+//    return  A_divide.l() * B / A_divide.r() ; 
+//  }
   else if( is<Divide>(B) ) return ( A * cast<Divide>(B).r() ) / cast<Divide>(B).l();
   return Expression( Divide( A, B ) );
 }
@@ -269,14 +281,15 @@ template <class TYPE> Expression simplify_constant_unary( const Expression& arg 
   return is<Constant>(arg) ? Expression(TYPE(arg)()) : Expression(TYPE(arg)); 
 }
 
-Expression AmpGen::fcn::sqrt( const Expression& expression ) { return simplify_constant_unary<Sqrt>(expression) ; }
-Expression AmpGen::fcn::abs(  const Expression& expression ) { return simplify_constant_unary<Abs>(expression); }
-Expression AmpGen::fcn::cos(  const Expression& expression ) { return simplify_constant_unary<Cos>(expression) ; } 
-Expression AmpGen::fcn::sin(  const Expression& expression ) { return simplify_constant_unary<Sin>(expression); } 
-Expression AmpGen::fcn::conj( const Expression& expression ) { return simplify_constant_unary<Conj>(expression); } 
-Expression AmpGen::fcn::norm( const Expression& expression ) { return simplify_constant_unary<Norm>(expression); }
-Expression AmpGen::fcn::exp(  const Expression& expression ) { return simplify_constant_unary<Exp>(expression) ; }
-Expression AmpGen::fcn::log(  const Expression& expression ) { return simplify_constant_unary<Log>(expression) ; }
+Expression AmpGen::fcn::sqrt(  const Expression& expression ) { return simplify_constant_unary<Sqrt>(expression) ; }
+Expression AmpGen::fcn::abs(   const Expression& expression ) { return simplify_constant_unary<Abs>(expression); }
+Expression AmpGen::fcn::cos(   const Expression& expression ) { return simplify_constant_unary<Cos>(expression) ; } 
+Expression AmpGen::fcn::sin(   const Expression& expression ) { return simplify_constant_unary<Sin>(expression); } 
+Expression AmpGen::fcn::conj(  const Expression& expression ) { return simplify_constant_unary<Conj>(expression); } 
+Expression AmpGen::fcn::norm(  const Expression& expression ) { return simplify_constant_unary<Norm>(expression); }
+Expression AmpGen::fcn::exp(   const Expression& expression ) { return simplify_constant_unary<Exp>(expression) ; }
+Expression AmpGen::fcn::log(   const Expression& expression ) { return simplify_constant_unary<Log>(expression) ; }
+Expression AmpGen::fcn::atan2( const Expression& y, const Expression& x){ return ATan2(y,x) ; } 
 
 Expression AmpGen::fcn::safe_sqrt( const Expression& x )
 {

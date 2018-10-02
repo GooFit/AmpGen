@@ -89,24 +89,26 @@ namespace AmpGen
       static bool isLineshape( const std::string& lineshape );
     };
     
-    /** @ingroup Lineshapes class BW 
-    @brief Simple two-body Breit-Wigner lineshape that describes relatively narrow, isolated resonances that couple to a single channel / orbital configuration.
+    DECLARE_LINESHAPE( None );
     
-    The propagator as a function of the invariant-mass squared @f$s@f$ for a two-body final state with relative orbital angular momentum @f$l@f$ is given by
-    @f[
-        \mathcal{A}(s) = \frac{ k(m,\Gamma_0) B_L(q(s),0) }{ m^2 - s - i m_0 \Gamma_{l}(s) },
-    @f] <br> 
-    <B> Parameters: </B> <br>  
-    <DD>
-         @f$m@f$        : <EM>particleName_</EM>mass   Breit-Wigner mass, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
-         @f$\Gamma_0@f$ : <EM>particleName_</EM>width   Breit-Wigner width, defined as the width of resonance at the Breit-Wigner mass <br>
-         @f$r@f$        : <EM>particleName_</EM>radius   Hadronic radius for Blatt-Weisskopf form-factor (defaults to 1.5GeV for light resonances, 3.5GeV for charm) <br>
-    </DD> <br>
-    <B> Modifiers: </B> <br>
-    <DD>
-    <EM> BL </EM> : Use Blatt-Weisskopf factors normalised at @f$ \sqrt{s}=m @f$ (by default, normalised at @f$\sqrt{s}=0@f$)
-    </DD>
-    \image html figs/BW_combined.png "Modulus and phase of the Relativistic Breit-Wigner propagator, for @f$l={0,4}@f$, using the mass and nominal width of the @f$\rho@f$ meson" width=6cm
+    /** @ingroup Lineshapes class BW 
+        @brief Simple two-body Breit-Wigner lineshape that describes relatively narrow, isolated resonances that couple to a single channel / orbital configuration.
+        
+        The propagator as a function of the invariant-mass squared @f$s@f$ for a two-body final state with relative orbital angular momentum @f$l@f$ is given by
+        @f[
+            \mathcal{A}(s) = \frac{ k(m,\Gamma_0) B_L(q(s),0) }{ m^2 - s - i m_0 \Gamma_{l}(s) },
+        @f] <br> 
+        <B> Parameters: </B> <br>  
+        <DD>
+             @f$m@f$        : <EM>particleName_</EM>mass   Breit-Wigner mass, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
+             @f$\Gamma_0@f$ : <EM>particleName_</EM>width   Breit-Wigner width, defined as the width of resonance at the Breit-Wigner mass <br>
+             @f$r@f$        : <EM>particleName_</EM>radius   Hadronic radius for Blatt-Weisskopf form-factor (defaults to 1.5GeV for light resonances, 3.5GeV for charm) <br>
+        </DD> <br>
+        <B> Modifiers: </B> <br>
+        <DD>
+        <EM> BL </EM> : Use Blatt-Weisskopf factors normalised at @f$ \sqrt{s}=m @f$ (by default, normalised at @f$\sqrt{s}=0@f$)
+        </DD>
+        \image html figs/BW_combined.png "Modulus and phase of the Relativistic Breit-Wigner propagator, for @f$l={0,4}@f$, using the mass and nominal width of the @f$\rho@f$ meson" width=6cm
     */
     DECLARE_LINESHAPE( BW );
 
@@ -122,7 +124,17 @@ namespace AmpGen
     /// Non-relativistic Breit-Wigner lineshape
     DECLARE_LINESHAPE( NonRelBW );
 
-    /// Gounaris-Sakurai lineshape models dispersive corrections to the I=1,J=1 \f$\pi\pi\f$ propagator (G.J. Gounaris and J.J. Sakurai, Phys. Rev. Lett.21, 244 (1968))
+    /** @ingroup Lineshapes class GounarisSakurai
+        @brief Gounaris-Sakurai lineshape models dispersive corrections to the I=1,J=1 \f$\pi\pi\f$ propagator (G.J. Gounaris and J.J. Sakurai, Phys. Rev. Lett.21, 244 (1968))
+        
+        <B> Parameters: </B> <br>  
+        <DD>
+             @f$m@f$        : <EM>particleName_</EM>mass   Breit-Wigner mass, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
+             @f$\Gamma_0@f$ : <EM>particleName_</EM>width   Breit-Wigner width, defined as the width of resonance at the Breit-Wigner mass <br>
+             @f$r@f$        : <EM>particleName_</EM>radius   Hadronic radius for Blatt-Weisskopf form-factor (defaults to 1.5GeV for light resonances, 3.5GeV for charm) <br>
+        </DD> <br>
+        \image html figs/GS_combined.png "Gounaris-Sakurai lineshape for the @f$\rho(770)^{0}@f$ meson, with the equivalent relativistic Breit Wigner lineshape shown for comparison.
+    */
     DECLARE_LINESHAPE( GounarisSakurai );
 
     /// LASS shape used to model the \f$ K\pi \f$ S-wave
@@ -139,50 +151,52 @@ namespace AmpGen
 
     DECLARE_LINESHAPE( FormFactor );
     DECLARE_LINESHAPE( NonRes );
-    DECLARE_LINESHAPE( None );
 
     /// Gaussian lineshape \f$ = e^{ -(x-\mu)^2 / 2\sigma^{2} } \f$
     DECLARE_LINESHAPE( Gaussian );
 
-    /* @ingroup Lineshapes class Poly
-     * Polynominal shape \f$ \mathcal{A}(s) = \sum^n_i c_i s^{i} \f$ where the sum is to lineshapeModifier::Degree, and the free parameters of the shape are lineshapeModifier_ci 
-     *
+    /** @ingroup Lineshapes class Poly
+     *  @brief Polynominal shape \f$ \mathcal{A}(s) = \sum^n_i c_i s^{i} \f$ where the sum is to lineshapeModifier::Degree, and the free parameters of the shape are lineshapeModifier_ci 
      */
     DECLARE_LINESHAPE( Poly );
 
     /// Anisovich-Sarantsev Isoscalar K-matrix from https://arxiv.org/abs/hep-ph/0204328
     DECLARE_LINESHAPE( kMatrix );
 
-    /// I=1/2 and I=3/2 K Matrices used in the description of the \f$ K\pi \f$ S-wave in the analysis of \f$ D^{+}
-    /// \rightarrow K^{-}\pi^{+}\pi^{+}\f$ https://arxiv.org/abs/0705.2248
-    DECLARE_LINESHAPE( FOCUS );
+    /** @ingroup Lineshapes class FOCUS
+     *  @brief K matrix amplitudes used for I=1/2 and I=3/2 in the description of the \f$ K\pi \f$ S-wave in the analysis of @f$ D^{+}\rightarrow K^{-}\pi^{+}\pi^{+}@f$ https://arxiv.org/abs/0705.2248
+     */
+     DECLARE_LINESHAPE( FOCUS );
 
-    /// I=1/2 and I=3/2 K Matrices used in the description of the \f$ K\pi\f$ S-wave in the analysis of \f$\eta_{c}
-    /// \rightarrow K^{+} K^{-} \pi^{0}\f$ https://arxiv.org/abs/1701.04881
+    /// I=1/2 and I=3/2 K Matrices used in the description of the \f$ K\pi\f$ S-wave in the analysis of @f$\eta_{c}\rightarrow K^{+} K^{-} \pi^{0}@f$ https://arxiv.org/abs/1701.04881
     DECLARE_LINESHAPE( PALANO );
 
-    /// I=1, J=1 K Matrix used to describe the \f$ \rho(770), \rho(1450), \rho(1900) \f$ system, including the \f$
-    /// \pi\pi,  KK , \pi\pi\pi\pi \f$ channels
+    /** @ingroup Lineshapes class ObelixRho
+     *  @brief Vector-Isovector amplitude (I=1, J=1) using K Matrices to describe the @f$ \rho(770), \rho(1450), \rho(1900) @f$ system, including the @f$\pi\pi,  KK , \pi\pi\pi\pi @f$ channels.
+     */
     DECLARE_LINESHAPE( ObelixRho );
 
     /// K matrix to describe \f$K_1(1270) / K_1(1400)\f$, WARNING, does not work at intended. 
     DECLARE_LINESHAPE( AxialKaon );
+    
     /// Flexible K matrix implementation that accepts a variable number of scalar channels and pole terms
     DECLARE_LINESHAPE( kMatrixSimple );
     
     /** @ingroup Lineshapes class MIPWA
-     *  @brief Model-Independent Partial Wave parameterisation using cubic splines.
-     *
-     *  The real and imaginary (or amplitude and phase) of the lineshape are fixed at \f$ N \f$ discrete positions to independent pairs of free parameters to be determined in a fit, 
-     *  and the value of the lineshape determined elsewhere by interpolating between these values using cubic splines. 
-     *  Based on techniques first used by the E791 collaboration in studying @f$ K \pi @f$ scalars, see https://arxiv.org/abs/hep-ex/0510045. <br>
-     * 
-     * <B> Parameters: </B> <br>
+        @brief Model-Independent Partial Wave parameterisation using cubic splines.
+      
+        The real and imaginary (or amplitude and phase) of the lineshape are fixed at \f$ N \f$ discrete positions to independent pairs of free parameters to be determined in a fit, 
+        and the value of the lineshape determined elsewhere by interpolating between these values using cubic splines. 
+        Based on techniques first used by the E791 collaboration in studying @f$ K \pi @f$ scalars, see https://arxiv.org/abs/hep-ex/0510045. <br>
+        The amplitude is given by 
+         @f[
+            \mathcal{A}(s) = \sum_n ( a_n + b_n \tilde{s} + c_n \tilde{s}^2 + d_n \tilde{s}^3 ) \mathrm{rect}\left( \frac{s - nL}{nL} \right)
+         @f]
+        <B> Parameters: </B> <br>
       <DD>
          @f$\mathcal{R}_j@f$ : <EM>particleName</EM>::Spline::Re::j  The real value of the lineshape evaluated at the @f$ j @f$th knot. <br>
          @f$\mathcal{I}_j@f$ : <EM>particleName</EM>::Spline::Im::j  The imaginary value of the lineshape evaluated at the @f$ j @f$th knot.  <br>
-    </DD> <br>
-     *  
+      </DD> <br>    
      */
     DECLARE_LINESHAPE( MIPWA );
     DECLARE_LINESHAPE( GSpline );

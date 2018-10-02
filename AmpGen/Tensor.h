@@ -121,12 +121,12 @@ namespace AmpGen
     static std::string coordinates_to_string( const std::vector<size_t >& coordinates );
   };
 
-  /*@class TensorProxy
-   * Utility class that wraps a tensor and a set of indices such
-   * that tensor operations can be performed.
-   * It normally isn't useful to use this class directly,
-   * instead is designed as an intermediate proxy object for performing
-   * tensor manipulations
+  /** @class TensorProxy
+      Utility class that wraps a tensor and a set of indices such
+      that tensor operations can be performed.
+      It normally isn't useful to use this class directly,
+      instead is designed as an intermediate proxy object for performing
+      tensor manipulations
    */
   class TensorProxy
   {

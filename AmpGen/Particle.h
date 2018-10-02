@@ -14,31 +14,87 @@
 
 namespace AmpGen
 {
-  ///\class Particle
-  ///Encodes a multi-body decay tree structure, essentially only limited by
-  ///spin factor and propagators implemented to quasi two-body processes,
-  ///and is the central object for computing the expression tree of
-  ///a matrix element
-  
+  /** @class Particle
+      Encodes a multi-body decay tree structure, is largely limited to describe a sequence 
+      of quasi two-body processes (i.e. the isobar model) by the implemented lineshapes (propagators) and 
+      spin structure (vertices) 
+      Decay chains are usually constucted by parsing strings, for example:
+
+      \code{cpp}
+        D0{rho(770)0{pi+,pi-},K0S0}
+      \endcode
+      
+      is the tree structure for the decay of a neutral D-meson into a @f$\rho@f$ meson and the short-lived neutral kaon, 
+      @f$ K^0_S @f$. States are lists of particles, separated by commas, and included within {} braces. 
+      As a trivial example, this decay descriptor can be used to generate some of its own documentation, in this case a formatted latex string:
+
+      \code{cpp}
+        AmpGen::Particle example("D0{rho(770)0{pi+,pi-},K0S0}");
+        std::cout << example.texLabel(true) << std::endl;
+      \endcode
+
+      produces the latex source for the output 
+
+      @f[
+       D^{0}\rightarrow \rho(770)^{0}\left[\pi^{+} \pi^{-} \right] K_{S}^{0}
+      @f]
+
+      There are also modifiers to the amplitude that alter the details of the decay process. 
+      For example, there may multiple orbital angular momentum substates. 
+      These will be denoted by the use of [] braces, so for example 
+
+      \code{cpp}
+        Delta(1232)++{p+,pi+}
+        Delta(1232)++[D]{p+,pi+}
+      \endcode
+
+      correspond to the S-wave and D-wave decays of the @f$\Delta(1232)^{++}@f$ baryon.
+      As a rule, the lowest orbital state permitted by the relevant conservation laws of the decay is 
+      used if the orbital state is not specified, so the conservation of angular momentum, 
+      and the conservation of parity if the decay proceeds via the strong or electromagnetic force.
+   
+      The modifier syntax is also used to specify a different choice of lineshape for the resonance. 
+      For example, a common parameterisation for the @f$\rho(770)@f$ meson is the Gounaris-Sakurai propagator, 
+      which accounts for dispersive corrections to the @f$I=1@f$ dipion scattering. In this example
+
+      \code{cpp}
+        rho(770)0[GounarisSakurai]{pi+,pi-}
+      \endcode 
+
+      Multiple modifiers can be applied to the same particle, by including them in a semi-colon separated list. 
+      For example, for three-body decays of broad resonances, such as the @f$a_1(1260)@f$, the propagator must take the evolution of 
+      the width of resonance from a numerical calculation, which can be supplied via a cubic spline (hence using the GSpline propagator).
+      Additionally, for the decay chain @f$ a_1(1260)^{+} \to \rho^{0} \pi^{+} @f$, the decay products can either be in a relative S or D wave, and hence 
+      the two particle descriptors
+
+      \code{cpp}
+        a(1)(1260)+[GSpline]{rho(770)0,pi+}
+        a(1)(1260)+[D;GSpline]{rho(770)0,pi+}
+      \endcode
+    
+      are relevant for the decay.   
+      Similar to other components of AmpGen, Particles will rarely be constructed in the C++ context, 
+      and will instead be instantiated dynamically at runtime from a user supplied options file. 
+   */
   class Particle
   {
   private:
-    const ParticleProperties* m_props;                  ///< Particle Properties from the PDG
-    std::string m_name;                                 ///< Name of the particle
-    std::string m_lineshape;                            ///< Propagator to use
-    std::string m_uniqueString;                         ///< Unique string of particle tree
-    int m_parity;                                       ///< Intrinsic parity of particle
-    int m_polState;                                     ///< polarisation state 
-    unsigned int m_index;                               ///< Index, for constructing four-momenta
-    unsigned int m_originalIndex;                       ///< Starting index, used in Bose-symmetrisation
-    unsigned int m_orbital;                             ///< Orbital angular momentum between daughters
-    unsigned int m_spinConfigurationNumber;             ///< Spin configuration quantum number
-    unsigned int m_minL;                                ///< Minimum orbital angular momentum
-    bool m_isHead;                                      ///< Flag that particle is head of decay chain
-    bool m_isStateGood;                                 ///< Flag to check the decay is well-formed
-    bool m_usesDefaultLineshape;                        ///< Flag to check if default shape is used
-    std::vector<std::shared_ptr<Particle>> m_daughters; ///< Array of daughter particles
-    std::vector<std::string> m_modifiers;               ///< Additional modifiers for amplitude
+    const ParticleProperties* m_props;                     ///< Particle Properties from the PDG
+    std::string m_name;                                    ///< Name of the particle
+    std::string m_lineshape;                               ///< Propagator to use
+    std::string m_uniqueString;                            ///< Unique string of particle tree
+    int m_parity;                                          ///< Intrinsic parity of particle
+    int m_polState;                                        ///< polarisation state 
+    unsigned int m_index;                                  ///< Index, for constructing four-momenta
+    unsigned int m_originalIndex;                          ///< Starting index, used in Bose-symmetrisation
+    unsigned int m_orbital;                                ///< Orbital angular momentum between daughters
+    unsigned int m_spinConfigurationNumber;                ///< Spin configuration quantum number
+    unsigned int m_minL;                                   ///< Minimum orbital angular momentum
+    bool m_isHead;                                         ///< Flag that particle is head of decay chain
+    bool m_isStateGood;                                    ///< Flag to check the decay is well-formed
+    bool m_usesDefaultLineshape;                           ///< Flag to check if default shape is used
+    std::vector<std::shared_ptr<Particle>> m_daughters;    ///< Array of daughter particles
+    std::vector<std::string> m_modifiers;                  ///< Additional modifiers for amplitude
 
     void pdgLookup();                                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
     bool hasModifier( const std::string& modifier ) const; ///< Check if this particle has a given modifier

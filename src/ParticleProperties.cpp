@@ -79,7 +79,7 @@ ParticleProperties::ParticleProperties( const std::string& pdg_string ) : m_netQ
   }
   else m_twoSpin = 2 * lexical_cast<int>( m_JtotalSpin, spin_status );
   if( spin_status == 0 ){
-    WARNING("Spin of particle: " << name() << " could not be interpretted (J=" << m_JtotalSpin << ")"  );
+   DEBUG("Spin of particle: " << name() << " could not be interpretted (J=" << m_JtotalSpin << ")"  );
   }
   setRadius();
 

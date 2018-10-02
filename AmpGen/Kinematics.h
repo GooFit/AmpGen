@@ -59,5 +59,7 @@ namespace AmpGen
   void rotate( Event& evt, const std::tuple<double, double, double>& n, const double& v );
 
   void rotateBasis( Event& evt, const TVector3& p1, const TVector3& p2, const TVector3& p3 );
+  
+  Tensor BoostMatrix( const Tensor& p );
 } // namespace AmpGen
 #endif

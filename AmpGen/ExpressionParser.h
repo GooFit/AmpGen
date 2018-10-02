@@ -46,9 +46,6 @@ namespace AmpGen
     std::vector<Expression> m_expressions;
   };
 
-  /// \ingroup ExpressionEngine class ExpressionParser 
-  /// \brief
-  /// parses strings to expressions, relies on MinuitParameterSets being defined. 
   class ExpressionParser
   {
     private:

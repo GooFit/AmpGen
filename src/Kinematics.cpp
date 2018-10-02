@@ -7,6 +7,7 @@
 #include <cmath>
 
 #include "AmpGen/MsgService.h"
+#include "AmpGen/Simplify.h"
 
 using namespace AmpGen;
 
@@ -173,7 +174,6 @@ double AmpGen::phi( const Event& evt, int i, int j, int k, int w )
 void AmpGen::boost( Event& evt, const std::tuple<double, double, double>& n, const double& v )
 {
   double gamma = 1. / sqrt( 1 - v * v );
-  std::vector<double> returnValue( 4, 0 );
   double nx   = std::get<0>( n );
   double ny   = std::get<1>( n );
   double nz   = std::get<2>( n );
@@ -206,17 +206,25 @@ void AmpGen::rotate( Event& evt, const std::tuple<double,double,double>& n, cons
     evt[4*i + 2] = cv * iz + sv*( iy * nx - ix * ny )/norm + k * nz / ( norm * norm );
   }
 }
+using namespace fcn;
 
-/*
-Tensor AmpGen::rotate( const Tensor& tensor, const RepresentationType& type ){
-  if( type == scalar ) return tensor; 
-  if( type == vector ){
-    
+AmpGen::Tensor AmpGen::BoostMatrix( const AmpGen::Tensor& p )
+{
+  auto norm = p[0]*p[0] + p[1]*p[1] + p[2]*p[2];
+  auto gamma = 1. / sqrt( 1. - norm/(p[3]*p[3]) );
+  Tensor boost_matrix = (std::vector<size_t>({4,4}));
+  for( int i = 0 ; i < 3 ; ++i ){
+    for( int j = 0 ; j < 3 ; ++j ){
+      boost_matrix(i,j) = ( (i==j) ? Constant(1) : Constant(0) ) + (gamma-1)*p[i]*p[j]/norm;
+    }
   }
-
+  for( int i = 0 ; i < 3; ++i ){
+    boost_matrix(i,3) = -gamma * p[i]/p[3];
+    boost_matrix(3,i) = -gamma * p[i]/p[3];
+  }
+  boost_matrix(3,3) = gamma;
+  return boost_matrix; 
 }
-*/
-
 
 void AmpGen::rotateBasis( Event& evt, const TVector3& p1, const TVector3& p2, const TVector3& p3 )
 {
@@ -229,5 +237,4 @@ void AmpGen::rotateBasis( Event& evt, const TVector3& p1, const TVector3& p2, co
     evt[4*i+1] = (p2.x() * ex + p2.y() * ey + p2.z() * ez )/p2.Mag();
     evt[4*i+2] = (p3.x() * ex + p3.y() * ey + p3.z() * ez )/p3.Mag();
   }
-
 }

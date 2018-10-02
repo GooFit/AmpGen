@@ -24,6 +24,7 @@ namespace AmpGen {
     private:
       std::vector<Term> m_terms; 
   };
+  Expression Simplify(const Expression& expression );
 }
 
 #endif

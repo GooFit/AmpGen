@@ -10,27 +10,17 @@
 
 using namespace AmpGen;
 
-DEFINE_CAST( Sum )
-DEFINE_CAST( Sub )
-DEFINE_CAST( Product )
-DEFINE_CAST( Divide )
-DEFINE_CAST( And )
-DEFINE_CAST( GreaterThan )
-DEFINE_CAST( LessThan )
-DEFINE_CAST( Equal )
-DEFINE_CAST( Pow )
-DEFINE_CAST( Fmod )
-
-Sum::Sum( const Expression& l, const Expression& r ) : IBinaryExpression( l, r ) {}
-Sub::Sub( const Expression& l, const Expression& r ) : IBinaryExpression( l, r ) {}
-Product::Product( const Expression& l, const Expression& r ) : IBinaryExpression( l, r ) {}
-Divide::Divide( const Expression& l, const Expression& r ) : IBinaryExpression( l, r ) {}
-LessThan::LessThan( const Expression& l, const Expression& r ) : IBinaryExpression( l, r ) {}
-Pow::Pow( const Expression& l, const Expression& r ) : IBinaryExpression( l, r ) {}
-Fmod::Fmod( const Expression& l, const Expression& r ) : IBinaryExpression( l, r ) {}
-And::And( const Expression& l, const Expression& r ) : IBinaryExpression( l, r ) {}
-GreaterThan::GreaterThan( const Expression& lval, const Expression& rval ) : IBinaryExpression( lval, rval ) {}
-Equal::Equal( const Expression& lval, const Expression& rval ) : IBinaryExpression( lval, rval ) {}
+DEFINE_BINARY_OPERATOR( Sum )
+DEFINE_BINARY_OPERATOR( Sub )
+DEFINE_BINARY_OPERATOR( Product )
+DEFINE_BINARY_OPERATOR( Divide )
+DEFINE_BINARY_OPERATOR( And )
+DEFINE_BINARY_OPERATOR( GreaterThan )
+DEFINE_BINARY_OPERATOR( LessThan )
+DEFINE_BINARY_OPERATOR( Equal )
+DEFINE_BINARY_OPERATOR( Pow )
+DEFINE_BINARY_OPERATOR( Fmod )
+DEFINE_BINARY_OPERATOR( ATan2 )
 
 template < class condition > 
 std::string bracketed( const Expression& expression, condition&& use_brackets, const ASTResolver* resolver=nullptr ){
@@ -47,6 +37,7 @@ complex_t LessThan::operator()()    const { return complex_t(std::real(lval()) <
 complex_t Pow::operator()()         const { return pow( lval(), rval() ); }
 complex_t Fmod::operator()()        const { return 0; }
 complex_t Equal::operator()()       const { return lval() == rval() ; } 
+complex_t ATan2::operator()()       const { return atan2( std::real(lval() ), std::real(rval() ) ); }
 
 std::string Sum::to_string(const ASTResolver* resolver)         const { 
   return lval.to_string(resolver) + " + " + rval.to_string(resolver) ;
@@ -55,6 +46,8 @@ std::string Sub::to_string(const ASTResolver* resolver)         const {
   return lval.to_string(resolver) + "-"   + bracketed( rval, [](auto& expression){ return is<Sum>(expression) || is<Sub>(expression) ; } , resolver ) ; 
 }
 std::string Equal::to_string(const ASTResolver* resolver)       const { return "("     + lval.to_string(resolver) + " == "+ rval.to_string(resolver) +")"; }
+
+
 std::string Product::to_string(const ASTResolver* resolver)     const { 
   auto use_brackets = [](auto& expression){ return is<Sum>(expression) || is<Sub>(expression); };
   return bracketed( lval,use_brackets,resolver) + "*" + bracketed(rval,use_brackets,resolver);
@@ -71,6 +64,7 @@ std::string GreaterThan::to_string(const ASTResolver* resolver) const { return "
 std::string And::to_string(const ASTResolver* resolver)         const { return "("     + lval.to_string(resolver) + "&&"  + rval.to_string(resolver) +")"; }
 std::string Pow::to_string(const ASTResolver* resolver)         const { return "pow("  + lval.to_string(resolver) + ", "  + rval.to_string(resolver) +")"; }
 std::string Fmod::to_string(const ASTResolver* resolver)        const { return "fmod(" + lval.to_string(resolver) + ","   + rval.to_string(resolver) +")"; }
+std::string ATan2::to_string( const ASTResolver* resolver)      const { return "atan2("+ lval.to_string(resolver) + ","   + rval.to_string(resolver) +")"; }
 
 void IBinaryExpression::resolve( ASTResolver& resolver )
 {

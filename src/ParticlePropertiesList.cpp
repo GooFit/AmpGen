@@ -114,7 +114,7 @@ bool ParticlePropertiesList::readFile( const std::string& name )
     DEBUG( "File not found: " << name );
     return false;
   }
-  INFO( "Reading file: " << name );
+  DEBUG( "Reading file: " << name );
   processFile( name, [this]( auto& line ) {
     if ( line[0] == '*' ) return;
     ParticleProperties P( line );
@@ -208,7 +208,7 @@ std::vector<int> ParticlePropertiesList::getParticleIds() const
 
 void ParticlePropertiesList::makeAlias( const std::string& name, const std::string& alias )
 {
-  INFO( "Making alias: " << alias << " for " << name );
+  DEBUG( "Making alias: " << alias << " for " << name );
   auto it = find( name );
   if ( it == nullptr ) {
     ERROR( "Cannot find particle " << name << " with which to make alias" );

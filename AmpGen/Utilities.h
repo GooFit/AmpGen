@@ -54,8 +54,6 @@ std::string vectorToString( const std::vector<T>& obj, const std::string& delim 
   return ss.str();
 }
 
-
-
 template <class T> 
 std::vector<std::vector<T>> nCr( const T& n, const T& r )
 {

@@ -1,27 +1,39 @@
 #ifndef AMPGEN_EXPRESSION_H
 #define AMPGEN_EXPRESSION_H
 
-/// \defgroup ExpressionEngine Expressions 
-/// \brief 
-/// are a set of classes for constructing functions from primatives 
-/// such as the binary operators \f$(+,-,/,\times)\f$, and elementary functions such as trigonometric 
-/// functions and sqrts. 
-///
-/// AmpGen Expressions are a set of classes for constructing functions from primatives 
-/// such as the binary operators \f$(+,-,/,\times)\f$, and elementary functions such as trigonometric 
-/// functions and sqrts. 
-/// These are then compiled to conventional C++ at runtime, to allow fast and flexible 
-/// evalulation of amplitudes. 
-/// Expression trees can be built using overloaded operators, so 
-///
-/// \code{.cpp}
-/// Expression x = a+b; 
-/// \endcode
-///
-/// will given an expression that can calculate the sum of expressions a and b 
-/// [n.b. the auto keyword should be avoided if dealing with unary functions explicitly, but not if handled via the fcn:: namespace]
-/// \author T.Evans
+/** @defgroup ExpressionEngine Expressions 
+    @brief 
+    are a set of classes for constructing functions from primatives 
+    such as the binary operators \f$(+,-,/,\times)\f$, and elementary functions such as trigonometric 
+    functions and sqrts. 
+   
+    AmpGen Expressions are a set of classes for constructing functions from primatives 
+    such as the binary operators \f$(+,-,/,\times)\f$, and elementary functions such as trigonometric 
+    functions and sqrts. 
+    These are then compiled to conventional C++ at runtime, to allow fast and flexible 
+    evalulation of amplitudes. 
+    Expression trees can be built using overloaded operators, so 
 
+    \code{.cpp}
+    Expression x = a+b; 
+    \endcode
+
+    will given an expression that can calculate the sum of expressions a and b.
+    There are constructors for expressions from constants and corresponding overloads of operators, so for example
+    
+    \code{.cpp}
+    Expression x = a+5;
+    \endcode
+
+    generates a tree that adds '5' to the the tree 'a'.  
+    Assorted optimisations will generally be invoked on the AST if constants are included, such as reduction of products and sums of constants.
+    
+    There is limited functionality for expressions to be evaluated in-situ to the default values associated with their parameters, which can useful for debugging purposes.
+    The more typical usage is to use an expression to generate a CompiledExpression that compiles the expression and wraps the corresponding shared library with a functor. 
+
+    For unary functions, it is recommend to use the functions contained in the fcn:: namespace that have the same names as those in std::math, in particular, use of the unary classes directly can cause unexpected behaviour if used in conjunction with the auto keyword. 
+    \author T.Evans
+*/
 
 /// \ingroup ExpressionEngine macro ADD_DEBUG
 /// Make a (named) debugging expression and add to a set of DebugSymbols.
@@ -33,6 +45,16 @@
 #define DEFINE_CAST( X )                                    \
   X::operator Expression() const                            \
 { return Expression( std::make_shared<X>( *this ) ); }  
+
+#define DEFINE_BINARY_OPERATOR( X ) \
+  X::X( const AmpGen::Expression& l, const AmpGen::Expression& r ) : IBinaryExpression(l,r ) {} \
+  X::operator Expression() const { return Expression( std::make_shared<X>(*this) ) ; } 
+
+#define DEFINE_UNARY_OPERATOR( X, F ) \
+  X::X( const AmpGen::Expression& expression) : IUnaryExpression(expression) {} \
+  X::operator Expression() const { return Expression( std::make_shared<X>(*this) ) ; } \
+  std::complex<double> X::operator()() const { return F( m_expression() ); } \
+  std::string X::to_string(const ASTResolver* resolver) const { return std::string(#F)+"("+ m_expression.to_string(resolver)+")";}
 
 /// \ingroup ExpressionEngine macro DECLARE_UNARY_OPERATOR
 /// Macro to declare a unary operator, \ref ExpressionEngine "see IUnaryExpression"
@@ -81,7 +103,7 @@ namespace AmpGen
   typedef std::vector<DebugSymbol> DebugSymbols;
 
   /// \ingroup ExpressionEngine class IExpression 
-  ///  Virtual base class for other expression tree components.
+  ///  @brief Virtual base class for other expression tree components. <br>
   ///  Implementations must permit the following operations on nodes.
   class IExpression {
     public:
@@ -166,11 +188,14 @@ namespace AmpGen
     double       m_defaultValue;
   };
 
-  /// \ingroup ExpressionEngine class Ternary 
-  /// Evaluates the ternary operator, i.e. 
-  /// \code{.cpp}
-  /// return a ? b : c 
-  /// \endcode 
+  /** @ingroup ExpressionEngine class Ternary 
+      @brief Evaluates the ternary operator.
+
+      The equivalent c++ code would be
+      \code{.cpp}
+      return a ? b : c 
+      \endcode 
+  */
   struct Ternary : public IExpression {
     Ternary( const Expression& cond, const Expression& v1, const Expression& v2 );
     std::string to_string(const ASTResolver* resolver=nullptr) const override;
@@ -265,6 +290,7 @@ namespace AmpGen
   DECLARE_BINARY_OPERATOR( And );
   DECLARE_BINARY_OPERATOR( Equal );
 
+  DECLARE_BINARY_OPERATOR( ATan2 );
   /// \ingroup ExpressionEngine class IUnaryExpression
   ///  Base class for unary expressions, i.e. those that take a single argument.
   class IUnaryExpression : public IExpression {
@@ -378,6 +404,7 @@ namespace AmpGen
     Expression conj( const Expression& expression );
     Expression exp( const Expression& expression );
     Expression log( const Expression& expression );
+    Expression atan2( const Expression& y, const Expression& x);
   }
 
   template < class T > bool is( const Expression& expression ){

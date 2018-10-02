@@ -12,32 +12,38 @@ void NormalOrderedExpression::Term::addExpression( const Expression& expression)
       addExpression(r);
     }
     if( is<Sum>(expression) || is<Sub>(expression) ) ERROR("I never should get here, brackets should be pre-expanded [" << expression << "] " );
-    if( is<Divide>(expression) ){ 
+    if( is<Divide>(expression) ){
       addExpression( l );
-      m_divisor = r ;  
+      m_divisor = m_divisor * r ;  
     }
   } 
   else if( is<Constant>(expression) ) m_prefactor *= expression();
   else m_terms.push_back( expression );
 }
 
-NormalOrderedExpression::Term::Term( const Expression& expression ) : m_prefactor(1), m_divisor(1), m_markForRemoval(false) {
+NormalOrderedExpression::Term::Term( const Expression& expression ) : 
+  m_prefactor(1), 
+  m_divisor(1), 
+  m_markForRemoval(false) {
   addExpression(expression);
   std::sort( m_terms.begin(), m_terms.end(), [](auto& t1, auto& t2 ){ return t1.to_string() > t2.to_string() ; } ) ;
-  for(size_t i = 0 ; i < m_terms.size() ; ++i ) 
-    m_expressionAsString += m_terms[i].to_string() + (i==m_terms.size()-1 ? "" : "*" ); 
+  Expression t = 1;
+  for( auto& f : m_terms ) t = t * f ;
+  m_expressionAsString = ( t / m_divisor).to_string();  
 }
+
 NormalOrderedExpression::Term::operator Expression() { 
   Expression pf = m_prefactor;
-  for( auto& t : m_terms ){ pf = pf * t ; };
+  for( auto& t : m_terms ) pf = pf * t ;
   return pf / m_divisor; 
 }
 
 NormalOrderedExpression::NormalOrderedExpression( const Expression& expression )
 {
   auto expanded = ExpandBrackets(expression);
-  for( auto& t : expanded ) m_terms.emplace_back( t );
-  
+  for( auto& t : expanded ){
+    m_terms.emplace_back( t );
+  }
   std::sort( m_terms.begin(), m_terms.end() , [](auto& t1, auto&t2 ){ return t1.m_expressionAsString > t2.m_expressionAsString ; });
   groupExpressions();
 }
@@ -94,12 +100,11 @@ std::vector<Expression> NormalOrderedExpression::ExpandBrackets( const Expressio
       auto right = ExpandBrackets( cast<Divide>(expression).r() );
       Expression sum = 0;
       for( auto& r : right ) sum = sum + r; 
-      for( auto& l : left ){
-        rt.emplace_back(l/sum);
-      }
+      for( auto& l : left ) rt.emplace_back(l/sum);
       return rt; 
     }
   }
   return {expression}; 
 }
 
+Expression AmpGen::Simplify(const Expression& expression ){ return Expression( NormalOrderedExpression(expression) ) ; }
