@@ -30,38 +30,37 @@ namespace AmpGen
 {
 
   class CompiledExpressionBase;
-    DECLARE_ARGUMENT_DEFAULT( Bins, size_t, 100 );
-    DECLARE_ARGUMENT( Prefix, std::string );
-    DECLARE_ARGUMENT( LineColor, int );
-    DECLARE_ARGUMENT( DrawStyle, std::string );
-    DECLARE_ARGUMENT( Selection, std::function<bool( const Event& )> );
-    DECLARE_ARGUMENT( WeightFunction, std::function<double( const Event& ) > );
-    DECLARE_ARGUMENT( Branches, std::vector<std::string> );
-    DECLARE_ARGUMENT( EntryList, std::vector<size_t> );
-    DECLARE_ARGUMENT_DEFAULT( GetGenPdf, bool, false );
-    DECLARE_ARGUMENT_DEFAULT( CacheSize, size_t , 0 );
-    DECLARE_ARGUMENT_DEFAULT( Filter, std::string , "");
-    DECLARE_ARGUMENT_DEFAULT( WeightBranch, std::string, "" );      
-    DECLARE_ARGUMENT_DEFAULT( ApplySym, bool, 0 ); 
+  DECLARE_ARGUMENT_DEFAULT( Bins, size_t, 100 );
+  DECLARE_ARGUMENT( Prefix, std::string );
+  DECLARE_ARGUMENT( LineColor, int );
+  DECLARE_ARGUMENT( DrawStyle, std::string );
+  DECLARE_ARGUMENT( Selection, std::function<bool( const Event& )> );
+  DECLARE_ARGUMENT( WeightFunction, std::function<double( const Event& ) > );
+  DECLARE_ARGUMENT( Branches, std::vector<std::string> );
+  DECLARE_ARGUMENT( EntryList, std::vector<size_t> );
+  DECLARE_ARGUMENT_DEFAULT( GetGenPdf, bool, false );
+  DECLARE_ARGUMENT_DEFAULT( CacheSize, size_t , 0 );
+  DECLARE_ARGUMENT_DEFAULT( Filter, std::string , "");
+  DECLARE_ARGUMENT_DEFAULT( WeightBranch, std::string, "" );      
+  DECLARE_ARGUMENT_DEFAULT( ApplySym, bool, 0 ); 
   class EventList
   {
   private:
-    std::vector<Event> m_data;
-
+    std::vector<Event>                  m_data;
   protected:
-    EventType m_eventType;
-    std::map<uint64_t, unsigned int> m_pdfIndex;
+    EventType                           m_eventType;
+    std::map<uint64_t, unsigned int>    m_pdfIndex;
     std::map<std::string, unsigned int> m_extensions;
-    double m_norm;
-    size_t m_lastCachePosition; 
+    double                              m_norm;
+    size_t                              m_lastCachePosition; 
   public:
     void resetCache();
     std::vector<Event>::reverse_iterator rbegin() { return m_data.rbegin(); }
-    std::vector<Event>::reverse_iterator rend() { return m_data.rend(); }
-    std::vector<Event>::iterator begin() { return m_data.begin(); }
-    std::vector<Event>::iterator end() { return m_data.end(); }
-    Event& operator[]( const size_t& pos ) { return m_data[pos]; }
-    real_t* getEvent( const size_t& index ) { return (( *this )[index] ); }
+    std::vector<Event>::reverse_iterator rend()   { return m_data.rend(); }
+    std::vector<Event>::iterator begin()          { return m_data.begin(); }
+    std::vector<Event>::iterator end()            { return m_data.end(); }
+    Event& operator[]( const size_t& pos )        { return m_data[pos]; }
+    real_t* getEvent( const size_t& index )       { return (( *this )[index] ); }
     const real_t* getEvent( const size_t& index ) const { return (const real_t*)(( *this )[index] ); }
     std::vector<Event>::const_iterator begin() const { return m_data.cbegin(); }
     std::vector<Event>::const_iterator end() const { return m_data.cend(); }
@@ -72,7 +71,6 @@ namespace AmpGen
 
     void reserve( const size_t& size ) { m_data.reserve( size ); }
     void push_back( const Event& evt ) { m_data.push_back( evt ); }
-//    void emplace_back( Event&& evt ){ m_data.emplace_back( evt ) ; }
     void setEventType( const EventType& type ) { m_eventType = type; }
 
     double integral() const;
@@ -164,9 +162,10 @@ namespace AmpGen
       m_data.erase( begin, end );
     }
     template <class FCN>
-    void transform( FCN&& fcn )
+    EventList& transform( FCN&& fcn )
     {
       for ( auto& event : m_data ) fcn( event );
+      return *this;
     }
     template <class FCN>
     void filter( FCN&& fcn ){

@@ -35,7 +35,6 @@ void MinuitParameter::setResult( double fitMean, double fitErr, double fitErrPos
 
 void MinuitParameter::print( std::ostream& os ) const
 {
-  // ... in a format that can be read back in
   os << std::left << std::setw(65) << name() << "\t" << iFixInit() << "\t" << mean() << "\t" << err() << "\t" << minInit() << "\t" << maxInit();
 }
 

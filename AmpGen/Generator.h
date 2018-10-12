@@ -141,5 +141,17 @@ namespace AmpGen
       return evts;
     }
   };
+  template <class FCN>
+  class PDFWrapper {
+    FCN m_fcn;
+    public:
+    void prepare(){};
+    void setEvents( AmpGen::EventList& evts ){};
+    double prob_unnormalised( const AmpGen::Event& evt ) const { return m_fcn(evt); }
+    PDFWrapper( const FCN& fcn ) : m_fcn(fcn) {}
+    size_t size() const { return 0; }
+    void reset( const bool& flag = false ){};
+  };
+
 } // namespace AmpGen
 #endif

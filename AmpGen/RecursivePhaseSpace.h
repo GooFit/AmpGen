@@ -39,7 +39,7 @@ namespace AmpGen
 
     void SetDecay( const double& mother, const std::vector<double>& daughters ) {}
 
-    RecursivePhaseSpace( const Particle& decayChain, const EventType& type )
+    RecursivePhaseSpace( const Particle& decayChain, const EventType& type, TRandom*  rndm = gRandom )
         : m_name( decayChain.name() ), m_eventType( type )
     {
       std::vector<double> masses;
@@ -68,6 +68,7 @@ namespace AmpGen
         }
       }
       m_phsp.SetDecay( decayChain.mass(), masses );
+      setRandom( rndm );
     }
     std::vector<RecursivePhaseSpaceNode*> getFinalStates()
     {
@@ -81,6 +82,7 @@ namespace AmpGen
         }
       }
       return rt;
+
     }
 
     void print( const size_t offset = 0 ) const

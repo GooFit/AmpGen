@@ -95,90 +95,37 @@ namespace AmpGen
 
   struct HadronicParameters {
 
-    HadronicParameters() : n1( 0 ), n2( 0 ), coherence( 0, 0 ), nFills( 0 ), id( 0 ), binID( 0 ) {}
+    HadronicParameters( const double& _R, const double& _d, const double& k1 );
+    HadronicParameters( const double& _R, const double& _d, const double& k1, const double& k2 );
+    HadronicParameters() : n1( 0 ), n2( 0 ), wt(0), coherence( 0, 0 ), nFills( 0 ), id( 0 ), binID( 0 ) {}
 
     double n1;
     double n2;
+    double wt;
     std::complex<double> coherence;
     unsigned int nFills;
     unsigned int id;
     unsigned int binID;
-    std::complex<double> getCoherence() const { return coherence / sqrt( n1 * n2 ); }
-    void reset()
-    {
-      n1        = 0;
-      n2        = 0;
-      coherence = 0;
-      nFills    = 0;
-      id        = 0;
-    }
-    void scale_p1( const double& sf )
-    {
-      n1 /= sf;
-      coherence /= sqrt( sf );
-    }
-    void scale_p2( const double& sf )
-    {
-      n2 /= sf;
-      coherence /= sqrt( sf );
-    }
-
-    void rotate( const double& angle ) { coherence *= std::complex<double>( cos( angle ), sin( angle ) ); }
-    double d() const { return -std::arg( coherence ); }
+    double I1() const { return n1 / wt  ; }
+    double I2() const { return n2 / wt  ; }
+    double d() const { return std::arg( coherence ); }
     double R() const { return std::abs( getCoherence() ); }
-    double r() const { return sqrt( n1 / n2 ); }
-    void clear() { n1 = ( 0 ), n2 = ( 0 ), coherence = std::complex<double>( 0, 0 ); }
+    double r() const { return sqrt( n1 / n2 ); } 
+    std::complex<double> getCoherence() const { return coherence / ( wt * sqrt( I1() * I2() ) ) ; }
+    void scale_p1( const double& sf );
+    void scale_p2( const double& sf );
+    void rotate( const double& angle );
+    void clear();
 
-    void add( const std::complex<double>& f1, const std::complex<double>& f2, const double& weight = 1 )
-    {
-      n1 += weight * std::norm( f1 );
-      n2 += weight * std::norm( f2 );
-      coherence += weight * f1 * std::conj(f2) ;
-      nFills++;
-    }
-    HadronicParameters( const double& _R, const double& _d, const double& k1 )
-        : n1( k1 * k1 ), n2( 1 ), coherence( k1 * _R * cos( M_PI * _d / 180. ), k1 * _R * sin( M_PI * _d / 180. ) ){};
-    HadronicParameters( const double& _R, const double& _d, const double& k1, const double& k2 )
-        : n1( k1 ), n2( k2 ), coherence( sqrt( k1 * k2 ) * _R * cos( _d ), sqrt( k1 * k2 ) * _R * sin( _d ) ){};
+    void add( const std::complex<double>& f1, const std::complex<double>& f2, const double& weight = 1 );
 
-    HadronicParameters operator+=( const HadronicParameters& other )
-    {
-      n1 += other.n1;
-      n2 += other.n2;
-      coherence += other.coherence;
-      nFills += other.nFills;
-      return *this;
-    }
-    HadronicParameters operator-=( const HadronicParameters& other )
-    {
-      n1 -= other.n1;
-      n2 -= other.n2;
-      coherence -= other.coherence;
-      nFills -= other.nFills;
-      return *this;
-    }
+    HadronicParameters operator+=( const HadronicParameters& other );
+    HadronicParameters operator-=( const HadronicParameters& other );
 
-    std::string to_string() const
-    {
-      auto c = getCoherence();
-
-      std::string total = "R = " + round( R() , 3 ) + " δ = " + round( 180 * d() / M_PI, 2 ) +
-                          " r = " + round( r(), 4 ) + " K = " + round( n1, 6 ) + " K' = " + round( n2, 6 ) + " N = " +
-                          std::to_string( nFills ) + " ci = " + std::to_string( std::real( c ) ) + " si = " +
-                          std::to_string( std::imag( c ) );
-      return total;
-    }
+    std::string to_string() const;
   };
-  HadronicParameters operator+( const HadronicParameters& a, const HadronicParameters& b )
-  {
-    HadronicParameters hp;
-    hp.n1        = a.n1 + b.n1;
-    hp.n2        = a.n2 + b.n2;
-    hp.coherence = a.coherence + b.coherence;
-    hp.nFills    = a.nFills + b.nFills;
-    return hp;
-  }
 
+  HadronicParameters operator+( const HadronicParameters& a, const HadronicParameters& b );
   class CoherenceFactor
   {
   private:
@@ -196,6 +143,7 @@ namespace AmpGen
     EventList* m_data;
     EventType m_type;
 
+    void MakeEventDeltaPlots(const std::vector<CoherenceEvent>& events );
   public:
     BinDT& getDT() { return m_voxels; }
     double phase();
@@ -214,10 +162,11 @@ namespace AmpGen
     void makeCoherentMapping( const unsigned int& nBins,
                               const std::function<std::vector<double>( const Event& )>& functors = nullptr,
                               const size_t& maxDepth = 20, const size_t& minPop = 50,
-                              const std::function<uint64_t( const Event& )>& flagFunctor = nullptr );
+                              const std::function<uint64_t( const Event& )>& flagFunctor = nullptr,
+                              const bool& refreshEvents = true );
     void makeCoherentMapping( const unsigned int& nBins, const BinDT& binDT );
 
-    void groupByStrongPhase( const std::vector<CoherenceEvent>& coherenceEvents = {} );
+    void groupByStrongPhase( const std::vector<CoherenceEvent>& coherenceEvents = {}, const bool& recalculateVoxels =true );
 
     void readBinsFromFile( const std::string& binName ); ///
     unsigned int getBinNumber( const Event& event ) const;

@@ -36,11 +36,10 @@ std::string AmpGen::programatic_name( std::string s )
 void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
 {
   ASTResolver resolver( m_evtMap, mps );
-  resolver.useCompileTimeConstants = 
-    NamedParameter<bool>( "CompiledExpression::UseCompileTimeConstants", false ); 
+  resolver.useCompileTimeConstants = NamedParameter<bool>( "CompiledExpression::UseCompileTimeConstants", false ); 
   resolver.getOrderedSubExpressions( m_obj,  m_dependentSubexpressions );
-  for ( auto& sym : m_db ) 
-    resolver.getOrderedSubExpressions( sym.second, m_dependentSubexpressions  );
+  for ( auto& sym : m_db ) sym.second.resolve( resolver ); 
+    //    resolver.getOrderedSubExpressions( sym.second, m_dependentSubexpressions  );
   resolveParameters(resolver);
 }
 

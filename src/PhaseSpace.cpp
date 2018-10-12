@@ -48,24 +48,6 @@ double PhaseSpace::PDK( double a, double b, double c )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Assignment operator
-
-PhaseSpace& PhaseSpace::operator=( const PhaseSpace& gen )
-{
-  m_nt     = gen.m_nt;
-  m_wtMax  = gen.m_wtMax;
-  m_teCmTm = gen.m_teCmTm;
-
-  for ( unsigned int i = 0; i < m_nt; i++ )
-    //   fPrims.push_back(gen.fPrims[i]);
-    m_mass[i] = gen.m_mass[i];
-
-  for ( unsigned int i = 0; i < m_nt; i++ ) m_decPro[i] = gen.m_decPro[i];
-
-  return *this;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 ///  Generate a random final state.
 ///  The function returns the weigth of the current event.
 ///  The TLorentzVector of each decay product can be obtained using GetDecay(n).
@@ -74,7 +56,6 @@ PhaseSpace& PhaseSpace::operator=( const PhaseSpace& gen )
 
 double PhaseSpace::Generate()
 {
-
   //  std::vector<double> rno( m_nt, 0 );
   std::array<double, kMAXP> rno;
   double pd[kMAXP];
@@ -186,16 +167,6 @@ Bool_t PhaseSpace::SetDecay( const double& m0, const std::vector<double>& mass )
   return kTRUE;
 }
 
-PhaseSpace::PhaseSpace( const PhaseSpace& gen )
-{
-  m_nt     = gen.m_nt;
-  m_wtMax  = gen.m_wtMax;
-  m_teCmTm = gen.m_teCmTm;
-  for ( unsigned int i = 0; i < m_nt; i++ ) {
-    m_mass[i]   = gen.m_mass[i];
-    m_decPro[i] = gen.m_decPro[i];
-  }
-}
 
 PhaseSpace::PhaseSpace( const EventType& type, TRandom* rand ) : m_type( type ), m_rand( rand )
 {
@@ -211,6 +182,7 @@ AmpGen::Event PhaseSpace::makeEvent( const unsigned int& cacheSize )
 {
   Generate();
   AmpGen::Event newEvent( m_type.eventSize(), cacheSize );
+  //INFO( "EventSize = " << m_type.eventSize() << " nParticles = " << m_nt ); 
   for ( unsigned int i = 0; i < m_nt; ++i ) {
     newEvent.set( i, {m_decPro[i].Px(), m_decPro[i].Py(), m_decPro[i].Pz(), m_decPro[i].E()} );
   }

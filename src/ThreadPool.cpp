@@ -27,6 +27,7 @@ ThreadPool::ThreadPool(const size_t& nt)
 
 ThreadPool::~ThreadPool()
 {
+  INFO("Clearing rest of queue <> jobs = " << m_tasks.size() );
   {
     std::unique_lock<std::mutex> lock(m_queue_mutex);
     m_stop = true;
@@ -34,4 +35,18 @@ ThreadPool::~ThreadPool()
   m_condition.notify_all();
   for(std::thread &worker: m_workers)
     worker.join();
+  INFO("Remaining tasks = " << m_tasks.size() );
+}
+
+void ThreadPool::waitForStoppedThreads()
+{
+  {
+    std::unique_lock<std::mutex> lock(m_queue_mutex);
+    m_stop = true;
+  }
+  m_condition.notify_all();
+  for(std::thread &worker: m_workers)
+    worker.join();
+
+  m_stop = false;
 }

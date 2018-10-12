@@ -150,7 +150,6 @@ namespace AmpGen
     DECLARE_LINESHAPE( ExpFF );
 
     DECLARE_LINESHAPE( FormFactor );
-    DECLARE_LINESHAPE( NonRes );
 
     /// Gaussian lineshape \f$ = e^{ -(x-\mu)^2 / 2\sigma^{2} } \f$
     DECLARE_LINESHAPE( Gaussian );

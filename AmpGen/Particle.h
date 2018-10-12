@@ -88,7 +88,7 @@ namespace AmpGen
     unsigned int m_index;                                  ///< Index, for constructing four-momenta
     unsigned int m_originalIndex;                          ///< Starting index, used in Bose-symmetrisation
     unsigned int m_orbital;                                ///< Orbital angular momentum between daughters
-    unsigned int m_spinConfigurationNumber;                ///< Spin configuration quantum number
+    unsigned int m_spinConfigurationNumber;                ///< Spin configuration quantum number 'S'
     unsigned int m_minL;                                   ///< Minimum orbital angular momentum
     bool m_isHead;                                         ///< Flag that particle is head of decay chain
     bool m_isStateGood;                                    ///< Flag to check the decay is well-formed
@@ -119,20 +119,22 @@ namespace AmpGen
 
     void addModifier( const std::string& mod );
     void parseModifier( const std::string& mod );
-    int conjugate( bool invertHead = false , bool reorder = true);
     void setOrdering( const std::vector<size_t>& ordering );
     void addDaughter( const std::shared_ptr<Particle>& particle );
     void setPolarisationState( const int& state );
-    std::pair<size_t,size_t> orbitalRange( bool converseParity = true ) const; ///< Range of possible orbital angular momenta between decay products
+    std::pair<size_t,size_t> orbitalRange( const bool& converseParity = true ) const; ///< Range of possible orbital angular momenta between decay products
 
+    std::vector< std::pair<double,double> > spinOrbitCouplings( const bool& conserveParity = true ) const;
     const ParticleProperties* props() const;
     MultiQuarkContent quarks() const;
     MultiQuarkContent daughterQuarks() const;
     int parity() const;
     int finalStateParity() const;
     int polState() const;
+    int conjugate( bool invertHead = false , bool reorder = true);
     double mass() const;
     double spin() const;    
+    double S() const; 
     bool isTop() const;
     bool isWeakDecay() const;
     bool isStateGood() const;

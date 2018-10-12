@@ -207,6 +207,7 @@ void EventList::resetCache()
 {
   m_pdfIndex.clear();
   for ( auto evt = begin(); evt != end(); ++evt ) evt->resizeCache( 0 );
+  m_lastCachePosition = 0;
 }
 
 double EventList::integral() const

@@ -89,7 +89,7 @@ namespace AmpGen
     //    operator double() const { return m_value ; }
     operator double() const { return m_parameter->mean(); }
     double getFast() const { return m_value ; }
-    MinuitProxy( MinuitParameter* param = nullptr ) : m_parameter( param ) { update(); }
+    MinuitProxy( MinuitParameter* param = nullptr ) : m_parameter( param ) { if( m_parameter != nullptr ) update(); }
     MinuitParameter* operator->() { return m_parameter; }
     const MinuitParameter* operator->() const { return m_parameter; }
   };

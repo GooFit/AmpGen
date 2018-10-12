@@ -23,13 +23,15 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Units.h"
+#include "AmpGen/Wigner.h"
+#include "AmpGen/RaritaSchwinger.h"
 
 using namespace AmpGen;
 using AmpGen::Lineshape::LineshapeFactory;
 
 Particle::Particle()
   : m_lineshape( "BW" )
-  , m_polState( 999 )
+  , m_polState( 0 )
   , m_index( 999 )
   , m_originalIndex( 999 )
   , m_orbital( 0 )
@@ -127,22 +129,16 @@ void Particle::parseModifier( const std::string& mod )
   if( mod.size() == 1 )
   {
     DEBUG( "Modifier = " << mod );
-    if ( mod == "S" )
-      m_orbital = 0;
-    else if ( mod == "P" )
-      m_orbital = 1;
-    else if ( mod == "D" )
-      m_orbital = 2;
-    else if ( mod == "F" )
-      m_orbital = 3;
+    if ( mod == "S" ) m_orbital = 0;
+    else if ( mod == "P" ) m_orbital = 1;
+    else if ( mod == "D" ) m_orbital = 2;
+    else if ( mod == "F" ) m_orbital = 3;
+    else if ( mod == "G" ) m_orbital = 4;
+    else if ( mod == "H" ) m_orbital = 5;
+    else if ( mod == "I" ) m_orbital = 6;
     bool status=true;
     auto tmp = lexical_cast<unsigned int>(mod,status);
-    if( status )
-      m_spinConfigurationNumber = tmp;
-    else if ( mod == "+" ) 
-      m_polState =  1;
-    else if ( mod == "-" ) 
-      m_polState = -1;
+    if( status ) m_spinConfigurationNumber = tmp;
   }
   else if ( mod.size() == 2 )
   {
@@ -154,6 +150,7 @@ void Particle::parseModifier( const std::string& mod )
 }
 
 double Particle::spin() const { return double( m_props->twoSpin() / 2. ) ; }
+double Particle::S() const { return m_spinConfigurationNumber ; }
 
 std::string Particle::vertexName() const
 {
@@ -171,7 +168,7 @@ std::string Particle::vertexName() const
   auto vx=  m_props->spinName() + "_" + 
     m_daughters[0]->m_props->spinName() + 
     m_daughters[1]->m_props->spinName() + "_" + orbitalString;
-  
+
   return vx;
 }
 
@@ -181,16 +178,20 @@ void Particle::pdgLookup()
     m_isStateGood = false;
     return;
   }
+
   if ( m_lineshape == "BW" || m_usesDefaultLineshape ) {
-    if ( m_name.find( "NonRes" ) != std::string::npos ) m_lineshape = "NonRes";
-    if ( m_props->width() < 1e-3 ) m_lineshape                      = "FormFactor";
-    // INFO("Setting default lineshape for " << m_name << " to " << m_lineshape );
+    if ( m_name.find( "NonRes" ) != std::string::npos || m_props->width() < 1e-3 ) 
+      m_lineshape = "FormFactor";
     m_usesDefaultLineshape = true;
   } else
     m_usesDefaultLineshape = false;
   m_parity                 = m_props->P();
   if ( !isdigit( m_props->J()[0] ) ) {
     ERROR( "Spin not recognised! : " << m_name << " J = " << m_props->J() );
+  }
+  std::string default_modifier = NamedParameter<std::string>("Particle::DefaultModifier","");
+  if( default_modifier != "" && m_lineshape.find(".") == std::string::npos ){
+    m_lineshape = m_lineshape + "." +default_modifier;
   }
   bool isStrong = quarks() == daughterQuarks();
   DEBUG( m_name << " is decaying via " << ( isStrong ? "strong" : "electroweak" ) << " interactions; P = " << props()->P() );
@@ -332,7 +333,7 @@ Expression Particle::Lineshape( DebugSymbols* db ) const
 {
   if ( db != nullptr && !isStable() ) db->emplace_back( uniqueString() +" lineshape", Parameter( "NULL", 0, true ) );
   if ( m_daughters.size() == 0 ) return 1;
-  
+
   Expression total( 1. );
   DEBUG( "Getting lineshape " << m_lineshape << " for " << m_name );
   Expression s = m_isHead ? dot(P(),P()) : massSq();
@@ -343,8 +344,8 @@ Expression Particle::Lineshape( DebugSymbols* db ) const
     DEBUG( "Three-body propagator defaults to fixed-width Breit-Wigner" );
     std::string shape = m_lineshape == "BW" ? "SBW" : m_lineshape;
     auto propagator   = ( LineshapeFactory::getGenericShape(
-        shape, {daughter( 0 )->P(), daughter( 1 )->P(), daughter( 2 )->P()}, m_name, m_orbital, db ) );
-     
+          shape, {daughter( 0 )->P(), daughter( 1 )->P(), daughter( 2 )->P()}, m_name, m_orbital, db ) );
+
     total = total * propagator ;  
   }  
   for ( auto& d : m_daughters ) total = total * make_cse( d->Lineshape( db ) );
@@ -384,6 +385,8 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   if ( db != nullptr && !isStable() ) 
     db->emplace_back( uniqueString() , Parameter( "NULL", 0, true ) );
 
+  std::string spinFormalism = NamedParameter<std::string>("Particle::SpinFormalism","RaritaSchwinger");
+
   Expression total( 0 );
   auto finalStateParticles = getFinalStateParticles();
   auto orderings            = identicalDaughterOrderings();
@@ -392,19 +395,21 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   bool includeSpin          = !hasModifier( "BgSpin0" );
   for ( auto& ordering : orderings ) {
     setOrdering( ordering );
-    auto spinTensor = SpinTensor(db);
-    Expression spinFactor = 1;
-    if( includeSpin && m_props->twoSpin() == 0 ) spinFactor = spinTensor[0];
-    if( includeSpin && m_props->twoSpin() == 1 ){
-      Tensor is = Bar( ExternalSpinTensor(m_polState) );
-      ADD_DEBUG( is[0], db );
-      ADD_DEBUG( is[1], db );
-      ADD_DEBUG( is[2], db );
-      ADD_DEBUG( is[3], db );
-      DEBUG( "Computing \\bar{u}_i T^{ij} u'_j" << " " << spinTensor.size() << " " << is.size() );
-      if( spinTensor.size() != 4 ){ ERROR("Spin tensor is the wrong rank = " << spinTensor.dimString() ); spinFactor = 1; }
-      else { spinFactor = is[0] * spinTensor[0] + is[1]*spinTensor[1] + is[2]*spinTensor[2] + is[3]*spinTensor[3]; }
+    Expression spinFactor = 1; 
+
+    if( includeSpin && spinFormalism == "RaritaSchwinger" ){
+      Tensor spinTensor = SpinTensor(db);
+      if( m_props->twoSpin() == 0 ) spinFactor = spinTensor[0];
+      if( m_props->twoSpin() == 1 ){
+        Tensor is = Bar( ExternalSpinTensor(m_polState) );
+        if( spinTensor.size() != 4 ){ ERROR("Spin tensor is the wrong rank = " << spinTensor.dimString() ); spinFactor = 1; }
+        else { spinFactor = is[0] * spinTensor[0] + is[1]*spinTensor[1] + is[2]*spinTensor[2] + is[3]*spinTensor[3]; }
+      }
     }
+    if ( includeSpin && spinFormalism == "Helicity" ){
+      spinFactor = helicityAmplitude( *this, Identity(4), double(polState())/2.0, db ); 
+    }
+
     ADD_DEBUG( spinFactor, db );
     DEBUG( "Got spin matrix element -> calculating lineshape product" );
     if ( sumAmplitudes ) total = total + make_cse ( Lineshape( db ) ) * spinFactor;
@@ -483,11 +488,11 @@ Tensor Particle::ExternalSpinTensor(const int& polState, DebugSymbols* db ) cons
     if( m_props->mass() == 0  ){
       Expression N = 1./(pP*sqrt(2)); 
       if( polState ==  1 ) return N * Tensor({ -pZ - pY*invPT2*(pP-pZ)*(pY-I*pX), 
-                                  -I*pZ + pX*invPT2*(pP-pZ)*(pY-I*pX),
-                                     ( pX + I*pY), 0 } );
+          -I*pZ + pX*invPT2*(pP-pZ)*(pY-I*pX),
+          ( pX + I*pY), 0 } );
       if( polState == -1 ) return N * Tensor({ pZ + pY*invPT2*(pP-pZ)*(pY+I*pX), 
-                                      I*pZ - pX*invPT2*(pP-pZ)*(pY+I*pX),
-                                     ( -pX + I*pY), 0 } );
+          I*pZ - pX*invPT2*(pP-pZ)*(pY+I*pX),
+          ( -pX + I*pY), 0 } );
       if( polState == 0 ) ERROR("Photon should does not have a rest frame, cannot be in m=0 state");
     }
   }
@@ -501,10 +506,10 @@ Tensor Particle::ExternalSpinTensor(const int& polState, DebugSymbols* db ) cons
     Expression xi01    = make_cse(Ternary( aligned,  0, (pP+pZ)/n ));
     Expression xi10    = make_cse(Ternary( aligned,  0, (pP+pZ)/n ));
     Expression xi11    = make_cse(Ternary( aligned,  1, z/n ));
-//    if(id > 0 && polState ==  1 ) return Tensor({  fm*xi10,  fm*xi11,  fp*xi10,  fp*xi11 } );
-//    if(id > 0 && polState == -1 ) return Tensor({  fp*xi00,  fp*xi01,  fm*xi00,  fm*xi01 } );
-//    if(id < 0 && polState ==  1 ) return Tensor({ -fp*xi00, -fp*xi01,  fm*xi00,  fm*xi01 } );
-//    if(id < 0 && polState == -1 ) return Tensor({  fm*xi10,  fm*xi11, -fp*xi01, -fp*xi11 } );     
+    //    if(id > 0 && polState ==  1 ) return Tensor({  fm*xi10,  fm*xi11,  fp*xi10,  fp*xi11 } );
+    //    if(id > 0 && polState == -1 ) return Tensor({  fp*xi00,  fp*xi01,  fm*xi00,  fm*xi01 } );
+    //    if(id < 0 && polState ==  1 ) return Tensor({ -fp*xi00, -fp*xi01,  fm*xi00,  fm*xi01 } );
+    //    if(id < 0 && polState == -1 ) return Tensor({  fm*xi10,  fm*xi11, -fp*xi01, -fp*xi11 } );     
     Expression fa = (fm+fp)/sqrt(2);
     Expression fb = (fm-fp)/sqrt(2);
     if(id > 0 && polState ==  1 ) return Tensor({  fa*xi10,  fa*xi11,  fb*xi10,  fb*xi11 } );
@@ -542,7 +547,7 @@ bool Particle::checkExists() const
   return success;
 }
 
-std::pair<size_t, size_t> Particle::orbitalRange( bool conserveParity ) const
+std::pair<size_t, size_t> Particle::orbitalRange( const bool& conserveParity ) const
 {
   if ( m_daughters.size() == 0 ) return {0, 0};
   if ( m_daughters.size() != 2 ) {
@@ -566,7 +571,7 @@ std::pair<size_t, size_t> Particle::orbitalRange( bool conserveParity ) const
   for ( ; l < max + 1; ++l ){
     if ( conservesParity( l ) ) break;
   }
-  if ( l == max + 1 ) return {999, 998};
+  if ( l == max + 1 ) return {999, 999};
   std::pair<size_t, size_t> lLimit = {l, l};
   l = max;
   for ( ; l != min - 1; --l )
@@ -574,6 +579,27 @@ std::pair<size_t, size_t> Particle::orbitalRange( bool conserveParity ) const
   lLimit.second = l;
   return lLimit;
 }
+
+std::vector< std::pair<double,double> > Particle::spinOrbitCouplings( const bool& conserveParity ) const 
+{   
+  auto lRange = orbitalRange( conserveParity );
+  std::vector< std::pair<double, double> > lsCouplings; 
+  const double J  = m_props->twoSpin() / 2.0;
+  const double j1 = daughter( 0 )->props()->twoSpin() /2.0;
+  const double j2 = daughter( 1 )->props()->twoSpin() /2.0;
+  for( double L = lRange.first; L <= lRange.second; ++L )
+  {
+    if( conserveParity && !conservesParity(L) ) continue; 
+    for( double S = abs(j1-j2); S <= j1+j2 ; ++S ){
+      double z2 = J*J - L*L - S*S;
+      if(  L != 0 && S != 0  && abs(z2/(2*L*S)) <= 1 ) lsCouplings.emplace_back(L,S);
+      if( (L == 0 || S == 0) && z2 == 0 )              lsCouplings.emplace_back(L,S);
+    }
+  }
+  return lsCouplings; 
+}
+
+
 
 std::string Particle::texLabel( const bool& printHead ) const
 {
@@ -624,7 +650,7 @@ int Particle::conjugate( bool invertHead , bool reorder )
 
 MultiQuarkContent Particle::quarks() const
 {
-  return m_lineshape == "NonRes" ? daughterQuarks() : m_props->netQuarkContent();
+  return m_name.find("NonRes") != std::string::npos ? daughterQuarks() : m_props->netQuarkContent();
 }
 MultiQuarkContent Particle::daughterQuarks() const
 {
@@ -709,7 +735,7 @@ bool Particle::operator<( const Particle& other )
   if ( isStable() && !other.isStable() ) return false;
   if ( mass() != other.mass() ) return mass() > other.mass();
   if ( fabs( props()->pdgID() )  == fabs( other.props()->pdgID() )
-       && props()->pdgID() != other.props()->pdgID() ) return props()->pdgID() > other.props()->pdgID();
+      && props()->pdgID() != other.props()->pdgID() ) return props()->pdgID() > other.props()->pdgID();
   if ( props()->charge() != other.props()->charge() ) return props()->charge() > other.props()->charge();
   if ( props()->pdgID() != other.props()->pdgID() ) return props()->pdgID() > other.props()->pdgID();
   return index() < other.index();
@@ -727,7 +753,7 @@ void Particle::setPolarisationState( const int& state )
 {
   if( m_props->isFermion() && (state > m_props->twoSpin() || state == 0 ) ){
     WARNING("Invalid polarisation state for fermion ["<<name() << "] = " << state );
-    m_polState = 999 ; 
+    m_polState = 999; 
   }
   else if ( m_props->isBoson() && state > m_props->twoSpin() / 2 ){
     WARNING("Invalid polarisation state for boson ["<< name() <<"] = " << state );

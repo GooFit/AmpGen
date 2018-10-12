@@ -10,16 +10,15 @@ double fact( const double& z )
   return f;
 }
 
-double nCr( const int& n, const int& r ){
+double nCr_( const int& n, const int& r ){
   double z=1;
   for( int f=1; f <= r ; ++f ) z *= double(n+1-f)/double(f);
   return z;
 }
 
-/// computes (1+x)^n
 Expression ExpandedBinomial( const Expression& x, const unsigned int& n ){
   Expression sum;
-  for( unsigned int k = 0 ; k <= n ; ++k ) sum = sum + nCr(n,k) * fcn::fpow(x,k);
+  for( unsigned int k = 0 ; k <= n ; ++k ) sum = sum + nCr_(n,k) * fcn::fpow(x,k);
   return sum; 
 }
 
@@ -28,8 +27,6 @@ Expression AmpGen::wigner_d( const Expression& cb, const double& j, const double
 {
   int k_min = std::max(0.,m+n);
   int k_max = std::min(j+m,j+n);
-  //Expression cb = fcn::cos(beta);
-  //Expression sgn_sin = Ternary(beta>0, 1, -1 );
   Expression sum = 0 ; 
   double w2_num = fact(j+m) * fact(j-m) * fact(j+n) * fact(j-n);
   double nc_intpart = 0;
@@ -37,8 +34,6 @@ Expression AmpGen::wigner_d( const Expression& cb, const double& j, const double
   double frac_nc = modf( k_min -(m+n)/2.    , &nc_intpart );
   double frac_ns = modf( j + (m+n)/2. -k_min, &ns_intpart );
   Expression fractional_part = 1 ; 
-  //Expression sign = pow(-1,j+m) * fcn::pow( sgn_sin, frac_ns==0.5);
-
   if( frac_nc == 0.5 && frac_ns != 0.5 )      fractional_part = fcn::sqrt(1+cb);
   else if( frac_nc != 0.5 && frac_ns == 0.5 ) fractional_part = fcn::sqrt(1-cb);
   else if( frac_nc == 0.5 && frac_ns == 0.5 ) fractional_part = fcn::sqrt(1-cb*cb);  
@@ -85,19 +80,24 @@ double AmpGen::CG(
 
 using namespace AmpGen::fcn;
 
-Tensor AmpGen::rotationMatrix( const Tensor& P ){
-  Tensor R(std::vector<size_t>({4,4}));
+Tensor AmpGen::rotationMatrix( const Tensor& P , const bool& handleZero ){
+  if( P.dims() != std::vector<size_t>({4}) && P.dims() != std::vector<size_t>({3}) ){
+    ERROR("rotationMatrix only implemented for spatial three/four vectors, rank of argument = " << 
+        P.dimString() );
+    return Tensor();
+  } 
+  Tensor R(std::vector<size_t>({P.size(),P.size()}));
   auto px = P[0];
   auto py = P[1];
   auto pz = P[2];
   auto p2  = make_cse(px*px + py*py + pz*pz);
   auto pt2 = make_cse(px*px + py*py);
   auto p   = sqrt(p2); 
-  Expression f    = Ternary( abs(p  ) < 1e-8  , 0 , pz/p - 1);
-  Expression pxn  = Ternary( abs(pt2) < 1e-8  , 0 , px/sqrt(pt2));
-  Expression pyn  = Ternary( abs(pt2) < 1e-8  , 0 , py/sqrt(pt2));
-  Expression pxn2 = Ternary( abs(px)  < 1e-8  , 0 , px/p);
-  Expression pyn2 = Ternary( abs(py)  < 1e-8  , 0 , py/p);
+  Expression f    = !handleZero ? ( pz/p - 1) : Ternary( fcn::abs(p  ) < 1e-6  , 0 , pz/p - 1);
+  Expression pxn  = !handleZero ? ( px/sqrt(pt2)) : Ternary( fcn::abs(pt2) < 1e-6  , 0 , px/sqrt(pt2));
+  Expression pyn  = !handleZero ? ( py/sqrt(pt2)) : Ternary( fcn::abs(pt2) < 1e-6  , 0 , py/sqrt(pt2));
+  Expression pxn2 = !handleZero ? ( px/p) : Ternary( fcn::abs(px)  < 1e-6  , 0 , px/p);
+  Expression pyn2 = !handleZero ? ( py/p) : Ternary( fcn::abs(py)  < 1e-6  , 0 , py/p); 
   R(0,0) = 1. + pxn*pxn*f;
   R(1,0) = pxn*pyn*f;
   R(2,0) = pxn2;
@@ -111,11 +111,23 @@ Tensor AmpGen::rotationMatrix( const Tensor& P ){
   return R;
 }
 
-Tensor AmpGen::helicityTransformMatrix( const Tensor& P, const Expression& E, const Expression& M, const double& ve )
+Tensor AmpGen::helicityTransformMatrix( const Tensor& P, 
+                                        const Expression& M, 
+                                        const int& ve,
+                                        const bool& handleZero )
 {
   auto dim = std::vector<size_t>({4,4});
+  if( P.dims() != std::vector<size_t>({4}) ){
+    ERROR("rotationMatrix only implemented for spatial four vectors, rank of argument = " << P.dimString() );
+    return Tensor();
+  }
+  if( ve != -1 && ve != +1 ) {
+    ERROR(" ve indicates the sign of the transformation, cannot be ve = " << ve );
+    return Tensor();
+  }
   Tensor L(dim);
-  Tensor R = rotationMatrix(P);
+  auto vP       = [](auto& tensor){ return Tensor( {-tensor[0],-tensor[1],-tensor[2], tensor[3] }  ); };
+  Tensor R = rotationMatrix( ve == 1 ? P : vP(P) , handleZero);
   Tensor::Index a,b,c;
   if( ve == -1 ){
     Tensor Rx(dim);
@@ -125,13 +137,17 @@ Tensor AmpGen::helicityTransformMatrix( const Tensor& P, const Expression& E, co
     Rx(3,3) =  1.0;
     R = Rx(a,b) * R(b,c);
   }
-  Expression p = sqrt( make_cse( P[0]*P[0] + P[1]*P[1] + P[2]*P[2] ) );
-  L(0,0) = 1.;
-  L(1,1) = 1.;
-  L(2,2) =  E / M;
-  L(2,3) =  - p / M;
-  L(3,2) =  - p / M;
-  L(3,3) =  E / M;
+  if( is<Constant>(M) && std::real(M()) == 0 ) return R ; 
+  else {
+    Expression p = sqrt( make_cse( P[0]*P[0] + P[1]*P[1] + P[2]*P[2] ) );
+    Expression E = P[3];
+    L(0,0) = 1.;
+    L(1,1) = 1.;
+    L(2,2) =  E / M;
+    L(2,3) =  - p / M;
+    L(3,2) =  - p / M;
+    L(3,3) =  E / M;
+  }
   return L(a,b) * R(b,c);
 }
 
@@ -150,3 +166,88 @@ Expression AmpGen::wigner_D(const Tensor& P,
   return  fpow( px - I * py, lB-lC-lA) * little_d; 
 }
 
+struct LS {
+  double factor; 
+  double m1;
+  double m2;
+};
+
+std::vector<LS> calculate_recoupling_constants( 
+    const double& J, 
+    const double& M,
+    const double& L, 
+    const double& S,
+    const double& j1,
+    const double& j2 ){
+
+  std::vector<LS> rt;
+  for( double m1 = -j1; m1 <= j1; ++m1 ){
+    for( double m2 = -j2; m2 <= j2; ++m2 ){
+      LS f; 
+      f.m1 = m1;
+      f.m2 = m2;
+      f.factor = sqrt( (2.*L + 1. )/( 2.*J + 1. ) );
+      f.factor *= AmpGen::CG(L ,0 ,S ,m1-m2,J,m1-m2);
+      f.factor *= AmpGen::CG(j1,m1,j2,-m2  ,S,m1-m2); 
+      if( f.factor != 0 ) rt.push_back(f);
+    }
+  }
+  return rt;
+}
+
+Expression AmpGen::helicityAmplitude( const Particle& particle, const Tensor& parentFrame, const double& Mz, DebugSymbols* db )
+{
+  if( particle.daughters().size() != 2 ) return 1; 
+  auto simplifiedParentFrame = particle.spin() == 0. ? Identity(4) : parentFrame;
+  auto particle_couplings = particle.spinOrbitCouplings(false);
+  auto L = particle.orbital();
+  auto& d0 = *particle.daughter(0);
+  auto& d1 = *particle.daughter(1);
+  
+  double S = 999;
+  if( particle.S() == 0 ){ 
+    for( auto& l : particle_couplings ) if( l.first == L ){ S = l.second ; break; }
+    if( S == 999 ) ERROR("Spin orbital coupling impossible!");
+  }
+  else S = particle.S() /2.;
+  
+  auto recoupling_constants = calculate_recoupling_constants( particle.spin(), Mz, L, S, d0.spin(), d1.spin() );
+  
+  Expression total = 0 ; 
+  Tensor::Index a,b,c;
+  Tensor f1 = simplifiedParentFrame(a,b) * d0.P()(b);
+  Tensor f2 = simplifiedParentFrame(a,b) * d1.P()(b);
+  auto L1 = helicityTransformMatrix( f1, fcn::sqrt( d0.massSq() ), 1 );
+  auto L2 = helicityTransformMatrix( f2, fcn::sqrt( d1.massSq() ), -1 );
+  f1.st();
+  f2.st();
+  L1.st();
+  L2.st();
+  if( recoupling_constants.size() == 0 ){
+    
+    WARNING( particle.uniqueString() << " " << particle.spin() << " " << 
+        particle.orbitalRange(false).first << " " << particle.orbitalRange(false).second 
+        <<  " transition Mz="<< Mz << " to " << d0.spin() << " x " << d0.spin() << " cannot be coupled in (LS) = " << L << ", " << S ); 
+    std::string lsStr = "";
+    for( auto& ls : particle_couplings ){
+      lsStr += "(" + std::to_string(int(ls.first)) + ", " + std::to_string(ls.second)  +")";
+    } 
+    WARNING( "--Possible (LS) combinations = " << lsStr );
+  }
+  for( auto& coupling : recoupling_constants ){          
+    std::string dt = "d_" + std::to_string( int(particle.spin()) ) 
+                    + "_" + std::to_string(int(Mz)) 
+                    + "_" + std::to_string(int(coupling.m1)) 
+                    + "_" + std::to_string(int(coupling.m2));
+    auto term = wigner_D( f1 , particle.spin(), Mz, coupling.m1, coupling.m2 );
+    DEBUG( particle.uniqueString() << " m1=" << coupling.m1 << " m2=" << coupling.m2 << " Mz=" << particle.polState() << " m1'=" << d0.polState() << " m2'=" << d1.polState() );
+    if( d0.isStable() && 2 * coupling.m1 != d0.polState() ) continue; 
+    if( d1.isStable() && 2 * coupling.m2 != d1.polState() ) continue; 
+    auto h1   = helicityAmplitude( d0, L1(a,b) * simplifiedParentFrame(b,c) , coupling.m1, db ) ;
+    auto h2   = helicityAmplitude( d1, L2(a,b) * simplifiedParentFrame(b,c) , coupling.m2, db ) ;
+
+    if( db != nullptr ) db->emplace_back( dt, term );
+    total = total + coupling.factor * term * h1 * h2 ; 
+  }
+  return total;
+}

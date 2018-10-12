@@ -42,8 +42,6 @@ namespace AmpGen
 
   public:
     PhaseSpace() : m_nt( 0 ), m_teCmTm( 0. ), m_wtMax( 0. ), m_rand( nullptr ) {}
-    PhaseSpace( const PhaseSpace& gen );
-    PhaseSpace& operator=( const PhaseSpace& gen );
     PhaseSpace( const EventType& type, TRandom* rand = nullptr );
     bool SetDecay( const double& m0, const std::vector<double>& mass );
     bool SetDecay( TLorentzVector& P, const unsigned int& nt, const double* mass );

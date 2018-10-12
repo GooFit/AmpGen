@@ -46,11 +46,11 @@ namespace AmpGen
       static ThreadPool* gThreadPool;
       static ThreadPool* getMe()
       {
-        if ( !gThreadPool ) 
-          gThreadPool = new ThreadPool(ThreadPool::nThreads);
+//        if ( !gThreadPool ) 
+//          gThreadPool = new ThreadPool(ThreadPool::nThreads);
         return gThreadPool;
       }
-
+      void waitForStoppedThreads(); 
       std::vector<std::thread>          m_workers;
       std::queue<std::function<void()>> m_tasks;
       std::mutex                        m_queue_mutex;

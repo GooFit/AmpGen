@@ -46,6 +46,15 @@ struct FixedLibPDF {
   void reset( const bool& flag = false ){};
 };
 
+
+template < class PDF_TYPE, class PRIOR_TYPE > void GenerateEvents( EventList& events, PDF_TYPE& pdf, PRIOR_TYPE& prior, const size_t& nEvents, const size_t& blockSize, TRandom* rndm )
+{
+  Generator<PRIOR_TYPE> signalGenerator( prior );
+  signalGenerator.setRandom( rndm);
+  signalGenerator.setBlockSize( blockSize );
+  signalGenerator.fillEventList( pdf, events, nEvents );
+}
+
 int main( int argc, char** argv )
 {
   OptionsParser::setArgs( argc, argv );
@@ -83,20 +92,20 @@ int main( int argc, char** argv )
 
   INFO("Generating events with type = " << eventType );
 
-
   if ( gen_type == "default" ) {
-    Generator<> signalGenerator( eventType );
-    signalGenerator.setRandom( &rand );
-    signalGenerator.setBlockSize( blockSize );
     FastCoherentSum sig( eventType, MPS, "" );
-    signalGenerator.fillEventList( sig, accepted, nEvents );
+    PhaseSpace phsp(eventType,&rand);
+    GenerateEvents( accepted, sig, phsp , nEvents, blockSize, &rand );
   } 
   else if ( gen_type == "PolarisedAmplitude" ){
-    Generator<> signalGenerator( eventType );
-    signalGenerator.setRandom( &rand );
-    signalGenerator.setBlockSize( blockSize );
     PolarisedAmplitude sig( eventType, MPS );
-    INFO("Filling event list .... ");
+    RecursivePhaseSpace phsp( sig.matrixElements()[0].decayTree->quasiStableTree() , eventType, &rand );
+    GenerateEvents( accepted, sig, phsp, nEvents, blockSize, &rand );
+  }
+  else if ( gen_type == "RGenerator" ) {
+    FastCoherentSum sig( eventType, MPS, "" );
+    Generator<RecursivePhaseSpace> signalGenerator( sig[0].decayTree->quasiStableTree(), eventType );
+    signalGenerator.setRandom( &rand );
     signalGenerator.fillEventList( sig, accepted, nEvents );
   }
   else if ( gen_type == "FixedLib" ) {
@@ -107,16 +116,6 @@ int main( int argc, char** argv )
     FixedLibPDF pdf( lib  );
     signalGenerator.fillEventList( pdf, accepted, nEvents );
   } 
-  else if ( gen_type == "RGenerator" ) {
-    FastCoherentSum sig( eventType, MPS, "" );
-    if ( sig.size() == 0 ) {
-      ERROR( "No matrix elements found" );
-      return -1;
-    }
-    Generator<RecursivePhaseSpace> signalGenerator( sig[0].decayTree->quasiStableTree(), eventType );
-    signalGenerator.setRandom( &rand );
-    signalGenerator.fillEventList( sig, accepted, nEvents );
-  }
   else {
     ERROR("Did not recognise configuration: " << gen_type );
   }

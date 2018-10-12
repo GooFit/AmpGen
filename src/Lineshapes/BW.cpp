@@ -19,11 +19,8 @@ DEFINE_LINESHAPE( FormFactor )
   if( lineshapeModifier == "L0" ) Lp = 0;
   if( lineshapeModifier == "L1" ) Lp = 1;
   if( lineshapeModifier == "L2" ) Lp = 2;
-  const Expression FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, Lp ) );
+  const Expression FormFactor = lineshapeModifier.find("BL") == std::string::npos ? sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, Lp ) ) : sqrt( BlattWeisskopf(q2*radius*radius, Lp ) );
   if( L != 0 ){
-    ADD_DEBUG( sqrt(s) , dbexpressions );
-    ADD_DEBUG( sqrt(s1), dbexpressions );
-    ADD_DEBUG( sqrt(s2), dbexpressions );
     ADD_DEBUG( q2      , dbexpressions );
     ADD_DEBUG( radius  , dbexpressions );
   }
@@ -50,23 +47,6 @@ DEFINE_LINESHAPE( ExpFF )
 
 DEFINE_LINESHAPE( None ) { return Constant( 1); }
 
-DEFINE_LINESHAPE( NonRes )
-{
-  auto props = ParticlePropertiesList::get( particleName );
-
-  Expression radius = Parameter( particleName + "_radius", props->radius() );
-  Expression mass   = Parameter( particleName + "_mass", props->mass() );
-
-  const Expression q2   = abs( Q2( s, s1, s2 ) );
-  const Expression q20  = abs( Q2( mass * mass, s1, s2 ) );
-  Expression FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
-
-  ADD_DEBUG( FormFactor, dbexpressions );
-  ADD_DEBUG( q2, dbexpressions );
-  ADD_DEBUG( radius, dbexpressions );
-  return FormFactor ;
-}
-
 DEFINE_LINESHAPE( BW )
 {
   auto props = ParticlePropertiesList::get( particleName );
@@ -79,7 +59,6 @@ DEFINE_LINESHAPE( BW )
   const Expression J = Constant(0,1);
   const Expression q2  = Ternary( q2_sgned > 0, q2_sgned, 0 );
   const Expression q20 = abs( Q2( mass * mass, s1, s2 ) );
-
   Expression FormFactor                       = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
   if ( lineshapeModifier == "BL" ) FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
   Expression runningWidth                     = width( s, s1, s2, mass, width0, radius, L, dbexpressions );
@@ -90,7 +69,6 @@ DEFINE_LINESHAPE( BW )
   ADD_DEBUG( BW, dbexpressions );
   ADD_DEBUG( kf, dbexpressions );
   return kf * BW;
-  ;
 }
 
 Expression aSqrtTerm( const Expression& s, const Expression& m0 )
@@ -125,8 +103,8 @@ DEFINE_LINESHAPE( Flatte )
   if ( lineshapeModifier == "CutKK" ) GKK = ( 1. / 2. ) * aSqrtTerm( s, mK0 ) + ( 1. / 2. ) * aSqrtTerm( s, mKPlus );
 
   Expression FlatteWidth = gPi * ( Gpipi + gK_by_gPi * GKK );
-  const Expression q2    = Abs( Q2( s, s1, s2 ) );
-  const Expression q20   = Abs( Q2( mass * mass, s1, s2 ) );
+  const Expression q2    = abs( Q2( s, s1, s2 ) );
+  const Expression q20   = abs( Q2( mass * mass, s1, s2 ) );
   const Expression BW    = 1. / ( -s + mass * mass - Constant( 0, 1 ) * mass * FlatteWidth );
   ADD_DEBUG( gPi, dbexpressions );
   ADD_DEBUG( mass, dbexpressions );

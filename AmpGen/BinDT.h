@@ -54,7 +54,7 @@ namespace AmpGen
           INode* m_parent;
           INode() : m_parent( nullptr ){};
           virtual ~INode()                                                                      = default;
-          virtual void visit( const std::function<void( const INode* )>& visit_function ) const = 0;
+          virtual void visit( const std::function<void( INode* )>& visit_function ) = 0;
       };
       class EndNode : public INode
     {
@@ -72,7 +72,7 @@ namespace AmpGen
         unsigned int voxNumber() const { return m_voxNumber; }
         unsigned int binNumber() const { return m_binNumber; }
         void setBinNumber( const unsigned int& binNumber ) { m_binNumber = binNumber; }
-        void visit( const std::function<void( const INode* )>& visit_function ) const override { visit_function( this ); }
+        void visit( const std::function<void(INode*)>& visit_function ) override { visit_function( this ); }
         friend class BinDT;
       private:
         unsigned int m_voxNumber;
@@ -91,7 +91,7 @@ namespace AmpGen
         }
         void serialize( std::ostream& stream ) const override;
         void setChildren( std::shared_ptr<INode> l, std::shared_ptr<INode> r );
-        void visit( const std::function<void( const INode* )>& visit_function ) const override
+        void visit( const std::function<void(INode*)>& visit_function ) override
         {
           visit_function( this );
           m_left->visit( visit_function );

@@ -100,7 +100,6 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
   auto time      = std::clock();
 
   pdf.setEvents( data );
-  INFO( "Fitting PDF with " << pdf.nPDFs() << " components" );
 
   Minimiser mini( pdf, &MPS );
   //addExtendedTerms( mini, std::get<0>( pdf.pdfs() ), MPS );
@@ -124,7 +123,7 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
       }
     }
   }
-
+  INFO( "Fitting PDF with " << pdf.nPDFs() << " components, iterating " << " " << nIterations + 1 << " times" );
   for ( unsigned int iteration = 0; iteration < nIterations + 1; ++iteration ) {
     mini.doFit();
     if ( iteration == 0 && nIterations != 0 ) {
@@ -213,7 +212,7 @@ int main( int argc, char* argv[] )
 
   FastCoherentSum   sig( evtType, MPS );
   FastIncoherentSum bkg( evtType, MPS, "Inco" );
-  FastCoherentSum misID( evtType, MPS, "MisID" );
+  FastCoherentSum misID( evtType.conj(true) , MPS  );
 
   if ( !sig.isStateGood() || !bkg.isStateGood() || !misID.isStateGood() ) {
     ERROR( "Amplitude incorrectly configured" );
@@ -230,13 +229,16 @@ int main( int argc, char* argv[] )
   const std::string cut         = NamedParameter<std::string>( "Cut", "1" );
   const std::string simCut      = NamedParameter<std::string>( "SimCut", "1" );
   unsigned int defaultCacheSize = count_amplitudes( MPS );
+  bool BAR = NamedParameter<bool>("Bar",false);
 
-  EventList events( dataFile, evtType, CacheSize(defaultCacheSize), Filter(cut) );
-  EventList eventsMC = mcFile == "" ? EventList( evtType) : EventList( mcFile, evtType, CacheSize(defaultCacheSize), Filter(simCut) ) ;
+  EventList events( dataFile, !BAR ? evtType : evtType.conj() , CacheSize(defaultCacheSize), Filter(cut) );
+  EventList eventsMC = mcFile == "" ? EventList( evtType) : EventList( mcFile, !BAR ? evtType : evtType.conj() , CacheSize(defaultCacheSize), Filter(simCut) ) ;
   auto scale_transform = [](auto& event){ for( size_t x = 0 ; x < event.size(); ++x ) event[x] /= 1000.; };
   INFO("Changing units from MeV -> GeV");
   events.transform( scale_transform );
   eventsMC.transform( scale_transform );
+  
+  if( BAR ) events.transform( [](auto& event ){ event.invertParity(4) ; } );
   INFO( "Data events: " << events.size() );  
   INFO( "MC events  : " << eventsMC.size() );
   if( mcFile == "" ){

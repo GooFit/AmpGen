@@ -61,7 +61,7 @@ PolarisedAmplitude::PolarisedAmplitude( const EventType& type, AmpGen::MinuitPar
     DebugSymbols syms;  
     for( auto& polState : all_polarisation_states ){
       set_polarisation_state( matrix_element, polState );
-      thisExpression[ i++ ] = matrix_element.first.getExpression(&syms); 
+      thisExpression[ i++ ] = make_cse( matrix_element.first.getExpression(&syms) ); 
     }
     CompiledExpression< std::vector<complex_t> , const real_t*, const real_t* > expression( 
         TensorExpression( thisExpression), 
@@ -76,13 +76,16 @@ PolarisedAmplitude::PolarisedAmplitude( const EventType& type, AmpGen::MinuitPar
     }
   }
   m_polStates = all_polarisation_states; 
-
   for( auto& thing : m_matrixElements ){
-    thing.pdf.compile();
+    CompilerWrapper(true).compile( thing.pdf, "" );
+    //thing.pdf.compile();
   }
-  m_productionParameters.emplace_back( mps["Px"] );
-  m_productionParameters.emplace_back( mps["Py"] );
-  m_productionParameters.emplace_back( mps["Pz"] ); 
+  if( mps.find("Px") == nullptr ){
+    WARNING("Polarisation parameters not defined, defaulting to (0,0,0)");
+  }
+  m_productionParameters.emplace_back( mps.addOrGet("Px",2,0,0 ) );
+  m_productionParameters.emplace_back( mps.addOrGet("Py",2,0,0 ) );
+  m_productionParameters.emplace_back( mps.addOrGet("Pz",2,0,0 ) ); 
   for( size_t i = 0 ; i < 6 ; ++i ) m_norms[i].resize( m_matrixElements.size(), m_matrixElements.size() );
 }
 
@@ -110,11 +113,7 @@ void   PolarisedAmplitude::prepare()
     t.pdf.resetExternals();
     changedPdfIndices.push_back(i);
   }
-
-  DEBUG("Building prob expression");
-  if( ! m_probExpression.isLinked() ){
-    build_probunnormalised();
-  }
+  if( ! m_probExpression.isLinked() ) build_probunnormalised();
   m_probExpression.prepare(); 
   m_weight = m_weightParam == nullptr ? 1 : m_weightParam->mean();
   if( m_integralDispatch.sim != nullptr )
@@ -138,7 +137,7 @@ void   PolarisedAmplitude::prepare()
       + std::conj(z)*( acc[4] +acc[5] ) 
       + z * ( std::conj( acc[4] + acc[5] ) );
     m_norm = std::real(total);
-    if( m_nCalls == 0 ) debug_norm();
+    //if( m_nCalls == 0 ) debug_norm();
   }
   m_nCalls++;
 }
@@ -302,11 +301,7 @@ Expression PolarisedAmplitude::probExpression( const Tensor& T_matrix, const std
 
 std::vector<FitFraction> PolarisedAmplitude::fitFractions( const LinearErrorPropagator& prop )
 {
-  //for( auto& p : m_matrixElements )
-  //{
-  //  
-  //} 
-    return std::vector<FitFraction>();
+  return std::vector<FitFraction>();
 }
 
 void PolarisedAmplitude::transferParameters()

@@ -35,11 +35,11 @@ Expression AmpGen::BlattWeisskopf_Norm( const Expression& z, const Expression& z
   switch( L ) {
     case 0: return 1;
     case 1: return (1+z0) / (1+z);
-    case 2: return (z0*z0 + 3*z + 9 ) / (z*z + 3*z + 9);
+    case 2: return (z0*z0 + 3*z0 + 9 ) / (z*z + 3*z + 9);
     case 3: return (z0*fpow(z0-15,2) + 9*fpow( 2*z0 -5,2 ) ) / (z*fpow(z-15,2) + 9*fpow( 2*z -5,2 ) );
     case 4: return (fpow(z0*z0-45*z0+105, 2)+25*z*fpow(2*z-21,2)) / (fpow(z*z-45*z+105, 2)+25*z*fpow(2*z-21,2) );
     default : 
-      ERROR("Barrier factors for implemented for L>4");
+      ERROR("Barrier factors not for implemented for L>4");
       return 0;
   }
 }
@@ -53,7 +53,7 @@ Expression AmpGen::BlattWeisskopf( const Expression& z, unsigned int L )
     case 3: return 277  *fpow(z,3) / (z*fpow(z-15,2) + 9*fpow( 2*z -5,2 ) );
     case 4: return 12746*fpow(z,4) / (fpow(z*z - 45*z + 105, 2) + 25*z*fpow(2*z-21,2) );
     default : 
-      ERROR("Barrier factors for implemented for L>4");
+      ERROR("Barrier factors not for implemented for L>4");
       return 0;
   }
 }

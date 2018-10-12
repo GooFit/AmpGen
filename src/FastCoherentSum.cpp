@@ -21,6 +21,7 @@
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/ThreadPool.h"
 
 #ifdef __USE_OPENMP__
 #include <omp.h>
@@ -48,9 +49,17 @@ FastCoherentSum::FastCoherentSum( const EventType& type, AmpGen::MinuitParameter
   auto amplitudes  = m_protoAmplitudes.getMatchingRules( m_evtType, prefix, useCartesian );
   for( auto& amp : amplitudes ) addMatrixElement( amp, mps );
 
-  for ( auto& p : m_matrixElements ) p.pdf.compile();
+//  for ( auto& p : m_matrixElements ) p.pdf.compile();
   m_isConstant = isFixedPDF(mps);
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() );
+
+ // ThreadPool threads(5);
+  for( auto& mE: m_matrixElements )
+  //  threads.enqueue( [&mE](){ 
+  //    INFO( "Compiling " << mE.decayTree->uniqueString() ); 
+      CompilerWrapper().compile( mE.pdf, ""); 
+    //  INFO("Done compiling " << mE.decayTree->uniqueString() );
+     //     } );
 }
 
 void FastCoherentSum::addMatrixElement( std::pair<Particle, Coupling>& particleWithCoupling, const MinuitParameterSet& mps )
@@ -76,6 +85,9 @@ void FastCoherentSum::addMatrixElement( std::pair<Particle, Coupling>& particleW
       std::make_shared<Particle>( protoParticle ), coupling,
       CompiledExpression<std::complex<double>, const double*, const double*>(
         expression, "p" + std::to_string(FNV1a_hash(name)), m_evtType.getEventFormat(), m_dbThis ? dbExpressions : DebugSymbols() , &mps ) );
+
+  
+
 }
 
 void FastCoherentSum::prepare()
@@ -480,7 +492,10 @@ void FastCoherentSum::reset( bool resetEvents )
 {
   m_prepareCalls                                    = 0;
   m_lastPrint                                       = 0;
-  for ( auto& mE : m_matrixElements ) mE.addressInt = 999;
+  for ( auto& mE : m_matrixElements ){
+    mE.addressInt = 999;
+    mE.addressData = 999;
+  }
   if ( resetEvents ) {
     m_events = nullptr;
     m_sim    = nullptr;
