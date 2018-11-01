@@ -91,7 +91,6 @@ namespace AmpGen {
 
       void print()      const;
       void printCache() const;
-      real_t pij( const size_t& i, const size_t& j) const ;
 
       real_t s( const size_t& index) const ;  
       real_t s( const size_t& index1, const size_t& index2 ) const ;

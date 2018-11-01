@@ -13,28 +13,21 @@ void Event::print() const {
     INFO( "P["<<i<<"] = {"<<px<<", " << py << ", " << pz << ", " << pE << "}, m = " << sqrt(fabs(s)) );
   }
 }
-double Event::pij( const size_t& i, const size_t& j) const {
-  return get(i*4+3)*get(j*4+3) - 
-    get(i*4+0)*get(j*4+0) -
-    get(i*4+1)*get(j*4+1) -
-    get(i*4+2)*get(j*4+2);
-}
-
-double Event::s( const size_t& index ) const {
+real_t Event::s( const size_t& index ) const {
   return get(4*index+3) * get(4*index+3)
     - get(4*index+0) * get(4*index+0)
     - get(4*index+1) * get(4*index+1)
     - get(4*index+2) * get(4*index+2);
 }
 
-double Event::s( const size_t& index1, const size_t& index2 ) const {
+real_t Event::s( const size_t& index1, const size_t& index2 ) const {
   return ( get(4*index1+3) + get(4*index2+3) )*( get(4*index1+3) + get(4*index2+3) ) - 
     ( get(4*index1+0) + get(4*index2+0) )*( get(4*index1+0) + get(4*index2+0) ) -
     ( get(4*index1+1) + get(4*index2+1) )*( get(4*index1+1) + get(4*index2+1) ) -
     ( get(4*index1+2) + get(4*index2+2) )*( get(4*index1+2) + get(4*index2+2) ) ;
 }
 
-double Event::s( const size_t& index1, const size_t& index2, const size_t& index3 ) const {
+real_t Event::s( const size_t& index1, const size_t& index2, const size_t& index3 ) const {
   return ( get(4*index1+3) + get(4*index2+3) + get(4*index3+3) ) *
     ( get(4*index1+3) + get(4*index2+3) + get(4*index3+3) ) - 
     ( get(4*index1+0) + get(4*index2+0) + get(4*index3+0) ) *
@@ -45,7 +38,7 @@ double Event::s( const size_t& index1, const size_t& index2, const size_t& index
     ( get(4*index1+2) + get(4*index2+2) + get(4*index3+2) ) ;
 }
 
-double Event::s( const std::vector<size_t>& indices ) const {
+real_t Event::s( const std::vector<size_t>& indices ) const {
   if( indices.size() == 2 ) return s( indices[0], indices[1] );
   if( indices.size() == 3 ) return s( indices[0], indices[1], indices[2] );
   double E=0;        double px=0;

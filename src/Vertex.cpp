@@ -138,12 +138,17 @@ Tensor AmpGen::Bar( const Tensor& P ){
 
 DEFINE_VERTEX( S_SS_S ) { return V1 * V2[0]; }
 
-DEFINE_VERTEX( S_VV_S ) { return V1( mu ) * V2( -mu ); }
+DEFINE_VERTEX( S_VV_S ) { auto v1_dot_v2 = V1( mu ) * V2( -mu ); ADD_DEBUG( v1_dot_v2,db); return v1_dot_v2; }
 
 DEFINE_VERTEX( S_VV_D )
 {
   Tensor L2   = Orbital_DWave( P, Q ) / ( GeV * GeV );
   Tensor vtol = V1( mu ) * L2( -mu, -nu ) * V2( nu );
+  auto LD = Orbital_PWave(P,Q);
+  ADD_DEBUG(LD[0],db);
+  ADD_DEBUG(LD[1],db);
+  ADD_DEBUG(LD[2],db);
+  ADD_DEBUG(LD[3],db);
   return vtol;
 }
 
@@ -166,6 +171,10 @@ DEFINE_VERTEX( V_SS_P )
   Tensor p_wave          = Orbital_PWave( P, Q );
   Expression scalar_part = V1[0] * V2[0] / GeV;
   Tensor L     = p_wave * scalar_part;
+  ADD_DEBUG( L[0], db ); 
+  ADD_DEBUG( L[1], db ); 
+  ADD_DEBUG( L[2], db ); 
+  ADD_DEBUG( L[3], db ); 
   return L;
 }
 
@@ -366,9 +375,14 @@ DEFINE_VERTEX( r_fS_D )
 
 DEFINE_VERTEX( f_rS_D )
 {
-  Tensor::Index a,b,c;
-  Tensor X = LeviCivita()( -mu, -nu, -alpha, -beta ) * P(beta) * Orbital_DWave(P,Q)(mu,nu) * V1(alpha,b) ;
-  Tensor F = Spin1hProjector(P)(a,b) * X(b) * V2[0] / GeV;
+  Tensor::Index a,b,c,d;
+//  Tensor X = LeviCivita()( -mu, -nu, -alpha, -beta ) * P(nu) * Orbital_DWave(P,Q)(alpha,c) * V1(-c,b) ;
+  Tensor F = Spin1hProjector(P)(a,b) 
+    * Gamma[4](b,d) 
+    * gamma_twiddle(P)(mu,d,c)
+    * V1(alpha,c) 
+    * Orbital_DWave(P,Q)(-mu,-alpha) 
+    * V2[0] / GeV;
   F.st();
   return F;
 }

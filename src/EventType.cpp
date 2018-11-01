@@ -47,9 +47,7 @@ std::pair<double, double> EventType::minmax( const std::vector<size_t>& indices,
   for ( auto& x : indices ) min += mass( x );
   for ( auto& x : ivec )
     if ( std::find( indices.begin(), indices.end(), x ) == indices.end() ) max -= mass( x );
-  //  INFO( "Binning = " << min << " , " << max );
   return std::pair<double, double>( min * min / GeV, max * max / GeV );
-  //  return std::pair<double,double>( min*min / (1.1*units), max*max * (1.1/units) );
 }
 
 std::vector<std::vector<unsigned int>> EventType::getBosePairs() const

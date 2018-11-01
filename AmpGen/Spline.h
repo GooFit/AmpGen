@@ -42,12 +42,12 @@ namespace AmpGen{
     size_t      m_nKnots;
     double      m_min;
     double      m_max;
-    std::vector<double> m_values; 
+    std::vector<real_t> m_values; 
     Spline(const std::string& name, const size_t& nBins, const double& min, const double& max, const std::vector<double>& values = {} ) ;
     Expression eval(const Expression& x , DebugSymbols* db=nullptr);
     void resolve( ASTResolver& resolver );
     Expression operator()( const Expression& x, DebugSymbols* db=nullptr );
-    void set( const std::vector<double>& values );
+    void set( const std::vector<real_t>& values );
     Spline clone() const { return Spline(m_name,m_nKnots,m_min,m_max) ; } 
   };
   
@@ -59,7 +59,7 @@ namespace AmpGen{
     void resolve( ASTResolver& resolver ) override ;
     std::string to_string(const ASTResolver* resolver=nullptr) const { return m_eval.to_string(resolver) ; } 
     operator Expression() { return Expression( std::make_shared<SplineExpression>( *this ) ); }
-    std::complex<double> operator()() const override { return 0; }
+    complex_t operator()() const override { return 0; }
     Expression clone() const { return SplineExpression( m_parent->clone(), m_x.clone() ) ; }
 
   };

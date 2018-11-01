@@ -6,7 +6,7 @@
 
 namespace AmpGen {
   Expression wigner_d( const Expression& cb, const double& j, const double& m, const double& n );
-  Expression wigner_D( const Tensor& P, const double& J, const double& lA, const double& lB, const double& lC ); 
+  Expression wigner_D( const Tensor& P, const double& J, const double& lA, const double& lB, const double& lC, DebugSymbols* db ); 
 
   double CG( const double& j1,
     const double& m1,

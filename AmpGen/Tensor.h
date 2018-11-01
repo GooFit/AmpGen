@@ -155,7 +155,7 @@ namespace AmpGen
       void resolve( ASTResolver& resolver ){ 
         for( unsigned int i = 0 ; i < m_tensor.size(); ++i ) m_tensor[i].resolve( resolver );
       }
-      std::complex<double> operator()() const { return 0 ; } 
+      complex_t operator()() const { return 0 ; } 
       Expression clone() const { return TensorExpression( m_tensor ) ; }  
       operator Expression() { return Expression( std::make_shared<TensorExpression>( *this ) ); }  
   };

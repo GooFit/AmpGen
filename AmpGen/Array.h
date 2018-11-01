@@ -48,7 +48,7 @@ namespace AmpGen
       m_parent->resolve( resolver );
     }
     operator Expression() { return Expression( std::make_shared<ArrayExpression>( *this ) ); }
-    std::complex<double> operator()() const override { return 0; }
+    complex_t operator()() const override { return 0; }
   };
 } // namespace AmpGen
 

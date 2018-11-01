@@ -15,9 +15,9 @@
 
 using namespace AmpGen;
 
-CompilerWrapper::CompilerWrapper( const bool& verbose) : 
-  m_includes( {"array", "complex", "math.h", "vector"} ), 
-  m_verbose(verbose) 
+CompilerWrapper::CompilerWrapper( const bool& verbose ) : 
+  m_includes( {"array", "complex", "math.h", "vector"} ),
+  m_verbose(verbose)
 {
   m_cxx = getenv("CXX") != nullptr ? std::string( getenv( "CXX" ) ) : "";
   if ( m_cxx == "" ) {
@@ -48,7 +48,8 @@ std::string CompilerWrapper::generateFilename()
   }
   return buffer;
 }
-long GetFileSize(std::string filename)
+
+int64_t fileSize(const std::string& filename)
 {
   struct stat stat_buf;
   int rc = stat(filename.c_str(), &stat_buf);
@@ -60,11 +61,14 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
 {
   bool print_all = m_verbose || NamedParameter<bool>("CompilerWrapper::Verbose",false);
 
-  std::string name = fname;
+  std::string name = fname; 
   if ( name == "" ) 
     name = name == "" ? generateFilename() : expandGlobals( name );
+  
   std::string cname = name +"_"+std::to_string(expression.hash())+".cpp";
   std::string oname = name +"_"+std::to_string(expression.hash())+".so";
+  if( NamedParameter<bool>("CompilerWrapper::ForceRebuild", false )  == false 
+      && fileSize(oname) != -1 && expression.link( oname )) return true;
   if( print_all ) INFO("Generating source: " << cname );
   auto twall_begin  = std::chrono::high_resolution_clock::now();
   generateSource( expression, cname );
@@ -72,7 +76,7 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
   expression.link( oname );
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();
-  if( print_all ) INFO( expression.name() << " " << cname << " Compile time = " << tWall / 1000. << " [size = " << GetFileSize(cname)/1024 << ", " << GetFileSize(oname)/1024 << "] kB" );
+  if( print_all ) INFO( expression.name() << " " << cname << " Compile time = " << tWall / 1000. << " [size = " << fileSize(cname)/1024 << ", " << fileSize(oname)/1024 << "] kB" );
   return true;
 }
 
@@ -96,7 +100,7 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
   for( auto& expression : expressions ) expression->link( oname );
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();
-  if( print_all ) INFO( cname << " Compile time = " << tWall / 1000. << " [size = " << GetFileSize(cname)/1024 << ", " << GetFileSize(oname)/1024 << "] kB" );
+  if( print_all ) INFO( cname << " Compile time = " << tWall / 1000. << " [size = " << fileSize(cname)/1024 << ", " << fileSize(oname)/1024 << "] kB" );
   return true;
 }
 

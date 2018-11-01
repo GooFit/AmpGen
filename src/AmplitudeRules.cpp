@@ -119,7 +119,7 @@ std::complex<double> Coupling::operator()() const
 
 Expression Coupling::to_expression() const
 {
-  Expression J = Constant(0.,1.);
+  Expression J = Constant(0,1);
   if ( isCartesian ) {
     Expression total =1 ;
     for ( auto& p : couplings ) {

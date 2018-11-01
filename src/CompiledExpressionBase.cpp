@@ -132,22 +132,6 @@ void CompiledExpressionBase::compile(const std::string& fname, const bool& wait 
 
 void CompiledExpressionBase::addDebug( std::ostream& stream ) const
 {
-  /*
-  stream << "extern \"C\" void " << m_name << "_DB(" << fcnSignature() << "){\n";
-  size_t sizeOf = 0 ; 
-  addDependentExpressions( stream, sizeOf );
-  for ( auto& f : m_db ) {
-    std::string name      = f.first;
-    const auto expression = f.second;
-    if ( expression.to_string() == "NULL" )
-      stream << "std::cout << \"\\033[1m\" << \"" << name << "\" << \"\\033[0m\" << std::endl ;" << std::endl;
-    else {
-      name.resize( 20, ' ' );
-      stream << "std::cout << \"  \" << \"" << name << "\" << \"=  \"<< " << expression << "<< std::endl ;" << std::endl;
-    }
-  }
-  stream << "}" << std::endl;
-  */ 
   stream << "extern \"C\" std::vector<std::complex<double>> " << m_name << "_DB(" << fcnSignature() << "){\n";
   size_t sizeOf = 0 ; 
   addDependentExpressions( stream, sizeOf );

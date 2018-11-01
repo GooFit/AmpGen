@@ -19,7 +19,11 @@ DEFINE_LINESHAPE( FormFactor )
   if( lineshapeModifier == "L0" ) Lp = 0;
   if( lineshapeModifier == "L1" ) Lp = 1;
   if( lineshapeModifier == "L2" ) Lp = 2;
-  const Expression FormFactor = lineshapeModifier.find("BL") == std::string::npos ? sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, Lp ) ) : sqrt( BlattWeisskopf(q2*radius*radius, Lp ) );
+  if( lineshapeModifier == "L3" ) Lp = 3;
+  
+  const Expression FormFactor = lineshapeModifier.find("BL") == std::string::npos ? 
+    sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, Lp ) ) : 
+    sqrt( BlattWeisskopf(q2*radius*radius, Lp ) );
   if( L != 0 ){
     ADD_DEBUG( q2      , dbexpressions );
     ADD_DEBUG( radius  , dbexpressions );

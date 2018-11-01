@@ -24,7 +24,7 @@
 #include "AmpGen/ThreadPool.h"
 
 #ifdef __USE_OPENMP__
-#include <omp.h>
+  #include <omp.h>
 #endif
 
 using namespace AmpGen;
@@ -46,20 +46,15 @@ FastCoherentSum::FastCoherentSum( const EventType& type, AmpGen::MinuitParameter
   m_dbThis          = AmpGen::NamedParameter<bool>( "FastCoherentSum::Debug", false );
   m_printFreq       = AmpGen::NamedParameter<unsigned int>( "FastCoherentSum::PrintFrequency", 100 );
   m_verbosity       = AmpGen::NamedParameter<unsigned int>( "FastCoherentSum::Verbosity", 0 );
+  
   auto amplitudes  = m_protoAmplitudes.getMatchingRules( m_evtType, prefix, useCartesian );
   for( auto& amp : amplitudes ) addMatrixElement( amp, mps );
 
-//  for ( auto& p : m_matrixElements ) p.pdf.compile();
   m_isConstant = isFixedPDF(mps);
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() );
 
- // ThreadPool threads(5);
   for( auto& mE: m_matrixElements )
-  //  threads.enqueue( [&mE](){ 
-  //    INFO( "Compiling " << mE.decayTree->uniqueString() ); 
-      CompilerWrapper().compile( mE.pdf, ""); 
-    //  INFO("Done compiling " << mE.decayTree->uniqueString() );
-     //     } );
+    CompilerWrapper().compile( mE.pdf, NamedParameter<std::string>( "FastCoherentSum::OCache","") ); 
 }
 
 void FastCoherentSum::addMatrixElement( std::pair<Particle, Coupling>& particleWithCoupling, const MinuitParameterSet& mps )
@@ -164,33 +159,6 @@ void FastCoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIn
     }
   }
   m_integralDispatch.flush(); 
-  /*
-  if( m_prepareCalls == 0 ){
-    for( unsigned int i = 0 ; i < size(); ++i ){
-      for( unsigned int j = 0 ; j < size(); ++j ){
-        INFO( "N["<<i<<", " << j << "] = " << m_normalisations.get(i,j) << " x " << m_matrixElements[i].coefficient << " x " << std::conj( m_matrixElements[j].coefficient ) );
-      }
-    }
-    auto& event = m_integralDispatch.sim->at(0);
-    event.print();
-    event.printCache();
-    INFO( "evt-prop: " << event.weight() << " " << event.genPdf() );
-    double N = norm();
-    for( unsigned int i = 0 ; i < size(); ++i){
-      auto val = m_normalisations.get( i, i ) * m_matrixElements[i].coefficient * std::conj( m_matrixElements[i].coefficient );
-      INFO( "Fraction [ " << m_matrixElements[i].decayTree->uniqueString() << " ] = " << val / N );
-    }
-    double n2 = 0 ;
-    for( auto& evt : * m_integralDispatch.sim ){
-      n2 += evt.weight() * prob_unnormalised(evt) / evt.genPdf(); 
-      if( prob_unnormalised(evt) > 1e6 ){
-        WARNING("Event has very high probability: " << prob_unnormalised(evt) );
-        evt.print();
-      }
-    }
-    INFO( "Cross-check normalisation: " << N << " -vs- " << n2 / m_integralDispatch.sim->norm() );
-  }
-  */
 }
 
 void FastCoherentSum::debug( const Event& evt, const std::string& nameMustContain )
@@ -351,6 +319,7 @@ void FastCoherentSum::generateSourceCode( const std::string& fname, const double
     amplitude = amplitude + ( p.decayTree->finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
   }
   
+  stream << CompiledExpression< std::complex<double>, const double*, int>( amplitude  , "AMP" ) << std::endl; 
   stream << CompiledExpression< double, const double*, int>(fcn::norm(amplitude) / normalisation, "FCN" ) << std::endl; 
   
   if( include_python_bindings ){

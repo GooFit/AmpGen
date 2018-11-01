@@ -40,24 +40,33 @@ namespace AmpGen
     return std::make_shared<TYPE>( obj );
   }
 
-  template <typename R, typename RT, typename ARGS, bool result = std::is_same<decltype( ( ( *(R*)nullptr ) )( ARGS() ) ), RT>::value>
+  template <typename R, 
+            typename RT, 
+            typename ARGS, 
+            bool result = std::is_same<decltype( ( ( *(R*)nullptr ) )( ARGS() ) ), RT>::value>
   constexpr bool typeHelper( int )
   {
     return result;
   }
 
-  template <typename R, typename RT, typename ARGS> constexpr bool typeHelper( ... )
+  template <typename R, 
+            typename RT, 
+            typename ARGS> 
+  constexpr bool typeHelper( ... )
   {
     return false;
   }
 
-  template <typename R, typename RT, typename ARGS> constexpr bool hasReturnType()
+  template <typename R, 
+            typename RT, 
+            typename ARGS> 
+  constexpr bool hasReturnType()
   {
     return typeHelper<R, RT, ARGS>( 0 );
   }
-  template <typename T, typename R> constexpr bool hasConstructor()
+  template <typename T, typename... R> constexpr bool hasConstructor()
   {
-    return std::is_constructible<T,R>::value && (false == std::is_same<T, R>::value);
+    return std::is_constructible<T,R...>::value && (false == std::is_same<T, R...>::value);
   }
    
   template <typename arg=void, typename... args> std::vector<std::string> typelist()

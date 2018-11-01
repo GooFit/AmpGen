@@ -99,6 +99,7 @@ int main( int argc, char** argv )
   } 
   else if ( gen_type == "PolarisedAmplitude" ){
     PolarisedAmplitude sig( eventType, MPS );
+    //PhaseSpace phsp(eventType,&rand);
     RecursivePhaseSpace phsp( sig.matrixElements()[0].decayTree->quasiStableTree() , eventType, &rand );
     GenerateEvents( accepted, sig, phsp, nEvents, blockSize, &rand );
   }
@@ -128,6 +129,16 @@ int main( int argc, char** argv )
   for ( auto& plot : plots ) {
     plot->Write();
   }
+  if( NamedParameter<bool>("plots_2d",true) == true ){
+    auto proj = eventType.defaultProjections(100);
+    INFO("Making 2D projections...");
+    for( size_t i = 0 ; i < proj.size(); ++i ){
+      for( size_t j = i+1 ; j < proj.size(); ++j ){
+        accepted.makeProjection( Projection2D(proj[i],proj[j] ) )->Write(); 
+      }
+    }
+  } 
+  
   INFO( "Writing output file " );
 
   f->Close();

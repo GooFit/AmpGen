@@ -2,6 +2,7 @@
 #include "AmpGen/Simplify.h"
 
 using namespace AmpGen;
+using namespace AmpGen::fcn;
 
 double fact( const double& z )
 {
@@ -16,12 +17,18 @@ double nCr_( const int& n, const int& r ){
   return z;
 }
 
-Expression ExpandedBinomial( const Expression& x, const unsigned int& n ){
+std::string fermis( const double& s )
+{
+  if( int(2*s) % 2 == 0 ) return std::to_string( (int)s);
+  else return std::to_string( (int)(2*s) ) + "/2";
+}
+
+Expression ExpandedBinomial( const Expression& x, const unsigned int& n )
+{
   Expression sum;
   for( unsigned int k = 0 ; k <= n ; ++k ) sum = sum + nCr_(n,k) * fcn::fpow(x,k);
   return sum; 
 }
-
 
 Expression AmpGen::wigner_d( const Expression& cb, const double& j, const double& m, const double& n )
 {
@@ -46,7 +53,7 @@ Expression AmpGen::wigner_d( const Expression& cb, const double& j, const double
     sum = sum + norm * p1 * p2;  
   }
   auto simplified = NormalOrderedExpression(sum);
-  return fractional_part * simplified; 
+  return pow(-1.,j+m) * fractional_part * simplified; 
 }
 
 double AmpGen::CG( 
@@ -77,8 +84,6 @@ double AmpGen::CG(
   }
   return sqrt(norm) * sum ; 
 }
-
-using namespace AmpGen::fcn;
 
 Tensor AmpGen::rotationMatrix( const Tensor& P , const bool& handleZero ){
   if( P.dims() != std::vector<size_t>({4}) && P.dims() != std::vector<size_t>({3}) ){
@@ -155,19 +160,29 @@ Expression AmpGen::wigner_D(const Tensor& P,
                             const double& J, 
                             const double& lA, 
                             const double& lB, 
-                            const double& lC )
+                            const double& lC, 
+                            DebugSymbols* db )
 {
   Expression pz = make_cse( P[2] / sqrt( P[0]*P[0] + P[1] * P[1] + P[2]*P[2] ) );  
   Expression pt2 = make_cse( P[0]*P[0] + P[1]*P[1] );
   Expression px = P[0] / sqrt( pt2 );
   Expression py = P[1] / sqrt( pt2 );
+
   Expression I(std::complex<double>(0,1));
   auto little_d = make_cse ( wigner_d( pz, J, lA, lB-lC ) );
-  return  fpow( px - I * py, lB-lC-lA) * little_d; 
+  if( J != 0 && db != nullptr ){
+    db->emplace_back("ϕ"     , atan2( py, px ) );
+    db->emplace_back("cosθ", pz );
+    db->emplace_back("d[" + fermis(J) +", " + fermis(lA) + ", " + fermis(lB-lC) +"](cosθ)", little_d );
+  }
+  return  fpow( px - I * py, ( lB-lC-lA ) ) * little_d; 
 }
 
 struct LS {
-  double factor; 
+  double factor;
+  double cg1;
+  double cg2;
+  double p; 
   double m1;
   double m2;
 };
@@ -187,8 +202,10 @@ std::vector<LS> calculate_recoupling_constants(
       f.m1 = m1;
       f.m2 = m2;
       f.factor = sqrt( (2.*L + 1. )/( 2.*J + 1. ) );
-      f.factor *= AmpGen::CG(L ,0 ,S ,m1-m2,J,m1-m2);
-      f.factor *= AmpGen::CG(j1,m1,j2,-m2  ,S,m1-m2); 
+      f.cg1    = AmpGen::CG(L ,0 ,S ,m1-m2,J,m1-m2);
+      f.cg2    = AmpGen::CG(j1,m1,j2,-m2  ,S,m1-m2); 
+      f.p      = sqrt( (2*L + 1 )/(2*J+1) );
+      f.factor *= f.cg1 * f.cg2;
       if( f.factor != 0 ) rt.push_back(f);
     }
   }
@@ -210,21 +227,22 @@ Expression AmpGen::helicityAmplitude( const Particle& particle, const Tensor& pa
     if( S == 999 ) ERROR("Spin orbital coupling impossible!");
   }
   else S = particle.S() /2.;
-  
+ 
+  INFO( particle.uniqueString() << " -> " << L << "  " << S << " P[S = " << particle.S() << "]" );
+
   auto recoupling_constants = calculate_recoupling_constants( particle.spin(), Mz, L, S, d0.spin(), d1.spin() );
   
   Expression total = 0 ; 
   Tensor::Index a,b,c;
   Tensor f1 = simplifiedParentFrame(a,b) * d0.P()(b);
   Tensor f2 = simplifiedParentFrame(a,b) * d1.P()(b);
-  auto L1 = helicityTransformMatrix( f1, fcn::sqrt( d0.massSq() ), 1 );
-  auto L2 = helicityTransformMatrix( f2, fcn::sqrt( d1.massSq() ), -1 );
+  auto L1 = helicityTransformMatrix( f1, fcn::sqrt( d0.massSq() ), 1  , 1);
+  auto L2 = helicityTransformMatrix( f2, fcn::sqrt( d1.massSq() ), -1 , 1);
   f1.st();
   f2.st();
   L1.st();
   L2.st();
-  if( recoupling_constants.size() == 0 ){
-    
+  if( recoupling_constants.size() == 0 ){    
     WARNING( particle.uniqueString() << " " << particle.spin() << " " << 
         particle.orbitalRange(false).first << " " << particle.orbitalRange(false).second 
         <<  " transition Mz="<< Mz << " to " << d0.spin() << " x " << d0.spin() << " cannot be coupled in (LS) = " << L << ", " << S ); 
@@ -235,18 +253,22 @@ Expression AmpGen::helicityAmplitude( const Particle& particle, const Tensor& pa
     WARNING( "--Possible (LS) combinations = " << lsStr );
   }
   for( auto& coupling : recoupling_constants ){          
-    std::string dt = "d_" + std::to_string( int(particle.spin()) ) 
-                    + "_" + std::to_string(int(Mz)) 
-                    + "_" + std::to_string(int(coupling.m1)) 
-                    + "_" + std::to_string(int(coupling.m2));
-    auto term = wigner_D( f1 , particle.spin(), Mz, coupling.m1, coupling.m2 );
+    std::string dt = "d[" + particle.name()+ 
+                     "]_" + fermis(particle.spin()) 
+                    + "_" + fermis(Mz) 
+                    + "_" + fermis(coupling.m1) 
+                    + "_" + fermis(coupling.m2);
+    auto term = wigner_D( f1 , particle.spin(), Mz, coupling.m1, coupling.m2,db );
     DEBUG( particle.uniqueString() << " m1=" << coupling.m1 << " m2=" << coupling.m2 << " Mz=" << particle.polState() << " m1'=" << d0.polState() << " m2'=" << d1.polState() );
     if( d0.isStable() && 2 * coupling.m1 != d0.polState() ) continue; 
     if( d1.isStable() && 2 * coupling.m2 != d1.polState() ) continue; 
+    INFO( "T[" << d0.name() << "] = " << coupling.factor << " [" << coupling.p << " " << coupling.cg1 << " " << coupling.cg2 << "] x D(J=" << particle.spin() << ", m=" << Mz << ", m'=" << coupling.m1 - coupling.m2 <<")" );
     auto h1   = helicityAmplitude( d0, L1(a,b) * simplifiedParentFrame(b,c) , coupling.m1, db ) ;
     auto h2   = helicityAmplitude( d1, L2(a,b) * simplifiedParentFrame(b,c) , coupling.m2, db ) ;
-
-    if( db != nullptr ) db->emplace_back( dt, term );
+    if( db != nullptr ){ 
+      db->emplace_back( dt, term );
+      db->emplace_back( "coupling" , coupling.factor );
+    }
     total = total + coupling.factor * term * h1 * h2 ; 
   }
   return total;

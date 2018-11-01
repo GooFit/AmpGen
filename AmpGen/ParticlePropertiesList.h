@@ -44,7 +44,9 @@ namespace AmpGen
     double quasiStableThreshold() const ;
     std::vector<std::string> getParticleNames() const;
     std::vector<int> getParticleIds() const;
-
+    
+    std::vector<ParticleProperties>::const_iterator begin() const { return m_theList.cbegin() ; }
+    std::vector<ParticleProperties>::const_iterator   end() const { return m_theList.cend() ; }
     void print( std::ostream& out = std::cout ) const;
     bool readLatexLabels( const std::string& name );
     void makeMappings();

@@ -18,20 +18,20 @@
 
 using namespace AmpGen;
 
-void HadronicParameters::scale_p1( const double& sf )
+void HadronicParameters::scale_p1( const real_t& sf )
 {
   n1 /= sf;
   coherence /= sqrt( sf );
 }
-void HadronicParameters::scale_p2( const double& sf )
+void HadronicParameters::scale_p2( const real_t& sf )
 {
   n2 /= sf;
   coherence /= sqrt( sf );
 }
 
-void HadronicParameters::rotate( const double& angle ) 
+void HadronicParameters::rotate( const real_t& angle ) 
 { 
-  coherence *= std::complex<double>( cos( angle ), sin( angle ) ); 
+  coherence *= complex_t( cos( angle ), sin( angle ) ); 
 }
 
 void HadronicParameters::clear() 
@@ -41,12 +41,12 @@ void HadronicParameters::clear()
   nFills    = 0;
   id        = 0;
   wt        = 0;
-  coherence = std::complex<double>( 0, 0 ); 
+  coherence = complex_t( 0, 0 ); 
 }
 
-void HadronicParameters::add( const std::complex<double>& f1, 
-                              const std::complex<double>& f2, 
-                              const double& weight )
+void HadronicParameters::add( const complex_t& f1, 
+                              const complex_t& f2, 
+                              const real_t& weight )
 {
   n1        += weight * std::norm( f1 );
   n2        += weight * std::norm( f2 );
@@ -55,13 +55,13 @@ void HadronicParameters::add( const std::complex<double>& f1,
   nFills++;
 }
 
-HadronicParameters::HadronicParameters( const double& _R, const double& _d, const double& k1 ) : 
+HadronicParameters::HadronicParameters( const real_t& _R, const real_t& _d, const real_t& k1 ) : 
   n1(k1*k1), 
   n2(1), 
   wt(1), 
   coherence(k1*_R*cos( M_PI*_d/180.), k1*_R*sin(M_PI*_d/180.)) {}
 
-HadronicParameters::HadronicParameters( const double& _R, const double& _d, const double& k1, const double& k2 )
+HadronicParameters::HadronicParameters( const real_t& _R, const real_t& _d, const real_t& k1, const real_t& k2 )
   : n1( k1 ), 
     n2( k2 ), 
     wt(1), 
@@ -108,7 +108,7 @@ std::string HadronicParameters::to_string() const
 }
   
 void CoherenceFactor::makeCoherentMapping( const unsigned int& nBins,
-    const std::function<std::vector<double>( const Event& )>& functors,
+    const std::function<std::vector<real_t>( const Event& )>& functors,
     const size_t& maxDepth, 
     const size_t& minPop,
     const std::function<uint64_t( const Event& )>& flagFunctor,
@@ -150,8 +150,8 @@ void CoherenceFactor::makeCoherentMapping( const unsigned int& nBins,
   };
   DynamicContainer<Event, EventList> dlist( population, makeEvents );
   std::vector<CoherenceEvent> DTevents( population );
-  std::vector<double*> addresses;
-  std::vector<double*> addresses_veto;
+  std::vector<real_t*> addresses;
+  std::vector<real_t*> addresses_veto;
   for ( auto evt : dlist ) {
     auto& te    = DTevents[otherCounter++];
     te.weight   = 1./evt.genPdf();
@@ -170,7 +170,7 @@ void CoherenceFactor::makeCoherentMapping( const unsigned int& nBins,
   m_voxels = BinDT( addresses, Functor( functors ), MaxDepth( maxDepth ), MinEvents( minPop ) );
 
   INFO( "Generated " << dlist.size()
-      << " events; entries per node =  " << double( dlist.size() ) / double( m_voxels.nodes().size() ) );
+      << " events; entries per node =  " << real_t( dlist.size() ) / real_t( m_voxels.nodes().size() ) );
   groupByStrongPhase( DTevents , true );
 }
 
@@ -194,10 +194,10 @@ void CoherenceFactor::calculateCoherenceFactorsPerVoxel()
   TH1D* deltaPhaseNoWeight   = new TH1D( "deltaPhase0","",100,-180,180);
   for ( auto& evt : *m_data ) {
     int binNumber           = m_voxels.getBinNumber( evt );
-    double w                = evt.weight() / evt.genPdf();
-    std::complex<double> p1 = m_pdf1->getVal( evt, pdf1CacheMap );
-    std::complex<double> p2 = m_pdf2->getVal( evt, pdf2CacheMap );
-    double arg = std::arg( p1* std::conj(p2 ) );
+    real_t w                = evt.weight() / evt.genPdf();
+    complex_t p1 = m_pdf1->getVal( evt, pdf1CacheMap );
+    complex_t p2 = m_pdf2->getVal( evt, pdf2CacheMap );
+    real_t arg = std::arg( p1* std::conj(p2 ) );
     deltaPhaseWeightPdf1->Fill( arg * 180 / M_PI, std::abs(p1) );
     deltaPhaseWeightPdf2->Fill( arg * 180 / M_PI, std::abs(p2) );
     deltaPhaseNoWeight->Fill( arg * 180 / M_PI, 1 );
@@ -224,7 +224,7 @@ void CoherenceFactor::calculateCoherenceFactorsPerVoxel( const std::vector<Coher
     unsigned int binNumber = evt.flag ? m_voxels.size() : m_voxels.getBinNumber( evt.values.data() );
     DEBUG( "BinNumber: " << binNumber << " pos = {" << evt.values[0] << "," << evt.values[1] << "," << evt.values[2]
         << "," << evt.values[3] << "," << evt.values[4] << "}" );
-    double arg = std::arg( std::conj(evt.amp1) * evt.amp2 );
+    real_t arg = std::arg( std::conj(evt.amp1) * evt.amp2 );
     deltaPhaseNoWeight->Fill(  arg * 180 / M_PI, 1 );
     weight->Fill( evt.weight );
     m_paramsPerVoxel[binNumber].add( evt.amp1, evt.amp2, evt.weight );
@@ -250,8 +250,8 @@ void CoherenceFactor::groupByStrongPhase( const std::vector<CoherenceEvent>& coh
   for ( auto& h : m_paramsPerVoxel ) global_hp += h;
 
   INFO( "Global parameters = " << global_hp.to_string() );
-  double phiTransform = m_globalPhase - global_hp.d();
-  double rTransform   = m_globalR * m_globalR * global_hp.n2 / global_hp.n1;
+  real_t phiTransform = m_globalPhase - global_hp.d();
+  real_t rTransform   = m_globalR * m_globalR * global_hp.n2 / global_hp.n1;
 
   INFO( "Global rotation = " << phiTransform * 180 / M_PI );
   for ( auto& h : m_paramsPerVoxel ) {
@@ -264,9 +264,9 @@ void CoherenceFactor::groupByStrongPhase( const std::vector<CoherenceEvent>& coh
   INFO( global_hp_new.to_string() );
   std::sort( m_paramsPerVoxel.begin(), m_paramsPerVoxel.end() - 1, []( auto& b1, auto& b2 ) { return b1.d() < b2.d(); } );
 
-  double norm_target      = global_hp_new.wt / double( m_nBins );
+  real_t norm_target      = global_hp_new.wt / real_t( m_nBins );
   unsigned int currentBin = 0;
-  std::vector<std::pair<double, double>> binLimits;
+  std::vector<std::pair<real_t, real_t>> binLimits;
   binLimits.emplace_back( -M_PI, 0 );
   INFO( "Normalisation-per-bin = " << norm_target << " i1 = " << global_hp_new.I1()  );
   auto currentBinLimits = binLimits.rbegin();
@@ -305,11 +305,11 @@ void CoherenceFactor::groupByStrongPhase( const std::vector<CoherenceEvent>& coh
 void CoherenceFactor::MakeEventDeltaPlots( const std::vector<CoherenceEvent>& events ) {
   
   std::vector<TH1D*> plots; 
-  for( int i = 0 ; i < m_nBins ; ++i ) 
+  for(size_t i = 0 ; i < m_nBins ; ++i ) 
     plots.push_back( new TH1D( ("Bin_"+std::to_string(i)+"_deltaPhi").c_str(),0,100,-180,180) );
   for( auto& event : events ){
     unsigned int voxNumber = event.flag ? m_voxels.size() : m_voxels.getBinNumber( event.values.data() );
-    double arg = std::arg( std::conj(event.amp1) * event.amp2 );
+    real_t arg = std::arg( std::conj(event.amp1) * event.amp2 );
     auto binNumber = m_nodeID2Bin[ voxNumber ];
     if( ! event.flag ) plots[binNumber]->Fill( arg*180/M_PI );
   }
@@ -357,7 +357,7 @@ void CoherenceFactor::testCoherenceFactor() const
   bid.flush();
 
   for ( unsigned int i = 0; i < 8; ++i ) {
-    std::complex<double> VALUE = calcs[i].getVal();
+    complex_t VALUE = calcs[i].getVal();
     INFO( "Bin [" << i + 1 << "] R=" << std::abs( VALUE ) << " d= " << 180 * std::arg( VALUE ) / M_PI
         << " N1= " << calcs[i].getN1() << " N2= " << calcs[i].getN2() );
   }
@@ -371,14 +371,14 @@ std::vector<HadronicParameters> CoherenceFactor::getCoherenceFactors() const
   auto pdf2CacheMap = m_pdf2->cacheAddresses( *m_data );
   for ( auto& evt : *m_data ) {
     unsigned int binNumber  = getBinNumber( evt );
-    double w                = evt.weight() / evt.genPdf();
-    std::complex<double> p1 = m_pdf1->getVal( evt, pdf1CacheMap );
-    std::complex<double> p2 = m_pdf2->getVal( evt, pdf2CacheMap );
+    real_t w                = evt.weight() / evt.genPdf();
+    complex_t p1 = m_pdf1->getVal( evt, pdf1CacheMap );
+    complex_t p2 = m_pdf2->getVal( evt, pdf2CacheMap );
     R[binNumber].add( p1, p2, w );
     RG.add( p1, p2, w );
   }
-  double phiTransform = m_globalPhase - std::arg( RG.coherence );
-  double rTransform   = m_globalR * m_globalR * RG.n2 / RG.n1;
+  real_t phiTransform = m_globalPhase - std::arg( RG.coherence );
+  real_t rTransform   = m_globalR * m_globalR * RG.n2 / RG.n1;
   for ( auto& h : R ) {
     h.scale_p1( 1. / rTransform );
     h.rotate(  phiTransform );
@@ -422,8 +422,8 @@ void CoherenceFactor::readBinsFromFile( const std::string& binName )
   INFO( "Got " << m_nBins << " coherent bins and " << m_voxels.size() << " voxels" );
 }
 
-double CoherenceFactor::phase() { return std::arg( m_global.getCoherence() ); }
-double CoherenceFactor::getR() { return std::abs( m_global.getCoherence() ); }
+real_t CoherenceFactor::phase() { return std::arg( m_global.getCoherence() ); }
+real_t CoherenceFactor::getR() { return std::abs( m_global.getCoherence() ); }
 
 HadronicParameters CoherenceFactor::calculateGlobalCoherence( EventList* _data )
 {
@@ -444,9 +444,9 @@ HadronicParameters CoherenceFactor::calculateGlobalCoherence( EventList* _data )
   auto pdf2CacheMap = m_pdf2->cacheAddresses( *_data );
   for ( unsigned int i = 0; i < _data->size(); ++i ) {
     const Event& evt          = ( *_data )[i];
-    double w                  = evt.weight() / evt.genPdf();
-    std::complex<double> pdf1 = m_pdf1->getVal( evt, pdf1CacheMap );
-    std::complex<double> pdf2 = m_pdf2->getVal( evt, pdf2CacheMap );
+    real_t w                  = evt.weight() / evt.genPdf();
+    complex_t pdf1 = m_pdf1->getVal( evt, pdf1CacheMap );
+    complex_t pdf2 = m_pdf2->getVal( evt, pdf2CacheMap );
     m_global.add( pdf1, pdf2, w );
   }
 
@@ -487,13 +487,13 @@ void CoherenceFactor::calculateNorms()
   for ( unsigned int i = 0; i < m_pdf1->size(); ++i ) {
     for ( unsigned int j = 0; j < m_pdf2->size(); ++j ) {
       id.addIntegral( ( *m_pdf1 )[i].pdf, ( *m_pdf2 )[j].pdf,
-          [i, j, this]( const std::complex<double>& val ) { this->m_calc.R.set( i, j, val ); } );
+          [i, j, this]( const complex_t& val ) { this->m_calc.R.set( i, j, val ); } );
     }
   }
 
   for ( unsigned int i = 0; i < m_pdf1->size(); ++i ) {
     for ( unsigned int j = i; j < m_pdf1->size(); ++j ) {
-      id.addIntegral( ( *m_pdf1 )[i].pdf, ( *m_pdf1 )[j].pdf, [i, j, this]( const std::complex<double>& val ) {
+      id.addIntegral( ( *m_pdf1 )[i].pdf, ( *m_pdf1 )[j].pdf, [i, j, this]( const complex_t& val ) {
           this->m_calc.N1.set( i, j, val );
           if ( i != j ) this->m_calc.N1.set( j, i, std::conj( val ) );
           } );
@@ -502,7 +502,7 @@ void CoherenceFactor::calculateNorms()
 
   for ( unsigned int i = 0; i < m_pdf2->size(); ++i ) {
     for ( unsigned int j = i; j < m_pdf2->size(); ++j ) {
-      id.addIntegral( ( *m_pdf2 )[i].pdf, ( *m_pdf2 )[j].pdf, [i, j, this]( const std::complex<double>& val ) {
+      id.addIntegral( ( *m_pdf2 )[i].pdf, ( *m_pdf2 )[j].pdf, [i, j, this]( const complex_t& val ) {
           this->m_calc.N2.set( i, j, val );
           if ( i != j ) this->m_calc.N2.set( j, i, std::conj( val ) );
           } );
@@ -517,4 +517,4 @@ unsigned int CoherenceFactor::getBinNumber( const Event& event ) const
   int voxelID = m_voxels.getBinNumber( event );
   return voxelID == -1 ? m_nBins : m_nodeID2Bin.find( voxelID )->second;
 }
-double CoherenceFactor::operator()() { return std::abs( m_calc.getVal() ); }
+real_t CoherenceFactor::operator()() { return std::abs( m_calc.getVal() ); }

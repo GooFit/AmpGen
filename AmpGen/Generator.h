@@ -24,8 +24,10 @@ namespace AmpGen
   public:
     template <class... ARGS>
     Generator( const ARGS&... args )
-        : m_gps( args... ), m_generatorBlock( 1000000 ), m_rnd( gRandom ), m_normalise( true )
-
+        : m_gps(args...),
+          m_generatorBlock(1000000),
+          m_rnd( gRandom ), 
+          m_normalise( true )
     {
       m_eventType = m_gps.eventType();
       setRandom( m_rnd );
@@ -85,9 +87,7 @@ namespace AmpGen
         auto t_start = std::chrono::high_resolution_clock::now();
         EventList mc( m_eventType );
         fillEventListPhaseSpace( mc, m_generatorBlock, pdf.size(), cut );
-
-     //   for( auto& event : mc ) boost(event,{1,0,0},0.99); 
-        
+ 
         pdf.setEvents( mc );
         pdf.prepare();
 
@@ -134,10 +134,10 @@ namespace AmpGen
       fillEventList( pdf, evts, nEvents );
       return evts;
     }
-    EventList generate( const unsigned int& nEvents )
+    EventList generate( const unsigned int& nEvents, const size_t& cacheSize=0 )
     {
       EventList evts( m_eventType );
-      fillEventListPhaseSpace( evts, nEvents, size_t( 0 ) );
+      fillEventListPhaseSpace( evts, nEvents, cacheSize );
       return evts;
     }
   };

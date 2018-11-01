@@ -160,7 +160,7 @@ void SplineExpression::resolve( ASTResolver& resolver )
   m_eval.resolve(resolver);
 }
 
-void Spline::set( const std::vector<double>& values )
+void Spline::set( const std::vector<real_t>& values )
 {
   if( values.size() != m_nKnots ){ 
     ERROR("Sizes do not match");

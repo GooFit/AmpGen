@@ -45,7 +45,7 @@ namespace AmpGen
       double                        m_weight; 
       std::vector<std::vector<int>> m_polStates; 
       EventType                     m_eventType;
-      CompiledExpression< double, const real_t*, const complex_t*> m_probExpression; 
+      CompiledExpression< real_t, const real_t*, const complex_t*> m_probExpression; 
     public: 
       PolarisedAmplitude( const EventType& eventType, AmpGen::MinuitParameterSet& mps, const std::string& prefix="" );
       void prepare();
@@ -60,6 +60,7 @@ namespace AmpGen
       void build_probunnormalised();
       Expression probExpression( const Tensor& T_matrix, const std::vector<Expression>& p ) const; 
       size_t size() const ;  
+      complex_t TE( const AmpGen::Event& event, const size_t& x, const size_t& y );
       real_t norm() const;
       real_t prob_unnormalised( const AmpGen::Event& evt ) const;
       real_t prob(const AmpGen::Event& evt ) const ;

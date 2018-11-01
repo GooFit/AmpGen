@@ -20,10 +20,10 @@
 namespace AmpGen
 {
   struct CoherenceEvent {
-    std::array<double, 5> values;
-    std::complex<double> amp1;
-    std::complex<double> amp2;
-    double weight;
+    std::array<real_t, 5> values;
+    complex_t amp1;
+    complex_t amp2;
+    real_t weight;
     uint64_t flag;
   };
 
@@ -33,8 +33,8 @@ namespace AmpGen
     Bilinears R;
     Bilinears N1;
     Bilinears N2;
-    double rTransform;
-    double phiTransform;
+    real_t rTransform;
+    real_t phiTransform;
     CoherenceCalculator() = default;
     CoherenceCalculator( FastCoherentSum* pdf1, FastCoherentSum* pdf2 )
         : m_pdf1( pdf1 )
@@ -47,14 +47,14 @@ namespace AmpGen
     {
     }
 
-    void setTransform( const double& rT, const double& pT )
+    void setTransform( const real_t& rT, const real_t& pT )
     {
       rTransform   = rT;
       phiTransform = pT;
     }
-    double getN2() const
+    real_t getN2() const
     {
-      double accN2 = 0;
+      real_t accN2 = 0;
       for ( unsigned int i = 0; i < m_pdf2->size(); ++i ) {
         accN2 += std::norm( ( *m_pdf2 )[i].coefficient ) * std::abs( N2.get( i, i ) );
         for ( unsigned int j = i + 1; j < m_pdf2->size(); ++j ) {
@@ -65,9 +65,9 @@ namespace AmpGen
       return accN2;
     }
 
-    double getN1() const
+    real_t getN1() const
     {
-      double accN1 = 0;
+      real_t accN1 = 0;
       for ( unsigned int i = 0; i < m_pdf1->size(); ++i ) {
         accN1 += std::norm( ( *m_pdf1 )[i].coefficient ) * std::abs( N1.get( i, i ) );
         for ( unsigned int j = i + 1; j < m_pdf1->size(); ++j ) {
@@ -78,9 +78,9 @@ namespace AmpGen
       return accN1 * rTransform * rTransform;
     }
 
-    std::complex<double> getVal()
+    complex_t getVal()
     {
-      std::complex<double> accR( 0, 0 );
+      complex_t accR( 0, 0 );
       m_pdf1->transferParameters();
       m_pdf2->transferParameters();
       for ( unsigned int i = 0; i < m_pdf1->size(); ++i ) {
@@ -88,36 +88,36 @@ namespace AmpGen
           accR += ( *m_pdf1 )[i].coefficient * std::conj( ( *m_pdf2 )[j].coefficient ) * R.get( i, j );
         }
       }
-      return std::complex<double>( cos( phiTransform ), sin( phiTransform ) ) * rTransform * accR /
+      return complex_t( cos( phiTransform ), sin( phiTransform ) ) * rTransform * accR /
              sqrt( getN1() * getN2() );
     }
   };
 
   struct HadronicParameters {
 
-    HadronicParameters( const double& _R, const double& _d, const double& k1 );
-    HadronicParameters( const double& _R, const double& _d, const double& k1, const double& k2 );
+    HadronicParameters( const real_t& _R, const real_t& _d, const real_t& k1 );
+    HadronicParameters( const real_t& _R, const real_t& _d, const real_t& k1, const real_t& k2 );
     HadronicParameters() : n1( 0 ), n2( 0 ), wt(0), coherence( 0, 0 ), nFills( 0 ), id( 0 ), binID( 0 ) {}
 
-    double n1;
-    double n2;
-    double wt;
-    std::complex<double> coherence;
+    real_t n1;
+    real_t n2;
+    real_t wt;
+    complex_t coherence;
     unsigned int nFills;
     unsigned int id;
     unsigned int binID;
-    double I1() const { return n1 / wt  ; }
-    double I2() const { return n2 / wt  ; }
-    double d() const { return std::arg( coherence ); }
-    double R() const { return std::abs( getCoherence() ); }
-    double r() const { return sqrt( n1 / n2 ); } 
-    std::complex<double> getCoherence() const { return coherence / ( wt * sqrt( I1() * I2() ) ) ; }
-    void scale_p1( const double& sf );
-    void scale_p2( const double& sf );
-    void rotate( const double& angle );
+    real_t I1() const { return n1 / wt  ; }
+    real_t I2() const { return n2 / wt  ; }
+    real_t d() const { return std::arg( coherence ); }
+    real_t R() const { return std::abs( getCoherence() ); }
+    real_t r() const { return sqrt( n1 / n2 ); } 
+    complex_t getCoherence() const { return coherence / ( wt * sqrt( I1() * I2() ) ) ; }
+    void scale_p1( const real_t& sf );
+    void scale_p2( const real_t& sf );
+    void rotate( const real_t& angle );
     void clear();
 
-    void add( const std::complex<double>& f1, const std::complex<double>& f2, const double& weight = 1 );
+    void add( const complex_t& f1, const complex_t& f2, const real_t& weight = 1 );
 
     HadronicParameters operator+=( const HadronicParameters& other );
     HadronicParameters operator-=( const HadronicParameters& other );
@@ -130,8 +130,8 @@ namespace AmpGen
   {
   private:
     HadronicParameters m_global;
-    double m_globalPhase;
-    double m_globalR;
+    real_t m_globalPhase;
+    real_t m_globalR;
     FastCoherentSum* m_pdf1;
     FastCoherentSum* m_pdf2;
     BinDT m_voxels;
@@ -146,8 +146,8 @@ namespace AmpGen
     void MakeEventDeltaPlots(const std::vector<CoherenceEvent>& events );
   public:
     BinDT& getDT() { return m_voxels; }
-    double phase();
-    double getR();
+    real_t phase();
+    real_t getR();
     std::vector<size_t> getNumberOfEventsInEachBin( const EventList& events ) const;
     HadronicParameters calculateGlobalCoherence( EventList* data = nullptr );
     void writeToFile( const std::string& filename );
@@ -160,7 +160,7 @@ namespace AmpGen
     CoherenceFactor( FastCoherentSum* pdf1, FastCoherentSum* pdf2, const EventType& type );
 
     void makeCoherentMapping( const unsigned int& nBins,
-                              const std::function<std::vector<double>( const Event& )>& functors = nullptr,
+                              const std::function<std::vector<real_t>( const Event& )>& functors = nullptr,
                               const size_t& maxDepth = 20, const size_t& minPop = 50,
                               const std::function<uint64_t( const Event& )>& flagFunctor = nullptr,
                               const bool& refreshEvents = true );
@@ -170,7 +170,7 @@ namespace AmpGen
 
     void readBinsFromFile( const std::string& binName ); ///
     unsigned int getBinNumber( const Event& event ) const;
-    double operator()();
+    real_t operator()();
     void testCoherenceFactor() const;
 
     std::vector<HadronicParameters> getCoherenceFactors() const;
@@ -181,7 +181,7 @@ namespace AmpGen
     void calculateCoherenceFactorsPerVoxel();
     void calculateCoherenceFactorsPerVoxel( const std::vector<CoherenceEvent>& dtEvents );
 
-    void setGlobals( const double& globalPhase, const double& globalR )
+    void setGlobals( const real_t& globalPhase, const real_t& globalR )
     {
       m_globalR     = globalR;
       m_globalPhase = globalPhase;

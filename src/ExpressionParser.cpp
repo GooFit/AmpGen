@@ -126,7 +126,8 @@ std::string MinuitParameterLink::to_string(const ASTResolver* /*resolver*/ ) con
 void MinuitParameterLink::resolve( ASTResolver& resolver )
 {
 }
-std::complex<double> MinuitParameterLink::operator()() const { 
+
+complex_t MinuitParameterLink::operator()() const { 
   if( m_parameter == nullptr ) ERROR("Parameter does not have end-point");
   return m_parameter->mean(); }
 
@@ -156,4 +157,5 @@ void ExpressionPack::resolve( ASTResolver& resolver )
 {
   for ( auto& expr : m_expressions ) expr.resolve( resolver );
 }
-std::complex<double> ExpressionPack::operator()() const { return 0; }
+
+complex_t ExpressionPack::operator()() const { return 0; }

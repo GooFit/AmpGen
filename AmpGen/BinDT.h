@@ -16,6 +16,7 @@
 #include "AmpGen/ArgumentPack.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/MsgService.h"
+#include "AmpGen/Types.h"
 
 namespace AmpGen
 {
@@ -24,7 +25,7 @@ namespace AmpGen
   DECLARE_ARGUMENT( MinEvents, size_t );
   DECLARE_ARGUMENT( Dim, size_t );
   DECLARE_ARGUMENT_PTR( Stream, std::ifstream );
-  DECLARE_ARGUMENT_DEFAULT( Functor, std::function<std::vector<double>( const Event& )>, nullptr );
+  DECLARE_ARGUMENT_DEFAULT( Functor, std::function<std::vector<real_t>( const Event& )>, nullptr );
 
   class BinDT
   {

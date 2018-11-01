@@ -23,7 +23,7 @@ namespace AmpGen
       MinuitParameterLink( MinuitParameter* param ) ;
       std::string to_string(const ASTResolver* resolver=nullptr) const override ;
       void resolve( ASTResolver& resolver ) override ;
-      std::complex<double> operator()() const override ;
+      complex_t operator()() const override ;
       operator Expression() const ;
       Expression clone() const { return MinuitParameterLink( m_parameter ) ; } 
     private: 
@@ -35,7 +35,7 @@ namespace AmpGen
     ExpressionPack( const Expression& A, const Expression& B );
     std::string to_string(const ASTResolver* resolver=nullptr) const override;
     void resolve( ASTResolver& resolver ) override;
-    std::complex<double> operator()() const override;
+    complex_t operator()() const override;
     operator Expression() const ;
     Expression clone() const { 
       std::vector<Expression> cloned; 

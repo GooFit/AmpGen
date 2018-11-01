@@ -88,13 +88,14 @@ void Minimiser::prepare()
     }
     if ( par->iFixInit() != 0 ) continue;
     m_minimizer->SetVariable( counter, par->name(), par->mean(), par->stepInit() );
-    if ( par->minInit() != 0 || par->maxInit() != 0 ) {
-      if ( m_printLevel != 0 )
-        INFO( "Setting parameter limits : " << par->name() << " in [" << par->minInit() << ", " << par->maxInit()
-                                            << "]" );
-      m_minimizer->SetVariableLimits( counter, par->minInit(), par->maxInit() );
-    } else if ( m_printLevel != 0 ) {
-      INFO( "Allowing free parameter: " << par->name() << " = " << par->mean() << " +/- " << par->stepInit() );
+    if ( par->minInit() != 0 || par->maxInit() != 0 ) m_minimizer->SetVariableLimits( counter, par->minInit(), par->maxInit() );
+    
+    else if ( m_printLevel != 0 ) {
+      INFO( "Parameter: " << std::left  << std::setw(60) << par->name() << " = " 
+                          << std::right << std::setw(12) << par->mean() << " ± " 
+                          << std::left  << std::setw(12) << par->stepInit() 
+                          << ( ( par->minInit() != 0 || par->maxInit() != 0 ) ? 
+                          ("["+ std::to_string(par->minInit()) + ", " + std::to_string(par->maxInit() ) ) : "" ) );
     }
     m_mapping.push_back( i );
     counter++;

@@ -53,7 +53,7 @@
 #define DEFINE_UNARY_OPERATOR( X, F ) \
   X::X( const AmpGen::Expression& expression) : IUnaryExpression(expression) {} \
   X::operator Expression() const { return Expression( std::make_shared<X>(*this) ) ; } \
-  std::complex<double> X::operator()() const { return F( m_expression() ); } \
+  complex_t X::operator()() const { return F( m_expression() ); } \
   std::string X::to_string(const ASTResolver* resolver) const { return std::string(#F)+"("+ m_expression.to_string(resolver)+")";}
 
 /// \ingroup ExpressionEngine macro DECLARE_UNARY_OPERATOR
@@ -66,7 +66,7 @@
     virtual Expression d() const override;                  \
     operator Expression() const;                            \
     Expression clone() const override { return X(m_expression.clone());} \
-    virtual std::complex<double> operator()() const override;          \
+    virtual complex_t operator()() const override;          \
   }
 
 /// \ingroup ExpressionEngine macro DECLARE_BINARY_OPERATOR
@@ -78,7 +78,7 @@
     virtual std::string to_string(const ASTResolver* resolver=nullptr) const override ;        \
     operator Expression() const ;                           \
     Expression clone() const override { return X(lval.clone(),rval.clone());} \
-    virtual std::complex<double> operator()() const override;          \
+    virtual complex_t operator()() const override;          \
   }
 
 #include <algorithm>
@@ -93,6 +93,8 @@
 #include <functional>
 #include "AmpGen/MsgService.h"
 #include "AmpGen/MetaUtils.h"
+#include "AmpGen/Types.h"
+
 namespace AmpGen
 {
   struct ASTResolver;
@@ -119,7 +121,7 @@ namespace AmpGen
       virtual ~IExpression() = default;
       /// Evaluate the expression using the tree, 
       /// will generally be very slow but ocassionally useful for debugging. 
-      virtual std::complex<double> operator()() const = 0;
+      virtual complex_t operator()() const = 0;
       virtual Expression clone() const = 0; 
   };
 
@@ -129,8 +131,8 @@ namespace AmpGen
   class Expression { 
     public:
     Expression();
-    Expression( const double& value );
-    Expression( const std::complex<double>& value );
+    Expression( const real_t& value );
+    Expression( const complex_t& value );
     Expression( const std::shared_ptr<IExpression>& expression ) ;
     ~Expression() = default;
     std::string to_string(const ASTResolver* resolver = nullptr) const;
@@ -142,7 +144,7 @@ namespace AmpGen
     Expression operator/=( const Expression& other ) const;
     Expression operator-() const;
     Expression clone() const { return m_expression->clone(); } 
-    std::complex<double> operator()() const; 
+    complex_t operator()() const; 
 
   private:
     std::shared_ptr<IExpression> m_expression;
@@ -152,16 +154,19 @@ namespace AmpGen
   /// Class to contain a complex valued complex 
   class Constant : public IExpression {
     public:
-    Constant( const int& real, const int& imag=0 ) : m_value(real,imag) {}
-    Constant( const double& real, const double& imag=0) : m_value( real, imag ) {}
-    Constant( const std::complex<double>& cmplx ) : m_value( cmplx) {}
+    template < typename T1, 
+               typename T2,
+               typename = std::enable_if_t< std::is_constructible< complex_t, T1, T2 >::value > >
+    Constant( const T1& real, const T2& imag=0 ) : m_value(real,imag) {}
+
+    Constant( const complex_t& value ) : m_value(value) {}
     std::string to_string(const ASTResolver* resolver = nullptr) const override;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const;
-    std::complex<double> operator()() const override { return m_value; }
+    complex_t operator()() const override { return m_value; }
     Expression clone() const override { return Constant(m_value); }
     private:
-    std::complex<double> m_value;
+    complex_t m_value;
   };
 
   /// \ingroup ExpressionEngine class Parameter
@@ -177,7 +182,7 @@ namespace AmpGen
     std::string to_string(const ASTResolver* resolver = nullptr) const override;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const ;
-    std::complex<double> operator()() const override { return std::complex<double>( m_defaultValue, 0 ); }
+    complex_t operator()() const override { return complex_t( m_defaultValue, 0 ); }
     std::string name() const { return m_name; }
     Expression clone() const override;
     std::string  m_name;
@@ -201,7 +206,7 @@ namespace AmpGen
     std::string to_string(const ASTResolver* resolver=nullptr) const override;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const ;
-    std::complex<double> operator()() const override { return std::real(m_cond()) ? m_v1() : m_v2(); }
+    complex_t operator()() const override { return std::real(m_cond()) ? m_v1() : m_v2(); }
     Expression clone() const override { return Ternary( m_cond.clone(), m_v1.clone(), m_v2.clone() ) ; } 
     Expression m_cond;
     Expression m_v1;
@@ -214,7 +219,7 @@ namespace AmpGen
     std::string to_string(const ASTResolver* resolver=nullptr) const override ;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const ;
-    std::complex<double> operator()() const override { return m_expression(); }
+    complex_t operator()() const override { return m_expression(); }
     Expression clone() const override { return SubTree( m_expression.clone() ); }
     
     uint64_t key() const; 
@@ -229,7 +234,7 @@ namespace AmpGen
     std::string to_string(const ASTResolver* resolver=nullptr) const override ;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const ;
-    std::complex<double> operator()() const override { return 0; }  
+    complex_t operator()() const override { return 0; }  
     Expression clone() const override { 
       std::vector<Expression> cloned_args; 
       for( auto& arg : m_args ) cloned_args.push_back( arg.clone() );
@@ -245,7 +250,7 @@ namespace AmpGen
     public:
     IBinaryExpression( const Expression& l, const Expression& r ) : lval( l ), rval( r ){};
     void resolve( ASTResolver& resolver ) override;
-    std::complex<double> operator()() const override = 0;
+    complex_t operator()() const override = 0;
     Expression l() const { return lval ; }
     Expression r() const { return rval ; }
     protected:
@@ -297,7 +302,7 @@ namespace AmpGen
     public:
     IUnaryExpression( const Expression& other ) : m_expression( other ){};
     void resolve( ASTResolver& resolver ) override;
-    std::complex<double> operator()() const override = 0;
+    complex_t operator()() const override = 0;
     virtual Expression d() const = 0; 
     Expression arg() const { return m_expression ;} 
     protected:

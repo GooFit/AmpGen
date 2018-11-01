@@ -506,10 +506,6 @@ Tensor Particle::ExternalSpinTensor(const int& polState, DebugSymbols* db ) cons
     Expression xi01    = make_cse(Ternary( aligned,  0, (pP+pZ)/n ));
     Expression xi10    = make_cse(Ternary( aligned,  0, (pP+pZ)/n ));
     Expression xi11    = make_cse(Ternary( aligned,  1, z/n ));
-    //    if(id > 0 && polState ==  1 ) return Tensor({  fm*xi10,  fm*xi11,  fp*xi10,  fp*xi11 } );
-    //    if(id > 0 && polState == -1 ) return Tensor({  fp*xi00,  fp*xi01,  fm*xi00,  fm*xi01 } );
-    //    if(id < 0 && polState ==  1 ) return Tensor({ -fp*xi00, -fp*xi01,  fm*xi00,  fm*xi01 } );
-    //    if(id < 0 && polState == -1 ) return Tensor({  fm*xi10,  fm*xi11, -fp*xi01, -fp*xi11 } );     
     Expression fa = (fm+fp)/sqrt(2);
     Expression fb = (fm-fp)/sqrt(2);
     if(id > 0 && polState ==  1 ) return Tensor({  fa*xi10,  fa*xi11,  fb*xi10,  fb*xi11 } );

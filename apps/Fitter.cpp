@@ -209,9 +209,12 @@ int main( int argc, char* argv[] )
     }
   }
   EventType evtType( evtType_particles );
-
+  INFO( "Signal  = " << evtType );
   FastCoherentSum   sig( evtType, MPS );
+  
+  INFO( "Background  = " << evtType );
   FastIncoherentSum bkg( evtType, MPS, "Inco" );
+  INFO( "OS  = " << evtType.conj(true) );
   FastCoherentSum misID( evtType.conj(true) , MPS  );
 
   if ( !sig.isStateGood() || !bkg.isStateGood() || !misID.isStateGood() ) {
@@ -279,10 +282,10 @@ int main( int argc, char* argv[] )
   sig.reset( true ); //// reset PDFs to ensure correct cache state
   sig.setMC( flatMC );
   sig.prepare();
-  if ( MPS["fComb"]->mean() != 1 )
-    fr->addFractions( sig.fitFractions( fr->getErrorPropagator() ) );
-  else
-    fr->addFractions( bkg.fitFractions( fr->getErrorPropagator() ) );
+//  if ( MPS["fComb"]->mean() != 1 )
+//    fr->addFractions( sig.fitFractions( fr->getErrorPropagator() ) );
+//  else
+//    fr->addFractions( bkg.fitFractions( fr->getErrorPropagator() ) );
 
   fr->writeToFile( logFile );
   output->cd();

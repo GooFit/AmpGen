@@ -24,8 +24,7 @@ namespace AmpGen
     std::string generateFilename();
   public:
 
-    CompilerWrapper( const bool& verbose=false) ;
-
+    CompilerWrapper( const bool& verbose=false);
     void generateSource( const CompiledExpressionBase& expression, const std::string& fname);
     bool compile( CompiledExpressionBase& expression, const std::string& fname=""); 
     bool compile( std::vector<CompiledExpressionBase*>& expression, const std::string& fname=""); 

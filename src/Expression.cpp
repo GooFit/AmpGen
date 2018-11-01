@@ -28,14 +28,14 @@ std::string Expression::to_string(const ASTResolver* resolver) const
 }
 IExpression* Expression::get() const { return m_expression.get(); }
 
-std::complex<double> Expression::operator()() const { return ( *m_expression )(); }
+complex_t Expression::operator()() const { return ( *m_expression )(); }
 
 template < class T > 
 bool isEqual( const T& A, const double& B ){
   return fabs(A-B) < std::numeric_limits<double>::epsilon();
 }
 
-bool isZero( const std::complex<double>& A ){
+bool isZero( const complex_t& A ){
   return fabs(std::real(A)) < std::numeric_limits<double>::epsilon() && fabs(std::imag(A)) < std::numeric_limits<double>::epsilon();
 }
 
@@ -46,7 +46,7 @@ std::string Constant::to_string(const ASTResolver* resolver) const {
     return str; 
   };
   return std::imag( m_value ) == 0 ? "(" + rounded_string(std::real(m_value)) +")" : 
-    "std::complex<double>("+rounded_string(std::real(m_value))+","+rounded_string(std::imag(m_value))+")";
+      typeof<complex_t>() +"("+rounded_string(std::real(m_value))+","+rounded_string(std::imag(m_value))+")";
 }
 
 Expression simplify_constant_addition( const Constant& constant, const Expression& expression )
@@ -60,7 +60,7 @@ Expression simplify_constant_addition( const Constant& constant, const Expressio
 Expression simplify_product_addition( const Product& prod, const Expression& expression, bool& status )
 {
   if( is<Constant>(prod.l()) && ( std::real( prod.l()() ) < 0.) ){
-    return expression - Constant(-1.*prod.l()())*prod.r(); 
+    return expression - Constant(-1.*complex_t(prod.l()()))*prod.r(); 
   }
   return Expression( Sum(expression, prod ) ); 
 }
@@ -199,7 +199,7 @@ Expression Expression::operator/=( const Expression& other ) const { return *thi
 
 std::ostream& AmpGen::operator<<( std::ostream& os, const Expression& expression ) {  return os << expression.to_string() ; } 
 Expression::Expression( const double& value ) : m_expression( std::make_shared<Constant>( value ) ) {}
-Expression::Expression( const std::complex<double>& value ) : m_expression( std::make_shared<Constant>( value ) ) {}
+Expression::Expression( const complex_t& value ) : m_expression( std::make_shared<Constant>( value ) ) {}
 Expression::Expression() : m_expression( std::make_shared<Constant>( 0. ) ) {}
 
 void Expression::resolve( ASTResolver& resolver ) { m_expression->resolve( resolver ); }

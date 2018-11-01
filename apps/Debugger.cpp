@@ -82,8 +82,7 @@ void print( const Event& event, const MatrixElements& matrixElements, bool verbo
     auto terms = mE.coupling.couplings;
     if ( verbose ) {
       for ( auto& term : terms ) {
-        INFO( "--> " << term.first->name() << " = (" << term.first->mean() * cos( term.second->mean() ) << " + i "
-            << term.first->mean() * sin( term.second->mean() ) << ")" );
+        INFO( "--> " << term.first->name() << " = (" << term.first->mean() * cos( term.second->mean() ) << " + i " << term.first->mean() * sin( term.second->mean() ) << ")" );
       }
       mE.pdf.debug( event );
     }
@@ -108,7 +107,10 @@ template < class FCN > void debug( FCN& sig, EventList& accepted, bool verbose, 
   auto boosted_value = sig.getValNoCache( accepted_boosted );
   INFO( "A(x)  = " << unboosted_value ) ;
   INFO( "A(Λx) = " << boosted_value );   
-
+  
+  accepted[0].invertParity(4);
+  accepted[0].print();
+  INFO( "A(Px) = " << sig.getValNoCache( accepted[0] ) );
 }
 
 int main( int argc, char** argv )
