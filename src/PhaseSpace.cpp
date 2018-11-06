@@ -34,29 +34,17 @@
 
 const Int_t kMAXP = 18;
 
-////////////////////////////////////////////////////////////////////////////////
-
-/// the PDK function
-
 using namespace AmpGen;
 
 double PhaseSpace::PDK( double a, double b, double c )
 {
   double x = ( a - b - c ) * ( a + b + c ) * ( a - b + c ) * ( a + b - c );
-  x        = TMath::Sqrt( x ) / ( 2 * a );
+  x        = sqrt( x ) / ( 2 * a );
   return x;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-///  Generate a random final state.
-///  The function returns the weigth of the current event.
-///  The TLorentzVector of each decay product can be obtained using GetDecay(n).
-///
-/// Note that Momentum, Energy units are Gev/C, GeV
-
 double PhaseSpace::Generate()
 {
-  //  std::vector<double> rno( m_nt, 0 );
   std::array<double, kMAXP> rno;
   double pd[kMAXP];
   double invMas[kMAXP];
@@ -83,16 +71,6 @@ double PhaseSpace::Generate()
     }
   } while ( wt < rndm() );
 
-  /*
-     only compute the full event if is phaseSpace -> very large
-     speed increase compared with default ROOT implementation
-     if trying to generate "unweighted" event.
-     also, this is much more intuitive
-     */
-
-  //
-  //-----> complete specification of event (Raubold-Lynch method)
-  //
   m_decPro[0].SetPxPyPzE( 0, pd[0], 0, sqrt( pd[0] * pd[0] + m_mass[0] * m_mass[0] ) );
 
   unsigned int i = 1;
@@ -124,9 +102,6 @@ double PhaseSpace::Generate()
   return wt;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// return Lorentz vector corresponding to decay n
-
 TLorentzVector* PhaseSpace::GetDecay( const unsigned int& n )
 {
   if ( n > m_nt ) return nullptr;
@@ -152,7 +127,7 @@ Bool_t PhaseSpace::SetDecay( const double& m0, const std::vector<double>& mass )
     m_teCmTm -= mass[n];
   }
 
-  if ( m_teCmTm <= 0 ) return kFALSE; // not enough energy for this decay
+  if ( m_teCmTm <= 0 ) return 0 ; 
 
   double emmax = m_teCmTm + m_mass[0];
   double emmin = 0;
@@ -164,14 +139,13 @@ Bool_t PhaseSpace::SetDecay( const double& m0, const std::vector<double>& mass )
   }
   m_wtMax = 1 / wtmax;
 
-  return kTRUE;
+  return true;
 }
 
 
 PhaseSpace::PhaseSpace( const EventType& type, TRandom* rand ) : m_type( type ), m_rand( rand )
 {
   SetDecay( type.motherMass(), type.masses() );
-  // tau in [ns]
   if ( type.isTimeDependent() )
     m_decayTime = 6.582119514 / ( ParticlePropertiesList::get( type.mother() )->width() * pow( 10, 13 ) );
 }
@@ -182,7 +156,6 @@ AmpGen::Event PhaseSpace::makeEvent( const unsigned int& cacheSize )
 {
   Generate();
   AmpGen::Event newEvent( m_type.eventSize(), cacheSize );
-  //INFO( "EventSize = " << m_type.eventSize() << " nParticles = " << m_nt ); 
   for ( unsigned int i = 0; i < m_nt; ++i ) {
     newEvent.set( i, {m_decPro[i].Px(), m_decPro[i].Py(), m_decPro[i].Pz(), m_decPro[i].E()} );
   }

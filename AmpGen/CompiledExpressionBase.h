@@ -33,16 +33,17 @@ namespace AmpGen
     std::string                                     m_name;
     DebugSymbols                                    m_db;
     std::map<std::string, size_t>                   m_evtMap;
-    std::shared_future<bool>*                       m_readyFlag;
+    std::shared_future<bool>*                       m_readyFlag = {nullptr};
     std::vector<std::pair<uint64_t, Expression>>    m_dependentSubexpressions;
     std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;
+    ASTResolver*                                    m_resolver = {nullptr};
   public:
     CompiledExpressionBase( const Expression& expression, 
                             const std::string& name,
                             const DebugSymbols& db=DebugSymbols(), 
                             const std::map<std::string,size_t>& evtMapping = {} );
     CompiledExpressionBase( const std::string& name );
-    CompiledExpressionBase() : m_readyFlag(nullptr) {}
+    CompiledExpressionBase() = default; 
 
     void resolve(const MinuitParameterSet* mps = nullptr);
     void prepare();

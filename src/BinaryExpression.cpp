@@ -54,9 +54,10 @@ std::string Product::to_string(const ASTResolver* resolver)     const {
 }
 
 std::string Divide::to_string(const ASTResolver* resolver)      const { 
-  auto use_brackets = [](auto& expression){ return is<Sum>(expression) || is<Sub>(expression); };
-  auto use_brackets_r = [](auto& expression){ return is<IBinaryExpression>(expression) ; };
-  return bracketed( lval, use_brackets,resolver) + "/"+ bracketed(rval, use_brackets_r,resolver);
+  //auto use_brackets = [](auto& expression){ return is<Sum>(expression) || is<Sub>(expression); };
+  //auto use_brackets_r = [](auto& expression){ return is<IBinaryExpression>(expression) ; };
+  return "(" + lval.to_string(resolver) + ")/("+ rval.to_string(resolver) +")";
+  //return bracketed( lval, use_brackets,resolver) + "/"+ bracketed(rval, use_brackets_r,resolver);
 }
 
 std::string LessThan::to_string(const ASTResolver* resolver)    const { return "("     + lval.to_string(resolver) + "<"   + rval.to_string(resolver) +")"; }

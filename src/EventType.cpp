@@ -24,14 +24,16 @@ using namespace AmpGen;
 std::map<std::string, size_t> EventType::getEventFormat( const bool& outputNames ) const
 {
   std::map<std::string, size_t> returnValue;
+  bool include_energy = NamedParameter<bool>("EventType::IncludeEnergy", true );
+  size_t s = include_energy ? 4 : 3; 
 
   for ( unsigned int ip = 0; ip < size(); ++ip ) {
     std::string stub =
         outputNames ? "_" + std::to_string( ip + 1 ) + "_" + m_particleNamesPickled[ip] : std::to_string( ip );
-    returnValue[stub + "_E"]  = 4 * ip + 3;
-    returnValue[stub + "_Px"] = 4 * ip + 0;
-    returnValue[stub + "_Py"] = 4 * ip + 1;
-    returnValue[stub + "_Pz"] = 4 * ip + 2;
+    if( include_energy ) returnValue[stub + "_E"]  = s * ip + 3;
+    returnValue[stub + "_Px"] = s * ip + 0;
+    returnValue[stub + "_Py"] = s * ip + 1;
+    returnValue[stub + "_Pz"] = s * ip + 2;
   }
   if ( m_timeDependent ) returnValue[m_mother + "_ctau"] = 4 * size();
   return returnValue;

@@ -215,13 +215,13 @@ Tensor Particle::P() const
   if ( isStable() ) {
     if ( m_index != 999 ) {
       const std::string index = std::to_string( m_index );
-      return Tensor(
-          std::vector<Expression>( {
+      Tensor rt( std::vector<Expression>( {
             Parameter( index + "_Px", 0, false, 1 ), 
             Parameter( index + "_Py", 0, false, 1 ),
-            Parameter( index + "_Pz", 0, false, 1 ), 
-            Parameter( index + "_E" , 0, false, 1 )} ),
-          {4} );
+            Parameter( index + "_Pz", 0, false, 1 ), 0 } ) , {4} );
+      rt[3] = make_cse( fcn::sqrt( mass()*mass() + rt[0]*rt[0] + rt[1]*rt[1] + rt[2]*rt[2] ) );
+         //   Parameter( index + "_E" , 0, false, 1 )} ),
+      return rt;
     } else
       ERROR( "Stable particle " << m_index << "is unindexed!" );
   } else {
@@ -336,7 +336,8 @@ Expression Particle::Lineshape( DebugSymbols* db ) const
 
   Expression total( 1. );
   DEBUG( "Getting lineshape " << m_lineshape << " for " << m_name );
-  Expression s = m_isHead ? dot(P(),P()) : massSq();
+  //Expression s = m_isHead ? dot(P(),P()) : massSq();
+  Expression s= massSq();
   if ( m_daughters.size() == 2 ) {
     total = total * make_cse( LineshapeFactory::getLineshape( m_lineshape, s, daughter( 0 )->massSq(), daughter( 1 )->massSq(), m_name, m_orbital, db ) );
   }
@@ -655,7 +656,7 @@ MultiQuarkContent Particle::daughterQuarks() const
   return quarks;
 }
 
-Expression Particle::massSq() const { return isStable() ? mass() * mass() : dot( P(), P() ); }
+Expression Particle::massSq() const { return isStable() ? mass() * mass() : make_cse( dot( P(), P() ) ); }
 void Particle::addModifier( const std::string& mod )
 {
   m_modifiers.push_back( mod );

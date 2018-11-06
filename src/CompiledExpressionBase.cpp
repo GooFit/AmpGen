@@ -35,12 +35,12 @@ std::string AmpGen::programatic_name( std::string s )
 
 void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
 {
-  ASTResolver resolver( m_evtMap, mps );
-  resolver.useCompileTimeConstants = NamedParameter<bool>( "CompiledExpression::UseCompileTimeConstants", false ); 
-  resolver.getOrderedSubExpressions( m_obj,  m_dependentSubexpressions );
-  for ( auto& sym : m_db ) sym.second.resolve( resolver ); 
+  if( m_resolver != nullptr ) delete m_resolver ; 
+  m_resolver = new ASTResolver( m_evtMap, mps );
+  m_resolver->getOrderedSubExpressions( m_obj,  m_dependentSubexpressions );
+  for ( auto& sym : m_db ) sym.second.resolve( *m_resolver ); 
     //    resolver.getOrderedSubExpressions( sym.second, m_dependentSubexpressions  );
-  resolveParameters(resolver);
+  resolveParameters(*m_resolver);
 }
 
 CompiledExpressionBase::CompiledExpressionBase( const Expression& expression, 
@@ -57,8 +57,8 @@ CompiledExpressionBase::CompiledExpressionBase( const std::string& name )
   : m_name( name ),
   m_readyFlag(nullptr) {}
 
-  std::string CompiledExpressionBase::name() const { return m_name; }
-  unsigned int CompiledExpressionBase::hash() const { return FNV1a_hash(m_name); }
+std::string CompiledExpressionBase::name() const { return m_name; }
+unsigned int CompiledExpressionBase::hash() const { return FNV1a_hash(m_name); }
 
 void CompiledExpressionBase::resolveParameters( ASTResolver& resolver )
 {
@@ -78,7 +78,7 @@ void CompiledExpressionBase::prepare()
 void CompiledExpressionBase::addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const
 {
   for ( auto& dep : m_dependentSubexpressions ) {
-    std::string rt = "auto v" + std::to_string(dep.first) + " = " + dep.second.to_string() +";"; 
+    std::string rt = "auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver) +";"; 
     stream << rt << "\n";
     sizeOfStream += sizeof(char) * rt.size(); /// bytes /// 
   }
@@ -87,19 +87,27 @@ void CompiledExpressionBase::addDependentExpressions( std::ostream& stream, size
 void CompiledExpressionBase::to_stream( std::ostream& stream  ) const 
 {
   if( m_db.size() !=0 ) stream << "#include<iostream>\n"; 
-  stream << "extern \"C\" const char* " << m_name << "_name() {\n"
-    << "  return \"" << m_name << "\";\n";
-  stream << "}\n\n";
+  stream << "extern \"C\" const char* " << m_name << "_name() {  return \"" << m_name << "\"; } \n";
+  bool enable_cuda = NamedParameter<bool>("enable_cuda",false);
 
-  // Avoid a warning about std::complex not being C compatible (it is)
-  stream << "#pragma clang diagnostic push\n"
-    << "#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
+    size_t sizeOfStream = 0; 
+  if( !enable_cuda ){
+    // Avoid a warning about std::complex not being C compatible (it is)
+    stream << "#pragma clang diagnostic push\n"
+      << "#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
 
-  stream << "extern \"C\" " << returnTypename() << " " << m_name << "(" << fcnSignature() << "){\n";
-  size_t sizeOfStream = 0; 
-  addDependentExpressions( stream , sizeOfStream );
-  std::string objString = m_obj.to_string();
-  stream << "return " << objString << ";\n}\n";
+    stream << "extern \"C\" " << returnTypename() << " " << m_name << "(" << fcnSignature() << "){\n";
+    addDependentExpressions( stream , sizeOfStream );
+    std::string objString = m_obj.to_string(m_resolver);
+    stream << "return " << objString << ";\n}\n";
+  }
+  else {
+    stream << "__global__ void " << m_name << "( float* r, const float* x0, const float3* x1 , const int& N) { \n";
+    stream <<  "  int i     = blockIdx.x * blockDim.x + threadIdx.x;\n";
+    addDependentExpressions( stream, sizeOfStream);
+    std::string objString = m_obj.to_string(m_resolver);
+    stream << "  r[i] = " << objString << ";\n}\n";
+  }
 
   if( NamedParameter<bool>("CompiledExpressionBase::Compat") == true ){
     stream << "#pragma clang diagnostic pop\n\n";
@@ -139,7 +147,7 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
   for ( unsigned int i = 0 ; i < m_db.size(); ++i ) {
     std::string comma = (i!=m_db.size()-1)?", " :"};\n}\n";
     const auto expression = m_db[i].second; 
-    if ( expression.to_string() != "NULL" )
+    if ( expression.to_string(m_resolver) != "NULL" )
     stream << std::endl << expression << comma;
     else stream << std::endl << "-999" << comma ;
   }

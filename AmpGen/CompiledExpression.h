@@ -18,10 +18,10 @@
 namespace AmpGen
 {
   /* @class CompiledExpression
-   * @tparam RETURN_TYPE The type that is returned this compiled expression,
-   * usually this is a std::complex<double>,
-   * but in principal support also exists for computing coupled channel propagators
-   * (i.e. returning array types)
+     @tparam RETURN_TYPE The type that is returned this compiled expression,
+     usually this is a std::complex<double>,
+     but in principal support also exists for computing coupled channel propagators
+     (i.e. returning array types)
    */
 
   template <class RETURN_TYPE, class... ARGS>
@@ -48,7 +48,7 @@ namespace AmpGen
     }
 
     CompiledExpression( const std::string& name = "" ) : CompiledExpressionBase( name ) {};
-
+    std::vector<real_t> externBuffer() const { return m_externals ; } 
     std::string returnTypename() const override { return typeof<RETURN_TYPE>(); }
     std::string fcnSignature() const override
     {
@@ -87,8 +87,7 @@ namespace AmpGen
       INFO( "Hash     = " << hash() );
       INFO( "IsReady? = " << isReady() << " IsLinked? " << (m_fcn.isLinked() ) );
       INFO( "args     = ["<< vectorToString( m_externals, ", ") <<"]");
-      // for( auto& elem : m_cacheTransfers ) elem->print();
-      //   INFO( "cacheSize= " << m_cacheTransfers.size() );
+      for( auto& c : m_cacheTransfers ){ c->print() ; } 
     }
 
     void setExternal( const double& value, const unsigned int& address ) override
@@ -201,7 +200,7 @@ namespace AmpGen
       return true;
     }
   };
-  
+
   template <class RT> 
     CompiledExpression<RT, const double*, const double*> 
       make_expression( const Expression& expression, const std::string& name , const bool& verbose=false)
@@ -211,5 +210,6 @@ namespace AmpGen
         return rt;
       }
 } // namespace AmpGen
+
 
 #endif

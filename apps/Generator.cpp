@@ -59,10 +59,10 @@ int main( int argc, char** argv )
 {
   OptionsParser::setArgs( argc, argv );
 
-  size_t nEvents           = NamedParameter<size_t>( "nEvents", 1, "Total number of events to generate" );
-  int seed                 = NamedParameter<int>( "Seed", 0, "Random seed used in event Generation" );
-  size_t blockSize         = NamedParameter<size_t>("BlockSize", 100000, "Number of events to generate per block" );
-  std::string out_filename = NamedParameter<std::string>( "Output", "Generate_Output.root" , "Name of output file" );
+  size_t nEvents      = NamedParameter<size_t>     ("nEvents"  , 1, "Total number of events to generate" );
+  size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
+  int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
+  std::string outfile = NamedParameter<std::string>("Output"   , "Generate_Output.root" , "Name of output file" );
   
   std::string gen_type = NamedParameter<std::string>( "Type", "default", 
       "Generator configuration to use: \n" 
@@ -79,6 +79,7 @@ int main( int argc, char** argv )
     omp_set_num_threads( nCores );
     omp_set_dynamic( 0 );
   #endif
+
   TRandom3 rand;
   rand.SetSeed( seed + 934534 );
 
@@ -122,7 +123,7 @@ int main( int argc, char** argv )
   }
   if( accepted.size() == 0 ) return -1;
   INFO( "Making output files" );
-  TFile* f = TFile::Open( out_filename.c_str(), "RECREATE" );
+  TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
   accepted.tree( "DalitzEventList" )->Write();
 
   auto plots = accepted.makeDefaultPlots( LineColor( kBlack ) );

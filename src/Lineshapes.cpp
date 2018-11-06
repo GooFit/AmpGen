@@ -84,8 +84,8 @@ Expression AmpGen::width( const Expression& s, const Expression& s1, const Expre
   Expression BF        = BlattWeisskopf_Norm( q2 * radius * radius, q20 * radius * radius, L );
   Expression qr        = sqrt( q2 / q20 ) * fpow( q2/q20, L );
 
-  const Expression mreco = sqrt( s );
-  const Expression mr    = mass / mreco;
+  const Expression mreco = isqrt( s );
+  const Expression mr    = mass * mreco;
 
   ADD_DEBUG(q2            , dbexpressions);
   ADD_DEBUG(q20           , dbexpressions);

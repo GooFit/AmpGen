@@ -57,7 +57,8 @@ const Tensor Metric4x4(){
 
 Tensor AmpGen::Orbital_PWave( const Tensor& P, const Tensor& Q )
 { 
-  return Q - P * ( dot( P, Q ) / make_cse( dot( P, P )  ));
+  auto is = 1./make_cse( dot(P,P) ,true);
+  return Q - P * make_cse( dot( P, Q ) ) * is ; // / make_cse( dot( P, P ) );
 }
 
 
@@ -66,14 +67,18 @@ Tensor AmpGen::Orbital_DWave( const Tensor& P, const Tensor& Q )
   Tensor::Index mu;
   Tensor::Index nu;
   Tensor L = Orbital_PWave( P, Q );
-  return L(mu) * L(nu) - make_cse( dot( L, L ) / 3. ) * Spin1Projector(P) ( mu, nu );
+  Tensor f =  L(mu) * L(nu) - make_cse( dot( L, L ) / 3. ) * Spin1Projector(P) ( mu, nu );
+  f.imposeSymmetry(0,1); 
+  f.st();
+  return f;  
 }
 
 Tensor AmpGen::Spin1Projector( const Tensor& P )
 {
   Tensor::Index mu;
   Tensor::Index nu;
-  return Metric4x4()(mu, nu) - P(mu) * P(nu) / make_cse( dot(P, P) , true ); 
+  auto is = 1./make_cse( dot(P,P) , true);
+  return Metric4x4()(mu, nu) - P(mu) * P(nu) * is ; // / make_cse( dot(P, P) , true ); 
 }
 
 Tensor AmpGen::Spin2Projector( const Tensor& P )
@@ -120,14 +125,15 @@ Tensor AmpGen::Spin1hProjector( const Tensor& P )
 
 Tensor AmpGen::Spin3hProjector( const Tensor& P )
 {
-  Tensor::Index a,b,c, d, mu, nu, alpha,beta;
+  Tensor::Index a,b,c, d, mu, nu; 
   Tensor Ps = P;
+  Ps.st();
   Tensor g = gamma_twiddle(Ps);
   Tensor F = Spin1hProjector(Ps);
   Tensor S = Spin1Projector(Ps);
   S.imposeSymmetry(0,1);
   Tensor rt = (-1.) * S(mu,nu) * F(a,b) + (1./3.) * F(a,c) * g(mu,c,d) * g(nu,d,b);
-  rt.st(1);
+  rt.st(true);
   return rt;
 }
 
@@ -222,7 +228,7 @@ DEFINE_VERTEX( T_VS_P )
   return V2[0] * ( ( L( alpha ) * Vp( beta ) + L( beta ) * Vp( alpha ) ) / 2. - S( alpha, beta ) * dot( L, V1 ) / 3. );
 }
 
-DEFINE_VERTEX( T_SS_D ) { return Orbital_DWave( P, Q ) / ( GeV * GeV ); }
+DEFINE_VERTEX( T_SS_D ) { return Orbital_DWave( P, Q )  * V1[0] * V2[0] / ( GeV * GeV ); }
 
 DEFINE_VERTEX( S_TV_P )
 {
@@ -312,7 +318,7 @@ DEFINE_VERTEX( f_Tf_P )
   Tensor::Index a,b,c;
   Tensor proj   = Spin1hProjector(P);
   Tensor T = V1;
-  T.imposeSymmetry({0,1});
+  T.imposeSymmetry(0,1);
   T.st();
   return proj( a, b ) * gamma_twiddle(P)(mu,b,c) * V2(c) * T(-mu,-nu) * Orbital_PWave(P,Q)(nu) / GeV;
 }

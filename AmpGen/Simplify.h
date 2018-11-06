@@ -6,11 +6,11 @@ namespace AmpGen {
   class NormalOrderedExpression { 
     public:
       struct Term {
-        std::complex<double>      m_prefactor; 
-        std::vector<Expression>   m_terms;
-        Expression                m_divisor; 
-        std::string               m_expressionAsString; 
-        bool                      m_markForRemoval;
+        std::complex<double>                              m_prefactor; 
+        std::vector<std::pair<Expression,std::string>>    m_terms;
+        Expression                                        m_divisor; 
+        std::string                                       m_expressionAsString; 
+        bool                                              m_markForRemoval;
         void addExpression( const Expression& expression);
         Term( const Expression& expression ) ;
         operator Expression() ;

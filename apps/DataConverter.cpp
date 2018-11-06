@@ -33,6 +33,11 @@ int main( int argc, char* argv[] )
   std::string pdfLibrary     = NamedParameter<std::string>( "PdfLibrary", ( std::string ) "" ).getVal();
   std::string motherID       = NamedParameter<std::string>( "MotherID", ( std::string ) "" ).getVal();
   std::string treeName       = NamedParameter<std::string>( "Tree", ( std::string ) "" );
+  std::vector<std::string> particles       = NamedParameter<std::string>( "ParticleNames" ).getVector();
+  std::vector<std::string> monitorBranches = NamedParameter<std::string>( "Monitors" ).getVector();
+  std::vector<std::string> branchFormat    = NamedParameter<std::string>( "BranchFormat" ).getVector();
+  EventType evtType( NamedParameter<std::string>( "EventType" ).getVector() );
+  
   std::string cuts           = "";
   unsigned int cIndex        = 0;
   std::string cut            = "";
@@ -123,13 +128,6 @@ int main( int argc, char* argv[] )
       eventsToTake.push_back( elist->GetEntry( i ) );
     }
   }
-
-  EventType evtType( NamedParameter<std::string>( "EventType" ).getVector() );
-  
-
-  std::vector<std::string> particles       = NamedParameter<std::string>( "ParticleNames" ).getVector();
-  std::vector<std::string> monitorBranches = NamedParameter<std::string>( "Monitors" ).getVector();
-  std::vector<std::string> branchFormat    = NamedParameter<std::string>( "BranchFormat" ).getVector();
 
   std::vector<std::string> branches;
   for ( auto& particle : particles ) {

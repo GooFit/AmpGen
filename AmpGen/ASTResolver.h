@@ -25,14 +25,14 @@ namespace AmpGen {
       ASTResolver(const std::map<std::string, size_t>& evtMap = {} , 
           const MinuitParameterSet* mps = nullptr );
       bool hasSubExpressions() const;
+      
       void clearSubTrees();
-
-      //unsigned int resolveParameter( const std::string& name, const double& defaultValue );
-      template <class TYPE> void resolve( TYPE& obj ){}
-
       void reduceSubTrees(); 
       void cleanup();
       void getOrderedSubExpressions( Expression& expression, std::vector< std::pair<size_t,Expression>>& dependentSubexpressions );
+
+      template <class TYPE> void resolve( TYPE& obj ){}
+
       template < class TYPE, class ...ARGS > size_t addCacheFunction( const std::string& name, ARGS&... args )
       {
         auto it = m_cacheFunctions.find(name);
@@ -43,16 +43,19 @@ namespace AmpGen {
         return nParameters - cacheFunction->size();
       }
       size_t nParams() const { return nParameters ; }       
-      bool                               useCompileTimeConstants; /// Use compile time constants
+      bool enableCuda() const { return enable_cuda ; }
+      bool enableCompileConstants() const { return enable_compileTimeConstants ;} 
       std::map<std::string, std::shared_ptr<CacheTransfer>> cacheFunctions() const { return m_cacheFunctions;}
     private : 
       std::map<std::string, std::shared_ptr<CacheTransfer>> m_cacheFunctions;
-      std::map<std::string, size_t>      evtMap;           /// event specification 
-      std::map<std::string, std::string> parameterMapping; /// Mapping of parameters to compile parameters
-      const MinuitParameterSet*          mps;              /// Set of MinuitParameters 
-      std::map<SubTree*, int>            tempTrees;        /// temporary store of sub-trees for performing cse reduction 
-      std::map<uint64_t, Expression>     subTrees;         /// Unordered sub-trees 
-      unsigned int                       nParameters;      /// Number of parameters
+      std::map<std::string, size_t>      evtMap;                  /// event specification 
+      std::map<std::string, std::string> parameterMapping;        /// Mapping of parameters to compile parameters
+      const MinuitParameterSet*          mps;                     /// Set of MinuitParameters 
+      std::map<SubTree*, int>            tempTrees;               /// temporary store of sub-trees for performing cse reduction 
+      std::map<uint64_t, Expression>     subTrees;                /// Unordered sub-trees 
+      unsigned int                       nParameters;             /// Number of parameters
+      bool                               enable_cuda;             /// flag to generate CUDA code <<experimental>>
+      bool                               enable_compileTimeConstants; /// flag to enable compile time constants <<experimental>>
   };
   
   template <> void ASTResolver::resolve<Parameter>( Parameter& obj );

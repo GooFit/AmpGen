@@ -111,7 +111,7 @@ namespace AmpGen
     public:
       /// Called to convert the Expression tree into source code.
       /// \return The source code as a string
-      virtual std::string to_string(const ASTResolver* resolver = nullptr) const = 0;
+      virtual std::string to_string(const ASTResolver* resolver=nullptr) const = 0;
 
       /// Resolve the dependencies of a tree using an ASTResolver,
       /// which keeps track of parameters, dependent sub-trees, etc.
@@ -135,7 +135,7 @@ namespace AmpGen
     Expression( const complex_t& value );
     Expression( const std::shared_ptr<IExpression>& expression ) ;
     ~Expression() = default;
-    std::string to_string(const ASTResolver* resolver = nullptr) const;
+    std::string to_string(const ASTResolver* resolver=nullptr) const;
     IExpression* get() const;
     void resolve( ASTResolver& resolver );
     Expression operator+=( const Expression& other ) const;
@@ -160,7 +160,7 @@ namespace AmpGen
     Constant( const T1& real, const T2& imag=0 ) : m_value(real,imag) {}
 
     Constant( const complex_t& value ) : m_value(value) {}
-    std::string to_string(const ASTResolver* resolver = nullptr) const override;
+    std::string to_string(const ASTResolver* resolver=nullptr) const override;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const;
     complex_t operator()() const override { return m_value; }
@@ -169,19 +169,22 @@ namespace AmpGen
     complex_t m_value;
   };
 
-  /// \ingroup ExpressionEngine class Parameter
-  /// \brief Free parameter for expression 
-  ///
-  /// Class to contain a function parameter. In general, this will include global function parameters 
-  /// such as masses and widths, as well as the event buffer (i.e. kinematic quantities), which should be stored in 
-  /// two separated parameter packs. There is also limited support for handling more complex function parameters to functions, 
-  /// such as cache states, but this currently requires manually specifying the argument ordering. 
+  /** @ingroup ExpressionEngine class Parameter
+   @brief Free parameter for expression 
+  
+   Class to contain a function parameter. In general, this will include global function parameters 
+   such as masses and widths, as well as the event buffer (i.e. kinematic quantities), which should be stored in 
+   two separated parameter packs. There is also limited support for handling more complex function parameters to functions, 
+   such as cache states, but this currently requires manually specifying the argument ordering. 
+  */
   struct Parameter : public IExpression {
-    Parameter( const std::string& name="", const double& defaultValue = 0, const bool& resolved = false,
-        const unsigned int& fromArg = 0 );
+    Parameter( const std::string& name     = "", 
+               const double&  defaultValue = 0 , 
+               const bool&        resolved = false,
+               const unsigned int& fromArg = 0 );
     std::string to_string(const ASTResolver* resolver = nullptr) const override;
     void resolve( ASTResolver& resolver ) override;
-    operator Expression() const ;
+    operator Expression() const;
     complex_t operator()() const override { return complex_t( m_defaultValue, 0 ); }
     std::string name() const { return m_name; }
     Expression clone() const override;
@@ -203,7 +206,7 @@ namespace AmpGen
   */
   struct Ternary : public IExpression {
     Ternary( const Expression& cond, const Expression& v1, const Expression& v2 );
-    std::string to_string(const ASTResolver* resolver=nullptr) const override;
+    std::string to_string(const ASTResolver* resolver = nullptr ) const override;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const ;
     complex_t operator()() const override { return std::real(m_cond()) ? m_v1() : m_v2(); }
@@ -216,7 +219,7 @@ namespace AmpGen
   /// \ingroup ExpressionEngine class SubTree
   struct SubTree : public IExpression { 
     SubTree( const Expression& other ) ;
-    std::string to_string(const ASTResolver* resolver=nullptr) const override ;
+    std::string to_string(const ASTResolver* resolver = nullptr ) const override ;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const ;
     complex_t operator()() const override { return m_expression(); }
@@ -231,7 +234,7 @@ namespace AmpGen
 
   struct Function : public IExpression {
     Function( const std::string& name, const std::vector<Expression>& args ) ;
-    std::string to_string(const ASTResolver* resolver=nullptr) const override ;
+    std::string to_string(const ASTResolver* resolver = nullptr ) const override ;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const ;
     complex_t operator()() const override { return 0; }  
@@ -363,6 +366,10 @@ namespace AmpGen
   /// \ingroup ExpressionEngine struct ATan
   /// \brief Unary expression that returns \f$\tan^{-1}(z)\f$
   DECLARE_UNARY_OPERATOR( ATan );
+  
+  /// \ingroup ExpressionEngine struct ISqrt
+  /// \brief Unary expression that uses inverse sqrt (faster than dividing by sqrt) 
+  DECLARE_UNARY_OPERATOR( ISqrt );
 
   Expression operator<( const Expression& A, const Expression& B );
   Expression operator>( const Expression& A, const Expression& B );
@@ -400,6 +407,7 @@ namespace AmpGen
     Expression sqrt( const Expression& expression ); 
     Expression safe_sqrt( const Expression& expression );
     Expression complex_sqrt( const Expression& expression );
+    Expression isqrt( const Expression& expression );
     Expression cos( const Expression& expression );
     Expression sin( const Expression& expression );
     Expression abs( const Expression& expression );
@@ -410,6 +418,7 @@ namespace AmpGen
     Expression exp( const Expression& expression );
     Expression log( const Expression& expression );
     Expression atan2( const Expression& y, const Expression& x);
+
   }
 
   template < class T > bool is( const Expression& expression ){

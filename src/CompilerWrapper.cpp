@@ -113,7 +113,8 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     "-Ofast", 
     "-shared", 
     "-rdynamic", 
-    "--std=c++14", 
+    "--std=c++17",
+    "-march=native",
     "-fPIC", 
     fname.c_str(), "-o", 
     oname.c_str(), NULL };

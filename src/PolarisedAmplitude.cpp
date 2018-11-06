@@ -112,7 +112,7 @@ void   PolarisedAmplitude::prepare()
     double timeNorm   = std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tBeginCal ).count();
     t.pdf.resetExternals();
     changedPdfIndices.push_back(i);
-    INFO("Updated cache for PDF: " << std::setw(55) << t.decayTree->uniqueString() << std::setw(3) << t.addressData << " " << "  t = " << timeNorm << " ms" );
+    DEBUG("Updated cache for PDF: " << std::setw(55) << t.decayTree->uniqueString() << std::setw(3) << t.addressData << " " << "  t = " << timeNorm << " ms" );
   }
   if( !m_probExpression.isLinked() ) build_probunnormalised();
   m_probExpression.prepare(); 

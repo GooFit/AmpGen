@@ -45,8 +45,9 @@ std::string Constant::to_string(const ASTResolver* resolver) const {
     str.erase ( str.find_last_not_of('0') + 1, std::string::npos );  
     return str; 
   };
+  std::string complex_type_string = resolver != nullptr && resolver->enableCuda() ? "ampgen_cuda::complex_t" : typeof<complex_t>() ;
   return std::imag( m_value ) == 0 ? "(" + rounded_string(std::real(m_value)) +")" : 
-      typeof<complex_t>() +"("+rounded_string(std::real(m_value))+","+rounded_string(std::imag(m_value))+")";
+      complex_type_string +"("+rounded_string(std::real(m_value))+","+rounded_string(std::imag(m_value))+")";
 }
 
 Expression simplify_constant_addition( const Constant& constant, const Expression& expression )
@@ -168,21 +169,21 @@ Parameter::Parameter( const std::string& name, const double& defaultValue, const
 
 std::string Parameter::to_string(const ASTResolver* resolver) const
 {
-  if ( m_resolved ) return m_name;
+  if ( m_resolved )            return m_name;
   if ( m_compileTimeConstant ) return "(" + std::to_string(m_defaultValue) + ")" ;
-  if ( m_address != 9999 ) return "x" + std::to_string( m_fromArg ) + "[" + std::to_string( m_address ) + "]";
+  if ( m_address != 9999 )     return "x" + std::to_string( m_fromArg ) + "[" + std::to_string( m_address ) + "]";
   else return m_name; 
 }
 
 Expression Parameter::clone() const 
 {
   Parameter par; 
-  par.m_name     = m_name; 
-  par.m_resolved = m_resolved; 
+  par.m_name                = m_name; 
+  par.m_resolved            = m_resolved; 
   par.m_compileTimeConstant = m_compileTimeConstant; 
-  par.m_fromArg = m_fromArg; 
-  par.m_address = m_address; 
-  par.m_defaultValue = m_defaultValue; 
+  par.m_fromArg             = m_fromArg; 
+  par.m_address             = m_address; 
+  par.m_defaultValue        = m_defaultValue; 
   return par; 
 }
 
@@ -203,7 +204,7 @@ Expression::Expression( const complex_t& value ) : m_expression( std::make_share
 Expression::Expression() : m_expression( std::make_shared<Constant>( 0. ) ) {}
 
 void Expression::resolve( ASTResolver& resolver ) { m_expression->resolve( resolver ); }
-
+                           
 void Constant::resolve( ASTResolver& resolver ) {}
 
 void Parameter::resolve( ASTResolver& resolver )
@@ -309,6 +310,12 @@ Expression AmpGen::fcn::complex_sqrt( const Expression& expression )
   if( is<Constant>(expression ) ) return sqrt( expression() );
   auto st = make_cse(expression);
   return Ternary( st > 0, Sqrt(st), Constant(0,1)*Sqrt(-st) );
+}
+
+Expression AmpGen::fcn::isqrt( const Expression& expression )
+{
+  if( is<Constant>(expression ) ) return 1./sqrt( expression() );
+  return ISqrt( expression );
 }
 
 Expression AmpGen::fcn::fpow( const Expression& x, const int& n){

@@ -11,30 +11,35 @@ void NormalOrderedExpression::Term::addExpression( const Expression& expression)
       addExpression(l);
       addExpression(r);
     }
-    if( is<Sum>(expression) || is<Sub>(expression) ) ERROR("I never should get here, brackets should be pre-expanded [" << expression << "] " );
+    if( is<Sum>(expression) || is<Sub>(expression) ) 
+      ERROR("I never should get here, brackets should be pre-expanded [" << expression << "] " );
     if( is<Divide>(expression) ){
       addExpression( l );
       m_divisor = m_divisor * r ;  
     }
   } 
   else if( is<Constant>(expression) ) m_prefactor *= expression();
-  else m_terms.push_back( expression );
+  else m_terms.emplace_back( expression, expression.to_string() );
 }
 
 NormalOrderedExpression::Term::Term( const Expression& expression ) : 
   m_prefactor(1), 
   m_divisor(1), 
-  m_markForRemoval(false) {
+  m_markForRemoval(false)
+{
   addExpression(expression);
-  std::sort( m_terms.begin(), m_terms.end(), [](auto& t1, auto& t2 ){ return t1.to_string() > t2.to_string() ; } ) ;
+  std::sort( m_terms.begin(), 
+             m_terms.end(), 
+             [](auto& t1, auto& t2 ){ return t1.second > t2.second; } ) ;
   Expression t = 1;
-  for( auto& f : m_terms ) t = t * f ;
+  for( auto& f : m_terms ) t = t * f.first;
   m_expressionAsString = ( t / m_divisor).to_string();  
 }
 
-NormalOrderedExpression::Term::operator Expression() { 
+NormalOrderedExpression::Term::operator Expression() 
+{ 
   Expression pf = m_prefactor;
-  for( auto& t : m_terms ) pf = pf * t ;
+  for( auto& t : m_terms ) pf = pf * t.first ;
   return pf / m_divisor; 
 }
 
@@ -44,7 +49,8 @@ NormalOrderedExpression::NormalOrderedExpression( const Expression& expression )
   for( auto& t : expanded ){
     m_terms.emplace_back( t );
   }
-  std::sort( m_terms.begin(), m_terms.end() , [](auto& t1, auto&t2 ){ return t1.m_expressionAsString > t2.m_expressionAsString ; });
+  std::sort( m_terms.begin(), m_terms.end() , 
+      [](auto& t1, auto&t2 ){ return t1.m_expressionAsString > t2.m_expressionAsString ; });
   groupExpressions();
 }
 

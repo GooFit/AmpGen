@@ -25,7 +25,7 @@ namespace AmpGen
     template <class... ARGS>
     Generator( const ARGS&... args )
         : m_gps(args...),
-          m_generatorBlock(1000000),
+          m_generatorBlock(5000000),
           m_rnd( gRandom ), 
           m_normalise( true )
     {

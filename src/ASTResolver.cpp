@@ -1,14 +1,29 @@
 #include "AmpGen/ASTResolver.h"
 #include "AmpGen/MinuitParameterSet.h"
+#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Spline.h"
 
 using namespace AmpGen;
 
 ASTResolver::ASTResolver(const std::map<std::string, size_t>& evtMap, 
-    const MinuitParameterSet* mps ) : evtMap(evtMap), mps(mps), nParameters(0) {}
+                         const MinuitParameterSet* mps ) : 
+  evtMap(evtMap),
+  mps(mps), 
+  nParameters(0)
+{
+  enable_cuda = NamedParameter<bool>("enable_cuda",false);
+  enable_compileTimeConstants = NamedParameter<bool>("enable_compileTimeConstants",false);
+}
 
-bool ASTResolver::hasSubExpressions() const { return subTrees.size() != 0; }
-void ASTResolver::clearSubTrees() { subTrees.clear(); }
+bool ASTResolver::hasSubExpressions() const 
+{ 
+  return subTrees.size() != 0; 
+}
+
+void ASTResolver::clearSubTrees() 
+{ 
+  subTrees.clear(); 
+}
 
 void ASTResolver::reduceSubTrees()
 {
@@ -60,13 +75,26 @@ template <> void ASTResolver::resolve<Parameter>( Parameter& parameter )
 {
   auto res = evtMap.find(parameter.m_name);
   if( res != evtMap.end() ){
-    parameter.m_address = res->second; 
-    return;
+    if( enable_cuda ) {
+      parameter.m_resolved = true;
+      size_t t = res->second; 
+      std::string it = ""; 
+      if( t % 3 == 0 ) it = "x";
+      if( t % 3 == 1 ) it = "y";
+      if( t % 3 == 2 ) it = "z";
+      int stg = t/3;
+      if( stg == 0 ) parameter.m_name = "x1[i]."+it;
+      else if( stg == 1 ) parameter.m_name = "x1[i+N]."+it;
+      else parameter.m_name = "x1[i+"+std::to_string(stg)+"*N]." + it;
+     // parameter.m_name = "x1[i+"+std::to_string(res->second)+"*N]";
+    }
+    else parameter.m_address = res->second; 
+    return; 
   }
   else if( mps != nullptr ){
     auto it = mps->find(parameter.m_name);
     if( it != nullptr ){
-      if( useCompileTimeConstants && it->iFixInit() == MinuitParameter::Flag::CompileTimeConstant ){
+      if( enable_compileTimeConstants && it->iFixInit() == MinuitParameter::Flag::CompileTimeConstant ){
         parameter.m_defaultValue = it->mean();
         parameter.m_compileTimeConstant = true; 
       }
@@ -74,7 +102,7 @@ template <> void ASTResolver::resolve<Parameter>( Parameter& parameter )
       return;
     }
   }
-  else if( useCompileTimeConstants ){
+  else if( enable_compileTimeConstants ){
     parameter.m_compileTimeConstant = true; 
     return; 
   }

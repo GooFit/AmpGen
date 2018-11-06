@@ -7,10 +7,6 @@
 #include <string>
 #include <utility>
 
-/* It's a singleton - there can only be one instance
-   of ParsedParameterFileList in any program.
-   */
-
 namespace AmpGen
 {
   class OptionsParser
@@ -33,6 +29,7 @@ namespace AmpGen
     static OptionsParser* getMe();
     static bool printHelp() { return getMe()->m_printHelp ; }   
     static void setArgs( int argc, char** argv ){ getMe()->setCommandLineArgs(argc, argv ) ; } 
+    static void setArg( const std::string& arg ){ getMe()->addArg( arg ); }
     void addArg( const std::string& arg );
     void setCommandLineArgs( int argc, char** argv );
      
@@ -45,4 +42,3 @@ namespace AmpGen
   };
 } // namespace AmpGen
 #endif
-//

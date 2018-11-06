@@ -34,10 +34,10 @@ std::string ArrayExpression::to_string(const ASTResolver* resolver) const
       return top_name + "["+ std::to_string( int( m_parent->m_address + std::real( m_addressOffset() ) ) ) +"]"; 
     }
     else 
-      return top_name + "["+ std::to_string( m_parent->m_address ) + "+int("+m_addressOffset.to_string() +")]"; 
+      return top_name + "["+ std::to_string( m_parent->m_address ) + "+int("+m_addressOffset.to_string(resolver) +")]"; 
   }
   else {
     if( is<Constant>(m_addressOffset ) ) return top.to_string(resolver) + "["+std::to_string( int(std::real(m_addressOffset())) ) + "]";
-    else return top.to_string(resolver) + "[int("+m_addressOffset.to_string() +")]";
+    else return top.to_string(resolver) + "[int("+m_addressOffset.to_string(resolver) +")]";
   }
 }
