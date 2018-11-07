@@ -5,46 +5,22 @@
 
 using namespace AmpGen;
 
-std::vector<int> polarisations( const std::string& name ){
-  auto props = *ParticlePropertiesList::get( name );
-  std::vector<int> rt( props.twoSpin() + 1 );
-
-  if( props.isFermion() ) return {1,-1};    
-  if( props.twoSpin() == 0 ) return {0};
-  if( props.twoSpin() == 2 ) 
-    return (name == "gamma0") ? std::vector<int>({-1,1}) : std::vector<int>({-1,0,1}) ;
-  else return {0};
-}
-
-std::vector< std::vector< int > > polarisation_outer_product( const std::vector< std::vector< int > >& A, const std::vector< int >& B ){
-  std::vector< std::vector< int > > rt; 
-  for( auto& iA : A ){
-    for( auto& iB : B ){
-      rt.push_back( iA );
-      rt.rbegin()->push_back( iB );
-    }
-  }
-  return rt;
-}
-
 PolarisedAmplitude::PolarisedAmplitude( const EventType& type, AmpGen::MinuitParameterSet& mps, const std::string& prefix ) : 
-  m_nCalls(0),
-  m_events(nullptr),
-  m_weightParam(nullptr),
   m_mps(&mps),
-  m_weight(1),
   m_eventType(type)
 {
+  bool debug       = NamedParameter<bool>("PolarisedAmplitude::Debug", false );
+  bool autoCompile = NamedParameter<bool>("PolarisedAmplitude::AutoCompile",true);
+
   AmplitudeRules proto( mps ); 
 
   auto proto_amplitudes = proto.getMatchingRules( type, prefix , true );
-
   auto production_polarisations = polarisations( type.mother() ); 
   std::vector<std::vector<int>> all_polarisation_states ;
   for( auto& pol : production_polarisations ) all_polarisation_states.push_back( {pol} );
 
   for( unsigned int i = 0 ; i < type.size(); ++i ){
-    all_polarisation_states = polarisation_outer_product( all_polarisation_states, polarisations( type[i] ) );
+    all_polarisation_states = polarisationOuterProduct( all_polarisation_states, polarisations( type[i] ) );
   }
   auto set_polarisation_state = []( auto& matrix_element, auto& polState ){
     auto fs = matrix_element.first.getFinalStateParticles();
@@ -54,7 +30,6 @@ PolarisedAmplitude::PolarisedAmplitude( const EventType& type, AmpGen::MinuitPar
     }
     matrix_element.first.makeUniqueString(); 
   };
-  bool debug = NamedParameter<bool>("PolarisedAmplitude::Debug", false );
   for( auto& matrix_element : proto_amplitudes ){
     Tensor thisExpression( std::vector<size_t>({all_polarisation_states.size()}) );
     int i = 0 ;
@@ -77,7 +52,7 @@ PolarisedAmplitude::PolarisedAmplitude( const EventType& type, AmpGen::MinuitPar
     }
   }
   m_polStates = all_polarisation_states; 
-  for( auto& thing : m_matrixElements ) CompilerWrapper().compile( thing.pdf, "" );
+  if( autoCompile) for( auto& thing : m_matrixElements ) CompilerWrapper().compile( thing.pdf, "" );
   if( mps.find("Px") == nullptr ){
     WARNING("Polarisation parameters not defined, defaulting to (0,0,0)");
   }
@@ -86,6 +61,29 @@ PolarisedAmplitude::PolarisedAmplitude( const EventType& type, AmpGen::MinuitPar
   m_productionParameters.emplace_back( mps.addOrGet("Pz",2,0,0 ) ); 
   for( size_t i = 0 ; i < 6 ; ++i ) m_norms[i].resize( m_matrixElements.size(), m_matrixElements.size() );
 }
+
+std::vector<int> PolarisedAmplitude::polarisations( const std::string& name ) const {
+  auto props = *ParticlePropertiesList::get( name );
+  std::vector<int> rt( props.twoSpin() + 1 );
+
+  if( props.isFermion() ) return {1,-1};    
+  if( props.twoSpin() == 0 ) return {0};
+  if( props.twoSpin() == 2 ) 
+    return (name == "gamma0") ? std::vector<int>({-1,1}) : std::vector<int>({-1,0,1}) ;
+  else return {0};
+}
+
+std::vector< std::vector< int > > PolarisedAmplitude::polarisationOuterProduct( const std::vector< std::vector< int > >& A, const std::vector< int >& B ) const {
+  std::vector< std::vector< int > > rt; 
+  for( auto& iA : A ){
+    for( auto& iB : B ){
+      rt.push_back( iA );
+      rt.rbegin()->push_back( iB );
+    }
+  }
+  return rt;
+}
+
 
 std::vector<TransitionMatrix<std::vector<complex_t>>> PolarisedAmplitude::matrixElements() const
 {

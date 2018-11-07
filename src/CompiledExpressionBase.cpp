@@ -102,7 +102,15 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     stream << "return " << objString << ";\n}\n";
   }
   else {
-    stream << "__global__ void " << m_name << "( float* r, const float* x0, const float3* x1 , const int& N) { \n";
+    std::string rt_cpp = returnTypename();
+    std::string rt_cuda = "";
+    if( rt_cpp == "double"               || rt_cpp == "float"               || rt_cpp == "real_t" ) 
+      rt_cuda = "float* r, const int N";
+    if( rt_cpp == "std::complex<double>" || rt_cpp == "std::complex<float>" || rt_cpp == "complex_t" ) 
+      rt_cuda = "ampgen_cuda::complex_t* r, const int N";
+    stream << "__global__ void " << m_name << "( " << rt_cuda << ", const float_t* x0, const float3* x1){\n"; 
+    //stream << "__global__ void " << m_name << "( float* r, const int& N, const float* x0, const float3* x1 ) { \n";
+    
     stream <<  "  int i     = blockIdx.x * blockDim.x + threadIdx.x;\n";
     addDependentExpressions( stream, sizeOfStream);
     std::string objString = m_obj.to_string(m_resolver);

@@ -1,0 +1,11 @@
+EventType                    D0 K- pi+ pi0 
+EventType::IncludeEnergy     false
+Normalise                    false
+FastCoherentSum::AutoCompile false 
+enable_cuda                  true
+sourceFile                   output.h
+NormEvents                   8388608
+outputPS                     events.dat
+
+
+D0{K(2)*(1430)bar0{K-,pi+},pi0} 2 1 0 2 0 0 

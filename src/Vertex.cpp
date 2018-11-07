@@ -58,7 +58,7 @@ const Tensor Metric4x4(){
 Tensor AmpGen::Orbital_PWave( const Tensor& P, const Tensor& Q )
 { 
   auto is = 1./make_cse( dot(P,P) ,true);
-  return Q - P * make_cse( dot( P, Q ) ) * is ; // / make_cse( dot( P, P ) );
+  return Q - P * make_cse( dot( P, Q ) * is );
 }
 
 
@@ -150,11 +150,6 @@ DEFINE_VERTEX( S_VV_D )
 {
   Tensor L2   = Orbital_DWave( P, Q ) / ( GeV * GeV );
   Tensor vtol = V1( mu ) * L2( -mu, -nu ) * V2( nu );
-  auto LD = Orbital_PWave(P,Q);
-  ADD_DEBUG(LD[0],db);
-  ADD_DEBUG(LD[1],db);
-  ADD_DEBUG(LD[2],db);
-  ADD_DEBUG(LD[3],db);
   return vtol;
 }
 
@@ -279,7 +274,7 @@ DEFINE_VERTEX( f_fS_S1 )
 
 DEFINE_VERTEX( f_fS_P )
 {
-  Tensor::Index a,b,c;
+  Tensor::Index a,b,c,d;
   return Spin1hProjector(P)(a, b) * slash(Orbital_PWave(P,Q))(b,c) * V1(c) * V2[0] / GeV;
 }
 

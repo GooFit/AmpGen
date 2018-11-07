@@ -20,40 +20,46 @@ using namespace AmpGen;
 
 template <class T> void generate_source(T& pdf, EventList& normEvents, const std::string& sourceFile, MinuitParameterSet& mps, const double& sf)
 {
-  pdf.setEvents( normEvents );
-  pdf.prepare();
-
-  double pMax = 0;
+  bool normalise                      = NamedParameter<bool>("Normalise",true);
   std::string type                    = NamedParameter<std::string>( "Type", "FastCoherentSum" );
-  
-  for ( auto& evt : normEvents ) {
-    if( type == "PolarisedAmplitude" ){ 
-      double px, py, pz; 
-      gRandom->Sphere(px,py,pz, gRandom->Uniform(0,1));
-      mps["Px"]->setCurrentFitVal(px);
-      mps["Py"]->setCurrentFitVal(py);
-      mps["Pz"]->setCurrentFitVal(pz);
-      pdf.transferParameters();
+
+  double norm = 1; 
+  if( normalise ){
+    double pMax = 0 ;
+    pdf.setEvents( normEvents );
+    pdf.prepare();
+
+    for ( auto& evt : normEvents ) {
+      if( type == "PolarisedAmplitude" ){ 
+        double px, py, pz; 
+        gRandom->Sphere(px,py,pz, gRandom->Uniform(0,1));
+        mps["Px"]->setCurrentFitVal(px);
+        mps["Py"]->setCurrentFitVal(py);
+        mps["Pz"]->setCurrentFitVal(pz);
+        pdf.transferParameters();
+      }
+      double n = pdf.prob_unnormalised( evt );
+      //    INFO( "Pol-vector =" << px << " " << py << " " << pz << " " << n1 << " " << n );
+      //    INFO("=========================");
+      if ( n > pMax ) {
+        pMax = n;
+      }
     }
-    double n = pdf.prob_unnormalised( evt );
-//    INFO( "Pol-vector =" << px << " " << py << " " << pz << " " << n1 << " " << n );
-//    INFO("=========================");
-    if ( n > pMax ) {
-      pMax = n;
-    }
-  }
+    norm = pMax * sf ; 
   INFO( "Making binary with " << pMax << " x safety factor = " << sf );
-  pdf.generateSourceCode( sourceFile, pMax * sf, true );
+  }
+  pdf.generateSourceCode( sourceFile, norm, true );
 }
 
 int main( int argc, char** argv )
 {
   OptionsParser::setArgs( argc, argv );
-//  ThreadPool::nThreads = 1;
+  //  ThreadPool::nThreads = 1;
   std::vector<std::string> oEventType = NamedParameter<std::string>( "EventType" ).getVector();
   std::string sourceFile              = NamedParameter<std::string>( "sourceFile" , "output.cpp" );
   std::string type                    = NamedParameter<std::string>( "Type", "FastCoherentSum" );
   std::string outputPS                = NamedParameter<std::string>( "outputPS", "" );
+  bool normalise                      = NamedParameter<bool>("Normalise",true);
   unsigned int NormEvents             = NamedParameter<unsigned int>( "NormEvents", 1000000 );
   double safetyFactor                 = NamedParameter<double>( "SafefyFactor", 3 );
 
@@ -69,6 +75,7 @@ int main( int argc, char** argv )
   phsp.setRandom( &rnd );
 
   EventList phspEvents( oEventType );
+  //if( normalise ) 
   phsp.fillEventListPhaseSpace( phspEvents, NormEvents );
 
   if( type == "FastCoherentSum" ){

@@ -31,30 +31,24 @@ using namespace AmpGen;
 
 FastCoherentSum::FastCoherentSum( const EventType& type, AmpGen::MinuitParameterSet& mps, const std::string& prefix )
   : m_protoAmplitudes( mps )
-  , m_events( nullptr )
-  , m_sim( nullptr )
   , m_evtType( type )
-  , m_weightParam( nullptr )
-  , m_prepareCalls( 0 )
-  , m_lastPrint( 0 )
-  , m_printFreq( 0 )
-  , m_weight( 1 )
   , m_prefix( prefix )
-    , m_stateIsGood( true )
 {
-  bool useCartesian = AmpGen::NamedParameter<bool>( "FastCoherentSum::UseCartesian", true );
-  m_dbThis          = AmpGen::NamedParameter<bool>( "FastCoherentSum::Debug", false );
+  bool useCartesian = AmpGen::NamedParameter<bool>(         "FastCoherentSum::UseCartesian", true );
+  bool autoCompile  = AmpGen::NamedParameter<bool>(         "FastCoherentSum::AutoCompile", true ); 
+  m_dbThis          = AmpGen::NamedParameter<bool>(         "FastCoherentSum::Debug", false );
   m_printFreq       = AmpGen::NamedParameter<unsigned int>( "FastCoherentSum::PrintFrequency", 100 );
   m_verbosity       = AmpGen::NamedParameter<unsigned int>( "FastCoherentSum::Verbosity", 0 );
-  
+  std::string objCache = AmpGen::NamedParameter<std::string>("FastCoherentSum::ObjectCache",""); 
   auto amplitudes  = m_protoAmplitudes.getMatchingRules( m_evtType, prefix, useCartesian );
   for( auto& amp : amplitudes ) addMatrixElement( amp, mps );
 
   m_isConstant = isFixedPDF(mps);
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() );
-
-  for( auto& mE: m_matrixElements )
-    CompilerWrapper().compile( mE.pdf, NamedParameter<std::string>( "FastCoherentSum::OCache","") ); 
+  if( autoCompile ){ 
+    for( auto& mE: m_matrixElements )
+      CompilerWrapper().compile( mE.pdf, objCache); 
+  }
 }
 
 void FastCoherentSum::addMatrixElement( std::pair<Particle, Coupling>& particleWithCoupling, const MinuitParameterSet& mps )
@@ -302,13 +296,15 @@ void FastCoherentSum::generateSourceCode( const std::string& fname, const double
   stream << "#include <complex>\n";
   stream << "#include <vector>\n";
   if ( add_mt ) stream << "#include <thread>\n";
-  bool include_python_bindings = NamedParameter<bool>("IncludePythonBindings",false);
+  bool includePythonBindings = NamedParameter<bool>("IncludePythonBindings",false);
+  bool enableCuda            = NamedParameter<bool>("enable_cuda",false);
+
   for ( auto& p : m_matrixElements ){
     INFO( "Streaming: " << p.decayTree->uniqueString() );
     stream << p.pdf << std::endl;
     INFO("Done streaming, incluing parameters...");
-    p.pdf.compileWithParameters( stream );
-    if( include_python_bindings ) p.pdf.compileDetails( stream );
+    if( ! enableCuda ) p.pdf.compileWithParameters( stream );
+    if( includePythonBindings ) p.pdf.compileDetails( stream );
   }
   Expression event = Parameter("x0",0,true,0);
   Expression pa    = Parameter("double(x1)",0,true,0);
@@ -318,11 +314,11 @@ void FastCoherentSum::generateSourceCode( const std::string& fname, const double
     Expression this_amplitude = p.coupling() * Function( p.pdf.name() + "_wParams", {event} ); 
     amplitude = amplitude + ( p.decayTree->finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
   }
-  
-  stream << CompiledExpression< std::complex<double>, const double*, int>( amplitude  , "AMP" ) << std::endl; 
-  stream << CompiledExpression< double, const double*, int>(fcn::norm(amplitude) / normalisation, "FCN" ) << std::endl; 
-  
-  if( include_python_bindings ){
+  if( !enableCuda ){
+    stream << CompiledExpression< std::complex<double>, const double*, int>( amplitude  , "AMP" ) << std::endl; 
+    stream << CompiledExpression< double, const double*, int>(fcn::norm(amplitude) / normalisation, "FCN" ) << std::endl; 
+  }
+  if( includePythonBindings ){
     stream << CompiledExpression< unsigned int >( m_matrixElements.size(), "matrix_elements_n" ) << std::endl;
     stream << CompiledExpression< double >      ( normalisation, "normalization") << std::endl;
     
