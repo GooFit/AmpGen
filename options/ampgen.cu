@@ -46,8 +46,6 @@ __global__ void bw_kernel( complex_t* __restrict__ r, const int N, const float* 
 
 #include "output.h"
 
-
-
 std::vector<std::string> split( const std::string& s, char delim, bool ignoreWhitespace=true )
 {
   std::vector<std::string> elems;
@@ -61,13 +59,12 @@ std::vector<std::string> split( const std::string& s, char delim, bool ignoreWhi
 
 int main(void)
 {
-  int N = 1 << 23; 
+  int N = 1 << 20; 
   complex_t * r;
   float     * pHost; 
   float3    * xE;
   std::ifstream stream("events.dat");
   std::string tmp;
-  std::cout << sizeof(float3) << " " << sizeof(float) << std::endl; 
     
   cudaMallocManaged( &r    , sizeof(complex_t) * N  );
   cudaMallocManaged( &xE   , sizeof(float3)    * N * 3 );
@@ -79,11 +76,14 @@ int main(void)
 
   std::vector<float> event_full( 12 * N );
   std::getline( stream , tmp );
-  for (int i = 0; i < N+1; i++) {
+  for (int i = 0; i < N; i++) {
     r[i]  = complex_t(0.0f,0.0f);
     std::getline( stream, tmp );
     auto tokens = split( tmp, ',');
-      if( i== 0 ) std::cout << tmp << std::endl; 
+    if( i==0 ){ 
+      std::cout << tmp << std::endl;
+      for( int i = 0 ; i < tokens.size(); ++i ) std::cout << i << " : " << stof(tokens[i]) << std::endl; 
+    }
     for( int p = 0 ; p < 3 ; ++p ){
       xE[ i + N * p  ].x  = stof( tokens[4*p]   );
       xE[ i + N * p  ].y  = stof( tokens[4*p+1] );
