@@ -1,5 +1,12 @@
 #include "AmpGen/Simplify.h"
+
+#include <stddef.h>
+#include <algorithm>
+#include <memory>
+#include <ostream>
+
 #include "AmpGen/MsgService.h"
+
 using namespace AmpGen;
 
 void NormalOrderedExpression::Term::addExpression( const Expression& expression){

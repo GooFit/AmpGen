@@ -1,10 +1,17 @@
 #include "AmpGen/Spline.h"
+
+#include <ostream>
+
 #include "AmpGen/ASTResolver.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/MinuitParameter.h"
-#include "AmpGen/MinuitParameterSet.h"
-
-#include "TVectorD.h"
+#include "AmpGen/CompiledExpressionBase.h"
+#include "AmpGen/MsgService.h"
+#include "TMatrixDfwd.h"
+#include "TMatrixT.h"
+#include "TMatrixTUtils.h"
+#include "TVectorDfwd.h"
+#include "TVectorT.h"
 
 using namespace AmpGen; 
 

@@ -9,6 +9,7 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/Types.h"
 
 namespace AmpGen
 {

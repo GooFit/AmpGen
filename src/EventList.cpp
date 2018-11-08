@@ -2,13 +2,13 @@
 #include <TDirectory.h>
 #include <TEventList.h>
 #include <TH1.h>
-#include <cmath>
+#include <bits/stdint-uintn.h>
+#include <stddef.h>
 #include <complex>
 #include <cstdint>
 #include <functional>
 #include <iterator>
 #include <map>
-#include <memory>
 #include <ostream>
 #include <string>
 #include <utility>
@@ -22,8 +22,10 @@
 #include "AmpGen/Projection.h"
 #include "AmpGen/TreeReader.h"
 #include "AmpGen/Utilities.h"
-#include "TFile.h"
 #include "TTree.h"
+#include "AmpGen/Event.h"
+#include "AmpGen/Types.h"
+#include "TH2.h"
 
 using namespace AmpGen;
 

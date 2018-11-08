@@ -1,6 +1,5 @@
 #include "AmpGen/FitFraction.h"
 
-#include <algorithm>
 #include <complex>
 
 #include "AmpGen/EventType.h"
@@ -8,6 +7,7 @@
 #include "AmpGen/FastIncoherentSum.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/Types.h"
 
 using namespace AmpGen;
 

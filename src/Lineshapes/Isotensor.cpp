@@ -1,4 +1,5 @@
 #include <cmath>
+#include <memory>
 
 #include "AmpGen/Expression.h"
 #include "AmpGen/Factory.h"

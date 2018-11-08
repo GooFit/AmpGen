@@ -1,33 +1,36 @@
 #ifndef AMPGEN_POLARISEDAMPLITUDE_H
 #define AMPGEN_POLARISEDAMPLITUDE_H
 
+#include <stddef.h>
 #include <complex>
 #include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+#include <array>
 
 #include "AmpGen/Types.h"
 #include "AmpGen/AmplitudeRules.h"
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
-#include "AmpGen/FitFraction.h"
 #include "AmpGen/Integrator.h"
-#include "AmpGen/Particle.h"
 #include "AmpGen/FastCoherentSum.h"
+#include "AmpGen/Expression.h"
+#include "AmpGen/Tensor.h"
+
 #include "TMatrixD.h"
 
 namespace AmpGen
 {
-
-  class CompiledExpressionBase;
   class LinearErrorPropagator;
   class MinuitParameter;
   class MinuitParameterSet;
   class FitFraction;
-  class Particle;
+  class Event;
+  class EventList;
+  class MinuitProxy; 
 
   class PolarisedAmplitude
   {

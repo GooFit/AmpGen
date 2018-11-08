@@ -6,11 +6,10 @@
 #include <map>
 #include <vector>
 
-#include "AmpGen/Event.h"
-#include "AmpGen/Projection.h"
-
 namespace AmpGen
 {
+  class Projection; 
+  class Event; 
   /**@class EventType
    *  Deals with final state configuration of events,
    *  specifically dealing with the ordering of particles in trees.

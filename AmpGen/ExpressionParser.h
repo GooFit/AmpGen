@@ -8,15 +8,13 @@
 #include <vector>
 
 #include "AmpGen/Expression.h"
-#include "AmpGen/MinuitParameter.h"
-#include "AmpGen/MinuitParameterSet.h"
-
+#include "AmpGen/Types.h"
 
 namespace AmpGen
 {
-
+  class ASTResolver;
+  class MinuitParameter;
   class MinuitParameterSet;
-  struct ASTResolver;
 
   class MinuitParameterLink : public IExpression {
     public:

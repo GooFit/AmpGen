@@ -1,5 +1,10 @@
 #include "AmpGen/ErrorPropagator.h"
+
+#include <ostream>
+
 #include "AmpGen/MinuitParameterSet.h"
+#include "TDecompChol.h"
+#include "TRandom3.h"
 
 using namespace AmpGen;
 

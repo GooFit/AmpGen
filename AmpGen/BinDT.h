@@ -1,5 +1,8 @@
 #ifndef AMPGEN_BINDT_H
 #define AMPGEN_BINDT_H
+#include <memory.h>
+#include <bits/stdint-uintn.h>
+#include <stddef.h>
 #include <array>
 #include <cstdint>
 #include <fstream>
@@ -20,6 +23,8 @@
 
 namespace AmpGen
 {
+  class Event;
+
 #define PACKET_SIZE 22
   DECLARE_ARGUMENT( MaxDepth, size_t );
   DECLARE_ARGUMENT( MinEvents, size_t );

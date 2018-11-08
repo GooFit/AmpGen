@@ -97,8 +97,8 @@
 
 namespace AmpGen
 {
-  struct ASTResolver;
-  struct Expression;
+  class ASTResolver;
+  class Expression;
   struct Parameter;
 
   typedef std::pair<std::string, Expression> DebugSymbol;

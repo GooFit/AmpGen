@@ -1,14 +1,21 @@
 #ifndef AMPGEN_ARRAY_H
 #define AMPGEN_ARRAY_H
 
-#include "AmpGen/Expression.h"
-#include "AmpGen/CompiledExpressionBase.h"
-
+#include <memory.h>
 #include <vector>
 #include <cstddef>
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "AmpGen/Expression.h"
+#include "AmpGen/CompiledExpressionBase.h"
+#include "AmpGen/Types.h"
 
 namespace AmpGen
 {
+  class ASTResolver;
+
   struct Array {
     Expression   m_top;
     size_t       m_address; 

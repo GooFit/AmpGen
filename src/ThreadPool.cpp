@@ -1,4 +1,7 @@
 #include "AmpGen/ThreadPool.h"
+
+#include <iostream>
+
 #include "AmpGen/MsgService.h"
 
 using namespace AmpGen;

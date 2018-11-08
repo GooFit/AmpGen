@@ -1,5 +1,10 @@
 #include "AmpGen/Array.h"
+
+#include <complex>
+#include <vector>
+
 #include "AmpGen/ASTResolver.h"
+#include "AmpGen/CacheTransfer.h"
 
 using namespace AmpGen; 
 

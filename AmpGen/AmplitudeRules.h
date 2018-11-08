@@ -1,6 +1,7 @@
 #ifndef AMPGEN_AMPLITUDERULES_H
 #define AMPGEN_AMPLITUDERULES_H
 
+#include <stddef.h>
 #include <complex>
 #include <map>
 #include <string>
@@ -9,9 +10,6 @@
 
 #include "AmpGen/EventType.h"
 #include "AmpGen/Expression.h"
-#include "AmpGen/MinuitParameter.h"
-#include "AmpGen/MinuitParameterSet.h"
-#include "AmpGen/Particle.h"
 
 namespace AmpGen
 {
@@ -19,6 +17,7 @@ namespace AmpGen
   class MinuitParameter;
   class MinuitParameterSet;
   struct Coupling;
+  class Particle;
 
   class AmplitudeRule
   {

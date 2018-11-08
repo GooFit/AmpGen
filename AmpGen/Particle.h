@@ -8,10 +8,8 @@
 /// AmpGen
 #include "AmpGen/EventType.h"
 #include "AmpGen/Expression.h"
-#include "AmpGen/Lineshapes.h"
-#include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Tensor.h"
-
+#include "AmpGen/MultiQuarkContent.h"
 namespace AmpGen
 {
   /** @class Particle
@@ -76,6 +74,7 @@ namespace AmpGen
       Similar to other components of AmpGen, Particles will rarely be constructed in the C++ context, 
       and will instead be instantiated dynamically at runtime from a user supplied options file. 
    */
+  class ParticleProperties; 
   class Particle
   {
   private:

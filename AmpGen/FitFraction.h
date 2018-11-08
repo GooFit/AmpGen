@@ -1,6 +1,7 @@
 #ifndef AMPGEN_FITFRACTION_H
 #define AMPGEN_FITFRACTION_H
 
+#include <memory.h>
 #include <memory>
 #include <string>
 #include <vector>

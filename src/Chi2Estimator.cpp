@@ -6,6 +6,8 @@
 #include "AmpGen/ArgumentPack.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/MsgService.h"
+#include "AmpGen/EventList.h"
+#include "AmpGen/Event.h"
 
 using namespace AmpGen;
 

@@ -1,9 +1,12 @@
 #ifndef AMPGEN_UTILITIES_H
 #define AMPGEN_UTILITIES_H
 
+#include <cxxabi.h>
+#include <bits/stdint-intn.h>
+#include <bits/stdint-uintn.h>
+#include <stddef.h>
 #include <algorithm>
 #include <cstdint>
-#include <cxxabi.h>
 #include <fstream>
 #include <functional>
 #include <map>
@@ -14,17 +17,6 @@
 
 #include "AmpGen/MsgService.h"
 #include "AmpGen/MetaUtils.h"
-/*
-
-   Generic utility functions for AmpGen library
-   nCr( n , r ) - Gets all unique (1..N) choose r elements
-   vectorToString<T> - concatenates vector into a string
-   findAll(input, ch) - Finds all positions of ch input string input
-   vecFindAll ( input, strings ) - Finds positions of elements in strings in input,
-   puts them into map
-   getItems - Extract vector of head / branches in a persistified decay tree
-
-*/
 
 template <class T>
 static bool isIn( const std::vector<T>& container, const T& obj )

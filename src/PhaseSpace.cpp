@@ -29,8 +29,8 @@
 
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/ParticlePropertiesList.h"
-#include "TMath.h"
 #include "TRandom.h"
+#include "AmpGen/Types.h"
 
 const Int_t kMAXP = 18;
 

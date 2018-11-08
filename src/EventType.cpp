@@ -1,3 +1,6 @@
+#include <ext/alloc_traits.h>
+#include <math.h>
+#include <stddef.h>
 #include <algorithm>
 #include <functional>
 #include <map>
@@ -9,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/NamedParameter.h"
@@ -18,6 +20,7 @@
 #include "AmpGen/Projection.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Units.h"
+#include "AmpGen/Event.h"
 
 using namespace AmpGen;
 

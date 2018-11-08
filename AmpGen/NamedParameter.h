@@ -3,24 +3,23 @@
 // author: Jonas Rademacker (Jonas.Rademacker@bristol.ac.uk)
 // status:  Mon 9 Feb 2009 19:17:56 GMT
 
+#include <stddef.h>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
+#include <iomanip>
+#include <map>
 
 #include "AmpGen/MsgService.h"
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/MetaUtils.h"
 
 namespace AmpGen
 {
-  template <class T> class NamedParameter;
-  template <class T> 
-  std::ostream& operator<<( std::ostream& os, const NamedParameter<T>& np );
-
-
   template <class T>
   class NamedParameter 
   {
@@ -147,7 +146,8 @@ namespace AmpGen
       return return_container;
     }
   };
-
+  template <class T> 
+  std::ostream& operator<<( std::ostream& os, const NamedParameter<T>& np );
 } // namespace AmpGen
 
 template <typename T>

@@ -1,5 +1,11 @@
 #ifndef AMPGEN_DALITZINTEGRATOR_H
 #define AMPGEN_DALITZINTEGRATOR_H
+#include <TAxis.h>
+#include <TH1.h>
+#include <TH2.h>
+#include <TF2.h>
+#include <TRandom3.h>
+#include <stddef.h>
 #include <chrono>
 #include <cmath>
 #include <complex>
@@ -7,19 +13,15 @@
 #include <string>
 #include <utility>
 
-#include <TAxis.h>
-#include <TH1.h>
-#include <TH2.h>
-#include <TF2.h>
-#include <TRandom3.h>
 
-#include "AmpGen/EventList.h"
-#include "AmpGen/Kinematics.h"
-#include "AmpGen/MsgService.h"
-#include "AmpGen/Projection.h"
+class TH1D;
+class TH2D;
 
 namespace AmpGen
 {
+  class Event;
+  class Projection2D;
+  class Projection;
   /** @class DalitzIntegrator
    *  Class for doing 2D integrals using the Square Dalitz Plot (SQDP) method
    */

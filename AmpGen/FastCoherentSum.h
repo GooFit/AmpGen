@@ -1,6 +1,8 @@
 #ifndef AMPGEN_FASTCOHERENTSUM_H
 #define AMPGEN_FASTCOHERENTSUM_H
 
+#include <memory.h>
+#include <stddef.h>
 #include <complex>
 #include <map>
 #include <memory>
@@ -12,15 +14,12 @@
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
-#include "AmpGen/FitFraction.h"
 #include "AmpGen/Integrator.h"
-#include "AmpGen/Particle.h"
 #include "AmpGen/Types.h"
-#include "TMatrixD.h"
+#include "AmpGen/Event.h"
 
 namespace AmpGen
 {
-  class CompiledExpressionBase;
   class LinearErrorPropagator;
   class MinuitParameter;
   class MinuitParameterSet;

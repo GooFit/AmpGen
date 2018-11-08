@@ -1,5 +1,3 @@
-
-
 #ifndef AMPGEN_KMATRIX_H
 #define AMPGEN_KMATRIX_H
 

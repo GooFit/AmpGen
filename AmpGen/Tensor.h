@@ -1,18 +1,28 @@
 #ifndef AMPGEN_TENSOR_H
 #define AMPGEN_TENSOR_H
+#include <memory.h>
+#include <stddef.h>
 #include <algorithm>
 #include <complex>
 #include <initializer_list>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "AmpGen/Expression.h"
 #include "AmpGen/MsgService.h"
+#include "AmpGen/Types.h"
+
+#define ADD_DEBUG_TENSOR( X, Y )  \
+  if ( Y != nullptr ) for( size_t i = 0 ; i < X.size(); ++i ) \
+    Y->emplace_back( std::string(#X) + Tensor::coordinates_to_string( X.coords(i) ) , X[i] );
 
 namespace AmpGen
 {
+  class ASTResolver;
   class TensorProxy;
+  
   class Tensor
   {
   private:

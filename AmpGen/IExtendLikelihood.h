@@ -1,5 +1,6 @@
 #ifndef AMPGEN_IEXTENDLIKELIHOOD_H
 #define AMPGEN_IEXTENDLIKELIHOOD_H
+
 #include <string>
 #include <vector>
 

@@ -1,5 +1,6 @@
 #include "AmpGen/MultiQuarkContent.h"
 
+#include <ext/alloc_traits.h>
 #include <memory>
 
 #include "AmpGen/Utilities.h"

@@ -8,6 +8,7 @@ namespace AmpGen
 {
   class CompiledExpressionBase;
   class MinuitParameter;
+
   class CacheTransfer 
   {
     protected: 

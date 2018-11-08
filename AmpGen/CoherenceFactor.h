@@ -1,5 +1,7 @@
 #ifndef AMPGEN_COHERENCEFACTOR_H
 #define AMPGEN_COHERENCEFACTOR_H
+#include <bits/stdint-uintn.h>
+#include <stddef.h>
 #include <array>
 #include <cmath>
 #include <complex>
@@ -16,9 +18,12 @@
 #include "AmpGen/Integrator.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/Types.h"
 
 namespace AmpGen
 {
+  class Event;
+
   struct CoherenceEvent {
     std::array<real_t, 5> values;
     complex_t amp1;

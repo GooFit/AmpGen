@@ -1,13 +1,19 @@
 #ifndef AMPGEN_KINEMATICS_H
 #define AMPGEN_KINEMATICS_H
+#include <stddef.h>
 #include <array>
 #include <tuple>
 #include <vector>
 
-#include "AmpGen/EventList.h"
+#include "AmpGen/Tensor.h"
+
 #include "TLorentzVector.h"
+#include "TVector3.h"
+
 namespace AmpGen
 {
+  class Event; 
+
   /// \defgroup Kin Kinematics
   /// Assorted functors for computing kinematic quantities on events, such as helicity cosines and acoplanarities. 
   /// Also contains utilities for boosting and rotating events  

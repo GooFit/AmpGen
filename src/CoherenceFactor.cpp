@@ -1,12 +1,15 @@
 #include "AmpGen/CoherenceFactor.h"
 
 #include <TRandom3.h>
+#include <memory.h>
+#include <ext/alloc_traits.h>
 #include <algorithm>
 #include <cmath>
 #include <memory>
 #include <numeric>
 #include <ostream>
 #include <utility>
+#include <cstdint>
 
 #include "AmpGen/ArgumentPack.h"
 #include "AmpGen/DynamicContainer.h"
@@ -15,6 +18,10 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/PhaseSpace.h"
 #include "AmpGen/NamedParameter.h"
+#include "AmpGen/CompiledExpression.h"
+#include "AmpGen/Event.h"
+#include "AmpGen/Utilities.h"
+#include "TH1.h"
 
 using namespace AmpGen;
 

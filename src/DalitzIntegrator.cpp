@@ -3,9 +3,19 @@
 #include <TLorentzVector.h>
 #include <Math/AdaptiveIntegratorMultiDim.h>
 #include <Math/WrappedMultiTF1.h>
+#include <iostream>
 
 #include "AmpGen/Kinematics.h"
 #include "AmpGen/Units.h"
+#include "AmpGen/Event.h"
+#include "AmpGen/MsgService.h"
+#include "AmpGen/Projection.h"
+#include "RtypesCore.h"
+#include "TF2.h"
+#include "TH1.h"
+#include "TH2.h"
+#include "TRandom.h"
+#include "TRandom3.h"
 
 using namespace AmpGen;
 DalitzIntegrator::DalitzIntegrator( const double& s0, const double& s1, const double& s2, const double& s3 )

@@ -1,5 +1,12 @@
+#include <math.h>
+#include <stddef.h>
+#include <complex>
+#include <ostream>
+#include <vector>
+
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Event.h"
+#include "AmpGen/Types.h"
 
 using namespace AmpGen; 
 

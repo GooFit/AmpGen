@@ -1,5 +1,19 @@
 #include "AmpGen/Wigner.h"
+
+#include <memory.h>
+#include <math.h>
+#include <stddef.h>
+#include <algorithm>
+#include <complex>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "AmpGen/Simplify.h"
+#include "AmpGen/MsgService.h"
+#include "AmpGen/Particle.h"
 
 using namespace AmpGen;
 using namespace AmpGen::fcn;

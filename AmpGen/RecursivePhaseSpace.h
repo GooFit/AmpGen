@@ -1,11 +1,14 @@
 #ifndef AMPGEN_RECURSIVEPHASESPACE_H
 #define AMPGEN_RECURSIVEPHASESPACE_H
 
+#include <memory.h>
+#include <stddef.h>
 #include <algorithm>
 #include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
@@ -13,12 +16,12 @@
 #include "AmpGen/Particle.h"
 #include "AmpGen/PhaseSpace.h"
 #include "TRandom3.h"
+#include "AmpGen/Event.h"
 
 class TRandom;
 
 namespace AmpGen
 {
-
   class RecursivePhaseSpace
   {
   private:

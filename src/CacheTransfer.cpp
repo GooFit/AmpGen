@@ -1,9 +1,7 @@
 #include "AmpGen/CacheTransfer.h"
 
-#include <TMatrixTUtils.h>
-#include <TVectorDfwd.h>
-#include <TVectorT.h>
-#include <ostream>
+#include <iostream>
+#include <string>
 
 #include "AmpGen/CompiledExpressionBase.h"
 #include "AmpGen/MinuitParameter.h"

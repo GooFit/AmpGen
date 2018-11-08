@@ -1,10 +1,8 @@
 #include <string>
 
-#include "AmpGen/Array.h"
 #include "AmpGen/Expression.h"
 #include "AmpGen/Factory.h"
 #include "AmpGen/Lineshapes.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Spline.h"

@@ -3,12 +3,11 @@
 #include <Math/ParamFunctor.h>
 #include <Math/GSLIntegrator.h>
 #include <Math/WrappedTF1.h>
-
 #include <TH2.h>
 #include <TF1.h>
 #include <TGraph.h>
-#include <TRandom3.h>
-
+#include <memory.h>
+#include <stddef.h>
 #include <algorithm>
 #include <cmath>
 #include <complex>
@@ -22,7 +21,6 @@
 #include "AmpGen/AmplitudeRules.h"
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/DalitzIntegrator.h"
-#include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/Expression.h"
 #include "AmpGen/FastCoherentSum.h"
@@ -35,6 +33,11 @@
 #include "AmpGen/Tensor.h"
 #include "AmpGen/ThreeBodyCalculators.h"
 #include "AmpGen/CompilerWrapper.h"
+#include "AmpGen/Units.h"
+#include "AmpGen/ParticlePropertiesList.h"
+#include "AmpGen/Event.h"
+#include "AmpGen/ParticleProperties.h"
+#include "AmpGen/Types.h"
 
 using namespace AmpGen;
 

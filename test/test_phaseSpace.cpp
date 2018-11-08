@@ -3,9 +3,20 @@
 #define BOOST_TEST_MODULE "PhaseSpace"
 
 #include <boost/test/unit_test.hpp>
+#include <boost/preprocessor/comparison/not_equal.hpp>
+#include <boost/preprocessor/control/iif.hpp>
+#include <boost/preprocessor/logical/compl.hpp>
+#include <boost/test/tools/context.hpp>
+#include <boost/test/tools/detail/tolerance_manip.hpp>
+#include <boost/test/tools/interface.hpp>
+#include <boost/test/unit_test_suite.hpp>
+#include <string>
+#include <vector>
+
 #include "AmpGen/PhaseSpace.h"
-#include "AmpGen/CompiledExpression.h"
 #include "TRandom3.h"
+#include "AmpGen/Event.h"
+#include "AmpGen/EventType.h"
 
 namespace tt = boost::test_tools;
 using namespace AmpGen;

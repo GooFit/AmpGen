@@ -1,11 +1,14 @@
 #include "AmpGen/ExpressionParser.h"
 
+#include <ext/alloc_traits.h>
+#include <stddef.h>
 #include <cmath>
 #include <ostream>
 
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/MinuitParameter.h"
 
 using namespace AmpGen;
 

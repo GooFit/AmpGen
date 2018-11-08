@@ -1,5 +1,6 @@
 #include "AmpGen/Lineshapes.h"
 
+#include <stddef.h>
 #include <cmath>
 #include <ostream>
 

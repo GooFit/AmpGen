@@ -1,5 +1,6 @@
 #include "AmpGen/BinDT.h"
 
+#include <string.h>
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -7,10 +8,10 @@
 #include <iomanip>
 #include <iostream>
 #include <ratio>
-#include <string.h>
-#include <type_traits>
+#include <cstdint>
 
 #include "AmpGen/Utilities.h"
+#include "AmpGen/Event.h"
 
 using namespace AmpGen;
 

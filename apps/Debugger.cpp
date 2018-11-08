@@ -74,8 +74,7 @@ int invert_parameter( AmpGen::MinuitParameter* param, MinuitParameterSet& mps )
   return sgn;
 }
 
-template <class MatrixElements> 
-void print( const Event& event, const MatrixElements& matrixElements, bool verbose )
+template <class MatrixElements> void print( const Event& event, const MatrixElements& matrixElements, bool verbose )
 {
   for ( auto& mE : matrixElements ) {
     INFO( mE.decayTree->uniqueString() << " " << mE.coupling() );
@@ -94,23 +93,34 @@ template < class FCN > void debug( FCN& sig, EventList& accepted, bool verbose, 
   sig.setEvents( accepted );
   sig.prepare();
   sig.debug( accepted[0] );
-  Event accepted_boosted = accepted[0];
-  boost( accepted_boosted,  { rndm->Uniform(-1,1), rndm->Uniform(-1,1), rndm->Uniform(-1,1)}, 0.99 );
-  
-  print( accepted[0], sig.matrixElements(), verbose );
+  // Event accepted_boosted = accepted[0];
+  /// align proton frame //// 
+  //TVector3 pZ = pFromEvent( accepted[0], {0} ).Vect();
+  //TVector3 pX = TVector3(0,0,1).Cross( pZ );
+  //TVector3 pY = pZ.Cross(pX);
+  //rotateBasis( accepted[0], pX, pY, pZ );
   accepted[0].print();
-  INFO( "A(x)  = " << sig.prob_unnormalised( accepted[0] ) );
-  
-  auto unboosted_value = sig.getValNoCache( accepted[0] );
-  INFO("Boosted: ");
-  accepted_boosted.print();
-  auto boosted_value = sig.getValNoCache( accepted_boosted );
-  INFO( "A(x)  = " << unboosted_value ) ;
-  INFO( "A(Λx) = " << boosted_value );   
-  
-  accepted[0].invertParity(4);
-  accepted[0].print();
-  INFO( "A(Px) = " << sig.getValNoCache( accepted[0] ) );
+  //sig.reset();
+  //sig.prepare();
+  //sig.debug( accepted[0] );
+  if( verbose ) print( accepted[0], sig.matrixElements(), verbose ); 
+//  boost( accepted_boosted,  { rndm->Uniform(-1,1), rndm->Uniform(-1,1), rndm->Uniform(-1,1)}, 0.99 );
+//  
+//  print( accepted[0], sig.matrixElements(), verbose );
+//  accepted[0].print();
+//  INFO( "A(x)  = " << sig.prob_unnormalised( accepted[0] ) );
+//
+//
+//  auto unboosted_value = sig.getValNoCache( accepted[0] );
+//  INFO("Boosted: ");
+//  accepted_boosted.print();
+//  auto boosted_value = sig.getValNoCache( accepted_boosted );
+//  INFO( "A(x)  = " << unboosted_value ) ;
+//  INFO( "A(Λx) = " << boosted_value );   
+//  
+//  accepted[0].invertParity(4);
+//  accepted[0].print();
+//  INFO( "A(Px) = " << sig.getValNoCache( accepted[0] ) );
 }
 
 int main( int argc, char** argv )
@@ -121,7 +131,8 @@ int main( int argc, char** argv )
 
   EventType eventType( NamedParameter<std::string>( "EventType" ).getVector() );
 
-  bool verbose = NamedParameter<bool>( "FastCoherentSum::Debug", 0 );
+  bool verbose = NamedParameter<bool>("FastCoherentSum::Debug", 0 ) || 
+                 NamedParameter<bool>("PolarisedAmplitude::Debug", 0 );
   INFO("Using verbose mode: " << verbose );
   AmpGen::MinuitParameterSet MPS;
   MPS.loadFromStream();

@@ -1,14 +1,16 @@
-#include <algorithm>
-#include <bitset>
-#include <cmath>
 #include <ctype.h>
+#include <stdlib.h>
+#include <memory.h>
+#include <ext/alloc_traits.h>
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <memory>
 #include <numeric>
-#include <stdlib.h>
 #include <string>
 #include <utility>
 #include <vector>
+#include <complex>
 
 #include "AmpGen/EventType.h"
 #include "AmpGen/Expression.h"
@@ -24,7 +26,7 @@
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Units.h"
 #include "AmpGen/Wigner.h"
-#include "AmpGen/RaritaSchwinger.h"
+#include "AmpGen/Types.h"
 
 using namespace AmpGen;
 using AmpGen::Lineshape::LineshapeFactory;
@@ -411,7 +413,9 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
       spinFactor = helicityAmplitude( *this, Identity(4), double(polState())/2.0, db ); 
     }
 
-    ADD_DEBUG( spinFactor, db );
+    if( db != nullptr ) 
+      db->emplace_back( "SF_"+std::to_string(polState()) +"_"+std::to_string(daughter(0)->polState()
+            ) + "_"+std::to_string(daughter(1)->polState() ) , spinFactor );
     DEBUG( "Got spin matrix element -> calculating lineshape product" );
     if ( sumAmplitudes ) total = total + make_cse ( Lineshape( db ) ) * spinFactor;
     else {
@@ -517,11 +521,11 @@ Tensor Particle::ExternalSpinTensor(const int& polState, DebugSymbols* db ) cons
   } 
   if ( m_props->twoSpin() == 1 && basis == "Dirac" )
   {
-    Expression norm = make_cse( fcn::sqrt(pE+m)) ;
-    if(id > 0 && polState ==  1 ) return Tensor({ norm   ,0       ,pZ/norm    , z/norm });
-    if(id > 0 && polState == -1 ) return Tensor({ 0      , norm   , zb/norm   ,-pZ/norm}); 
-    if(id < 0 && polState == -1 ) return Tensor({ pZ/norm, z/norm , norm      ,0       });
-    if(id < 0 && polState ==  1 ) return Tensor({ zb/norm,-pZ/norm, 0         , norm   }); 
+    Expression norm = make_cse( fcn::sqrt((pE+m)/(2*m) ));
+    if(id > 0 && polState ==  1 ) return norm * Tensor({ 1        ,0          , pZ/(pE+m),  z/(pE+m)  });
+    if(id > 0 && polState == -1 ) return norm * Tensor({ 0        ,1          , zb/(pE+m), -pZ/(pE+m) }); 
+    if(id < 0 && polState == -1 ) return norm * Tensor({ pZ/(pE+m),  z/(pE+m) , 1        ,0           });
+    if(id < 0 && polState ==  1 ) return norm * Tensor({ zb/(pE+m),-pZ/(pE+m) , 0        ,1           }); 
   }
   WARNING("Spin tensors not implemented for spin J = " << m_props->twoSpin() << " / 2 m = " << m_polState ); 
   return Tensor( std::vector<double>( {1.} ), std::vector<size_t>( {0} ) );

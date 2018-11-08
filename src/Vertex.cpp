@@ -1,9 +1,10 @@
 #include "AmpGen/Vertex.h"
 
+#include <stddef.h>
 #include <array>
-#include <bitset>
 #include <memory>
 #include <ostream>
+#include <initializer_list>
 
 #include "AmpGen/DiracMatrices.h"
 #include "AmpGen/NamedParameter.h"
@@ -19,8 +20,7 @@ const Tensor::Index nu    = Tensor::Index();
 const Tensor::Index alpha = Tensor::Index();
 const Tensor::Index beta  = Tensor::Index();
 
-template <>
-Factory<AmpGen::Vertex::VertexBase>* Factory<AmpGen::Vertex::VertexBase>::gImpl = nullptr;
+template <> Factory<AmpGen::Vertex::VertexBase>* Factory<AmpGen::Vertex::VertexBase>::gImpl = nullptr;
 
 bool VertexFactory::isVertex( const std::string& hash ) { return get( hash ) != nullptr; }
 
@@ -144,7 +144,7 @@ Tensor AmpGen::Bar( const Tensor& P ){
 
 DEFINE_VERTEX( S_SS_S ) { return V1 * V2[0]; }
 
-DEFINE_VERTEX( S_VV_S ) { auto v1_dot_v2 = V1( mu ) * V2( -mu ); ADD_DEBUG( v1_dot_v2,db); return v1_dot_v2; }
+DEFINE_VERTEX( S_VV_S ) { return V1( mu ) * V2( -mu ); }
 
 DEFINE_VERTEX( S_VV_D )
 {
@@ -172,10 +172,6 @@ DEFINE_VERTEX( V_SS_P )
   Tensor p_wave          = Orbital_PWave( P, Q );
   Expression scalar_part = V1[0] * V2[0] / GeV;
   Tensor L     = p_wave * scalar_part;
-  ADD_DEBUG( L[0], db ); 
-  ADD_DEBUG( L[1], db ); 
-  ADD_DEBUG( L[2], db ); 
-  ADD_DEBUG( L[3], db ); 
   return L;
 }
 
@@ -286,11 +282,10 @@ DEFINE_VERTEX( f_fS_P1 )
 
 DEFINE_VERTEX( f_Vf_S )
 {
-  Tensor::Index a,b;
+  Tensor::Index a,b,c,d;
   Tensor proj   = Spin1hProjector(P);
   Tensor vSlash = gamma_twiddle(P)(mu,a,b) * V1(-mu);
-  Tensor decaySpinor = Gamma[4](beta,nu) * vSlash( nu, mu ) * V2(mu);
-  return proj(alpha,beta) * decaySpinor(beta);
+  return proj(a, b) * Gamma[4](b,c) * vSlash(c,d) * V2(d);
 }
 
 DEFINE_VERTEX( f_Vf_S1 )
@@ -305,7 +300,8 @@ DEFINE_VERTEX( f_Vf_S1 )
 DEFINE_VERTEX( f_Vf_P )
 {
   Tensor proj   = Spin1hProjector(P);
-  return proj( alpha, beta ) * V2(beta) * dot( V1, Orbital_PWave( P, Q ) ) / GeV ;
+  auto L = Orbital_PWave(P,Q);
+  return proj( alpha, beta ) * V2(beta) * dot( V1, L ) / GeV ;
 }
 
 DEFINE_VERTEX( f_Tf_P )
@@ -324,7 +320,36 @@ DEFINE_VERTEX( f_Vf_P1 )
   return proj( alpha, beta ) * Gamma[4](beta,nu) * V2(nu) * dot( V1, Orbital_PWave( P, Q ) ) / GeV;
 }
 
+DEFINE_VERTEX( f_Vf_P2 )
+{
+  Tensor::Index a,b,c;
+  Tensor proj   = Spin1hProjector(P);
+  Tensor L = Orbital_PWave(P,Q);
+  Tensor t = LeviCivita()(-mu,-nu,-alpha,-beta) * L(nu) * V1(alpha) * P(beta); 
+  t.st();
+  return proj( a, b ) * gamma_twiddle(P)(mu,b,c) * V2(c) * t(-mu); 
+}
+
+DEFINE_VERTEX( f_Vf_P3 )
+{
+  Tensor::Index a,b,c,d;
+  Tensor proj   = Spin1hProjector(P);
+  Tensor L = Orbital_PWave(P,Q);
+  Tensor t = LeviCivita()(-mu,-nu,-alpha,-beta) * L(nu) * V1(alpha) * P(beta); 
+  t.st();
+  return proj( a, b ) * Gamma[4](b,c) * gamma_twiddle(P)(mu,c,d) * V2(d) * t(-mu);
+}
+
 DEFINE_VERTEX( f_Vf_D )
+{
+  Tensor::Index a,b,c,d;
+  Tensor proj   = Spin1hProjector(P);
+  Tensor gt     = gamma_twiddle(P);
+  Tensor L      = Orbital_DWave(P,Q)(-mu,-nu) * V1(nu) / (GeV*GeV);
+  return proj( a, b ) * gt(mu,b,c) * L(-mu) * V2(c) ;
+}
+
+DEFINE_VERTEX( f_Vf_D1 )
 {
   Tensor::Index a,b,c,d;
   Tensor proj   = Spin1hProjector(P);
@@ -338,17 +363,10 @@ DEFINE_VERTEX( r_fS_P )
   Tensor::Index a,b,c,d;
   Tensor L = Orbital_PWave(P,Q);
   L.st();
-  if( NamedParameter<bool>("UseSimplifiedVertex", true ) ){
-    Tensor F = Spin1hProjector(P);
-    Tensor V = ( (-1) * L(nu) * F(a,d) + (1./3.) * F(a,b) * gamma_twiddle(P)(nu,b,c) * slash(L)(c,d) ) * V1(d) / GeV; 
-    V.st();
-    return V;
-  }
-  
-  Tensor sp = Spin3hProjector(P); 
-  Tensor rt = sp(mu,nu,a,b) * L(-nu) * V1(b) / (GeV);
-  rt.st();   
-  return rt;
+  Tensor F = Spin1hProjector(P);
+  Tensor V = ( (-1) * L(nu) * F(a,d) + (1./3.) * F(a,b) * gamma_twiddle(P)(nu,b,c) * slash(L)(c,d) ) * V1(d) / GeV; 
+  V.st();
+  return V;
 }
 
 DEFINE_VERTEX( r_fS_D )
@@ -393,6 +411,9 @@ DEFINE_VERTEX( f_rS_P )
   Tensor::Index a,b,c;
   auto L = Orbital_PWave(P,Q);
   Tensor F = Spin1hProjector(P)(a,b)                 * V1(-mu,b) * L(mu) * V2[0] / GeV;
+  ADD_DEBUG_TENSOR( V1, db );
+  ADD_DEBUG_TENSOR( L , db );
+  ADD_DEBUG_TENSOR( F , db );
   F.st();
   return F;
 }

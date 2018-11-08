@@ -7,10 +7,11 @@
 #include <vector>
 
 #include "AmpGen/EventList.h"
-/// AmpGen
 #include "AmpGen/FastCoherentSum.h"
 #include "AmpGen/Integrator.h"
 #include "AmpGen/MsgService.h"
+#include "AmpGen/Event.h"
+#include "AmpGen/Types.h"
 
 namespace AmpGen
 {

@@ -1,13 +1,10 @@
 #ifndef AMPGEN_GENERATOR_H
 #define AMPGEN_GENERATOR_H
 
-#include "AmpGen/DynamicContainer.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/PhaseSpace.h"
-#include "AmpGen/RecursivePhaseSpace.h"
 #include "AmpGen/Utilities.h"
-#include "AmpGen/Kinematics.h"
 
 namespace AmpGen
 {

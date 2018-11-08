@@ -5,6 +5,8 @@
 #include "AmpGen/Particle.h"
 
 namespace AmpGen {
+class Particle;
+
   Expression wigner_d( const Expression& cb, const double& j, const double& m, const double& n );
   Expression wigner_D( const Tensor& P, const double& J, const double& lA, const double& lB, const double& lC, DebugSymbols* db ); 
 

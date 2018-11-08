@@ -1,7 +1,12 @@
 #include "AmpGen/MinuitExpression.h"
 
+#include <ext/alloc_traits.h>
+#include <stddef.h>
+
 #include "AmpGen/Expression.h"
 #include "AmpGen/ExpressionParser.h"
+#include "AmpGen/MsgService.h"
+#include "AmpGen/Utilities.h"
 
 namespace AmpGen
 {

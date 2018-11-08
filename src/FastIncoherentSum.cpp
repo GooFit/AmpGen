@@ -1,5 +1,6 @@
 #include "AmpGen/FastIncoherentSum.h"
 
+#include <memory.h>
 #include <iomanip>
 #include <memory>
 #include <ostream>
@@ -8,8 +9,8 @@
 #include "AmpGen/ErrorPropagator.h"
 #include "AmpGen/FitFraction.h"
 #include "AmpGen/MinuitParameter.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Particle.h"
+#include "AmpGen/EventList.h"
 
 namespace AmpGen
 {

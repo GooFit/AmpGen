@@ -7,6 +7,7 @@
 #include "AmpGen/FastCoherentSum.h"
 #include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/Types.h"
 
 namespace AmpGen
 {

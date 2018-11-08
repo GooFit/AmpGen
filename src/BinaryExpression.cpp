@@ -1,12 +1,13 @@
-#include <algorithm>
+#include <math.h>
 #include <complex>
-#include <memory>
 #include <string>
 
 #include "AmpGen/Expression.h"
-#include "AmpGen/CompiledExpressionBase.h"
-#include "AmpGen/ASTResolver.h"
 #include "AmpGen/Types.h"
+
+namespace AmpGen {
+class ASTResolver;
+}  // namespace AmpGen
 
 using namespace AmpGen;
 

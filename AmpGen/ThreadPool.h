@@ -7,6 +7,8 @@
  * A single static thread pool exists that can be used as a sceduler.
  */
 
+#include <memory.h>
+#include <stddef.h>
 #include <atomic>
 #include <condition_variable>
 #include <functional>

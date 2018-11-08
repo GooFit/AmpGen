@@ -4,11 +4,19 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <string>
 
 #include "AmpGen/Expression.h"
 #include "AmpGen/Factory.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/Tensor.h"
+#include "AmpGen/MsgService.h"
+
+namespace AmpGen {
+namespace Vertex {
+struct VertexBase;
+}  // namespace Vertex
+}  // namespace AmpGen
 
 
 /** \defgroup Vertices Spin
@@ -106,12 +114,16 @@ namespace AmpGen
     DECLARE_VERTEX( f_Vf_S );
     DECLARE_VERTEX( f_Vf_S1 );
     DECLARE_VERTEX( f_Vf_P );
+    DECLARE_VERTEX( f_Vf_P1 );
+    DECLARE_VERTEX( f_Vf_P2 );
+    DECLARE_VERTEX( f_Vf_P3 );
+    
+    DECLARE_VERTEX( f_Vf_D );
+    DECLARE_VERTEX( f_Vf_D1 );
     
     DECLARE_VERTEX( f_Tf_P );
 
-    DECLARE_VERTEX( f_Vf_P1 );
 
-    DECLARE_VERTEX( f_Vf_D );
     
     DECLARE_VERTEX( r_fS_P );
     DECLARE_VERTEX( r_fS_D );

@@ -7,12 +7,9 @@
 
 #include "AmpGen/Expression.h"
 #include "AmpGen/MinuitParameter.h"
-#include "AmpGen/MsgService.h"
-#include "AmpGen/Utilities.h"
 
 namespace AmpGen
 {
-
   class MinuitParameterSet;
 
   class MinuitExpression : public MinuitParameter

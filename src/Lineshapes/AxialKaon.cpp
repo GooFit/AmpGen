@@ -1,7 +1,15 @@
 
+#include <stddef.h>
+#include <string>
+#include <vector>
+
 #include "AmpGen/Lineshapes.h"
 #include "AmpGen/kMatrix.h"
 #include "AmpGen/Spline.h"
+#include "AmpGen/Expression.h"
+#include "AmpGen/Factory.h"
+#include "AmpGen/Tensor.h"
+#include "AmpGen/Utilities.h"
 
 using namespace AmpGen;
 

@@ -1,5 +1,7 @@
 #include "AmpGen/AmplitudeRules.h"
 
+#include <memory.h>
+#include <ext/alloc_traits.h>
 #include <algorithm>
 #include <cmath>
 #include <memory>

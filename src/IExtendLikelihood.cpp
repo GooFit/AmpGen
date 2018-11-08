@@ -1,5 +1,6 @@
 #include "AmpGen/IExtendLikelihood.h"
 
+#include <ext/alloc_traits.h>
 #include <ostream>
 
 #include "AmpGen/Factory.h"

@@ -1,5 +1,10 @@
 #ifndef AMPGEN_SIMPLIFY_H
 #define AMPGEN_SIMPLIFY_H 1
+#include <complex>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "AmpGen/Expression.h"
 
 namespace AmpGen { 

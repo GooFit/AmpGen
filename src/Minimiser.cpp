@@ -4,6 +4,7 @@
 #include <TMatrixTSym.h>
 #include <iostream>
 #include <string>
+#include <iomanip>
 
 #include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/MinuitParameter.h"

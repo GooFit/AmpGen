@@ -1,13 +1,13 @@
 #include "AmpGen/Kinematics.h"
 
-#include <RtypesCore.h>
 #include <TLorentzVector.h>
 #include <TMath.h>
 #include <TVector3.h>
 #include <cmath>
 
-#include "AmpGen/MsgService.h"
-#include "AmpGen/Simplify.h"
+#include "AmpGen/Expression.h"
+#include "AmpGen/EventList.h"
+#include "AmpGen/Event.h"
 
 using namespace AmpGen;
 

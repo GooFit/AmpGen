@@ -1,21 +1,33 @@
 #ifndef AMPGEN_ERRORPROPAGATOR_H
 #define AMPGEN_ERRORPROPAGATOR_H
 
+#include <ext/alloc_traits.h>
+#include <cmath>
+#include <stddef.h>
 #include <string>
 #include <vector>
 #include <map>
 #include <functional>
+#include <array>
+#include <utility>
+
+#include "AmpGen/MinuitParameter.h"
+#include "AmpGen/MsgService.h"
 
 #include "TDecompChol.h"
 #include "TMatrixD.h"
 #include "TRandom3.h"
 #include "TVectorD.h"
+#include "TMatrixDfwd.h"
+#include "TMatrixT.h"
+#include "TVectorDfwd.h"
+#include "TVectorT.h"
 
-#include "AmpGen/MinuitParameter.h"
-#include "AmpGen/MsgService.h"
+class TRandom3;
 
 namespace AmpGen
 {
+  class MinuitParameterSet;
   /// \class LinearErrorPropagator
   /// Propagates uncertainties on functors using either a MinuitParameterSet (thus assuming a diagonal covariance matrix) 
   /// or with a set of parameters and a covariance matrix (i.e. the product of a fit). 

@@ -1,12 +1,11 @@
 #include "AmpGen/CompiledExpressionBase.h"
 
+#include <cxxabi.h>
 #include <algorithm>
 #include <memory>
 #include <ostream>
 
 #include "AmpGen/CacheTransfer.h"
-#include "AmpGen/MinuitParameterSet.h"
-#include "AmpGen/MsgService.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/ThreadPool.h"

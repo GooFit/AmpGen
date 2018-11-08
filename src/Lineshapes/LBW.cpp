@@ -1,6 +1,13 @@
+#include <stddef.h>
+#include <string>
+#include <vector>
+
 #include "AmpGen/Lineshapes.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/ParticlePropertiesList.h"
+#include "AmpGen/Expression.h"
+#include "AmpGen/Factory.h"
+#include "AmpGen/ParticleProperties.h"
 
 using namespace AmpGen;
 using namespace AmpGen::fcn;

@@ -6,12 +6,13 @@
 #include <vector>
 
 #include "AmpGen/BinDT.h"
-#include "AmpGen/EventList.h"
-#include "AmpGen/EventType.h"
-#include "AmpGen/MsgService.h"
 
 namespace AmpGen
 {
+  class EventList; 
+  class EventType; 
+  class Event;
+
   class Chi2Estimator
   {
 

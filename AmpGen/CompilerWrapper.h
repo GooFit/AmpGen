@@ -1,20 +1,16 @@
 #ifndef AMPGEN_COMPILERWRAPPER_H
 #define AMPGEN_COMPILERWRAPPER_H
 
-#include <dlfcn.h>
+#include <stdlib.h>
 #include <fstream>
 #include <iostream>
-#include <map>
-#include <stdlib.h>
 #include <string>
-#include <unordered_map>
-#include <utility>
 #include <vector>
-
-#include "AmpGen/CompiledExpressionBase.h"
 
 namespace AmpGen
 {
+  class CompiledExpressionBase; 
+
   class CompilerWrapper
   {
   private:

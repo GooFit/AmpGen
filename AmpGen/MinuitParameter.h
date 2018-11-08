@@ -9,6 +9,7 @@
 namespace AmpGen
 {
   class MinuitParameterSet;
+
   class MinuitParameter
   {
   public:

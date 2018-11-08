@@ -1,16 +1,22 @@
 #ifndef AMPGEN_PROJECTION_H
 #define AMPGEN_PROJECTION_H
 
+#include <stddef.h>
 #include <functional>
+#include <string>
+#include <utility>
 
 #include "TH1D.h"
 #include "TH2D.h"
-
 #include "AmpGen/Event.h"
+
+class TH1D;
+class TH2D;
 
 namespace AmpGen
 {
   class Projection2D;
+class Event;
 
   class Projection
   {

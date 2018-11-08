@@ -8,6 +8,7 @@
 
 #include "AmpGen/Expression.h"
 #include "AmpGen/Factory.h"
+#include "AmpGen/MsgService.h"
 
 /**
   @defgroup Lineshapes Lineshapes

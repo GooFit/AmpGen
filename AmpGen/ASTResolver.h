@@ -1,3 +1,6 @@
+#include <memory.h>
+#include <bits/stdint-uintn.h>
+#include <stddef.h>
 #include <iosfwd>
 #include <map>
 #include <memory>
@@ -14,6 +17,7 @@
 namespace AmpGen {
   class MinuitParameter;
   class MinuitParameterSet;
+  struct Spline;
 
   /// \class ASTResolver
   /// Traverses trees in IExpression::resolveDependencies()

@@ -59,7 +59,6 @@ int main( int argc, char** argv )
   std::string sourceFile              = NamedParameter<std::string>( "sourceFile" , "output.cpp" );
   std::string type                    = NamedParameter<std::string>( "Type", "FastCoherentSum" );
   std::string outputPS                = NamedParameter<std::string>( "outputPS", "" );
-  bool normalise                      = NamedParameter<bool>("Normalise",true);
   unsigned int NormEvents             = NamedParameter<unsigned int>( "NormEvents", 1000000 );
   double safetyFactor                 = NamedParameter<double>( "SafefyFactor", 3 );
 
@@ -75,7 +74,6 @@ int main( int argc, char** argv )
   phsp.setRandom( &rnd );
 
   EventList phspEvents( oEventType );
-  //if( normalise ) 
   phsp.fillEventListPhaseSpace( phspEvents, NormEvents );
 
   if( type == "FastCoherentSum" ){

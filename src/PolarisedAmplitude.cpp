@@ -1,7 +1,30 @@
 #include "AmpGen/PolarisedAmplitude.h"
+
+#include <memory.h>
+#include <ext/alloc_traits.h>
+#include <chrono>
+#include <complex>
+#include <iomanip>
+#include <map>
+#include <memory>
+#include <ostream>
+#include <ratio>
+#include <utility>
+
 #include "AmpGen/CompilerWrapper.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Array.h"
+#include "AmpGen/ParticlePropertiesList.h"
+#include "AmpGen/AmplitudeRules.h"
+#include "AmpGen/CompiledExpressionBase.h"
+#include "AmpGen/Event.h"
+#include "AmpGen/EventList.h"
+#include "AmpGen/FitFraction.h"
+#include "AmpGen/MinuitParameterSet.h"
+#include "AmpGen/MsgService.h"
+#include "AmpGen/Particle.h"
+#include "AmpGen/ParticleProperties.h"
+#include "AmpGen/Utilities.h"
 
 using namespace AmpGen;
 
@@ -92,14 +115,12 @@ std::vector<TransitionMatrix<std::vector<complex_t>>> PolarisedAmplitude::matrix
 
 void   PolarisedAmplitude::prepare()
 {
-  bool isReady = 0 ; 
   auto dim = m_eventType.dim();
   std::vector<size_t> changedPdfIndices; 
   auto tStartEval = std::chrono::high_resolution_clock::now();
   for( size_t i = 0; i < m_matrixElements.size(); ++i ){
     auto tBeginCal = std::chrono::high_resolution_clock::now();
     auto& t = m_matrixElements[i];
-    if( m_nCalls == 0 ) isReady &= t.pdf.isReady(); 
     t.pdf.prepare();
     if( m_nCalls != 0 && !t.pdf.hasExternalsChanged() ) continue; 
     if( t.addressData == 999 ){
@@ -110,7 +131,7 @@ void   PolarisedAmplitude::prepare()
     double timeNorm   = std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tBeginCal ).count();
     t.pdf.resetExternals();
     changedPdfIndices.push_back(i);
-    DEBUG("Updated cache for PDF: " << std::setw(55) << t.decayTree->uniqueString() << std::setw(3) << t.addressData << " " << "  t = " << timeNorm << " ms" );
+    INFO("Updated cache for PDF: " << std::setw(55) << t.decayTree->uniqueString() << std::setw(3) << t.addressData << " " << "  t = " << timeNorm << " ms" );
   }
   if( !m_probExpression.isLinked() ) build_probunnormalised();
   m_probExpression.prepare(); 

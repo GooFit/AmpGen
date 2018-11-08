@@ -6,6 +6,8 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/Event.h"
+#include "AmpGen/Projection.h"
 
 #include <chrono>
 #include <functional>
@@ -28,8 +30,8 @@
 
 namespace AmpGen
 {
-
   class CompiledExpressionBase;
+
   DECLARE_ARGUMENT_DEFAULT( Bins, size_t, 100 );
   DECLARE_ARGUMENT( Prefix, std::string );
   DECLARE_ARGUMENT( LineColor, int );

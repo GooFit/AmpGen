@@ -10,6 +10,7 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <stddef.h>
 #include <vector>
 
 #include "AmpGen/Event.h"
@@ -52,8 +53,6 @@ namespace AmpGen
     
     size_t size() const { return m_nt; }
     TLorentzVector* GetDecay( const unsigned int& n );
-
-
     AmpGen::Event makeEvent( const unsigned int& cacheSize = 0 );
     AmpGen::EventType eventType() const;
   };

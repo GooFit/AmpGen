@@ -1,7 +1,15 @@
+#include <stddef.h>
+#include <ostream>
+#include <string>
+#include <vector>
+
 #include "AmpGen/Expression.h"
 #include "AmpGen/Lineshapes.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/NamedParameter.h"
+#include "AmpGen/Factory.h"
+#include "AmpGen/MsgService.h"
+#include "AmpGen/ParticleProperties.h"
 
 using namespace AmpGen;
 using namespace AmpGen::fcn;

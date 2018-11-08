@@ -1,5 +1,8 @@
 #ifndef AMPGEN_COMPILEDEXPRESSIONBASE_H
 #define AMPGEN_COMPILEDEXPRESSIONBASE_H
+#include <memory.h>
+#include <bits/stdint-uintn.h>
+#include <stddef.h>
 #include <iosfwd>
 #include <map>
 #include <memory>
@@ -10,10 +13,11 @@
 #include <future>
 
 #include "AmpGen/Expression.h"
-#include "AmpGen/CacheTransfer.h"
 
 namespace AmpGen
 {
+  class CacheTransfer;
+
   std::string programatic_name( std::string s );
   
   class MinuitParameter;

@@ -1,7 +1,14 @@
 #include "AmpGen/ASTResolver.h"
+
+#include <algorithm>
+#include <cstdint>
+
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Spline.h"
+#include "AmpGen/Array.h"
+#include "AmpGen/MinuitParameter.h"
+#include "AmpGen/MsgService.h"
 
 using namespace AmpGen;
 

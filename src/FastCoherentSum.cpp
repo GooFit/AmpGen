@@ -21,7 +21,8 @@
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/Utilities.h"
-#include "AmpGen/ThreadPool.h"
+#include "AmpGen/CompiledExpressionBase.h"
+#include "AmpGen/CompilerWrapper.h"
 
 #ifdef __USE_OPENMP__
   #include <omp.h>

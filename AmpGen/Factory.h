@@ -12,6 +12,13 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundefined-var-template"
 
+#pragma clang diagnostic pop
+
+#define REGISTER( BASE_CLASS, DERIVED_CLASS )                                                                          \
+  std::string DERIVED_CLASS::_id = AmpGen::Factory<BASE_CLASS>::Register( #DERIVED_CLASS, new DERIVED_CLASS() )
+#define REGISTER_WITH_KEY( BASE_CLASS, DERIVED_CLASS, KEY, KEY_TYPE )                                                  \
+  KEY_TYPE DERIVED_CLASS::_id = AmpGen::Factory<BASE_CLASS, KEY_TYPE>::Register( KEY, new DERIVED_CLASS() )
+
 namespace AmpGen
 {
   /**@class Factory
@@ -48,11 +55,5 @@ namespace AmpGen
   };
 } // namespace AmpGen
 
-#pragma clang diagnostic pop
-
-#define REGISTER( BASE_CLASS, DERIVED_CLASS )                                                                          \
-  std::string DERIVED_CLASS::_id = AmpGen::Factory<BASE_CLASS>::Register( #DERIVED_CLASS, new DERIVED_CLASS() )
-#define REGISTER_WITH_KEY( BASE_CLASS, DERIVED_CLASS, KEY, KEY_TYPE )                                                  \
-  KEY_TYPE DERIVED_CLASS::_id = AmpGen::Factory<BASE_CLASS, KEY_TYPE>::Register( KEY, new DERIVED_CLASS() )
-
 #endif
+

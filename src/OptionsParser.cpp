@@ -1,6 +1,12 @@
 #include "AmpGen/OptionsParser.h"
+
+#include <ctype.h>
+#include <algorithm>
+#include <utility>
+
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/MsgService.h"
 
 using namespace AmpGen;
 

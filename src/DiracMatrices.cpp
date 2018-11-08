@@ -1,5 +1,10 @@
 #include "AmpGen/DiracMatrices.h"
 
+#include <stddef.h>
+#include <initializer_list>
+
+#include "AmpGen/Tensor.h"
+
 using namespace AmpGen;
 
 extern const AmpGen::Expression               AmpGen::I      ( Constant(0., 1.) );

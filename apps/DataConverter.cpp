@@ -17,6 +17,8 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/Projection.h"
+
 #include "TEventList.h"
 #include "TFile.h"
 #include "TH1.h"

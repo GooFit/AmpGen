@@ -7,8 +7,7 @@
 #include "AmpGen/MsgService.h"
 
 #include <tuple>
-/* A tuple PDF is the log likliehood of the form
-
+/* A SumPDF is the log likliehood of the form
    -2*LL(event) = -2*log( Sum( i, P_i(event) ) )
    Where P_i are some probability density functions
    The sum is variadically unrolled at compile time, i.e. the wrapper

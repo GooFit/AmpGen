@@ -1,15 +1,25 @@
 #ifndef AMPGEN_SPLINE_H
 #define AMPGEN_SPLINE_H
 
+#include <memory.h>
+#include <stddef.h>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "AmpGen/Array.h"
 #include "AmpGen/Expression.h"
 #include "AmpGen/CacheTransfer.h"
+#include "AmpGen/Types.h"
 
-#include <TMatrixDfwd.h>
-#include <TMatrixT.h>
 #include "TMatrixD.h"
 
 namespace AmpGen{
+  class ASTResolver;
+  class CompiledExpressionBase;
+  class MinuitParameter;
+
   class SplineTransfer : public CacheTransfer
   {
   private:

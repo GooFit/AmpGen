@@ -1,12 +1,19 @@
 #include "AmpGen/Tensor.h"
 
+#include <ext/alloc_traits.h>
 #include <algorithm>
 #include <iostream>
 #include <iterator>
 #include <memory>
 #include <numeric>
+#include <map>
 
 #include "AmpGen/Utilities.h"
+#include "AmpGen/MsgService.h"
+
+namespace AmpGen {
+class ASTResolver;
+}  // namespace AmpGen
 
 using namespace AmpGen;
 

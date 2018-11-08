@@ -1,17 +1,23 @@
 #include "AmpGen/CompilerWrapper.h"
-#include "AmpGen/NamedParameter.h"
 
-#include <dlfcn.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <chrono>
-#include <thread>
-#include <sys/times.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <bits/stdint-intn.h>
+#include <stdlib.h>
+#include <chrono>
+#include <fstream>
+#include <ratio>
+#include <dlfcn.h>
+#include <unordered_map>
+#include <map>
+#include <utility>
 
+#include "AmpGen/NamedParameter.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/CompiledExpressionBase.h"
 
 using namespace AmpGen;
 
