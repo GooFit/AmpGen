@@ -14,17 +14,14 @@ namespace AmpGen
   private:
     EventType    m_eventType;
     PHASESPACE   m_gps;
-    unsigned int m_generatorBlock;
-    TRandom*     m_rnd;
-    bool         m_normalise;
+    unsigned int m_generatorBlock = {5000000};
+    TRandom*     m_rnd            = {gRandom};
+    bool         m_normalise      = {true};
 
   public:
     template <class... ARGS>
     Generator( const ARGS&... args )
-        : m_gps(args...),
-          m_generatorBlock(5000000),
-          m_rnd( gRandom ), 
-          m_normalise( true )
+        : m_gps(args...)
     {
       m_eventType = m_gps.eventType();
       setRandom( m_rnd );

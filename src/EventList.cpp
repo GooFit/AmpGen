@@ -2,6 +2,10 @@
 #include <TDirectory.h>
 #include <TEventList.h>
 #include <TH1.h>
+#include <TH2.h>
+#include <TTree.h>
+#include <TFile.h>
+
 #include <bits/stdint-uintn.h>
 #include <stddef.h>
 #include <complex>
@@ -22,15 +26,24 @@
 #include "AmpGen/Projection.h"
 #include "AmpGen/TreeReader.h"
 #include "AmpGen/Utilities.h"
-#include "TTree.h"
 #include "AmpGen/Event.h"
 #include "AmpGen/Types.h"
-#include "TH2.h"
 
 using namespace AmpGen;
 
-EventList::EventList() : m_norm(0), m_lastCachePosition(0) {}
-EventList::EventList( const EventType& type ) : m_eventType( type ), m_norm( 0 ), m_lastCachePosition(0) {}
+EventList::EventList( const EventType& type ) : m_eventType( type ) {} 
+
+void EventList::loadFromFile( const std::string& fname, const ArgumentPack& args )
+{
+  auto current_file = gFile; 
+  TTree* tree =  split( fname, ':' ).size() == 2
+    ? (TTree*)TFile::Open( split( fname, ':' )[0].c_str(), "READ" )->Get( split( fname, ':' )[1].c_str() )
+    : (TTree*)TFile::Open( fname.c_str(), "READ" )->Get( "DalitzEventList" );
+
+  loadFromTree( tree, args );
+  gFile->Close();
+  gFile = current_file; 
+}
 
 void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
 {
@@ -70,7 +83,7 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
   if( weightBranch != "" ) tr.setBranch( weightBranch, temp.pWeight() );
   if( filter != "" ){
     if( entryList.size() != 0 ){
-       WARNING("Specified entry list and filter, will overwrite list with specified selection");
+      WARNING("Specified entry list and filter, will overwrite list with specified selection");
     }
     tr.prepare();
     tree->Draw(">>evtList", filter.c_str() );
@@ -195,7 +208,7 @@ size_t EventList::registerExpression( const CompiledExpressionBase& expression, 
     if ( size >= at( 0 ).cacheSize() ) {
 
       WARNING( "Cache index " << size << " exceeds cache size = " << at( 0 ).cacheSize() << " resizing to "
-                              << size + expression_size );
+          << size + expression_size );
 
       for ( auto& evt : *this ) evt.resizeCache( size + expression_size );
     }
@@ -228,4 +241,14 @@ void EventList::add( const EventList& evts )
     m_data.push_back( evt );
     rbegin()->resizeCache( 0 );
   }
+}
+double EventList::norm()
+{
+  if ( m_norm == 0 ) {
+    double totalWeight = 0;
+#pragma omp parallel for reduction( + : totalWeight )
+    for ( unsigned int i = 0; i < size(); ++i ) totalWeight += ( *this )[i].weight() / ( *this )[i].genPdf();
+    m_norm               = totalWeight;
+  }
+  return m_norm;
 }

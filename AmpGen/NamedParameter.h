@@ -65,6 +65,16 @@ namespace AmpGen
       if ( OptionsParser::printHelp() ) help(def);
       DEBUG( *this );
     }
+    
+    NamedParameter( const std::string& name, const std::vector<T>& defVec, const std::string& helpString="" )
+        : m_name(name),
+          m_helpString(helpString)
+    {
+      setVal( defVec );
+      setFromOptionsParser();
+      if ( OptionsParser::printHelp() ) help( defVec[0] );
+    }
+    
     void help(const T& def){
       std::map< std::string, std::string > aliases;  
       std::string type = typeof<T>();
@@ -81,15 +91,6 @@ namespace AmpGen
         }
         else std::cout << std::string(46,' ') << tokens[i] << std::endl; 
       }
-    }
-
-    NamedParameter( const std::string& name, const std::vector<T>& defVec, const std::string& helpString="" )
-        : m_name(name),
-          m_helpString(helpString)
-    {
-      setVal( defVec );
-      setFromOptionsParser();
-      if ( OptionsParser::printHelp() ) help( defVec[0] );
     }
 
     size_t size() const { return m_valueArray.size(); }

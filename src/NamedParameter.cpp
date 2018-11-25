@@ -9,4 +9,4 @@ template class AmpGen::NamedParameter<double>;
 template class AmpGen::NamedParameter<unsigned int>;
 template class AmpGen::NamedParameter<int>;
 template class AmpGen::NamedParameter<size_t>;
-
+template class AmpGen::NamedParameter<bool>;

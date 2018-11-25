@@ -57,6 +57,6 @@ extern const std::array<AmpGen::Tensor,5>     AmpGen::Weyl::Gamma  ( {
 extern const std::array<AmpGen::Tensor,3> AmpGen::Sigma ( 
     {
       Tensor({0,1,1,0},{2,2}),
-      Tensor({Z,I,-I,Z},{2,2}),
+      Tensor({Z,-I,I,Z},{2,2}),
       Tensor({1,0,0,-1},{2,2})
     } );

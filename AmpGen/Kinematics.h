@@ -20,9 +20,6 @@ namespace AmpGen
 
   /// \ingroup Kin class HelicityCosine 
   /// \brief Functor to compute the angle between set of particles {1} and {2} in the rest frame of set {3}. 
-//  enum RepresentationType {
-//    scalar, vector, spinor, antispinor, tensor; 
-//  };
 
   class HelicityCosine {
     public:

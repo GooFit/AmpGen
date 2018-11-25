@@ -46,6 +46,7 @@ namespace AmpGen
         friend std::ostream& operator <<( std::ostream& out, const Index& index );  
     };
 
+
     Tensor();
     Tensor( const std::vector<Expression>& elements );
     Tensor( const std::vector<size_t>& _dim );

@@ -31,20 +31,7 @@
 using namespace AmpGen;
 using AmpGen::Lineshape::LineshapeFactory;
 
-Particle::Particle()
-  : m_lineshape( "BW" )
-  , m_polState( 0 )
-  , m_index( 999 )
-  , m_originalIndex( 999 )
-  , m_orbital( 0 )
-  , m_spinConfigurationNumber( 0 )
-  , m_isHead( true )
-  , m_isStateGood( true )
-  , m_usesDefaultLineshape( false )
-{
-}
-
-Particle::Particle( const std::string& name, const Particle& p1, const Particle& p2 ) : Particle()
+Particle::Particle( const std::string& name, const Particle& p1, const Particle& p2 ) 
 {
   m_props = ParticlePropertiesList::get( name );
   m_name  = name;
@@ -56,7 +43,7 @@ Particle::Particle( const std::string& name, const Particle& p1, const Particle&
   m_uniqueString = makeUniqueString();
 }
 
-Particle::Particle( const int& pdgID, const Particle& p1, const Particle& p2 ) : Particle()
+Particle::Particle( const int& pdgID, const Particle& p1, const Particle& p2 )
 {
   m_props = ParticlePropertiesList::get( pdgID );
   m_daughters.push_back( std::make_shared<Particle>( p1 ) );
@@ -405,6 +392,8 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
       if( m_props->twoSpin() == 0 ) spinFactor = spinTensor[0];
       if( m_props->twoSpin() == 1 ){
         Tensor is = Bar( ExternalSpinTensor(m_polState) );
+        ADD_DEBUG_TENSOR( ExternalSpinTensor(m_polState ) , db );
+        ADD_DEBUG_TENSOR( spinTensor, db );
         if( spinTensor.size() != 4 ){ ERROR("Spin tensor is the wrong rank = " << spinTensor.dimString() ); spinFactor = 1; }
         else { spinFactor = is[0] * spinTensor[0] + is[1]*spinTensor[1] + is[2]*spinTensor[2] + is[3]*spinTensor[3]; }
       }
@@ -444,7 +433,9 @@ Tensor Particle::SpinTensor( DebugSymbols* db ) const
 {
   DEBUG( "Getting SpinTensor for : " << m_name << " " << m_daughters.size() );
   if ( m_daughters.size() == 0 ){
-    return ExternalSpinTensor(m_polState, db);
+    auto S= ExternalSpinTensor(m_polState, db);
+    if( S.size() != 1 ) ADD_DEBUG_TENSOR( S, db );
+    return S;
   }
   else if ( m_daughters.size() == 2 ) {
     Tensor value = VertexFactory::getSpinFactor( P(), Q(), daughter( 0 )->SpinTensor( db ),
@@ -471,12 +462,12 @@ Tensor Particle::ExternalSpinTensor(const int& polState, DebugSymbols* db ) cons
 
   std::string basis = NamedParameter< std::string >("Particle::SpinBasis","Dirac");
   Tensor p        = P();
-  Expression pX   = p.get( 0 ) / GeV;
-  Expression pY   = p.get( 1 ) / GeV;
-  Expression pZ   = p.get( 2 ) / GeV;
-  Expression pE   = p.get( 3 ) / GeV;
-  Expression pP   = ( fcn::sqrt( pX*pX + pY*pY + pZ*pZ ) );
-  Expression m    = ( fcn::sqrt( dot( p, p ) ) ) / GeV;
+  Expression pX   = p.get(0) ;
+  Expression pY   = p.get(1) ;
+  Expression pZ   = p.get(2) ;
+  Expression pE   = p.get(3) ;
+  Expression pP   = fcn::sqrt( pX*pX + pY*pY + pZ*pZ );
+  Expression m    = fcn::sqrt( dot( p, p ) );
   complex_t I(0,1);
   Expression z    = pX + I*pY; 
   Expression zb   = pX - I*pY;
@@ -503,21 +494,20 @@ Tensor Particle::ExternalSpinTensor(const int& polState, DebugSymbols* db ) cons
   }
 
   if( m_props->twoSpin() == 1 && basis == "Weyl" ){
-    Expression n       = fcn::sqrt( 2*pP*(pP+pZ) );
-    Expression fp      = make_cse(fcn::sqrt( pE + pP ));
-    Expression fm      = make_cse(fcn::sqrt( pE - pP ));
+    Expression n       = fcn::sqrt( 2 * pP*(pP+pZ) );
+    Expression fa      = fcn::sqrt( (pE + m)/(2*m) );
+    Expression fb      = fcn::sqrt( (pE - m)/(2*m) );
     Expression aligned = make_cse( Abs(pP + pZ) < 10e-6 ) ;
-    Expression xi00    = make_cse(Ternary( aligned, -1, -zb/n ));
-    Expression xi01    = make_cse(Ternary( aligned,  0, (pP+pZ)/n ));
-    Expression xi10    = make_cse(Ternary( aligned,  0, (pP+pZ)/n ));
-    Expression xi11    = make_cse(Ternary( aligned,  1, z/n ));
-    Expression fa = (fm+fp)/sqrt(2);
-    Expression fb = (fm-fp)/sqrt(2);
-    if(id > 0 && polState ==  1 ) return Tensor({  fa*xi10,  fa*xi11,  fb*xi10,  fb*xi11 } );
-    if(id > 0 && polState == -1 ) return Tensor({  fa*xi00,  fa*xi01,  -fb*xi00,  -fb*xi01 } );
-    if(id < 0 && polState ==  1 ) return Tensor({ -fp*xi00, -fp*xi01,  fm*xi00,  fm*xi01 } );
-    if(id < 0 && polState == -1 ) return Tensor({  fm*xi10,  fm*xi11, -fp*xi01, -fp*xi11 } ); 
-
+      
+    Expression xi10    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
+    Expression xi11    = make_cse(Ternary( aligned,  0, z/n ));
+    Expression xi00    = make_cse(Ternary( aligned,  0, -zb/n ));
+    Expression xi01    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
+    
+    if(id > 0 && polState ==  1 ) return Tensor({ fa*xi10,  fa*xi11,  fb*xi10,  fb*xi11 } );
+    if(id > 0 && polState == -1 ) return Tensor({ fa*xi00,  fa*xi01, -fb*xi00, -fb*xi01 } );
+    if(id < 0 && polState ==  1 ) return Tensor({ fb*xi00,  fb*xi01,  -fa*xi00,  -fa*xi01 } );
+    if(id < 0 && polState == -1 ) return Tensor({ fb*xi10,  fb*xi11, -fa*xi01,  -fa*xi11 } );
   } 
   if ( m_props->twoSpin() == 1 && basis == "Dirac" )
   {
@@ -527,7 +517,7 @@ Tensor Particle::ExternalSpinTensor(const int& polState, DebugSymbols* db ) cons
     if(id < 0 && polState == -1 ) return norm * Tensor({ pZ/(pE+m),  z/(pE+m) , 1        ,0           });
     if(id < 0 && polState ==  1 ) return norm * Tensor({ zb/(pE+m),-pZ/(pE+m) , 0        ,1           }); 
   }
-  WARNING("Spin tensors not implemented for spin J = " << m_props->twoSpin() << " / 2 m = " << m_polState ); 
+  WARNING("Spin tensors not implemented for spin J = " << m_props->twoSpin() << " / 2 m = " << m_polState << " " << m_name ); 
   return Tensor( std::vector<double>( {1.} ), std::vector<size_t>( {0} ) );
 }
 
@@ -602,21 +592,22 @@ std::vector< std::pair<double,double> > Particle::spinOrbitCouplings( const bool
 
 
 
-std::string Particle::texLabel( const bool& printHead ) const
+std::string Particle::texLabel( const bool& printHead, const bool& recurse ) const
 {
   const std::string leftBrace     = "\\left[";
   const std::string rightBrace    = "\\right]";
-  std::string val                 = m_isHead ? "" : m_props->label() + leftBrace;
-  if ( printHead && m_isHead ) val = m_props->label() + "\\rightarrow ";
-  if ( m_daughters.size() != 0 ) {
-    if ( m_isHead && m_orbital != m_minL ) val = leftBrace;
-    for ( unsigned int i = 0; i < m_daughters.size(); ++i ) val += m_daughters[i]->texLabel() + " ";
-    val += m_isHead ? "" : rightBrace;
-    if ( m_isHead && m_orbital != m_minL ) val += rightBrace;
-    if ( m_orbital != m_minL ) val += "^{" + orbitalString() + "}";
-    return val;
-  } else
-    return m_props->label();
+  if( m_daughters.size() == 0 ) return m_props->label();
+  
+  std::string val                 = m_props->label();
+  if( printHead && m_isHead ) val = m_props->label() + "\\rightarrow ";
+
+  if( m_isHead || recurse ){
+    if ( !m_isHead || m_orbital != m_minL ) val += leftBrace;
+    for( auto& prod : m_daughters )         val += prod->texLabel(false,recurse) + " ";
+    if ( !m_isHead || m_orbital != m_minL ) val += rightBrace;
+    if ( m_orbital != m_minL )              val += "^{" + orbitalString() + "}";
+  }
+  return val;
 }
 
 void Particle::sortDaughters()

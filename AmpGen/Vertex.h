@@ -12,13 +12,6 @@
 #include "AmpGen/Tensor.h"
 #include "AmpGen/MsgService.h"
 
-namespace AmpGen {
-namespace Vertex {
-struct VertexBase;
-}  // namespace Vertex
-}  // namespace AmpGen
-
-
 /** \defgroup Vertices Spin
   * Vertices for the decays of particles are formed from the polarisation vectors or spinors of the decay products, 
   * and the momentum and momentum transfer of the decaying particle. 
@@ -46,21 +39,26 @@ namespace AmpGen
 {
   namespace Vertex
   {
-    /// \ingroup Vertices class VertexBase
-    /// Virtual base class from which all the other vertices derive, in essence this is 
-    /// just a named function pointer that can create a pointer to itself, i.e. such 
-    /// that it can be constructed using \ref Factory "Factory".
+    /** \ingroup Vertices class VertexBase
+     *  Virtual base class from which all the other vertices derive, in essence this is 
+     *  just a named function pointer that can create a pointer to itself, i.e. such 
+     *  that it can be constructed using \ref Factory "Factory".
+     */
     struct VertexBase {
       
-      /// Calculate the generalised current for this decay process, as a function of:
-      /// \param P The momentum of the decaying particle
-      /// \param Q The momentum transfer between the two decay products
-      /// \param V1 The polarisation tensor or spinor of the first decay product. By construction, the 
-      /// particle ordering convention used implies that the first decay product has the higher spin
-      /// \param V2 The polarisation tensor or spinor of the second decay product. 
-      /// \param db Optional collection of debug symbols for evaluating this amplitude. 
-      virtual AmpGen::Tensor operator()( const AmpGen::Tensor& P, const AmpGen::Tensor& Q, const AmpGen::Tensor& V1, const AmpGen::Tensor& V2,
-                          AmpGen::DebugSymbols* db = nullptr ) = 0;
+      /* Calculate the generalised current for this decay process, as a function of:
+      * \param P The momentum of the decaying particle
+      * \param Q The momentum transfer between the two decay products
+      * \param V1 The polarisation tensor or spinor of the first decay product. By construction, the 
+      * particle ordering convention used implies that the first decay product has the higher spin
+      * \param V2 The polarisation tensor or spinor of the second decay product. 
+      * \param db Optional collection of debug symbols for evaluating this amplitude. 
+      */
+      virtual AmpGen::Tensor operator()(const AmpGen::Tensor& P, 
+                                        const AmpGen::Tensor& Q, 
+                                        const AmpGen::Tensor& V1, 
+                                        const AmpGen::Tensor& V2,
+                                        AmpGen::DebugSymbols* db = nullptr ) = 0;
 
       virtual ~VertexBase() = default;
       VertexBase* create() { return this; }   

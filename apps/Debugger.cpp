@@ -118,8 +118,11 @@ template < class FCN > void debug( FCN& sig, EventList& accepted, bool verbose, 
 //  INFO( "A(x)  = " << unboosted_value ) ;
 //  INFO( "A(Λx) = " << boosted_value );   
 //  
-//  accepted[0].invertParity(4);
-//  accepted[0].print();
+  accepted[0].invertParity();
+  accepted[0].print();
+  sig.reset();
+  sig.prepare();
+  sig.debug( accepted[0] );
 //  INFO( "A(Px) = " << sig.getValNoCache( accepted[0] ) );
 }
 

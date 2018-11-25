@@ -107,7 +107,6 @@ void Minimiser::prepare()
 
 bool Minimiser::doFit()
 {
-
   m_lastPrint = 999;
   ROOT::Math::Functor f( *this, m_nParams );
   for ( unsigned int i = 0; i < m_mapping.size(); ++i ) {

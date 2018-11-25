@@ -17,7 +17,6 @@ using namespace AmpGen;
 
 AmplitudeRules::AmplitudeRules( MinuitParameterSet& mps )
 {
-
   for ( auto& o : mps.map() ) {
     if ( o.first.find( "_Re" ) == std::string::npos ) continue;
     AmplitudeRule pAmp( o.first, mps.map() );
@@ -39,7 +38,6 @@ std::map<std::string, std::vector<AmplitudeRule>> AmplitudeRules::rules() { retu
 
 AmplitudeRule::AmplitudeRule( const std::string& reName, std::map<std::string, MinuitParameter*>& mapping )
 {
-
   auto tokens = split( reName, '_' );
   if ( tokens.size() == 3 ) {
     m_prefix = tokens[0];
@@ -80,6 +78,7 @@ AmplitudeRule::AmplitudeRule( const std::string& reName, std::map<std::string, M
     }
   }
 }
+
 EventType AmplitudeRule::eventType() const
 {
   Particle particle( m_name );

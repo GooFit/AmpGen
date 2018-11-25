@@ -73,7 +73,6 @@ namespace AmpGen
           auto c = ij( evt, m_integrals[roll].i, m_integrals[roll].j );
           re[roll] += w * std::real( c );
           im[roll] += w * std::imag( c );
-         // INFO( "Adding to roll " << roll << " = " << m_integrals[roll].i << " " << m_integrals[roll].j << " " << evt.getCache( m_integrals[roll].i ) << " x " << evt.getCache( m_integrals[roll].j ) );
         }
       }
       real_t nv = sim->norm();

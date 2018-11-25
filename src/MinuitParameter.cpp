@@ -8,21 +8,29 @@
 
 using namespace AmpGen;
 
+MinuitParameter::MinuitParameter( const std::string& name, const MinuitParameter::Flag& fix, const double& mean, const double& step,
+                                  const double& mi, const double& ma )
+    : m_iFixInit( fix ), m_name( name ), m_meanInit( mean ), m_stepInit( step ), m_minInit( mi ), m_maxInit( ma )
+{
+  DEBUG( "Building parameter : " << name );
+  resetToInit();
+}
+
 MinuitParameter::Flag MinuitParameter::iFixInit() const { return m_iFixInit; }
 
-double MinuitParameter::meanInit() const { return m_meanInit; }
-double MinuitParameter::stepInit() const { return m_stepInit; }
-double MinuitParameter::minInit() const { return m_minInit; }
-double MinuitParameter::maxInit() const { return m_maxInit; }
+double MinuitParameter::meanInit()                const { return m_meanInit; }
+double MinuitParameter::stepInit()                const { return m_stepInit; }
+double MinuitParameter::minInit()                 const { return m_minInit; }
+double MinuitParameter::maxInit()                 const { return m_maxInit; }
+double MinuitParameter::mean()                    const { return m_meanResult; }
+double MinuitParameter::errPos()                  const { return m_errPosResult; }
+double MinuitParameter::errNeg()                  const { return m_errNegResult; }
+double MinuitParameter::err()                     const { return m_errResult; }
 
-double MinuitParameter::mean() const { return m_meanResult; }
-double MinuitParameter::errPos() const { return m_errPosResult; }
-double MinuitParameter::errNeg() const { return m_errNegResult; }
-double MinuitParameter::err() const { return m_errResult; }
-const std::string& MinuitParameter::name() const { return m_name; }
+const std::string& MinuitParameter::name()        const { return m_name; }
+bool MinuitParameter::hidden()                    const { return m_iFixInit == 1; }
 
 void MinuitParameter::setFree() { INFO("Setting parameter: " << m_name << " free" ) ; m_iFixInit = Flag::Float; }
-bool MinuitParameter::hidden() const { return m_iFixInit == 1; }
 
 void MinuitParameter::setCurrentFitVal( double cfv ) { m_meanResult = cfv; }
 
@@ -39,15 +47,6 @@ void MinuitParameter::setResult( double fitMean, double fitErr, double fitErrPos
 void MinuitParameter::print( std::ostream& os ) const
 {
   os << std::left << std::setw(65) << name() << "\t" << iFixInit() << "\t" << mean() << "\t" << err() << "\t" << minInit() << "\t" << maxInit();
-}
-
-MinuitParameter::MinuitParameter( const std::string& name, const MinuitParameter::Flag& fix, const double& mean, const double& step,
-                                  const double& mi, const double& ma )
-    : m_iFixInit( fix ), m_name( name ), m_meanInit( mean ), m_stepInit( step ), m_minInit( mi ), m_maxInit( ma )
-{
-  DEBUG( "Building parameter : " << name );
-
-  resetToInit();
 }
 
 void MinuitParameter::resetToInit()

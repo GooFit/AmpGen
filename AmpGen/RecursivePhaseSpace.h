@@ -70,7 +70,7 @@ namespace AmpGen
           }
         }
       }
-      m_phsp.SetDecay( decayChain.mass(), masses );
+      m_phsp.setDecay( decayChain.mass(), masses );
       setRandom( rndm );
     }
     std::vector<RecursivePhaseSpaceNode*> getFinalStates()

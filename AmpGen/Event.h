@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <array>
 #include "AmpGen/Types.h"
+
 namespace AmpGen { 
   class Event {
     private:

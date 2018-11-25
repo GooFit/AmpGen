@@ -10,10 +10,17 @@
 #include "TMatrixDfwd.h"
 #include "TMatrixT.h"
 #include "TMatrixTUtils.h"
-#include "TVectorDfwd.h"
 #include "TVectorT.h"
 
 using namespace AmpGen; 
+
+Spline::Spline(const std::string& name, const size_t& nBins, const double& min, const double& max, const std::vector<double>& values) :
+  m_points( Parameter(name), 2*nBins ),
+  m_name(name),
+  m_nKnots(nBins),
+  m_min(min),
+  m_max(max),
+  m_values(values){}
 
 Expression AmpGen::Spline::operator()( const Expression& x , DebugSymbols* db )
 {
@@ -56,13 +63,6 @@ Expression Spline::eval(const Expression& xp, DebugSymbols* db )
 
   return SubTree(returnValue);
 }
-Spline::Spline(const std::string& name, const size_t& nBins, const double& min, const double& max, const std::vector<double>& values) :
-  m_points( Parameter(name), 2*nBins ),
-  m_name(name),
-  m_nKnots(nBins),
-  m_min(min),
-  m_max(max),
-  m_values(values){}
 
   void SplineTransfer::print() const { INFO( "Source: " << m_parameters[0]->name() ); }
   SplineTransfer::SplineTransfer() = default;

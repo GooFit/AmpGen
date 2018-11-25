@@ -425,7 +425,7 @@ namespace AmpGen
     return dynamic_cast< const T* >( expression.get() ) != nullptr;
   }
   template < class T > T cast( const Expression& expression ){
-    return *dynamic_cast< const T*>(expression.get() );
+    return *static_cast< const T*>(expression.get() );
   }
   
   Expression make_cse( const Expression& A , bool simplify = false);

@@ -202,6 +202,8 @@ int main( int argc, char* argv[] )
       evts[i].setWeight( weight );
     }
   }
+  evts.transform( [=](auto& event){ for( size_t i = 0 ; i < 4*evtType.size(); ++i ) event[i] /= 1000. ; } );
+
   if ( pdfLibrary != "" ) {
     INFO( "Setting generator level PDF from " << pdfLibrary );
     void* handle = dlopen( pdfLibrary.c_str(), RTLD_NOW );

@@ -1,29 +1,21 @@
 #ifndef AMPGEN_PHASESPACE_H
 #define AMPGEN_PHASESPACE_H
 
-// @(#)root/physics:$Id$
-// Author: Rene Brun , Valerio Filippini  06/09/2000
-
-///////////////////////////////////////////////////////////////////////////////
-//                                                                           //
-//   Phase Space Generator, based on the GENBOD routine of CERNLIB           //
-//                                                                           //
-///////////////////////////////////////////////////////////////////////////////
-
 #include <stddef.h>
 #include <vector>
 
 #include "AmpGen/Event.h"
 #include "AmpGen/EventType.h"
-#include "TLorentzVector.h"
 #include "TRandom.h"
 
 namespace AmpGen
 {
   /**@class PhaseSpace
-   * Phase-space generator taken from the ROOT routine, from Rene Brun and Valerio Filippini, which was originally based on the GENBOD routine of CERNLIB with
+   * Phase-space generator taken from the ROOT routine, from Rene Brun and Valerio Filippini, 
+   * which was originally based on the GENBOD routine of CERNLIB with
    * modifications such that unweighted events are generated,
-   * which saves a large amount of CPU
+   * which saves a large amount of CPU. Further modified to remove the dependencies on TLorentzVector 
+   * and to only use the AmpGen::Event classes, and to add the option to include a time dependence.  
    */
 
   class PhaseSpace
@@ -35,25 +27,21 @@ namespace AmpGen
     double m_teCmTm    = {0}; // total energy in the C.M. minus the total mass
     double m_wtMax     = {0}; // maximum weight 
     double m_decayTime = {0}; // decay time
-    EventType m_type;
-    TRandom*  m_rand = {nullptr};
+    TRandom*  m_rand   = {nullptr};
+    EventType m_type   ;
     
-    std::vector<TLorentzVector> m_decPro;
     double rndm() { return m_rand->Rndm(); }
     double PDK( double a, double b, double c );
 
   public:
-    PhaseSpace() = default; 
+    PhaseSpace()  = default; 
+    ~PhaseSpace() = default;
     PhaseSpace( const EventType& type, TRandom* rand = nullptr );
-    bool SetDecay( const double& m0, const std::vector<double>& mass );
-    bool SetDecay( TLorentzVector& P, const unsigned int& nt, const double* mass );
-    double Generate();
-    double GetWtMax() const { return m_wtMax; }
+    bool setDecay( const double& m0, const std::vector<double>& mass );
     void setRandom( TRandom* rand ) { m_rand = rand; }
     
     size_t size() const { return m_nt; }
-    TLorentzVector* GetDecay( const unsigned int& n );
-    AmpGen::Event makeEvent( const unsigned int& cacheSize = 0 );
+    AmpGen::Event makeEvent( const size_t& cacheSize = 0 );
     AmpGen::EventType eventType() const;
   };
 } // namespace AmpGen

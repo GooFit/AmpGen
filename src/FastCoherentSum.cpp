@@ -54,10 +54,8 @@ FastCoherentSum::FastCoherentSum( const EventType& type, AmpGen::MinuitParameter
 
 void FastCoherentSum::addMatrixElement( std::pair<Particle, Coupling>& particleWithCoupling, const MinuitParameterSet& mps )
 {
-
   auto& protoParticle = particleWithCoupling.first;
   auto& coupling      = particleWithCoupling.second;
-
   if ( !protoParticle.isStateGood() ) {
     ERROR( "Decay tree not configured correctly for " << protoParticle.uniqueString() );
     m_stateIsGood = false;
@@ -75,9 +73,6 @@ void FastCoherentSum::addMatrixElement( std::pair<Particle, Coupling>& particleW
       std::make_shared<Particle>( protoParticle ), coupling,
       CompiledExpression<std::complex<double>, const double*, const double*>(
         expression, "p" + std::to_string(FNV1a_hash(name)), m_evtType.getEventFormat(), m_dbThis ? dbExpressions : DebugSymbols() , &mps ) );
-
-  
-
 }
 
 void FastCoherentSum::prepare()

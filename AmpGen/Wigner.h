@@ -8,7 +8,7 @@ namespace AmpGen {
 class Particle;
 
   Expression wigner_d( const Expression& cb, const double& j, const double& m, const double& n );
-  Expression wigner_D( const Tensor& P, const double& J, const double& lA, const double& lB, const double& lC, DebugSymbols* db ); 
+  Expression wigner_D( const Tensor& P, const double& J, const double& lA, const double& lB, DebugSymbols* db ); 
 
   double CG( const double& j1,
     const double& m1,
@@ -26,8 +26,23 @@ class Particle;
     */
   Tensor helicityTransformMatrix( const Tensor& P, const Expression& M, const int& ve =1, const bool& handleZeroCase = false );   
   
-  Expression helicityAmplitude( const Particle& particle, const Tensor& parentFrame, const double& Mz,    DebugSymbols* db );
+  Expression helicityAmplitude( const Particle& particle, const Tensor& parentFrame, const double& Mz,    DebugSymbols* db , const int sgn=1);
 
+  struct LS {
+    double factor;
+    double cg1;
+    double cg2;
+    double p; 
+    double m1;
+    double m2;
+  };
+  std::vector<LS> calculate_recoupling_constants( 
+    const double& J, 
+    const double& M,
+    const double& L, 
+    const double& S,
+    const double& j1,
+    const double& j2 );
 }
 
 #endif

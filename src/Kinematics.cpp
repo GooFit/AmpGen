@@ -44,7 +44,6 @@ HelicityCosine::HelicityCosine( const size_t& i, const size_t& j, const std::vec
 double HelicityCosine::operator()( std::vector<Event>::iterator evt ) const { return ( *this )( *evt ); }
 double HelicityCosine::operator()( const Event& evt ) const
 {
-
   TLorentzVector PR = pFromEvent( evt, _pR );
   TLorentzVector pi = pFromEvent( evt, _i );
   TLorentzVector pj = pFromEvent( evt, _j );
