@@ -3,32 +3,32 @@
 
 #include "TMatrixD.h"
 
-#include "AmpGen/ErrorPropagator.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/FitFraction.h"
 #include "AmpGen/MinuitParameter.h"
-#include "AmpGen/Particle.h"
 #include "AmpGen/Utilities.h"
 
 namespace AmpGen
 {
   class Minimiser;
+  class LinearErrorPropagator; 
 
   class FitResult
   {
   private:
-    double m_chi2;
-    double m_LL;
-    double m_nBins;
-    double m_nParam;
-    int m_status;
-    EventType m_eventType;
-    std::map<std::string, double> m_observables;
-    std::vector<FitFraction> m_fitFractions;
-    TMatrixD m_covarianceMatrix;
+    double                              m_chi2;
+    double                              m_LL;
+    double                              m_nBins;
+    double                              m_nParam;
+    int                                 m_status;
+    EventType                           m_eventType;
+    std::map<std::string, double>       m_observables;
+    std::vector<FitFraction>            m_fitFractions;
+    TMatrixD                            m_covarianceMatrix;
     std::shared_ptr<MinuitParameterSet> m_mps;
-    bool m_fitted;
+    bool                                m_fitted;
     std::map<std::string, unsigned int> m_covMapping;
+
     std::string getLastLine( std::ifstream& in ) const;
     void addToParameters( const std::string& line );
     void addToObservables( const std::string& line );

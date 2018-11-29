@@ -8,8 +8,7 @@ namespace AmpGen {
 class Particle;
 
   Expression wigner_d( const Expression& cb, const double& j, const double& m, const double& n );
-  Expression wigner_D( const Tensor& P, const double& J, const double& lA, const double& lB, DebugSymbols* db ); 
-
+  Expression wigner_D( const Tensor& P, const double& J, const double& lA, const double& lB, DebugSymbols* db , const std::string& name = "");
   double CG( const double& j1,
     const double& m1,
     const double& j2, 

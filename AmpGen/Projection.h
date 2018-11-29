@@ -16,11 +16,12 @@ class TH2D;
 namespace AmpGen
 {
   class Projection2D;
-class Event;
+  class Event;
 
   class Projection
   {
     friend class Projection2D;
+    private:
     std::function<double( const Event& )> m_func;
     std::string m_name;
     std::string m_xAxisTitle;
@@ -29,17 +30,16 @@ class Event;
     double m_min;
     double m_max;
     double m_width;
-  public:
+    public:
     const std::string name() const  ; 
     double operator()( const Event& evt ) const ;
     template <class FCN>
-    Projection( const FCN& fcn, const std::string& name,
-                const std::string& xAxisTitle, const unsigned int& nBins, const double& min, const double& max,
-                const std::string& units = "" ) : Projection( std::function< double( const Event& )>( fcn ), name, xAxisTitle, nBins, min, max, units ) {}
+      Projection( const FCN& fcn, const std::string& name,
+          const std::string& xAxisTitle, const unsigned int& nBins, const double& min, const double& max,
+          const std::string& units = "" ) : Projection( std::function< double( const Event& )>( fcn ), name, xAxisTitle, nBins, min, max, units ) {}
     Projection( const std::function<double( const Event& )>& fcn, const std::string& name,
-                const std::string& xAxisTitle, const unsigned int& nBins, const double& min, const double& max,
-                const std::string& units = "" );
-
+        const std::string& xAxisTitle, const unsigned int& nBins, const double& min, const double& max,
+        const std::string& units = "" );
 
     TH1D* plot(const std::string& prefix="") const;
 
@@ -53,7 +53,7 @@ class Event;
     Projection xAxis;
     Projection yAxis;
 
-  public:
+    public:
     Projection2D( const Projection& _xAxis, const Projection& _yAxis ) : xAxis( _xAxis ), yAxis( _yAxis ) {}
 
     TH2D* plot(const std::string& prefix="") const;

@@ -149,7 +149,7 @@ namespace AmpGen
   };
   template <class T> 
   std::ostream& operator<<( std::ostream& os, const NamedParameter<T>& np );
-} // namespace AmpGen
+}
 
 template <typename T>
 std::ostream& AmpGen::operator<<( std::ostream& os, const AmpGen::NamedParameter<T>& np )

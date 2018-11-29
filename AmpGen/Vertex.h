@@ -120,8 +120,6 @@ namespace AmpGen
     DECLARE_VERTEX( f_Vf_D1 );
     
     DECLARE_VERTEX( f_Tf_P );
-
-
     
     DECLARE_VERTEX( r_fS_P );
     DECLARE_VERTEX( r_fS_D );

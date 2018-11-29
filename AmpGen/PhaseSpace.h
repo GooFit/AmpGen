@@ -22,13 +22,13 @@ namespace AmpGen
   {
 
   private:
-    unsigned int m_nt  = {0}; // number of decay particles
-    double m_mass[18]  = {0}; // masses of particles
-    double m_teCmTm    = {0}; // total energy in the C.M. minus the total mass
-    double m_wtMax     = {0}; // maximum weight 
-    double m_decayTime = {0}; // decay time
-    TRandom*  m_rand   = {nullptr};
-    EventType m_type   ;
+    unsigned int m_nt        = {0}; // number of decay particles
+    double       m_mass[18]  = {0}; // masses of particles
+    double       m_teCmTm    = {0}; // total energy in the C.M. minus the total mass
+    double       m_wtMax     = {0}; // maximum weight 
+    double       m_decayTime = {0}; // decay time
+    TRandom*     m_rand      = {nullptr}; // Random number generator
+    EventType    m_type   ;               // EventType to generate
     
     double rndm() { return m_rand->Rndm(); }
     double PDK( double a, double b, double c );

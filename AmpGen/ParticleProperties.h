@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string>
 
-#include "AmpGen/MultiQuarkContent.h"
+#include "AmpGen/QuarkContent.h"
 #include "AmpGen/Units.h"
 
 namespace AmpGen
@@ -36,7 +36,7 @@ namespace AmpGen
     std::string m_chargeString; ///< string for particle charge
     char m_Aformat;             ///< anti-particle format character
     char m_status;              ///< status (estalished or not etc)
-    MultiQuarkContent m_netQuarkContent;
+    QuarkContent m_netQuarkContent;
     bool m_isValid;
 
     static double _defaultRadius;
@@ -76,7 +76,7 @@ namespace AmpGen
     char S() const { return m_status; }
     void setLabel( const std::string& label ) { m_texName = label; }
     void setName( const std::string& name ) { m_name = name; }
-    const MultiQuarkContent& netQuarkContent() const { return m_netQuarkContent; }
+    const QuarkContent& netQuarkContent() const { return m_netQuarkContent; }
     
     bool isValid() const { return m_isValid; }
 
@@ -88,23 +88,11 @@ namespace AmpGen
 
     void print( std::ostream& out = std::cout ) const;
 
-    bool operator==( const ParticleProperties& rhs ) const
-    {
-      if ( pdgID() == 0 && rhs.pdgID() == 0 ) {
-        return name() == rhs.name();
-      }
-      return pdgID() == rhs.pdgID();
-    }
-    bool operator<( const ParticleProperties& rhs ) const
-    {
-      if ( pdgID() == 0 || rhs.pdgID() == 0 ) {
-        return name() < rhs.name();
-      }
-      return pdgID() < rhs.pdgID();
-    }
-    bool operator>( const ParticleProperties& rhs ) const { return !( *this == rhs || *this < rhs ); }
-    bool operator<=( const ParticleProperties& rhs ) const { return ( *this < rhs || *this == rhs ); }
-    bool operator>=( const ParticleProperties& rhs ) const { return ( *this > rhs || *this == rhs ); }
+    bool operator==( const ParticleProperties& rhs ) const;
+    bool operator< ( const ParticleProperties& rhs ) const;
+    bool operator> ( const ParticleProperties& rhs ) const;
+    bool operator<=( const ParticleProperties& rhs ) const;
+    bool operator>=( const ParticleProperties& rhs ) const;
 
     bool antiThis();
     ParticleProperties anti() const;

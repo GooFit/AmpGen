@@ -10,6 +10,16 @@
 
 using namespace AmpGen; 
 
+Event::Event( const size_t& N, const size_t& cacheSize) : 
+  m_event(N), 
+  m_cache(cacheSize) {
+  }
+
+Event::Event( const real_t* data, const size_t& N, const size_t& cacheSize) :
+  m_event(data, data+N),
+  m_cache(cacheSize) {
+  }
+
 void Event::print() const {
   for( unsigned int i = 0 ; i< m_event.size()/4. ; ++i ){
     double px = m_event[4*i+0];
@@ -64,3 +74,40 @@ void Event::printCache() const {
     INFO("Cache adddress [" << i << "] = " << m_cache[i] );
   }
 }
+
+void Event::set( const size_t& i, const std::vector<real_t>& p ){
+  for( size_t j = 0 ; j < 4; ++j) m_event[4*i + j ] = p[j];
+}
+void Event::set( const size_t& i, const real_t* p ){
+  for( size_t j = 0 ; j < 4; ++j) m_event[4*i + j ] = p[j];
+}
+void Event::set( const real_t* evt ){
+  for( size_t i = 0 ; i < m_event.size(); ++i ) m_event[i] = *(evt + i );
+}
+void Event::set( const size_t& i, const real_t& p ){ m_event[i] = p ; } 
+
+void Event::swap( const unsigned int& i , const unsigned int& j )
+{
+  double tmp[4];
+  std::memmove( tmp, &m_event[4*j], sizeof(tmp)); 
+  std::memmove( &m_event[4*j], &m_event[4*i],sizeof(tmp));
+  std::memmove( &m_event[4*i], &tmp,sizeof(tmp));
+}
+
+void Event::invertParity( const size_t& nParticles)
+{
+  for( size_t i = 0 ; i < ( nParticles == 0 ? size()/4 : nParticles); ++i )
+  {
+    m_event[4*i + 0 ] = -m_event[4*i+0];
+    m_event[4*i + 1 ] = -m_event[4*i+1];
+    m_event[4*i + 2 ] = -m_event[4*i+2];
+  }
+}
+
+void Event::setCache(const complex_t& value, const size_t& pos){ m_cache[pos] = value; }
+void Event::setCache( const std::vector<complex_t>& value, const size_t& pos )
+{
+  std::memmove( m_cache.data() + pos, value.data(), sizeof(complex_t) * value.size() );
+}
+
+void Event::resizeCache( const unsigned int& new_size ){ m_cache.resize(new_size); }

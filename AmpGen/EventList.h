@@ -23,7 +23,7 @@
 namespace AmpGen
 {
   class CompiledExpressionBase;
-
+  
   DECLARE_ARGUMENT_DEFAULT( Bins, size_t, 100 );
   DECLARE_ARGUMENT( Prefix, std::string );
   DECLARE_ARGUMENT( LineColor, int );
@@ -83,6 +83,8 @@ namespace AmpGen
     void loadFromTree( TTree* tree, const ArgumentPack& args ); 
     void loadFromFile( const std::string& fname, const ArgumentPack& args );
     void printCacheInfo( const unsigned int& nEvt = 0 );
+    void clear();
+    void erase( const std::vector<Event>::iterator& begin, const std::vector<Event>::iterator& end );
 
     TTree* tree( const std::string& name, const std::vector<std::string>& extraBranches = {} );
     
@@ -111,12 +113,6 @@ namespace AmpGen
     TH2D* makeProjection( const Projection2D& projection, const ArgumentPack& args );
 
     std::vector<TH1D*> makePlots( const std::vector<Projection>& projections, const ArgumentPack& args );
-
-    void clear() { m_data.clear(); }
-    void erase( const std::vector<Event>::iterator& begin, const std::vector<Event>::iterator& end )
-    {
-      m_data.erase( begin, end );
-    }
 
     template <class... ARGS>
     std::vector<TH1D*> makeDefaultPlots( const ARGS&... args )
@@ -155,6 +151,7 @@ namespace AmpGen
       INFO("Filter removes: " << currentSize - size() << " / " << currentSize << " events");
     }
   };
+  
 } // namespace AmpGen
 
 #endif

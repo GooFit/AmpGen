@@ -17,7 +17,7 @@
 #include "AmpGen/Vertex.h"
 #include "AmpGen/Lineshapes.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/MultiQuarkContent.h"
+#include "AmpGen/QuarkContent.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/ParticlePropertiesList.h"
@@ -590,8 +590,6 @@ std::vector< std::pair<double,double> > Particle::spinOrbitCouplings( const bool
   return lsCouplings; 
 }
 
-
-
 std::string Particle::texLabel( const bool& printHead, const bool& recurse ) const
 {
   const std::string leftBrace     = "\\left[";
@@ -640,13 +638,14 @@ int Particle::conjugate( bool invertHead , bool reorder )
   return sgn;
 }
 
-MultiQuarkContent Particle::quarks() const
+QuarkContent Particle::quarks() const
 {
   return m_name.find("NonRes") != std::string::npos ? daughterQuarks() : m_props->netQuarkContent();
 }
-MultiQuarkContent Particle::daughterQuarks() const
+
+QuarkContent Particle::daughterQuarks() const
 {
-  MultiQuarkContent quarks;
+  QuarkContent quarks;
   for ( auto& d : m_daughters ) quarks += d->quarks();
   return quarks;
 }
@@ -733,6 +732,11 @@ bool Particle::operator<( const Particle& other )
   return index() < other.index();
 }
 
+bool Particle::operator>(const Particle& other )
+{
+  return !( *this < other );
+}
+
 EventType Particle::eventType() const
 {
   std::vector<std::string> names = {m_name};
@@ -777,4 +781,3 @@ unsigned int Particle::matches( const Particle& other ) const
     rt &= ~MatchState::Exact;
   return rt;
 }
-

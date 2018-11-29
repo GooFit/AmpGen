@@ -64,18 +64,14 @@ void FastIncoherentSum::prepare()
 
     if ( m_prepareCalls == 0 && m_events != nullptr )
       m_matrixElements[i].addressData                                             = m_events->registerExpression( pdf );
-    if ( m_prepareCalls == 0 && m_sim != nullptr ) m_matrixElements[i].addressInt = m_sim->registerExpression( pdf );
 
     if ( m_events != nullptr ) m_events->updateCache( pdf, m_matrixElements[i].addressData );
-    if ( m_sim != nullptr ) {
-      m_sim->updateCache( pdf, m_matrixElements[i].addressInt );
-      m_integralDispatch.addIntegral(
-          m_matrixElements[i].pdf, m_matrixElements[i].pdf,
-          [i, this]( const std::complex<double>& val ) { this->m_normalisations.set( i, 0, val ); } );
-    }
+    
+    if ( m_prepareCalls == 0 && m_integrator.isReady() ) m_integrator.prepareExpression( pdf );
+
     pdf.resetExternals();
   }
-  m_integralDispatch.flush();
+  m_integrator.flush();
 
   m_prepareCalls++;
   m_norm = norm(); /// update normalisation
@@ -83,9 +79,7 @@ void FastIncoherentSum::prepare()
 
 std::vector<FitFraction> FastIncoherentSum::fitFractions( const LinearErrorPropagator& linProp )
 {
-
   std::vector<FitFraction> outputFractions;
-
   for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) {
 
     IFFCalculator calc;

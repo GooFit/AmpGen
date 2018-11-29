@@ -9,7 +9,7 @@
 #include "AmpGen/EventType.h"
 #include "AmpGen/Expression.h"
 #include "AmpGen/Tensor.h"
-#include "AmpGen/MultiQuarkContent.h"
+#include "AmpGen/QuarkContent.h"
 namespace AmpGen
 {
   /** @class Particle
@@ -98,17 +98,23 @@ namespace AmpGen
       void pdgLookup();                                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
       bool hasModifier( const std::string& modifier ) const; ///< Check if this particle has a given modifier
       std::string modifierString() const;                    ///< Re-generate modifier string used to create particle
+      std::string makeUniqueString();                        ///< Generate the decay descriptor for this decay. 
       void sortDaughters();                                  ///< Recursively order the particle's decay products. 
     public:
-      Particle() = default;                                            
+      /// @constructor default constructor
+      Particle() = default;            
+      
+      /// @constructor Constructor that takes a pair of other particles (i.e. this particle's decay products) as arguments and looks up the properties of this particle using the particle name. 
       Particle( const std::string& name, const Particle& p1, const Particle& p2 ); 
-      ///< Constructor that takes a pair of other particles (i.e. this particle's decay products) as arguments and looks up the properties of this particle using the particle name. 
+      
+      /// @constructor Constructor that takes a pair of other particles (i.e. this particle's decay products) as arguments and looks up the properties of this particle using the PDG MC ID.       
       Particle( const int& pdg_id, const Particle& p1, const Particle& p2 ); 
-      ///< Constructor that takes a pair of other particles (i.e. this particle's decay products) as arguments and looks up the properties of this particle using the PDG MC ID.       
-      Particle( const std::string& name, const unsigned int& index );        
-      ///<Constructor by name and with an index to match to the event type
+      
+      /// @constructor Constructor by name and with an index to match to the event type
+      Particle( const std::string& name, const unsigned int& index ); 
+
+      /// @constructor Constructor that takes a decay descriptor as an argument and a list of final state particles to match to the event type. Constructs the entire decay tree.  
       Particle( const std::string& decayString, const std::vector<std::string>& finalStates = {}, const bool& orderDaughters = true );
-      ///<Constructor that takes a decayString as an argument and a list of final state particles to match to the event type. Constructs the entire decay tree.  
 
       void setOrbital( const unsigned int& orbital );
       void setLineshape( const std::string& lineshape );
@@ -125,8 +131,8 @@ namespace AmpGen
 
       std::vector< std::pair<double,double> > spinOrbitCouplings( const bool& conserveParity = true ) const;
       const ParticleProperties* props() const;
-      MultiQuarkContent quarks() const;
-      MultiQuarkContent daughterQuarks() const;
+      QuarkContent quarks() const;
+      QuarkContent daughterQuarks() const;
       int parity() const;
       int finalStateParity() const;
       int polState() const;
@@ -146,25 +152,51 @@ namespace AmpGen
       unsigned int index() const;
       unsigned int originalIndex() const;
 
-      std::string name() const;                                            ///< Name of the decaying particle.
-      std::string lineshape() const;                                       ///< Name of the propagator to use for the decay of this particle.
+      ///@ function name of the decaying particle.
+      std::string name() const;                   
+            
+      /// @function Propagator to use for the decay of this particle.
+      std::string lineshape() const;
+
+      /// @function Name of the (spin)vertex to use for the decay of this particle 
       std::string vertexName() const;
 
-      std::string uniqueString() const;                                    ///< Returns the unique string that identifies this decay / can be parsed to generate the decay tree.
-      std::string topologicalString() const;                               ///< String that describes the angular momentum configuration. 
-      std::string orbitalString() const;                                   ///< String that describes the orbital configuration of this decay (S,P,D) + possible modifiers. 
-      std::string texLabel( const bool& printHead = false, const bool& recurse=true ) const;         ///< Get the TeX formatted label for this decay process.
-      std::string makeUniqueString();                                      ///< Generate the unique string that identifies this decay / can be parsed into this structure.
-      EventType eventType() const;                                         ///< EventType 
+      /// @function The unique string (i.e. decay descriptor) that identifies this decay / 
+      /// can be parsed to generate the decay tree.
+      std::string uniqueString() const;
+      
+      /// @function The string that describes the spin/orbital topology of this decay, 
+      /// i.e. replacing specific particle names with their spins.
+      std::string topologicalString() const;
+      
+      /// @function The string that describes the spin/orbit configuration of this decay.
+      std::string orbitalString() const;
+      
+      /// @function Decay descriptor formatted as LaTeX for this decay. 
+      std::string texLabel( const bool& printHead = false, const bool& recurse=true ) const;
+            
+      /// @function Return the eventType for this decay (i.e. the initial and final state particles) 
+      EventType eventType() const;
 
-      std::shared_ptr<Particle> daughter( const size_t& index );           ///< Return the ith decay product
-      std::shared_ptr<Particle> daughter( const size_t& index ) const;     ///< Return the ith decay product
-      std::vector<std::shared_ptr<Particle>> daughters() const;            ///< vector of decay products
+      /// @function Returns the indexth decay product of this particle
+      std::shared_ptr<Particle> daughter( const size_t& index );
+      
+      /// @function Returns in indexth decay product of this particle (as constant)
+      std::shared_ptr<Particle> daughter( const size_t& index ) const;
+     
+      /// @function Vector of decay products of this particle 
+      std::vector<std::shared_ptr<Particle>> daughters() const;
 
-      std::vector<std::vector<size_t>> identicalDaughterOrderings() const; ///< Get orderings of the final state that are identical to each other, i.e. those that only differ by exchanging identical particles. 
-      std::vector<std::shared_ptr<Particle>>
-        getFinalStateParticles( const bool& sort = true ) const; ///< Retrieve vector of final state particles.
-      Particle quasiStableTree() const;                        ///< Returns the tree of quasi-stable processes, i.e. only includes states with lifetimes > ParticleProperties::qsThreshold (default ~ 1 KeV ) 
+      /// @function Get orderings of the final state that are identical to each other, i.e. those that only differ by exchanging identical particles. 
+      std::vector<std::vector<size_t>> identicalDaughterOrderings() const;
+      
+      /// @function Returns the final state particles for this decay process.
+      std::vector<std::shared_ptr<Particle>> getFinalStateParticles( const bool& sort = true ) const;
+      
+      /// @function Calculate the particle tree only including quasi-stable processes, 
+      /// i.e. only includes states with lifetimes > ParticleProperties::qsThreshold (default ~ 1 KeV ) 
+      Particle quasiStableTree() const;
+
       /// @function Calculates the momentum sum of the decay products
       Tensor P() const;
     
@@ -187,6 +219,7 @@ namespace AmpGen
       Expression getExpression( DebugSymbols* db = nullptr, const unsigned int& index = 0 );
 
       bool operator<( const Particle& other );
+      bool operator>( const Particle& other );
 
       enum MatchState 
       {

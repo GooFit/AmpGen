@@ -98,6 +98,7 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
   for ( unsigned int evt = 0; evt < nEvents; ++evt ) {
     tr.getEntry( hasEventList ? entryList[evt] : evt );
     if( applySym ) symmetriser( temp );
+    temp.setGenPdf( temp.genPdf() );
     m_data.push_back( temp );
   }
 }
@@ -251,4 +252,11 @@ double EventList::norm()
     m_norm               = totalWeight;
   }
   return m_norm;
+}
+
+
+void EventList::clear() { m_data.clear(); }
+void EventList::erase( const std::vector<Event>::iterator& begin, const std::vector<Event>::iterator& end )
+{
+  m_data.erase( begin, end );
 }

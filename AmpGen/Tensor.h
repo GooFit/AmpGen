@@ -30,6 +30,7 @@ namespace AmpGen
     std::vector<size_t> m_symmetrisedCoordinates; 
     std::vector<size_t> m_uniqueElements; 
     std::vector<Expression> m_elements;
+
   public:
     class Index {
       private: 

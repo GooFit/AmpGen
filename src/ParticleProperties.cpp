@@ -20,11 +20,11 @@ double ParticleProperties::_defaultCharmRadius = 5.0 / GeV;
 void ParticleProperties::print( std::ostream& out ) const
 {
   out << "Mass  " << mass() << " +" << mErrPlus() << " -" << mErrMinus() << "\nWidth " << width() << " +" << wErrPlus()
-      << " -" << wErrMinus() << "\n I=" << I() << ", G=" << G() << "\n J=" << J() << ", C=" << C() << ", P=" << P()
-      << "\n Q = " << charge() << "\n pdgID " << pdgID() << "\n name " << name() << "\n quark content: " << quarks()
-      << "\n net-quark-content " << netQuarkContent() << "\n is its own antiparticle? "
-      << ( isItsOwnAnti() ? "yes" : "no" ) << "\n radius " << radius() * GeV << " /GeV"
-      << "\n";
+    << " -" << wErrMinus() << "\n I=" << I() << ", G=" << G() << "\n J=" << J() << ", C=" << C() << ", P=" << P()
+    << "\n Q = " << charge() << "\n pdgID " << pdgID() << "\n name " << name() << "\n quark content: " << quarks()
+    << "\n net-quark-content " << netQuarkContent() << "\n is its own antiparticle? "
+    << ( isItsOwnAnti() ? "yes" : "no" ) << "\n radius " << radius() * GeV << " /GeV"
+    << "\n";
 }
 
 int ParticleProperties::chargeFromString( const std::string& ch, bool& status ) const
@@ -75,12 +75,12 @@ ParticleProperties::ParticleProperties( const std::string& pdg_string ) : m_netQ
   m_netQuarkContent.initFromString( m_quarks );
   bool spin_status = 1;
   if( m_JtotalSpin == "?" ) m_twoSpin = 0;
-    else if( m_JtotalSpin.find("/") != std::string::npos ){
+  else if( m_JtotalSpin.find("/") != std::string::npos ){
     m_twoSpin = lexical_cast<int>( m_JtotalSpin.substr(0, m_JtotalSpin.find("/") ) , spin_status );
   }
   else m_twoSpin = 2 * lexical_cast<int>( m_JtotalSpin, spin_status );
   if( spin_status == 0 ){
-   DEBUG("Spin of particle: " << name() << " could not be interpretted (J=" << m_JtotalSpin << ")"  );
+    DEBUG("Spin of particle: " << name() << " could not be interpretted (J=" << m_JtotalSpin << ")"  );
   }
   setRadius();
 
@@ -191,10 +191,10 @@ std::string ParticleProperties::spinName() const {
     if( m_twoSpin == 6 ) return "H"; 
   }
   else {
-   if( m_twoSpin == 1 ) return "f";
-   if( m_twoSpin == 3 ) return "r";
-   if( m_twoSpin == 5 ) return "e";
-   if( m_twoSpin == 7 ) return "c";
+    if( m_twoSpin == 1 ) return "f";
+    if( m_twoSpin == 3 ) return "r";
+    if( m_twoSpin == 5 ) return "e";
+    if( m_twoSpin == 7 ) return "c";
   }
   WARNING("Spin name not implemented for " << m_JtotalSpin );
   return "?";
@@ -203,4 +203,24 @@ std::string ParticleProperties::spinName() const {
 const ParticleProperties* ParticleProperties::get( const std::string& name, const bool& quiet ){
   return ParticlePropertiesList::get( name, quiet );
 }
+
+bool ParticleProperties::operator==( const ParticleProperties& rhs ) const
+{
+  if ( pdgID() == 0 && rhs.pdgID() == 0 ) {
+    return name() == rhs.name();
+  }
+  return pdgID() == rhs.pdgID();
+}
+
+bool ParticleProperties::operator<( const ParticleProperties& rhs ) const
+{
+  if ( pdgID() == 0 || rhs.pdgID() == 0 ) {
+    return name() < rhs.name();
+  }
+  return pdgID() < rhs.pdgID();
+}
+
+bool ParticleProperties::operator>( const ParticleProperties& rhs ) const { return !( *this == rhs || *this < rhs ); }
+bool ParticleProperties::operator<=( const ParticleProperties& rhs ) const { return ( *this < rhs || *this == rhs ); }
+bool ParticleProperties::operator>=( const ParticleProperties& rhs ) const { return ( *this > rhs || *this == rhs ); }
 

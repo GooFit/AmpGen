@@ -35,19 +35,19 @@ namespace AmpGen
   class PolarisedAmplitude
   {
     private: 
-      std::vector< TransitionMatrix<std::vector<complex_t>>> m_matrixElements;  
-      size_t                        m_size = {0}; 
-      size_t                        m_nCalls = {0};
-      real_t                        m_norm = {1};
-      EventList*                    m_events = { nullptr };
-      std::vector<MinuitProxy>      m_productionParameters; 
-      Integrator<10>                m_integralDispatch;
-      std::array<Bilinears,8>       m_norms;
+      size_t                        m_size        = {0}; 
+      size_t                        m_nCalls      = {0};
+      real_t                        m_norm        = {1};
+      EventList*                    m_events      = {nullptr};
       MinuitParameter*              m_weightParam = {nullptr}; 
-      MinuitParameterSet*           m_mps;
-      double                        m_weight = {1}; 
+      MinuitParameterSet*           m_mps         = {nullptr};
+      double                        m_weight      = {1}; 
+      std::vector<MinuitProxy>      m_pVector     = {}; 
+      Integrator<18>                m_integrator;
+      std::array<Bilinears,6>       m_norms;
       std::vector<std::vector<int>> m_polStates; 
       EventType                     m_eventType;
+      std::vector<TransitionMatrix<std::vector<complex_t>>>        m_matrixElements;  
       CompiledExpression< real_t, const real_t*, const complex_t*> m_probExpression; 
      
       std::vector< std::vector< int > > polarisationOuterProduct( const std::vector< std::vector< int > >& A, const std::vector< int >& B ) const;

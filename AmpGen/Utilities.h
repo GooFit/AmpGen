@@ -131,17 +131,14 @@ void processFile( const std::string& filename, FCN&& toDo, const char ignoreLine
 bool stringMatchesWildcard( const std::string& input, const std::string& wildcard_string,
                             const char wildcard_character = '*' );
 
+bool file_exists( const std::string& name );
+
 std::vector<std::string> getListOfFiles( const std::string& directory, std::string patternString = "" );
 void printSplash();
 
-// trim from end
 std::string ltrim( std::string s );
 std::string rtrim( std::string s );
-// trim from both ends
 std::string trim( std::string s );
-
-bool file_exists( const std::string& name );
-
 std::string expandGlobals( std::string path );
 
 std::ostream& bold_on( std::ostream& );

@@ -108,7 +108,7 @@ void FastCoherentSum::prepare()
   }
   auto tStartIntegral = std::chrono::high_resolution_clock::now();
 
-  if ( m_sim != nullptr ) {
+  if ( m_integrator.isReady()) {
     updateNorms( changedPdfIndices );
   } else if ( m_verbosity ) {
     WARNING( "No simulated sample specified for " << this );
@@ -130,25 +130,19 @@ void FastCoherentSum::prepare()
 
 void FastCoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIndices )
 {
-  std::vector<bool> integralHasChanged( size() * size(), 0 );
   for ( auto& i : changedPdfIndices ) {
     auto& pdf = m_matrixElements[i].pdf;
-    m_integralDispatch.prepareExpression( pdf );
+    m_integrator.prepareExpression( pdf );
   }
-
+  std::vector<size_t> cacheIndex; 
+  for( auto& m : m_matrixElements )  cacheIndex.push_back( m_integrator.events().getCacheIndex( m.pdf ) );
   for ( auto& i : changedPdfIndices ) {
-    for ( unsigned int j = 0; j < size(); ++j ) {
-      if ( integralHasChanged[i * size() + j] ) continue;
-      integralHasChanged[i * size() + j] = true;
-      integralHasChanged[j * size() + i] = true;
-      m_integralDispatch.addIntegral( m_matrixElements[i].pdf, m_matrixElements[j].pdf,
-          [i, j, this]( const complex_t& val ) {
-          this->m_normalisations.set( i, j, val );
-          this->m_normalisations.set( j, i, std::conj( val ) );
-          } );
+    for ( size_t j = 0; j < size(); ++j ) {
+      m_integrator.addIntegralKeyed( cacheIndex[i], cacheIndex[j] ,i, j, &m_normalisations );
     }
   }
-  m_integralDispatch.flush(); 
+  m_normalisations.resetCalculateFlags();
+  m_integrator.flush(); 
 }
 
 void FastCoherentSum::debug( const Event& evt, const std::string& nameMustContain )
@@ -451,16 +445,10 @@ void FastCoherentSum::preprepare()
 
 void FastCoherentSum::reset( bool resetEvents )
 {
-  m_prepareCalls                                    = 0;
-  m_lastPrint                                       = 0;
-  for ( auto& mE : m_matrixElements ){
-    mE.addressInt = 999;
-    mE.addressData = 999;
-  }
-  if ( resetEvents ) {
-    m_events = nullptr;
-    m_sim    = nullptr;
-  }
+  m_prepareCalls                                     = 0;
+  m_lastPrint                                        = 0;
+  for ( auto& mE : m_matrixElements ) mE.addressData = 999;
+  if ( resetEvents ) m_events = nullptr;
 }
 void FastCoherentSum::setEvents( EventList& list )
 {
@@ -471,10 +459,8 @@ void FastCoherentSum::setEvents( EventList& list )
 void FastCoherentSum::setMC( EventList& sim )
 {
   if ( m_verbosity ) INFO( "Setting MC = " << &sim << " for " << this );
-  if ( m_sim == &sim ) return;
   reset();
-  m_sim                  = &sim;
-  m_integralDispatch.sim = m_sim;
+  m_integrator = Integrator<10>(&sim);
 }
 
 double FastCoherentSum::norm() const

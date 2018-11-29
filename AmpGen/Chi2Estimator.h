@@ -15,44 +15,22 @@ namespace AmpGen
 
   class Chi2Estimator
   {
-
-    double m_chi2;
-    unsigned int m_nBins;
-    BinDT m_binning;
+  private: 
+    double  m_chi2;
+    size_t  m_nBins;
+    BinDT   m_binning;
 
   public:
-    double chi2() { return m_chi2; }
-    double nBins() { return m_nBins; }
-    struct Moment {
-      double x;
-      double xx;
-      double N;
-      std::vector<double> values;
-      Moment() : x( 0 ), xx( 0 ), N( 0 ) {}
-      void add( const double& value )
-      {
-        x += value;
-        xx += value * value;
-        N++;
-        values.push_back( value );
-      }
-      void rescale( const double& val )
-      {
-        x *= val;
-        xx *= ( val * val );
-      }
-      double val() { return x; }
-      double var() { return N == 0 ? 0 : xx; }
-    };
-
-    void writeBinningToFile( const std::string& filename ) { m_binning.serialize( filename ); }
-    void doChi2( const EventList& dataEvents, const EventList& mcEvents,
-                 const std::function<double( const Event& )>& fcn );
     Chi2Estimator( const EventList& dataEvents, const EventList& mcEvents,
                    const std::function<double( const Event& )>& fcn, const unsigned int& minEvents = 10 );
 
     Chi2Estimator( const EventList& dataEvents, const EventList& mcEvents,
                    const std::function<double( const Event& )>& fcn, const std::string& filename );
+    double chi2() { return m_chi2; }
+    double nBins() { return m_nBins; }
+    void writeBinningToFile( const std::string& filename ) { m_binning.serialize( filename ); }
+    void doChi2( const EventList& dataEvents, const EventList& mcEvents,
+                 const std::function<double( const Event& )>& fcn );
   };
 } // namespace AmpGen
 

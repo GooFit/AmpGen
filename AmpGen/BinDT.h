@@ -25,7 +25,7 @@ namespace AmpGen
 {
   class Event;
 
-#define PACKET_SIZE 22
+  #define PACKET_SIZE 22
   DECLARE_ARGUMENT( MaxDepth, size_t );
   DECLARE_ARGUMENT( MinEvents, size_t );
   DECLARE_ARGUMENT( Dim, size_t );

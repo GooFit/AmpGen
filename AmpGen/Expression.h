@@ -418,7 +418,6 @@ namespace AmpGen
     Expression exp( const Expression& expression );
     Expression log( const Expression& expression );
     Expression atan2( const Expression& y, const Expression& x);
-
   }
 
   template < class T > bool is( const Expression& expression ){

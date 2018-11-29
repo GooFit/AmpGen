@@ -8,36 +8,52 @@
 
 namespace AmpGen
 {
+  class QuarkState
+  {
+    private: 
+      static std::array<char,6>  gNames; 
+      static std::map<char, int> gPositions;
+      static bool initPositions();
+      std::array<int, 6> m_quarks;
+    public:
+      QuarkState();
+      QuarkState( const std::string& str );
+      void antiThis();
+      void initFromString( const std::string& str );
+      char nameFromPosition( int i ) const;
+      int positionFromName( char c ) const;
+      bool isVacuum()                const;
+      void print( std::ostream& os = std::cout ) const;
+      QuarkState& operator+=( const QuarkState& rhs );
+      QuarkState& operator-=( const QuarkState& rhs );
+      QuarkState  operator+ ( const QuarkState& rhs ) const;
+      QuarkState  operator- ( const QuarkState& rhs ) const;
+      bool                operator==( const QuarkState& rhs ) const;
+      int                 operator[]( const size_t& index ) const;
+  };
+
   class QuarkContent
   {
-    static char _names[6];
-    static char _NAMES[6];
-    static std::map<char, int> _positions;
-    std::array<int, 6> m_quarks;
-    static bool initPositions();
-
-  public:
-    QuarkContent();
-    QuarkContent( const std::string& str );
-
-    void antiThis();
-    bool initFromString( const std::string& str );
-
-    char nameFromPosition( int i ) const;
-    int positionFromName( char c ) const;
-    bool isVacuum() const;
-
-    void print( std::ostream& os = std::cout ) const;
-
-    QuarkContent& operator+=( const QuarkContent& rhs );
-    QuarkContent& operator-=( const QuarkContent& rhs );
-
-    QuarkContent operator+( const QuarkContent& rhs ) const;
-    QuarkContent operator-( const QuarkContent& rhs ) const;
-    int operator[]( const size_t& index ) const;
-    bool operator==( const QuarkContent& rhs ) const;
+    private: 
+      std::vector<QuarkState> m_quarks;
+    public:
+      QuarkContent();
+      QuarkContent( const std::string& str ){ initFromString(str); }
+      void antiThis();
+      void initFromString( const std::string& str );
+      void print( std::ostream& os = std::cout ) const;
+      size_t size() const; 
+      bool compatible( const QuarkContent& other ) const;
+      QuarkContent& operator+=( const QuarkContent& rhs );
+      QuarkContent& operator-=( const QuarkContent& rhs );
+      QuarkContent  operator+ ( const QuarkContent& rhs ) const;
+      QuarkContent  operator- ( const QuarkContent& rhs ) const;
+      bool          operator==( const QuarkContent& rhs ) const;
+      bool          operator!=( const QuarkContent& rhs ) const;
+      QuarkState  operator[]( const size_t& index) const; 
+      std::vector<QuarkState> quarks() const; 
   };
+  std::ostream& operator<<( std::ostream& st, const QuarkState& qc );
+  std::ostream& operator<<( std::ostream& st, const QuarkContent& qc );
 } // namespace AmpGen
-std::ostream& operator<<( std::ostream& st, const AmpGen::QuarkContent& qc );
 #endif
-//

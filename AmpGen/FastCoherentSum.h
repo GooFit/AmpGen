@@ -32,8 +32,7 @@ namespace AmpGen
     Coupling                                            coupling;
     complex_t                                           coefficient;
     CompiledExpression<RT,const real_t*,const real_t*>  pdf; 
-    size_t                                              addressData;
-    size_t                                              addressInt;
+    size_t                                              addressData = {999};
     const RT operator()( const Event& event ) const { return pdf(event.address() ); }
     TransitionMatrix(){};
     TransitionMatrix( const std::shared_ptr<Particle>& dt, 
@@ -41,9 +40,7 @@ namespace AmpGen
                       const CompiledExpression<RT, const real_t*, const real_t*> & _pdf ) : 
           decayTree( dt ), 
           coupling( coup ), 
-          pdf( _pdf ), 
-          addressData( 999 ), 
-          addressInt( 999 )
+          pdf( _pdf ) 
     {
     }
     std::vector<MinuitParameter*> getDependencies() const;
@@ -55,11 +52,10 @@ namespace AmpGen
     std::vector<TransitionMatrix<complex_t>> m_matrixElements; ///< Vector of (expanded) matrix elements
     Bilinears m_normalisations;                  ///< Normalisation integrals
     AmplitudeRules m_protoAmplitudes;            ///< Proto amplitudes from user rule-set
-    Integrator<10> m_integralDispatch;           ///< Integral dispatch tool (with default unroll = 10) 
+    Integrator<10> m_integrator;                 ///< Integral dispatch tool (with default unroll = 10) 
     TransitionMatrix<complex_t> m_total;         ///< Total Matrix Element 
-    EventList* m_events = {nullptr};             ///< Data events to evaluate PDF on
-    EventList* m_sim = {nullptr};                ///< Integration events to evalute PDF on
-    EventType m_evtType;                         ///< Final state for this amplitude
+    EventList* m_events            = {nullptr};  ///< Data events to evaluate PDF on
+    EventType  m_evtType;                        ///< Final state for this amplitude
     MinuitParameter* m_weightParam = {nullptr};  ///< Weight parameter (i.e. the normalised yield)
     int m_prepareCalls             = {0};        ///< Number of times prepare has been called
     int m_lastPrint                = {0};        ///< Last time verbose PDF info was printed
