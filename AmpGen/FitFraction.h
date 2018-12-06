@@ -9,8 +9,8 @@
 namespace AmpGen
 {
   class EventType;
-  class FastCoherentSum;
-  class FastIncoherentSum;
+  class CoherentSum;
+  class IncoherentSum;
   class Particle;
 
   struct FFCalculator {
@@ -18,20 +18,20 @@ namespace AmpGen
     std::vector<size_t> index_i;
     std::vector<size_t> index_j;
     std::vector<size_t> denom;
-    FastCoherentSum* fcs;
+    CoherentSum* fcs;
     std::string name;
-    FFCalculator( const std::string& name, FastCoherentSum* fcs, const std::vector<size_t>& indices,
+    FFCalculator( const std::string& name, CoherentSum* fcs, const std::vector<size_t>& indices,
                   const std::vector<size_t>& denom );
 
-    FFCalculator( const std::string& name, FastCoherentSum* fcs, const std::vector<size_t>& indexI,
+    FFCalculator( const std::string& name, CoherentSum* fcs, const std::vector<size_t>& indexI,
                   const std::vector<size_t>& indexJ, const std::vector<size_t>& denom );
   };
 
   struct IFFCalculator {
     double operator()();
     size_t index;
-    FastIncoherentSum* fcs;
-    IFFCalculator( const size_t& index, FastIncoherentSum* fcs );
+    IncoherentSum* fcs;
+    IFFCalculator( const size_t& index, IncoherentSum* fcs );
   };
 
   class FitFraction

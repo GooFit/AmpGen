@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "AmpGen/EventList.h"
-#include "AmpGen/FastCoherentSum.h"
+#include "AmpGen/CoherentSum.h"
 #include "AmpGen/Integrator.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Event.h"
@@ -20,11 +20,11 @@ namespace AmpGen
   class LinearErrorPropagator;
   class MinuitParameterSet;
 
-  class FastIncoherentSum : public FastCoherentSum
+  class IncoherentSum : public CoherentSum
   {
 
   public:
-    FastIncoherentSum( const EventType& finalStates, AmpGen::MinuitParameterSet& mps,
+    IncoherentSum( const EventType& finalStates, AmpGen::MinuitParameterSet& mps,
                        const std::string& prefix = "Inco" );
 
     double getVal( const Event& evt ) const;

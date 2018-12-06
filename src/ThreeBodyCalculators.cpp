@@ -23,7 +23,7 @@
 #include "AmpGen/DalitzIntegrator.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/Expression.h"
-#include "AmpGen/FastCoherentSum.h"
+#include "AmpGen/CoherentSum.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/MsgService.h"

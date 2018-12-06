@@ -3,7 +3,7 @@
 
 #include "AmpGen/DalitzIntegrator.h"
 #include "AmpGen/Expression.h"
-#include "AmpGen/FastCoherentSum.h"
+#include "AmpGen/CoherentSum.h"
 #include "AmpGen/Tensor.h"
 
 class TGraph;
@@ -17,7 +17,7 @@ namespace AmpGen
   {
   private:
     struct PartialWidth {
-      FastCoherentSum fcs;
+      CoherentSum fcs;
       DalitzIntegrator integrator;
       CompiledExpression< std::complex<double>, const real_t*, const real_t* > totalWidth;
       EventType type;

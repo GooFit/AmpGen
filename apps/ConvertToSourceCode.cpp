@@ -5,8 +5,8 @@
 
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
-#include "AmpGen/FastCoherentSum.h"
-#include "AmpGen/PolarisedAmplitude.h"
+#include "AmpGen/CoherentSum.h"
+#include "AmpGen/PolarisedSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/NamedParameter.h"
@@ -21,7 +21,7 @@ using namespace AmpGen;
 template <class T> void generate_source(T& pdf, EventList& normEvents, const std::string& sourceFile, MinuitParameterSet& mps, const double& sf)
 {
   bool normalise                      = NamedParameter<bool>("Normalise",true);
-  std::string type                    = NamedParameter<std::string>( "Type", "FastCoherentSum" );
+  std::string type                    = NamedParameter<std::string>( "Type", "CoherentSum" );
 
   double norm = 1; 
   if( normalise ){
@@ -30,7 +30,7 @@ template <class T> void generate_source(T& pdf, EventList& normEvents, const std
     pdf.prepare();
 
     for ( auto& evt : normEvents ) {
-      if( type == "PolarisedAmplitude" ){ 
+      if( type == "PolarisedSum" ){ 
         double px, py, pz; 
         gRandom->Sphere(px,py,pz, gRandom->Uniform(0,1));
         mps["Px"]->setCurrentFitVal(px);
@@ -57,7 +57,7 @@ int main( int argc, char** argv )
   //  ThreadPool::nThreads = 1;
   std::vector<std::string> oEventType = NamedParameter<std::string>( "EventType" ).getVector();
   std::string sourceFile              = NamedParameter<std::string>( "sourceFile" , "output.cpp" );
-  std::string type                    = NamedParameter<std::string>( "Type", "FastCoherentSum" );
+  std::string type                    = NamedParameter<std::string>( "Type", "CoherentSum" );
   std::string outputPS                = NamedParameter<std::string>( "outputPS", "" );
   unsigned int NormEvents             = NamedParameter<unsigned int>( "NormEvents", 1000000 );
   double safetyFactor                 = NamedParameter<double>( "SafefyFactor", 3 );
@@ -76,12 +76,12 @@ int main( int argc, char** argv )
   EventList phspEvents( oEventType );
   phsp.fillEventListPhaseSpace( phspEvents, NormEvents );
 
-  if( type == "FastCoherentSum" ){
-    FastCoherentSum sig( eventType, MPS, "" );
+  if( type == "CoherentSum" ){
+    CoherentSum sig( eventType, MPS, "" );
     generate_source( sig, phspEvents, sourceFile, MPS, safetyFactor );
   }
-  if( type == "PolarisedAmplitude" ){
-    PolarisedAmplitude sig( eventType, MPS );
+  if( type == "PolarisedSum" ){
+    PolarisedSum sig( eventType, MPS );
     generate_source( sig, phspEvents, sourceFile, MPS, safetyFactor );
   }
   if ( outputPS != "" ) {

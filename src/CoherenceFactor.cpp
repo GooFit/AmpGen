@@ -473,7 +473,7 @@ void CoherenceFactor::writeToFile( const std::string& filename )
 HadronicParameters CoherenceFactor::getVal() const { return m_global; }
 CoherenceFactor::CoherenceFactor() = default;
 
-CoherenceFactor::CoherenceFactor( FastCoherentSum* pdf1, FastCoherentSum* pdf2, EventList* data )
+CoherenceFactor::CoherenceFactor( CoherentSum* pdf1, CoherentSum* pdf2, EventList* data )
   : m_pdf1( pdf1 ), m_pdf2( pdf2 ), m_calc( pdf1, pdf2 ), m_data( data )
 {
   if ( m_data != nullptr ) {
@@ -483,7 +483,7 @@ CoherenceFactor::CoherenceFactor( FastCoherentSum* pdf1, FastCoherentSum* pdf2, 
   }
 }
 
-CoherenceFactor::CoherenceFactor( FastCoherentSum* pdf1, FastCoherentSum* pdf2, const EventType& type )
+CoherenceFactor::CoherenceFactor( CoherentSum* pdf1, CoherentSum* pdf2, const EventType& type )
   : m_pdf1( pdf1 ), m_pdf2( pdf2 ), m_calc( pdf1, pdf2 ), m_data( nullptr ), m_type( type )
 {
 }

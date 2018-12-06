@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "AmpGen/Factory.h"
-#include "AmpGen/FastCoherentSum.h"
+#include "AmpGen/CoherentSum.h"
 #include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/NamedParameter.h"
@@ -39,7 +39,7 @@ double PartialWidthConstraint::getVal() const
   return m_weight * ( ratio - m_ratio ) * ( ratio - m_ratio );
 }
 
-void PartialWidthConstraint::configure( const std::string& configString, const AmpGen::FastCoherentSum& pdf,
+void PartialWidthConstraint::configure( const std::string& configString, const AmpGen::CoherentSum& pdf,
                                         const AmpGen::MinuitParameterSet& mps )
 {
 

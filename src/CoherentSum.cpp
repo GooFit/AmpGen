@@ -1,4 +1,4 @@
-#include "AmpGen/FastCoherentSum.h"
+#include "AmpGen/CoherentSum.h"
 
 #include <algorithm>
 #include <chrono>
@@ -30,17 +30,17 @@
 
 using namespace AmpGen;
 
-FastCoherentSum::FastCoherentSum( const EventType& type, MinuitParameterSet& mps, const std::string& prefix )
+CoherentSum::CoherentSum( const EventType& type, MinuitParameterSet& mps, const std::string& prefix )
   : m_protoAmplitudes( mps )
   , m_evtType( type )
   , m_prefix( prefix )
 {
-  bool useCartesian    = NamedParameter<bool>(  "FastCoherentSum::UseCartesian"  , true );
-  bool autoCompile     = NamedParameter<bool>(  "FastCoherentSum::AutoCompile"   , true ); 
-  m_dbThis             = NamedParameter<bool>(  "FastCoherentSum::Debug"         , false );
-  m_printFreq          = NamedParameter<size_t>("FastCoherentSum::PrintFrequency", 100 );
-  m_verbosity          = NamedParameter<size_t>("FastCoherentSum::Verbosity"     , 0 );
-  std::string objCache = NamedParameter<std::string>("FastCoherentSum::ObjectCache",""); 
+  bool useCartesian    = NamedParameter<bool>(  "CoherentSum::UseCartesian"  , true );
+  bool autoCompile     = NamedParameter<bool>(  "CoherentSum::AutoCompile"   , true ); 
+  m_dbThis             = NamedParameter<bool>(  "CoherentSum::Debug"         , false );
+  m_printFreq          = NamedParameter<size_t>("CoherentSum::PrintFrequency", 100 );
+  m_verbosity          = NamedParameter<size_t>("CoherentSum::Verbosity"     , 0 );
+  std::string objCache = NamedParameter<std::string>("CoherentSum::ObjectCache",""); 
   auto amplitudes  = m_protoAmplitudes.getMatchingRules( m_evtType, prefix, useCartesian );
   for( auto& amp : amplitudes ) addMatrixElement( amp, mps );
 
@@ -53,7 +53,7 @@ FastCoherentSum::FastCoherentSum( const EventType& type, MinuitParameterSet& mps
   }
 }
 
-void FastCoherentSum::addMatrixElement( std::pair<Particle, Coupling>& particleWithCoupling, const MinuitParameterSet& mps )
+void CoherentSum::addMatrixElement( std::pair<Particle, Coupling>& particleWithCoupling, const MinuitParameterSet& mps )
 {
   auto& protoParticle = particleWithCoupling.first;
   auto& coupling      = particleWithCoupling.second;
@@ -75,7 +75,7 @@ void FastCoherentSum::addMatrixElement( std::pair<Particle, Coupling>& particleW
       expression, "p" + std::to_string(FNV1a_hash(name)), m_evtType.getEventFormat(), m_dbThis ? dbExpressions : DebugSymbols() , &mps ) );
 }
 
-void FastCoherentSum::prepare()
+void CoherentSum::prepare()
 {
   if ( m_weightParam != nullptr ) m_weight = m_weightParam->mean();
   if ( m_isConstant && m_prepareCalls != 0 ) return;
@@ -127,7 +127,7 @@ void FastCoherentSum::prepare()
   m_prepareCalls++;
 }
 
-void FastCoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIndices )
+void CoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIndices )
 {
   for ( auto& i : changedPdfIndices ) m_integrator.prepareExpression( m_matrixElements[i].pdf );
   std::vector<size_t> cacheIndex; 
@@ -147,7 +147,7 @@ void FastCoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIn
   m_normalisations.resetCalculateFlags();
 }
 
-void FastCoherentSum::debug( const Event& evt, const std::string& nameMustContain )
+void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
 {
   prepare();
   for ( auto& pdf : m_matrixElements ) pdf.pdf.resetExternals();
@@ -166,7 +166,7 @@ void FastCoherentSum::debug( const Event& evt, const std::string& nameMustContai
   INFO( "Pdf = " << prob_unnormalised( evt ) );
 }
 
-std::map<std::string, std::vector<unsigned int>> FastCoherentSum::getGroupedAmplitudes()
+std::map<std::string, std::vector<unsigned int>> CoherentSum::getGroupedAmplitudes()
 {
   auto rules = m_protoAmplitudes.rulesForDecay( m_evtType.mother() );
   std::map<std::string, std::vector<unsigned int>> ruleMapping;
@@ -177,7 +177,7 @@ std::map<std::string, std::vector<unsigned int>> FastCoherentSum::getGroupedAmpl
   return ruleMapping;
 }
 
-std::vector<FitFraction> FastCoherentSum::fitFractions( const LinearErrorPropagator& linProp )
+std::vector<FitFraction> CoherentSum::fitFractions( const LinearErrorPropagator& linProp )
 {
   struct processCalculator {
     std::vector<FFCalculator> calculators;
@@ -280,7 +280,7 @@ std::vector<FitFraction> FastCoherentSum::fitFractions( const LinearErrorPropaga
   return outputFractions;
 }
 
-void FastCoherentSum::generateSourceCode( const std::string& fname, const double& normalisation, bool add_mt )
+void CoherentSum::generateSourceCode( const std::string& fname, const double& normalisation, bool add_mt )
 {
   std::ofstream stream( fname );
   transferParameters();
@@ -371,7 +371,7 @@ void FastCoherentSum::generateSourceCode( const std::string& fname, const double
   stream.close();
 }
 
-std::vector<size_t> FastCoherentSum::processIndex( const std::string& label ) const
+std::vector<size_t> CoherentSum::processIndex( const std::string& label ) const
 {
   std::vector<size_t> indices;
   for ( size_t i = 0; i < m_matrixElements.size(); ++i ) {
@@ -383,7 +383,7 @@ std::vector<size_t> FastCoherentSum::processIndex( const std::string& label ) co
   return indices;
 }
 
-std::string FastCoherentSum::getParentProcess( const std::string& label ) const
+std::string CoherentSum::getParentProcess( const std::string& label ) const
 {
   auto pI = processIndex( label );
   if ( pI.size() == 0 ) return "";
@@ -396,7 +396,7 @@ std::string FastCoherentSum::getParentProcess( const std::string& label ) const
   return "";
 }
 
-unsigned int FastCoherentSum::getPdfIndex( const std::string& name ) const
+unsigned int CoherentSum::getPdfIndex( const std::string& name ) const
 {
   for ( unsigned int i = 0; i < size(); ++i ) {
     if ( m_matrixElements[i].decayTree->uniqueString() == name ) return i;
@@ -405,7 +405,7 @@ unsigned int FastCoherentSum::getPdfIndex( const std::string& name ) const
   return 999;
 }
 
-bool FastCoherentSum::isFixedPDF(const MinuitParameterSet& mps) const
+bool CoherentSum::isFixedPDF(const MinuitParameterSet& mps) const
 {
   for ( auto& p : m_matrixElements ) {
     for( auto& c : p.coupling.couplings ) 
@@ -415,7 +415,7 @@ bool FastCoherentSum::isFixedPDF(const MinuitParameterSet& mps) const
   return true;
 }
 
-void FastCoherentSum::PConjugate()
+void CoherentSum::PConjugate()
 {
   for ( auto& amp : m_matrixElements ) {
     if ( amp.decayTree->finalStateParity() == -1 ) {
@@ -425,7 +425,7 @@ void FastCoherentSum::PConjugate()
   }
 }
 
-std::complex<double> FastCoherentSum::getValNoCache( const Event& evt ) const
+std::complex<double> CoherentSum::getValNoCache( const Event& evt ) const
 {
   std::complex<double> value( 0, 0 );
   for ( auto& mE : m_matrixElements ) {
@@ -434,27 +434,27 @@ std::complex<double> FastCoherentSum::getValNoCache( const Event& evt ) const
   return value;
 }
 
-void FastCoherentSum::reset( bool resetEvents )
+void CoherentSum::reset( bool resetEvents )
 {
   m_prepareCalls                                     = 0;
   m_lastPrint                                        = 0;
   for ( auto& mE : m_matrixElements ) mE.addressData = 999;
   if ( resetEvents ) m_events = nullptr;
 }
-void FastCoherentSum::setEvents( EventList& list )
+void CoherentSum::setEvents( EventList& list )
 {
   if ( m_verbosity ) INFO( "Setting events to size = " << list.size() << " for " << this );
   reset();
   m_events = &( list );
 }
-void FastCoherentSum::setMC( EventList& sim )
+void CoherentSum::setMC( EventList& sim )
 {
   if ( m_verbosity ) INFO( "Setting MC = " << &sim << " for " << this );
   reset();
   m_integrator = Integrator<10>(&sim);
 }
 
-double FastCoherentSum::norm() const
+double CoherentSum::norm() const
 {
   std::complex<double> acc( 0, 0 );
   for ( size_t i = 0; i < size(); ++i ) {
@@ -467,7 +467,7 @@ double FastCoherentSum::norm() const
   return acc.real();
 }
 
-double FastCoherentSum::norm( const Bilinears& norms ) const
+double CoherentSum::norm( const Bilinears& norms ) const
 {
   std::complex<double> acc( 0, 0 );
   for ( size_t i = 0; i < size(); ++i ) {
@@ -479,17 +479,17 @@ double FastCoherentSum::norm( const Bilinears& norms ) const
   return acc.real();
 }
 
-std::complex<double> FastCoherentSum::norm( const unsigned int& x, const unsigned int& y ) const
+std::complex<double> CoherentSum::norm( const unsigned int& x, const unsigned int& y ) const
 {
   return m_normalisations.get( x, y );
 }
 
-void FastCoherentSum::transferParameters()
+void CoherentSum::transferParameters()
 {
   for ( auto& mE : m_matrixElements ) mE.coefficient = mE.coupling();
 }
 
-void FastCoherentSum::printVal( const Event& evt, bool isSim )
+void CoherentSum::printVal( const Event& evt, bool isSim )
 {
   for ( auto& mE : m_matrixElements ) {
     unsigned int address = mE.addressData;

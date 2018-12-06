@@ -46,7 +46,7 @@ namespace AmpGen
     std::vector<MinuitParameter*> getDependencies() const;
   };
 
-  class FastCoherentSum
+  class CoherentSum
   {
   protected:
     std::vector<TransitionMatrix<complex_t>> m_matrixElements; ///< Vector of (expanded) matrix elements
@@ -72,7 +72,7 @@ namespace AmpGen
     bool isFixedPDF(const MinuitParameterSet& mps) const;
 
   public:
-    FastCoherentSum( const EventType& type, AmpGen::MinuitParameterSet& mps, const std::string& prefix = "" );
+    CoherentSum( const EventType& type, AmpGen::MinuitParameterSet& mps, const std::string& prefix = "" );
 
     real_t operator()( const Event& evt ) const { return prob( evt ); }
 

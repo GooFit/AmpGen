@@ -2,8 +2,8 @@
 #define AMPGEN_PLOTS_H
 #include "AmpGen/ErrorPropagator.h"
 #include "AmpGen/EventList.h"
-#include "AmpGen/FastCoherentSum.h"
-#include "AmpGen/FastIncoherentSum.h"
+#include "AmpGen/CoherentSum.h"
+#include "AmpGen/IncoherentSum.h"
 #include "AmpGen/Integrator.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/NamedParameter.h"
@@ -77,7 +77,7 @@ namespace AmpGen
     }
 
   template <size_t NBINS, size_t NROLLS>
-    std::array<Bilinears, NBINS> getNorms( FastCoherentSum& fcn, BinnedIntegrator<NBINS, NROLLS>& bid )
+    std::array<Bilinears, NBINS> getNorms( CoherentSum& fcn, BinnedIntegrator<NBINS, NROLLS>& bid )
     {
 
       std::array<Bilinears, NBINS> normalisations;
@@ -98,7 +98,7 @@ namespace AmpGen
     }
 
   template <size_t NBINS, size_t NROLLS>
-    std::array<Bilinears, NBINS> getNorms( FastIncoherentSum& fcn, BinnedIntegrator<NBINS, NROLLS>& bid )
+    std::array<Bilinears, NBINS> getNorms( IncoherentSum& fcn, BinnedIntegrator<NBINS, NROLLS>& bid )
     {
 
       std::array<Bilinears, NBINS> normalisations;

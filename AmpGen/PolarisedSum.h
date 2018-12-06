@@ -16,7 +16,7 @@
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/Integrator.h"
-#include "AmpGen/FastCoherentSum.h"
+#include "AmpGen/CoherentSum.h"
 #include "AmpGen/Expression.h"
 #include "AmpGen/Tensor.h"
 
@@ -32,7 +32,7 @@ namespace AmpGen
   class EventList;
   class MinuitProxy; 
 
-  class PolarisedAmplitude
+  class PolarisedSum
   {
     private: 
       size_t                        m_size        = {0}; 
@@ -53,7 +53,7 @@ namespace AmpGen
       std::vector< std::vector< int > > polarisationOuterProduct( const std::vector< std::vector< int > >& A, const std::vector< int >& B ) const;
       std::vector<int> polarisations( const std::string& name ) const ;
     public: 
-      PolarisedAmplitude( const EventType& eventType, AmpGen::MinuitParameterSet& mps, const std::string& prefix="" );
+      PolarisedSum( const EventType& eventType, AmpGen::MinuitParameterSet& mps, const std::string& prefix="" );
       void prepare();
       void setEvents( AmpGen::EventList& events );
       void setMC( AmpGen::EventList& events );

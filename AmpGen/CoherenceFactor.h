@@ -14,7 +14,7 @@
 #include "AmpGen/BinDT.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
-#include "AmpGen/FastCoherentSum.h"
+#include "AmpGen/CoherentSum.h"
 #include "AmpGen/Integrator.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
@@ -33,15 +33,15 @@ namespace AmpGen
   };
 
   struct CoherenceCalculator {
-    FastCoherentSum* m_pdf1;
-    FastCoherentSum* m_pdf2;
+    CoherentSum* m_pdf1;
+    CoherentSum* m_pdf2;
     Bilinears R;
     Bilinears N1;
     Bilinears N2;
     real_t rTransform;
     real_t phiTransform;
     CoherenceCalculator() = default;
-    CoherenceCalculator( FastCoherentSum* pdf1, FastCoherentSum* pdf2 )
+    CoherenceCalculator( CoherentSum* pdf1, CoherentSum* pdf2 )
         : m_pdf1( pdf1 )
         , m_pdf2( pdf2 )
         , R( m_pdf1->size(), m_pdf2->size() )
@@ -137,8 +137,8 @@ namespace AmpGen
     HadronicParameters m_global;
     real_t m_globalPhase;
     real_t m_globalR;
-    FastCoherentSum* m_pdf1;
-    FastCoherentSum* m_pdf2;
+    CoherentSum* m_pdf1;
+    CoherentSum* m_pdf2;
     BinDT m_voxels;
     std::vector<HadronicParameters> m_paramsPerVoxel;
     std::map<unsigned int, unsigned int> m_nodeID2Bin;
@@ -160,9 +160,9 @@ namespace AmpGen
     HadronicParameters getVal() const;
     CoherenceFactor( const std::string& filename );
     CoherenceFactor();
-    CoherenceFactor( FastCoherentSum* pdf1, FastCoherentSum* pdf2, EventList* data = nullptr );
+    CoherenceFactor( CoherentSum* pdf1, CoherentSum* pdf2, EventList* data = nullptr );
 
-    CoherenceFactor( FastCoherentSum* pdf1, FastCoherentSum* pdf2, const EventType& type );
+    CoherenceFactor( CoherentSum* pdf1, CoherentSum* pdf2, const EventType& type );
 
     void makeCoherentMapping( const unsigned int& nBins,
                               const std::function<std::vector<real_t>( const Event& )>& functors = nullptr,

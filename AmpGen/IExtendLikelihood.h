@@ -8,13 +8,13 @@ namespace AmpGen
 {
   class MinuitParameterSet;
   class MinuitParameter;
-  class FastCoherentSum;
+  class CoherentSum;
 
   class IExtendLikelihood
   {
   public:
     virtual double getVal() const = 0;
-    virtual void configure( const std::string& configString, const AmpGen::FastCoherentSum& pdf,
+    virtual void configure( const std::string& configString, const AmpGen::CoherentSum& pdf,
                             const MinuitParameterSet& mps ) = 0;
     virtual IExtendLikelihood* create()                     = 0;
   };
@@ -23,7 +23,7 @@ namespace AmpGen
   {
   public:
     double getVal() const override;
-    void configure( const std::string& configString, const AmpGen::FastCoherentSum& pdf,
+    void configure( const std::string& configString, const AmpGen::CoherentSum& pdf,
                     const MinuitParameterSet& mps ) override;
     IExtendLikelihood* create() override { return new GaussianConstraint(); }
     static std::string _id;
@@ -38,13 +38,13 @@ namespace AmpGen
   {
   public:
     double getVal() const override;
-    void configure( const std::string& configString, const AmpGen::FastCoherentSum& pdf,
+    void configure( const std::string& configString, const AmpGen::CoherentSum& pdf,
                     const AmpGen::MinuitParameterSet& mps ) override;
     IExtendLikelihood* create() override { return new PartialWidthConstraint(); }
     static std::string _id;
 
   private:
-    const FastCoherentSum* m_pdf;
+    const CoherentSum* m_pdf;
     double m_ratio;
     double m_weight;
     std::vector<unsigned int> m_denComponents;
@@ -55,14 +55,14 @@ namespace AmpGen
   {
   public:
     double getVal() const override;
-    void configure( const std::string& configString, const AmpGen::FastCoherentSum& pdf,
+    void configure( const std::string& configString, const AmpGen::CoherentSum& pdf,
                     const MinuitParameterSet& mps ) override;
     IExtendLikelihood* create() override { return new LASSO(); }
     static std::string _id;
 
   private:
     double m_lambda;
-    const FastCoherentSum* m_pdf;
+    const CoherentSum* m_pdf;
   };
 } // namespace AmpGen
 

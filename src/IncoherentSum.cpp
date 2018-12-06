@@ -1,4 +1,4 @@
-#include "AmpGen/FastIncoherentSum.h"
+#include "AmpGen/IncoherentSum.h"
 
 #include <memory.h>
 #include <iomanip>
@@ -14,18 +14,18 @@
 
 using namespace AmpGen;
 
-FastIncoherentSum::FastIncoherentSum( const EventType& finalStates, AmpGen::MinuitParameterSet& mps,
-    const std::string& prefix ) : FastCoherentSum( finalStates, mps, prefix )
+IncoherentSum::IncoherentSum( const EventType& finalStates, AmpGen::MinuitParameterSet& mps,
+    const std::string& prefix ) : CoherentSum( finalStates, mps, prefix )
 {
   m_normalisations.resize( size(), 1 );
 }
 
-double FastIncoherentSum::norm() const
+double IncoherentSum::norm() const
 { 
   return norm( m_normalisations ); 
 }
 
-double FastIncoherentSum::norm( const Bilinears& norms ) const
+double IncoherentSum::norm( const Bilinears& norms ) const
 {
   double norm( 0 ); // (0,0);
   for ( unsigned int i = 0; i < size(); ++i ) {
@@ -35,7 +35,7 @@ double FastIncoherentSum::norm( const Bilinears& norms ) const
   return norm; //.real();
 }
 
-void FastIncoherentSum::prepare()
+void IncoherentSum::prepare()
 {
   if ( m_weightParam != nullptr ) m_weight = m_weightParam->mean();
 
@@ -54,6 +54,7 @@ void FastIncoherentSum::prepare()
     if ( m_prepareCalls == 0 && m_integrator.isReady() ){
       m_integrator.prepareExpression( pdf );
     }
+    INFO( mE.addressData << " " << m_events->at(0).getCache(mE.addressData) );
     pdf.resetExternals();
   }
   if( m_prepareCalls == 0 ){
@@ -65,22 +66,22 @@ void FastIncoherentSum::prepare()
   }
   m_prepareCalls++;
   m_norm = norm();
+  INFO( "norm = " << m_norm << " weight = " << m_weight );
 }
 
-std::vector<FitFraction> FastIncoherentSum::fitFractions( const LinearErrorPropagator& linProp )
+std::vector<FitFraction> IncoherentSum::fitFractions( const LinearErrorPropagator& linProp )
 {
   std::vector<FitFraction> outputFractions;
   for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) {
     IFFCalculator calc(i, this);
     outputFractions.emplace_back( m_matrixElements[i].decayTree->uniqueString(), calc(), linProp.getError( calc ) );
   }
-
   for ( auto& p : outputFractions ) {
     INFO( std::setw( 100 ) << p.name() << " " << std::setw( 7 ) << p.val() << " ± " << p.err() );
   }
   return outputFractions;
 }
-double FastIncoherentSum::getVal( const Event& evt ) const
+double IncoherentSum::getVal( const Event& evt ) const
 {
   double value( 0. );
   for ( auto& mE : m_matrixElements ) {
@@ -88,10 +89,9 @@ double FastIncoherentSum::getVal( const Event& evt ) const
   }
   return value;
 }
-double FastIncoherentSum::operator()( const Event& evt ) const { return prob( evt ); }
-double FastIncoherentSum::prob( const Event& evt ) const
+double IncoherentSum::operator()( const Event& evt ) const { return prob( evt ); }
+double IncoherentSum::prob( const Event& evt ) const
 {
-  DEBUG( "global weight = " << m_weight << ", pdf value = " << getVal( evt ) << ", norm = " << m_norm );
   return m_weight * getVal( evt ) / m_norm;
 }
-double FastIncoherentSum::prob_unnormalised( const Event& evt ) const { return getVal( evt ); }
+double IncoherentSum::prob_unnormalised( const Event& evt ) const { return getVal( evt ); }

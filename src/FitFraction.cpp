@@ -3,8 +3,8 @@
 #include <complex>
 
 #include "AmpGen/EventType.h"
-#include "AmpGen/FastCoherentSum.h"
-#include "AmpGen/FastIncoherentSum.h"
+#include "AmpGen/CoherentSum.h"
+#include "AmpGen/IncoherentSum.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Types.h"
@@ -23,13 +23,13 @@ FitFraction::FitFraction( const std::string& line, const AmpGen::EventType& evtT
 }
 
 FFCalculator::FFCalculator( const std::string& name, 
-                            FastCoherentSum* fcs, 
+                            CoherentSum* fcs, 
                             const std::vector<size_t>& indices,
                             const std::vector<size_t>& denom )
     : FFCalculator( name,fcs, indices, indices, denom ) {}
 
 FFCalculator::FFCalculator( const std::string& name, 
-                            FastCoherentSum* fcs, 
+                            CoherentSum* fcs, 
                             const std::vector<size_t>& indexI,
                             const std::vector<size_t>& indexJ, 
                             const std::vector<size_t>& denom )
@@ -39,7 +39,7 @@ FFCalculator::FFCalculator( const std::string& name,
       fcs( fcs ), 
       name( name ) {}
 
-IFFCalculator::IFFCalculator( const size_t& index, FastIncoherentSum* fcs ) :
+IFFCalculator::IFFCalculator( const size_t& index, IncoherentSum* fcs ) :
   index(index),
   fcs(fcs) {}
 

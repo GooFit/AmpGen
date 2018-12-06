@@ -20,11 +20,11 @@
 #include "AmpGen/RecursivePhaseSpace.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/EventType.h"
-#include "AmpGen/FastCoherentSum.h"
+#include "AmpGen/CoherentSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/NamedParameter.h"
-#include "AmpGen/PolarisedAmplitude.h"
+#include "AmpGen/PolarisedSum.h"
 #include "AmpGen/OptionsParser.h"
 
 using namespace AmpGen;
@@ -67,7 +67,7 @@ int main( int argc, char** argv )
   std::string gen_type = NamedParameter<std::string>( "Type", "default", 
       "Generator configuration to use: \n" 
       "\033[3m default            \033[0m: Full phase-space generator with scalar amplitude \n"
-      "\033[3m PolarisedAmplitude \033[0m: Full phase-space generator with polarised spin 1/2 amplitude\n"
+      "\033[3m PolarisedSum \033[0m: Full phase-space generator with polarised spin 1/2 amplitude\n"
       "\033[3m FixedLib           \033[0m: Full phase-space generator with an amplitude from a precompiled library\n"
       "\033[3m RGenerator         \033[0m: Recursive phase-space generator for intermediate (quasi)stable states such as the D-mesons" );
   
@@ -94,18 +94,18 @@ int main( int argc, char** argv )
   INFO("Generating events with type = " << eventType );
 
   if ( gen_type == "default" ) {
-    FastCoherentSum sig( eventType, MPS, "" );
+    CoherentSum sig( eventType, MPS, "" );
     PhaseSpace phsp(eventType,&rand);
     GenerateEvents( accepted, sig, phsp , nEvents, blockSize, &rand );
   } 
-  else if ( gen_type == "PolarisedAmplitude" ){
-    PolarisedAmplitude sig( eventType, MPS );
+  else if ( gen_type == "PolarisedSum" ){
+    PolarisedSum sig( eventType, MPS );
     //PhaseSpace phsp(eventType,&rand);
     RecursivePhaseSpace phsp( sig.matrixElements()[0].decayTree->quasiStableTree() , eventType, &rand );
     GenerateEvents( accepted, sig, phsp, nEvents, blockSize, &rand );
   }
   else if ( gen_type == "RGenerator" ) {
-    FastCoherentSum sig( eventType, MPS, "" );
+    CoherentSum sig( eventType, MPS, "" );
     Generator<RecursivePhaseSpace> signalGenerator( sig[0].decayTree->quasiStableTree(), eventType );
     signalGenerator.setRandom( &rand );
     signalGenerator.fillEventList( sig, accepted, nEvents );

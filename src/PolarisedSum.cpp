@@ -1,4 +1,4 @@
-#include "AmpGen/PolarisedAmplitude.h"
+#include "AmpGen/PolarisedSum.h"
 
 #include <memory.h>
 #include <ext/alloc_traits.h>
@@ -29,13 +29,13 @@
 
 using namespace AmpGen;
 
-PolarisedAmplitude::PolarisedAmplitude( const EventType& type, AmpGen::MinuitParameterSet& mps, const std::string& prefix ) : 
+PolarisedSum::PolarisedSum( const EventType& type, AmpGen::MinuitParameterSet& mps, const std::string& prefix ) : 
   m_mps(&mps),
   m_eventType(type)
 {
-  bool debug           = NamedParameter<bool>("PolarisedAmplitude::Debug", false );
-  bool autoCompile     = NamedParameter<bool>("PolarisedAmplitude::AutoCompile",true);
-  std::string objCache = NamedParameter<std::string>("PolarisedAmplitude::ObjectCache",""); 
+  bool debug           = NamedParameter<bool>("PolarisedSum::Debug", false );
+  bool autoCompile     = NamedParameter<bool>("PolarisedSum::AutoCompile",true);
+  std::string objCache = NamedParameter<std::string>("PolarisedSum::ObjectCache",""); 
 
   AmplitudeRules proto( mps ); 
 
@@ -89,7 +89,7 @@ PolarisedAmplitude::PolarisedAmplitude( const EventType& type, AmpGen::MinuitPar
   for( size_t i = 0 ; i < 6 ; ++i ) m_norms[i].resize( m_matrixElements.size(), m_matrixElements.size() );
 }
 
-std::vector<int> PolarisedAmplitude::polarisations( const std::string& name ) const {
+std::vector<int> PolarisedSum::polarisations( const std::string& name ) const {
   auto props = *ParticlePropertiesList::get( name );
   std::vector<int> rt( props.twoSpin() + 1 );
 
@@ -100,7 +100,7 @@ std::vector<int> PolarisedAmplitude::polarisations( const std::string& name ) co
   else return {0};
 }
 
-std::vector<std::vector<int>> PolarisedAmplitude::polarisationOuterProduct( const std::vector< std::vector< int > >& A, const std::vector< int >& B ) const {
+std::vector<std::vector<int>> PolarisedSum::polarisationOuterProduct( const std::vector< std::vector< int > >& A, const std::vector< int >& B ) const {
   std::vector<std::vector<int>> rt; 
   for( auto& iA : A ){
     for( auto& iB : B ){
@@ -111,7 +111,7 @@ std::vector<std::vector<int>> PolarisedAmplitude::polarisationOuterProduct( cons
   return rt;
 }
 
-std::vector<TransitionMatrix<std::vector<complex_t>>> PolarisedAmplitude::matrixElements() const
+std::vector<TransitionMatrix<std::vector<complex_t>>> PolarisedSum::matrixElements() const
 {
   return m_matrixElements;  
 }
@@ -142,7 +142,7 @@ struct pclock {
   operator double() const { return std::chrono::duration<double, std::milli>( t_end - t_start ).count() ; } ; 
 };
 
-void   PolarisedAmplitude::prepare()
+void   PolarisedSum::prepare()
 {
   auto dim = m_eventType.dim();
   std::vector<size_t> changedPdfIndices; 
@@ -194,7 +194,7 @@ void   PolarisedAmplitude::prepare()
   m_nCalls++;
 }
 
-void PolarisedAmplitude::debug_norm()
+void PolarisedSum::debug_norm()
 {
   double norm = 0;
   for( auto& evt : m_integrator.events() ){
@@ -227,27 +227,27 @@ void PolarisedAmplitude::debug_norm()
   INFO( "nNorms = " << nNorms << " nZeros = " <<nZeros );
 }
 
-void   PolarisedAmplitude::setEvents( AmpGen::EventList& events )
+void   PolarisedSum::setEvents( AmpGen::EventList& events )
 { 
   reset();
   m_events = &events;
 }
 
-void   PolarisedAmplitude::setMC( AmpGen::EventList& events )
+void   PolarisedSum::setMC( AmpGen::EventList& events )
 {
   m_nCalls = 0;
   m_integrator = Integrator<18>(&events);
 }
 
-size_t PolarisedAmplitude::size() const 
+size_t PolarisedSum::size() const 
 { 
   auto dim = m_eventType.dim() ; 
   return dim.first * dim.second * m_matrixElements.size(); 
 }
 
-void   PolarisedAmplitude::reset( const bool& flag ){ m_nCalls = 0 ; }
+void   PolarisedSum::reset( const bool& flag ){ m_nCalls = 0 ; }
 
-void   PolarisedAmplitude::build_probunnormalised()
+void   PolarisedSum::build_probunnormalised()
 {
   Expression prob  = probExpression( transitionMatrix() , { Parameter("Px"), Parameter("Py"), Parameter("Pz") } );
   m_probExpression = CompiledExpression<real_t, const real_t*, const complex_t*>( 
@@ -255,7 +255,7 @@ void   PolarisedAmplitude::build_probunnormalised()
   CompilerWrapper().compile( m_probExpression );
 } 
   
-Tensor PolarisedAmplitude::transitionMatrix()
+Tensor PolarisedSum::transitionMatrix()
 { 
   auto dim = m_eventType.dim();
   auto size = dim.first * dim.second ; 
@@ -272,7 +272,7 @@ Tensor PolarisedAmplitude::transitionMatrix()
   return T_matrix; 
 }
 
-complex_t PolarisedAmplitude::TE( const Event& event, const size_t& x, const size_t& y )
+complex_t PolarisedSum::TE( const Event& event, const size_t& x, const size_t& y )
 {
   auto dim = m_eventType.dim();
   size_t size = dim.first * dim.second; 
@@ -291,17 +291,17 @@ complex_t PolarisedAmplitude::TE( const Event& event, const size_t& x, const siz
 }
 
 
-double PolarisedAmplitude::prob_unnormalised( const AmpGen::Event& evt ) const
+double PolarisedSum::prob_unnormalised( const AmpGen::Event& evt ) const
 {
   return m_probExpression( evt.getCachePtr(0) );
 }
 
-double PolarisedAmplitude::norm() const 
+double PolarisedSum::norm() const 
 {
   return m_norm;
 }
 
-void PolarisedAmplitude::calculateNorms(const std::vector<size_t>& changedPdfIndices )
+void PolarisedSum::calculateNorms(const std::vector<size_t>& changedPdfIndices )
 {
   size_t size_of = size() / m_matrixElements.size();
   std::vector<size_t> cacheIndex; 
@@ -363,11 +363,11 @@ void PolarisedAmplitude::calculateNorms(const std::vector<size_t>& changedPdfInd
   for( size_t i = 0 ; i < 6; ++i ) m_norms[i].resetCalculateFlags();
 }
 
-double PolarisedAmplitude::prob( const AmpGen::Event& evt ) const {
+double PolarisedSum::prob( const AmpGen::Event& evt ) const {
   return m_weight * prob_unnormalised(evt) / m_norm;
 }
 
-void   PolarisedAmplitude::debug(const Event& evt ){
+void   PolarisedSum::debug(const Event& evt ){
   for( auto& me : m_matrixElements )
   {
     INFO( me.decayTree->uniqueString() << " " << me.addressData 
@@ -378,7 +378,7 @@ void   PolarisedAmplitude::debug(const Event& evt ){
   }
 }
 
-void PolarisedAmplitude::generateSourceCode( const std::string& fname, const double& normalisation, bool add_mt )
+void PolarisedSum::generateSourceCode( const std::string& fname, const double& normalisation, bool add_mt )
 {
   INFO("Generating sourceCode -> " << fname );
   std::ofstream stream( fname );
@@ -422,7 +422,7 @@ void PolarisedAmplitude::generateSourceCode( const std::string& fname, const dou
   stream.close();
 }
 
-Expression PolarisedAmplitude::probExpression( const Tensor& T_matrix, const std::vector<Expression>& p  ) const 
+Expression PolarisedSum::probExpression( const Tensor& T_matrix, const std::vector<Expression>& p  ) const 
 {
   Tensor T_conj = T_matrix.conjugate();
   Tensor::Index a,b,c; 
@@ -444,18 +444,18 @@ Expression PolarisedAmplitude::probExpression( const Tensor& T_matrix, const std
   return Real( Expression( rho(a,b) * TT(b,a)  ));  
 }
 
-std::vector<FitFraction> PolarisedAmplitude::fitFractions( const LinearErrorPropagator& prop )
+std::vector<FitFraction> PolarisedSum::fitFractions( const LinearErrorPropagator& prop )
 {
   return std::vector<FitFraction>();
 }
 
-void PolarisedAmplitude::transferParameters()
+void PolarisedSum::transferParameters()
 { 
   m_probExpression.prepare(); 
   for( auto& me : m_matrixElements ) me.pdf.prepare();
 }
 
-real_t PolarisedAmplitude::getValNoCache( const AmpGen::Event& evt )  {
+real_t PolarisedSum::getValNoCache( const AmpGen::Event& evt )  {
   transferParameters();
   AmpGen::Event copy(evt);
   copy.resizeCache( size() );

@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "AmpGen/Factory.h"
-#include "AmpGen/FastCoherentSum.h"
+#include "AmpGen/CoherentSum.h"
 #include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Types.h"
@@ -26,7 +26,7 @@ double LASSO::getVal() const
   return m_lambda * sum;
 }
 
-void LASSO::configure( const std::string& configString, const AmpGen::FastCoherentSum& pdf,
+void LASSO::configure( const std::string& configString, const AmpGen::CoherentSum& pdf,
                        const AmpGen::MinuitParameterSet& mps )
 {
   m_pdf       = &( pdf );

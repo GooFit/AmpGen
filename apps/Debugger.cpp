@@ -26,12 +26,12 @@
 #endif
 
 #include "AmpGen/EventType.h"
-#include "AmpGen/FastCoherentSum.h"
+#include "AmpGen/CoherentSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/Kinematics.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/NamedParameter.h"
-#include "AmpGen/PolarisedAmplitude.h"
+#include "AmpGen/PolarisedSum.h"
 
 using namespace AmpGen;
 
@@ -135,8 +135,8 @@ int main( int argc, char** argv )
 
   EventType eventType( NamedParameter<std::string>( "EventType" ).getVector() );
 
-  bool verbose = NamedParameter<bool>("FastCoherentSum::Debug", 0 ) || 
-                 NamedParameter<bool>("PolarisedAmplitude::Debug", 0 );
+  bool verbose = NamedParameter<bool>("CoherentSum::Debug", 0 ) || 
+                 NamedParameter<bool>("PolarisedSum::Debug", 0 );
   INFO("Using verbose mode: " << verbose );
   AmpGen::MinuitParameterSet MPS;
   MPS.loadFromStream();
@@ -155,18 +155,18 @@ int main( int argc, char** argv )
   }
   accepted[0].print();
 
-  std::string type = NamedParameter<std::string>("Type","FastCoherentSum");
+  std::string type = NamedParameter<std::string>("Type","CoherentSum");
 
-  if( type == "PolarisedAmplitude"){
-    PolarisedAmplitude sig( eventType, MPS );  
+  if( type == "PolarisedSum"){
+    PolarisedSum sig( eventType, MPS );  
     sig.setEvents( accepted );
     sig.prepare();
     debug( sig, accepted, verbose, rndm , MPS );
     sig.setMC(accepted);
     INFO("norm = " << sig.norm() );   
   }
-  if( type == "FastCoherentSum" ){
-    FastCoherentSum sig( eventType, MPS );  
+  if( type == "CoherentSum" ){
+    CoherentSum sig( eventType, MPS );  
     debug( sig, accepted, verbose, rndm , MPS );
     print( accepted[0], sig.matrixElements() , false ); 
   }

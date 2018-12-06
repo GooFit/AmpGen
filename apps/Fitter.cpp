@@ -15,8 +15,8 @@
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/Factory.h"
-#include "AmpGen/FastCoherentSum.h"
-#include "AmpGen/FastIncoherentSum.h"
+#include "AmpGen/CoherentSum.h"
+#include "AmpGen/IncoherentSum.h"
 #include "AmpGen/FitResult.h"
 #include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/MetaUtils.h"
@@ -214,9 +214,9 @@ int main( int argc, char* argv[] )
   }
   EventType evtType( evtType_particles );
   INFO( "Signal  = " << evtType << " OS = " << evtType.conj(true) );
-  FastCoherentSum   sig( evtType, MPS );
-  FastIncoherentSum bkg( evtType, MPS, "Inco" );
-  FastCoherentSum misID( evtType.conj(true) , MPS );
+  CoherentSum   sig( evtType, MPS );
+  IncoherentSum bkg( evtType, MPS, "Inco" );
+  CoherentSum misID( evtType.conj(true) , MPS );
 
   if ( !sig.isStateGood() || !bkg.isStateGood() || !misID.isStateGood() ) {
     ERROR( "Amplitude incorrectly configured" );
