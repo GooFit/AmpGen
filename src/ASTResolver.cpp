@@ -101,7 +101,8 @@ template <> void ASTResolver::resolve<Parameter>( Parameter& parameter )
   else if( mps != nullptr ){
     auto it = mps->find(parameter.m_name);
     if( it != nullptr ){
-      if( enable_compileTimeConstants && it->iFixInit() == MinuitParameter::Flag::CompileTimeConstant ){
+      if( enable_compileTimeConstants && 
+          it->iFixInit() == MinuitParameter::Flag::CompileTimeConstant ){
         parameter.m_defaultValue = it->mean();
         parameter.m_compileTimeConstant = true; 
       }

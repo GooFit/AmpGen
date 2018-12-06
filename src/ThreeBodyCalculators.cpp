@@ -152,10 +152,10 @@ Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(
       element.decayTree->setOrdering( p );
       std::string current_lineshape = element.decayTree->lineshape();
       element.decayTree->setLineshape( "FormFactor" );
-      Expression prop = make_cse( element.coupling.to_expression() ) * make_cse( element.decayTree->Lineshape( msym ) );
+      Expression prop = make_cse( element.coupling.to_expression() ) * make_cse( element.decayTree->propagator( msym ) );
       if ( msym != nullptr ) msym->emplace_back( element.decayTree->name() + "_g", element.coupling.to_expression() );
-      if ( msym != nullptr ) msym->emplace_back( element.decayTree->name() + "_p", element.decayTree->Lineshape() );
-      Tensor zt = element.decayTree->SpinTensor( msym );
+      if ( msym != nullptr ) msym->emplace_back( element.decayTree->name() + "_p", element.decayTree->propagator() );
+      Tensor zt = element.decayTree->spinTensor( msym );
       zt.st() ;
       currents.push_back( zt * prop );
       element.decayTree->setLineshape( current_lineshape );

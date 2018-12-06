@@ -27,7 +27,7 @@ namespace AmpGen
   /** @class CompiledExpressionBase
    *  Base class for compiled expressions, i.e. expressions that are (almost) ready to be evaluated.
    *  Handles (some) resolution and compilation behaviour, allows management of CompiledExpressions
-   *  with explicitly referring to their return type, which is specified by template parameter
+   *  without explicitly referring to their return type, which is specified by template parameter
    *  in the implementation CompiledExpression
    */
   class CompiledExpressionBase
@@ -39,8 +39,9 @@ namespace AmpGen
     std::map<std::string, size_t>                   m_evtMap;
     std::shared_future<bool>*                       m_readyFlag = {nullptr};
     std::vector<std::pair<uint64_t, Expression>>    m_dependentSubexpressions;
+    std::vector<std::pair<uint64_t, Expression>>    m_debugSubexpressions; 
     std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;
-    ASTResolver*                                    m_resolver = {nullptr};
+    ASTResolver*                                    m_resolver  = {nullptr};
   public:
     CompiledExpressionBase( const Expression& expression, 
                             const std::string& name,

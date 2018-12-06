@@ -37,8 +37,11 @@ void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
   if( m_resolver != nullptr ) delete m_resolver ; 
   m_resolver = new ASTResolver( m_evtMap, mps );
   m_resolver->getOrderedSubExpressions( m_obj,  m_dependentSubexpressions );
-  for ( auto& sym : m_db ) sym.second.resolve( *m_resolver ); 
-    //    resolver.getOrderedSubExpressions( sym.second, m_dependentSubexpressions  );
+  
+  for ( auto& sym : m_db ){ 
+    sym.second.resolve( *m_resolver ); 
+    m_resolver->getOrderedSubExpressions( sym.second, m_debugSubexpressions );
+  }
   resolveParameters(*m_resolver);
 }
 
@@ -108,15 +111,13 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     if( rt_cpp == "std::complex<double>" || rt_cpp == "std::complex<float>" || rt_cpp == "complex_t" ) 
       rt_cuda = "ampgen_cuda::complex_t* r, const int N";
     stream << "__global__ void " << m_name << "( " << rt_cuda << ", const float_t* x0, const float3* x1){\n"; 
-    //stream << "__global__ void " << m_name << "( float* r, const int& N, const float* x0, const float3* x1 ) { \n";
-    
     stream <<  "  int i     = blockIdx.x * blockDim.x + threadIdx.x;\n";
     addDependentExpressions( stream, sizeOfStream);
     std::string objString = m_obj.to_string(m_resolver);
     stream << "  r[i] = " << objString << ";\n}\n";
   }
 
-  if( NamedParameter<bool>("CompiledExpressionBase::Compat") == true ){
+  if( NamedParameter<bool>("CompiledExpressionBase::Compat", false) == true ){
     stream << "#pragma clang diagnostic pop\n\n";
     stream << "extern \"C\" void " <<  m_name << "_c" << "(double *real, double *imag, " << fcnSignature() << "){\n";
     stream << "  auto val = " << m_name << "(" << args() << ") ;\n"; 
@@ -147,15 +148,20 @@ void CompiledExpressionBase::compile(const std::string& fname, const bool& wait 
 
 void CompiledExpressionBase::addDebug( std::ostream& stream ) const
 {
-  stream << "extern \"C\" std::vector<std::complex<double>> " << m_name << "_DB(" << fcnSignature() << "){\n";
-  size_t sizeOf = 0 ; 
-  addDependentExpressions( stream, sizeOf );
+  stream << "#include<string>\n";
+  stream << "extern \"C\" std::vector<std::pair< std::string, std::complex<double>>> " 
+         << m_name << "_DB(" << fcnSignature() << "){\n";
+  for ( auto& dep : m_debugSubexpressions ) {
+    std::string rt = "auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver) +";"; 
+    stream << rt << "\n";
+  }
   stream << "return {";
   for ( unsigned int i = 0 ; i < m_db.size(); ++i ) {
     std::string comma = (i!=m_db.size()-1)?", " :"};\n}\n";
     const auto expression = m_db[i].second; 
+    stream << std::endl << "{\"" << m_db[i].first << "\",";
     if ( expression.to_string(m_resolver) != "NULL" )
-    stream << std::endl << expression << comma;
-    else stream << std::endl << "-999" << comma ;
+      stream << expression << "}" << comma;
+    else stream << "-999}" << comma ;
   }
 }

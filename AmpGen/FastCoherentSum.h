@@ -57,9 +57,9 @@ namespace AmpGen
     EventList* m_events            = {nullptr};  ///< Data events to evaluate PDF on
     EventType  m_evtType;                        ///< Final state for this amplitude
     MinuitParameter* m_weightParam = {nullptr};  ///< Weight parameter (i.e. the normalised yield)
-    int m_prepareCalls             = {0};        ///< Number of times prepare has been called
-    int m_lastPrint                = {0};        ///< Last time verbose PDF info was printed
-    int m_printFreq                = {0};        ///< Frequency to print verbose PDF info
+    size_t m_prepareCalls          = {0};        ///< Number of times prepare has been called
+    size_t m_lastPrint             = {0};        ///< Last time verbose PDF info was printed
+    size_t m_printFreq             = {0};        ///< Frequency to print verbose PDF info
     double m_weight                = {1};        ///< Weight number (i.e. the normalised yield)
     double m_norm                  = {0};        ///< Normalisation integral
     std::string m_prefix           = {""};       ///< Prefix for matrix elements
@@ -79,7 +79,7 @@ namespace AmpGen
     AmplitudeRules protoAmplitudes() { return m_protoAmplitudes; }
     std::vector<TransitionMatrix<complex_t>> matrixElements() { return m_matrixElements; }
 
-    std::vector<unsigned int> processIndex( const std::string& label ) const;
+    std::vector<size_t> processIndex( const std::string& label ) const;
     std::string getParentProcess( const std::string& label ) const;
 
     unsigned int getPdfIndex( const std::string& name ) const;
@@ -105,7 +105,6 @@ namespace AmpGen
     bool isStateGood() const { return m_stateIsGood; }
     complex_t norm( const unsigned int& x, const unsigned int& y ) const;
     void transferParameters();
-    void preprepare();
     void prepare();
     void printVal( const Event& evt, bool isSim = false );
     void updateNorms( const std::vector<unsigned int>& changedPdfIndices );

@@ -25,6 +25,7 @@
 #include "AmpGen/Particle.h"
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/ThreadPool.h"
 
 using namespace AmpGen;
 
@@ -44,7 +45,8 @@ PolarisedAmplitude::PolarisedAmplitude( const EventType& type, AmpGen::MinuitPar
   for( auto& pol : production_polarisations ) all_polarisation_states.push_back( {pol} );
 
   for( unsigned int i = 0 ; i < type.size(); ++i ){
-    all_polarisation_states = polarisationOuterProduct( all_polarisation_states, polarisations( type[i] ) );
+    all_polarisation_states = 
+      polarisationOuterProduct( all_polarisation_states, polarisations( type[i] ) );
   }
   auto set_polarisation_state = []( auto& matrix_element, auto& polState ){
     auto fs = matrix_element.first.getFinalStateParticles();
@@ -75,8 +77,11 @@ PolarisedAmplitude::PolarisedAmplitude( const EventType& type, AmpGen::MinuitPar
     }
   }
   m_polStates = all_polarisation_states; 
-  if( autoCompile) for( auto& thing : m_matrixElements ) 
-    CompilerWrapper().compile( thing.pdf, objCache );
+  if(autoCompile){
+    ThreadPool tp(8);
+    for( auto& thing : m_matrixElements ) 
+      tp.enqueue( [&]{ CompilerWrapper().compile( thing.pdf, objCache ) ;}  );
+  }
   if( mps.find("Px") == nullptr ){
     WARNING("Polarisation parameters not defined, defaulting to (0,0,0)");
   }
@@ -165,7 +170,6 @@ void   PolarisedAmplitude::prepare()
   if( m_integrator.isReady() )
   {
     if( changedPdfIndices.size() != 0 ) calculateNorms(changedPdfIndices);
-    if( m_nCalls == 0 ) debug_norm();
     std::array< complex_t, 6 > acc;
     for( size_t i = 0 ; i < m_matrixElements.size(); ++i )
     {
@@ -182,6 +186,7 @@ void   PolarisedAmplitude::prepare()
     complex_t total =       (1+pz)*(acc[0]+acc[1]) +         (1-pz)*(acc[2]+acc[3]) 
                     + std::conj(z)*(acc[4]+acc[5]) + z * ( std::conj(acc[4]+acc[5]) );
     m_norm = std::real(total);
+    //if( m_nCalls == 0 || changedPdfIndices.size() != 0 ) debug_norm();
   }
   tIntegral.stop();
   if( changedPdfIndices.size() != 0  ) 
@@ -199,7 +204,7 @@ void PolarisedAmplitude::debug_norm()
       evt.print();
     }
   }
-  INFO("Average = " << m_norm );
+  INFO("Average = " << m_norm << " " << norm /  m_integrator.sampleNorm()  );
   auto evt = m_integrator.events()[0];
   evt.print();
   INFO("Check one event: " << prob_unnormalised(evt) << " " << getValNoCache(evt) );
@@ -216,7 +221,7 @@ void PolarisedAmplitude::debug_norm()
       }
       norm_string += "]";
       nNorms += 6; 
-      INFO( m_matrixElements[i].decayTree->uniqueString() << " " << m_matrixElements[j].decayTree->uniqueString() << " " << norm_string );
+      //INFO( m_matrixElements[i].decayTree->uniqueString() << " " << m_matrixElements[j].decayTree->uniqueString() << " " << norm_string );
     }
   }
   INFO( "nNorms = " << nNorms << " nZeros = " <<nZeros );
@@ -304,19 +309,58 @@ void PolarisedAmplitude::calculateNorms(const std::vector<size_t>& changedPdfInd
   for( auto& m : m_matrixElements )  cacheIndex.push_back( m_integrator.events().getCacheIndex( m.pdf ) );
   
   for( auto& i : changedPdfIndices ){
+  //for( auto i = 0 ; i < m_matrixElements.size(); ++i ){
     auto ai = cacheIndex[i]; 
     for(size_t j = 0; j < m_matrixElements.size(); ++j ){
       auto aj = cacheIndex[j];
-      m_integrator.addIntegralKeyed(ai+0, aj+0, i, j, &(m_norms[0]) );
-      m_integrator.addIntegralKeyed(ai+1, aj+1, i, j, &(m_norms[1]) );
-      m_integrator.addIntegralKeyed(ai+2, aj+2, i, j, &(m_norms[2]) );
-      m_integrator.addIntegralKeyed(ai+3, aj+3, i, j, &(m_norms[3]) ); 
-      m_integrator.addIntegralKeyed(ai+0, aj+2, i, j, &(m_norms[4]) , false );
-      m_integrator.addIntegralKeyed(ai+1, aj+3, i, j, &(m_norms[5]) , false );
+      m_integrator.queueIntegral(ai+0, aj+0, i, j, &(m_norms[0]) );
+      m_integrator.queueIntegral(ai+1, aj+1, i, j, &(m_norms[1]) );
+      m_integrator.queueIntegral(ai+2, aj+2, i, j, &(m_norms[2]) );
+      m_integrator.queueIntegral(ai+3, aj+3, i, j, &(m_norms[3]) ); 
+      m_integrator.queueIntegral(ai+0, aj+2, i, j, &(m_norms[4]) , false );
+      m_integrator.queueIntegral(ai+1, aj+3, i, j, &(m_norms[5]) , false );
+      if( i != j )
+      {
+        m_integrator.queueIntegral(aj+0, ai+2, j, i, &(m_norms[4]) , false );
+        m_integrator.queueIntegral(aj+1, ai+3, j, i, &(m_norms[5]) , false );
+      }
     }
   }
-  for( size_t i = 0 ; i < 6; ++i ) m_norms[i].resetCalculateFlags();
+  /*
+  std::array< Bilinears,6 > copied_normalisations;
+  for( int i = 0 ; i< 6 ; ++i ) 
+    copied_normalisations[i].resize( m_matrixElements.size(), m_matrixElements.size() ); 
+  
+  for( auto i = 0 ; i < m_matrixElements.size(); ++i ){
+    auto ai = cacheIndex[i]; 
+    for(size_t j = 0; j < m_matrixElements.size(); ++j ){
+      auto aj = cacheIndex[j];
+      m_integrator.queueIntegral(ai+0, aj+0, i, j, &(copied_normalisations[0]) );
+      m_integrator.queueIntegral(ai+1, aj+1, i, j, &(copied_normalisations[1]) );
+      m_integrator.queueIntegral(ai+2, aj+2, i, j, &(copied_normalisations[2]) );
+      m_integrator.queueIntegral(ai+3, aj+3, i, j, &(copied_normalisations[3]) ); 
+      m_integrator.queueIntegral(ai+0, aj+2, i, j, &(copied_normalisations[4]) , false );
+      m_integrator.queueIntegral(ai+1, aj+3, i, j, &(copied_normalisations[5]) , false );
+    }
+  }
+  auto diff = [](const auto& l, const auto& r){
+    return std::abs( l - r );
+  };
+
+  for( size_t i = 0 ; i < 6; ++i ){
+   for( size_t j = 0 ; j < m_matrixElements.size(); ++j ){
+     for( size_t k = 0 ; k < m_matrixElements.size(); ++k ){
+       if( diff( m_norms[i](j,k) , copied_normalisations[i](j,k) ) > 1e-10 ) 
+         INFO( "ERROR: normalisations( " << i  << ", " << j << ", " << k << " do not match !!"
+             << m_norms[i](j,k) << " " << copied_normalisations[i](j,k)  <<
+             diff( m_norms[i](j,k) , copied_normalisations[i](j,k))
+             );
+     }
+   }
+  }
+  */
   m_integrator.flush();
+  for( size_t i = 0 ; i < 6; ++i ) m_norms[i].resetCalculateFlags();
 }
 
 double PolarisedAmplitude::prob( const AmpGen::Event& evt ) const {

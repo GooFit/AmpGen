@@ -131,6 +131,7 @@ int main( int argc, char** argv )
   OptionsParser::setArgs( argc, argv );
 
   int seed = NamedParameter<int>( "Seed", 156 );
+  TRandom3* rndm = new TRandom3( seed );
 
   EventType eventType( NamedParameter<std::string>( "EventType" ).getVector() );
 
@@ -148,7 +149,6 @@ int main( int argc, char** argv )
   std::string infile = NamedParameter<std::string>("InputFile","");
   EventList accepted = infile == "" ? EventList( eventType ) : EventList( infile, eventType );
 
-  TRandom3* rndm = new TRandom3( seed );
   if( infile == "" ){
     Event evt = PhaseSpace( eventType, rndm ).makeEvent();
     accepted.push_back(evt);

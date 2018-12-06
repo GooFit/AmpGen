@@ -30,7 +30,8 @@ namespace AmpGen
 
   private:
     DynamicFCN<RETURN_TYPE( ARGS... )> m_fcn;
-    DynamicFCN<std::vector<std::complex<double>>( ARGS... )> m_fdb;
+    DynamicFCN<std::vector<std::pair<std::string, 
+               std::complex<double>>>( ARGS... )> m_fdb;
     std::vector<real_t> m_externals;
     bool m_hasExternalsChanged;
    
@@ -159,12 +160,13 @@ namespace AmpGen
       if ( !m_fdb.isLinked() ) {
         ERROR( "Function" << name() << " debugging symbols not linked" );
       }
-      std::vector<complex_t> vals = m_fdb( &( m_externals[0] ), event );
-      for( size_t i = 0 ; i < vals.size(); ++i ){ 
-        //std::cout << std::setw(50) << m_db[i].first << vals[i] << std::endl;
-        if( std::real(vals[i]) == -999. ) std::cout << bold_on << std::setw(50) << std::left << m_db[i].first << bold_off << std::endl; 
-        else if( std::imag(vals[i]) == 0 ) std::cout << "  " << std::setw(50) << std::left << m_db[i].first << " = " << std::real(vals[i]) << std::endl; 
-        else std::cout <<"  " <<  std::setw(50) << std::left << m_db[i].first << " = " << vals[i] << std::endl; 
+      auto debug_results = m_fdb( &( m_externals[0] ), event );
+      for( auto& debug_result : debug_results ){ 
+        auto val = debug_result.second;  
+        auto label = debug_result.first; 
+        if( std::real(val) == -999. )  std::cout << bold_on << std::setw(50) << std::left << label << bold_off << std::endl; 
+        else if( std::imag(val) == 0 ) std::cout << "  " << std::setw(50) << std::left << label << " = " << std::real(val) << std::endl; 
+        else                           std::cout << "  " << std::setw(50) << std::left << label << " = " << val << std::endl; 
       }
     }
 
@@ -207,6 +209,16 @@ namespace AmpGen
       {
         CompiledExpression<RT,const double*, const double*> rt(expression,name);
         CompilerWrapper(verbose).compile( rt, "");
+        return rt;
+      }
+  template <class RT> 
+    CompiledExpression<RT, const double*, const double*> 
+      make_expression( const Expression& expression, 
+                       const std::string& name, 
+                       const MinuitParameterSet& mps )
+      {
+        CompiledExpression<RT,const double*, const double*> rt(expression,name,{},{},&mps);
+        CompilerWrapper().compile( rt, "");
         return rt;
       }
 } // namespace AmpGen

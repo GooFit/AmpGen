@@ -13,7 +13,7 @@ namespace AmpGen {
     private:
       std::vector<real_t>    m_event; 
       std::vector<complex_t> m_cache;
-      real_t                 m_igenPdf = {1};
+      real_t                 m_genPdf = {1};
       real_t                 m_weight = {1}; 
 
       inline real_t get(const size_t& index ) const { return m_event[index]; };
@@ -40,14 +40,13 @@ namespace AmpGen {
       size_t   size()                                         const { return m_event.size(); } 
 
       real_t* pWeight()                                             { return &(m_weight); }
-      real_t* pGenPdf()                                             { return &m_igenPdf; }
+      real_t* pGenPdf()                                             { return &m_genPdf; }
       const real_t* address(const unsigned int ref=0 )        const { return &(m_event[ref]); }
       real_t*       address(const unsigned int& ref=0)              { return &(m_event[ref]); }
 
       unsigned int cacheSize()                                const { return m_cache.size(); } 
       real_t weight()                                         const { return m_weight; } 
-      real_t genPdf()                                         const { return 1./m_igenPdf; }
-      real_t igenPdf()                                        const { return m_igenPdf; }
+      real_t genPdf()                                         const { return m_genPdf; }
       real_t  operator[](const unsigned int& i)               const { return m_event[i]; }
       real_t& operator[](const unsigned int& i)                     { return m_event[i]; }
       operator const real_t*()                                const { return &(m_event[0]); }
@@ -57,7 +56,7 @@ namespace AmpGen {
       const complex_t* getCachePtr(const unsigned int& pos=0) const { return &(m_cache[0]) + pos; }
 
       void setWeight( const real_t& weight ){ m_weight = weight ; } 
-      void setGenPdf( const real_t& genPdf ){ m_igenPdf = 1./genPdf ; } 
+      void setGenPdf( const real_t& genPdf ){ m_genPdf = genPdf ; } 
       void extendEvent(const real_t& value) { m_event.push_back( value ); } 
 
       void print()      const;

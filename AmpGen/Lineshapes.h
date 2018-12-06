@@ -118,8 +118,6 @@ namespace AmpGen
      */ 
     DECLARE_LINESHAPE( LBW );
     
-    DECLARE_LINESHAPE( CoupledChannel );
-
     /// Breit-Wigner lineshape with fixed width
     DECLARE_LINESHAPE( SBW );
     /// Non-relativistic Breit-Wigner lineshape
@@ -203,7 +201,7 @@ namespace AmpGen
     DECLARE_LINESHAPE( FormFactorSpline );
     DECLARE_LINESHAPE( DecaySpline );
     DECLARE_LINESHAPE( InelasticSpline );
-
+    DECLARE_LINESHAPE( CoupledChannel );
     /// Implements Dalitz plot distribution for decays \f$ \eta \rightarrow \pi^{+}\pi^{-}\pi^{0}\f$
     DECLARE_GENERIC_SHAPE( EtaDalitz );
 

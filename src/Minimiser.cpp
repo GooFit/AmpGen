@@ -91,12 +91,12 @@ void Minimiser::prepare()
     m_minimizer->SetVariable( counter, par->name(), par->mean(), par->stepInit() );
     if ( par->minInit() != 0 || par->maxInit() != 0 ) m_minimizer->SetVariableLimits( counter, par->minInit(), par->maxInit() );
     
-    else if ( m_printLevel != 0 ) {
+    if ( m_printLevel != 0 ) {
       INFO( "Parameter: " << std::left  << std::setw(60) << par->name() << " = " 
                           << std::right << std::setw(12) << par->mean() << " ± " 
                           << std::left  << std::setw(12) << par->stepInit() 
                           << ( ( par->minInit() != 0 || par->maxInit() != 0 ) ? 
-                          ("["+ std::to_string(par->minInit()) + ", " + std::to_string(par->maxInit() ) ) : "" ) );
+                          ("["+ std::to_string(par->minInit()) + ", " + std::to_string(par->maxInit() ) ) + "]" : "" ) );
     }
     m_mapping.push_back( i );
     counter++;
@@ -111,21 +111,15 @@ bool Minimiser::doFit()
   ROOT::Math::Functor f( *this, m_nParams );
   for ( unsigned int i = 0; i < m_mapping.size(); ++i ) {
     MinuitParameter* par = m_parSet->getParPtr( m_mapping[i] );
-    // INFO( "p["<<i<<"] = " << par->name() << "    " << par->mean() << "   " << par->err() );
     m_minimizer->SetVariable( i, par->name(), par->mean(), par->stepInit() );
-    if ( par->minInit() != 0 || par->maxInit() != 0 ) {
-      if ( m_printLevel != 0 )
-        INFO( "Setting parameter limits : " << par->name() << " in [" << par->minInit() << ", " << par->maxInit()
-                                            << "]" );
+    if ( par->minInit() != 0 || par->maxInit() != 0 )
       m_minimizer->SetVariableLimits( i, par->minInit(), par->maxInit() );
-    }
   }
 
   m_minimizer->SetFunction( f );
   m_minimizer->Minimize();
   for ( unsigned int i = 0; i < m_nParams; ++i ) {
     auto par = m_parSet->getParPtr( m_mapping[i] );
-    ///    INFO( par->name() << " value=" << par->mean() << " gradient=" << (grad != 0 ? grad[i] : -1) );
     double error = *( m_minimizer->Errors() + i );
     par->setResult( *( m_minimizer->X() + i ), error, error, error );
     for ( unsigned int j = 0; j < m_nParams; ++j ) {
@@ -133,8 +127,6 @@ bool Minimiser::doFit()
     }
   }
   m_status = m_minimizer->Status();
-  // if( m_printLevel != 0 )
-  // INFO("Fit status = " << m_status );
   return 1;
 }
 

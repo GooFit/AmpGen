@@ -15,22 +15,23 @@ namespace AmpGen
 
   struct FFCalculator {
     double operator()();
-    std::vector<unsigned int> index_i;
-    std::vector<unsigned int> index_j;
-    std::vector<unsigned int> denom;
+    std::vector<size_t> index_i;
+    std::vector<size_t> index_j;
+    std::vector<size_t> denom;
     FastCoherentSum* fcs;
     std::string name;
-    FFCalculator( const std::string& _name, FastCoherentSum* _fcs, const std::vector<unsigned int> indices,
-                  const std::vector<unsigned int> _denom );
+    FFCalculator( const std::string& name, FastCoherentSum* fcs, const std::vector<size_t>& indices,
+                  const std::vector<size_t>& denom );
 
-    FFCalculator( const std::string& _name, FastCoherentSum* _fcs, const std::vector<unsigned int> _indexI,
-                  const std::vector<unsigned int> _indexJ, const std::vector<unsigned int> _denom );
+    FFCalculator( const std::string& name, FastCoherentSum* fcs, const std::vector<size_t>& indexI,
+                  const std::vector<size_t>& indexJ, const std::vector<size_t>& denom );
   };
 
   struct IFFCalculator {
     double operator()();
-    unsigned int index;
+    size_t index;
     FastIncoherentSum* fcs;
+    IFFCalculator( const size_t& index, FastIncoherentSum* fcs );
   };
 
   class FitFraction

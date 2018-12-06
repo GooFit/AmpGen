@@ -100,21 +100,25 @@ DEFINE_LINESHAPE( Flatte )
   double mK0     = ParticlePropertiesList::get("K0")->mass();
   double mKPlus  = ParticlePropertiesList::get("K+")->mass();
 
-  const Expression mreco = sqrt( s );
-  Expression Gpipi       = ( 1. / 3. ) * fSqrtTerm( s, mPi0 ) + ( 2. / 3. ) * fSqrtTerm( s, mPiPlus );
+  Expression Gpipi       = 
+    ( 1. / 3. ) * fSqrtTerm( s, mPi0 ) + ( 2. / 3. ) * fSqrtTerm( s, mPiPlus );
 
-  Expression GKK = ( 1. / 2. ) * fSqrtTerm( s, mK0 ) + ( 1. / 2. ) * fSqrtTerm( s, mKPlus );
+  Expression GKK = 
+    ( 1. / 2. ) * fSqrtTerm( s, mK0 ) + ( 1. / 2. ) * fSqrtTerm( s, mKPlus );
 
-  if ( lineshapeModifier == "CutKK" ) GKK = ( 1. / 2. ) * aSqrtTerm( s, mK0 ) + ( 1. / 2. ) * aSqrtTerm( s, mKPlus );
+  if ( lineshapeModifier == "CutKK" ) 
+    GKK = ( 1. / 2. ) * aSqrtTerm( s, mK0 ) + ( 1. / 2. ) * aSqrtTerm( s, mKPlus );
 
   Expression FlatteWidth = gPi * ( Gpipi + gK_by_gPi * GKK );
   const Expression q2    = abs( Q2( s, s1, s2 ) );
   const Expression q20   = abs( Q2( mass * mass, s1, s2 ) );
-  const Expression BW    = 1. / ( -s + mass * mass - Constant( 0, 1 ) * mass * FlatteWidth );
+  auto D = mass*mass - Constant(0,1)*mass*FlatteWidth; 
+  const Expression BW    = 1. / ( D - s ); 
   ADD_DEBUG( gPi, dbexpressions );
   ADD_DEBUG( mass, dbexpressions );
   ADD_DEBUG( gK_by_gPi, dbexpressions );
   ADD_DEBUG( fSqrtTerm( s, mKPlus ), dbexpressions );
+  ADD_DEBUG( fSqrtTerm( s, mPiPlus ), dbexpressions );
   ADD_DEBUG( q2, dbexpressions );
   ADD_DEBUG( q20, dbexpressions );
   ADD_DEBUG( Gpipi, dbexpressions );
@@ -134,10 +138,11 @@ DEFINE_LINESHAPE( SBW )
   const Expression q2  = Abs( Q2( s, s1, s2 ) );
   const Expression q20 = Abs( Q2( mass * mass, s1, s2 ) );
   Expression BF        = BlattWeisskopf_Norm( q2 * radius * radius, 0, L );
-  const Expression BW = sqrt( kFactor( mass, width0 ) ) / ( -s + mass * mass - Constant(0,1) *mass * width0 );
+  const Expression kF = kFactor( mass, width0 ) ;
+  const Expression BW = 1 / ( mass * mass - s - Constant(0,1) *mass * width0 );
   ADD_DEBUG( q2, dbexpressions );
   ADD_DEBUG( q20, dbexpressions );
   ADD_DEBUG( BF, dbexpressions );
   ADD_DEBUG( BW, dbexpressions );
-  return BW;
+  return kF * BW;
 }

@@ -98,7 +98,6 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
   for ( unsigned int evt = 0; evt < nEvents; ++evt ) {
     tr.getEntry( hasEventList ? entryList[evt] : evt );
     if( applySym ) symmetriser( temp );
-    temp.setGenPdf( temp.genPdf() );
     m_data.push_back( temp );
   }
 }

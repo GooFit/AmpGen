@@ -13,10 +13,10 @@ using namespace AmpGen::fcn;
 template <>
 Factory<AmpGen::ILineshape>* Factory<AmpGen::ILineshape>::gImpl = nullptr;
 
-Expression AmpGen::Q2( const Expression& Msq, const Expression& M1sq, const Expression& M2sq )
+Expression AmpGen::Q2( const Expression& s, const Expression& M1sq, const Expression& M2sq )
 {
-  const Expression num = Msq / 4. - ( M1sq + M2sq ) / 2. + ( M1sq - M2sq ) * ( M1sq - M2sq ) / ( 4 * Msq );
-  return num;
+  const Expression num = s -  2*M1sq - 2*M2sq  + ( M1sq - M2sq ) * ( M1sq - M2sq ) / s ;
+  return num/4.;
 }
 
 Expression AmpGen::kFactor( const Expression& mass, const Expression& width, DebugSymbols* dbexpressions )

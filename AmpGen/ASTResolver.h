@@ -45,7 +45,8 @@ namespace AmpGen {
       void clearSubTrees();
       void reduceSubTrees(); 
       void cleanup();
-      void getOrderedSubExpressions( Expression& expression, std::vector< std::pair<size_t,Expression>>& dependentSubexpressions );
+      void getOrderedSubExpressions( Expression& expression, 
+          std::vector< std::pair<size_t,Expression>>& dependentSubexpressions );
 
       template <class TYPE> void resolve( TYPE& obj ){}
 

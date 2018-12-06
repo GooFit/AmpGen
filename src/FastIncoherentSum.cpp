@@ -12,30 +12,17 @@
 #include "AmpGen/Particle.h"
 #include "AmpGen/EventList.h"
 
-namespace AmpGen
-{
-  class EventType;
-  class MinuitParameterSet;
-} // namespace AmpGen
-
 using namespace AmpGen;
 
 FastIncoherentSum::FastIncoherentSum( const EventType& finalStates, AmpGen::MinuitParameterSet& mps,
-                                      const std::string& prefix )
-    : FastCoherentSum( finalStates, mps, prefix )
+    const std::string& prefix ) : FastCoherentSum( finalStates, mps, prefix )
 {
-
   m_normalisations.resize( size(), 1 );
 }
 
 double FastIncoherentSum::norm() const
-{
-  double norm( 0 ); // (0,0);
-  for ( unsigned int i = 0; i < size(); ++i ) {
-    double val = m_normalisations.get( i, 0 ).real() * std::norm( m_matrixElements[i].coefficient );
-    norm += val;
-  }
-  return norm; //.real();
+{ 
+  return norm( m_normalisations ); 
 }
 
 double FastIncoherentSum::norm( const Bilinears& norms ) const
@@ -54,38 +41,37 @@ void FastIncoherentSum::prepare()
 
   if ( m_isConstant && m_prepareCalls != 0 ) return;
 
-  transferParameters(); /// move everything to the "immediate" cache ///
-  bool isReady = true; 
-  for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) {
-    auto& pdf = m_matrixElements[i].pdf;
-    if( m_prepareCalls == 0 ) isReady &= pdf.isReady();
+  transferParameters();
+  for ( auto& mE : m_matrixElements ) {
+    auto& pdf = mE.pdf;
     pdf.prepare();
     if ( m_prepareCalls != 0 && !pdf.hasExternalsChanged() ) continue;
 
     if ( m_prepareCalls == 0 && m_events != nullptr )
-      m_matrixElements[i].addressData                                             = m_events->registerExpression( pdf );
+      mE.addressData = m_events->registerExpression( pdf );
 
-    if ( m_events != nullptr ) m_events->updateCache( pdf, m_matrixElements[i].addressData );
-    
-    if ( m_prepareCalls == 0 && m_integrator.isReady() ) m_integrator.prepareExpression( pdf );
-
+    if ( m_events != nullptr ) m_events->updateCache( pdf, mE.addressData ); 
+    if ( m_prepareCalls == 0 && m_integrator.isReady() ){
+      m_integrator.prepareExpression( pdf );
+    }
     pdf.resetExternals();
   }
-  m_integrator.flush();
-
+  if( m_prepareCalls == 0 ){
+    for( size_t i = 0 ; i < m_matrixElements.size(); ++i ){
+      auto& mE = m_matrixElements[i];
+      m_integrator.queueIntegral( m_integrator.events().getCacheIndex ( mE.pdf) ,0,i,0,&m_normalisations, false );
+    }
+    m_integrator.flush();
+  }
   m_prepareCalls++;
-  m_norm = norm(); /// update normalisation
+  m_norm = norm();
 }
 
 std::vector<FitFraction> FastIncoherentSum::fitFractions( const LinearErrorPropagator& linProp )
 {
   std::vector<FitFraction> outputFractions;
   for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) {
-
-    IFFCalculator calc;
-    calc.fcs   = this;
-    calc.index = i;
-
+    IFFCalculator calc(i, this);
     outputFractions.emplace_back( m_matrixElements[i].decayTree->uniqueString(), calc(), linProp.getError( calc ) );
   }
 
@@ -94,3 +80,18 @@ std::vector<FitFraction> FastIncoherentSum::fitFractions( const LinearErrorPropa
   }
   return outputFractions;
 }
+double FastIncoherentSum::getVal( const Event& evt ) const
+{
+  double value( 0. );
+  for ( auto& mE : m_matrixElements ) {
+    value += std::norm( mE.coefficient * evt.getCache( mE.addressData ) );
+  }
+  return value;
+}
+double FastIncoherentSum::operator()( const Event& evt ) const { return prob( evt ); }
+double FastIncoherentSum::prob( const Event& evt ) const
+{
+  DEBUG( "global weight = " << m_weight << ", pdf value = " << getVal( evt ) << ", norm = " << m_norm );
+  return m_weight * getVal( evt ) / m_norm;
+}
+double FastIncoherentSum::prob_unnormalised( const Event& evt ) const { return getVal( evt ); }

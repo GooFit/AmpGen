@@ -94,7 +94,7 @@ namespace AmpGen
       bool m_usesDefaultLineshape            = {false};      ///< Flag to check if default shape is used
       std::vector<std::shared_ptr<Particle>> m_daughters;    ///< Array of daughter particles
       std::vector<std::string> m_modifiers;                  ///< Additional modifiers for amplitude
-
+      Expression* m_expression               = {nullptr};    ///< pointer to cached lineshape product
       void pdgLookup();                                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
       bool hasModifier( const std::string& modifier ) const; ///< Check if this particle has a given modifier
       std::string modifierString() const;                    ///< Re-generate modifier string used to create particle
@@ -204,20 +204,22 @@ namespace AmpGen
       Tensor Q() const;
      
       /// @function Calculates the spin tensor or generalised current for this particle 
-      Tensor SpinTensor( DebugSymbols* db = nullptr ) const;
+      Tensor spinTensor( DebugSymbols* db = nullptr ) const;
       
       /// @function Calculates the polarisation vector / spinor etc. of this particle, used for the initial/final state particles 
-      Tensor ExternalSpinTensor(const int& polState, DebugSymbols* db = nullptr) const;
+      Tensor externalSpinTensor(const int& polState, DebugSymbols* db = nullptr) const;
       
       /// @function Calculates the invariant mass-squared of the mass of this particle
       Expression massSq() const;                                
 
       /// @function Calculates the lineshape / propagator for this particle. 
-      Expression Lineshape( DebugSymbols* db = nullptr ) const;
+      Expression propagator( DebugSymbols* db = nullptr ) const;
 
       /// @function Calculates the total expression for this particle, including symmetrisation and the current polarisation state
       Expression getExpression( DebugSymbols* db = nullptr, const unsigned int& index = 0 );
 
+      /// @function Calculate the transition matrix for this decay 
+      Tensor transitionMatrix( DebugSymbols* db = nullptr );
       bool operator<( const Particle& other );
       bool operator>( const Particle& other );
 

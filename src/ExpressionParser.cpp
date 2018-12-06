@@ -106,7 +106,10 @@ Expression ExpressionParser::processEndPoint( const std::string& name )
   double value = lexical_cast<double>( name, status );
   if ( status == true ) return Constant( value );
   if ( name == "PI" ) return Constant( M_PI );
+  if ( name == "pi" ) return Constant( M_PI );
+  if ( name == "e" ) return Constant( std::exp(1) );
   if ( name == "I" ) return Constant( 0, 1 );
+  if ( name == "i" ) return Constant( 0, 1 );
 
   if ( m_mps != nullptr ) {
     auto map = m_mps->map();

@@ -4,7 +4,6 @@
 #include <chrono>
 #include <cmath>
 #include <ctime>
-/// STL
 #include <iomanip>
 #include <iostream>
 #include <numeric>
@@ -23,6 +22,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/CompiledExpressionBase.h"
 #include "AmpGen/CompilerWrapper.h"
+#include "AmpGen/ThreadPool.h"
 
 #ifdef __USE_OPENMP__
   #include <omp.h>
@@ -30,25 +30,26 @@
 
 using namespace AmpGen;
 
-FastCoherentSum::FastCoherentSum( const EventType& type, AmpGen::MinuitParameterSet& mps, const std::string& prefix )
+FastCoherentSum::FastCoherentSum( const EventType& type, MinuitParameterSet& mps, const std::string& prefix )
   : m_protoAmplitudes( mps )
   , m_evtType( type )
   , m_prefix( prefix )
 {
-  bool useCartesian = AmpGen::NamedParameter<bool>(         "FastCoherentSum::UseCartesian", true );
-  bool autoCompile  = AmpGen::NamedParameter<bool>(         "FastCoherentSum::AutoCompile", true ); 
-  m_dbThis          = AmpGen::NamedParameter<bool>(         "FastCoherentSum::Debug", false );
-  m_printFreq       = AmpGen::NamedParameter<unsigned int>( "FastCoherentSum::PrintFrequency", 100 );
-  m_verbosity       = AmpGen::NamedParameter<unsigned int>( "FastCoherentSum::Verbosity", 0 );
-  std::string objCache = AmpGen::NamedParameter<std::string>("FastCoherentSum::ObjectCache",""); 
+  bool useCartesian    = NamedParameter<bool>(  "FastCoherentSum::UseCartesian"  , true );
+  bool autoCompile     = NamedParameter<bool>(  "FastCoherentSum::AutoCompile"   , true ); 
+  m_dbThis             = NamedParameter<bool>(  "FastCoherentSum::Debug"         , false );
+  m_printFreq          = NamedParameter<size_t>("FastCoherentSum::PrintFrequency", 100 );
+  m_verbosity          = NamedParameter<size_t>("FastCoherentSum::Verbosity"     , 0 );
+  std::string objCache = NamedParameter<std::string>("FastCoherentSum::ObjectCache",""); 
   auto amplitudes  = m_protoAmplitudes.getMatchingRules( m_evtType, prefix, useCartesian );
   for( auto& amp : amplitudes ) addMatrixElement( amp, mps );
 
   m_isConstant = isFixedPDF(mps);
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() );
   if( autoCompile ){ 
+    ThreadPool tp(8);
     for( auto& mE: m_matrixElements )
-      CompilerWrapper().compile( mE.pdf, objCache); 
+      tp.enqueue( [&]{ CompilerWrapper().compile( mE.pdf, objCache); } );
   }
 }
 
@@ -63,23 +64,23 @@ void FastCoherentSum::addMatrixElement( std::pair<Particle, Coupling>& particleW
   }
   const std::string name = protoParticle.uniqueString();
   DebugSymbols dbExpressions;
-  INFO( "Matrix Element = " << name << ", hash = " << FNV1a_hash(name) );
-  const Expression expression = protoParticle.getExpression( m_dbThis ? &dbExpressions : nullptr );
-  DEBUG( "Got expression for this tree" );
+  INFO( name ); 
   for ( auto& mE : m_matrixElements ) {
     if ( name == mE.decayTree->uniqueString() ) return;
   }
+  const Expression expression = protoParticle.getExpression( m_dbThis ? &dbExpressions : nullptr );
   m_matrixElements.emplace_back(
-      std::make_shared<Particle>( protoParticle ), coupling,
-      CompiledExpression<std::complex<double>, const double*, const double*>(
-        expression, "p" + std::to_string(FNV1a_hash(name)), m_evtType.getEventFormat(), m_dbThis ? dbExpressions : DebugSymbols() , &mps ) );
+    std::make_shared<Particle>( protoParticle ), coupling,
+    CompiledExpression<complex_t, const real_t*, const real_t*>(
+      expression, "p" + std::to_string(FNV1a_hash(name)), m_evtType.getEventFormat(), m_dbThis ? dbExpressions : DebugSymbols() , &mps ) );
 }
 
 void FastCoherentSum::prepare()
 {
   if ( m_weightParam != nullptr ) m_weight = m_weightParam->mean();
   if ( m_isConstant && m_prepareCalls != 0 ) return;
-  preprepare();
+  transferParameters(); 
+  
   std::vector<unsigned int> changedPdfIndices;
   auto tStartEval = std::chrono::high_resolution_clock::now();
   bool printed    = false;
@@ -108,12 +109,10 @@ void FastCoherentSum::prepare()
   }
   auto tStartIntegral = std::chrono::high_resolution_clock::now();
 
-  if ( m_integrator.isReady()) {
-    updateNorms( changedPdfIndices );
-  } else if ( m_verbosity ) {
-    WARNING( "No simulated sample specified for " << this );
-  }
-  m_norm = norm(); 
+  if ( m_integrator.isReady())  updateNorms( changedPdfIndices );
+  else if ( m_verbosity ) WARNING( "No simulated sample specified for " << this );
+  
+  m_norm = norm();
   if ( m_verbosity && printed ) {
     auto tNow        = std::chrono::high_resolution_clock::now();
     double timeEval  = std::chrono::duration<double, std::milli>( tStartIntegral - tStartEval ).count();
@@ -130,19 +129,22 @@ void FastCoherentSum::prepare()
 
 void FastCoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIndices )
 {
-  for ( auto& i : changedPdfIndices ) {
-    auto& pdf = m_matrixElements[i].pdf;
-    m_integrator.prepareExpression( pdf );
-  }
+  for ( auto& i : changedPdfIndices ) m_integrator.prepareExpression( m_matrixElements[i].pdf );
   std::vector<size_t> cacheIndex; 
-  for( auto& m : m_matrixElements )  cacheIndex.push_back( m_integrator.events().getCacheIndex( m.pdf ) );
-  for ( auto& i : changedPdfIndices ) {
-    for ( size_t j = 0; j < size(); ++j ) {
-      m_integrator.addIntegralKeyed( cacheIndex[i], cacheIndex[j] ,i, j, &m_normalisations );
+  for( auto& m : m_matrixElements )  
+    cacheIndex.push_back( m_integrator.events().getCacheIndex( m.pdf ) );
+  for ( auto& i : changedPdfIndices )
+    for ( size_t j = 0; j < size(); ++j )
+      m_integrator.queueIntegral( cacheIndex[i], cacheIndex[j] ,i, j, &m_normalisations );
+  m_integrator.flush();
+  if( m_prepareCalls == 0 ) {
+    for( int i = 0 ; i < m_matrixElements.size(); ++i ){
+      for( int j = 0 ; j < m_matrixElements.size(); ++j ){
+        std::cout << "I  "<<i << " " << j << " ) " << m_normalisations.get(i,j) << std::endl;
+      }
     }
   }
   m_normalisations.resetCalculateFlags();
-  m_integrator.flush(); 
 }
 
 void FastCoherentSum::debug( const Event& evt, const std::string& nameMustContain )
@@ -326,7 +328,6 @@ void FastCoherentSum::generateSourceCode( const std::string& fname, const double
     stream << "  };\n";
     stream << "  if(amps == nullptr)\n";
     stream << "    amps = local_amps;\n\n";
-
     stream << "  for(unsigned int i=0; i<size; i++) {\n";
     stream << "    double* E = events + i*" << ( *this->m_events )[0].size() << ";\n";
 
@@ -370,10 +371,10 @@ void FastCoherentSum::generateSourceCode( const std::string& fname, const double
   stream.close();
 }
 
-std::vector<unsigned int> FastCoherentSum::processIndex( const std::string& label ) const
+std::vector<size_t> FastCoherentSum::processIndex( const std::string& label ) const
 {
-  std::vector<unsigned int> indices;
-  for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) {
+  std::vector<size_t> indices;
+  for ( size_t i = 0; i < m_matrixElements.size(); ++i ) {
     bool couplingIncludesThis = false;
     for ( auto& reAndIm : m_matrixElements[i].coupling.couplings )
       if ( reAndIm.first->name().find( label ) != std::string::npos ) couplingIncludesThis = true;
@@ -431,16 +432,6 @@ std::complex<double> FastCoherentSum::getValNoCache( const Event& evt ) const
     value += mE.coefficient * mE( evt );
   }
   return value;
-}
-
-void FastCoherentSum::preprepare()
-{
-  transferParameters();
-  bool isReady = true; 
-  for ( auto& mE : m_matrixElements ) {
-    if( m_prepareCalls == 0 ) isReady &= mE.pdf.isReady();
-    mE.pdf.prepare();
-  }
 }
 
 void FastCoherentSum::reset( bool resetEvents )
@@ -502,7 +493,6 @@ void FastCoherentSum::printVal( const Event& evt, bool isSim )
 {
   for ( auto& mE : m_matrixElements ) {
     unsigned int address = mE.addressData;
-
     std::cout << mE.decayTree->uniqueString() << " = " << mE.coefficient << " x " << evt.getCache( address )
       << " address = " << address << " " << mE( evt ) << std::endl;
     if( mE.coupling.couplings.size() != 1 ){

@@ -11,9 +11,40 @@
 
 using namespace AmpGen;
 
+FitFraction::FitFraction( const std::string& line, const AmpGen::EventType& evtType )
+{
+  auto tokens = split( line, ' ' );
+  m_name      = tokens[1];
+  m_value     = stod( tokens[2] );
+  m_error     = stod( tokens[3] );
+  if ( evtType.size() != 0 ) {
+    std::vector<std::string> finalStates = evtType.finalStates();
+  }
+}
+
+FFCalculator::FFCalculator( const std::string& name, 
+                            FastCoherentSum* fcs, 
+                            const std::vector<size_t>& indices,
+                            const std::vector<size_t>& denom )
+    : FFCalculator( name,fcs, indices, indices, denom ) {}
+
+FFCalculator::FFCalculator( const std::string& name, 
+                            FastCoherentSum* fcs, 
+                            const std::vector<size_t>& indexI,
+                            const std::vector<size_t>& indexJ, 
+                            const std::vector<size_t>& denom )
+    : index_i( indexI ), 
+      index_j( indexJ ), 
+      denom( denom ), 
+      fcs( fcs ), 
+      name( name ) {}
+
+IFFCalculator::IFFCalculator( const size_t& index, FastIncoherentSum* fcs ) :
+  index(index),
+  fcs(fcs) {}
+
 double FFCalculator::operator()()
 {
-
   std::complex<double> J = 0;
   auto& amp              = *fcs;
   for ( auto& i : index_i ) {
@@ -42,18 +73,6 @@ double IFFCalculator::operator()()
   return J / fcs->norm();
 }
 
-FitFraction::FitFraction( const std::string& line, const AmpGen::EventType& evtType )
-{
-  auto tokens = split( line, ' ' );
-  m_name      = tokens[1];
-  m_value     = stod( tokens[2] );
-  m_error     = stod( tokens[3] );
-  if ( evtType.size() != 0 ) {
-    std::vector<std::string> finalStates = evtType.finalStates();
-    // m_particle = std::make_shared<Particle>( tokens[1], finalStates );
-  }
-}
-
 std::shared_ptr<Particle> FitFraction::particle() const { return std::make_shared<Particle>( m_name ); }
 
 FitFraction::FitFraction( const std::string& name, const double& frac, const double& err )
@@ -61,14 +80,3 @@ FitFraction::FitFraction( const std::string& name, const double& frac, const dou
 {
 }
 
-FFCalculator::FFCalculator( const std::string& _name, FastCoherentSum* _fcs, const std::vector<unsigned int> indices,
-                            const std::vector<unsigned int> _denom )
-    : index_i( indices ), index_j( indices ), denom( _denom ), fcs( _fcs ), name( _name )
-{
-}
-
-FFCalculator::FFCalculator( const std::string& _name, FastCoherentSum* _fcs, const std::vector<unsigned int> _indexI,
-                            const std::vector<unsigned int> _indexJ, const std::vector<unsigned int> _denom )
-    : index_i( _indexI ), index_j( _indexJ ), denom( _denom ), fcs( _fcs ), name( _name )
-{
-}

@@ -44,9 +44,9 @@ namespace AmpGen
         markAsZero.resize( r * c );
         calculate.resize(  r * c );
         for( size_t i = 0 ; i < r*c; ++i ){
-          norms[i] = 0;
-          markAsZero[i] = 0;
-          calculate[i] = true;
+          norms[i]      = 0;
+          markAsZero[i] = false;
+          calculate[i]  = true;
         }
       }
   };
@@ -83,7 +83,7 @@ namespace AmpGen
           #pragma omp parallel for reduction( +: re, im )
           for ( size_t i = 0; i < m_events->size(); ++i ) {
             auto& evt = ( *m_events )[i];
-            real_t w  = evt.weight() * evt.igenPdf();
+            real_t w  = evt.weight() / evt.genPdf();
             for ( size_t roll = 0; roll < NROLL; ++roll ) {
               auto c = evt.getCache( m_integrals[roll].i ) * std::conj( evt.getCache( m_integrals[roll].j ) );
               re[roll] += w * std::real( c );
@@ -96,6 +96,7 @@ namespace AmpGen
         }
       public:
         Integrator( EventList* events = nullptr ) : m_events( events ){}
+        double sampleNorm() { return m_events->norm(); } 
         bool isReady() const { return m_events != nullptr ; }
         const EventList& events() const { return *m_events ; } 
         template <class T1, class T2>
@@ -103,11 +104,18 @@ namespace AmpGen
           {
             addIntegralKeyed( m_events->getCacheIndex(f1), m_events->getCacheIndex(f2), tFunc );
           }
-        void addIntegralKeyed( const size_t& c1, const size_t& c2, const size_t& i , const size_t& j, Bilinears* out, const bool& sim = true )
+        void queueIntegral( const size_t& c1, 
+                            const size_t& c2, 
+                            const size_t& i, 
+                            const size_t& j, 
+                            Bilinears* out, 
+                            const bool& sim = true )
         {
           if( out->workToDo(i,j) ){
             if( sim ) 
-              addIntegralKeyed( c1, c2, [out,i,j]( const arg& val ){ out->set(i,j,val);  if( i != j ) out->set(j,i, std::conj(val) ); } );
+              addIntegralKeyed( c1, c2, [out,i,j]( const arg& val ){ 
+                out->set(i,j,val);
+                if( i != j ) out->set(j,i, std::conj(val) ); } );
             else 
               addIntegralKeyed( c1, c2, [out,i,j]( const arg& val ){ out->set(i,j,val); } );
           }

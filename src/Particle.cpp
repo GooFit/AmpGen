@@ -318,7 +318,7 @@ Particle Particle::quasiStableTree() const
   return returnVal;
 }
 
-Expression Particle::Lineshape( DebugSymbols* db ) const
+Expression Particle::propagator( DebugSymbols* db ) const
 {
   if ( db != nullptr && !isStable() ) db->emplace_back( uniqueString() +" lineshape", Parameter( "NULL", 0, true ) );
   if ( m_daughters.size() == 0 ) return 1;
@@ -338,7 +338,7 @@ Expression Particle::Lineshape( DebugSymbols* db ) const
 
     total = total * propagator ;  
   }  
-  for ( auto& d : m_daughters ) total = total * make_cse( d->Lineshape( db ) );
+  for ( auto& d : m_daughters ) total = total * make_cse( d->propagator( db ) );
   if ( db != nullptr ) db->emplace_back( "A(" + uniqueString() + ")", total );
   return total;
 }
@@ -370,15 +370,22 @@ void Particle::setOrdering( const std::vector<size_t>& ordering )
 }
 void Particle::addDaughter( const std::shared_ptr<Particle>& particle ) { m_daughters.push_back( particle ); }
 
+Tensor Particle::transitionMatrix( DebugSymbols* db  )
+{
+  auto particles = getFinalStateParticles();
+   
+  return spinTensor();
+}
+
 Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index )
 {
-  if ( db != nullptr && !isStable() ) 
+  if( db != nullptr && !isStable() ) 
     db->emplace_back( uniqueString() , Parameter( "NULL", 0, true ) );
 
   std::string spinFormalism = NamedParameter<std::string>("Particle::SpinFormalism","RaritaSchwinger");
 
   Expression total( 0 );
-  auto finalStateParticles = getFinalStateParticles();
+  auto finalStateParticles  = getFinalStateParticles();
   auto orderings            = identicalDaughterOrderings();
   bool doBoseSymmetrisation = !hasModifier( "NoSym" );
   bool sumAmplitudes        = !hasModifier( "Inco" );
@@ -386,29 +393,28 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   for ( auto& ordering : orderings ) {
     setOrdering( ordering );
     Expression spinFactor = 1; 
-
     if( includeSpin && spinFormalism == "RaritaSchwinger" ){
-      Tensor spinTensor = SpinTensor(db);
-      if( m_props->twoSpin() == 0 ) spinFactor = spinTensor[0];
+      Tensor st = spinTensor(db);
+      if( m_props->twoSpin() == 0 ) spinFactor = st[0];
       if( m_props->twoSpin() == 1 ){
-        Tensor is = Bar( ExternalSpinTensor(m_polState) );
-        ADD_DEBUG_TENSOR( ExternalSpinTensor(m_polState ) , db );
-        ADD_DEBUG_TENSOR( spinTensor, db );
-        if( spinTensor.size() != 4 ){ ERROR("Spin tensor is the wrong rank = " << spinTensor.dimString() ); spinFactor = 1; }
-        else { spinFactor = is[0] * spinTensor[0] + is[1]*spinTensor[1] + is[2]*spinTensor[2] + is[3]*spinTensor[3]; }
+        Tensor is = Bar( externalSpinTensor(m_polState) );
+        ADD_DEBUG_TENSOR( externalSpinTensor(m_polState), db );
+        ADD_DEBUG_TENSOR( st, db );
+        Tensor::Index a;
+        if( st.size() != 4 ){ ERROR("Spin tensor is the wrong rank = " << st.dimString() ); spinFactor = 1; }
+        else { spinFactor = is(a) * st(a) ; }
       }
     }
     if ( includeSpin && spinFormalism == "Helicity" ){
       spinFactor = helicityAmplitude( *this, Identity(4), double(polState())/2.0, db ); 
     }
-
     if( db != nullptr ) 
       db->emplace_back( "SF_"+std::to_string(polState()) +"_"+std::to_string(daughter(0)->polState()
             ) + "_"+std::to_string(daughter(1)->polState() ) , spinFactor );
     DEBUG( "Got spin matrix element -> calculating lineshape product" );
-    if ( sumAmplitudes ) total = total + make_cse ( Lineshape( db ) ) * spinFactor;
+    if ( sumAmplitudes ) total = total + make_cse ( propagator( db ) ) * spinFactor;
     else {
-      Expression ls     = Lineshape( db ) * spinFactor;
+      Expression ls     = propagator( db ) * spinFactor;
       Expression conjLs = fcn::conj( ls );
       Expression prod   = ls * conjLs;
       ADD_DEBUG( ls, db );
@@ -420,8 +426,7 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   }
   ADD_DEBUG( total, db );
   double nPermutations = doBoseSymmetrisation ? orderings.size() : 1;
-  if ( sumAmplitudes )
-    return total / fcn::sqrt( nPermutations );
+  if ( sumAmplitudes ) return total / fcn::sqrt( nPermutations );
   else {
     Expression sqrted = fcn::sqrt( total / nPermutations );
     ADD_DEBUG( sqrted, db );
@@ -429,32 +434,33 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   }
 }
 
-Tensor Particle::SpinTensor( DebugSymbols* db ) const
+Tensor Particle::spinTensor( DebugSymbols* db ) const
 {
   DEBUG( "Getting SpinTensor for : " << m_name << " " << m_daughters.size() );
   if ( m_daughters.size() == 0 ){
-    auto S= ExternalSpinTensor(m_polState, db);
+    auto S= externalSpinTensor(m_polState, db);
     if( S.size() != 1 ) ADD_DEBUG_TENSOR( S, db );
     return S;
   }
   else if ( m_daughters.size() == 2 ) {
-    Tensor value = VertexFactory::getSpinFactor( P(), Q(), daughter( 0 )->SpinTensor( db ),
-        daughter( 1 )->SpinTensor( db ), vertexName() , db );
+    Tensor value = VertexFactory::getSpinFactor( P(), Q(), 
+        daughter(0)->spinTensor( db ),
+        daughter(1)->spinTensor( db ), vertexName() , db );
     DEBUG( "Returning spin tensor" );
     return value;
   } else if ( m_daughters.size() == 3 ) {
-    return VertexFactory::getSpinFactorNBody( {{daughter( 0 )->P(), daughter( 0 )->SpinTensor()},
-        {daughter( 1 )->P(), daughter( 1 )->SpinTensor()},
-        {daughter( 2 )->P(), daughter( 2 )->SpinTensor()}},
-        spin() , db );
+    return VertexFactory::getSpinFactorNBody( {
+        {daughter(0)->P(), daughter(0)->spinTensor()},
+        {daughter(1)->P(), daughter(1)->spinTensor()},
+        {daughter(2)->P(), daughter(2)->spinTensor()}}, spin() , db );
   } else if ( m_daughters.size() == 1 ) {
     DEBUG( "Forwarding through Quasi-particle" );
-    return daughter( 0 )->SpinTensor( db );
+    return daughter( 0 )->spinTensor( db );
   }
   return Tensor( std::vector<double>( {1.} ), {1} );
 }
 
-Tensor Particle::ExternalSpinTensor(const int& polState, DebugSymbols* db ) const
+Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) const
 {
   DEBUG("Getting final state spin tensor for: " << name() << " " << spin() );
   if ( spin() == 0 )

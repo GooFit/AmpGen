@@ -133,17 +133,21 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
   }
 
   FitResult* fr          = new FitResult( mini );
-  unsigned int makePlots = NamedParameter<unsigned int>( "MakePlots", 1 );
+  bool makePlots = NamedParameter<bool>( "MakePlots", true );
 
   if ( makePlots ) {
     auto ep = fr->getErrorPropagator();
 
     unsigned int counter = 1;
     for_each( pdf.m_pdfs, [&]( auto& f ) {
+        std::function<double(const Event&)> FCN_sig = 
+          [&](const Event& evt){ return f.prob_unnormalised(evt) ; };
         auto tStartIntegral2 = std::chrono::high_resolution_clock::now();
-        auto mc_plot3        = bandPlot<100>( mc, "tMC_Category" + std::to_string( counter ) + "_", f, ep );
-        auto tEndIntegral2 = std::chrono::high_resolution_clock::now();
-        double t2          = std::chrono::duration<double, std::milli>( tEndIntegral2 - tStartIntegral2 ).count();
+        auto mc_plot3 = mc.makePlots( mc.eventType().defaultProjections(100), WeightFunction(f), Prefix("tMC_Category"+std::to_string(counter) ) );
+
+        //        auto mc_plot3        = bandPlot<100>( mc, "tMC_Category" + std::to_string( counter ) + "_", f, ep );
+        auto tEndIntegral2   = std::chrono::high_resolution_clock::now();
+        double t2            = std::chrono::duration<double, std::milli>( tEndIntegral2 - tStartIntegral2 ).count();
         INFO( "Time for plots = " << t2 );
 
         for ( auto& plot : mc_plot3 ) {
@@ -209,13 +213,10 @@ int main( int argc, char* argv[] )
     }
   }
   EventType evtType( evtType_particles );
-  INFO( "Signal  = " << evtType );
+  INFO( "Signal  = " << evtType << " OS = " << evtType.conj(true) );
   FastCoherentSum   sig( evtType, MPS );
-  
-  INFO( "Background  = " << evtType );
   FastIncoherentSum bkg( evtType, MPS, "Inco" );
-  INFO( "OS  = " << evtType.conj(true) );
-  FastCoherentSum misID( evtType.conj(true) , MPS  );
+  FastCoherentSum misID( evtType.conj(true) , MPS );
 
   if ( !sig.isStateGood() || !bkg.isStateGood() || !misID.isStateGood() ) {
     ERROR( "Amplitude incorrectly configured" );
@@ -248,14 +249,14 @@ int main( int argc, char* argv[] )
     Generator<>( evtType, &rndm ).fillEventListPhaseSpace( eventsMC, 5e6 );
     INFO("Generated: " << eventsMC.size() << " events for integrals" );
   }
-
+  
   sig.setMC( eventsMC );
   bkg.setMC( eventsMC );
   misID.setMC( eventsMC );
 
   TFile* output = TFile::Open( plotFile.c_str(), "RECREATE" );
   output->cd();
-  AmpGen::FitResult* fr = nullptr;
+  FitResult* fr = nullptr;
 
   if ( MPS["fPDF"]->mean() == 1.0 )
     fr = doFit( make_pdf( sig ), events, eventsMC, MPS );
@@ -276,12 +277,12 @@ int main( int argc, char* argv[] )
 
   INFO( "Completed fit; calculating additional observables" );
 
-  EventList* fmc               = &eventsMC;
-  if ( fmcFile != mcFile ) fmc = new EventList( fmcFile, evtType );
-  EventList& flatMC            = *fmc;
-  sig.reset( true ); //// reset PDFs to ensure correct cache state
-  sig.setMC( flatMC );
-  sig.prepare();
+//  EventList* fmc               = &eventsMC;
+//  if ( fmcFile != mcFile ) fmc = new EventList( fmcFile, evtType );
+//  EventList& flatMC            = *fmc;
+//  sig.reset( true ); //// reset PDFs to ensure correct cache state
+//  sig.setMC( flatMC );
+//  sig.prepare();
 //  if ( MPS["fComb"]->mean() != 1 )
 //    fr->addFractions( sig.fitFractions( fr->getErrorPropagator() ) );
 //  else
