@@ -8,9 +8,9 @@
 
 using namespace AmpGen; 
 
-AmpGen::Expression AmpGen::Array::operator[]( const AmpGen::Expression& expression )
+Expression AmpGen::Array::operator[]( const AmpGen::Expression& expression )
 {
-  return AmpGen::Expression( AmpGen::ArrayExpression( *this, expression ) );
+  return Expression( ArrayExpression( *this, expression ) );
 }
 
 void Array::resolve( ASTResolver& resolver ) 

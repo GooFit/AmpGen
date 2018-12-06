@@ -21,8 +21,9 @@ double GaussianConstraint::getVal() const
   return -( m_param->mean() - m_mean ) * ( m_param->mean() - m_mean ) / ( 2 * m_sigma * m_sigma );
 }
 
-void GaussianConstraint::configure( const std::string& configString, const AmpGen::CoherentSum& pdf,
-                                    const AmpGen::MinuitParameterSet& mps )
+void GaussianConstraint::configure( const std::string& configString, 
+                                    const CoherentSum& pdf,
+                                    const MinuitParameterSet& mps )
 {
   auto tokens            = split( configString, ' ' );
   const std::string name = tokens[1];

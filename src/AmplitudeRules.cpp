@@ -15,28 +15,8 @@
 
 using namespace AmpGen;
 
-AmplitudeRules::AmplitudeRules( MinuitParameterSet& mps )
-{
-  for ( auto& o : mps.map() ) {
-    if ( o.first.find( "_Re" ) == std::string::npos ) continue;
-    AmplitudeRule pAmp( o.first, mps.map() );
-    if ( pAmp.m_isGood ) {
-      m_rules[pAmp.m_head].push_back( pAmp );
-    }
-  }
-}
-
-bool AmplitudeRules::hasDecay( const std::string& head ) { return m_rules.find( head ) != m_rules.end(); }
-
-std::vector<AmplitudeRule> AmplitudeRules::rulesForDecay( const std::string& head )
-{
-  if ( !hasDecay( head ) ) return std::vector<AmplitudeRule>();
-  return m_rules[head];
-}
-
-std::map<std::string, std::vector<AmplitudeRule>> AmplitudeRules::rules() { return m_rules; }
-
-AmplitudeRule::AmplitudeRule( const std::string& reName, std::map<std::string, MinuitParameter*>& mapping )
+AmplitudeRule::AmplitudeRule( const std::string& reName, 
+                              const std::map<std::string, MinuitParameter*>& mapping )
 {
   auto tokens = split( reName, '_' );
   if ( tokens.size() == 3 ) {
@@ -54,7 +34,6 @@ AmplitudeRule::AmplitudeRule( const std::string& reName, std::map<std::string, M
   } else if ( tokens.size() == 2 ) {
     m_prefix = "";
     m_name   = tokens[0];
-    m_re     = mapping[reName];
     auto ire = mapping.find( reName );
     auto iim = mapping.find( tokens[0] + "_Im" );
     if ( iim == mapping.end() ) {
@@ -70,14 +49,43 @@ AmplitudeRule::AmplitudeRule( const std::string& reName, std::map<std::string, M
   }
   if ( m_isGood ) {
     size_t pos = find_next_of( m_name, {"[", "{"} );
-    if ( pos != std::string::npos )
-      m_head = m_name.substr( 0, pos );
+    if ( pos != std::string::npos ) m_head = m_name.substr( 0, pos );
     else {
       ERROR( "Does not seem to be well formed decay descriptor [" << reName << "]" );
       m_isGood = false;
     }
   }
 }
+
+AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
+{
+  for ( auto& o : mps.const_map() ) {
+    if ( o.first.find( "_Re" ) == std::string::npos ) continue;
+    AmplitudeRule pAmp( o.first, mps.const_map() );
+    if ( pAmp.m_isGood ) m_rules[pAmp.m_head].push_back( pAmp );
+  }
+}
+
+CouplingConstant::CouplingConstant( const CouplingConstant& other, 
+                    const AmplitudeRule& pA, 
+                    bool isCartesian ) : 
+  couplings( other.couplings ),
+  isCartesian(isCartesian)
+{
+  couplings.emplace_back( pA.m_re, pA.m_im );
+}
+
+
+bool AmplitudeRules::hasDecay( const std::string& head ) { return m_rules.find( head ) != m_rules.end(); }
+
+std::vector<AmplitudeRule> AmplitudeRules::rulesForDecay( const std::string& head )
+{
+  if ( !hasDecay( head ) ) return std::vector<AmplitudeRule>();
+  return m_rules[head];
+}
+
+std::map<std::string, std::vector<AmplitudeRule>> AmplitudeRules::rules() { return m_rules; }
+
 
 EventType AmplitudeRule::eventType() const
 {
@@ -90,35 +98,22 @@ EventType AmplitudeRule::eventType() const
   return EventType( particleNames );
 }
 
-Coupling AmplitudeRule::makeCoupling( bool isCartan )
-{
-  Coupling c;
-  c.couplings.emplace_back( m_re, m_im );
-  c.isCartesian = isCartan;
-  return c;
+CouplingConstant::CouplingConstant( const AmplitudeRule& pA, bool isCartesian) : 
+  isCartesian(isCartesian) {
+  couplings.emplace_back( std::make_pair(pA.m_re,pA.m_im) );  
 }
 
-std::complex<double> Coupling::operator()() const
+std::complex<double> CouplingConstant::operator()() const
 {
-
-  if ( isCartesian ) {
-    std::complex<double> F( 1, 0 );
-    for ( auto& p : couplings ) {
-      // INFO( p.first << " " << p.second );
-      F *= std::complex<double>( p.first->mean(), p.second->mean() );
-    }
-    return F;
-  } else {
-    std::complex<double> F( 1, 0 );
-    for ( auto& p : couplings ) {
-      F *= p.first->mean() * std::complex<double>( cos( p.second->mean() ), sin( p.second->mean() ) );
-    }
-    // INFO("Returning F = " << F );
-    return F; // amp * std::complex<double>( cos(angle), sin(angle) );
-  }
+  std::complex<double> F( 1, 0 );
+  if ( isCartesian )
+    for( auto& p : couplings ) F *= complex_t( p.first->mean() , p.second->mean() ); 
+  else
+    for( auto& p : couplings ) F *= p.first->mean() * complex_t( cos( p.second->mean() ), sin( p.second->mean() ) );
+  return F;
 }
 
-Expression Coupling::to_expression() const
+Expression CouplingConstant::to_expression() const
 {
   Expression J = Constant(0,1);
   if ( isCartesian ) {
@@ -138,7 +133,7 @@ Expression Coupling::to_expression() const
   }
 }
 
-void Coupling::print() const
+void CouplingConstant::print() const
 {
   INFO( couplings[0].first->name() << " (" << isCartesian << ") = " << ( *this )() );
   if ( isCartesian )
@@ -147,27 +142,26 @@ void Coupling::print() const
     for ( auto& coupling : couplings ) INFO( coupling.first->name() << " x exp(i" << coupling.second->name() );
 }
 
-std::vector< std::pair<Particle, Coupling > > AmplitudeRules::getMatchingRules( 
-  const AmpGen::EventType& type, const std::string& prefix, const bool& useCartesian ){
+std::vector< std::pair<Particle, CouplingConstant > > AmplitudeRules::getMatchingRules( 
+    const EventType& type, const std::string& prefix, const bool& useCartesian ){
 
   auto rules        = rulesForDecay( type.mother() );
-  std::vector< std::pair< Particle, Coupling > > rt; 
+  std::vector< std::pair< Particle, CouplingConstant > > rt; 
 
-  for ( auto& p : rules ) {
-    if ( p.prefix() != prefix ) continue;
-    std::vector<std::pair<Particle, Coupling>> tmpParticles;
+  for ( auto& rule : rules ) {
+    if ( rule.prefix() != prefix ) continue;
+    std::vector<std::pair<Particle, CouplingConstant>> tmpParticles;
     auto fs = type.finalStates();
-    tmpParticles.emplace_back( Particle( p.name(), fs ), p.makeCoupling( useCartesian ) );
+    tmpParticles.emplace_back( Particle( rule.name(), fs ), CouplingConstant(rule,useCartesian) );
     do {
-      std::vector<std::pair<Particle, Coupling>> newTmpParticles;
-      for ( auto& particleWithCoupling : tmpParticles ) {
-        auto protoParticle    = particleWithCoupling.first;
-        auto coupling         = particleWithCoupling.second;
+      std::vector<std::pair<Particle, CouplingConstant>> newTmpParticles;
+      for ( auto& particleWithCouplingConstant : tmpParticles ) {
+        auto protoParticle    = particleWithCouplingConstant.first;
+        auto coupling         = particleWithCouplingConstant.second;
         auto protoFinalStates = protoParticle.getFinalStateParticles();
         if ( protoFinalStates.size() == type.size() ) {
-          rt.emplace_back( particleWithCoupling );
-          //        addMatrixElement( particleWithCoupling );
-          continue; /// this particle is fully expanded
+          rt.emplace_back( particleWithCouplingConstant );
+          continue;
         }
         std::string nameToExpand = protoParticle.uniqueString();
         for ( auto& ifs : protoFinalStates ) {
@@ -176,8 +170,7 @@ std::vector< std::pair<Particle, Coupling > > AmplitudeRules::getMatchingRules(
           for ( auto& subTree : expandedRules ) {
             auto expanded_amplitude = replaceAll( nameToExpand, ifs->name(), subTree.name() );
             auto fs2                = type.finalStates();
-            newTmpParticles.emplace_back( Particle( expanded_amplitude, fs2 ),
-                                          Coupling( coupling, subTree, useCartesian ) );
+            newTmpParticles.emplace_back( Particle( expanded_amplitude, fs2 ), CouplingConstant( coupling, subTree, useCartesian ) );
           }
           break; // we should only break if there are rules to be expanded ...
         }
@@ -187,3 +180,25 @@ std::vector< std::pair<Particle, Coupling > > AmplitudeRules::getMatchingRules(
   }
   return rt;
 }
+
+bool CouplingConstant::isFixed() const
+{
+  for( auto& c : couplings ) 
+    if( c.first->iFixInit() == 0 or 
+        c.second->iFixInit() == 0 ) return false; 
+  return true;
+}
+
+bool CouplingConstant::contains( const std::string& label ) const 
+{
+  for ( auto& reAndIm : couplings )
+    if ( reAndIm.first->name().find( label ) != std::string::npos ) return true; 
+  return false; 
+}
+
+void CouplingConstant::changeSign() 
+{
+  auto& top_coupling = *couplings.begin();
+  if( isCartesian ) top_coupling.first->setCurrentFitVal( top_coupling.first->mean() * -1. );
+}
+

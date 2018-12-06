@@ -22,7 +22,7 @@ Spline::Spline(const std::string& name, const size_t& nBins, const double& min, 
   m_max(max),
   m_values(values){}
 
-Expression AmpGen::Spline::operator()( const Expression& x , DebugSymbols* db )
+Expression Spline::operator()( const Expression& x , DebugSymbols* db )
 {
   return Expression( SplineExpression(*this,x, db ) );
 }
@@ -31,9 +31,17 @@ Expression AmpGen::getSpline( const std::string& name, const Expression& x, cons
     DebugSymbols* dbexpressions, const bool& continueSpline )
 {
   double min, max, nBins( 0 );
-  min   = AmpGen::NamedParameter<double>( name + "::Spline::Min", 0. ).getVal();
-  max   = AmpGen::NamedParameter<double>( name + "::Spline::Max", 0. ).getVal();
-  nBins = AmpGen::NamedParameter<double>( name + "::Spline::N"  , 0. ).getVal();
+  auto spline_params = NamedParameter<double>( name + "::Spline").getVector();
+  if( spline_params.size() == 3 ){
+    nBins = size_t( spline_params[0] );
+    min   =         spline_params[1] ; 
+    max   =         spline_params[2];
+  }
+  else {
+    nBins = NamedParameter<double>( name + "::Spline::N"  , 0. );
+    min   = NamedParameter<double>( name + "::Spline::Min", 0. );
+    max   = NamedParameter<double>( name + "::Spline::Max", 0. );
+  }
   std::string spline_name = name + "::Spline::"+arrayName;
   Spline shape( spline_name, nBins, min, max );
   return shape(x, dbexpressions); 
@@ -110,7 +118,7 @@ bool SplineTransfer::isConfigured()
   return true;
 }
 
-void SplineTransfer::set( const unsigned int& N, AmpGen::MinuitParameter* f )
+void SplineTransfer::set( const unsigned int& N, MinuitParameter* f )
 {
   m_parameters[N] = f;
 }

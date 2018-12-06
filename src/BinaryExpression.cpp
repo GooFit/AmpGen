@@ -5,10 +5,6 @@
 #include "AmpGen/Expression.h"
 #include "AmpGen/Types.h"
 
-namespace AmpGen {
-class ASTResolver;
-}  // namespace AmpGen
-
 using namespace AmpGen;
 
 DEFINE_BINARY_OPERATOR( Sum )

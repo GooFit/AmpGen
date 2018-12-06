@@ -30,7 +30,7 @@
 
 using namespace AmpGen;
 
-CoherentSum::CoherentSum( const EventType& type, MinuitParameterSet& mps, const std::string& prefix )
+CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
   : m_protoAmplitudes( mps )
   , m_evtType( type )
   , m_prefix( prefix )
@@ -41,9 +41,9 @@ CoherentSum::CoherentSum( const EventType& type, MinuitParameterSet& mps, const 
   m_printFreq          = NamedParameter<size_t>("CoherentSum::PrintFrequency", 100 );
   m_verbosity          = NamedParameter<size_t>("CoherentSum::Verbosity"     , 0 );
   std::string objCache = NamedParameter<std::string>("CoherentSum::ObjectCache",""); 
-  auto amplitudes  = m_protoAmplitudes.getMatchingRules( m_evtType, prefix, useCartesian );
-  for( auto& amp : amplitudes ) addMatrixElement( amp, mps );
+  auto amplitudes      = m_protoAmplitudes.getMatchingRules( m_evtType, prefix, useCartesian );
 
+  for( auto& amp : amplitudes ) addMatrixElement( amp, mps );
   m_isConstant = isFixedPDF(mps);
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() );
   if( autoCompile ){ 
@@ -53,10 +53,10 @@ CoherentSum::CoherentSum( const EventType& type, MinuitParameterSet& mps, const 
   }
 }
 
-void CoherentSum::addMatrixElement( std::pair<Particle, Coupling>& particleWithCoupling, const MinuitParameterSet& mps )
+void CoherentSum::addMatrixElement( std::pair<Particle, CouplingConstant>& particleWithCouplingConstant, const MinuitParameterSet& mps )
 {
-  auto& protoParticle = particleWithCoupling.first;
-  auto& coupling      = particleWithCoupling.second;
+  auto& protoParticle = particleWithCouplingConstant.first;
+  auto& coupling      = particleWithCouplingConstant.second;
   if ( !protoParticle.isStateGood() ) {
     ERROR( "Decay tree not configured correctly for " << protoParticle.uniqueString() );
     m_stateIsGood = false;
@@ -137,13 +137,6 @@ void CoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIndice
     for ( size_t j = 0; j < size(); ++j )
       m_integrator.queueIntegral( cacheIndex[i], cacheIndex[j] ,i, j, &m_normalisations );
   m_integrator.flush();
-  if( m_prepareCalls == 0 ) {
-    for( int i = 0 ; i < m_matrixElements.size(); ++i ){
-      for( int j = 0 ; j < m_matrixElements.size(); ++j ){
-        std::cout << "I  "<<i << " " << j << " ) " << m_normalisations.get(i,j) << std::endl;
-      }
-    }
-  }
   m_normalisations.resetCalculateFlags();
 }
 
@@ -287,6 +280,7 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
   stream << std::setprecision( 10 );
   stream << "#include <complex>\n";
   stream << "#include <vector>\n";
+  stream << "#include <math.h>\n";
   if ( add_mt ) stream << "#include <thread>\n";
   bool includePythonBindings = NamedParameter<bool>("IncludePythonBindings",false);
   bool enableCuda            = NamedParameter<bool>("enable_cuda",false);
@@ -375,10 +369,7 @@ std::vector<size_t> CoherentSum::processIndex( const std::string& label ) const
 {
   std::vector<size_t> indices;
   for ( size_t i = 0; i < m_matrixElements.size(); ++i ) {
-    bool couplingIncludesThis = false;
-    for ( auto& reAndIm : m_matrixElements[i].coupling.couplings )
-      if ( reAndIm.first->name().find( label ) != std::string::npos ) couplingIncludesThis = true;
-    if ( couplingIncludesThis ) indices.push_back( i );
+    if ( m_matrixElements[i].coupling.contains(label) ) indices.push_back( i );
   }
   return indices;
 }
@@ -388,7 +379,7 @@ std::string CoherentSum::getParentProcess( const std::string& label ) const
   auto pI = processIndex( label );
   if ( pI.size() == 0 ) return "";
   auto coupling = m_matrixElements[pI[0]].coupling.couplings;
-  for ( unsigned int i = 0; i < coupling.size(); ++i ) {
+  for ( size_t i = 0; i < coupling.size(); ++i ) {
     if ( coupling[i].first->name().find( label ) != std::string::npos ) {
       return i == 0 ? m_evtType.mother() : coupling[i - 1].first->name();
     }
@@ -407,31 +398,25 @@ unsigned int CoherentSum::getPdfIndex( const std::string& name ) const
 
 bool CoherentSum::isFixedPDF(const MinuitParameterSet& mps) const
 {
-  for ( auto& p : m_matrixElements ) {
-    for( auto& c : p.coupling.couplings ) 
-      if( c.first->iFixInit() == 0 or 
-          c.second->iFixInit() == 0 ) return false; 
+  for ( auto& matrixElement : m_matrixElements ) {
+    if( ! matrixElement.coupling.isFixed() ) return false; 
   }
   return true;
 }
 
 void CoherentSum::PConjugate()
 {
-  for ( auto& amp : m_matrixElements ) {
-    if ( amp.decayTree->finalStateParity() == -1 ) {
-      auto& top_coupling = *amp.coupling.couplings.begin();
-      top_coupling.second->setCurrentFitVal( top_coupling.second->mean() + M_PI );
-    }
+  for ( auto& matrixElement : m_matrixElements ) {
+    if ( matrixElement.decayTree->finalStateParity() == -1 ) matrixElement.coupling.changeSign();
   }
 }
 
 std::complex<double> CoherentSum::getValNoCache( const Event& evt ) const
 {
-  std::complex<double> value( 0, 0 );
-  for ( auto& mE : m_matrixElements ) {
-    value += mE.coefficient * mE( evt );
-  }
-  return value;
+  return std::accumulate( m_matrixElements.begin(), 
+                          m_matrixElements.end(), 
+                          complex_t(0,0), 
+                          [&evt]( auto& a, auto& b ){ return a + b.coefficient * b(evt);} );
 }
 
 void CoherentSum::reset( bool resetEvents )
@@ -445,7 +430,7 @@ void CoherentSum::setEvents( EventList& list )
 {
   if ( m_verbosity ) INFO( "Setting events to size = " << list.size() << " for " << this );
   reset();
-  m_events = &( list );
+  m_events = &list;
 }
 void CoherentSum::setMC( EventList& sim )
 {
@@ -456,15 +441,7 @@ void CoherentSum::setMC( EventList& sim )
 
 double CoherentSum::norm() const
 {
-  std::complex<double> acc( 0, 0 );
-  for ( size_t i = 0; i < size(); ++i ) {
-    for ( size_t j = 0; j < size(); ++j ) {
-      auto val =
-        m_normalisations.get( i, j ) * m_matrixElements[i].coefficient * std::conj( m_matrixElements[j].coefficient );
-      acc += val;
-    }
-  }
-  return acc.real();
+  return norm( m_normalisations );
 }
 
 double CoherentSum::norm( const Bilinears& norms ) const
@@ -489,17 +466,15 @@ void CoherentSum::transferParameters()
   for ( auto& mE : m_matrixElements ) mE.coefficient = mE.coupling();
 }
 
-void CoherentSum::printVal( const Event& evt, bool isSim )
+void CoherentSum::printVal( const Event& evt )
 {
   for ( auto& mE : m_matrixElements ) {
     unsigned int address = mE.addressData;
     std::cout << mE.decayTree->uniqueString() << " = " << mE.coefficient << " x " << evt.getCache( address )
       << " address = " << address << " " << mE( evt ) << std::endl;
     if( mE.coupling.couplings.size() != 1 ){
-      std::cout << "Couplings: " << std::endl;
-      for ( auto& ci : mE.coupling.couplings ) {
-        std::cout << ci.first->name() << " " << ci.first->mean() << " " << ci.second->mean() << std::endl;
-      }
+      std::cout << "CouplingConstants: " << std::endl;
+      mE.coupling.print();
       std::cout << "================================" << std::endl;
     }
   }

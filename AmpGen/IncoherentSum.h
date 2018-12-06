@@ -24,8 +24,7 @@ namespace AmpGen
   {
 
   public:
-    IncoherentSum( const EventType& finalStates, AmpGen::MinuitParameterSet& mps,
-                       const std::string& prefix = "Inco" );
+    IncoherentSum( const EventType& finalStates, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "Inco" );
 
     double getVal( const Event& evt ) const;
     double operator()( const Event& evt ) const;

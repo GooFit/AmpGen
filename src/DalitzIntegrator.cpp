@@ -46,7 +46,7 @@ double DalitzIntegrator::sqDp2( const Event& evt ) const
   TLorentzVector p2( evt.address( 4 ) );
   TLorentzVector p3( evt.address( 8 ) );
   TLorentzVector pA = p1 + p2;
-  return acos( AmpGen::Product( p1, p3, pA ) / sqrt( AmpGen::Product( p1, p1, pA ) * AmpGen::Product( p3, p3, pA ) ) ) / M_PI;
+  return acos( Product( p1, p3, pA ) / sqrt( Product( p1, p1, pA ) * Product( p3, p3, pA ) ) ) / M_PI;
 }
 
 void DalitzIntegrator::setEvent( const sqCo& x, double* event ) const
@@ -153,7 +153,7 @@ TH1D* DalitzIntegrator::makePlot( const std::function<double(const double*)>& fc
   auto plot = projection.plot();
   double event[12];
   for ( unsigned int i = 0; i < 12; ++i ) event[i] = 0;
-  AmpGen::Event evtCache( 12 );
+  Event evtCache( 12 );
   for ( unsigned int i = 0; i < nSamples; ++i ) {
     sqCo pos = {gRandom->Uniform(), gRandom->Uniform()};
     setEvent( pos, event );
@@ -169,7 +169,7 @@ TH2D* DalitzIntegrator::makePlot( const std::function<double(const double*)>& fc
   auto plot = projection.plot();
   double event[12];
   for ( unsigned int i = 0; i < 12; ++i ) event[i] = 0;
-  AmpGen::Event evtCache( 12 );
+  Event evtCache( 12 );
   for ( unsigned int i = 0; i < nSamples; ++i ) {
     sqCo pos = {gRandom->Uniform(), gRandom->Uniform()};
     setEvent( pos, event );

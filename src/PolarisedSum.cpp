@@ -29,7 +29,9 @@
 
 using namespace AmpGen;
 
-PolarisedSum::PolarisedSum( const EventType& type, AmpGen::MinuitParameterSet& mps, const std::string& prefix ) : 
+PolarisedSum::PolarisedSum( const EventType& type, 
+                            MinuitParameterSet& mps, 
+                            const std::string& prefix ) : 
   m_mps(&mps),
   m_eventType(type)
 {
@@ -227,13 +229,13 @@ void PolarisedSum::debug_norm()
   INFO( "nNorms = " << nNorms << " nZeros = " <<nZeros );
 }
 
-void   PolarisedSum::setEvents( AmpGen::EventList& events )
+void   PolarisedSum::setEvents( EventList& events )
 { 
   reset();
   m_events = &events;
 }
 
-void   PolarisedSum::setMC( AmpGen::EventList& events )
+void   PolarisedSum::setMC( EventList& events )
 {
   m_nCalls = 0;
   m_integrator = Integrator<18>(&events);
@@ -291,7 +293,7 @@ complex_t PolarisedSum::TE( const Event& event, const size_t& x, const size_t& y
 }
 
 
-double PolarisedSum::prob_unnormalised( const AmpGen::Event& evt ) const
+double PolarisedSum::prob_unnormalised( const Event& evt ) const
 {
   return m_probExpression( evt.getCachePtr(0) );
 }
@@ -363,7 +365,7 @@ void PolarisedSum::calculateNorms(const std::vector<size_t>& changedPdfIndices )
   for( size_t i = 0 ; i < 6; ++i ) m_norms[i].resetCalculateFlags();
 }
 
-double PolarisedSum::prob( const AmpGen::Event& evt ) const {
+double PolarisedSum::prob( const Event& evt ) const {
   return m_weight * prob_unnormalised(evt) / m_norm;
 }
 
@@ -455,9 +457,9 @@ void PolarisedSum::transferParameters()
   for( auto& me : m_matrixElements ) me.pdf.prepare();
 }
 
-real_t PolarisedSum::getValNoCache( const AmpGen::Event& evt )  {
+real_t PolarisedSum::getValNoCache( const Event& evt )  {
   transferParameters();
-  AmpGen::Event copy(evt);
+  Event copy(evt);
   copy.resizeCache( size() );
   for( auto& me :  m_matrixElements ){
     auto values = me(copy);

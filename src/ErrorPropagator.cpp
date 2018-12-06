@@ -8,7 +8,7 @@
 
 using namespace AmpGen;
 
-GaussErrorPropagator::GaussErrorPropagator( const TMatrixD& reducedCovariance, const std::vector<AmpGen::MinuitParameter*>& params, TRandom3* rnd )
+GaussErrorPropagator::GaussErrorPropagator( const TMatrixD& reducedCovariance, const std::vector<MinuitParameter*>& params, TRandom3* rnd )
   : m_parameters( params ), m_rand( rnd ), m_decomposedCholesky( params.size(), params.size() )
 {
 
@@ -217,4 +217,4 @@ TMatrixD LinearErrorPropagator::correlationMatrix(const std::vector<std::functio
   return cov_matrix;
 }
 
-const std::vector<AmpGen::MinuitParameter*>& LinearErrorPropagator::params() const { return m_parameters; }
+const std::vector<MinuitParameter*>& LinearErrorPropagator::params() const { return m_parameters; }

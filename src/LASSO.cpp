@@ -9,11 +9,6 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Types.h"
 
-namespace AmpGen
-{
-  class MinuitParameterSet;
-} // namespace AmpGen
-
 using namespace AmpGen;
 
 double LASSO::getVal() const
@@ -26,8 +21,9 @@ double LASSO::getVal() const
   return m_lambda * sum;
 }
 
-void LASSO::configure( const std::string& configString, const AmpGen::CoherentSum& pdf,
-                       const AmpGen::MinuitParameterSet& mps )
+void LASSO::configure( const std::string& configString, 
+                       const CoherentSum& pdf,
+                       const MinuitParameterSet& mps )
 {
   m_pdf       = &( pdf );
   auto tokens = split( configString, ' ' );

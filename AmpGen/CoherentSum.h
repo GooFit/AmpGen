@@ -29,14 +29,14 @@ namespace AmpGen
   template <class RT>
   struct TransitionMatrix {
     std::shared_ptr<Particle>                           decayTree;
-    Coupling                                            coupling;
+    CouplingConstant                                    coupling;
     complex_t                                           coefficient;
     CompiledExpression<RT,const real_t*,const real_t*>  pdf; 
     size_t                                              addressData = {999};
     const RT operator()( const Event& event ) const { return pdf(event.address() ); }
     TransitionMatrix(){};
     TransitionMatrix( const std::shared_ptr<Particle>& dt, 
-                      const Coupling& coup, 
+                      const CouplingConstant& coup, 
                       const CompiledExpression<RT, const real_t*, const real_t*> & _pdf ) : 
           decayTree( dt ), 
           coupling( coup ), 
@@ -48,31 +48,8 @@ namespace AmpGen
 
   class CoherentSum
   {
-  protected:
-    std::vector<TransitionMatrix<complex_t>> m_matrixElements; ///< Vector of (expanded) matrix elements
-    Bilinears m_normalisations;                  ///< Normalisation integrals
-    AmplitudeRules m_protoAmplitudes;            ///< Proto amplitudes from user rule-set
-    Integrator<10> m_integrator;                 ///< Integral dispatch tool (with default unroll = 10) 
-    TransitionMatrix<complex_t> m_total;         ///< Total Matrix Element 
-    EventList* m_events            = {nullptr};  ///< Data events to evaluate PDF on
-    EventType  m_evtType;                        ///< Final state for this amplitude
-    MinuitParameter* m_weightParam = {nullptr};  ///< Weight parameter (i.e. the normalised yield)
-    size_t m_prepareCalls          = {0};        ///< Number of times prepare has been called
-    size_t m_lastPrint             = {0};        ///< Last time verbose PDF info was printed
-    size_t m_printFreq             = {0};        ///< Frequency to print verbose PDF info
-    double m_weight                = {1};        ///< Weight number (i.e. the normalised yield)
-    double m_norm                  = {0};        ///< Normalisation integral
-    std::string m_prefix           = {""};       ///< Prefix for matrix elements
-    bool m_stateIsGood             = {true};     ///< Flag for the state being good
-    bool m_isConstant              = {false};    ///< Flag for a constant PDF
-    bool m_dbThis                  = {false};    ///< Flag to generate amplitude level debugging
-    bool m_verbosity               = {false};    ///< Flag for verbose printing
-
-    void addMatrixElement( std::pair<Particle, Coupling>& particleWithCoupling, const MinuitParameterSet& mps );
-    bool isFixedPDF(const MinuitParameterSet& mps) const;
-
   public:
-    CoherentSum( const EventType& type, AmpGen::MinuitParameterSet& mps, const std::string& prefix = "" );
+    CoherentSum( const EventType& type, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "" );
 
     real_t operator()( const Event& evt ) const { return prob( evt ); }
 
@@ -106,7 +83,7 @@ namespace AmpGen
     complex_t norm( const unsigned int& x, const unsigned int& y ) const;
     void transferParameters();
     void prepare();
-    void printVal( const Event& evt, bool isSim = false );
+    void printVal( const Event& evt );
     void updateNorms( const std::vector<unsigned int>& changedPdfIndices );
     
     std::vector<unsigned int> cacheAddresses( const EventList& evts ) const
@@ -150,6 +127,30 @@ namespace AmpGen
     std::map<std::string, std::vector<unsigned int>> getGroupedAmplitudes();
     void resync();
     Bilinears norms() const { return m_normalisations ; }
+  
+  protected:
+    std::vector<TransitionMatrix<complex_t>> m_matrixElements; ///< Vector of (expanded) matrix elements
+    Bilinears m_normalisations;                  ///< Normalisation integrals
+    AmplitudeRules m_protoAmplitudes;            ///< Proto amplitudes from user rule-set
+    Integrator<10> m_integrator;                 ///< Integral dispatch tool (with default unroll = 10) 
+    TransitionMatrix<complex_t> m_total;         ///< Total Matrix Element 
+    EventList* m_events            = {nullptr};  ///< Data events to evaluate PDF on
+    EventType  m_evtType;                        ///< Final state for this amplitude
+    MinuitParameter* m_weightParam = {nullptr};  ///< Weight parameter (i.e. the normalised yield)
+    size_t m_prepareCalls          = {0};        ///< Number of times prepare has been called
+    size_t m_lastPrint             = {0};        ///< Last time verbose PDF info was printed
+    size_t m_printFreq             = {0};        ///< Frequency to print verbose PDF info
+    double m_weight                = {1};        ///< Weight number (i.e. the normalised yield)
+    double m_norm                  = {0};        ///< Normalisation integral
+    std::string m_prefix           = {""};       ///< Prefix for matrix elements
+    bool m_stateIsGood             = {true};     ///< Flag for the state being good
+    bool m_isConstant              = {false};    ///< Flag for a constant PDF
+    bool m_dbThis                  = {false};    ///< Flag to generate amplitude level debugging
+    bool m_verbosity               = {false};    ///< Flag for verbose printing
+
+    void addMatrixElement( std::pair<Particle, CouplingConstant>& particleWithCoupling, const MinuitParameterSet& mps );
+    bool isFixedPDF(const MinuitParameterSet& mps) const;
+
   };
 } // namespace AmpGen
 

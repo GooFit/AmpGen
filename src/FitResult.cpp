@@ -125,9 +125,9 @@ void FitResult::writeToFile( const std::string& fname )
   outlog.close();
 }
 
-FitResult::FitResult( const AmpGen::Minimiser& mini )
+FitResult::FitResult( const Minimiser& mini )
 {
-  m_mps  = std::make_shared<AmpGen::MinuitParameterSet>( *mini.parSet() );
+  m_mps  = std::make_shared<MinuitParameterSet>( *mini.parSet() );
   m_LL   = mini.FCN();
   auto M = mini.covMatrixFull();
   m_covarianceMatrix.ResizeTo( M.GetNcols(), M.GetNrows() );
@@ -140,9 +140,9 @@ FitResult::FitResult( const AmpGen::Minimiser& mini )
   }
 }
 
-FitResult::FitResult( const AmpGen::MinuitParameterSet& mps, const TMatrixD& covMini ) : FitResult()
+FitResult::FitResult( const MinuitParameterSet& mps, const TMatrixD& covMini ) : FitResult()
 {
-  m_mps = std::make_shared<AmpGen::MinuitParameterSet>( mps );
+  m_mps = std::make_shared<MinuitParameterSet>( mps );
   if ( int( mps.size() ) != covMini.GetNcols() ) {
     ERROR( "Minuit parameter set size does not match covariance matrix size!" );
   }
@@ -176,16 +176,16 @@ FitResult::FitResult( const FitResult& other )
   m_covarianceMatrix = other.cov();
 }
 
-std::vector<AmpGen::MinuitParameter*> FitResult::getParameters() const
+std::vector<MinuitParameter*> FitResult::getParameters() const
 {
-  std::vector<AmpGen::MinuitParameter*> params;
+  std::vector<MinuitParameter*> params;
   for ( auto& param : *m_mps ) params.push_back( param );
   return params;
 }
 
-std::vector<AmpGen::MinuitParameter*> FitResult::getFloating( const bool& extended ) const
+std::vector<MinuitParameter*> FitResult::getFloating( const bool& extended ) const
 {
-  std::vector<AmpGen::MinuitParameter*> floating;
+  std::vector<MinuitParameter*> floating;
   for ( auto& param : *m_mps ) {
     if ( ( param->iFixInit() == 0 || extended ) && param->err() > 1e-6 ) floating.push_back( param );
   }

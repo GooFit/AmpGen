@@ -254,8 +254,8 @@ Tensor AmpGen::operator/( const Tensor& t1, const double& t2 ) { return t1 / Con
 Tensor AmpGen::operator*( const double& other, const Tensor& t1 ) { return Constant( other ) * t1; }
 Tensor AmpGen::operator*( const Tensor& t1, const double& other ) { return t1 * Constant( other ); }
 
-void AmpGen::Tensor::operator+=( const Tensor& rhs ){ *this = *this + rhs; }
-void AmpGen::Tensor::operator-=( const Tensor& rhs ){ *this = *this - rhs; }
+void Tensor::operator+=( const Tensor& rhs ){ *this = *this + rhs; }
+void Tensor::operator-=( const Tensor& rhs ){ *this = *this - rhs; }
 Expression AmpGen::dot( const Tensor& A, const Tensor& B )
 {
   if ( A.nElements() == 1 && B.nElements() == 1 ) return A[0] * B[0];

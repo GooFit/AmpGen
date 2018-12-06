@@ -119,5 +119,5 @@ PhaseSpace::PhaseSpace( const EventType& type, TRandom* rand ) : m_rand( rand ),
     m_decayTime = 6.582119514 / ( ParticlePropertiesList::get( type.mother() )->width() * pow( 10, 13 ) );
 }
 
-AmpGen::EventType PhaseSpace::eventType() const { return m_type; }
+EventType PhaseSpace::eventType() const { return m_type; }
 

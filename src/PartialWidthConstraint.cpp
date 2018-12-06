@@ -10,11 +10,7 @@
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Types.h"
-
-namespace AmpGen
-{
-  class MinuitParameterSet;
-} // namespace AmpGen
+#include "AmpGen/MinuitParameterSet.h"
 
 using namespace AmpGen;
 
@@ -39,8 +35,9 @@ double PartialWidthConstraint::getVal() const
   return m_weight * ( ratio - m_ratio ) * ( ratio - m_ratio );
 }
 
-void PartialWidthConstraint::configure( const std::string& configString, const AmpGen::CoherentSum& pdf,
-                                        const AmpGen::MinuitParameterSet& mps )
+void PartialWidthConstraint::configure( const std::string& configString, 
+                                        const CoherentSum& pdf,
+                                        const MinuitParameterSet& mps )
 {
 
   m_pdf                                = &( pdf );

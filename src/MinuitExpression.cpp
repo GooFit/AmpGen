@@ -8,11 +8,6 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
 
-namespace AmpGen
-{
-  class MinuitParameterSet;
-} // namespace AmpGen
-
 using namespace AmpGen;
 
 MinuitExpression::MinuitExpression( const std::vector<std::string>& tokens, MinuitParameterSet* mps )

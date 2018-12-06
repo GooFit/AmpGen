@@ -14,8 +14,10 @@
 
 using namespace AmpGen;
 
-IncoherentSum::IncoherentSum( const EventType& finalStates, AmpGen::MinuitParameterSet& mps,
-    const std::string& prefix ) : CoherentSum( finalStates, mps, prefix )
+IncoherentSum::IncoherentSum( const EventType& finalStates, 
+                              const MinuitParameterSet& mps,
+                              const std::string& prefix ) : 
+  CoherentSum( finalStates, mps, prefix )
 {
   m_normalisations.resize( size(), 1 );
 }
@@ -60,7 +62,8 @@ void IncoherentSum::prepare()
   if( m_prepareCalls == 0 ){
     for( size_t i = 0 ; i < m_matrixElements.size(); ++i ){
       auto& mE = m_matrixElements[i];
-      m_integrator.queueIntegral( m_integrator.events().getCacheIndex ( mE.pdf) ,0,i,0,&m_normalisations, false );
+      auto index = m_integrator.events().getCacheIndex( mE.pdf );
+      m_integrator.queueIntegral( index, index, i, 0, &m_normalisations, false);
     }
     m_integrator.flush();
   }

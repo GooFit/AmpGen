@@ -34,24 +34,6 @@ namespace AmpGen
 
   class PolarisedSum
   {
-    private: 
-      size_t                        m_size        = {0}; 
-      size_t                        m_nCalls      = {0};
-      real_t                        m_norm        = {1};
-      EventList*                    m_events      = {nullptr};
-      MinuitParameter*              m_weightParam = {nullptr}; 
-      MinuitParameterSet*           m_mps         = {nullptr};
-      double                        m_weight      = {1}; 
-      std::vector<MinuitProxy>      m_pVector     = {}; 
-      Integrator<18>                m_integrator;
-      std::array<Bilinears,6>       m_norms;
-      std::vector<std::vector<int>> m_polStates; 
-      EventType                     m_eventType;
-      std::vector<TransitionMatrix<std::vector<complex_t>>>        m_matrixElements;  
-      CompiledExpression< real_t, const real_t*, const complex_t*> m_probExpression; 
-     
-      std::vector< std::vector< int > > polarisationOuterProduct( const std::vector< std::vector< int > >& A, const std::vector< int >& B ) const;
-      std::vector<int> polarisations( const std::string& name ) const ;
     public: 
       PolarisedSum( const EventType& eventType, AmpGen::MinuitParameterSet& mps, const std::string& prefix="" );
       void prepare();
@@ -75,6 +57,25 @@ namespace AmpGen
       std::vector<TransitionMatrix<std::vector<complex_t>>> matrixElements() const;
       void transferParameters(); 
       Tensor transitionMatrix();
+    
+    private: 
+      size_t                        m_size        = {0}; 
+      size_t                        m_nCalls      = {0};
+      real_t                        m_norm        = {1};
+      EventList*                    m_events      = {nullptr};
+      MinuitParameter*              m_weightParam = {nullptr}; 
+      const MinuitParameterSet*     m_mps         = {nullptr};
+      double                        m_weight      = {1}; 
+      std::vector<MinuitProxy>      m_pVector     = {}; 
+      Integrator<18>                m_integrator;
+      std::array<Bilinears,6>       m_norms;
+      std::vector<std::vector<int>> m_polStates; 
+      EventType                     m_eventType;
+      std::vector<TransitionMatrix<std::vector<complex_t>>>        m_matrixElements;  
+      CompiledExpression< real_t, const real_t*, const complex_t*> m_probExpression; 
+     
+      std::vector< std::vector< int > > polarisationOuterProduct( const std::vector< std::vector< int > >& A, const std::vector< int >& B ) const;
+      std::vector<int> polarisations( const std::string& name ) const ;
   };
 } // namespace AmpGen
 

@@ -11,7 +11,7 @@
 
 using namespace AmpGen;
 
-FitFraction::FitFraction( const std::string& line, const AmpGen::EventType& evtType )
+FitFraction::FitFraction( const std::string& line, const EventType& evtType )
 {
   auto tokens = split( line, ' ' );
   m_name      = tokens[1];

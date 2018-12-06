@@ -232,8 +232,8 @@ int main( int argc, char* argv[] )
 
   const std::string cut         = NamedParameter<std::string>( "Cut", "1" );
   const std::string simCut      = NamedParameter<std::string>( "SimCut", "1" );
-  unsigned int defaultCacheSize = count_amplitudes( MPS );
-  bool BAR = NamedParameter<bool>("Bar",false);
+  bool BAR                      = NamedParameter<bool>("Bar",false);
+  size_t defaultCacheSize       = count_amplitudes( MPS );
 
   EventList events( dataFile, !BAR ? evtType : evtType.conj() , CacheSize(defaultCacheSize), Filter(cut) );
   EventList eventsMC = mcFile == "" ? EventList( evtType) : EventList( mcFile, !BAR ? evtType : evtType.conj() , CacheSize(defaultCacheSize), Filter(simCut) ) ;

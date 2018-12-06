@@ -8,10 +8,6 @@
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Types.h"
 
-namespace AmpGen {
-class ASTResolver;
-}  // namespace AmpGen
-
 using namespace AmpGen;
 
 template <class T>
@@ -33,7 +29,7 @@ DEFINE_UNARY_OPERATOR( Real, std::real )
 DEFINE_UNARY_OPERATOR( Imag, std::imag )
 //DEFINE_UNARY_OPERATOR( ISqrt, rsqrt )
 
-ISqrt::ISqrt( const AmpGen::Expression& expression) : IUnaryExpression(expression) {} 
+ISqrt::ISqrt( const Expression& expression) : IUnaryExpression(expression) {} 
 ISqrt::operator Expression() const { return Expression( std::make_shared<ISqrt>(*this) ) ; } 
 complex_t ISqrt::operator()() const { return 1./sqrt( m_expression() ); } 
 std::string ISqrt::to_string(const ASTResolver* resolver) const {   

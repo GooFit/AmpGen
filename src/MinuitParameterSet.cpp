@@ -148,7 +148,7 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
       if ( OptionsParser::printHelp() )
         INFO( "MINUIT: Registered " << line[0] << " (flag " << flag << ") = " << mean << ", step=" << step << " ("
                                     << min << "," << max << ")" );
-      add( new AmpGen::MinuitParameter( line[0], MinuitParameter::Flag(flag), mean, step, min, max ) );
+      add( new MinuitParameter( line[0], MinuitParameter::Flag(flag), mean, step, min, max ) );
     }
     return;
   }
@@ -185,8 +185,8 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
       INFO( "MINUIT: Complex " << line[0] << "_Im (flag " << flag_im << ") = " << mean_im << ", step=" << step_im
                                << " (" << min_im << "," << max_im << ")" );
     }
-    add( new AmpGen::MinuitParameter( line[0] + "_Re", MinuitParameter::Flag(flag_re), mean_re, step_re, min_re, max_re ) );
-    add( new AmpGen::MinuitParameter( line[0] + "_Im", MinuitParameter::Flag(flag_im), mean_im, step_im, min_im, max_im ) );
+    add( new MinuitParameter( line[0] + "_Re", MinuitParameter::Flag(flag_re), mean_re, step_re, min_re, max_re ) );
+    add( new MinuitParameter( line[0] + "_Im", MinuitParameter::Flag(flag_im), mean_im, step_im, min_im, max_im ) );
   }
   if ( line.size() == 11  ) {
 
@@ -203,8 +203,8 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
     double max_im  = lexical_cast<double>( line[10], status );
     if ( !status ) return;
 
-    add( new AmpGen::MinuitParameter( line[0] + "_Re", MinuitParameter::Flag(flag_re), mean_re, step_re, min_re, max_re ) );
-    add( new AmpGen::MinuitParameter( line[0] + "_Im", MinuitParameter::Flag(flag_im), mean_im, step_im, min_im, max_im ) );
+    add( new MinuitParameter( line[0] + "_Re", MinuitParameter::Flag(flag_re), mean_re, step_re, min_re, max_re ) );
+    add( new MinuitParameter( line[0] + "_Im", MinuitParameter::Flag(flag_im), mean_im, step_im, min_im, max_im ) );
   }
 }
 
