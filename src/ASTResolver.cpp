@@ -13,23 +13,18 @@
 using namespace AmpGen;
 
 ASTResolver::ASTResolver(const std::map<std::string, size_t>& evtMap, 
-                         const MinuitParameterSet* mps ) : 
+    const MinuitParameterSet* mps ) : 
   evtMap(evtMap),
   mps(mps), 
   nParameters(0)
 {
-  enable_cuda = NamedParameter<bool>("enable_cuda",false);
+  enable_cuda                 = NamedParameter<bool>("enable_cuda",false);
   enable_compileTimeConstants = NamedParameter<bool>("enable_compileTimeConstants",false);
 }
 
 bool ASTResolver::hasSubExpressions() const 
 { 
   return subTrees.size() != 0; 
-}
-
-void ASTResolver::clearSubTrees() 
-{ 
-  subTrees.clear(); 
 }
 
 void ASTResolver::reduceSubTrees()
@@ -78,59 +73,88 @@ void ASTResolver::getOrderedSubExpressions(
   std::reverse( dependentSubexpressions.begin(), dependentSubexpressions.end() );
 }
 
-template <> void ASTResolver::resolve<Parameter>( Parameter& parameter )
+template <> void ASTResolver::resolve<SubTree>( const SubTree& subTree )
 {
+  if( tempTrees.count( &subTree ) != 0 ) return;
+  tempTrees[&subTree] = 1;
+}
+
+template <> void ASTResolver::resolve<Spline>( const Spline& spline )
+{ 
+  if( m_resolvedParameters.count( &spline) != 0  ) return ; 
+  auto address = addCacheFunction<SplineTransfer>(spline.m_name,spline.m_nKnots,spline.m_min,spline.m_max);
+  addResolvedParameter( &spline, address );
+  addResolvedParameter( spline.m_points.top().get(), address );  
+  auto splineTransfer = dynamic_cast<SplineTransfer*>( m_cacheFunctions[spline.m_name].get() );
+  if( mps == nullptr ) ERROR("Fix me!");
+  for( unsigned int i = 0 ; i < spline.m_nKnots; ++i ) 
+    splineTransfer->set(i, mps->find(spline.m_name+"::"+std::to_string(i)) );
+}
+
+template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
+{
+  if( m_resolvedParameters.count(&parameter) != 0 || parameter.isResolved() ) return; 
   auto res = evtMap.find(parameter.m_name);
+  std::string compiled_string = "";
   if( res != evtMap.end() ){
     if( enable_cuda ) {
-      parameter.m_resolved = true;
       size_t t = res->second; 
       std::string it = ""; 
       if( t % 3 == 0 ) it = "x";
       if( t % 3 == 1 ) it = "y";
       if( t % 3 == 2 ) it = "z";
       int stg = t/3;
-      if( stg == 0 ) parameter.m_name = "x1[i]."+it;
-      else if( stg == 1 ) parameter.m_name = "x1[i+N]."+it;
-      else parameter.m_name = "x1[i+"+std::to_string(stg)+"*N]." + it;
-     // parameter.m_name = "x1[i+"+std::to_string(res->second)+"*N]";
+      std::string nTimesStg = "+"+std::to_string(stg) +"*N"; 
+      if( stg == 0 ) nTimesStg = "";
+      if( stg == 1 ) nTimesStg = "N";
+      addResolvedParameter( &parameter, "x1[i"+nTimesStg+"]" +it );
+      return;
     }
-    else parameter.m_address = res->second; 
-    return; 
+    else {
+      addResolvedParameter( &parameter, res->second ,1 );
+      return;
+    }
   }
   else if( mps != nullptr ){
     auto it = mps->find(parameter.m_name);
     if( it != nullptr ){
       if( enable_compileTimeConstants && 
           it->iFixInit() == MinuitParameter::Flag::CompileTimeConstant ){
-        parameter.m_defaultValue = it->mean();
-        parameter.m_compileTimeConstant = true; 
+        addResolvedParameter( &parameter, std::to_string(it->mean()) );
+        return;
       }
-      else parameter.m_address = addCacheFunction<ParameterTransfer>( parameter.m_name, it );
-      return;
+      else {
+        addResolvedParameter( &parameter, addCacheFunction<ParameterTransfer>( parameter.m_name, it )  );
+        return;
+      }
     }
   }
   else if( enable_compileTimeConstants ){
-    parameter.m_compileTimeConstant = true; 
-    return; 
+    addResolvedParameter( &parameter, std::to_string( parameter.defaultValue() ) );
+    return;
   }
-  parameter.m_address = addCacheFunction<CacheTransfer>( parameter.m_name, parameter.m_defaultValue );
+  auto address = addCacheFunction<CacheTransfer>( parameter.m_name, parameter.m_defaultValue );
+  addResolvedParameter( &parameter, address );
+}
+std::map<std::string, std::shared_ptr<CacheTransfer>> ASTResolver::cacheFunctions() const { return m_cacheFunctions;}
+
+void ASTResolver::addResolvedParameter(const IExpression* param, const std::string& thing) 
+{
+  m_resolvedParameters[param] = thing; 
 }
 
-template <> void ASTResolver::resolve<SubTree>( SubTree& subTree )
+void ASTResolver::addResolvedParameter(const IExpression* param, const size_t& address, const size_t& arg) 
 {
-  if( tempTrees.count( &subTree ) != 0 ) return;
-  tempTrees[&subTree] = 1;
+  m_resolvedParameters[param] = "x"+std::to_string(arg)+"["+std::to_string(address)+"]";
 }
 
-template <> void ASTResolver::resolve<Spline>( Spline& spline )
+std::string ASTResolver::resolvedParameter( const IExpression* param ) const
 {
-  spline.m_points.m_address = addCacheFunction<SplineTransfer>(spline.m_name,spline.m_nKnots,spline.m_min,spline.m_max);
-  auto splineTransfer = dynamic_cast<SplineTransfer*>( m_cacheFunctions[spline.m_name].get() );
-  if( mps == nullptr ) ERROR("Fix me!");
-  if( spline.m_values.size() == 0 ){
-    for( unsigned int i = 0 ; i < spline.m_nKnots; ++i ) 
-      splineTransfer->set(i, mps->find(spline.m_name+"::"+std::to_string(i)) );
+  auto it = m_resolvedParameters.find(param);
+  if( it != m_resolvedParameters.end() ) return it->second; 
+  else {
+    ERROR( "Parameter cannot be resolved" << param );
+    return "";
   }
-  else for( unsigned int i = 0 ; i < spline.m_nKnots; ++i ) splineTransfer->set(i,spline.m_values[i]) ;
 }
+

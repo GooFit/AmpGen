@@ -42,7 +42,11 @@ void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
     sym.second.resolve( *m_resolver ); 
     m_resolver->getOrderedSubExpressions( sym.second, m_debugSubexpressions );
   }
-  resolveParameters(*m_resolver);
+  m_cacheTransfers.clear();
+  for( auto& expression : m_resolver->cacheFunctions() ) 
+    m_cacheTransfers.emplace_back( expression.second ); 
+  resizeExternalCache( m_resolver->nParams() ); 
+  prepare(); 
 }
 
 CompiledExpressionBase::CompiledExpressionBase( const Expression& expression, 
@@ -61,16 +65,6 @@ CompiledExpressionBase::CompiledExpressionBase( const std::string& name )
 
 std::string CompiledExpressionBase::name() const { return m_name; }
 unsigned int CompiledExpressionBase::hash() const { return FNV1a_hash(m_name); }
-
-void CompiledExpressionBase::resolveParameters( ASTResolver& resolver )
-{
-  auto ppdf = this;
-  m_cacheTransfers.clear();
-  for( auto& expression : resolver.cacheFunctions() ) 
-    m_cacheTransfers.emplace_back( expression.second ); 
-  ppdf->resizeExternalCache(resolver.nParams() ); 
-  prepare();
-}
 
 void CompiledExpressionBase::prepare()
 {

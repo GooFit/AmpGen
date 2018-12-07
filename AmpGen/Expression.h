@@ -187,13 +187,13 @@ namespace AmpGen
     operator Expression() const;
     complex_t operator()() const override { return complex_t( m_defaultValue, 0 ); }
     std::string name() const { return m_name; }
+    double defaultValue() const { return m_defaultValue ; }
+    bool isResolved() const { return m_resolved ;}
     Expression clone() const override;
     std::string  m_name;
-    bool         m_resolved;
-    bool         m_compileTimeConstant;
-    unsigned int m_fromArg;
-    unsigned int m_address;
     double       m_defaultValue;
+    bool         m_resolved; 
+    unsigned int m_fromArg;
   };
 
   /** @ingroup ExpressionEngine class Ternary 
@@ -223,12 +223,10 @@ namespace AmpGen
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const ;
     complex_t operator()() const override { return m_expression(); }
-    Expression clone() const override { return SubTree( m_expression.clone() ); }
-    
-    uint64_t key() const; 
-    void setKey( const uint64_t& k ) ; 
+    Expression clone() const override { return SubTree( m_expression.clone() ); }  
+    uint64_t key() const;
+    void setKey( const size_t& new_key ); 
     Expression  m_expression;
-    std::string m_name;
     uint64_t    m_key; 
   };
 

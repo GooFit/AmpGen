@@ -14,17 +14,30 @@
 
 using namespace AmpGen; 
 
-Spline::Spline(const std::string& name, const size_t& nBins, const double& min, const double& max, const std::vector<double>& values) :
-  m_points( Parameter(name), 2*nBins ),
+Spline::Spline(const std::string& name, 
+    const size_t& nKnots, 
+    const double& min, 
+    const double& max ) :
+  m_points( Parameter(name), 2*nKnots ),
   m_name(name),
-  m_nKnots(nBins),
+  m_nKnots(nKnots),
   m_min(min),
-  m_max(max),
-  m_values(values){}
+  m_max(max) {}
 
-Expression Spline::operator()( const Expression& x , DebugSymbols* db )
+Spline::Spline(const Spline& spline, 
+    const Expression& x )
+  : 
+    m_points( spline.m_points ),
+    m_name(   spline.m_name),
+    m_nKnots( spline.m_nKnots),
+    m_min(    spline.m_min ),
+    m_max(    spline.m_max ),
+    m_x  ( x ),
+    m_eval( eval() )  {
+    }
+Expression Spline::operator()( const Expression& x )
 {
-  return Expression( SplineExpression(*this,x, db ) );
+  return Spline(*this,x); 
 }
 
 Expression AmpGen::getSpline( const std::string& name, const Expression& x, const std::string& arrayName,
@@ -43,37 +56,28 @@ Expression AmpGen::getSpline( const std::string& name, const Expression& x, cons
     max   = NamedParameter<double>( name + "::Spline::Max", 0. );
   }
   std::string spline_name = name + "::Spline::"+arrayName;
-  Spline shape( spline_name, nBins, min, max );
-  return shape(x, dbexpressions); 
+  return Spline( spline_name, nBins, min,max )(x);
 }
 
-Expression Spline::eval(const Expression& xp, DebugSymbols* db )
+Expression Spline::eval() const 
 {
-  Expression x   = make_cse(xp);
+  Expression x   = make_cse(m_x);
   double spacing = ( m_max - m_min ) / ( (double)m_nKnots - 1. );
   Expression dx  = Fmod( x - m_min, spacing );
   Expression bin = ( x - m_min ) / spacing;
   Expression continuedValue            = 0;
-  ADD_DEBUG( x   ,db );
-  ADD_DEBUG( dx  ,db );
-  ADD_DEBUG( bin ,db );
-  ADD_DEBUG( m_points[bin], db );
-  ADD_DEBUG( m_points[bin+1], db );
-  ADD_DEBUG( m_points[bin+m_nKnots], db );
-  ADD_DEBUG( m_points[bin+1+m_nKnots], db );
 
   Expression returnValue = Ternary( x > m_min && x < m_max,
       m_points[bin] + ( ( m_points[bin + 1] - m_points[bin] ) / spacing 
-      - ( m_points[bin + 1 + m_nKnots] + 2 * m_points[bin+m_nKnots] ) * spacing / 6. ) * dx 
+        - ( m_points[bin + 1 + m_nKnots] + 2 * m_points[bin+m_nKnots] ) * spacing / 6. ) * dx 
       + m_points[bin+m_nKnots] * dx * dx / 2. 
       + dx * dx * dx * ( m_points[bin+1+m_nKnots] - m_points[bin+m_nKnots] ) / ( 6. * spacing ),
       continuedValue );
-
-  return SubTree(returnValue);
+  return make_cse(returnValue);
 }
 
-  void SplineTransfer::print() const { INFO( "Source: " << m_parameters[0]->name() ); }
-  SplineTransfer::SplineTransfer() = default;
+void SplineTransfer::print() const { INFO( "Source: " << m_parameters[0]->name() ); }
+SplineTransfer::SplineTransfer() = default;
 
 SplineTransfer::SplineTransfer( const SplineTransfer& other )
   : CacheTransfer()
@@ -146,40 +150,28 @@ void SplineTransfer::transfer( CompiledExpressionBase* destination )
     DEBUG( "Knot["<<i<<"] : value = (" << m_parameters[i]->mean() << ", "  << m_address +i << ") "
         << " curvature = (" << mvectors[i] << " , " << m_address + m_nKnots +i << ")" );
     destination->setExternal( m_parameters[i]->mean(), m_address + i );
-    destination->setExternal( mvectors[i], m_address + m_nKnots + i );
-  
+    destination->setExternal( mvectors[i], m_address + m_nKnots + i );  
   }
 }
 
 void Spline::resolve( ASTResolver& resolver )
 {
   resolver.resolve(*this);
-  // m_points.m_address = resolver.addCacheFunction<SplineTransfer>(m_name,m_nKnots,m_min,m_max);
- // auto splineTransfer = dynamic_cast<SplineTransfer*>( resolver.cacheFunctions[m_name].get() );
- // if( resolver.mps == nullptr ) ERROR("Fix me!");
- // if( m_values.size() == 0 ){
- //   for( unsigned int i = 0 ; i < m_nKnots; ++i ) 
- //     splineTransfer->set(i, resolver.mps->find(m_name+"::"+std::to_string(i)) );
- // }
- // else for( unsigned int i = 0 ; i < m_nKnots; ++i ) splineTransfer->set(i,m_values[i]) ;
-}
-
-SplineExpression::SplineExpression( const Spline& parent, const Expression& x , DebugSymbols* db) : 
-  m_parent(std::make_shared<Spline>(parent)), 
-  m_x(x), 
-  m_eval( m_parent->eval(x, db) ) {}
-
-void SplineExpression::resolve( ASTResolver& resolver ) 
-{ 
-  m_parent->resolve(resolver);  
+  m_x.resolve(resolver);
   m_eval.resolve(resolver);
 }
 
-void Spline::set( const std::vector<real_t>& values )
-{
-  if( values.size() != m_nKnots ){ 
-    ERROR("Sizes do not match");
-    return;
-  }
-  m_values = values; 
-}
+/*
+   void Spline::set( const std::vector<real_t>& values )
+   {
+   if( values.size() != m_nKnots ){ 
+   ERROR("Sizes do not match");
+   return;
+   }
+   m_values = values; 
+   }
+   */
+std::string Spline::to_string(const ASTResolver* resolver) const { return m_eval.to_string(resolver) ; } 
+Spline::operator Expression() { return Expression( std::make_shared<Spline>( *this ) ); }
+complex_t Spline::operator()() const  { return 0; }
+Expression Spline::clone() const { return Spline(*this,m_x) ; }

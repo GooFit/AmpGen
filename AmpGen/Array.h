@@ -15,47 +15,23 @@
 namespace AmpGen
 {
   class ASTResolver;
+  class Array : public IExpression {
+    public:
+      Array( const Expression& top, 
+          const size_t&     size,
+          const Expression& address = 0 );
+      Expression clone() const override ;
 
-  struct Array {
-    Expression   m_top;
-    size_t       m_address; 
-    size_t       m_size; 
-    Array( const Expression& expression, const size_t& size ) : 
-      m_top(expression), 
-      m_address(9999),
-      m_size(size) {}
-    Expression operator[]( const Expression& address );
-    virtual ~Array() = default;
-    void resolve( ASTResolver& resolver ) ;
-    Array clone() const { 
-      return Array( m_top.clone(), m_size );
-    }
-  };
-
-  struct ArrayExpression : public IExpression {
-    std::shared_ptr<Array> m_parent;
-    Expression m_addressOffset;
-    Expression clone() const {
-      return ArrayExpression( m_parent->clone(), m_addressOffset.clone() );
-    }
-
-    ArrayExpression( const Array& parent, const Expression& address )
-        : m_parent( std::make_shared<Array>( parent ) ), m_addressOffset( address )
-    {
-    }
-    ArrayExpression( const std::shared_ptr<Array>& parent, const Expression& address )
-        : m_parent(parent), m_addressOffset( address )
-    {
-    }
-    std::string to_string(const ASTResolver* resolver=nullptr) const override ;
-
-    void resolve( ASTResolver& resolver ) override
-    {
-      m_addressOffset.resolve( resolver );
-      m_parent->resolve( resolver );
-    }
-    operator Expression() { return Expression( std::make_shared<ArrayExpression>( *this ) ); }
-    complex_t operator()() const override { return 0; }
+      std::string to_string(const ASTResolver* resolver=nullptr) const override ;
+      void resolve( ASTResolver& resolver ) override;
+      operator Expression(); 
+      complex_t operator()() const override;
+      Expression operator[]( const Expression& address ) const;
+      Expression top() const { return m_top ; } 
+    private:
+      Expression m_top; 
+      Expression m_address;
+      size_t     m_size; 
   };
 } // namespace AmpGen
 

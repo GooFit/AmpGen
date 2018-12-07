@@ -70,7 +70,6 @@ namespace AmpGen
   private:
     void addDebug( std::ostream& stream ) const;
     void addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const;
-    void resolveParameters( ASTResolver& resolver );
   };
   std::ostream& operator<<( std::ostream& os, const CompiledExpressionBase& expression );
 }// namespace AmpGen

@@ -16,7 +16,7 @@ using namespace AmpGen;
 DEFINE_LINESHAPE( AxialKaon )
 {
   ERROR("This lineshape does not work as intended, should not be used");
-
+/*
   
   Spline rho_Krho("rho_Krho",20, 0.597247, 5, 
       {5.35636e-23, 0.000210696, 0.00208479, 0.00993997, 0.0415061, 0.120885, 0.196599, 0.256062, 0.304949, 0.34693, 0.384132, 0.417868, 0.448995, 0.478101, 0.505606, 0.531815, 0.556963, 0.581226, 0.604745, 0.627631});
@@ -57,5 +57,6 @@ DEFINE_LINESHAPE( AxialKaon )
     M = M + F[{channel, i}] * pole.couplings[i];
   }
   return SubTree( M / ( pole.s - s ) );
-
+  */
+  return 0;
 }

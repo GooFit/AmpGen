@@ -167,20 +167,18 @@ Expression AmpGen::operator==( const Expression& A, const double& B ){ return A 
 Parameter::Parameter( const std::string& name, const double& defaultValue, const bool& resolved,
     const unsigned int& fromArg )
   : m_name( name )
+  , m_defaultValue( defaultValue )
   , m_resolved( resolved )
-  , m_compileTimeConstant(false)
   , m_fromArg( fromArg )
-  , m_address( 9999 )
-    , m_defaultValue( defaultValue )
 {
 }
 
 std::string Parameter::to_string(const ASTResolver* resolver) const
 {
-  if ( m_resolved )            return m_name;
-  if ( m_compileTimeConstant ) return "(" + std::to_string(m_defaultValue) + ")" ;
-  if ( m_address != 9999 )     return "x" + std::to_string( m_fromArg ) + "[" + std::to_string( m_address ) + "]";
-  else return m_name; 
+  if ( m_resolved || resolver == nullptr ){
+    return m_name; 
+  }
+  return resolver->resolvedParameter(this);
 }
 
 Expression Parameter::clone() const 
@@ -188,13 +186,10 @@ Expression Parameter::clone() const
   Parameter par; 
   par.m_name                = m_name; 
   par.m_resolved            = m_resolved; 
-  par.m_compileTimeConstant = m_compileTimeConstant; 
   par.m_fromArg             = m_fromArg; 
-  par.m_address             = m_address; 
   par.m_defaultValue        = m_defaultValue; 
   return par; 
 }
-
 
 Expression AmpGen::operator<( const Expression& A, const Expression& B ) { return Expression( LessThan( A, B ) ); }
 Expression AmpGen::operator>( const Expression& A, const Expression& B ) { return Expression( GreaterThan( A, B ) ); }
@@ -226,7 +221,7 @@ Ternary::Ternary( const Expression& cond, const Expression& v1, const Expression
 }
 std::string Ternary::to_string(const ASTResolver* resolver) const
 {
-  return "(" + m_cond.to_string() + "?" + m_v1.to_string() + ":" + m_v2.to_string() + ")";
+  return "(" + m_cond.to_string(resolver) + "?" + m_v1.to_string(resolver) + ":" + m_v2.to_string(resolver) + ")";
 }
 
 void Ternary::resolve( ASTResolver& resolver )
@@ -237,10 +232,8 @@ void Ternary::resolve( ASTResolver& resolver )
 }
 
 SubTree::SubTree( const Expression& other ) : 
-  m_expression( other ), 
-  m_name( "" ) 
-{
-}
+  m_expression( other ),
+  m_key( FNV1a_hash(m_expression.to_string() ) ) {}
 
 Function::Function( const std::string& name, const std::vector<Expression>& args ) :
   m_name(name),
@@ -258,8 +251,7 @@ void Function::resolve( ASTResolver& resolver ) {}
 
 std::string SubTree::to_string(const ASTResolver* /*resolver*/) const 
 {
-  std::string name = m_name == "" ? "v"+ std::to_string( FNV1a_hash( m_expression.to_string() ) ) : m_name ; 
-  return name;
+  return "v"+ std::to_string(key());
 }
 
 void SubTree::resolve( ASTResolver& resolver ) 
@@ -278,13 +270,11 @@ Expression AmpGen::make_cse( const Expression& A , bool simplify )
   return Expression(cse);
 }
 
-
-uint64_t SubTree::key() const { return m_name == "" ? FNV1a_hash(m_expression.to_string()) : m_key ; }
-void SubTree::setKey( const uint64_t& k ){
-  m_key = k; 
-  m_name = "v"+std::to_string(k);
+uint64_t SubTree::key() const { return m_key ; } // FNV1a_hash(m_expression.to_string()); }
+void     SubTree::setKey( const size_t& new_key )
+{
+  m_key = new_key;
 }
-
 template <class TYPE> Expression simplify_constant_unary( const Expression& arg )
 {
   return is<Constant>(arg) ? Expression(TYPE(arg)()) : Expression(TYPE(arg)); 

@@ -8,41 +8,40 @@
 
 using namespace AmpGen; 
 
-Expression AmpGen::Array::operator[]( const AmpGen::Expression& expression )
-{
-  return Expression( ArrayExpression( *this, expression ) );
+Expression Array::clone() const {
+  return Array( m_top, m_size, m_address ); 
 }
 
-void Array::resolve( ASTResolver& resolver ) 
+Array::Array( const Expression& top, 
+    const size_t&     size,
+    const Expression& address)
+  : m_top(top),
+  m_address(address),
+  m_size(size)
 {
-  double value = 0.0; 
-  if( is<Parameter>(m_top) ){
-    auto param = cast<Parameter>(m_top);
-    param.resolve( resolver );
-    if( ! param.m_resolved ) param.m_address = resolver.addCacheFunction<CacheTransfer>( param.m_name, value , m_size );
-    m_address = param.m_address; 
-  }
-  else {
-    m_address = 0;
-    m_top.resolve( resolver );
-  }
 }
 
-std::string ArrayExpression::to_string(const ASTResolver* resolver) const
-{
-  auto& top = m_parent->m_top;
+std::string Array::to_string(const ASTResolver* resolver) const {
+  auto head   = m_top.to_string(resolver);
+  auto offset = m_address.to_string(resolver);
+  auto pos = head.find_last_of("]");
+  if( pos != std::string::npos ){
+    auto st1 = head.substr(0,pos);
+    auto st2 = head.substr(pos,head.size() - pos );
+    return st1 + "+int("+offset+")" + st2;
+  }
+  else return head +"[ int("+offset+")]";
+}
 
-  if( is<Parameter>(top) ){
-    auto param = cast<Parameter>( top );
-    std::string top_name = "x"+std::to_string(param.m_fromArg); 
-    if( is<Constant>( m_addressOffset ) ){     
-      return top_name + "["+ std::to_string( int( m_parent->m_address + std::real( m_addressOffset() ) ) ) +"]"; 
-    }
-    else 
-      return top_name + "["+ std::to_string( m_parent->m_address ) + "+int("+m_addressOffset.to_string(resolver) +")]"; 
-  }
-  else {
-    if( is<Constant>(m_addressOffset ) ) return top.to_string(resolver) + "["+std::to_string( int(std::real(m_addressOffset())) ) + "]";
-    else return top.to_string(resolver) + "[int("+m_addressOffset.to_string(resolver) +")]";
-  }
+void Array::resolve( ASTResolver& resolver )
+{
+  m_top.resolve( resolver );
+  m_address.resolve( resolver );
+}
+
+Array::operator Expression() { return Expression( std::make_shared<Array>( *this ) ); }
+complex_t Array::operator()() const { return 0; }
+
+Expression Array::operator[]( const Expression& address ) const { 
+  return Array( m_top, m_size, address );
 }
