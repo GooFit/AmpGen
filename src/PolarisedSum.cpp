@@ -26,6 +26,7 @@
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/ThreadPool.h"
+#include "AmpGen/ProfileClock.h"
 
 using namespace AmpGen;
 
@@ -136,21 +137,13 @@ size_t count_zeros( std::array<Bilinears,6>& norms, const size_t& N )
   return nZeros; 
 }
 
-struct pclock {
-  std::chrono::_V2::system_clock::time_point t_start; 
-  std::chrono::_V2::system_clock::time_point t_end; 
-  pclock() : t_start(   std::chrono::high_resolution_clock::now()) {}
-  void stop(){ t_end = std::chrono::high_resolution_clock::now() ; }
-  operator double() const { return std::chrono::duration<double, std::milli>( t_end - t_start ).count() ; } ; 
-};
-
 void   PolarisedSum::prepare()
 {
   auto dim = m_eventType.dim();
   std::vector<size_t> changedPdfIndices; 
-  pclock tEval; 
+  ProfileClock tEval; 
   for( size_t i = 0; i < m_matrixElements.size(); ++i ){
-    pclock tMEval;
+    ProfileClock tMEval;
     auto& t = m_matrixElements[i];
     t.pdf.prepare();
     if( m_nCalls != 0 && !t.pdf.hasExternalsChanged() ) continue; 
@@ -168,7 +161,7 @@ void   PolarisedSum::prepare()
   m_probExpression.prepare(); 
   m_weight = m_weightParam == nullptr ? 1 : m_weightParam->mean();
   tEval.stop(); 
-  pclock tIntegral; 
+  ProfileClock tIntegral; 
   if( m_integrator.isReady() )
   {
     if( changedPdfIndices.size() != 0 ) calculateNorms(changedPdfIndices);

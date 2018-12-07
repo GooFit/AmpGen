@@ -23,6 +23,7 @@
 #include "AmpGen/CompiledExpressionBase.h"
 #include "AmpGen/CompilerWrapper.h"
 #include "AmpGen/ThreadPool.h"
+#include "AmpGen/ProfileClock.h"
 
 #ifdef __USE_OPENMP__
   #include <omp.h>
@@ -42,7 +43,6 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   m_verbosity          = NamedParameter<size_t>("CoherentSum::Verbosity"     , 0 );
   std::string objCache = NamedParameter<std::string>("CoherentSum::ObjectCache",""); 
   auto amplitudes      = m_protoAmplitudes.getMatchingRules( m_evtType, prefix, useCartesian );
-
   for( auto& amp : amplitudes ) addMatrixElement( amp, mps );
   m_isConstant = isFixedPDF(mps);
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() );
@@ -82,46 +82,39 @@ void CoherentSum::prepare()
   transferParameters(); 
   
   std::vector<unsigned int> changedPdfIndices;
-  auto tStartEval = std::chrono::high_resolution_clock::now();
+  ProfileClock clockEval; 
   bool printed    = false;
 
   for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) {
     auto& pdf = m_matrixElements[i].pdf;
+    pdf.prepare();
     if ( m_prepareCalls != 0 && !pdf.hasExternalsChanged() ) continue;
-    auto t_start = std::chrono::high_resolution_clock::now();
+    ProfileClock clockThisElement;
     if ( m_events != nullptr ) {
-      if ( m_matrixElements[i].addressData == 999 ){
-        m_matrixElements[i].addressData = m_events->registerExpression( pdf );
-        DEBUG("Registering expression " << i << " = " << m_matrixElements[i].addressData );
-      }
+      if ( m_matrixElements[i].addressData == 999 ) m_matrixElements[i].addressData = m_events->registerExpression( pdf );
       m_events->updateCache( pdf, m_matrixElements[i].addressData );
-    } else if ( i == 0 && m_verbosity ) {
-      WARNING( "No data events specified for " << this );
-    }
-    auto t_end = std::chrono::high_resolution_clock::now();
-    auto time  = std::chrono::duration<double, std::milli>( t_end - t_start ).count();
+    } 
+    else if ( i == 0 && m_verbosity ) WARNING( "No data events specified for " << this );
+    clockThisElement.stop();
     if ( m_verbosity && ( m_prepareCalls > m_lastPrint + m_printFreq || m_prepareCalls == 0 ) ) {
-      INFO( pdf.name() << " (t = " << time << " ms, nCalls = " << m_prepareCalls << ", events = " << m_events->size() << ")" );
+      INFO( pdf.name() << " (t = " << clockThisElement << " ms, nCalls = " << m_prepareCalls << ", events = " << m_events->size() << ")" );
       printed = true;
     }
-    changedPdfIndices.push_back( i );
+    changedPdfIndices.push_back(i);
     pdf.resetExternals();
   }
-  auto tStartIntegral = std::chrono::high_resolution_clock::now();
-
+  clockEval.stop();
+  ProfileClock clockIntegral;
   if ( m_integrator.isReady())  updateNorms( changedPdfIndices );
   else if ( m_verbosity ) WARNING( "No simulated sample specified for " << this );
   
   m_norm = norm();
   if ( m_verbosity && printed ) {
-    auto tNow        = std::chrono::high_resolution_clock::now();
-    double timeEval  = std::chrono::duration<double, std::milli>( tStartIntegral - tStartEval ).count();
-    double timeIntg  = std::chrono::duration<double, std::milli>( tNow - tStartIntegral ).count();
-    double timeTotal = std::chrono::duration<double, std::milli>( tNow - tStartEval ).count();
+    clockIntegral.stop();
     INFO( "Time Performance: "
-        << "Eval = " << timeEval << " ms"
-        << ", Integral = " << timeIntg << " ms"
-        << ", Total = " << timeTotal << " ms; normalisation = "  << m_norm );
+        << "Eval = "       << clockEval     << " ms"
+        << ", Integral = " << clockIntegral << " ms"
+        << ", Total = "    << clockEval + clockIntegral << " ms; normalisation = "  << m_norm );
     m_lastPrint = m_prepareCalls;
   }
   m_prepareCalls++;
@@ -148,8 +141,7 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
     for ( auto& pdf : m_matrixElements ) {
       auto v = pdf(evt);
       INFO( std::setw(90) << pdf.decayTree->uniqueString() << " = " <<  std::real(v) << " " << std::imag(v) << " cached = " << 
-          evt.getCache(  pdf.addressData ) 
-          );
+          evt.getCache(  pdf.addressData ) );
       if( m_dbThis ) pdf.pdf.debug( evt );
     }
   else
@@ -215,10 +207,8 @@ std::vector<FitFraction> CoherentSum::fitFractions( const LinearErrorPropagator&
   bool hardcore     = NamedParameter<bool>( "Hardcore", false );
   bool interference = NamedParameter<bool>( "Interference", false );
   auto FitFractions = [this, &AllCalculators, &hardcore]() {
-    if ( hardcore )
-      this->prepare();
-    else
-      this->transferParameters();
+    if ( hardcore ) this->prepare();
+    else this->transferParameters();
     std::vector<double> rv;
     for ( auto& pCalc : AllCalculators ) {
       for ( auto& calc : pCalc.calculators ) rv.push_back( calc() );
@@ -360,7 +350,6 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
     }
     stream << "  return 0;\n}\n";
   }
-
   INFO("Generating source-code for PDF: " << fname << " include MT symbols? " << add_mt << " normalisation = " << normalisation );
   stream.close();
 }

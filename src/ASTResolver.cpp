@@ -108,12 +108,11 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
       if( stg == 0 ) nTimesStg = "";
       if( stg == 1 ) nTimesStg = "N";
       addResolvedParameter( &parameter, "x1[i"+nTimesStg+"]" +it );
-      return;
     }
     else {
       addResolvedParameter( &parameter, res->second ,1 );
-      return;
     }
+    return;
   }
   else if( mps != nullptr ){
     auto it = mps->find(parameter.m_name);
@@ -121,12 +120,9 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
       if( enable_compileTimeConstants && 
           it->iFixInit() == MinuitParameter::Flag::CompileTimeConstant ){
         addResolvedParameter( &parameter, std::to_string(it->mean()) );
-        return;
       }
-      else {
-        addResolvedParameter( &parameter, addCacheFunction<ParameterTransfer>( parameter.m_name, it )  );
-        return;
-      }
+      else addResolvedParameter( &parameter, addCacheFunction<ParameterTransfer>( parameter.m_name, it )  );
+      return;
     }
   }
   else if( enable_compileTimeConstants ){

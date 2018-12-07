@@ -27,16 +27,16 @@ DEFINE_CAST( Function )
 
 Expression::Expression( const std::shared_ptr<IExpression>& expression ) : m_expression( expression ) {}
 
-std::string Expression::to_string(const ASTResolver* resolver) const
+std::string  Expression::to_string(const ASTResolver* resolver) const
 {
   if ( m_expression == nullptr || get() == nullptr ) {
     ERROR( "No expression contained in this node!" );
   }
   return m_expression->to_string(resolver);
 }
-IExpression* Expression::get() const { return m_expression.get(); }
 
-complex_t Expression::operator()() const { return ( *m_expression )(); }
+IExpression* Expression::get() const { return m_expression.get(); }
+complex_t    Expression::operator()() const { return ( *m_expression )(); }
 
 template < class T > 
 bool isEqual( const T& A, const double& B ){
