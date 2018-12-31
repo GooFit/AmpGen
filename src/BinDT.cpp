@@ -473,7 +473,6 @@ const BinDT::EndNode* BinDT::Decision::operator()( const double* evt ) const
   return *( evt + m_index ) < m_value ? ( *m_right )( evt ) : ( *m_left )( evt );
 }
 
-void BinDT::Decision::setChildren( std::shared_ptr<BinDT::INode> l, std::shared_ptr<BinDT::INode> r );
 void BinDT::Decision::visit( const std::function<void(BinDT::INode*)>& visit_function )
 {
   visit_function( this );
