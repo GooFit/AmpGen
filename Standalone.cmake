@@ -7,14 +7,17 @@ if(DEFINED ENV{ROOTSYS})
   list(APPEND CMAKE_MODULE_PATH "$ENV{ROOTSYS}/etc/cmake/")
 endif()
 
-find_package(ROOT CONFIG REQUIRED COMPONENTS Minuit2 Matrix MathMore MathCore Gpad Tree Graf)
+find_package(ROOT CONFIG REQUIRED COMPONENTS Matrix MathMore MathCore Gpad Tree Graf)
 
-# if(NOT TARGET ROOT::Minuit2)
-#     add_subdirectory("extern/Minuit2")
-#     set_target_properties(Minuit2 PROPERTIES FOLDER extern)
-#     set_target_properties(Minuit2Math PROPERTIES FOLDER extern)
-#     add_library(ROOT::Minuit2 ALIAS Minuit2)
-# endif()
+if(NOT TARGET ROOT::Minuit2 OR "${extern_minuit2}" )
+  message( STATUS "Use external Minuit2") 
+  add_subdirectory("extern/Minuit2")
+  set_target_properties(Minuit2 PROPERTIES FOLDER extern)
+  set_target_properties(Minuit2Math PROPERTIES FOLDER extern)
+  add_library(ROOT::Minuit2 ALIAS Minuit2)
+  else()
+    message( STATUS "Use ROOT::Minuit2")
+endif()
 
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
@@ -62,6 +65,10 @@ target_link_libraries(AmpGen
   PUBLIC
   ${ROOT_LIBRARIES}
   ${CMAKE_DL_LIBS})
+
+target_link_libraries(AmpGen
+  INTERFACE 
+  ROOT::Minuit2 )
 
 target_compile_definitions(AmpGen
   PUBLIC
