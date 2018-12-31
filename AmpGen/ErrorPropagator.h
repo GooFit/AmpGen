@@ -1,7 +1,6 @@
 #ifndef AMPGEN_ERRORPROPAGATOR_H
 #define AMPGEN_ERRORPROPAGATOR_H
 
-#include <ext/alloc_traits.h>
 #include <cmath>
 #include <stddef.h>
 #include <string>
