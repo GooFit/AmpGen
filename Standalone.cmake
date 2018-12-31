@@ -9,6 +9,13 @@ endif()
 
 find_package(ROOT CONFIG REQUIRED COMPONENTS Minuit2 Matrix MathMore MathCore Gpad Tree Graf)
 
+# if(NOT TARGET ROOT::Minuit2)
+#     add_subdirectory("extern/Minuit2")
+#     set_target_properties(Minuit2 PROPERTIES FOLDER extern)
+#     set_target_properties(Minuit2Math PROPERTIES FOLDER extern)
+#     add_library(ROOT::Minuit2 ALIAS Minuit2)
+# endif()
+
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
