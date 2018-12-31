@@ -114,6 +114,8 @@ Generator MyOpts.opt --nEvents=10000 --Output=output.root
 
 Which generates 10000 events of the model described in MyOpts.opt and saves them to output.root.
 
+![s01](https://gitlab.com/tevans1260/AmpGen/blob/master/doc/figs/s01.png)
+
 ### ConvertToSourceCode
 
 This produces source code to evalute the PDF, and normalises for use with other generators such as EvtGen, i.e. P(max) < 1. This can be used as
