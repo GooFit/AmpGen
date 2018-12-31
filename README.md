@@ -112,9 +112,10 @@ The standalone generator for models can be used as
 Generator MyOpts.opt --nEvents=10000 --Output=output.root
 ```
 
-Which generates 10000 events of the model described in MyOpts.opt and saves them to output.root.
+Which generates 10000 events of the model described in MyOpts.opt and saves them to output.root. The output should include a tree (DalitzEventList) of candidates with the full four-vectors, as well as one- and two-dimensional projections, an example of which is shown below:
 
-![s01](https://gitlab.com/tevans1260/AmpGen/blob/master/doc/figs/s01.png)
+![s01](doc/figs/s01.png)
+
 
 ### ConvertToSourceCode
 
