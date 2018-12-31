@@ -1,7 +1,6 @@
 #ifndef AMPGEN_BINDT_H
 #define AMPGEN_BINDT_H
 #include <memory.h>
-#include <bits/stdint-uintn.h>
 #include <stddef.h>
 #include <array>
 #include <cstdint>

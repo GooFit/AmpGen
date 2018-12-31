@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-#include <bits/stdint-intn.h>
 #include <stdlib.h>
 #include <chrono>
 #include <fstream>

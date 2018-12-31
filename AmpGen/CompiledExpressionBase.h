@@ -1,7 +1,6 @@
 #ifndef AMPGEN_COMPILEDEXPRESSIONBASE_H
 #define AMPGEN_COMPILEDEXPRESSIONBASE_H
 #include <memory.h>
-#include <bits/stdint-uintn.h>
 #include <stddef.h>
 #include <iosfwd>
 #include <map>

@@ -2,8 +2,6 @@
 #define AMPGEN_UTILITIES_H
 
 #include <cxxabi.h>
-#include <bits/stdint-intn.h>
-#include <bits/stdint-uintn.h>
 #include <stddef.h>
 #include <algorithm>
 #include <cstdint>

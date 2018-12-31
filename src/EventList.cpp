@@ -6,7 +6,6 @@
 #include <TTree.h>
 #include <TFile.h>
 
-#include <bits/stdint-uintn.h>
 #include <stddef.h>
 #include <complex>
 #include <cstdint>

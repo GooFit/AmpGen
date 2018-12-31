@@ -1,6 +1,5 @@
 #ifndef AMPGEN_COHERENCEFACTOR_H
 #define AMPGEN_COHERENCEFACTOR_H
-#include <bits/stdint-uintn.h>
 #include <stddef.h>
 #include <array>
 #include <cmath>

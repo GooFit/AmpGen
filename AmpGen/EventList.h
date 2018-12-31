@@ -11,6 +11,7 @@
 #include <functional>
 #include <numeric>
 #include <cstddef>
+#include <algorithm>
 
 #include <TH1D.h>
 #include <TH2D.h>
