@@ -20,29 +20,28 @@ namespace AmpGen
 
   class PhaseSpace
   {
+    public:
+      PhaseSpace()  = default; 
+      PhaseSpace( const EventType& type, TRandom* rand = nullptr );
+      ~PhaseSpace() = default;
+      
+      bool setDecay( const double& m0, const std::vector<double>& mass );
+      void setRandom( TRandom* rand ) { m_rand = rand; }
+      size_t size() const { return m_nt; }
+      AmpGen::Event makeEvent( const size_t& cacheSize = 0 );
+      AmpGen::EventType eventType() const;
 
-  private:
-    unsigned int m_nt        = {0}; // number of decay particles
-    double       m_mass[18]  = {0}; // masses of particles
-    double       m_teCmTm    = {0}; // total energy in the C.M. minus the total mass
-    double       m_wtMax     = {0}; // maximum weight 
-    double       m_decayTime = {0}; // decay time
-    TRandom*     m_rand      = {nullptr}; // Random number generator
-    EventType    m_type   ;               // EventType to generate
-    
-    double rndm() { return m_rand->Rndm(); }
-    double PDK( double a, double b, double c );
+    private:
+      unsigned int m_nt        = {0}; // number of decay particles
+      double       m_mass[18]  = {0}; // masses of particles
+      double       m_teCmTm    = {0}; // total energy in the C.M. minus the total mass
+      double       m_wtMax     = {0}; // maximum weight 
+      double       m_decayTime = {0}; // decay time
+      TRandom*     m_rand      = {nullptr}; // Random number generator
+      EventType    m_type;                  // EventType to generate
 
-  public:
-    PhaseSpace()  = default; 
-    ~PhaseSpace() = default;
-    PhaseSpace( const EventType& type, TRandom* rand = nullptr );
-    bool setDecay( const double& m0, const std::vector<double>& mass );
-    void setRandom( TRandom* rand ) { m_rand = rand; }
-    
-    size_t size() const { return m_nt; }
-    AmpGen::Event makeEvent( const size_t& cacheSize = 0 );
-    AmpGen::EventType eventType() const;
+      double rndm() { return m_rand->Rndm(); }
+      double PDK( double a, double b, double c );
   };
 } // namespace AmpGen
 #endif

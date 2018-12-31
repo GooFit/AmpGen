@@ -1,18 +1,19 @@
 #ifndef AMPGEN_PARTICLE_H
 #define AMPGEN_PARTICLE_H
 
-/// STL
 #include <complex>
 #include <vector>
 
-/// AmpGen
 #include "AmpGen/EventType.h"
 #include "AmpGen/Expression.h"
 #include "AmpGen/Tensor.h"
 #include "AmpGen/QuarkContent.h"
+
 namespace AmpGen
 {
   /** @class Particle
+      @brief Describes a particle, its decay process and subsequent decay products, which are also Particles. 
+
     Encodes a multi-body decay tree structure, is largely limited to describe a sequence 
     of quasi two-body processes (i.e. the isobar model) by the implemented lineshapes (propagators) and 
     spin structure (vertices) 
@@ -72,8 +73,7 @@ namespace AmpGen
 
     are relevant for the decay.   
     Similar to other components of AmpGen, Particles will rarely be constructed in the C++ context, 
-    and will instead be instantiated dynamically at runtime from a user supplied options file. 
-    */
+    and will instead be instantiated dynamically at runtime from a user supplied options file. */
   class ParticleProperties; 
   class Particle
   {
@@ -152,7 +152,7 @@ namespace AmpGen
       unsigned int index() const;
       unsigned int originalIndex() const;
 
-      ///@ function name of the decaying particle.
+      /// @function name of the decaying particle.
       std::string name() const;                   
             
       /// @function Propagator to use for the decay of this particle.

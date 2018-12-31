@@ -181,16 +181,6 @@ std::string Parameter::to_string(const ASTResolver* resolver) const
   return resolver->resolvedParameter(this);
 }
 
-Expression Parameter::clone() const 
-{
-  Parameter par; 
-  par.m_name                = m_name; 
-  par.m_resolved            = m_resolved; 
-  par.m_fromArg             = m_fromArg; 
-  par.m_defaultValue        = m_defaultValue; 
-  return par; 
-}
-
 Expression AmpGen::operator<( const Expression& A, const Expression& B ) { return Expression( LessThan( A, B ) ); }
 Expression AmpGen::operator>( const Expression& A, const Expression& B ) { return Expression( GreaterThan( A, B ) ); }
 

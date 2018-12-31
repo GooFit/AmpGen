@@ -46,6 +46,18 @@ std::string vectorToString( const std::vector<T>& obj, const std::string& delim 
   return ss.str();
 }
 
+template <class T, class F>
+std::string vectorToString( const std::vector<T>& obj, const std::string& delim="", const F& functor =[](auto& f){ return f ; }  )
+{
+  std::string returnValue;
+  std::stringstream ss;
+  if( obj.size() == 0 ) return "";
+  for ( unsigned int i = 0 ; i < obj.size()-1; ++i ) 
+    ss << functor(obj[i]) << delim;
+  ss << functor(obj[obj.size()-1]);
+  return ss.str();
+}
+
 template <class T> 
 std::vector<std::vector<T>> nCr( const T& n, const T& r )
 {

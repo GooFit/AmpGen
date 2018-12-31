@@ -31,16 +31,15 @@
     There is limited functionality for expressions to be evaluated in-situ to the default values associated with their parameters, which can useful for debugging purposes.
     The more typical usage is to use an expression to generate a CompiledExpression that compiles the expression and wraps the corresponding shared library with a functor. 
 
-    For unary functions, it is recommend to use the functions contained in the fcn:: namespace that have the same names as those in std::math, in particular, use of the unary classes directly can cause unexpected behaviour if used in conjunction with the auto keyword. 
-    \author T.Evans
-*/
+    For unary functions, it is recommend to use the functions contained in the fcn:: namespace that have the same names as those in std::math. 
+    Use of the unary classes directly can cause unexpected behaviour if used in conjunction with the auto keyword.*/
 
-/// \ingroup ExpressionEngine macro ADD_DEBUG
+/// @ingroup ExpressionEngine macro ADD_DEBUG
 /// Make a (named) debugging expression and add to a set of DebugSymbols.
 #define ADD_DEBUG( X, Y )                                               \
   if ( Y != 0 ) Y->push_back( DebugSymbol( std::string( #X ), X ) );    \
 
-/// \ingroup ExpressionEngine macro DEFINE_CAST 
+/// @ingroup ExpressionEngine macro DEFINE_CAST 
 /// Define a cast from an expression implementation to the shared_ptr wrapper. 
 #define DEFINE_CAST( X )                                    \
   X::operator Expression() const                            \
@@ -56,7 +55,7 @@
   complex_t X::operator()() const { return F( m_expression() ); } \
   std::string X::to_string(const ASTResolver* resolver) const { return std::string(#F)+"("+ m_expression.to_string(resolver)+")";}
 
-/// \ingroup ExpressionEngine macro DECLARE_UNARY_OPERATOR
+/// @ingroup ExpressionEngine macro DECLARE_UNARY_OPERATOR
 /// Macro to declare a unary operator, \ref ExpressionEngine "see IUnaryExpression"
 #define DECLARE_UNARY_OPERATOR( X )                         \
   class X : public IUnaryExpression {                       \
@@ -65,11 +64,10 @@
     virtual std::string to_string(const ASTResolver* resolver=nullptr) const override;         \
     virtual Expression d() const override;                  \
     operator Expression() const;                            \
-    Expression clone() const override { return X(m_expression.clone());} \
     virtual complex_t operator()() const override;          \
   }
 
-/// \ingroup ExpressionEngine macro DECLARE_BINARY_OPERATOR
+/// @ingroup ExpressionEngine macro DECLARE_BINARY_OPERATOR
 /// Macro to declare a binary operator, \ref ExpressionEngine "see IBinaryExpression"
 #define DECLARE_BINARY_OPERATOR( X )                        \
   class X : public IBinaryExpression {                      \
@@ -77,7 +75,6 @@
     X( const Expression& l, const Expression& r );          \
     virtual std::string to_string(const ASTResolver* resolver=nullptr) const override ;        \
     operator Expression() const ;                           \
-    Expression clone() const override { return X(lval.clone(),rval.clone());} \
     virtual complex_t operator()() const override;          \
   }
 
@@ -104,15 +101,14 @@ namespace AmpGen
   typedef std::pair<std::string, Expression> DebugSymbol;
   typedef std::vector<DebugSymbol> DebugSymbols;
 
-  /// \ingroup ExpressionEngine class IExpression 
-  ///  @brief Virtual base class for other expression tree components. <br>
-  ///  Implementations must permit the following operations on nodes.
+  /** @ingroup ExpressionEngine class IExpression 
+      @brief Virtual base class for other expression tree components. <br>
+      Implementations must permit the following operations on nodes. */
   class IExpression {
     public:
       /// Called to convert the Expression tree into source code.
       /// \return The source code as a string
       virtual std::string to_string(const ASTResolver* resolver=nullptr) const = 0;
-
       /// Resolve the dependencies of a tree using an ASTResolver,
       /// which keeps track of parameters, dependent sub-trees, etc.
       /// \param resolver resolver object to use 
@@ -122,12 +118,11 @@ namespace AmpGen
       /// Evaluate the expression using the tree, 
       /// will generally be very slow but ocassionally useful for debugging. 
       virtual complex_t operator()() const = 0;
-      virtual Expression clone() const = 0; 
   };
 
-  /// \ingroup ExpressionEngine cclass Expression 
-  /// Wrapper for shared_ptrs to virtual expressions for use with overloaded operators, 
-  /// i.e. what expression trees should be constructed from. 
+  /** @ingroup ExpressionEngine cclass Expression 
+      @brief Wrapper class for shared_ptrs to virtual expressions for use in conjunction with operators 
+      to build expression trees. */
   class Expression { 
     public:
     Expression();
@@ -143,16 +138,15 @@ namespace AmpGen
     Expression operator-=( const Expression& other ) const;
     Expression operator/=( const Expression& other ) const;
     Expression operator-() const;
-    Expression clone() const { return m_expression->clone(); } 
     complex_t operator()() const; 
 
   private:
     std::shared_ptr<IExpression> m_expression;
   };
 
-  /// \ingroup ExpressionEngine class Constant
-  /// Class to contain a complex valued complex 
-  class Constant : public IExpression {
+  /** @ingroup ExpressionEngine class Constant
+      @brief Class to contain a constant (which can contain a complex value) */
+   class Constant : public IExpression {
     public:
     template < typename T1, 
                typename T2,
@@ -164,19 +158,17 @@ namespace AmpGen
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const;
     complex_t operator()() const override { return m_value; }
-    Expression clone() const override { return Constant(m_value); }
     private:
     complex_t m_value;
   };
 
   /** @ingroup ExpressionEngine class Parameter
-   @brief Free parameter for expression 
+      @brief Free parameter for expression 
   
-   Class to contain a function parameter. In general, this will include global function parameters 
+   Class to contain a parameter. In general, this will include global function parameters 
    such as masses and widths, as well as the event buffer (i.e. kinematic quantities), which should be stored in 
    two separated parameter packs. There is also limited support for handling more complex function parameters to functions, 
-   such as cache states, but this currently requires manually specifying the argument ordering. 
-  */
+   such as cache states, but this currently requires manually specifying the argument ordering. */
   struct Parameter : public IExpression {
     Parameter( const std::string& name     = "", 
                const double&  defaultValue = 0 , 
@@ -189,7 +181,6 @@ namespace AmpGen
     std::string name() const { return m_name; }
     double defaultValue() const { return m_defaultValue ; }
     bool isResolved() const { return m_resolved ;}
-    Expression clone() const override;
     std::string  m_name;
     double       m_defaultValue;
     bool         m_resolved; 
@@ -202,28 +193,25 @@ namespace AmpGen
       The equivalent c++ code would be
       \code{.cpp}
       return a ? b : c 
-      \endcode 
-  */
+      \endcode */
   struct Ternary : public IExpression {
     Ternary( const Expression& cond, const Expression& v1, const Expression& v2 );
     std::string to_string(const ASTResolver* resolver = nullptr ) const override;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const ;
     complex_t operator()() const override { return std::real(m_cond()) ? m_v1() : m_v2(); }
-    Expression clone() const override { return Ternary( m_cond.clone(), m_v1.clone(), m_v2.clone() ) ; } 
     Expression m_cond;
     Expression m_v1;
     Expression m_v2;
   };
 
-  /// \ingroup ExpressionEngine class SubTree
+  /// @ingroup ExpressionEngine class SubTree
   struct SubTree : public IExpression { 
     SubTree( const Expression& other ) ;
     std::string to_string(const ASTResolver* resolver = nullptr ) const override ;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const ;
     complex_t operator()() const override { return m_expression(); }
-    Expression clone() const override { return SubTree( m_expression.clone() ); }  
     uint64_t key() const;
     void setKey( const size_t& new_key ); 
     Expression  m_expression;
@@ -236,16 +224,11 @@ namespace AmpGen
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const ;
     complex_t operator()() const override { return 0; }  
-    Expression clone() const override { 
-      std::vector<Expression> cloned_args; 
-      for( auto& arg : m_args ) cloned_args.push_back( arg.clone() );
-      return Function( m_name, cloned_args );
-    } 
     std::string m_name;
     std::vector<Expression> m_args;
   };
 
-  /// \ingroup ExpressionEngine class IBinaryExpression
+  /// @ingroup ExpressionEngine class IBinaryExpression
   ///  Base class for binary expressions, i.e. those that take a pair of arguments (such as \f$+,-,\times,/\f$)
   class IBinaryExpression : public IExpression {
     public:
@@ -259,45 +242,45 @@ namespace AmpGen
     Expression rval;
   };
 
-  /// \ingroup ExpressionEngine class Sum 
-  /// \brief Binary expression that returns \f$l+r\f$
+  /// @ingroup ExpressionEngine class Sum 
+  /// @brief Binary expression that returns \f$l+r\f$
   DECLARE_BINARY_OPERATOR( Sum );
 
-  /// \ingroup ExpressionEngine class Sub
-  /// \brief Binary expression that returns \f$l-r\f$
+  /// @ingroup ExpressionEngine class Sub
+  /// @brief Binary expression that returns \f$l-r\f$
   DECLARE_BINARY_OPERATOR( Sub );
   
-  /// \ingroup ExpressionEngine class Sub
-  /// \brief Binary expression that returns \f$l\times r\f$
+  /// @ingroup ExpressionEngine class Sub
+  /// @brief Binary expression that returns \f$l\times r\f$
   DECLARE_BINARY_OPERATOR( Product );
   
-  /// \ingroup ExpressionEngine class Divide
-  /// \brief Binary expression that returns \f$l / r\f$
+  /// @ingroup ExpressionEngine class Divide
+  /// @brief Binary expression that returns \f$l / r\f$
   DECLARE_BINARY_OPERATOR( Divide );
   
-  /// \ingroup ExpressionEngine class Pow
-  /// \brief Binary expression that returns \f$ l^{r} \f$
+  /// @ingroup ExpressionEngine class Pow
+  /// @brief Binary expression that returns \f$ l^{r} \f$
   DECLARE_BINARY_OPERATOR( Pow );
   
-  /// \ingroup ExpressionEngine class Fmod 
-  /// \brief Binary expression that returns the fractional part of \f$ l \mathrm{mod} r \f$
+  /// @ingroup ExpressionEngine class Fmod 
+  /// @brief Binary expression that returns the fractional part of \f$ l \mathrm{mod} r \f$
   DECLARE_BINARY_OPERATOR( Fmod );
   
-  /// \ingroup ExpressionEngine class LessThan
-  /// \brief Binary expression that returns \f$l < r\f$
+  /// @ingroup ExpressionEngine class LessThan
+  /// @brief Binary expression that returns \f$l < r\f$
   DECLARE_BINARY_OPERATOR( LessThan );
   
-  /// \ingroup ExpressionEngine class GreaterThan
-  /// \brief Binary expression that returns \f$l > r\f$
+  /// @ingroup ExpressionEngine class GreaterThan
+  /// @brief Binary expression that returns \f$l > r\f$
   DECLARE_BINARY_OPERATOR( GreaterThan );
   
-  /// \ingroup ExpressionEngine class And
-  /// \brief Binary expression that returns \f$l \wedge r\f$
+  /// @ingroup ExpressionEngine class And
+  /// @brief Binary expression that returns \f$l \wedge r\f$
   DECLARE_BINARY_OPERATOR( And );
   DECLARE_BINARY_OPERATOR( Equal );
 
   DECLARE_BINARY_OPERATOR( ATan2 );
-  /// \ingroup ExpressionEngine class IUnaryExpression
+  /// @ingroup ExpressionEngine class IUnaryExpression
   ///  Base class for unary expressions, i.e. those that take a single argument.
   class IUnaryExpression : public IExpression {
     public:
@@ -309,65 +292,69 @@ namespace AmpGen
     protected:
     Expression m_expression;
   };
-  /// \ingroup ExpressionEngine struct Log
-  /// \brief Unary expression that returns \f$\log(x)\f$
+  /// @ingroup ExpressionEngine struct Log
+  /// @brief Unary expression that returns \f$\log(x)\f$
   DECLARE_UNARY_OPERATOR( Log );
 
-  /// \ingroup ExpressionEngine struct Exp
-  /// \brief Unary expression that returns \f$e^x\f$
+  /// @ingroup ExpressionEngine struct Exp
+  /// @brief Unary expression that returns \f$e^x\f$
   DECLARE_UNARY_OPERATOR( Exp );
 
-  /// \ingroup ExpressionEngine struct Sqrt
-  /// \brief Unary expression that returns \f$\sqrt{x}\f$
+  /// @ingroup ExpressionEngine struct Sqrt
+  /// @brief Unary expression that returns \f$\sqrt{x}\f$
   DECLARE_UNARY_OPERATOR( Sqrt );
 
-  /// \ingroup ExpressionEngine struct Abs 
-  /// \brief Unary expression that returns \f$|z|\f$
+  /// @ingroup ExpressionEngine struct Abs 
+  /// @brief Unary expression that returns \f$|z|\f$
   DECLARE_UNARY_OPERATOR( Abs );
 
-  /// \ingroup ExpressionEngine struct Norm
-  /// \brief Unary expression that returns \f$|z|^2\f$
+  /// @ingroup ExpressionEngine struct Norm
+  /// @brief Unary expression that returns \f$|z|^2\f$
   DECLARE_UNARY_OPERATOR( Norm );
 
-  /// \ingroup ExpressionEngine struct Conj
-  /// \brief Unary expression that returns \f$z^{*}\f$
+  /// @ingroup ExpressionEngine struct Conj
+  /// @brief Unary expression that returns \f$z^{*}\f$
   DECLARE_UNARY_OPERATOR( Conj );
 
-  /// \ingroup ExpressionEngine struct Real
-  /// \brief Unary expression that returns the real part of \f$z\f$
+  /// @ingroup ExpressionEngine struct Real
+  /// @brief Unary expression that returns the real part of \f$z\f$
   DECLARE_UNARY_OPERATOR( Real );
 
-  /// \ingroup ExpressionEngine struct Imag
-  /// \brief Unary expression that returns the imaginary part of \f$z\f$
+  /// @ingroup ExpressionEngine struct Imag
+  /// @brief Unary expression that returns the imaginary part of \f$z\f$
   DECLARE_UNARY_OPERATOR( Imag );
 
-  /// \ingroup ExpressionEngine struct Sin
-  /// \brief Unary expression that returns \f$\sin(z)\f$
+  /// @ingroup ExpressionEngine struct Sin
+  /// @brief Unary expression that returns \f$\sin(z)\f$
   DECLARE_UNARY_OPERATOR( Sin );
 
-  /// \ingroup ExpressionEngine struct Cos
-  /// \brief Unary expression that returns \f$\cos(z)\f$
+  /// @ingroup ExpressionEngine struct Cos
+  /// @brief Unary expression that returns \f$\cos(z)\f$
   DECLARE_UNARY_OPERATOR( Cos );
 
-  /// \ingroup ExpressionEngine struct Tan
-  /// \brief Unary expression that returns \f$\tan(z)\f$
+  /// @ingroup ExpressionEngine struct Tan
+  /// @brief Unary expression that returns \f$\tan(z)\f$
   DECLARE_UNARY_OPERATOR( Tan );
 
-  /// \ingroup ExpressionEngine struct ASin
-  /// \brief Unary expression that returns \f$\sin^{-1}(z)\f$
+  /// @ingroup ExpressionEngine struct ASin
+  /// @brief Unary expression that returns \f$\sin^{-1}(z)\f$
   DECLARE_UNARY_OPERATOR( ASin );
 
-  /// \ingroup ExpressionEngine struct ACos
-  /// \brief Unary expression that returns \f$\cos^{-1}(z)\f$
+  /// @ingroup ExpressionEngine struct ACos
+  /// @brief Unary expression that returns \f$\cos^{-1}(z)\f$
   DECLARE_UNARY_OPERATOR( ACos );
 
-  /// \ingroup ExpressionEngine struct ATan
-  /// \brief Unary expression that returns \f$\tan^{-1}(z)\f$
+  /// @ingroup ExpressionEngine struct ATan
+  /// @brief Unary expression that returns \f$\tan^{-1}(z)\f$
   DECLARE_UNARY_OPERATOR( ATan );
   
-  /// \ingroup ExpressionEngine struct ISqrt
-  /// \brief Unary expression that uses inverse sqrt (faster than dividing by sqrt) 
+  /// @ingroup ExpressionEngine struct ISqrt
+  /// @brief Unary expression that uses inverse sqrt (faster than dividing by sqrt) 
   DECLARE_UNARY_OPERATOR( ISqrt );
+  
+  /// @ingroup ExpressionEngine struct LGamma
+  /// @brief Unary expression that returns \f$\log\left|\\Gamma(x)\right|\f$
+  DECLARE_UNARY_OPERATOR( LGamma );
 
   Expression operator<( const Expression& A, const Expression& B );
   Expression operator>( const Expression& A, const Expression& B );

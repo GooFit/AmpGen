@@ -165,9 +165,12 @@ int main( int argc, char** argv )
     sig.setMC(accepted);
     INFO("norm = " << sig.norm() );   
   }
-  if( type == "CoherentSum" ){
+  else if( type == "CoherentSum" ){
     CoherentSum sig( eventType, MPS );  
     debug( sig, accepted, verbose, rndm , MPS );
     print( accepted[0], sig.matrixElements() , false ); 
+  }
+  else {
+    ERROR( "Type: " << type << " is not recognised");
   }
 }

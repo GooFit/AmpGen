@@ -9,8 +9,8 @@
 using namespace AmpGen;
 
 MinuitParameter::MinuitParameter( const std::string& name, const MinuitParameter::Flag& fix, const double& mean, const double& step,
-                                  const double& mi, const double& ma )
-    : m_iFixInit( fix ), m_name( name ), m_meanInit( mean ), m_stepInit( step ), m_minInit( mi ), m_maxInit( ma )
+    const double& mi, const double& ma )
+  : m_iFixInit( fix ), m_name( name ), m_meanInit( mean ), m_stepInit( step ), m_minInit( mi ), m_maxInit( ma )
 {
   DEBUG( "Building parameter : " << name );
   resetToInit();
@@ -26,6 +26,19 @@ double MinuitParameter::mean()                    const { return m_meanResult; }
 double MinuitParameter::errPos()                  const { return m_errPosResult; }
 double MinuitParameter::errNeg()                  const { return m_errNegResult; }
 double MinuitParameter::err()                     const { return m_errResult; }
+
+bool MinuitParameter::fixed() { return m_iFixInit == Flag::Fix; }
+
+void MinuitParameter::fix() { m_iFixInit = Flag::Fix; }
+void MinuitParameter::scaleStep( const double& sf )
+{
+  m_errResult *= sf;
+  m_stepInit *= sf;
+}
+void MinuitParameter::setStepInit( const double& si )
+{
+  m_stepInit = si;
+}
 
 const std::string& MinuitParameter::name()        const { return m_name; }
 bool MinuitParameter::hidden()                    const { return m_iFixInit == 1; }
@@ -49,10 +62,18 @@ void MinuitParameter::print( std::ostream& os ) const
   os << std::left << std::setw(65) << name() << "\t" << iFixInit() << "\t" << mean() << "\t" << err() << "\t" << minInit() << "\t" << maxInit();
 }
 
+void MinuitParameter::setName( const std::string& name ) { m_name = name; }
+
 void MinuitParameter::resetToInit()
+{ 
+  m_meanResult   = m_meanInit;
+  m_errResult    = m_stepInit;
+  m_errPosResult = -9999;
+  m_errNegResult = -9999;
+}
+
+void MinuitParameter::setLimits( const double& min, const double& max )
 {
-  m_meanResult = m_currentFitVal = m_meanInit;
-  m_errResult                    = m_stepInit;
-  m_errPosResult                 = -9999;
-  m_errNegResult                 = -9999;
+  m_minInit = min;
+  m_maxInit = max;
 }

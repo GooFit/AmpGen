@@ -103,7 +103,7 @@ std::vector<int> PolarisedSum::polarisations( const std::string& name ) const {
   else return {0};
 }
 
-std::vector<std::vector<int>> PolarisedSum::polarisationOuterProduct( const std::vector< std::vector< int > >& A, const std::vector< int >& B ) const {
+std::vector<std::vector<int>> PolarisedSum::polarisationOuterProduct( const std::vector<std::vector<int>>& A, const std::vector<int>& B ) const {
   std::vector<std::vector<int>> rt; 
   for( auto& iA : A ){
     for( auto& iB : B ){
@@ -304,7 +304,6 @@ void PolarisedSum::calculateNorms(const std::vector<size_t>& changedPdfIndices )
   for( auto& m : m_matrixElements )  cacheIndex.push_back( m_integrator.events().getCacheIndex( m.pdf ) );
   
   for( auto& i : changedPdfIndices ){
-  //for( auto i = 0 ; i < m_matrixElements.size(); ++i ){
     auto ai = cacheIndex[i]; 
     for(size_t j = 0; j < m_matrixElements.size(); ++j ){
       auto aj = cacheIndex[j];
@@ -321,39 +320,6 @@ void PolarisedSum::calculateNorms(const std::vector<size_t>& changedPdfIndices )
       }
     }
   }
-  /*
-  std::array< Bilinears,6 > copied_normalisations;
-  for( int i = 0 ; i< 6 ; ++i ) 
-    copied_normalisations[i].resize( m_matrixElements.size(), m_matrixElements.size() ); 
-  
-  for( auto i = 0 ; i < m_matrixElements.size(); ++i ){
-    auto ai = cacheIndex[i]; 
-    for(size_t j = 0; j < m_matrixElements.size(); ++j ){
-      auto aj = cacheIndex[j];
-      m_integrator.queueIntegral(ai+0, aj+0, i, j, &(copied_normalisations[0]) );
-      m_integrator.queueIntegral(ai+1, aj+1, i, j, &(copied_normalisations[1]) );
-      m_integrator.queueIntegral(ai+2, aj+2, i, j, &(copied_normalisations[2]) );
-      m_integrator.queueIntegral(ai+3, aj+3, i, j, &(copied_normalisations[3]) ); 
-      m_integrator.queueIntegral(ai+0, aj+2, i, j, &(copied_normalisations[4]) , false );
-      m_integrator.queueIntegral(ai+1, aj+3, i, j, &(copied_normalisations[5]) , false );
-    }
-  }
-  auto diff = [](const auto& l, const auto& r){
-    return std::abs( l - r );
-  };
-
-  for( size_t i = 0 ; i < 6; ++i ){
-   for( size_t j = 0 ; j < m_matrixElements.size(); ++j ){
-     for( size_t k = 0 ; k < m_matrixElements.size(); ++k ){
-       if( diff( m_norms[i](j,k) , copied_normalisations[i](j,k) ) > 1e-10 ) 
-         INFO( "ERROR: normalisations( " << i  << ", " << j << ", " << k << " do not match !!"
-             << m_norms[i](j,k) << " " << copied_normalisations[i](j,k)  <<
-             diff( m_norms[i](j,k) , copied_normalisations[i](j,k))
-             );
-     }
-   }
-  }
-  */
   m_integrator.flush();
   for( size_t i = 0 ; i < 6; ++i ) m_norms[i].resetCalculateFlags();
 }

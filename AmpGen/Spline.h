@@ -65,7 +65,6 @@ namespace AmpGen{
     std::string to_string(const ASTResolver* resolver=nullptr) const ;
     operator Expression() ;
     complex_t operator()() const override ;
-    Expression clone() const ;
     Expression operator()( const Expression& x ); 
     Expression eval() const ;
   };

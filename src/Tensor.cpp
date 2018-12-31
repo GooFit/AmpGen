@@ -646,3 +646,22 @@ const Tensor AmpGen::LeviCivita( const size_t& rank )
   return result;
 }
 
+
+TensorProxy::operator Tensor() { return m_tensor; }
+std::vector<Tensor::Index> TensorProxy::indices() const { return m_indices; }
+const Tensor& TensorProxy::tensor() const { return m_tensor; }
+TensorProxy::operator Expression() { return m_tensor[0] ; } 
+Tensor& TensorProxy::tensorMutable(){ return m_tensor ; } 
+  
+TensorExpression::TensorExpression( const Tensor& tensor ) : 
+  m_tensor(tensor) {}
+
+std::string TensorExpression::to_string(const ASTResolver* resolver) const {
+  return m_tensor.to_string(resolver);
+}
+void TensorExpression::resolve( ASTResolver& resolver ){ 
+  for( size_t i = 0 ; i < m_tensor.size(); ++i ) m_tensor[i].resolve( resolver );
+}
+
+complex_t TensorExpression::operator()() const { return 0 ; } 
+DEFINE_CAST( TensorExpression )

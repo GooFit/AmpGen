@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+#include <Minuit2/Minuit2Minimizer.h>
+
 
 #include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/MinuitParameter.h"
@@ -23,8 +25,8 @@ unsigned int Minimiser::nPars() const { return m_nParams; }
 
 void Minimiser::print( const double& LL )
 {
-  INFO( "Iteration # " << m_lastPrint << "  FCN = " << round( LL, 3 ) << "  Edm = " << round( m_minimizer->Edm(), 3 )
-                       << "  NCalls = " << m_minimizer->NCalls() );
+  INFO( "Iteration # " << m_lastPrint << "  FCN = " << round( LL, 3 ) << "  Edm = " << round( m_minimiser->Edm(), 3 )
+                       << "  NCalls = " << m_minimiser->NCalls() );
 }
 
 double Minimiser::operator()( const double* xx )
@@ -65,13 +67,13 @@ void Minimiser::prepare()
   unsigned int maxCalls = NamedParameter<unsigned int>( "Minimiser::MaxCalls", 100000 );
   double tolerance      = NamedParameter<double>( "Minimiser::Tolerance", 0.01 );
   m_printLevel          = NamedParameter<unsigned int>( "Minimiser::PrintLevel", 4 );
-  if ( m_minimizer != nullptr ) delete m_minimizer;
-  m_minimizer = ROOT::Math::Factory::CreateMinimizer( minimiser, algorithm );
-  DEBUG( "Error definition = " << m_minimizer->ErrorDef() );
-  m_minimizer->SetMaxFunctionCalls( maxCalls );
-  m_minimizer->SetMaxIterations( 100000 );
-  m_minimizer->SetTolerance( tolerance );
-  m_minimizer->SetPrintLevel( m_printLevel );
+  if ( m_minimiser != nullptr ) delete m_minimiser;
+  m_minimiser = new ROOT::Minuit2::Minuit2Minimizer(algorithm.c_str() ) ; // ROOT::Math::Factory::CreateMinimizer( minimiser, algorithm );
+  DEBUG( "Error definition = " << m_minimiser->ErrorDef() );
+  m_minimiser->SetMaxFunctionCalls( maxCalls );
+  m_minimiser->SetMaxIterations( 100000 );
+  m_minimiser->SetTolerance( tolerance );
+  m_minimiser->SetPrintLevel( m_printLevel );
 
   m_mapping.clear();
   m_covMatrix.clear();
@@ -88,8 +90,8 @@ void Minimiser::prepare()
       continue;
     }
     if ( par->iFixInit() != 0 ) continue;
-    m_minimizer->SetVariable( counter, par->name(), par->mean(), par->stepInit() );
-    if ( par->minInit() != 0 || par->maxInit() != 0 ) m_minimizer->SetVariableLimits( counter, par->minInit(), par->maxInit() );
+    m_minimiser->SetVariable( counter, par->name(), par->mean(), par->stepInit() );
+    if ( par->minInit() != 0 || par->maxInit() != 0 ) m_minimiser->SetVariableLimits( counter, par->minInit(), par->maxInit() );
     
     if ( m_printLevel != 0 ) {
       INFO( "Parameter: " << std::left  << std::setw(60) << par->name() << " = " 
@@ -111,22 +113,22 @@ bool Minimiser::doFit()
   ROOT::Math::Functor f( *this, m_nParams );
   for ( unsigned int i = 0; i < m_mapping.size(); ++i ) {
     MinuitParameter* par = m_parSet->getParPtr( m_mapping[i] );
-    m_minimizer->SetVariable( i, par->name(), par->mean(), par->stepInit() );
+    m_minimiser->SetVariable( i, par->name(), par->mean(), par->stepInit() );
     if ( par->minInit() != 0 || par->maxInit() != 0 )
-      m_minimizer->SetVariableLimits( i, par->minInit(), par->maxInit() );
+      m_minimiser->SetVariableLimits( i, par->minInit(), par->maxInit() );
   }
 
-  m_minimizer->SetFunction( f );
-  m_minimizer->Minimize();
+  m_minimiser->SetFunction( f );
+  m_minimiser->Minimize();
   for ( unsigned int i = 0; i < m_nParams; ++i ) {
     auto par = m_parSet->getParPtr( m_mapping[i] );
-    double error = *( m_minimizer->Errors() + i );
-    par->setResult( *( m_minimizer->X() + i ), error, error, error );
+    double error = *( m_minimiser->Errors() + i );
+    par->setResult( *( m_minimiser->X() + i ), error, error, error );
     for ( unsigned int j = 0; j < m_nParams; ++j ) {
-      m_covMatrix[i + m_nParams * j] = m_minimizer->CovMatrix( i, j );
+      m_covMatrix[i + m_nParams * j] = m_minimiser->CovMatrix( i, j );
     }
   }
-  m_status = m_minimizer->Status();
+  m_status = m_minimiser->Status();
   return 1;
 }
 
@@ -172,4 +174,9 @@ TMatrixTSym<double> Minimiser::covMatrixFull() const
 
 MinuitParameterSet* Minimiser::parSet() const { return m_parSet; }
 
-void Minimiser::addExtendedTerm( IExtendLikelihood* m_term ) { m_extendedTerms.push_back( m_term ); }
+void Minimiser::addExtendedTerm( IExtendLikelihood* m_term )
+{ 
+  m_extendedTerms.push_back( m_term ); 
+}
+
+ROOT::Math::Minimizer* Minimiser::minimiserInternal() { return m_minimiser; }

@@ -26,106 +26,57 @@ namespace AmpGen
   class FitFraction;
   class Particle;
 
-  template <class RT>
-  struct TransitionMatrix {
-    std::shared_ptr<Particle>                           decayTree;
-    CouplingConstant                                    coupling;
-    complex_t                                           coefficient;
-    CompiledExpression<RT,const real_t*,const real_t*>  pdf; 
-    size_t                                              addressData = {999};
-    const RT operator()( const Event& event ) const { return pdf(event.address() ); }
-    TransitionMatrix(){};
-    TransitionMatrix( const std::shared_ptr<Particle>& dt, 
-                      const CouplingConstant& coup, 
-                      const CompiledExpression<RT, const real_t*, const real_t*> & _pdf ) : 
-          decayTree( dt ), 
-          coupling( coup ), 
-          pdf( _pdf ) 
-    {
-    }
-    std::vector<MinuitParameter*> getDependencies() const;
-  };
-
   class CoherentSum
   {
   public:
     CoherentSum( const EventType& type, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "" );
-
-    real_t operator()( const Event& evt ) const { return prob( evt ); }
+    virtual ~CoherentSum() = default; 
 
     AmplitudeRules protoAmplitudes() { return m_protoAmplitudes; }
-    std::vector<TransitionMatrix<complex_t>> matrixElements() { return m_matrixElements; }
-
-    std::vector<size_t> processIndex( const std::string& label ) const;
     std::string getParentProcess( const std::string& label ) const;
-
-    unsigned int getPdfIndex( const std::string& name ) const;
-    void PConjugate();
-
+    std::string prefix() const { return m_prefix; }
+    
     TransitionMatrix<complex_t> operator[]( const unsigned int& index ) { return m_matrixElements[index]; }
     const TransitionMatrix<complex_t> operator[]( const unsigned int& index ) const { return m_matrixElements[index]; }
-
-    std::string prefix() const { return m_prefix; }
-
     unsigned int size() const { return m_matrixElements.size(); }
-    double getWeight() const { return m_weight; }
-    void setWeight( const double& weight ) { m_weight = weight; }
-    void setWeight( MinuitParameter* param ) { m_weightParam = param; }
-
-    void makeTotalExpression();
-    void reset( bool resetEvents = false );
-    void setEvents( EventList& list );
-    void setMC( EventList& sim );
-
+    unsigned int getPdfIndex( const std::string& name ) const;
+    
+    real_t getWeight() const { return m_weight; }
+    real_t operator()( const Event& evt ) const { return prob( evt ); }
+    real_t prob( const Event& evt ) const { return m_weight * std::norm( getVal( evt ) ) / m_norm; }
+    real_t prob_unnormalised( const Event& evt ) const { return std::norm( getVal( evt ) ); }
     real_t norm( const Bilinears& norms ) const;
     real_t norm() const;
-    bool isStateGood() const { return m_stateIsGood; }
+    real_t getNorm( const Bilinears& normalisations );
+    real_t get_norm() const { return m_norm ; }
+
     complex_t norm( const unsigned int& x, const unsigned int& y ) const;
+    complex_t getVal( const Event& evt ) const;
+    complex_t getVal( const Event& evt, const std::vector<unsigned int>& cacheAddresses ) const;
+    complex_t getValNoCache( const Event& evt ) const;
+    bool isStateGood() const { return m_stateIsGood; }
+    
     void transferParameters();
     void prepare();
     void printVal( const Event& evt );
     void updateNorms( const std::vector<unsigned int>& changedPdfIndices );
-    
-    std::vector<unsigned int> cacheAddresses( const EventList& evts ) const
-    {
-      std::vector<unsigned int> addresses;
-      for ( auto& mE : m_matrixElements ) {
-        addresses.push_back( evts.getCacheIndex( mE.pdf ) );
-      }
-      return addresses;
-    }
-
-    complex_t getVal( const Event& evt ) const
-    {
-      complex_t value( 0., 0. );
-      for ( auto& mE : m_matrixElements ) {
-        value += mE.coefficient * evt.getCache( mE.addressData );
-      }
-      return value;
-    }
-
-    complex_t getVal( const Event& evt, const std::vector<unsigned int>& cacheAddresses ) const
-    {
-      complex_t value( 0., 0. );
-      for ( unsigned int i = 0; i < m_matrixElements.size(); ++i )
-        value += m_matrixElements[i].coefficient * evt.getCache( cacheAddresses[i] );
-      return value;
-    }
-    std::complex<double> getValNoCache( const Event& evt ) const;
-
-    double prob( const Event& evt ) const { return m_weight * std::norm( getVal( evt ) ) / m_norm; }
-    double prob_unnormalised( const Event& evt ) const { return std::norm( getVal( evt ) ); }
-
+    void setWeight( const double& weight ) { m_weight = weight; }
+    void setWeight( MinuitParameter* param ) { m_weightParam = param; }
+    void makeTotalExpression();
+    void reset( bool resetEvents = false );
+    void setEvents( EventList& list );
+    void setMC( EventList& sim );
+    void PConjugate();
     void debug( const Event& evt, const std::string& nameMustContain="");
-    std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
-
     void generateSourceCode( const std::string& fname, const double& normalisation = 1, bool add_mt = false );
-
-    double getNorm( const Bilinears& normalisations );
-    
-    double get_norm() const { return m_norm ; }
-    std::map<std::string, std::vector<unsigned int>> getGroupedAmplitudes();
     void resync();
+
+    std::vector<unsigned int> cacheAddresses( const EventList& evts ) const; 
+    std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
+    std::vector<TransitionMatrix<complex_t>> matrixElements() { return m_matrixElements; }
+    std::vector<size_t> processIndex( const std::string& label ) const;
+
+    std::map<std::string, std::vector<unsigned int>> getGroupedAmplitudes();
     Bilinears norms() const { return m_normalisations ; }
   
   protected:

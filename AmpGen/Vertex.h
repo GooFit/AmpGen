@@ -64,30 +64,35 @@ namespace AmpGen
       VertexBase* create() { return this; }   
     };
     /// \ingroup Vertices class S_SS_S 
-    /// \brief \f$ S = S_1 S_2 \f$
+    /// \brief \f$ S_1 S_2 \f$
     DECLARE_VERTEX( S_SS_S );
 
     /// \ingroup Vertices class S_VV_S 
-    /// \brief \f$ S = g_{\mu\nu} V_1^\mu V_2^{\nu} \f$
+    /// \brief \f$ g_{\mu\nu} V_1^\mu V_2^{\nu} \f$
     DECLARE_VERTEX( S_VV_S );
 
     /// \ingroup Vertices class S_VV_P
-    /// \f$ S = \varepsilon_{\alpha\beta\mu\nu} P^{\alpha} L^{\beta} V_1^{\mu} V_2^{\nu} \f$
+    /// \f$ \varepsilon_{\alpha\beta\mu\nu} P^{\alpha} L^{\beta} V_1^{\mu} V_2^{\nu} \f$
     DECLARE_VERTEX( S_VV_P );
     
     /// \ingroup Vertices class S_VV_D
-    /// \brief \f$  S =  L_{\mu\nu} V_1^\mu V_2^\nu \f$
+    /// \brief \f$ L_{\mu\nu} V_1^\mu V_2^\nu \f$
     DECLARE_VERTEX( S_VV_D );
 
     /// \ingroup Vertices class S_VS_P
-    /// \brief \f$ S = L_{\mu} V_1^{\mu} S_2 \f$
+    /// \brief \f$ L_{\mu} V_1^{\mu} S_2 \f$
     DECLARE_VERTEX( S_VS_P );
 
     /// \ingroup Vertices class S_TV_P
-    /// \brief \f$ S = L^{\mu} T_{\mu\nu} V^{\nu} \f$
+    /// \brief \f$ L^{\mu} T_{\mu\nu} V^{\nu} \f$
     DECLARE_VERTEX( S_TV_P );
-    DECLARE_VERTEX( S_TV_D );
 
+    /// \ingroup Vertices class S_TV_D 
+    /// \brief \f$ \varepsilon_{\mu\nu\alpha\beta} T^{\mu\gamma} L_{\gamma}^{\nu} P^{\alpha} V^{\beta} \f$
+    DECLARE_VERTEX( S_TV_D );
+    
+    /// \ingroup Vertices class S_TS_D 
+    /// \brief \f$ T^{\mu\nu} L_{\mu\nu}\f$
     DECLARE_VERTEX( S_TS_D );
     DECLARE_VERTEX( S_TT_S );
 

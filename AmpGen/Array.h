@@ -15,19 +15,18 @@
 namespace AmpGen
 {
   class ASTResolver;
-  class Array : public IExpression {
+  
+  class Array : public IExpression 
+  {
     public:
-      Array( const Expression& top, 
-          const size_t&     size,
-          const Expression& address = 0 );
-      Expression clone() const override ;
-
+      Array( const Expression& top, const size_t& size, const Expression& address = 0 );
       std::string to_string(const ASTResolver* resolver=nullptr) const override ;
       void resolve( ASTResolver& resolver ) override;
       operator Expression(); 
       complex_t operator()() const override;
       Expression operator[]( const Expression& address ) const;
       Expression top() const { return m_top ; } 
+
     private:
       Expression m_top; 
       Expression m_address;

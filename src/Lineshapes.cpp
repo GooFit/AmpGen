@@ -59,8 +59,12 @@ Expression AmpGen::BlattWeisskopf( const Expression& z, unsigned int L )
   }
 }
 
-Expression AmpGen::BL( const Expression& s, const Expression& s0, const Expression& s1, const Expression& s2,
-                       const Expression& radius, const unsigned int& L )
+Expression AmpGen::BL( const Expression& s, 
+                       const Expression& s0, 
+                       const Expression& s1, 
+                       const Expression& s2,
+                       const Expression& radius, 
+                       const unsigned int& L )
 {
   const Expression q2  = abs( Q2( s, s1, s2 ) );
   const Expression q20 = abs( Q2( s0, s1, s2 ) );

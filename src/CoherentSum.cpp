@@ -400,7 +400,7 @@ void CoherentSum::PConjugate()
   }
 }
 
-std::complex<double> CoherentSum::getValNoCache( const Event& evt ) const
+complex_t CoherentSum::getValNoCache( const Event& evt ) const
 {
   return std::accumulate( m_matrixElements.begin(), 
                           m_matrixElements.end(), 
@@ -415,12 +415,14 @@ void CoherentSum::reset( bool resetEvents )
   for ( auto& mE : m_matrixElements ) mE.addressData = 999;
   if ( resetEvents ) m_events = nullptr;
 }
+
 void CoherentSum::setEvents( EventList& list )
 {
   if ( m_verbosity ) INFO( "Setting events to size = " << list.size() << " for " << this );
   reset();
   m_events = &list;
 }
+
 void CoherentSum::setMC( EventList& sim )
 {
   if ( m_verbosity ) INFO( "Setting MC = " << &sim << " for " << this );
@@ -428,24 +430,26 @@ void CoherentSum::setMC( EventList& sim )
   m_integrator = Integrator<10>(&sim);
 }
 
-double CoherentSum::norm() const
+real_t CoherentSum::norm() const
 {
   return norm( m_normalisations );
 }
 
-double CoherentSum::norm( const Bilinears& norms ) const
+real_t CoherentSum::norm( const Bilinears& norms ) const
 {
-  std::complex<double> acc( 0, 0 );
+  complex_t acc( 0, 0 );
   for ( size_t i = 0; i < size(); ++i ) {
     for ( size_t j = 0; j < size(); ++j ) {
-      auto val = norms.get( i, j ) * m_matrixElements[i].coefficient * std::conj( m_matrixElements[j].coefficient );
+      auto val = norms.get( i, j ) 
+               * m_matrixElements[i].coefficient 
+               * std::conj( m_matrixElements[j].coefficient );
       acc += val;
     }
   }
   return acc.real();
 }
 
-std::complex<double> CoherentSum::norm( const unsigned int& x, const unsigned int& y ) const
+complex_t CoherentSum::norm( const unsigned int& x, const unsigned int& y ) const
 {
   return m_normalisations.get( x, y );
 }

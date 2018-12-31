@@ -32,7 +32,10 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+if( NOT "${CMAKE_CXX_STANDARD}" )
+  set(CMAKE_CXX_STANDARD 17)
+endif() 
+
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -88,7 +91,6 @@ if(OpenMP_FOUND OR OpenMP_CXX_FOUND)
 else()
   message(STATUS "OpenMP not found for CXX, you might have forgotten lb-run ROOT bash or CXX=`which g++` in CERN stack")
 endif()
-
 
 # Default to XROOTD only if on CMT system. Can be overridden with -DAMPGEN_XROOTD=ON
 if(DEFINED ENV{CMTCONFIG})

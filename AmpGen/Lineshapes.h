@@ -14,7 +14,29 @@
   @defgroup Lineshapes Lineshapes
   @brief Lineshapes are semi-empirical complex functions for describing the propagation and decay of short-lived resonances. 
   The lineshapes are stored in a static factory and can be accessed by key from anywhere in the program.
- */
+  For example, consider a @f$K^{*}(892)^{0}@f$ resonance decaying into a kaon and a pion, the propagation of which could be described 
+  using the Relativistic Breit Wigner (BW) lineshape. The corresponding decay descriptor would be
+
+  \code{cpp}
+  K*(892)[BW]{K+,pi-}
+  \endcode
+
+  where in this case, the BW is redundant, as this the default if no alternative is specified. Now consider the broad scalar @f$K^{*}(1430)^{0}@f$ 
+  meson, which cannot readily be described by a simple Breit Wigner due to a quasi nonresonant amplitude (alternatively, due to the presence of an 
+  additional very broad scalar at lower masses, the @f$\kappa(800)@f$). 
+  One alternative parameterisation of this system is the LASS lineshape 
+  which can be used as
+
+  \code{cpp}
+  K(0)*(1430)[LASS]{K+,pi-}
+  \endcode
+
+  Linshapes for describing different systems are detailed below. 
+  Some, such as the LASS shape or kMatrix, pertain to the specific particles and final states. 
+  Others, such as CoupledChannel or Spline can flexibly describe a variety of systems, but therefore require a more detailed specification by the user. 
+  
+  Generally, the relativistic Breit-Wigner a sufficient description for many purposes for nonscalar resonances that decay to a single two-body final state or are relatively far from relevant thresholds.More complex systems require more specialised descriptions. 
+  */
 
 #define DECLARE_LINESHAPE( X )                                                                                  \
   class X : public AmpGen::ILineshape {                                                                         \
@@ -112,12 +134,7 @@ namespace AmpGen
         \image html figs/BW_combined.png "Modulus and phase of the Relativistic Breit-Wigner propagator, for @f$l={0,4}@f$, using the mass and nominal width of the @f$\rho@f$ meson" width=6cm
     */
     DECLARE_LINESHAPE( BW );
-
-    /** @ingroup Lineshapes class LBW
-       Mixed-spin Breit-Wigner lineshape, with the orbital substates specified by particleName_waves, then coupling constants specified by free parameters particleName_gi 
-     */ 
-    DECLARE_LINESHAPE( LBW );
-    
+ 
     /// Breit-Wigner lineshape with fixed width
     DECLARE_LINESHAPE( SBW );
     /// Non-relativistic Breit-Wigner lineshape
@@ -132,15 +149,17 @@ namespace AmpGen
              @f$\Gamma_0@f$ : <EM>particleName_</EM>width   Breit-Wigner width, defined as the width of resonance at the Breit-Wigner mass <br>
              @f$r@f$        : <EM>particleName_</EM>radius   Hadronic radius for Blatt-Weisskopf form-factor (defaults to 1.5GeV for light resonances, 3.5GeV for charm) <br>
         </DD> <br>
-        \image html figs/GS_combined.png "Gounaris-Sakurai lineshape for the @f$\rho(770)^{0}@f$ meson, with the equivalent relativistic Breit Wigner lineshape shown for comparison.
+        \image html figs/GS_combined.png "Gounaris-Sakurai lineshape for the ϱ(770) meson, with the equivalent relativistic Breit Wigner lineshape shown for comparison.
     */
     DECLARE_LINESHAPE( GounarisSakurai );
 
-    /// LASS shape used to model the \f$ K\pi \f$ S-wave
+    /// Description of the \f$ K\pi \f$ S-wave, based on the fits to scattering data.
     DECLARE_LINESHAPE( LASS );
 
+    /// Generalisation of the LASS lineshape to include a free amplitude and phase between the ``resonant'' and ''nonresonant'' components.
     DECLARE_LINESHAPE( gLASS );
-    /// Flatte lineshape to describe resonances with coupled channels such as \f$f_{0}(980)^{0} / a_{0}(980) \f$ (S.M.Flatté, Phys. Lett B. 63, 224 (1976))
+
+    /// Lineshape to describe resonances with coupled channels such as \f$f_{0}(980)^{0} / a_{0}(980) \f$ (S.M.Flatté, Phys. Lett B. 63, 224 (1976))
     DECLARE_LINESHAPE( Flatte );
     DECLARE_LINESHAPE( Bugg );
     DECLARE_LINESHAPE( Isotensor );
@@ -158,7 +177,19 @@ namespace AmpGen
      */
     DECLARE_LINESHAPE( Poly );
 
-    /// Anisovich-Sarantsev Isoscalar K-matrix from https://arxiv.org/abs/hep-ph/0204328
+    /** @ingroup Lineshapes class kMatrix 
+        @brief Anisovich-Sarantsev Isoscalar K-matrix from https://arxiv.org/abs/hep-ph/0204328
+
+        Describes the isoscalar @f$ \pi\pi, KK, 4\pi \eta\eta, \eta\eta^\prime@f$ S-wave in terms of a five-by-five K-matrix and corresponding P-vector couplings.
+        Includes a large number of parameters that can be fixed from the above publication. 
+        These parameters can be found in the options directory, which in turn can be includes in the fit by adding 
+
+        \code{cpp}
+          Import $AMPGENROOT/options/kMatrix.opt
+        \endcode 
+        
+        to the user configuration file. 
+     */ 
     DECLARE_LINESHAPE( kMatrix );
 
     /** @ingroup Lineshapes class FOCUS
@@ -170,14 +201,20 @@ namespace AmpGen
     DECLARE_LINESHAPE( PALANO );
 
     /** @ingroup Lineshapes class ObelixRho
-     *  @brief Vector-Isovector amplitude (I=1, J=1) using K Matrices to describe the @f$ \rho(770), \rho(1450), \rho(1900) @f$ system, including the @f$\pi\pi,  KK , \pi\pi\pi\pi @f$ channels.
+     *  @brief Amplitude to describe the vector-isovector system, otherwise known as the @f$ \rho @f$ mesons. WARNING untested. 
+
+         Vector-Isovector amplitude @f$(I=1, J=1)@f$ using a K-matrix to describe the @f$\pi\pi,  KK, \pi\pi\pi\pi @f$ channels using three poles, commonly associated with 
+     the @f$ \rho(770), \rho(1450), \rho(1900) @f$ resonances. 
      */
     DECLARE_LINESHAPE( ObelixRho );
 
-    /// K matrix to describe \f$K_1(1270) / K_1(1400)\f$, WARNING, does not work at intended. 
+    /// K matrix to describe \f$K_1(1270) / K_1(1400)\f$. WARNING incompleted. 
     DECLARE_LINESHAPE( AxialKaon );
     
-    /// Flexible K matrix implementation that accepts a variable number of scalar channels and pole terms
+    /** @ingroup Lineshapes class kMatrixSimple 
+        @brief Simple and flexible K matrix that implements a variable number of scalar channels and poles.   
+        Flexible K matrix implementation that accepts a variable number of scalar channels and pole terms.
+        Generally only likely to be useful for pedagoical examples. */
     DECLARE_LINESHAPE( kMatrixSimple );
     
     /** @ingroup Lineshapes class MIPWA
@@ -197,12 +234,20 @@ namespace AmpGen
       </DD> <br>    
      */
     DECLARE_LINESHAPE( MIPWA );
+    /** @ingroup Lineshapes class GSpline 
+        @brief 
+      */
+    
     DECLARE_LINESHAPE( GSpline );
     DECLARE_LINESHAPE( FormFactorSpline );
     DECLARE_LINESHAPE( DecaySpline );
     DECLARE_LINESHAPE( InelasticSpline );
+
+    /** @ingroup Lineshapes class CoupledChannel 
+        @brief Description of a resonance that decays to multiple two and three-body final states. 
+      */
     DECLARE_LINESHAPE( CoupledChannel );
-    /// Implements Dalitz plot distribution for decays \f$ \eta \rightarrow \pi^{+}\pi^{-}\pi^{0}\f$
+    /// ``Lineshape'' that implements the Dalitz plot distribution for decays \f$ \eta \rightarrow \pi^{+}\pi^{-}\pi^{0}\f$
     DECLARE_GENERIC_SHAPE( EtaDalitz );
 
   } // namespace Lineshape

@@ -16,17 +16,6 @@ namespace AmpGen
 
   class MinuitParameterSet
   {
-  private:
-    void tryParameter( const std::vector<std::string>& line );
-    void tryAlias( const std::vector<std::string>& line );
-
-  protected:
-    std::vector<MinuitParameter*> _parPtrList;
-    std::vector<MinuitExpression*> _aliasList;
-    std::map<std::string, MinuitParameter*> _keyAccess;
-
-    bool addToEnd( MinuitParameter* parPtr );
-
   public:
     MinuitParameterSet();
     MinuitParameterSet( const MinuitParameterSet& other );
@@ -79,6 +68,14 @@ namespace AmpGen
       }
       return _keyAccess[name]->mean();
     }
+  private:
+    void tryParameter( const std::vector<std::string>& line );
+    void tryAlias( const std::vector<std::string>& line );
+    std::vector<MinuitParameter*> _parPtrList;
+    std::vector<MinuitExpression*> _aliasList;
+    std::map<std::string, MinuitParameter*> _keyAccess;
+    bool addToEnd( MinuitParameter* parPtr );
+
   };
 
 } // namespace AmpGen

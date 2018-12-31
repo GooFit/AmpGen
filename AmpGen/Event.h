@@ -9,14 +9,13 @@
 #include "AmpGen/Types.h"
 
 namespace AmpGen { 
-  class Event {
-    private:
-      std::vector<real_t>    m_event; 
-      std::vector<complex_t> m_cache;
-      real_t                 m_genPdf = {1};
-      real_t                 m_weight = {1}; 
+  
+  /** @class Event 
+      @brief Encapsulates the final state particles of a single event 
+      
+      Encapsulates the final state particles of a single event, or candidate in the language of proton-proton collisions. Typically will store (i) the event kinematics, i.e. four-momenta, (ii). a cache of complex numbers that contain intermediate calculations of the amplitude, (iii). the weight of the given event/candidate, (iv). The probability that the event was generated with, in the case of a simulated event */
 
-      inline real_t get(const size_t& index ) const { return m_event[index]; };
+  class Event {
     public:
 
       Event( const size_t& N, const size_t& cacheSize=0 );
@@ -66,6 +65,14 @@ namespace AmpGen {
       real_t s( const size_t& index1, const size_t& index2 ) const ;
       real_t s( const size_t& index1, const size_t& index2, const size_t& index3 ) const;
       real_t s( const std::vector<size_t>& indices ) const ;
+    
+    private:
+      std::vector<real_t>    m_event; 
+      std::vector<complex_t> m_cache;
+      real_t                 m_genPdf = {1};
+      real_t                 m_weight = {1}; 
+
+      inline real_t get(const size_t& index ) const { return m_event[index]; };
   };
 }
 

@@ -47,7 +47,13 @@ struct FixedLibPDF {
 };
 
 
-template < class PDF_TYPE, class PRIOR_TYPE > void GenerateEvents( EventList& events, PDF_TYPE& pdf, PRIOR_TYPE& prior, const size_t& nEvents, const size_t& blockSize, TRandom* rndm )
+template < class PDF_TYPE, class PRIOR_TYPE > 
+  void GenerateEvents( EventList& events
+                       , PDF_TYPE& pdf 
+                       , PRIOR_TYPE& prior
+                       , const size_t& nEvents
+                       , const size_t& blockSize
+                       , TRandom* rndm )
 {
   Generator<PRIOR_TYPE> signalGenerator( prior );
   signalGenerator.setRandom( rndm);
@@ -83,7 +89,7 @@ int main( int argc, char** argv )
   TRandom3 rand;
   rand.SetSeed( seed + 934534 );
 
-  AmpGen::MinuitParameterSet MPS;
+  MinuitParameterSet MPS;
   MPS.loadFromStream();
   
   EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),

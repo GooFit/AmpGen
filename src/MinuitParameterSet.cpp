@@ -30,10 +30,8 @@ MinuitParameterSet::MinuitParameterSet( const MinuitParameterSet& other )
 MinuitParameterSet MinuitParameterSet::getFloating()
 {
   MinuitParameterSet floating;
-  for ( unsigned int i = 0; i < size(); i++ ) {
-    if ( nullptr != getParPtr( i ) ) {
-      floating.add( getParPtr( i ) );
-    }
+  for ( auto& param : *this ) {
+    if ( param->iFixInit() == MinuitParameter::Flag::Float ) floating.add(param);
   }
   return floating;
 }

@@ -10,7 +10,7 @@ using namespace AmpGen;
 extern const AmpGen::Expression               AmpGen::I      ( Constant(0., 1.) );
 extern const AmpGen::Expression               AmpGen::Z      ( Expression( 0 ) );
 
-extern const std::array<AmpGen::Tensor,5>     AmpGen::Dirac::Gamma  ( { 
+extern const std::array<AmpGen::Tensor,5>     AmpGen::Gamma  ( { 
     Tensor ({ 0, 0, 0, 1, 
               0, 0, 1, 0, 
               0,-1, 0, 0, 
@@ -31,28 +31,6 @@ extern const std::array<AmpGen::Tensor,5>     AmpGen::Dirac::Gamma  ( {
               0, 0, 0, 1, 
               1, 0, 0, 0, 
               0, 1, 0, 0} , {4, 4})} );
-
-extern const std::array<AmpGen::Tensor,5>     AmpGen::Weyl::Gamma  ( { 
-    Tensor ({ 0, 0, 0, 1, 
-              0, 0, 1, 0, 
-              0,-1, 0, 0, 
-             -1, 0, 0, 0} , {4, 4}),
-    Tensor ({ Z, Z, Z,-I, 
-              Z, Z, I, Z, 
-              Z, I, Z, Z, 
-             -I, Z, Z, Z} , {4, 4}),
-    Tensor ({ 0, 0, 1, 0, 
-              0, 0, 0,-1, 
-             -1, 0, 0, 0,  
-              0, 1, 0, 0} , {4, 4}),
-    Tensor ({ 0, 0, 1, 0, 
-              0, 0, 0, 1, 
-              1, 0, 0, 0, 
-              0, 1, 0, 0} , {4, 4}),
-    Tensor ({-1, 0, 0, 0, 
-              0,-1, 0, 0, 
-              0, 0, 1, 0,
-              0, 0, 0, 1} , {4, 4} ) }  );
 
 extern const std::array<AmpGen::Tensor,3> AmpGen::Sigma ( 
     {

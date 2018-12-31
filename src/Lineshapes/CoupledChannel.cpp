@@ -62,10 +62,17 @@ Expression rho_threeBody( const Expression& s,
       ) / (16.*M_PI*M_PI*s) , 0 );
 }
 
-Expression phaseSpace(const Expression& s, const Particle& p)
+Expression phaseSpace(const Expression& s, const Particle& p, const size_t& l )
 {
   auto fs = p.getFinalStateParticles();
-  if( fs.size() == 2 ) return rho_twoBody(s, p.daughter(0)->massSq(), p.daughter(1)->massSq() ); 
+  if( fs.size() == 2 ){ 
+    const Expression radius       = Parameter( p.name()  + "_radius", p.props()->radius() );
+    auto s1 = p.daughter(0)->massSq();
+    auto s2 = p.daughter(1)->massSq();
+    auto q2v             = make_cse( Q2(s,s1,s2) );
+    const Expression q2  = Ternary( q2v > 0, q2v, 0 );
+    return rho_twoBody(s, s1,s2 ) * BlattWeisskopf( q2*radius*radius, l );
+  }  
   if( fs.size() == 3 && ! p.daughter(0)->isStable() ) return rho_threeBody( s, *p.daughter(0), *p.daughter(1) );
   if( fs.size() == 3 && ! p.daughter(1)->isStable() ) return rho_threeBody( s, *p.daughter(1), *p.daughter(0) );
   ERROR("Phase space only implemented for two and three body decays");
@@ -88,11 +95,10 @@ DEFINE_LINESHAPE( CoupledChannel )
     Particle p( channels[i] ); 
     INFO( "Adding channel ... " << p.uniqueString() << " coupling = " << NamedParameter<std::string>( channels[i+1]  ) );
     Expression coupling = Parameter( channels[i+1],0);
-    totalWidth       = totalWidth       + coupling * phaseSpace(s,p);
-    totalWidthAtPole = totalWidthAtPole + coupling * phaseSpace(mass*mass,p);
-    
+    totalWidth       = totalWidth       + coupling * phaseSpace(s        , p, p.orbital() );
+    totalWidthAtPole = totalWidthAtPole + coupling * phaseSpace(mass*mass, p, p.orbital() );    
     ADD_DEBUG( coupling, dbexpressions );
-    ADD_DEBUG( phaseSpace(s,p), dbexpressions );
+    ADD_DEBUG( phaseSpace(s,p,p.orbital() ), dbexpressions );
   }
   const Expression q2  = make_cse( Abs(Q2( s, s1, s2 ) ) ) ;
   const Expression formFactor                       = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );

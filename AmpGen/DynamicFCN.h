@@ -7,26 +7,40 @@
 
 namespace AmpGen
 {
-  template<typename RETURN_TYPE>
-  class DynamicFCN;
+  /**@class DynamicFCN 
+     @brief Wrapper to give templated interface to a function contained in a dynamically linked library. 
+    @tparam RETURN_TYPE type that this function returns
+    @tparam IN_TYPES input types for this function 
+    DynamicFCN is a template wrapper for a C-style function pointer and a handle to a dynamic library, i.e. provides a more C++-like interface to dlsym. 
+   For example, for a function called "foo" in library "bar.so" that returns a double from two doubles can be used as
+    
+     \code{cpp}
+       DynamicFCN<double(double,double)> foo("bar.so","foo");
+       double z = foo(4,5); 
+     \endcode  
+  
+     i.e. the foo function object can then be used as a regular function.*/
 
-  template <typename RETURN_TYPE, typename... IN_TYPES>
+  template <class RETURN_TYPE, class ...IN_TYPES> 
+  class DynamicFCN; 
+
+  template <class RETURN_TYPE, class ...IN_TYPES>
   class DynamicFCN<RETURN_TYPE( IN_TYPES... )>
   {
-
   private:
-    void* m_handle;
-    RETURN_TYPE ( *m_fcn )( IN_TYPES... );
+    void* m_handle                        = {nullptr};
+    RETURN_TYPE ( *m_fcn )( IN_TYPES... ) = {nullptr};
 
   public:
-    DynamicFCN() : m_handle( nullptr ), m_fcn( nullptr ) {}
+    DynamicFCN() = default; 
     DynamicFCN( const std::string& lib, const std::string& name ) :
 
       m_handle(dlopen( lib.c_str(), RTLD_NOW )) {
         set(m_handle,name);
     }
     DynamicFCN( void* handle, const std::string& name ) : m_handle(handle) { set( handle, name ); }
-    
+    ~DynamicFCN() = default;
+
     bool set( const std::string& lib, const std::string& name )
     {
       DEBUG("Linking handle: " << lib << ":" << name );
@@ -48,7 +62,6 @@ namespace AmpGen
     }
     RETURN_TYPE operator()( IN_TYPES... input ) const { return ( *m_fcn )( input... ); }
     bool isLinked() const { return m_fcn != nullptr; }
-    ~DynamicFCN() = default ;
   };
 } // namespace AmpGen
 

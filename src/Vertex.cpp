@@ -12,7 +12,6 @@
 #include "AmpGen/Units.h"
 
 using namespace AmpGen;
-using namespace AmpGen::Dirac;
 using namespace AmpGen::Vertex;
 
 const Tensor::Index mu    = Tensor::Index();
@@ -173,6 +172,7 @@ DEFINE_VERTEX( V_SS_P )
   Tensor p_wave          = Orbital_PWave( P, Q );
   Expression scalar_part = V1[0] * V2[0] / GeV;
   Tensor L     = p_wave * scalar_part;
+  ADD_DEBUG_TENSOR( L, db );
   return L;
 }
 
@@ -267,7 +267,11 @@ DEFINE_VERTEX( f_fS_P )
   Tensor::Index a,b,c,d;
   Tensor proj   = Spin1hProjector(P);
   Tensor L      = Orbital_PWave(P,Q);
-  return proj(a, b) * Gamma[4](b,c) * gamma_twiddle(P)(mu,c,d) * V1(d) * L(-mu);
+  Tensor t      = proj(a, b) * Gamma[4](b,c) * slash(L)(c,d) * V1(d);
+  ADD_DEBUG_TENSOR( L, db );
+  ADD_DEBUG_TENSOR( Tensor(Gamma[4](b,c)*slash(L)(c,d)*V1(d)), db );
+  ADD_DEBUG_TENSOR(t, db);
+  return t; 
 }
 
 DEFINE_VERTEX( f_Vf_S )

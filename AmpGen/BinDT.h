@@ -35,46 +35,31 @@ namespace AmpGen
   class BinDT
   {
     public:
-      struct AddressCompressor {
+      struct AddressCompressor 
+      {
+        AddressCompressor() = default; 
+        uint32_t operator[]( const void* ptr );
+        uint32_t counter = {0};
         std::map<const void*, uint32_t> elements;
-        AddressCompressor() : counter( 0 ) {}
-        uint32_t counter;
-        uint32_t operator[]( const void* ptr )
-        {
-          auto it = elements.find( ptr );
-          if ( it != elements.end() )
-            return it->second;
-          else {
-            elements[ptr] = counter++;
-            return elements[ptr];
-          }
-        }
       };
       class EndNode;
 
       class INode
       {
         public:
+          INode() = default;
+          virtual ~INode() = default;
           virtual const EndNode* operator()( const double* evt ) const = 0;
           virtual void serialize( std::ostream& stream ) const         = 0;
-          INode* m_parent;
-          INode() : m_parent( nullptr ){};
-          virtual ~INode()                                                                      = default;
-          virtual void visit( const std::function<void( INode* )>& visit_function ) = 0;
+          virtual void visit( const std::function<void( INode* )>& visit_function ) = 0; 
+          INode* m_parent = {nullptr};
       };
       class EndNode : public INode
     {
       public:
-        EndNode( const unsigned int& no, const unsigned int& binNumber = 999 )
-          : m_voxNumber( no ), m_binNumber( binNumber )
-        {
-        }
-        const EndNode* operator()( const double* evt ) const override { return this; }
-        void serialize( std::ostream& stream ) const override
-        {
-          stream << this << " " << m_voxNumber << " " << m_binNumber << std::endl;
-        }
-
+        EndNode( const unsigned int& no, const unsigned int& binNumber = 999 );
+        const EndNode* operator()( const double* evt ) const override ;
+        void serialize( std::ostream& stream ) const override;
         unsigned int voxNumber() const { return m_voxNumber; }
         unsigned int binNumber() const { return m_binNumber; }
         void setBinNumber( const unsigned int& binNumber ) { m_binNumber = binNumber; }
@@ -91,18 +76,10 @@ namespace AmpGen
       public:
         Decision( const unsigned int& index, const double& value, std::shared_ptr<INode> left = nullptr,
             std::shared_ptr<INode> right = nullptr );
-        const EndNode* operator()( const double* evt ) const override
-        {
-          return *( evt + m_index ) < m_value ? ( *m_right )( evt ) : ( *m_left )( evt );
-        }
+        const EndNode* operator()( const double* evt ) const override;
         void serialize( std::ostream& stream ) const override;
         void setChildren( std::shared_ptr<INode> l, std::shared_ptr<INode> r );
-        void visit( const std::function<void(INode*)>& visit_function ) override
-        {
-          visit_function( this );
-          m_left->visit( visit_function );
-          m_right->visit( visit_function );
-        }
+        void visit( const std::function<void(INode*)>& visit_function ) override;
         friend class BinDT;
 
       private :
@@ -111,16 +88,6 @@ namespace AmpGen
         unsigned int m_index;
         double m_value;
     };
-
-    private:
-      std::shared_ptr<INode> m_top;
-      unsigned int m_dim;
-      std::vector<std::shared_ptr<EndNode>> m_endNodes;
-      std::function<std::vector<double>( const Event& )> m_functors;
-      unsigned int m_minEvents;
-      unsigned int m_maxDepth;
-      std::vector<size_t> m_queueOrdering; 
-      double getBestPost( std::vector<double*> source, std::vector<double*> target, int index, bool verbose = false );
 
     public:
       template <class... ARGS>
@@ -179,6 +146,17 @@ namespace AmpGen
       std::shared_ptr<INode> makeNodes( std::vector<double*> source, std::vector<double*> target,
           std::queue<unsigned int> indexQueue, const unsigned int& depth );
       void setFunctor( const std::function<std::vector<double>( const Event& )>& functors ) { m_functors = functors; }
+    
+    private:
+      std::shared_ptr<INode> m_top;
+      unsigned int m_dim;
+      std::vector<std::shared_ptr<EndNode>> m_endNodes;
+      std::function<std::vector<double>( const Event& )> m_functors;
+      unsigned int m_minEvents;
+      unsigned int m_maxDepth;
+      std::vector<size_t> m_queueOrdering; 
+      double getBestPost( std::vector<double*> source, std::vector<double*> target, int index, bool verbose = false );
+
   };
 
 } // namespace AmpGen

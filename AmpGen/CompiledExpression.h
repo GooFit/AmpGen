@@ -21,8 +21,7 @@ namespace AmpGen
      @tparam RETURN_TYPE The type that is returned this compiled expression,
      usually this is a std::complex<double>,
      but in principal support also exists for computing coupled channel propagators
-     (i.e. returning array types)
-   */
+     (i.e. returning array types) */
 
   template <class RETURN_TYPE, class... ARGS>
   class CompiledExpression : public CompiledExpressionBase
@@ -39,7 +38,8 @@ namespace AmpGen
 
     CompiledExpression( const Expression& expression, 
                         const std::string& name,
-                        const std::map<std::string, size_t>& evtMapping = std::map<std::string, size_t>(),
+                        const std::map<std::string, size_t>& evtMapping = 
+                              std::map<std::string, size_t>(),
                         const DebugSymbols& db = {},
                         const MinuitParameterSet* mps = nullptr )
       : CompiledExpressionBase( expression, name, db, evtMapping ), 

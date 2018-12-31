@@ -25,12 +25,6 @@ namespace AmpGen
   
   class Tensor
   {
-  private:
-    std::vector<size_t> m_dim;   
-    std::vector<size_t> m_symmetrisedCoordinates; 
-    std::vector<size_t> m_uniqueElements; 
-    std::vector<Expression> m_elements;
-
   public:
     class Index {
       private: 
@@ -131,6 +125,12 @@ namespace AmpGen
     static std::vector<size_t> index_to_coordinates( const size_t& index, const std::vector<size_t>& dim );
     static size_t coordinates_to_index( const std::vector<size_t>& coords, const std::vector<size_t>& dim );
     static std::string coordinates_to_string( const std::vector<size_t >& coordinates );
+  
+  private:
+    std::vector<size_t> m_dim;   
+    std::vector<size_t> m_symmetrisedCoordinates; 
+    std::vector<size_t> m_uniqueElements; 
+    std::vector<Expression> m_elements;
   };
 
   /** @class TensorProxy
@@ -142,34 +142,31 @@ namespace AmpGen
    */
   class TensorProxy
   {
+  public:
+    TensorProxy( const Tensor& tensor, const std::vector<Tensor::Index>& indices ) ;
+    std::vector<Tensor::Index> indices() const;
+    const Tensor& tensor() const;
+    Tensor& tensorMutable();
+    TensorProxy reorder( const std::vector<Tensor::Index>& indices );
+    operator Expression();
+    operator Tensor();
+  
   private:
     Tensor m_tensor;
     std::vector<Tensor::Index> m_indices;
-  public:
-    operator Tensor() { return m_tensor; }
-    TensorProxy( const Tensor& tensor, const std::vector<Tensor::Index>& indices ) ;
-    std::vector<Tensor::Index> indices() const { return m_indices; }
-    const Tensor& tensor() const { return m_tensor; }
-    operator Expression() { return m_tensor[0] ; } 
-    Tensor& tensorMutable(){ return m_tensor ; } 
-    TensorProxy reorder( const std::vector<Tensor::Index>& indices );
   };
   
   class TensorExpression : public IExpression 
   {
+    public:
+      TensorExpression( const Tensor& tensor );
+      std::string to_string(const ASTResolver* resolver) const;
+      void resolve( ASTResolver& resolver ) ; 
+      complex_t operator()() const ;
+      operator Expression() const;
+    
     private:
       Tensor m_tensor; 
-    public:
-      TensorExpression( const Tensor& tensor ) : m_tensor(tensor) {}
-      std::string to_string(const ASTResolver* resolver) const {
-        return m_tensor.to_string(resolver);
-      }
-      void resolve( ASTResolver& resolver ){ 
-        for( unsigned int i = 0 ; i < m_tensor.size(); ++i ) m_tensor[i].resolve( resolver );
-      }
-      complex_t operator()() const { return 0 ; } 
-      Expression clone() const { return TensorExpression( m_tensor ) ; }  
-      operator Expression() { return Expression( std::make_shared<TensorExpression>( *this ) ); }  
   };
 
   Tensor operator+( const Tensor& t1, const Tensor& t2 );

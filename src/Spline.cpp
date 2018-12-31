@@ -161,17 +161,6 @@ void Spline::resolve( ASTResolver& resolver )
   m_eval.resolve(resolver);
 }
 
-/*
-   void Spline::set( const std::vector<real_t>& values )
-   {
-   if( values.size() != m_nKnots ){ 
-   ERROR("Sizes do not match");
-   return;
-   }
-   m_values = values; 
-   }
-   */
 std::string Spline::to_string(const ASTResolver* resolver) const { return m_eval.to_string(resolver) ; } 
 Spline::operator Expression() { return Expression( std::make_shared<Spline>( *this ) ); }
 complex_t Spline::operator()() const  { return 0; }
-Expression Spline::clone() const { return Spline(*this,m_x) ; }

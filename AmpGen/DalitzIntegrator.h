@@ -28,36 +28,11 @@ namespace AmpGen
 
   class DalitzIntegrator
   {
-    private:
-      double    m_min;
-      double    m_max;
-      double    m_s0;
-      double    m_s1;
-      double    m_s2;
-      double    m_s3;
-      double integrate_internal( TF2& fcn ) const ;
-   
     public:
       typedef std::pair<double, double> sqCo;
 
       DalitzIntegrator( const double& s0, const double& s1, const double& s2, const double& s3);
 
-      sqCo getCoordinates( const Event& evt ) const;
-
-      template <class FCN>
-      double integrate( FCN fcn ) const
-      {
-        double event[12];
-        for ( unsigned int i = 0; i < 12; ++i ) event[i] = 0;
-        TF2 f( "fcn",
-            [&]( double* x, double* p ) {
-            sqCo pos = {x[0], x[1]};
-            setEvent( pos, event );
-            return J( pos ) * std::real( fcn( event ) );
-            }, 0, 1, 0, 1, 0 );
-        return integrate_internal(f) / m_s0;
-      }
-      
       template <class FCN>
       double integrate( FCN fcn, const double& s) const
       {
@@ -70,6 +45,12 @@ namespace AmpGen
             return J( pos, s ) * std::real( fcn( event ) );
             }, 0, 1, 0, 1, 0 );
         return integrate_internal(f) / s;
+      }
+      
+      template <class FCN>
+      double integrate( FCN fcn ) const
+      {
+        return integrate( fcn, m_s0 );
       }
 
       double getMAB( sqCo coords )   const;
@@ -94,6 +75,18 @@ namespace AmpGen
 
       TH2D* makePlot( const std::function<double(const double*)>& fcn, const Projection2D& projection,
           const std::string& name, const size_t& nSamples = 1000000 );
+      
+      sqCo getCoordinates( const Event& evt ) const;
+
+    private:
+      double    m_min;
+      double    m_max;
+      double    m_s0;
+      double    m_s1;
+      double    m_s2;
+      double    m_s3;
+      double integrate_internal( TF2& fcn ) const ;
+   
   };
 } // namespace AmpGen
 

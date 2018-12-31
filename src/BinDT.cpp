@@ -97,7 +97,7 @@ void BinDT::readFromStream( std::istream& stream )
   while ( getline( stream, line ) ) {
     if( line == "end" ) break; 
     auto tokens = split( line, ' ' );
-    
+
     try { 
       std::string address                = tokens[0];
       if ( topAddress == "" ) topAddress = address;
@@ -414,7 +414,7 @@ void BinDT::refreshQueue( const std::vector<double*>& evts, std::queue<unsigned 
   if ( evts.size() > m_minEvents * pow( 2, m_dim ) && depth + m_dim < m_maxDepth ) {
     if( m_queueOrdering.size() == 0 ) 
       for ( unsigned int i = 0; i < m_dim; ++i ) m_queueOrdering.push_back( i );
-   for ( unsigned int i = 0; i < m_dim; ++i ) indexQueue.push( m_queueOrdering[i] );
+    for ( unsigned int i = 0; i < m_dim; ++i ) indexQueue.push( m_queueOrdering[i] );
   } else {
     std::vector<std::pair<unsigned int, double>> indices;
     for ( unsigned int i = 0; i < m_dim; ++i ) indices.emplace_back( i, nnUniformity( evts, i ) );
@@ -445,4 +445,38 @@ void BinDT::Decision::setChildren( std::shared_ptr<INode> l, std::shared_ptr<INo
   m_right           = r;
   m_left->m_parent  = this;
   m_right->m_parent = this;
+}
+
+uint32_t BinDT::AddressCompressor::operator[]( const void* ptr )
+{
+  auto it = elements.find( ptr );
+  if ( it != elements.end() )
+    return it->second;
+  else {
+    elements[ptr] = counter++;
+    return elements[ptr];
+  }
+}
+
+BinDT::EndNode::EndNode( const unsigned int& no, const unsigned int& binNumber ) : 
+  m_voxNumber( no ), 
+  m_binNumber( binNumber ) {}
+
+  const BinDT::EndNode* BinDT::EndNode::operator()( const double* evt ) const { return this; }
+
+  void BinDT::EndNode::serialize( std::ostream& stream ) const
+{
+  stream << this << " " << m_voxNumber << " " << m_binNumber << std::endl;
+}
+const BinDT::EndNode* BinDT::Decision::operator()( const double* evt ) const
+{
+  return *( evt + m_index ) < m_value ? ( *m_right )( evt ) : ( *m_left )( evt );
+}
+
+void BinDT::Decision::setChildren( std::shared_ptr<BinDT::INode> l, std::shared_ptr<BinDT::INode> r );
+void BinDT::Decision::visit( const std::function<void(BinDT::INode*)>& visit_function )
+{
+  visit_function( this );
+  m_left->visit( visit_function );
+  m_right->visit( visit_function );
 }

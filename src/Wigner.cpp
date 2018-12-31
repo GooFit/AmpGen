@@ -15,6 +15,7 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/ParticleProperties.h"
+#include "AmpGen/Utilities.h"
 
 using namespace AmpGen;
 using namespace AmpGen::fcn;
@@ -173,6 +174,16 @@ Tensor AmpGen::helicityTransformMatrix( const Tensor& P,
   return L(a,b) * R(b,c);
 }
 
+std::string phaseString( const double& lA, 
+                         const double& lBmlC, 
+                         const std::string& particleName ){
+  int l =  -lBmlC+lA; 
+  if( l == 0  ) return "";
+  if( l == 1  ) return "e^{  i \\chi_{"+particleName+"}}";
+  if( l == -1 ) return "e^{ -i \\chi_{"+particleName+"}}";
+  else return "e^{ i " + std::to_string(l) + "\\chi_{"+particleName+"}}";
+}
+
 Expression AmpGen::wigner_D(const Tensor& P, 
     const double& J, 
     const double& lA, 
@@ -187,12 +198,19 @@ Expression AmpGen::wigner_D(const Tensor& P,
 
   Expression I(std::complex<double>(0,1));
   auto little_d = make_cse ( wigner_d( pz, J, lA, lB ) );
+  std::cout << "$ d^{" << fermis(J) 
+            <<   "}_{" << fermis(lA) 
+            <<     " " << fermis(lB) 
+            << "}\\left(" << " \\theta_{"+ name +"}\\right)"
+            << phaseString( lA, lB , name ) << "$" << std::endl;
   if( J != 0 && db != nullptr ){
     db->emplace_back("ϕ("+name+")"     , atan2( py, px ) );
     db->emplace_back("cosθ("+name+")"  , pz );
-    db->emplace_back("d[" + fermis(J) +", " + fermis(lA) + ", " + fermis(lB) +"](cosθ)", little_d );
+    db->emplace_back("d[" + std::to_string(J)  +", " + 
+                            std::to_string(lA) +", " + 
+                            std::to_string(lB) +"](cosθ)", little_d );
   }
-  return  fpow( px + I * py, lA - lB ) * little_d; 
+  return  fpow( px + I * py, lB - lA ) * little_d; 
 }
 
 std::vector<LS> AmpGen::calculate_recoupling_constants( 
@@ -220,16 +238,6 @@ std::vector<LS> AmpGen::calculate_recoupling_constants(
   return rt;
 }
 
-std::string phaseString( const double& lA, 
-                         const double& lBmlC, 
-                         const std::string& particleName ){
-  int l =  -lBmlC+lA; 
-  if( l == 0 ) return "";
-  if( l == 1 ) return  "e^{ i \\phi_{"+particleName+"}}";
-  if( l == -1 ) return "e^{ -i \\phi_{"+particleName+"}}";
-  else return "e^{ i " + std::to_string(l) + "\\phi_{"+particleName+"}}";
-}
-
 Expression AmpGen::helicityAmplitude(const Particle& particle, 
                                      const Tensor& parentFrame, 
                                      const double& Mz, 
@@ -239,21 +247,16 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   
   if( particle.daughters().size() > 2 ) return 1; 
   
-  Tensor::Index a,b,c;
-  
+  Tensor::Index a,b,c; 
   Tensor sParentFrame    = particle.spin() == 0. ? Identity(4) : parentFrame;
   Tensor pInParentFrame  = sParentFrame(a,b) * particle.P()(b);
   pInParentFrame.st();
+  Tensor myFrame         = helicityTransformMatrix( pInParentFrame, fcn::sqrt(particle.massSq()), sgn, true )(a,b) * sParentFrame(b,c);
+  
   if( particle.isStable() )
   {
-    //return 1;
-    //   if( particle.spin() == 0 ) return 1;
-    Tensor z({0,0,1,0},{4});
-    Tensor f = parentFrame(a,b) * z(b) ;
- //   std::cout << "$ d^{" + fermis( particle.spin() ) +"}_{"+fermis(Mz) +" "+ fermis( double(particle.polState() )/ 2.) + "}\\left("
- //             << " \\theta_{"+ particle.props()->label() +"}\\right)"
- //             << phaseString( Mz, double( particle.polState() ) / 2. , particle.props()->label() ) << "$" << std::endl;
-    return wigner_D( f, particle.spin(), Mz, double(particle.polState()) / 2.,  db, particle.name() );
+    if( particle.spin() == 0 ) return 1;
+    return wigner_D( pInParentFrame, particle.spin(), Mz, double(sgn * particle.polState()) / 2.,  db, particle.name() ) ;
   }
 
   auto particle_couplings = particle.spinOrbitCouplings(false);
@@ -272,43 +275,20 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
     INFO( particle.uniqueString() << " -> " << L << "  " << S << " P[S = " << particle.S() << "]" );
 
   auto recoupling_constants = calculate_recoupling_constants( particle.spin(), Mz, L, S, d0.spin(), d1.spin() );
-  
-  Expression m           = fcn::sqrt( particle.massSq() );
- // Tensor myFrame         = helicityTransformMatrix( pInParentFrame, m , sgn, true )(a,b) * sParentFrame(b,c);
- // myFrame.st();
 
-  Tensor f1 = sParentFrame(a,b) * d0.P()(b);
-  Tensor f2 = sParentFrame(a,b) * d1.P()(b);
-  f1.st();
-  f2.st();
-  auto L1 = helicityTransformMatrix( f1, fcn::sqrt( d0.massSq() ),  1 , false);
-  auto L2 = helicityTransformMatrix( f2, fcn::sqrt( d1.massSq() ), -1 , false);
-  L1.st();
-  L2.st();
-  
   if( recoupling_constants.size() == 0 ){    
     WARNING( particle.uniqueString() << " " << particle.spin() << " " << 
         particle.orbitalRange(false).first << " " << particle.orbitalRange(false).second 
         <<  " transition Mz="<< Mz << " to " << d0.spin() << " x " << d0.spin() << " cannot be coupled in (LS) = " << L << ", " << S ); 
-    std::string lsStr = "";
-    for( auto& ls : particle_couplings ){
-      lsStr += "(" + std::to_string(int(ls.first)) + ", " + std::to_string(ls.second)  +")";
-    } 
-    WARNING( "--Possible (LS) combinations = " << lsStr );
+    WARNING( "Possible (LS) combinations = " << 
+      vectorToString( particle_couplings, ", ", []( auto& ls ){ return "("+std::to_string(int(ls.first)) + ", " + std::to_string(ls.second) +")";} ) );
   } 
   Expression total = 0 ; 
-  for( auto& coupling : recoupling_constants ){          
-
-    auto term = wigner_D( f1 , particle.spin(), Mz, coupling.m1 - coupling.m2,db, d0.name() );
-    std::cout << "$" << coupling.factor
-              << " d^{" + fermis( particle.spin() ) +"}_{"+fermis(Mz) +" "+ fermis( coupling.m1 -coupling.m2 ) + "}\\left("
-              << " \\theta_{"+d0.props()->label()+"}\\right)"
-              << phaseString( Mz, coupling.m1 - coupling.m2, d0.props()->label() ) << "$" << std::endl;
-    auto h1 = helicityAmplitude( d0, L1(a,b) * sParentFrame(b,c), coupling.m1, db , +1);
-    auto h2 = helicityAmplitude( d1, L2(a,b) * sParentFrame(b,c), coupling.m2, db , -1);
-   // auto h1 = helicityAmplitude( d0, myFrame, coupling.m1, db ,  sgn);
-   // auto h2 = helicityAmplitude( d1, myFrame, coupling.m2, db , -sgn);
-    
+  for( auto& coupling : recoupling_constants )
+  {          
+    auto term = fcn::conj( wigner_D( myFrame(a,b)*d0.P()(b) , particle.spin(), Mz, coupling.m1 - coupling.m2,db, d0.name() ) ) ;
+    auto h1 = helicityAmplitude(d0, myFrame, coupling.m1, db, +1);
+    auto h2 = helicityAmplitude(d1, myFrame, coupling.m2, db, -1);
     if( db != nullptr ) db->emplace_back( "coupling" , coupling.factor );
     total = total + coupling.factor * term * h1 * h2;
   }

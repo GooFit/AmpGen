@@ -22,19 +22,18 @@ namespace AmpGen
 
   class IncoherentSum : public CoherentSum
   {
+    public:
+      IncoherentSum( const EventType& finalStates, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "Inco" );
 
-  public:
-    IncoherentSum( const EventType& finalStates, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "Inco" );
-
-    double getVal( const Event& evt ) const;
-    double operator()( const Event& evt ) const;
-    double prob( const Event& evt ) const;
-    double prob_unnormalised( const Event& evt ) const;
-    void prepare();
-    double norm() const;
-    double norm( const Bilinears& norms ) const;
-    std::complex<double> norm( const unsigned int& i ) { return m_normalisations.get( i, 0 ); }
-    std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
+      double getVal( const Event& evt ) const;
+      double operator()( const Event& evt ) const;
+      double prob( const Event& evt ) const;
+      double prob_unnormalised( const Event& evt ) const;
+      void prepare();
+      double norm() const;
+      double norm( const Bilinears& norms ) const;
+      std::complex<double> norm( const unsigned int& i ) { return m_normalisations.get( i, 0 ); }
+      std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
   };
 } // namespace AmpGen
 

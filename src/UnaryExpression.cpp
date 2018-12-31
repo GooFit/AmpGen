@@ -27,13 +27,23 @@ DEFINE_UNARY_OPERATOR( Norm, std::norm )
 DEFINE_UNARY_OPERATOR( Conj, std::conj )
 DEFINE_UNARY_OPERATOR( Real, std::real )
 DEFINE_UNARY_OPERATOR( Imag, std::imag )
-//DEFINE_UNARY_OPERATOR( ISqrt, rsqrt )
+//DEFINE_UNARY_OPERATOR( LGamma, std::lgamma );
+  //DEFINE_UNARY_OPERATOR( ISqrt, rsqrt )
 
 ISqrt::ISqrt( const Expression& expression) : IUnaryExpression(expression) {} 
 ISqrt::operator Expression() const { return Expression( std::make_shared<ISqrt>(*this) ) ; } 
 complex_t ISqrt::operator()() const { return 1./sqrt( m_expression() ); } 
 std::string ISqrt::to_string(const ASTResolver* resolver) const {   
-  return NamedParameter<bool>("enable_cuda",false) ? "rsqrt("+m_expression.to_string(resolver) +")" : "1./sqrt("+ m_expression.to_string(resolver)+")" ; 
+  return NamedParameter<bool>("enable_cuda",false)  ?
+      "rsqrt("+m_expression.to_string(resolver)+")" :
+    "1./sqrt("+m_expression.to_string(resolver)+")" ;
+}
+
+LGamma::LGamma( const Expression& expression) : IUnaryExpression(expression) {} 
+LGamma::operator Expression() const { return Expression( std::make_shared<LGamma>(*this) ) ; }
+complex_t LGamma::operator()() const { return std::lgamma( std::abs( m_expression() ) ); }
+std::string LGamma::to_string(const ASTResolver* resolver) const {   
+  return "std::lgamma(" + m_expression.to_string(resolver) + ")"; 
 }
 
 Expression Log::d()  const { return 1. / arg(); }
@@ -55,5 +65,5 @@ Expression Abs::d()  const { return 0;}
 Expression Norm::d() const { return 0;} 
 Expression Real::d() const { return 0;} 
 Expression Imag::d() const { return 0;} 
-
+Expression LGamma::d() const { return 0;}
 void IUnaryExpression::resolve( ASTResolver& resolver ) { m_expression.resolve( resolver ); }

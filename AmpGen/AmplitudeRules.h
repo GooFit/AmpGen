@@ -10,6 +10,8 @@
 
 #include "AmpGen/EventType.h"
 #include "AmpGen/Expression.h"
+#include "AmpGen/CompiledExpression.h"
+#include "AmpGen/Event.h"
 
 namespace AmpGen
 {
@@ -54,7 +56,8 @@ namespace AmpGen
       std::map<std::string, std::vector<AmplitudeRule>> m_rules;
   };
 
-  class CouplingConstant {
+  class CouplingConstant 
+  {
     public:
       CouplingConstant() = default; 
       CouplingConstant( const CouplingConstant& other, const AmplitudeRule& pA, bool isCartesian = true );
@@ -70,6 +73,24 @@ namespace AmpGen
 
     private:
       bool isCartesian = {true};
+  };
+
+  template <class RT> struct TransitionMatrix 
+  {
+    TransitionMatrix() = default;
+    TransitionMatrix( const std::shared_ptr<Particle>& dt, 
+                      const CouplingConstant& coup, 
+                      const CompiledExpression<RT, const real_t*, const real_t*> & _pdf ) : 
+          decayTree( dt ), 
+          coupling( coup ), 
+          pdf( _pdf ) {}
+    const RT operator()( const Event& event ) const { return pdf(event.address() ); }
+    
+    std::shared_ptr<Particle>                           decayTree;
+    CouplingConstant                                    coupling;
+    complex_t                                           coefficient;
+    CompiledExpression<RT,const real_t*,const real_t*>  pdf; 
+    size_t                                              addressData = {999};
   };
 
 } // namespace AmpGen

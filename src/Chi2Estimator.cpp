@@ -33,8 +33,26 @@ struct Moment {
   double var() { return N == 0 ? 0 : xx; }
 };
 
+Chi2Estimator::Chi2Estimator( const EventList& dataEvents, const EventList& mcEvents,
+    const std::function<double( const Event& )>& fcn, const unsigned int& minEvents ) : 
+  m_binning( dataEvents, MinEvents( minEvents ), Dim( dataEvents.eventType().dof() ) )
+{
+  doChi2( dataEvents, mcEvents, fcn );
+}
 
-void Chi2Estimator::doChi2( const EventList& dataEvents, const EventList& mcEvents,
+Chi2Estimator::Chi2Estimator( const EventList& dataEvents, const EventList& mcEvents,
+    const std::function<double( const Event& )>& fcn, const std::string& filename ) : 
+  m_binning( File( filename ) )
+{
+  doChi2( dataEvents, mcEvents, fcn );
+}
+
+
+double Chi2Estimator::chi2() const { return m_chi2; }
+double Chi2Estimator::nBins() const { return m_nBins; }
+void   Chi2Estimator::writeBinningToFile( const std::string& filename ) { m_binning.serialize( filename ); }
+
+void   Chi2Estimator::doChi2( const EventList& dataEvents, const EventList& mcEvents,
     const std::function<double( const Event& )>& fcn )
 {
   std::vector<Moment> data( m_binning.size() );
@@ -66,23 +84,9 @@ void Chi2Estimator::doChi2( const EventList& dataEvents, const EventList& mcEven
     mc[i].rescale( total_data_weight / total_int_weight );
     double delta = data[i].val() - mc[i].val();
     double tChi2 = delta * delta / ( data[i].val() + mc[i].var() );
-    // if( tChi2 > 100 ) continue ;
     chi2 += tChi2;
   }
   m_chi2  = chi2;
   m_nBins = m_binning.size();
 }
 
-Chi2Estimator::Chi2Estimator( const EventList& dataEvents, const EventList& mcEvents,
-    const std::function<double( const Event& )>& fcn, const unsigned int& minEvents )
-  : m_binning( dataEvents, MinEvents( minEvents ), Dim( dataEvents.eventType().dof() ) )
-{
-  doChi2( dataEvents, mcEvents, fcn );
-}
-
-Chi2Estimator::Chi2Estimator( const EventList& dataEvents, const EventList& mcEvents,
-    const std::function<double( const Event& )>& fcn, const std::string& filename )
-  : m_binning( File( filename ) )
-{
-  doChi2( dataEvents, mcEvents, fcn );
-}

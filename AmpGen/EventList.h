@@ -22,22 +22,9 @@
 
 namespace AmpGen
 {
-  class CompiledExpressionBase;
-  
   DECLARE_ARGUMENT_DEFAULT( Bins, size_t, 100 );
-  DECLARE_ARGUMENT( Prefix, std::string );
-  DECLARE_ARGUMENT( LineColor, int );
-  DECLARE_ARGUMENT( DrawStyle, std::string );
-  DECLARE_ARGUMENT( Selection, std::function<bool( const Event& )> );
-  DECLARE_ARGUMENT( WeightFunction, std::function<double( const Event& ) > );
-  DECLARE_ARGUMENT( Branches, std::vector<std::string> );
-  DECLARE_ARGUMENT( EntryList, std::vector<size_t> );
-  DECLARE_ARGUMENT_DEFAULT( GetGenPdf, bool, false );
-  DECLARE_ARGUMENT_DEFAULT( CacheSize, size_t , 0 );
-  DECLARE_ARGUMENT_DEFAULT( Filter, std::string , "");
-  DECLARE_ARGUMENT_DEFAULT( WeightBranch, std::string, "" );      
-  DECLARE_ARGUMENT_DEFAULT( ApplySym, bool, 0 ); 
 
+  class CompiledExpressionBase; 
   class EventList
   {
   private:
@@ -151,7 +138,18 @@ namespace AmpGen
       INFO("Filter removes: " << currentSize - size() << " / " << currentSize << " events");
     }
   };
-  
+  DECLARE_ARGUMENT( Prefix, std::string );
+  DECLARE_ARGUMENT( LineColor, int );
+  DECLARE_ARGUMENT( DrawStyle, std::string );
+  DECLARE_ARGUMENT( Selection, std::function<bool( const Event& )> );
+  DECLARE_ARGUMENT( WeightFunction, std::function<double( const Event& ) > );
+  DECLARE_ARGUMENT( Branches, std::vector<std::string> );
+  DECLARE_ARGUMENT( EntryList, std::vector<size_t> );
+  DECLARE_ARGUMENT_DEFAULT( GetGenPdf, bool, false );
+  DECLARE_ARGUMENT_DEFAULT( CacheSize, size_t , 0 );
+  DECLARE_ARGUMENT_DEFAULT( Filter, std::string , "");
+  DECLARE_ARGUMENT_DEFAULT( WeightBranch, std::string, "" );      
+  DECLARE_ARGUMENT_DEFAULT( ApplySym, bool, 0 );  
 } // namespace AmpGen
 
 #endif

@@ -8,10 +8,6 @@
 
 using namespace AmpGen; 
 
-Expression Array::clone() const {
-  return Array( m_top, m_size, m_address ); 
-}
-
 Array::Array( const Expression& top, 
     const size_t&     size,
     const Expression& address)

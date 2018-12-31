@@ -41,8 +41,8 @@ DEFINE_LINESHAPE( kMatrixSimple )
     std::vector<std::string> particlesInThisChannel =
         NamedParameter<std::string>( "kMatrix::Channel::" + std::to_string( i ) ).getVector();
     if ( particlesInThisChannel.size() != 2 ) ERROR( "Only does two body channels for now" );
-    double m1 = ParticlePropertiesList::get( particlesInThisChannel[0] )->mass() / 1000.;
-    double m2 = ParticlePropertiesList::get( particlesInThisChannel[1] )->mass() / 1000.;
+    double m1 = ParticlePropertiesList::get( particlesInThisChannel[0] )->mass();
+    double m2 = ParticlePropertiesList::get( particlesInThisChannel[1] )->mass();
     masses.emplace_back( m1, m2 );
     phaseSpace.push_back( phsp_twoBody( sInGeV, m1, m2 ) );
   }
