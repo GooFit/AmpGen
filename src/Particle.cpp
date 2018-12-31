@@ -589,8 +589,8 @@ std::vector< std::pair<double,double> > Particle::spinOrbitCouplings( const bool
     if( conserveParity && !conservesParity(L) ) continue; 
     for( double S = std::abs(j1-j2); S <= j1+j2 ; ++S ){
       double z2 = J*J - L*L - S*S;
-      if(  L != 0 && S != 0  && abs(z2/(2*L*S)) <= 1 ) lsCouplings.emplace_back(L,S);
-      if( (L == 0 || S == 0) && z2 == 0 )              lsCouplings.emplace_back(L,S);
+      if( L != 0 && S != 0  && std::abs(z2/(2*L*S)) <= 1 ) lsCouplings.emplace_back(L,S);
+      if( (L == 0 || S == 0) && z2 == 0 )                  lsCouplings.emplace_back(L,S);
     }
   }
   return lsCouplings; 
