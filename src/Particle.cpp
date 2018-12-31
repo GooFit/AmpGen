@@ -555,9 +555,9 @@ std::pair<size_t, size_t> Particle::orbitalRange( const bool& conserveParity ) c
   const int s1 = daughter( 0 )->props()->twoSpin();
   const int s2 = daughter( 1 )->props()->twoSpin();
 
-  unsigned int min                                  = abs( S - s1 - s2 );
-  if ( (unsigned int)abs( S + s1 - s2 ) < min ) min = (unsigned int)abs( S + s1 - s2 );
-  if ( (unsigned int)abs( S - s1 + s2 ) < min ) min = (unsigned int)abs( S - s1 + s2 );
+  unsigned int min                                  = std::abs( S - s1 - s2 );
+  if ( (unsigned int)std::abs( S + s1 - s2 ) < min ) min = (unsigned int)std::abs( S + s1 - s2 );
+  if ( (unsigned int)std::abs( S - s1 + s2 ) < min ) min = (unsigned int)std::abs( S - s1 + s2 );
   unsigned int max                                  = S + s1 + s2;
 
   min /= 2;
@@ -587,7 +587,7 @@ std::vector< std::pair<double,double> > Particle::spinOrbitCouplings( const bool
   for( double L = lRange.first; L <= lRange.second; ++L )
   {
     if( conserveParity && !conservesParity(L) ) continue; 
-    for( double S = abs(j1-j2); S <= j1+j2 ; ++S ){
+    for( double S = std::abs(j1-j2); S <= j1+j2 ; ++S ){
       double z2 = J*J - L*L - S*S;
       if(  L != 0 && S != 0  && abs(z2/(2*L*S)) <= 1 ) lsCouplings.emplace_back(L,S);
       if( (L == 0 || S == 0) && z2 == 0 )              lsCouplings.emplace_back(L,S);
@@ -632,7 +632,7 @@ int Particle::conjugate( bool invertHead , bool reorder )
   }
   sgn *= pow( -1, m_orbital );
   if ( m_parity == -1 && m_daughters.size() == 2 &&
-      abs( daughter( 0 )->props()->pdgID() ) == abs( daughter( 1 )->props()->pdgID() ) &&
+      std::abs( daughter( 0 )->props()->pdgID() ) == std::abs( daughter( 1 )->props()->pdgID() ) &&
       daughter( 0 )->props()->pdgID() != daughter( 1 )->props()->pdgID() ) {
     sgn *= -1;
   }
@@ -731,7 +731,7 @@ bool Particle::operator<( const Particle& other )
   if ( !isStable() && other.isStable() ) return true;
   if ( isStable() && !other.isStable() ) return false;
   if ( mass() != other.mass() ) return mass() > other.mass();
-  if ( fabs( props()->pdgID() )  == fabs( other.props()->pdgID() )
+  if ( std::abs( props()->pdgID() )  == std::abs( other.props()->pdgID() )
       && props()->pdgID() != other.props()->pdgID() ) return props()->pdgID() > other.props()->pdgID();
   if ( props()->charge() != other.props()->charge() ) return props()->charge() > other.props()->charge();
   if ( props()->pdgID() != other.props()->pdgID() ) return props()->pdgID() > other.props()->pdgID();
