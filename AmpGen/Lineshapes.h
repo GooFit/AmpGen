@@ -31,7 +31,7 @@
   K(0)*(1430)[LASS]{K+,pi-}
   \endcode
 
-  Linshapes for describing different systems are detailed below. 
+  Lineshapes for describing different systems are detailed below. 
   Some, such as the LASS shape or kMatrix, pertain to the specific particles and final states. 
   Others, such as CoupledChannel or Spline can flexibly describe a variety of systems, but therefore require a more detailed specification by the user. 
   

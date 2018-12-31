@@ -137,6 +137,7 @@ Which generates 10000 events of the model described in MyOpts.opt and saves them
 
 ![s01](doc/figs/s01.png)
 
+In particular, the tree indicates the way in which data is by default loaded into the _Event_ / _EventList_ class. 
 
 ### ConvertToSourceCode
 
