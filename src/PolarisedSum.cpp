@@ -1,7 +1,6 @@
 #include "AmpGen/PolarisedSum.h"
 
 #include <memory.h>
-#include <ext/alloc_traits.h>
 #include <chrono>
 #include <complex>
 #include <iomanip>

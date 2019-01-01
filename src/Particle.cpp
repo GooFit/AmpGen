@@ -1,7 +1,6 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <memory.h>
-#include <ext/alloc_traits.h>
 #include <algorithm>
 #include <cmath>
 #include <fstream>

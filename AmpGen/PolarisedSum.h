@@ -59,7 +59,7 @@ namespace AmpGen
       Tensor transitionMatrix();
     
     private: 
-      size_t                        m_size        = {0}; 
+      //size_t                        m_size        = {0}; 
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};
       EventList*                    m_events      = {nullptr};

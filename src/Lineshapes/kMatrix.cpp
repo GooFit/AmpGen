@@ -1,4 +1,3 @@
-#include <ext/alloc_traits.h>
 #include <stddef.h>
 #include <functional>
 #include <memory>

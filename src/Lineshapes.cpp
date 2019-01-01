@@ -10,9 +10,6 @@
 using namespace AmpGen;
 using namespace AmpGen::fcn;
 
-template <>
-Factory<AmpGen::ILineshape>* Factory<AmpGen::ILineshape>::gImpl = nullptr;
-
 Expression AmpGen::Q2( const Expression& s, const Expression& M1sq, const Expression& M2sq )
 {
   const Expression num = s -  2*M1sq - 2*M2sq  + ( M1sq - M2sq ) * ( M1sq - M2sq ) / s ;

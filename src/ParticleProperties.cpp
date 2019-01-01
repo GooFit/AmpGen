@@ -3,7 +3,6 @@
 #include "AmpGen/ParticleProperties.h"
 
 #include <stdlib.h>
-#include <ext/alloc_traits.h>
 #include <algorithm>
 #include <vector>
 

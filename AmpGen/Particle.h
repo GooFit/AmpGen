@@ -94,7 +94,7 @@ namespace AmpGen
       bool m_usesDefaultLineshape            = {false};      ///< Flag to check if default shape is used
       std::vector<std::shared_ptr<Particle>> m_daughters;    ///< Array of daughter particles
       std::vector<std::string> m_modifiers;                  ///< Additional modifiers for amplitude
-      Expression* m_expression               = {nullptr};    ///< pointer to cached lineshape product
+      //Expression* m_expression               = {nullptr};    ///< pointer to cached lineshape product
       void pdgLookup();                                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
       bool hasModifier( const std::string& modifier ) const; ///< Check if this particle has a given modifier
       std::string modifierString() const;                    ///< Re-generate modifier string used to create particle

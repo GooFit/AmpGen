@@ -1,6 +1,5 @@
 #include "AmpGen/ExpressionParser.h"
 
-#include <ext/alloc_traits.h>
 #include <stddef.h>
 #include <cmath>
 #include <ostream>

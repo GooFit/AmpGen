@@ -43,8 +43,8 @@ namespace AmpGen{
 
     void setAddress( const unsigned int& address );
     void print() const override;
-    virtual unsigned int address() const { return m_address ; } 
-    virtual unsigned int size() const { return 2*m_nKnots ; }  
+    unsigned int address() const override { return m_address ; } 
+    unsigned int size() const override { return 2*m_nKnots ; }  
   };
   
   struct Spline : public IExpression { 
@@ -62,7 +62,7 @@ namespace AmpGen{
  
     Spline( const Spline& spline, const Expression& x );
     void resolve( ASTResolver& resolver ) override ;
-    std::string to_string(const ASTResolver* resolver=nullptr) const ;
+    std::string to_string(const ASTResolver* resolver=nullptr) const override;
     operator Expression() ;
     complex_t operator()() const override ;
     Expression operator()( const Expression& x ); 

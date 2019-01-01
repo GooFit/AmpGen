@@ -8,6 +8,7 @@ if(DEFINED ENV{ROOTSYS})
 endif()
 
 find_package(ROOT CONFIG REQUIRED COMPONENTS Matrix MathMore MathCore Gpad Tree Graf)
+find_package(OpenMP)
 
 if(NOT TARGET ROOT::Minuit2 OR "${extern_minuit2}" )
   message( STATUS "Use external Minuit2") 
@@ -15,10 +16,9 @@ if(NOT TARGET ROOT::Minuit2 OR "${extern_minuit2}" )
   set_target_properties(Minuit2 PROPERTIES FOLDER extern)
   set_target_properties(Minuit2Math PROPERTIES FOLDER extern)
   add_library(ROOT::Minuit2 ALIAS Minuit2)
-  else()
-    message( STATUS "Use ROOT::Minuit2")
+else()
+  message( STATUS "Use ROOT::Minuit2")
 endif()
-
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
@@ -84,22 +84,20 @@ target_compile_options(AmpGen
   -Wno-unknown-pragmas
   $<$<CONFIG:Release>:-Ofast>)
 
-find_package(OpenMP)
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+  set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm -lstdc++")
+endif()
+
 if(OpenMP_FOUND OR OpenMP_CXX_FOUND)
   if(NOT TARGET OpenMP::OpenMP_CXX)
     add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
-    set_property(TARGET OpenMP::OpenMP_CXX
-      PROPERTY INTERFACE_COMPILE_OPTIONS ${OpenMP_CXX_FLAGS})
-    # Only works if the same flag is passed to the linker; use CMake 3.9+ otherwise (Intel, AppleClang)
-    set_property(TARGET OpenMP::OpenMP_CXX
-      PROPERTY INTERFACE_LINK_LIBRARIES ${OpenMP_CXX_FLAGS})
+    set_property(TARGET OpenMP::OpenMP_CXX PROPERTY INTERFACE_COMPILE_OPTIONS ${OpenMP_CXX_FLAGS})
+    set_property(TARGET OpenMP::OpenMP_CXX PROPERTY INTERFACE_LINK_LIBRARIES  ${OpenMP_CXX_FLAGS})
     if(CMAKE_VERSION VERSION_LESS 3.4)
-      set_property(TARGET OpenMP::OpenMP_CXX APPEND
-        PROPERTY INTERFACE_LINK_LIBRARIES -pthread)
+      set_property(TARGET OpenMP::OpenMP_CXX APPEND PROPERTY INTERFACE_LINK_LIBRARIES -pthread)
     else()
       find_package(Threads REQUIRED)
-      set_property(TARGET OpenMP::OpenMP_CXX APPEND
-        PROPERTY INTERFACE_LINK_LIBRARIES Threads::Threads)
+      set_property(TARGET OpenMP::OpenMP_CXX APPEND PROPERTY INTERFACE_LINK_LIBRARIES Threads::Threads)
     endif()
   endif()
   target_link_libraries(AmpGen PUBLIC OpenMP::OpenMP_CXX)
@@ -157,10 +155,9 @@ if ( Boost_FOUND )
       EXECUTABLE_OUTPUT_DIRECTORY      "${CMAKE_TEST_OUTPUT_DIRECTORY}" 
     )
     target_link_libraries(${testName} ${Boost_LIBRARIES} AmpGen)
-    message( "Building test: ${testName} in directory =  ${CMAKE_TEST_OUTPUT_DIRECTORY}" )
     add_test(NAME ${testName} WORKING_DIRECTORY ${CMAKE_TEST_OUTPUT_DIRECTORY} COMMAND ${CMAKE_TEST_OUTPUT_DIRECTORY}/${testName} )
   endforeach(testSrc)
 else()
-   message( WARNING "Warning: Boost (version >=1.67.0) required to build unit tests\n")
+  message( WARNING "Warning: Boost (version >=1.67.0) required to build unit tests\n")
 endif()
 

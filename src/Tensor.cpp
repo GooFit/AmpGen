@@ -1,6 +1,5 @@
 #include "AmpGen/Tensor.h"
 
-#include <ext/alloc_traits.h>
 #include <algorithm>
 #include <iostream>
 #include <iterator>

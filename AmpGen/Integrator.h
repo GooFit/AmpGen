@@ -113,11 +113,11 @@ namespace AmpGen
         {
           if( out->workToDo(i,j) ){
             if( sim ) 
-              addIntegralKeyed( c1, c2, [out,i,j]( const arg& val ){ 
+              addIntegralKeyed( c1, c2, [out,i,j]( arg& val ){ 
                 out->set(i,j,val);
                 if( i != j ) out->set(j,i, std::conj(val) ); } );
             else 
-              addIntegralKeyed( c1, c2, [out,i,j]( const arg& val ){ out->set(i,j,val); } );
+              addIntegralKeyed( c1, c2, [out,i,j]( arg& val ){ out->set(i,j,val); } );
           }
         }
         void addIntegralKeyed( const size_t& c1, const size_t& c2, const TransferFCN& tFunc )

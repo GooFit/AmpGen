@@ -1,6 +1,5 @@
 #include "AmpGen/MinuitExpression.h"
 
-#include <ext/alloc_traits.h>
 #include <stddef.h>
 
 #include "AmpGen/Expression.h"

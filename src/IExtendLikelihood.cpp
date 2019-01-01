@@ -1,6 +1,5 @@
 #include "AmpGen/IExtendLikelihood.h"
 
-#include <ext/alloc_traits.h>
 #include <ostream>
 
 #include "AmpGen/Factory.h"
@@ -12,9 +11,6 @@
 #include "AmpGen/Utilities.h"
 
 using namespace AmpGen;
-
-template <>
-Factory<IExtendLikelihood>* Factory<IExtendLikelihood>::gImpl = nullptr;
 
 double GaussianConstraint::getVal() const
 {

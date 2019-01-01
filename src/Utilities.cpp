@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <ext/alloc_traits.h>
 #include <algorithm>
 #include <cctype>
 #include <cmath>

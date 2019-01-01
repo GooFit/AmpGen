@@ -1,4 +1,3 @@
-#include <ext/alloc_traits.h>
 #include <math.h>
 #include <stddef.h>
 #include <algorithm>
@@ -139,18 +138,17 @@ std::vector<Projection> EventType::defaultProjections( const unsigned int& nBins
   std::vector<std::vector<size_t>> permutations;
   std::string gevcccc            = useRootLabelling ? "GeV^{2}/c^{4}" : "\\mathrm{GeV}^{2}/c^{4}";
   std::string gevcc              = useRootLabelling ? "GeV/c^{2}" : "\\mathrm{GeV}/c^{2}";
-  double units                   = 1;
   for ( size_t r = 2; r < size(); ++r ) { /// loop over sizes ///
     std::vector<std::vector<size_t>>  combR = nCr( size(), r );
     for ( auto& indices : combR ) {
       auto mm = minmax( indices, true );
       if( defaultObservable == "mass2" )
-        axes.emplace_back( [indices, units]( const Event& evt ) { return evt.s( indices ); },
+        axes.emplace_back( [indices]( const Event& evt ) { return evt.s( indices ); },
                          "s" + vectorToString( indices ),
                          "s_{" + label( indices, useRootLabelling ) + "}\\, \\left[" + gevcccc + "\\right]", nBins,
                          ( mm.first - 0.05 ) ,  ( mm.second + 0.05 ) , gevcccc );
       else if( defaultObservable == "mass" )
-        axes.emplace_back( [indices, units]( const Event& evt ) { return sqrt( evt.s( indices ) / ( units * units ) ); },
+        axes.emplace_back( [indices]( const Event& evt ) { return sqrt( evt.s( indices ) ); },
                          "m" + vectorToString( indices ),
                          "m_{" + label( indices, useRootLabelling ) + "}\\, \\left[" + gevcc + "\\right]", nBins,
                          sqrt( mm.first - 0.05 ) ,  sqrt( mm.second + 0.05 ) , gevcc );

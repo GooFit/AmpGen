@@ -2,7 +2,6 @@
 
 #include <TRandom3.h>
 #include <memory.h>
-#include <ext/alloc_traits.h>
 #include <algorithm>
 #include <cmath>
 #include <memory>

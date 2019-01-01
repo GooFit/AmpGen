@@ -7,13 +7,6 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
 
-// In clang, we need to disable the warning about a missing instantiation
-// since it exists in a different unit.
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wundefined-var-template"
-
-#pragma clang diagnostic pop
-
 #define REGISTER( BASE_CLASS, DERIVED_CLASS )                                                                          \
   std::string DERIVED_CLASS::_id = AmpGen::Factory<BASE_CLASS>::Register( #DERIVED_CLASS, new DERIVED_CLASS() )
 #define REGISTER_WITH_KEY( BASE_CLASS, DERIVED_CLASS, KEY, KEY_TYPE )                                                  \
@@ -53,6 +46,9 @@ namespace AmpGen
       return key;
     }
   };
+
+  template <class TYPE, class KEY_TYPE> 
+    Factory<TYPE,KEY_TYPE>* Factory<TYPE,KEY_TYPE>::gImpl = nullptr; 
 } // namespace AmpGen
 
 #endif
