@@ -39,11 +39,12 @@ complex_t    Expression::operator()() const { return ( *m_expression )(); }
 
 template < class T > 
 bool isEqual( const T& A, const double& B ){
-  return fabs(A-B) < std::numeric_limits<double>::epsilon();
+  return std::abs(A-B) < std::numeric_limits<double>::epsilon();
 }
 
 bool isZero( const complex_t& A ){
-  return fabs(std::real(A)) < std::numeric_limits<double>::epsilon() && fabs(std::imag(A)) < std::numeric_limits<double>::epsilon();
+  return std::abs(std::real(A)) < std::numeric_limits<double>::epsilon() && 
+         std::abs(std::imag(A)) < std::numeric_limits<double>::epsilon();
 }
 
 std::string Constant::to_string(const ASTResolver* resolver) const {  
