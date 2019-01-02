@@ -11,6 +11,7 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/NamedParameter.h"
 
 using namespace AmpGen;
 
@@ -66,10 +67,10 @@ AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
 }
 
 CouplingConstant::CouplingConstant( const CouplingConstant& other, 
-                    const AmplitudeRule& pA, 
-                    bool isCartesian ) : 
-  couplings( other.couplings ),
-  isCartesian(isCartesian)
+                    const AmplitudeRule& pA) : 
+  couplings(other.couplings ),
+  isCartesian(other.isCartesian),
+  sf(other.sf)
 {
   couplings.emplace_back( pA.m_re, pA.m_im );
 }
@@ -85,7 +86,6 @@ std::vector<AmplitudeRule> AmplitudeRules::rulesForDecay( const std::string& hea
 
 std::map<std::string, std::vector<AmplitudeRule>> AmplitudeRules::rules() { return m_rules; }
 
-
 EventType AmplitudeRule::eventType() const
 {
   Particle particle( m_name );
@@ -97,9 +97,21 @@ EventType AmplitudeRule::eventType() const
   return EventType( particleNames );
 }
 
-CouplingConstant::CouplingConstant( const AmplitudeRule& pA, bool isCartesian) : 
-  isCartesian(isCartesian) {
+CouplingConstant::CouplingConstant( const AmplitudeRule& pA)
+{
   couplings.emplace_back( std::make_pair(pA.m_re,pA.m_im) );  
+  std::string cartOrPolar = NamedParameter<std::string>("CouplingConstant::Coordinates","cartesian");
+  if( cartOrPolar == "polar" ){
+    isCartesian = false; 
+  }
+  else if ( cartOrPolar != "cartesian" ){
+    ERROR("Coordinates for coupling constants must be either cartesian or polar");
+  } 
+  std::string degOrRad = NamedParameter<std::string>("CouplingConstant::AngularUnits","rad");
+  if ( degOrRad == "deg") sf = M_PI / 180; 
+  else if ( degOrRad != "rad"){
+    ERROR("CouplingConstant::AngularUnits must be either rad or deg");
+  } 
 }
 
 std::complex<double> CouplingConstant::operator()() const
@@ -108,7 +120,7 @@ std::complex<double> CouplingConstant::operator()() const
   if ( isCartesian )
     for( auto& p : couplings ) F *= complex_t( p.first->mean() , p.second->mean() ); 
   else
-    for( auto& p : couplings ) F *= p.first->mean() * complex_t( cos( p.second->mean() ), sin( p.second->mean() ) );
+    for( auto& p : couplings ) F *= p.first->mean() * complex_t( cos( sf * p.second->mean() ), sin( sf * p.second->mean() ) );
   return F;
 }
 
@@ -116,7 +128,7 @@ Expression CouplingConstant::to_expression() const
 {
   Expression J = Constant(0,1);
   if ( isCartesian ) {
-    Expression total =1 ;
+    Expression total = 1;
     for ( auto& p : couplings ) {
       total = total * ( Parameter( p.first->name() ) + J * Parameter( p.second->name() ) );
     }
@@ -128,7 +140,7 @@ Expression CouplingConstant::to_expression() const
       angle = angle + Parameter( p.second->name() );
       amp   = amp * Parameter( p.first->name() );
     }
-    return amp * ( Cos( angle ) + J * Sin( angle ) );
+    return amp * ( Cos( sf * angle ) + J * Sin( sf * angle ) );
   }
 }
 
@@ -138,11 +150,11 @@ void CouplingConstant::print() const
   if ( isCartesian )
     for ( auto& coupling : couplings ) INFO( coupling.first->name() + " i " + coupling.second->name() );
   else
-    for ( auto& coupling : couplings ) INFO( coupling.first->name() << " x exp(i" << coupling.second->name() );
+    for ( auto& coupling : couplings ) INFO( coupling.first->name() << " x exp(i" <<  coupling.second->name() );
 }
 
 std::vector< std::pair<Particle, CouplingConstant > > AmplitudeRules::getMatchingRules( 
-    const EventType& type, const std::string& prefix, const bool& useCartesian ){
+    const EventType& type, const std::string& prefix ){
 
   auto rules        = rulesForDecay( type.mother() );
   std::vector< std::pair< Particle, CouplingConstant > > rt; 
@@ -151,7 +163,7 @@ std::vector< std::pair<Particle, CouplingConstant > > AmplitudeRules::getMatchin
     if ( rule.prefix() != prefix ) continue;
     std::vector<std::pair<Particle, CouplingConstant>> tmpParticles;
     auto fs = type.finalStates();
-    tmpParticles.emplace_back( Particle( rule.name(), fs ), CouplingConstant(rule,useCartesian) );
+    tmpParticles.emplace_back( Particle( rule.name(), fs ), CouplingConstant(rule) );
     do {
       std::vector<std::pair<Particle, CouplingConstant>> newTmpParticles;
       for ( auto& particleWithCouplingConstant : tmpParticles ) {
@@ -169,7 +181,7 @@ std::vector< std::pair<Particle, CouplingConstant > > AmplitudeRules::getMatchin
           for ( auto& subTree : expandedRules ) {
             auto expanded_amplitude = replaceAll( nameToExpand, ifs->name(), subTree.name() );
             auto fs2                = type.finalStates();
-            newTmpParticles.emplace_back( Particle( expanded_amplitude, fs2 ), CouplingConstant( coupling, subTree, useCartesian ) );
+            newTmpParticles.emplace_back( Particle( expanded_amplitude, fs2 ), CouplingConstant( coupling, subTree) );
           }
           break; // we should only break if there are rules to be expanded ...
         }

@@ -60,6 +60,7 @@ namespace AmpGen
     
     private: 
       //size_t                        m_size        = {0}; 
+
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};
       EventList*                    m_events      = {nullptr};
@@ -67,6 +68,7 @@ namespace AmpGen
       const MinuitParameterSet*     m_mps         = {nullptr};
       double                        m_weight      = {1}; 
       std::vector<MinuitProxy>      m_pVector     = {}; 
+      bool                          m_verbosity   = {0};
       Integrator<18>                m_integrator;
       std::array<Bilinears,6>       m_norms;
       std::vector<std::vector<int>> m_polStates; 

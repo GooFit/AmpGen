@@ -86,7 +86,7 @@ void OptionsParser::import( const std::string& fName )
       if ( tokens.size() == 0 ) return;
       std::string name = currentTokens[0];
       if ( name == "Import" && currentTokens.size() == 2 ) {
-      this->import( tokens[1] );
+      this->import( expandGlobals( tokens[1] ) );
       currentTokens.clear();
       return;
       }

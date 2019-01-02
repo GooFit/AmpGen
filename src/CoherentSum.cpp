@@ -36,13 +36,12 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   , m_evtType( type )
   , m_prefix( prefix )
 {
-  bool useCartesian    = NamedParameter<bool>(  "CoherentSum::UseCartesian"  , true );
   bool autoCompile     = NamedParameter<bool>(  "CoherentSum::AutoCompile"   , true ); 
   m_dbThis             = NamedParameter<bool>(  "CoherentSum::Debug"         , false );
   m_printFreq          = NamedParameter<size_t>("CoherentSum::PrintFrequency", 100 );
-  m_verbosity          = NamedParameter<size_t>("CoherentSum::Verbosity"     , 0 );
+  m_verbosity          = NamedParameter<bool>("CoherentSum::Verbosity"     , 0 );
   std::string objCache = NamedParameter<std::string>("CoherentSum::ObjectCache",""); 
-  auto amplitudes      = m_protoAmplitudes.getMatchingRules( m_evtType, prefix, useCartesian );
+  auto amplitudes      = m_protoAmplitudes.getMatchingRules( m_evtType, prefix);
   for( auto& amp : amplitudes ) addMatrixElement( amp, mps );
   m_isConstant = isFixedPDF(mps);
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() );

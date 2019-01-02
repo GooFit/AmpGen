@@ -50,7 +50,7 @@ namespace AmpGen
       bool hasDecay( const std::string& head );
       std::map<std::string, std::vector<AmplitudeRule>> rules();
       std::vector< std::pair< Particle, CouplingConstant > > getMatchingRules( 
-          const EventType& type, const std::string& prefix, const bool& useCartesian );
+          const EventType& type, const std::string& prefix );
 
     private:
       std::map<std::string, std::vector<AmplitudeRule>> m_rules;
@@ -60,8 +60,8 @@ namespace AmpGen
   {
     public:
       CouplingConstant() = default; 
-      CouplingConstant( const CouplingConstant& other, const AmplitudeRule& pA, bool isCartesian = true );
-      CouplingConstant( const AmplitudeRule& pA, bool isCartesian = true );
+      CouplingConstant( const CouplingConstant& other, const AmplitudeRule& pA);
+      CouplingConstant( const AmplitudeRule& pA);
       std::complex<double> operator()() const;
       Expression to_expression() const;
       void print() const;
@@ -73,6 +73,7 @@ namespace AmpGen
 
     private:
       bool isCartesian = {true};
+      double sf        = {1};
   };
 
   template <class RT> struct TransitionMatrix 

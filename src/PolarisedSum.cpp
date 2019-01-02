@@ -38,10 +38,11 @@ PolarisedSum::PolarisedSum( const EventType& type,
   bool debug           = NamedParameter<bool>("PolarisedSum::Debug", false );
   bool autoCompile     = NamedParameter<bool>("PolarisedSum::AutoCompile",true);
   std::string objCache = NamedParameter<std::string>("PolarisedSum::ObjectCache",""); 
+  m_verbosity          = NamedParameter<bool>("PolarisedSum::Verbosity"     , 0 );
 
   AmplitudeRules proto( mps ); 
 
-  auto proto_amplitudes = proto.getMatchingRules( type, prefix , true );
+  auto proto_amplitudes = proto.getMatchingRules( type, prefix);
   auto production_polarisations = polarisations( type.mother() ); 
   std::vector<std::vector<int>> all_polarisation_states ;
   for( auto& pol : production_polarisations ) all_polarisation_states.push_back( {pol} );
@@ -183,7 +184,7 @@ void   PolarisedSum::prepare()
     //if( m_nCalls == 0 || changedPdfIndices.size() != 0 ) debug_norm();
   }
   tIntegral.stop();
-  if( changedPdfIndices.size() != 0  ) 
+  if( m_verbosity && changedPdfIndices.size() != 0  ) 
     INFO("Time to evaluate = " << tEval << " ms; norm = " << tIntegral << " ms;  [pdfs = " << changedPdfIndices.size() << " zeros= " << count_zeros(m_norms, m_matrixElements.size() ) << "]" );
   m_nCalls++;
 }
