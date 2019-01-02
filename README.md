@@ -101,7 +101,8 @@ K*(892)0{K+,pi-}
 describes an excited vector kaon decaying into a charged kaon and pion. 
 The other numbers on the lines that describe the decays parameterise the coupling to this channel, 
 either in terms of real and imaginary parts or an amplitude and a phase.
-The possible options for the _Fix?_ flag are: 
+Each parameter is specified in terms of three numbers: the _fix_ flag, the initial value, and the step size. 
+The possible options for the _fix_ flag are: 
 * Free (fix=0) and a step size of not 0.
 * Fixed (fix=2, for historical reasons)
 * Compile-Time-Constant (fix=3) which indicates that the parameter should be treated as a (JIT) compile time constant, which in some cases allows for more aggressive optimisations to be performed. 
@@ -133,7 +134,8 @@ The standalone generator for models can be used as
 Generator MyOpts.opt --nEvents=10000 --Output=output.root
 ```
 
-Which generates 10000 events of the model described in MyOpts.opt and saves them to output.root. The output should include a tree (DalitzEventList) of candidates with the full four-vectors, as well as one- and two-dimensional projections, an example of which is shown below:
+Which generates 10000 events of the model described in MyOpts.opt and saves them to output.root. 
+The output should include a tree (DalitzEventList) of candidates with the full four-vectors, as well as one- and two-dimensional projections, an example of which is shown below:
 
 ![s01](doc/figs/s01.png)
 
