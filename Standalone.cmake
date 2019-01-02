@@ -3,6 +3,18 @@ set(AMPGEN_CXX ${CMAKE_CXX_COMPILER}  CACHE FILEPATH "This should be the path to
 file(GLOB_RECURSE AMPGEN_SRC src/*)
 file(GLOB_RECURSE AMPGEN_HDR AmpGen/*)
 
+if( NOT "${CMAKE_CXX_STANDARD}" ) 
+  set(CMAKE_CXX_STANDARD 17) 
+endif() 
+
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+option(AMPGEN_DEBUG "AmpGen Debug printout")
+option(AMPGEN_TRACE "AmpGen Trace printout")
+
+add_library(AmpGen SHARED ${AMPGEN_SRC} ${AMPGEN_HDR})
+
 if(DEFINED ENV{ROOTSYS})
   list(APPEND CMAKE_MODULE_PATH "$ENV{ROOTSYS}/etc/cmake/")
 endif()
@@ -10,15 +22,6 @@ endif()
 find_package(ROOT CONFIG REQUIRED COMPONENTS Matrix MathMore MathCore Gpad Tree Graf)
 find_package(OpenMP)
 
-if(NOT TARGET ROOT::Minuit2 OR "${extern_minuit2}" )
-  message( STATUS "Use external Minuit2") 
-  add_subdirectory("extern/Minuit2")
-  set_target_properties(Minuit2 PROPERTIES FOLDER extern)
-  set_target_properties(Minuit2Math PROPERTIES FOLDER extern)
-  add_library(ROOT::Minuit2 ALIAS Minuit2)
-else()
-  message( STATUS "Use ROOT::Minuit2")
-endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
@@ -43,17 +46,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-if( NOT "${CMAKE_CXX_STANDARD}" )
-  set(CMAKE_CXX_STANDARD 17)
-endif() 
-
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-option(AMPGEN_DEBUG "AmpGen Debug printout")
-option(AMPGEN_TRACE "AmpGen Trace printout")
-
-add_library(AmpGen SHARED ${AMPGEN_SRC} ${AMPGEN_HDR})
+message( STATUS "ROOT_INCLUDE_DIRS = ${ROOT_INCLUDE_DIRS}")
 
 target_include_directories(AmpGen
   PUBLIC
@@ -86,6 +79,17 @@ target_compile_options(AmpGen
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm -lstdc++")
+endif()
+
+if(NOT TARGET ROOT::Minuit2 OR "${extern_minuit2}" )
+  message( STATUS "Use external Minuit2") 
+  add_subdirectory("extern/Minuit2")
+  set_target_properties(Minuit2     PROPERTIES FOLDER extern)
+  set_target_properties(Minuit2Math PROPERTIES FOLDER extern)
+  add_library(ROOT::Minuit2 ALIAS Minuit2)
+  target_include_directories( AmpGen PUBLIC "${CMAKE_SOURCE_DIR}/extern/Minuit2/inc/")  
+else()
+  message( STATUS "Use ROOT::Minuit2")
 endif()
 
 if(OpenMP_FOUND OR OpenMP_CXX_FOUND)

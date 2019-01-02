@@ -2,6 +2,7 @@
 
 #include <TMatrixTBase.h>
 #include <TMatrixTSym.h>
+#include <TGraph.h>
 #include <iostream>
 #include <string>
 #include <iomanip>
@@ -17,9 +18,9 @@
 #include "Math/Factory.h"
 #include "Math/Functor.h"
 #include "Math/Minimizer.h"
-#include "TGraph.h"
 
 using namespace AmpGen;
+using namespace ROOT;
 
 unsigned int Minimiser::nPars() const { return m_nParams; }
 
@@ -68,7 +69,7 @@ void Minimiser::prepare()
   double tolerance      = NamedParameter<double>( "Minimiser::Tolerance", 0.01 );
   m_printLevel          = NamedParameter<unsigned int>( "Minimiser::PrintLevel", 4 );
   if ( m_minimiser != nullptr ) delete m_minimiser;
-  m_minimiser = new ROOT::Minuit2::Minuit2Minimizer(algorithm.c_str() ) ; // ROOT::Math::Factory::CreateMinimizer( minimiser, algorithm );
+  m_minimiser = new Minuit2::Minuit2Minimizer(algorithm.c_str() ) ; // ROOT::Math::Factory::CreateMinimizer( minimiser, algorithm );
   DEBUG( "Error definition = " << m_minimiser->ErrorDef() );
   m_minimiser->SetMaxFunctionCalls( maxCalls );
   m_minimiser->SetMaxIterations( 100000 );
