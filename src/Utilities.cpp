@@ -443,7 +443,16 @@ bool lexical_cast<bool>( const std::string& word, bool& status )
 }
 
 template <>
-uint64_t lexical_cast<uint64_t>( const std::string& word, bool& status )
+long int lexical_cast<long int>( const std::string& word, bool& status )
+{
+  char* p;
+  auto number = strtol( word.c_str(), &p, 10 );
+  status &= *p == 0;
+  return number;
+}
+
+template <>
+unsigned long int lexical_cast<unsigned long int>( const std::string& word, bool& status )
 {
   char* p;
   auto number = strtoul( word.c_str(), &p, 10 );
@@ -451,11 +460,3 @@ uint64_t lexical_cast<uint64_t>( const std::string& word, bool& status )
   return number;
 }
 
-template <>
-int64_t lexical_cast<int64_t>( const std::string& word, bool& status )
-{
-  char* p;
-  auto number = strtol( word.c_str(), &p, 10 );
-  status &= *p == 0;
-  return number;
-}

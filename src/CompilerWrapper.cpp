@@ -114,15 +114,20 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
   std::vector<pid_t> pids;
   pid_t childPID = 0; 
   using namespace std::chrono_literals;
+  std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", 
+   {"-Ofast", "--std=c++17","-march=native"} ); 
+
   std::vector<const char*> argp = { m_cxx.c_str(), 
-    "-Ofast", 
     "-shared", 
     "-rdynamic", 
-    "--std=c++17",
-    "-march=native",
-    "-fPIC", 
-    fname.c_str(), "-o", 
-    oname.c_str(), NULL };
+    "-fPIC"};
+  for( auto& flag : compile_flags ) argp.push_back( flag.c_str() );
+
+  argp.push_back( fname.c_str() );
+  argp.push_back( "-o");
+  argp.push_back( oname.c_str() );
+  argp.push_back( NULL );
+  
   childPID = vfork();
   if( childPID == 0 )
   {

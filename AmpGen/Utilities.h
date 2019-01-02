@@ -108,22 +108,14 @@ RETURN_TYPE lexical_cast( const std::string& word, bool& status )
   return RETURN_TYPE();
 }
 
-template <>
-double lexical_cast( const std::string& word, bool& status );
-template <>
-unsigned int lexical_cast( const std::string& word, bool& status );
-template <>
-std::string lexical_cast( const std::string& word, bool& status );
-template <>
-float lexical_cast( const std::string& word, bool& status );
-template <>
-bool lexical_cast( const std::string& word, bool& status );
-template <>
-int lexical_cast( const std::string& word, bool& status );
-template <>
-uint64_t lexical_cast( const std::string& word, bool& status );
-template <>
-int64_t lexical_cast( const std::string& word, bool& status );
+template <> double       lexical_cast( const std::string& word, bool& status );
+template <> unsigned int lexical_cast( const std::string& word, bool& status );
+template <> std::string  lexical_cast( const std::string& word, bool& status );
+template <> float        lexical_cast( const std::string& word, bool& status );
+template <> bool         lexical_cast( const std::string& word, bool& status );
+template <> int          lexical_cast( const std::string& word, bool& status );
+template <> unsigned long int lexical_cast( const std::string& word, bool& status );
+template <> long int          lexical_cast( const std::string& word, bool& status );
 
 template <class FCN>
 void processFile( const std::string& filename, FCN&& toDo, const char ignoreLinesThatBeginWith = '#' )

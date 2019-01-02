@@ -112,7 +112,7 @@ Decays can either be specified fully inline, as above, or split into multiple st
 ```
 D0{K(1)(1270)+,pi-}                         0     1      0.1       0     0      0.1   
 
-K(1)(1270)+{rho(770)0{pi+,pi-},K-}          2     1      0         2     0      0
+K(1)(1270)+{rho(770)0{pi+,pi-},K+}          2     1      0         2     0      0
 K(1)(1270)+{K*(892)0{K+,pi-},pi+}           0     1      0.1       0     0      0.1
 ```
 The production/decay couplings of the K(1270) resonance are now defined in terms of the coupling to the rho(770),K+ channel, 
