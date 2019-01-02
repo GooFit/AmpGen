@@ -59,27 +59,6 @@ target_link_libraries(AmpGen
   ${ROOT_LIBRARIES}
   ${CMAKE_DL_LIBS})
 
-target_link_libraries(AmpGen
-  INTERFACE 
-  ROOT::Minuit2 )
-
-target_compile_definitions(AmpGen
-  PUBLIC
-  "AMPGENROOT_CMAKE=\"${CMAKE_BINARY_DIR}/bin\""
-  "AMPGEN_CXX=\"${AMPGEN_CXX}\""
-  $<$<BOOL:${AMPGEN_DEBUG}>:DEBUGLEVEL=1>
-  $<$<BOOL:${AMPGEN_TRACE}>:TRACELEVEL=1>)
-
-target_compile_options(AmpGen
-  PUBLIC
-  -Wall -Wextra -Wpedantic -g3
-  -Wno-unused-parameter
-  -Wno-unknown-pragmas
-  $<$<CONFIG:Release>:-Ofast>)
-
-if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-  set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm -lstdc++")
-endif()
 
 if(NOT TARGET ROOT::Minuit2 OR "${extern_minuit2}" )
   message( STATUS "Use external Minuit2") 
@@ -91,6 +70,11 @@ if(NOT TARGET ROOT::Minuit2 OR "${extern_minuit2}" )
 else()
   message( STATUS "Use ROOT::Minuit2")
 endif()
+
+target_link_libraries(AmpGen
+  PUBLIC 
+  ROOT::Minuit2 )
+
 
 if(OpenMP_FOUND OR OpenMP_CXX_FOUND)
   if(NOT TARGET OpenMP::OpenMP_CXX)
@@ -122,6 +106,24 @@ if(AMPGEN_XROOTD)
   find_library(XROOTD_LIB NAMES libXrdCl.so
     HINTS "/cvmfs/lhcb.cern.ch/lib/lcg/releases/LCG_89/xrootd/4.6.0/$ENV{CMTCONFIG}/lib64")
   target_link_libraries(AmpGen PUBLIC ${XROOTD_LIB})
+endif()
+
+target_compile_definitions(AmpGen
+  PUBLIC
+  "AMPGENROOT_CMAKE=\"${CMAKE_BINARY_DIR}/bin\""
+  "AMPGEN_CXX=\"${AMPGEN_CXX}\""
+  $<$<BOOL:${AMPGEN_DEBUG}>:DEBUGLEVEL=1>
+  $<$<BOOL:${AMPGEN_TRACE}>:TRACELEVEL=1>)
+
+target_compile_options(AmpGen
+  PUBLIC
+  -Wall -Wextra -Wpedantic -g3
+  -Wno-unused-parameter
+  -Wno-unknown-pragmas
+  $<$<CONFIG:Release>:-Ofast>)
+
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+  set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm -lstdc++")
 endif()
 
 file(GLOB_RECURSE applications apps/*.cpp )
