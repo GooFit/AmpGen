@@ -3,6 +3,7 @@
 
 #include <complex>
 #include <vector>
+#include <memory>
 
 #include "AmpGen/EventType.h"
 #include "AmpGen/Expression.h"
@@ -165,6 +166,10 @@ namespace AmpGen
       /// can be parsed to generate the decay tree.
       std::string uniqueString() const;
       
+      /// @function The descriptor that describes this decay / 
+      /// that can be parsed to generate the decay tree and uniquely identify it. 
+      std::string decayDescriptor() const;
+      
       /// @function The string that describes the spin/orbital topology of this decay, 
       /// i.e. replacing specific particle names with their spins.
       std::string topologicalString() const;
@@ -174,7 +179,9 @@ namespace AmpGen
       
       /// @function Decay descriptor formatted as LaTeX for this decay. 
       std::string texLabel( const bool& printHead = false, const bool& recurse=true ) const;
-            
+      
+      /// @function Returns the ``quasi'' CP Quantum number for this decay       
+      int quasiCP() const; 
       /// @function Return the eventType for this decay (i.e. the initial and final state particles) 
       EventType eventType() const;
 

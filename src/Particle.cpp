@@ -627,12 +627,13 @@ int Particle::conjugate( bool invertHead , bool reorder )
     DEBUG( "Trying to conjugate: " << m_name );
     m_props = ParticlePropertiesList::get( -m_props->pdgID() );
     m_name  = m_props->name();
-    pdgLookup();
+    m_parity = m_props->P();
   }
   sgn *= pow( -1, m_orbital );
-  if ( m_parity == -1 && m_daughters.size() == 2 &&
-      std::abs( daughter( 0 )->props()->pdgID() ) == std::abs( daughter( 1 )->props()->pdgID() ) &&
-      daughter( 0 )->props()->pdgID() != daughter( 1 )->props()->pdgID() ) {
+  if ( m_parity == -1 
+      && m_daughters.size() == 2 
+      && std::abs(daughter(0)->props()->pdgID()) == std::abs(daughter(1)->props()->pdgID())
+      && daughter(0)->props()->pdgID() != daughter(1)->props()->pdgID() ) {
     sgn *= -1;
   }
   for ( auto& d : m_daughters ) sgn *= d->conjugate( invertHead );
@@ -785,4 +786,15 @@ unsigned int Particle::matches( const Particle& other ) const
   if( rt & MatchState::Exact && rt != MatchState::Exact ) 
     rt &= ~MatchState::Exact;
   return rt;
+}
+
+std::string Particle::decayDescriptor() const { return m_uniqueString ; }
+
+int Particle::quasiCP() const 
+{
+  int prod = m_props->C() == 0 ? 1 : m_props->C();
+  prod *= ( m_orbital % 2 == 0 ? 1 : -1 );
+  //if( isStable() ) prod *= m_props->P();
+  for( auto& d : m_daughters ) prod *= d->quasiCP() ;
+  return prod; 
 }

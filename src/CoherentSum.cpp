@@ -138,9 +138,12 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
   for ( auto& pdf : m_matrixElements ) pdf.pdf.resetExternals();
   if ( nameMustContain == "" )
     for ( auto& pdf : m_matrixElements ) {
-      auto v = pdf(evt);
-      INFO( std::setw(90) << pdf.decayTree->uniqueString() << " = " <<  std::real(v) << " " << std::imag(v) << " cached = " << 
-          evt.getCache(  pdf.addressData ) );
+      auto A = pdf(evt);
+      auto gTimesA = pdf.coupling() * A; 
+      INFO( std::setw(70) << pdf.decayTree->uniqueString() << " A = [ " 
+                          << std::real(A)       << " " << std::imag(A) << " ] g × A = [ "
+                          << std::real(gTimesA) << " " << std::imag(gTimesA) << " ]" );
+                          //evt.getCache(  pdf.addressData ) );
       if( m_dbThis ) pdf.pdf.debug( evt );
     }
   else
@@ -275,9 +278,7 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
   bool enableCuda            = NamedParameter<bool>("enable_cuda",false);
 
   for ( auto& p : m_matrixElements ){
-    INFO( "Streaming: " << p.decayTree->uniqueString() );
     stream << p.pdf << std::endl;
-    INFO("Done streaming, incluing parameters...");
     if( ! enableCuda ) p.pdf.compileWithParameters( stream );
     if( includePythonBindings ) p.pdf.compileDetails( stream );
   }

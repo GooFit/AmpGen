@@ -244,10 +244,6 @@ void MinuitParameterSet::loadFromFile( const std::string& file )
 }
 
 MinuitParameterSet::~MinuitParameterSet() = default;
-//  for( unsigned int i = 0 ; i < _parPtrList.size(); ++i ){
-//    delete _parPtrList[i];
-//  }
-// }
 
 void MinuitParameterSet::set( const MinuitParameterSet& other )
 {
