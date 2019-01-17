@@ -18,6 +18,10 @@
   if ( Y != nullptr ) for( size_t i = 0 ; i < X.size(); ++i ) \
     Y->emplace_back( std::string(#X) + Tensor::coordinates_to_string( X.coords(i) ) , X[i] );
 
+#define ADD_DEBUG_TENSOR_NAMED( X, Y, Z )  \
+  if ( Y != nullptr ) for( size_t i = 0 ; i < X.size(); ++i ) \
+    Y->emplace_back( Z + Tensor::coordinates_to_string( X.coords(i) ) , X[i] );
+
 namespace AmpGen
 {
   class ASTResolver;

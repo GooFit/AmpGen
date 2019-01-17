@@ -372,7 +372,6 @@ void Particle::addDaughter( const std::shared_ptr<Particle>& particle ) { m_daug
 Tensor Particle::transitionMatrix( DebugSymbols* db  )
 {
   auto particles = getFinalStateParticles();
-   
   return spinTensor();
 }
 
@@ -407,9 +406,16 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
     if ( includeSpin && spinFormalism == "Helicity" ){
       spinFactor = helicityAmplitude( *this, Identity(4), double(polState())/2.0, db ); 
     }
-    if( db != nullptr ) 
-      db->emplace_back( "SF_"+std::to_string(polState()) +"_"+std::to_string(daughter(0)->polState()
-            ) + "_"+std::to_string(daughter(1)->polState() ) , spinFactor );
+    if( db != nullptr ){
+      std::string finalStateString="";
+      for( auto& fs : finalStateParticles ) 
+        if( fs->spin() != 0 ){
+          finalStateString += std::to_string(fs->polState()) + "_";
+        }
+      if( finalStateString != "" ) 
+        finalStateString = finalStateString.substr(0, finalStateString.size()-1);
+      db->emplace_back( "SF_"+std::to_string(polState()) +"_"+ finalStateString , spinFactor );
+    }
     DEBUG( "Got spin matrix element -> calculating lineshape product" );
     if ( sumAmplitudes ) total = total + make_cse ( propagator( db ) ) * spinFactor;
     else {
@@ -437,8 +443,8 @@ Tensor Particle::spinTensor( DebugSymbols* db ) const
 {
   DEBUG( "Getting SpinTensor for : " << m_name << " " << m_daughters.size() );
   if ( m_daughters.size() == 0 ){
-    auto S= externalSpinTensor(m_polState, db);
-    if( S.size() != 1 ) ADD_DEBUG_TENSOR( S, db );
+    auto S = externalSpinTensor(m_polState, db);
+    if( S.size() != 1 ) ADD_DEBUG_TENSOR_NAMED( S, db, "S("+name()+")" );
     return S;
   }
   else if ( m_daughters.size() == 2 ) {
@@ -554,19 +560,18 @@ std::pair<size_t, size_t> Particle::orbitalRange( const bool& conserveParity ) c
   const int s1 = daughter( 0 )->props()->twoSpin();
   const int s2 = daughter( 1 )->props()->twoSpin();
 
-  unsigned int min                                  = std::abs( S - s1 - s2 );
-  if ( (unsigned int)std::abs( S + s1 - s2 ) < min ) min = (unsigned int)std::abs( S + s1 - s2 );
-  if ( (unsigned int)std::abs( S - s1 + s2 ) < min ) min = (unsigned int)std::abs( S - s1 + s2 );
-  unsigned int max                                  = S + s1 + s2;
+  int min                                  = std::abs( S - s1 - s2 );
+  if ( std::abs( S + s1 - s2 ) < min ) min = std::abs( S + s1 - s2 );
+  if ( std::abs( S - s1 + s2 ) < min ) min = std::abs( S - s1 + s2 );
+  int max                                  = S + s1 + s2;
 
   min /= 2;
   max /= 2;
   DEBUG( "Range = " << min << " -> " << max << " conserving parity ? " << conserveParity << " J = " << S << " s1= " << s1 << " s2= " << s2 );
   if ( conserveParity == false ) return {min, max};
-  unsigned int l = min;
-  for ( ; l < max + 1; ++l ){
-    if ( conservesParity( l ) ) break;
-  }
+  
+  int l = min;
+  for ( ; l < max + 1; ++l ) if( conservesParity(l) ) break;
   if ( l == max + 1 ) return {999, 999};
   std::pair<size_t, size_t> lLimit = {l, l};
   l = max;

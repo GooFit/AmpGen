@@ -80,6 +80,10 @@ namespace AmpGen
     }
     return rt;
   }
+
+  template <typename> struct isTuple: std::false_type {};
+
+  template <typename ...T> struct isTuple<std::tuple<T...>>: std::true_type {};
 } // namespace AmpGen
 
 #endif

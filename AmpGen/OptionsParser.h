@@ -21,6 +21,7 @@ namespace AmpGen
     static void setArg( const std::string& arg ); 
     void addArg( const std::string& arg );
     void setCommandLineArgs( int argc, char** argv ); 
+    void import( const std::string& fName );
     iterator find( const std::string& name );
     iterator begin();
     iterator end();
@@ -35,7 +36,6 @@ namespace AmpGen
     OptionsParser();
     bool ignoreThisLine( const std::string& line );
     void readStream( std::istream& is );
-    void import( const std::string& fName );
     std::vector<std::string> makeParsedStrings( const std::string& line, int& braceDepth ) const;
   };
 } // namespace AmpGen

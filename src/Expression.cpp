@@ -273,6 +273,7 @@ template <class TYPE> Expression simplify_constant_unary( const Expression& arg 
 Expression AmpGen::fcn::sqrt(  const Expression& expression ) { return simplify_constant_unary<Sqrt>(expression) ; }
 Expression AmpGen::fcn::abs(   const Expression& expression ) { return simplify_constant_unary<Abs>(expression); }
 Expression AmpGen::fcn::cos(   const Expression& expression ) { return simplify_constant_unary<Cos>(expression) ; } 
+Expression AmpGen::fcn::acos(   const Expression& expression ){ return simplify_constant_unary<ACos>(expression) ; } 
 Expression AmpGen::fcn::sin(   const Expression& expression ) { return simplify_constant_unary<Sin>(expression); } 
 Expression AmpGen::fcn::conj(  const Expression& expression ) { return simplify_constant_unary<Conj>(expression); } 
 Expression AmpGen::fcn::norm(  const Expression& expression ) { return simplify_constant_unary<Norm>(expression); }

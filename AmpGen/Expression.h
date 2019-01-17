@@ -396,6 +396,7 @@ namespace AmpGen
     Expression cos( const Expression& expression );
     Expression sin( const Expression& expression );
     Expression abs( const Expression& expression );
+    Expression acos( const Expression& expression );
     Expression pow( const Expression& expression, const Expression& co );
     Expression fpow( const Expression& expression, const int& n );
     Expression norm( const Expression& expression );

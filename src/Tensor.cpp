@@ -16,31 +16,27 @@ class ASTResolver;
 
 using namespace AmpGen;
 
-std::ostream& AmpGen::operator <<( std::ostream& out, const Tensor::Index& index ){
+std::ostream& AmpGen::operator <<( std::ostream& out, const Tensor::Index& index )
+{
   return out << index.m_ptr << " " << index.m_isUpper; 
 }  
+
 Tensor::Tensor()
 {
-  DEBUG("Begin constructor <default>");
   setupCoordinates();
-  DEBUG("End constructor <default>");
 }
 
 Tensor::Tensor( const std::vector<size_t>& _dim ) 
   : m_dim( _dim ), m_elements( nElements(), Constant( 0. ) )
 {
-  DEBUG("Begin constructor <empty>");
   setupCoordinates();
-  DEBUG("End constructor <empty>");
 }
 
 Tensor::Tensor( const std::vector<Expression>& elements )
   : m_dim( std::vector<size_t>( {elements.size()} ) )
 {
-  DEBUG("Begin constructor <Expressions>");
   setupCoordinates();
   for( auto& element : elements ) append( element );
-  DEBUG("End constructor <Expressions>");
 }
 
 Expression Tensor::get( const size_t& co )
@@ -106,10 +102,10 @@ size_t Tensor::index( const std::vector<size_t>& _co ) const
   return id;
 }
 
-size_t Tensor::symmetrisedIndex( const std::vector<size_t>& _co ) const 
+size_t Tensor::symmetrisedIndex( const std::vector<size_t>& co ) const 
 {
-  auto id = Tensor::coordinates_to_index( _co, m_dim );
-  return m_symmetrisedCoordinates[ id ] ;
+  auto id = Tensor::coordinates_to_index( co, m_dim );
+  return m_symmetrisedCoordinates[id] ;
 }
 
 const std::vector<size_t> Tensor::coords( const size_t& index ) const
@@ -123,9 +119,7 @@ std::vector<size_t> Tensor::index_to_coordinates( const size_t& index, const std
   size_t index_temp = index;
   for (size_t j = 1; j < dim.size() + 1; ++j ) {
     size_t dproduct = 1;
-    for (size_t i = 0; i < dim.size() - j; ++i ) {
-      dproduct *= dim[i];
-    }
+    for (size_t i = 0; i < dim.size() - j; ++i ) dproduct *= dim[dim.size() - i-1];
     size_t val = ( index_temp - ( index_temp % dproduct ) ) / dproduct;
     index_temp -= dproduct * val;
     returnValue.push_back( val );
@@ -135,22 +129,19 @@ std::vector<size_t> Tensor::index_to_coordinates( const size_t& index, const std
 
 std::string Tensor::coordinates_to_string( const std::vector<size_t>& coordinates )
 {
-  std::string rt = "[";
-  for(size_t i = 0; i < coordinates.size(); ++i)
-    rt += std::to_string( coordinates[i] )+ ( i==coordinates.size()-1?"]":",");
-  return rt;
+  return "[" + vectorToString( coordinates, ", ") + "]";
 }
 
 
-size_t Tensor::coordinates_to_index( const std::vector<size_t>& _co, const std::vector<size_t>& dim )
+size_t Tensor::coordinates_to_index( const std::vector<size_t>& co, const std::vector<size_t>& dim )
 {
-  size_t _index   = 0;
+  size_t index    = 0;
   size_t dproduct = 1;
-  for ( size_t i = 0; i != dim.size() ; ++i ) {
-    _index += _co[dim.size() -1 -i ] * dproduct;
-    dproduct *= dim[dim.size()-i-1];
+  for ( int i = dim.size()-1; i >= 0; --i ) {
+    index    += co[i] * dproduct;
+    dproduct *= dim[i];
   }
-  return _index;
+  return index;
 }
 
 size_t Tensor::nElements() const
@@ -255,6 +246,7 @@ Tensor AmpGen::operator*( const Tensor& t1, const double& other ) { return t1 * 
 
 void Tensor::operator+=( const Tensor& rhs ){ *this = *this + rhs; }
 void Tensor::operator-=( const Tensor& rhs ){ *this = *this - rhs; }
+
 Expression AmpGen::dot( const Tensor& A, const Tensor& B )
 {
   if ( A.nElements() == 1 && B.nElements() == 1 ) return A[0] * B[0];
@@ -267,13 +259,8 @@ Expression AmpGen::dot( const Tensor& A, const Tensor& B )
   }
   Expression result;
   for ( int i = A.nElements() -1 ; i != -1 ; --i ) {
-    int sgn = A.metricSgn( i );
-    if ( sgn == 1 )
-      result = result + A.get( i ) * B.get( i );
-    else if ( sgn == -1 )
-      result = result - A.get( i ) * B.get( i );
-    else
-      result + sgn* A.get( i ) * B.get( i );
+    int sgn = A.metricSgn(i);
+    result = result + sgn * A.get(i) * B.get(i);
   }
   return result;
 }
@@ -286,13 +273,10 @@ Tensor Tensor::Invert() const
   };
   Tensor data = *this;
   for ( int i = 1; i < actualsize; i++ ) data[i] = data[i] / data[0]; // normalize row 0
-  // data.print();
-
   for ( int i = 1; i < actualsize; i++ ) {
-    for ( int j = i; j < actualsize; j++ ) { // do a column of L
+    for ( int j = i; j < actualsize; j++ ) {
       Expression sum = 0;
       for ( int k = 0; k < i; k++ ) sum = sum + data[j * actualsize + k] * data[k * actualsize + i];
-      //   INFO("Subtracting " << sum.to_string() << "   " << data[j*actualsize+i].to_string() );
       data[j * actualsize + i] = data[j * actualsize + i] - SubTree( sum );
     }
     if ( i == actualsize - 1 ) continue;
@@ -302,8 +286,6 @@ Tensor Tensor::Invert() const
       data[i * actualsize + j] = ( data[i * actualsize + j] - SubTree( sum ) ) / data[i * actualsize + i];
     }
   }
-  // INFO("LU part : " ) ;
-  // data.print();
   for ( int i = 0; i < actualsize; i++ ) // invert L
     for ( int j = i; j < actualsize; j++ ) {
       Expression x = 1.0;
@@ -331,8 +313,6 @@ Tensor Tensor::Invert() const
   return data;
 }
 
-/// generic contraction operator ///
-
 void Tensor::print() const
 {
   std::string dim_string = "";
@@ -344,15 +324,15 @@ void Tensor::print() const
   else if ( m_dim.size() == 1 ) {
     for ( unsigned int x = 0; x < m_dim[0]; ++x ) std::cout << m_elements[x].to_string() << std::endl;
   }
-
   else if ( m_dim.size() == 2 ) {
-    for ( unsigned int y = 0; y < m_dim[1]; ++y ) {
-      for ( unsigned int x = 0; x < m_dim[0]; ++x ) {
+    for ( unsigned int x = 0; x < m_dim[0]; ++x ) {
+      for ( unsigned int y = 0; y < m_dim[1]; ++y ) {
         std::cout << m_elements[index( {x, y} )].to_string() << "     ";
       }
       std::cout << std::endl;
     }
-  } else {
+  } 
+  else {
     for ( unsigned int i = 0; i < m_elements.size(); ++i ) {
       INFO( "M(" + vectorToString( coords( i ) ) + ") = " << m_elements[i].to_string() );
     }
@@ -382,11 +362,12 @@ TensorProxy Tensor::operator()( const Tensor::Index& a, const Tensor::Index& b, 
 TensorProxy AmpGen::operator*( const TensorProxy& t1, const TensorProxy& t2 )
 {
   struct contractor {
-    unsigned int i;
-    unsigned int j;
+    size_t i;
+    size_t j;
     int sgn;
     contractor( const size_t& i, const size_t&j, const int& sgn) : i(i),j(j),sgn(sgn) {}
   };
+
   std::vector<contractor> contractions;
 
   std::vector<Tensor::Index> unsummedIndices;
@@ -420,59 +401,55 @@ TensorProxy AmpGen::operator*( const TensorProxy& t1, const TensorProxy& t2 )
       t2_index[i].isUpper() != it->isUpper() ? -1 : 1 );
     }
   }
-  unsigned int sumElements = 1;
-  for ( auto& c : contractions ) {
-    unsigned int dim = t1_tensor.dims()[c.i];
-    contractionMatrix.push_back( dim );
-    sumElements *= dim;
+  size_t nElementsInSum = 1; 
+  for ( auto& c : contractions ){
+    contractionMatrix.push_back( t1_tensor.dims()[c.i] );
+    nElementsInSum *= t1_tensor.dims()[c.i];
   }
   Tensor value( finalTensorRank );
 
-  unsigned nElem = value.nElements();
-  DEBUG( "Got " << t1_tensor.dims().size() << " x " << t2_tensor.dims().size() << " with " << contractions.size() << " contractions " );
+  size_t nElem = value.nElements();
+  DEBUG( "Got " << t1_tensor.dims().size() << " x " << t2_tensor.dims().size() << " with " << contractions.size() << " contractions " << nElementsInSum );
+  DEBUG( t1_tensor.dimString() << " x " << t2_tensor.dimString() << " -> " << value.dimString() );
+  DEBUG( "Contraction matrix = " << "[" << vectorToString( contractionMatrix, ", " ) << "]" );
+  //value.print();
 
-  for ( unsigned int elem = 0; elem < nElem; ++elem ) {
-    auto coords = Tensor::index_to_coordinates( elem, finalTensorRank ); // value.coords(elem); /// coordinates of this
-    // part of the expression ///
+  for( size_t elem = 0; elem < nElem; ++elem ) {
+    auto coords = Tensor::index_to_coordinates( elem, finalTensorRank );
     std::vector<size_t> t1_coords( t1_size, 0 );
     std::vector<size_t> t2_coords( t2_size, 0 );
-    unsigned int i = 0;
-    unsigned int j = 0;
+    size_t i = 0;
+    size_t j = 0;
     do {
-      //DEBUG( "Checking : " << i );
-      if ( !isIn( contractions, i, [](
-              // INFO( "checking : " << i );
-              const contractor& a, const unsigned int& b ) { return a.i == b; } ) ) {
-      //  DEBUG( "Setting coordinate " << i << " = " << j << " coords.size() = " << coords.size() );
+      if( !isIn(contractions, i, [](const contractor& a, const size_t& b){ return a.i == b;})) {
         t1_coords[i] = coords[j];
         j++;
       }
     } while ( ++i < t1_size );
+    
     i = 0;
     j = t1_size - contractions.size();
+    
     do {
-     // DEBUG( "Checking : " << i );
-      if ( !isIn( contractions, i, []( const contractor& a, const unsigned int& b ) { return a.j == b; } ) ) {
+      if( !isIn(contractions, i, [](const contractor& a, const size_t& b){ return a.j == b;})) {
         t2_coords[i] = coords[j];
-      //  DEBUG( "Setting i = " << i << ", (" << j << ")" << coords[j] );
         j++;
       }
     } while ( ++i < t2_size );
-    /// calculate the number of components to sum over.
+    
     Expression elementExpression = 0;
-    for ( unsigned int i = 0; i < sumElements; ++i ) {
+    for( unsigned int i=0; i<nElementsInSum; ++i) {
       auto contractedCoordinates = Tensor::index_to_coordinates( i, contractionMatrix );
       int sign                   = 1;
-      for ( unsigned int i = 0; i < contractions.size(); ++i ) {
-        t1_coords[contractions[i].i] = contractedCoordinates[i];
-        t2_coords[contractions[i].j] = contractedCoordinates[i];
-        sign *= ( contractedCoordinates[i] ) == 3 ? 1 : contractions[i].sgn;
+      for( unsigned int j=0; j<contractions.size(); ++j) {
+        t1_coords[contractions[j].i] = contractedCoordinates[j];
+        t2_coords[contractions[j].j] = contractedCoordinates[j];
+        sign *= ( contractedCoordinates[j] ) == 3 ? 1 : contractions[j].sgn;
       }
       elementExpression = elementExpression + sign * t1_tensor[t1_coords] * t2_tensor[t2_coords];
     }
     value[elem] = elementExpression;
   }
-//  DEBUG( "Returning object of rank = " << unsummedIndices.size() );
   return TensorProxy( value, unsummedIndices );
 }
 
@@ -586,9 +563,7 @@ TensorProxy::TensorProxy( const Tensor& tensor, const std::vector<Tensor::Index>
         break ; 
       } 
     }
-   // if( j == indices.size() ) m_indices.push_back( indices[i] );
   }
-  
 }
 
 TensorProxy TensorProxy::reorder( const std::vector<Tensor::Index>& indices )
@@ -644,7 +619,6 @@ const Tensor AmpGen::LeviCivita( const size_t& rank )
   } while ( std::next_permutation( indices.begin(), indices.end() ) );
   return result;
 }
-
 
 TensorProxy::operator Tensor() { return m_tensor; }
 std::vector<Tensor::Index> TensorProxy::indices() const { return m_indices; }

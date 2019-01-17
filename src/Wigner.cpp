@@ -198,17 +198,15 @@ Expression AmpGen::wigner_D(const Tensor& P,
 
   Expression I(std::complex<double>(0,1));
   auto little_d = make_cse ( wigner_d( pz, J, lA, lB ) );
-  std::cout << "$ d^{" << fermis(J) 
-            <<   "}_{" << fermis(lA) 
-            <<     " " << fermis(lB) 
-            << "}\\left(" << " \\theta_{"+ name +"}\\right)"
-            << phaseString( lA, lB , name ) << "$" << std::endl;
   if( J != 0 && db != nullptr ){
     db->emplace_back("ϕ("+name+")"     , atan2( py, px ) );
     db->emplace_back("cosθ("+name+")"  , pz );
     db->emplace_back("d[" + std::to_string(J)  +", " + 
                             std::to_string(lA) +", " + 
-                            std::to_string(lB) +"](cosθ)", little_d );
+                            std::to_string(lB) +"](θ)", little_d );
+    db->emplace_back("D[" + std::to_string(J)  +", " + 
+                            std::to_string(lA) +", " + 
+                            std::to_string(lB) +"](Ω)", fpow(px+I*py,lB-lA) * little_d );
   }
   return  fpow( px + I * py, lB - lA ) * little_d; 
 }
@@ -255,8 +253,8 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   
   if( particle.isStable() )
   {
-    if( particle.spin() == 0 ) return 1;
-    return wigner_D( pInParentFrame, particle.spin(), Mz, double(sgn * particle.polState()) / 2.,  db, particle.name() ) ;
+    if( particle.spin() == 0 ) return Mz==0;
+    return Mz == double(sgn * particle.polState())/2.;
   }
 
   auto particle_couplings = particle.spinOrbitCouplings(false);
@@ -286,10 +284,13 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   Expression total = 0 ; 
   for( auto& coupling : recoupling_constants )
   {          
-    auto term = fcn::conj( wigner_D( myFrame(a,b)*d0.P()(b) , particle.spin(), Mz, coupling.m1 - coupling.m2,db, d0.name() ) ) ;
-    auto h1 = helicityAmplitude(d0, myFrame, coupling.m1, db, +1);
-    auto h2 = helicityAmplitude(d1, myFrame, coupling.m2, db, -1);
-    if( db != nullptr ) db->emplace_back( "coupling" , coupling.factor );
+    auto term = wigner_D( myFrame(a,b)*d0.P()(b) , particle.spin(), Mz, coupling.m1 - coupling.m2,db, d0.name() );
+    auto h1   = helicityAmplitude(d0, myFrame, coupling.m1, db, +1);
+    auto h2   = helicityAmplitude(d1, myFrame, coupling.m2, db, -1);
+    if( db != nullptr ){ 
+      db->emplace_back( "coupling" , coupling.factor );
+      if( coupling.factor != 1 ) db->emplace_back( "C x DD'", coupling.factor * term * h1 * h2 );
+    }
     total = total + coupling.factor * term * h1 * h2;
   }
   return total;

@@ -90,7 +90,6 @@ double AmpGen::Product( const TLorentzVector& p1, const TLorentzVector& p2, cons
 
 double AmpGen::trihedralAngle( const Event& evt )
 {
-
   TLorentzVector p0 = pFromEvent( evt, 0 );
   TLorentzVector p1 = pFromEvent( evt, 1 );
   TLorentzVector p2 = pFromEvent( evt, 2 );
