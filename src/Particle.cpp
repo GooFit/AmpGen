@@ -399,12 +399,15 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
         ADD_DEBUG_TENSOR( externalSpinTensor(m_polState), db );
         ADD_DEBUG_TENSOR( st, db );
         Tensor::Index a;
-        if( st.size() != 4 ){ ERROR("Spin tensor is the wrong rank = " << st.dimString() ); spinFactor = 1; }
+        if( st.size() != 4 ){ 
+          ERROR("Spin tensor is the wrong rank = " << st.dimString() ); 
+          spinFactor = 1; 
+        }
         else { spinFactor = is(a) * st(a) ; }
       }
     }
     if ( includeSpin && spinFormalism == "Helicity" ){
-      spinFactor = helicityAmplitude( *this, Identity(4), double(polState())/2.0, db ); 
+      spinFactor = helicityAmplitude( *this, TransformSequence(), double(polState())/2.0, db ); 
     }
     if( db != nullptr ){
       std::string finalStateString="";
@@ -509,12 +512,13 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
     Expression fa      = fcn::sqrt( (pE + m)/(2*m) );
     Expression fb      = fcn::sqrt( (pE - m)/(2*m) );
     Expression aligned = make_cse( Abs(pP + pZ) < 10e-6 ) ;
-      
+    
     Expression xi10    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
-    Expression xi11    = make_cse(Ternary( aligned,  0, z/n ));
+    Expression xi11    = make_cse(Ternary( aligned,  0,  z/n ));
     Expression xi00    = make_cse(Ternary( aligned,  0, -zb/n ));
     Expression xi01    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
-    
+
+
     if(id > 0 && polState ==  1 ) return Tensor({ fa*xi10,  fa*xi11,  fb*xi10,  fb*xi11 } );
     if(id > 0 && polState == -1 ) return Tensor({ fa*xi00,  fa*xi01, -fb*xi00, -fb*xi01 } );
     if(id < 0 && polState ==  1 ) return Tensor({ fb*xi00,  fb*xi01,  -fa*xi00,  -fa*xi01 } );
@@ -704,7 +708,7 @@ std::string Particle::topologicalString() const
   return topo;
 }
 const ParticleProperties* Particle::props() const { return m_props; }
-bool Particle::isTop() const { return m_isHead; }
+bool Particle::isHead() const { return m_isHead; }
 bool Particle::isWeakDecay() const { return quarks() == daughterQuarks(); }
 bool Particle::isStateGood() const { return m_isStateGood; }
 bool Particle::isStable() const { return m_daughters.size() == 0; }
@@ -799,7 +803,6 @@ int Particle::quasiCP() const
 {
   int prod = m_props->C() == 0 ? 1 : m_props->C();
   prod *= ( m_orbital % 2 == 0 ? 1 : -1 );
-  //if( isStable() ) prod *= m_props->P();
   for( auto& d : m_daughters ) prod *= d->quasiCP() ;
   return prod; 
 }

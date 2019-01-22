@@ -141,7 +141,7 @@ namespace AmpGen
       double mass() const;
       double spin() const;    
       double S() const; 
-      bool isTop() const;
+      bool isHead() const;
       bool isWeakDecay() const;
       bool isStateGood() const;
       bool isStable() const;

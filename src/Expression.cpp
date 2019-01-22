@@ -156,6 +156,7 @@ Expression AmpGen::operator/( const Expression& A, const Expression& B )
 //    return  A_divide.l() * B / A_divide.r() ; 
 //  }
   else if( is<Divide>(B) ) return ( A * cast<Divide>(B).r() ) / cast<Divide>(B).l();
+  else if( is<Sqrt>(B) ) return ( A * fcn::isqrt( cast<Sqrt>(B).arg() ) ); 
   return Expression( Divide( A, B ) );
 }
 Expression AmpGen::operator&&( const Expression& A, const Expression& B ) { return Expression( And( A, B ) ); }

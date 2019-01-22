@@ -45,28 +45,30 @@ namespace AmpGen
         friend std::ostream& operator <<( std::ostream& out, const Index& index );  
     };
 
-
     Tensor();
-    Tensor( const std::vector<Expression>& elements );
-    Tensor( const std::vector<size_t>& _dim );
-    
-    template <class TYPE> Tensor( const std::initializer_list<TYPE>& elements, const std::vector<size_t>& _dim ) : m_dim( _dim )
+    Tensor(const std::vector<Expression>& elements);
+   // Tensor(const std::vector<Tensor>& elements );     
+    Tensor(const std::vector<size_t>& dim);
+
+    template <class TYPE> Tensor(const std::initializer_list<TYPE>& elements, 
+                                 const std::vector<size_t>& dim) : m_dim(dim)
     {
       setupCoordinates();
       for ( auto& x : elements ) append( x );
     }
 
-    template <class TYPE> Tensor( const std::vector<TYPE>& elements, const std::vector<size_t>& _dim ) : m_dim( _dim )
+    template <class TYPE> Tensor(const std::vector<TYPE>& elements, 
+                                 const std::vector<size_t>& dim) : m_dim(dim)
     {
       setupCoordinates();
       for ( auto& x : elements ) append( x );
     }
 
     /// Low level access of elements, either by coordinates or by index ///
-    Expression& operator[]( const size_t& i )                           { return m_elements[m_symmetrisedCoordinates[i]]; }
-    Expression& operator[]( const std::vector<size_t>& co )             { return m_elements[m_symmetrisedCoordinates[index( co )]]; }
-    const Expression& operator[]( const size_t& i ) const               { return m_elements[m_symmetrisedCoordinates[i]]; }
-    const Expression& operator[]( const std::vector<size_t>& co ) const { return m_elements[m_symmetrisedCoordinates[index( co )]]; }
+    Expression& operator[]( const size_t& i ); 
+    Expression& operator[]( const std::vector<size_t>& co ); 
+    const Expression& operator[]( const size_t& i ) const; 
+    const Expression& operator[]( const std::vector<size_t>& co ) const; 
 
     Expression get( const size_t& co );
     Expression get( const size_t& co ) const;
@@ -86,6 +88,8 @@ namespace AmpGen
     TensorProxy operator()( const Tensor::Index& a, const Tensor::Index& b, const Tensor::Index& c,
                              const Tensor::Index& d ) const;
     TensorProxy operator()( const std::vector<Tensor::Index>& indices ) const;
+    
+    Tensor operator-() const; 
 
     void st(const bool simplify=false);
 
@@ -100,10 +104,9 @@ namespace AmpGen
     int metricSgn( const std::vector<size_t>& coordinates ) const;
     int metricSgn( const size_t& index ) const;
     void append( const Expression& expression );
-    void append( const Parameter& parameter );
-    void append( const double& value );
-    void append( const std::string& name, bool resolved = true );
-    void append( const std::complex<double>& value );
+    void append( const real_t& value );
+    void append( const complex_t& value );
+    void append( const std::string& value );
     void setupCoordinates(); 
 
     size_t nDim() const;
@@ -117,7 +120,7 @@ namespace AmpGen
     const std::vector<size_t>& dims() const { return m_dim; }
     const std::string dimString() const ;
 
-    void print() const;
+    void print(const bool& eval = false) const;
 
     const std::vector<size_t>& uniqueElements() const {
       return m_uniqueElements; 
@@ -129,7 +132,13 @@ namespace AmpGen
     static std::vector<size_t> index_to_coordinates( const size_t& index, const std::vector<size_t>& dim );
     static size_t coordinates_to_index( const std::vector<size_t>& coords, const std::vector<size_t>& dim );
     static std::string coordinates_to_string( const std::vector<size_t >& coordinates );
-  
+    template <class... ARGS>
+    static std::vector<size_t> dim( const ARGS&... args ){
+      std::vector<size_t> rt; 
+      auto up = std::tuple<ARGS...>(args...);
+      for_each(up, [&rt]( auto& f ) { rt.emplace_back(f); } );
+      return rt;
+    } 
   private:
     std::vector<size_t> m_dim;   
     std::vector<size_t> m_symmetrisedCoordinates; 
@@ -152,8 +161,8 @@ namespace AmpGen
     const Tensor& tensor() const;
     Tensor& tensorMutable();
     TensorProxy reorder( const std::vector<Tensor::Index>& indices );
-    operator Expression();
-    operator Tensor();
+    operator Expression() const;
+    operator Tensor() const;
   
   private:
     Tensor m_tensor;
@@ -175,7 +184,6 @@ namespace AmpGen
 
   Tensor operator+( const Tensor& t1, const Tensor& t2 );
   Tensor operator-( const Tensor& t1, const Tensor& t2 );
-
   Tensor operator/( const Tensor& t1, const Expression& t2 );
   Tensor operator*( const Expression& t1, const Tensor& t2 );
   Tensor operator*( const Tensor& t1, const Expression& t2 );

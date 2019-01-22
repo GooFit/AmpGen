@@ -139,7 +139,7 @@ Tensor AmpGen::Spin3hProjector( const Tensor& P )
 
 Tensor AmpGen::Bar( const Tensor& P ){
   Tensor::Index a,b;
-  return P.conjugate()(b) * Gamma[3](b,a) ;
+  return P.conjugate()(b) * Gamma[3](b,a);
 }
 
 DEFINE_VERTEX( S_SS_S ) { return V1 * V2[0]; }

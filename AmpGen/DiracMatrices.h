@@ -10,8 +10,9 @@ namespace AmpGen
 {
   extern const Expression I;
   extern const Expression Z;
-  extern const std::array<Tensor, 5> Gamma;
+  extern const std::array<Tensor,5> Gamma;
   extern const std::array<Tensor,3> Sigma;
+  extern const std::array<Tensor,3> S03;
 } // namespace AmpGen
 
 #endif

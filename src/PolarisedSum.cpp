@@ -26,6 +26,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/ThreadPool.h"
 #include "AmpGen/ProfileClock.h"
+#include "AmpGen/DiracMatrices.h"
 
 using namespace AmpGen;
 
@@ -388,20 +389,13 @@ Expression PolarisedSum::probExpression( const Tensor& T_matrix, const std::vect
   Tensor T_conj = T_matrix.conjugate();
   Tensor::Index a,b,c; 
   Tensor TT = T_matrix(b,c) * T_conj(a,c);
-  complex_t j(0,1);
 
   size_t it = T_matrix.dims()[0]; 
-  Tensor rho( std::vector<size_t>({it,it}));
-  if( it == 2 ){
-    rho[{0,0}] = 1 + p[2]; 
-    rho[{1,1}] = 1 - p[2];
-    rho[{1,0}] = p[0] + j*p[1];
-    rho[{0,1}] = p[0] - j*p[1];
-  }
-  else if ( it == 1 ) 
-  {
-    rho[{0,0}] = 1;
-  }
+  Tensor rho(Tensor::dim(2,2));
+  
+  if( it == 2 ) rho = Sigma[0] * p[0] + Sigma[1] * p[1] + Sigma[2]*p[2];
+  else if ( it == 1 ) rho[{0,0}] = 1;
+
   return Real( Expression( rho(a,b) * TT(b,a)  ));  
 }
 
