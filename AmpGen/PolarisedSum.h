@@ -73,6 +73,7 @@ namespace AmpGen
       std::array<Bilinears,6>       m_norms;
       std::vector<std::vector<int>> m_polStates; 
       EventType                     m_eventType;
+      std::string                   m_prefix      = "";
       std::vector<TransitionMatrix<std::vector<complex_t>>>        m_matrixElements;  
       CompiledExpression< real_t, const real_t*, const complex_t*> m_probExpression; 
      

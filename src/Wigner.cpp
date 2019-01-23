@@ -283,10 +283,6 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
       auto helicity_tensor          = basis_spinor( pInParentFrame, 2*Mz, particle.props()->pdgID(), db);
       auto it = parentFrame.inverse();
       auto helicity_in_frame = it( helicity_tensor, Transform::Representation::Bispinor ); 
-//      auto helicity_in_frame = helicity_tensor; 
-      ADD_DEBUG_TENSOR(tensor         , db); 
-      ADD_DEBUG_TENSOR(helicity_in_frame, db);
-      ADD_DEBUG_TENSOR(helicity_tensor, db); 
       return Bar(helicity_in_frame)(a) * tensor(a); 
     }
   }
@@ -316,7 +312,7 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   for( auto& coupling : recoupling_constants )
   {          
     auto dm = coupling.m1 - coupling.m2;
-    auto term = wigner_D( myFrame(d0.P()), particle.spin(), Mz, dm,db, d0.name() );
+    auto term = wigner_D(myFrame(d0.P()), particle.spin(), Mz, dm,db, d0.name() );
     auto h1   = helicityAmplitude(d0, myFrame, coupling.m1, db, +1);
     auto h2   = helicityAmplitude(d1, myFrame, coupling.m2, db, -1);
     if( db != nullptr ){ 

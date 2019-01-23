@@ -157,7 +157,8 @@ int main( int argc, char** argv )
 
   std::string type = NamedParameter<std::string>("Type","CoherentSum");
 
-  if( type == "PolarisedSum"){
+  if( type == "PolarisedSum")
+  {
     PolarisedSum sig( eventType, MPS );  
     sig.setEvents( accepted );
     sig.prepare();
@@ -165,10 +166,11 @@ int main( int argc, char** argv )
     sig.setMC(accepted);
     INFO("norm = " << sig.norm() );   
   }
-  else if( type == "CoherentSum" ){
-    CoherentSum sig( eventType, MPS );  
-    debug( sig, accepted, verbose, rndm , MPS );
-    print( accepted[0], sig.matrixElements() , false ); 
+  else if( type == "CoherentSum" )
+  {
+    CoherentSum sig(eventType, MPS);
+    debug(sig, accepted, verbose, rndm, MPS);
+    print(accepted[0], sig.matrixElements() , false);
   }
   else {
     ERROR( "Type: " << type << " is not recognised");

@@ -34,7 +34,8 @@ PolarisedSum::PolarisedSum( const EventType& type,
                             MinuitParameterSet& mps, 
                             const std::string& prefix ) : 
   m_mps(&mps),
-  m_eventType(type)
+  m_eventType(type),
+  m_prefix(prefix)
 {
   bool debug           = NamedParameter<bool>("PolarisedSum::Debug", false );
   bool autoCompile     = NamedParameter<bool>("PolarisedSum::AutoCompile",true);
@@ -182,11 +183,11 @@ void   PolarisedSum::prepare()
     complex_t total =       (1+pz)*(acc[0]+acc[1]) +         (1-pz)*(acc[2]+acc[3]) 
                     + std::conj(z)*(acc[4]+acc[5]) + z * ( std::conj(acc[4]+acc[5]) );
     m_norm = std::real(total);
-    //if( m_nCalls == 0 || changedPdfIndices.size() != 0 ) debug_norm();
   }
   tIntegral.stop();
   if( m_verbosity && changedPdfIndices.size() != 0  ) 
     INFO("Time to evaluate = " << tEval << " ms; norm = " << tIntegral << " ms;  [pdfs = " << changedPdfIndices.size() << " zeros= " << count_zeros(m_norms, m_matrixElements.size() ) << "]" );
+  if( m_nCalls == 0 ) debug_norm();
   m_nCalls++;
 }
 
@@ -194,16 +195,17 @@ void PolarisedSum::debug_norm()
 {
   double norm = 0;
   for( auto& evt : m_integrator.events() ){
-    norm += evt.weight() * prob_unnormalised(evt) / evt.genPdf(); 
-    if( prob_unnormalised(evt) > 1e6 ){
-      WARNING("Event has very high weight: " << prob_unnormalised(evt) );
+    auto t = evt.weight() * prob_unnormalised(evt) / evt.genPdf();
+    norm += t; 
+    if( t > 1e6 ){
+      ERROR("[" << m_prefix << "]: Event has unusual weight: " << t << " " << evt.weight() << " " << evt.genPdf() << " " << prob_unnormalised(evt) << " " << getValNoCache(evt) );
       evt.print();
     }
   }
-  INFO("Average = " << m_norm << " " << norm /  m_integrator.sampleNorm()  );
+  INFO("NORM = " << std::setprecision(10) << " " << m_norm << " " << norm /  m_integrator.sampleNorm() << " sample norm = " << m_integrator.sampleNorm() );
   auto evt = m_integrator.events()[0];
   evt.print();
-  INFO("Check one event: " << prob_unnormalised(evt) << " " << getValNoCache(evt) );
+  INFO("[" << m_prefix << "]  Check one event: " << std::setprecision(10) << " " << prob_unnormalised(evt) << " " << getValNoCache(evt) );
   int nNorms = 0 ; 
   int nZeros = 0; 
   for( size_t i = 0 ; i < m_matrixElements.size(); ++i ){
@@ -384,17 +386,16 @@ void PolarisedSum::generateSourceCode( const std::string& fname, const double& n
   stream.close();
 }
 
-Expression PolarisedSum::probExpression( const Tensor& T_matrix, const std::vector<Expression>& p  ) const 
+Expression PolarisedSum::probExpression(const Tensor& T_matrix, const std::vector<Expression>& p) const 
 {
   Tensor T_conj = T_matrix.conjugate();
   Tensor::Index a,b,c; 
   Tensor TT = T_matrix(b,c) * T_conj(a,c);
 
   size_t it = T_matrix.dims()[0]; 
-  Tensor rho(Tensor::dim(2,2));
+  Tensor rho = Identity(it);
   
-  if( it == 2 ) rho = Sigma[0] * p[0] + Sigma[1] * p[1] + Sigma[2]*p[2];
-  else if ( it == 1 ) rho[{0,0}] = 1;
+  if( it == 2 ) rho = rho + Sigma[0] * p[0] + Sigma[1] * p[1] + Sigma[2]*p[2];
 
   return Real( Expression( rho(a,b) * TT(b,a)  ));  
 }

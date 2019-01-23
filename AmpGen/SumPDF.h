@@ -34,7 +34,8 @@ namespace AmpGen
       for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
       #pragma omp parallel for reduction( + : LL )
       for ( unsigned int i = 0; i < m_events->size(); ++i ) {
-        LL += log( ( *this )( ( *m_events )[i] ) );
+        auto prob = ((*this))(( *m_events)[i] );
+        LL += log(prob);
       }
       return -2 * LL;
     }
