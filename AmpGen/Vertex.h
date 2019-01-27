@@ -70,6 +70,10 @@ namespace AmpGen
     /// \ingroup Vertices class S_VV_S 
     /// \brief \f$ g_{\mu\nu} V_1^\mu V_2^{\nu} \f$
     DECLARE_VERTEX( S_VV_S );
+    
+    /// \ingroup Vertices class S_VV_S1
+    /// \brief \f$ S_{\mu\nu} V_1^\mu V_2^{\nu} \f$
+    DECLARE_VERTEX( S_VV_S1 );
 
     /// \ingroup Vertices class S_VV_P
     /// \f$ \varepsilon_{\alpha\beta\mu\nu} P^{\alpha} L^{\beta} V_1^{\mu} V_2^{\nu} \f$

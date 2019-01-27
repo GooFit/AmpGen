@@ -187,7 +187,7 @@ void   PolarisedSum::prepare()
   tIntegral.stop();
   if( m_verbosity && changedPdfIndices.size() != 0  ) 
     INFO("Time to evaluate = " << tEval << " ms; norm = " << tIntegral << " ms;  [pdfs = " << changedPdfIndices.size() << " zeros= " << count_zeros(m_norms, m_matrixElements.size() ) << "]" );
-  if( m_nCalls == 0 ) debug_norm();
+//  if( m_nCalls == 0 ) debug_norm();
   m_nCalls++;
 }
 

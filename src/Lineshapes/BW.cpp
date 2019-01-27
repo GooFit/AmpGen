@@ -61,13 +61,13 @@ DEFINE_LINESHAPE( BW )
   const Expression& radius   = Parameter( particleName + "_radius", props->radius() );
   const Expression q2_sgned  = make_cse( Abs(Q2( s_cse, s1, s2 ) ) ) ;
   const Expression q20_sgned = make_cse( Abs(Q2( mass * mass, s1, s2 )) );
-  const Expression J = Constant(0,1);
+  const Expression i = Constant(0,1);
   const Expression q2  = make_cse( q2_sgned); // Ternary( q2_sgned > 0, q2_sgned, 0 );
   const Expression q20 = q20_sgned;
   Expression FormFactor                       = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
   if ( lineshapeModifier == "BL" ) FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
   Expression runningWidth                     = width( s_cse, s1, s2, mass, width0, radius, L, dbexpressions );
-  const Expression BW = FormFactor / ( mass * mass - s_cse  -J*mass * runningWidth );
+  const Expression BW = FormFactor / ( mass * mass - s_cse  -i*mass * runningWidth );
   const Expression kf = kFactor( mass, width0, dbexpressions );
   ADD_DEBUG( FormFactor, dbexpressions );
   ADD_DEBUG( runningWidth, dbexpressions );

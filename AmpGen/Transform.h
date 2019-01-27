@@ -47,6 +47,9 @@ namespace AmpGen {
           const Transform::Representation& repr=Transform::Representation::Vector ) const;
       void add( const Transform& transform );
       void add( const TransformSequence& transform );
+      void stepThrough( const Tensor& tensor, 
+                        const Transform::Representation& repr = Transform::Representation::Vector );
+      
       void clear(); 
       std::vector<Transform>::reverse_iterator rbegin()       { return m_transforms.rbegin(); }
       std::vector<Transform>::reverse_iterator rend()         { return m_transforms.rend(); }

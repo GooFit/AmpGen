@@ -145,6 +145,7 @@ Tensor AmpGen::Bar( const Tensor& P ){
 DEFINE_VERTEX( S_SS_S ) { return V1 * V2[0]; }
 
 DEFINE_VERTEX( S_VV_S ) { return V1( mu ) * V2( -mu ); }
+DEFINE_VERTEX( S_VV_S1 ) { return Spin1Projector(P)(mu,nu) * V1( -mu ) * V2( -nu ); }
 
 DEFINE_VERTEX( S_VV_D )
 {

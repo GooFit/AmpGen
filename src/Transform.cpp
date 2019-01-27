@@ -148,4 +148,16 @@ void TransformSequence::clear()
   m_transforms.clear();
 }
 
+void TransformSequence::stepThrough(const Tensor& tensor, 
+    const Transform::Representation& repr) 
+{
+  Tensor tr = tensor ;
+  Tensor::Index a,b;
+  INFO( "Frame[0] = " << tr[0]() << " " << tr[1]() << " " << tr[2]() << " " << tr[3]() );
+  for(unsigned int i = 0 ; i < m_transforms.size(); ++i ){
+    tr = m_transforms[i](repr)(a,b) * tr(b);
+    INFO( "Frame["<<i+1<<"] = " << tr[0]() << " " << tr[1]() << " " << tr[2]() << " " << tr[3]() );
+  }
+}
+
 

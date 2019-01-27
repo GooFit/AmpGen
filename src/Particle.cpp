@@ -258,8 +258,8 @@ std::string Particle::modifierString() const
   if ( !m_usesDefaultLineshape ) append( m_lineshape );
   std::vector<std::string> otherModifiers = {"BgSpin0", "Inco", "NoSym"};
   for ( auto& mod : otherModifiers ) if ( hasModifier( mod ) ) append(mod) ;
+  for ( auto& mod : m_modifiers ) if( mod.find("=") != std::string::npos ) append( mod );
   modString += "]";
-
   return modString == "[]" ? "" : modString;
 }
 
@@ -380,8 +380,9 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   if( db != nullptr && !isStable() ) 
     db->emplace_back( uniqueString() , Parameter( "NULL", 0, true ) );
 
-  std::string spinFormalism = NamedParameter<std::string>("Particle::SpinFormalism","RaritaSchwinger");
-
+  std::string spinFormalism = NamedParameter<std::string>("Particle::SpinFormalism","Covariant");
+  auto localFormalism = attribute("SpinFormalism"); 
+  if( localFormalism.first ) spinFormalism = localFormalism.second;
   Expression total( 0 );
   auto finalStateParticles  = getFinalStateParticles();
   auto orderings            = identicalDaughterOrderings();
@@ -391,7 +392,7 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   for ( auto& ordering : orderings ) {
     setOrdering( ordering );
     Expression spinFactor = 1; 
-    if( includeSpin && spinFormalism == "RaritaSchwinger" ){
+    if( includeSpin && spinFormalism == "Covariant" ){
       Tensor st = spinTensor(db);
       if( m_props->twoSpin() == 0 ) spinFactor = st[0];
       if( m_props->twoSpin() == 1 ){
@@ -406,7 +407,7 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
         else { spinFactor = is(a) * st(a) ; }
       }
     }
-    if ( includeSpin && spinFormalism == "Helicity" ){
+    if ( includeSpin && spinFormalism == "Wigner" ){
       spinFactor = helicityAmplitude( *this, TransformSequence(), double(polState())/2.0, db ); 
     }
     if( db != nullptr ){
@@ -805,4 +806,14 @@ int Particle::quasiCP() const
   prod *= ( m_orbital % 2 == 0 ? 1 : -1 );
   for( auto& d : m_daughters ) prod *= d->quasiCP() ;
   return prod; 
+}
+
+std::pair<bool,std::string> Particle::attribute(const std::string& key) const 
+{
+  std::map<std::string,std::string> m_rt;
+  for( auto& modifier : m_modifiers ){
+    auto tokens = split( modifier, '=');
+    if( tokens.size() == 2 && tokens[0] == key ) return std::make_pair(true, tokens[1] );
+  }
+  return std::make_pair(false, "");
 }

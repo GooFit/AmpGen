@@ -23,11 +23,6 @@ class Particle;
     const double& J,
     const double& M );
 
-  /** \function rotationMatrix
-    Generates a rotation tensor (matrix) that aligns Tensor P (four-vector) to the +ve z-axis, i.e. to construct the helicity frame. 
-   */
-  Tensor rotationMatrix( const Tensor& p , const bool& handleZeroCase = false );
-  
   /** \function helicityTransformMatrix
     Generates a helicity transform tensor (matrix) that aligns tensor P (four-vector) to the +/- ve z-axis, then boosts to the rest frame. 
     The mass may be seperately specified. The parameter ve specifies whether the initial Euler rotation is to the +/- z-axis. 
@@ -40,7 +35,7 @@ class Particle;
 
   Tensor basis_spinor(const Tensor& p, const int& polState, const int& id, DebugSymbols* db=nullptr );
 
-    struct LS {
+  struct LS {
     double factor;
     double cg1;
     double cg2;
