@@ -17,9 +17,13 @@
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/MetaUtils.h"
+#include "AmpGen/ArgumentPack.h"
 
 namespace AmpGen
 {
+  template <class T>
+  DECLARE_ARGUMENT( AcceptedValues, std::vector<T> ); 
+  DECLARE_ARGUMENT( HelpString    , std::string    ); 
   template <class T>
   class NamedParameter 
   {
@@ -65,7 +69,29 @@ namespace AmpGen
       if ( OptionsParser::printHelp() ) help(def);
       DEBUG( *this );
     }
-    
+    /*
+    template <class... ARGS>
+    NamedParameter( const std::string& name, const T& def, const ARGS&... args ) : 
+      m_name(name)
+    {
+      setVal( def );
+      setFromOptionsParser();   
+      auto arg_pack       = ArgumentPack(args...);
+      auto acceptedValues = arg_pack.getArg<AcceptedValues<T>>().val;
+      m_helpString        = arg_pack.getArg<HelpString>().val;
+
+      if( acceptedValues.size() != 0 ){
+         bool isAcceptedValue = false; 
+         for( auto& v : acceptedValues ) if( m_valueArray[0] == v ) isAcceptedValue = true; 
+         if( !isAcceptedValue ){
+           ERROR( "Argument: " << name << " is not in ["  << italic_on << vectorToString( acceptedValues, ", ") << italic_off <<"]" );
+         }
+      }
+      if ( OptionsParser::printHelp() ) help(def);
+      DEBUG( *this );
+    }
+    */
+
     NamedParameter( const std::string& name, const std::vector<T>& defVec, const std::string& helpString="" )
         : m_name(name),
           m_helpString(helpString)
@@ -85,7 +111,7 @@ namespace AmpGen
       if( tokens.size() == 0 ) std::cout << std::endl; 
       for( size_t i = 0 ; i < tokens.size(); ++i){
         if( i == 0 ){
-          std::cout << tokens[i] ; // << ( def != T() ? " (default=" <<  def << ") " : "")  << std::endl  ;
+          std::cout << tokens[i];
           if( def != T() ) std::cout << " (default = " << def << ")";
           std::cout << std::endl;  
         }

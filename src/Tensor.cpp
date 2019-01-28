@@ -51,15 +51,13 @@ Tensor::Tensor( const std::vector<Tensor>& elements )
 Expression Tensor::get( const size_t& co )
 {
   if ( co >= m_elements.size() )
-    ERROR( "Element (" + std::to_string( co ) + " ) out of range (0"
-        << ", " << m_elements.size() << ")" );
+    ERROR("Element (" + std::to_string( co ) + " ) out of range (0" << ", " << m_elements.size() << ")");
   return m_elements[m_symmetrisedCoordinates[co]];
 }
 Expression Tensor::get( const size_t& co ) const
 {
   if ( co >= m_elements.size() )
-    ERROR( "Element (" + std::to_string( co ) + " ) out of range (0"
-        << ", " << m_elements.size() << ")" );
+    ERROR("Element (" + std::to_string( co ) + " ) out of range (0" << ", " << m_elements.size() << ")");
   return m_elements[m_symmetrisedCoordinates[co]];
 }
 
@@ -107,7 +105,7 @@ size_t Tensor::size() const { return m_elements.size(); }
 size_t Tensor::index( const std::vector<size_t>& _co ) const
 {
   auto id = Tensor::coordinates_to_index( _co, m_dim );
-  if ( id > nElements() ) ERROR( "Element (" << id << ") out of range" );
+  if ( id > nElements() ) ERROR("Element (" << id << ") out of range");
   return id;
 }
 
@@ -187,12 +185,12 @@ Tensor AmpGen::operator+( const Tensor& t1, const Tensor& t2 )
   Tensor result( t1.dims() );
 
   if ( t1.rank() != t2.rank() ) {
-    ERROR( "Addition between tensors of different rank makes no sense!" );
+    ERROR("Addition between tensors of different rank makes no sense!");
     t1.print();
     t2.print();
   }
   if ( t1.nElements() != t2.nElements() ) {
-    ERROR( "Addition between tensors with different number of elements " << t1.nElements() << " " << t2.nElements() );
+    ERROR("Addition between tensors with different number of elements " << t1.nElements() << " " << t2.nElements());
   }
 
   for ( size_t i = 0; i < t1.nElements(); ++i ) result[i] = t1[i] + t2[i];
@@ -204,21 +202,16 @@ Tensor AmpGen::operator-( const Tensor& t1, const Tensor& t2 )
 {
   Tensor result( t1.dims() );
   if ( t1.rank() != t2.rank() ) {
-    ERROR( "Subtraction between tensors of different rank makes no sense!" );
+    ERROR("Subtraction between tensors of different rank makes no sense!");
     t1.print();
     t2.print();
   }
   if ( t1.nElements() != t2.nElements() ) {
     t1.print();
     t2.print();
-    ERROR( "Subtraction between tensors with different number of elements " << t1.nElements() << " "
-        << t2.nElements() );
+    ERROR("Subtraction between tensors with different number of elements " << t1.nElements() << " "<< t2.nElements());
   }
   for ( size_t i = 0; i < t1.nElements(); ++i ) result[i] = t1[i] - t2[i];
-  if ( result.nElements() != t1.nElements() || result.nElements() != t2.nElements() ) {
-    ERROR( "What are you saying?" );
-  }
-
   return result;
 }
 
@@ -267,10 +260,11 @@ Expression AmpGen::dot( const Tensor& A, const Tensor& B )
 {
   if ( A.nElements() == 1 && B.nElements() == 1 ) return A[0] * B[0];
 
-  if ( A.rank() != B.rank() || A.nElements() != B.nElements() ) {
-    ERROR( "Rank(A) = " << A.rank() << " != Rank(B) = " << B.rank() );
-    ERROR( "Elem(A) = " << A.nElements() << " ; Elem(B) = " << B.nElements() );
-    ERROR( "Cannot fully contract unmatched Tensors - you nitwit" );
+  if ( A.rank() != B.rank() || A.nElements() != B.nElements() )
+  {
+    ERROR("Rank(A) = " << A.rank() << " != Rank(B) = " << B.rank());
+    ERROR("Elem(A) = " << A.nElements() << " ; Elem(B) = " << B.nElements());
+    ERROR("Cannot fully contract unmatched Tensors - you nitwit");
     return Constant( 0 );
   }
   Expression result;
@@ -284,9 +278,8 @@ Expression AmpGen::dot( const Tensor& A, const Tensor& B )
 Tensor Tensor::Invert() const
 {
   int actualsize = m_dim[0];
-  if ( rank() != 2 ) {
-    ERROR( "Inversion only implemented for rank 2 objects" );
-  };
+  if ( rank() != 2 ) ERROR("Inversion only implemented for rank 2 objects");
+  
   Tensor data = *this;
   for ( int i = 1; i < actualsize; i++ ) data[i] = data[i] / data[0]; // normalize row 0
   for ( int i = 1; i < actualsize; i++ ) {
@@ -334,7 +327,7 @@ void Tensor::print(const bool& eval) const
   std::string dim_string = "";
   for ( unsigned int i = 0; i < m_dim.size(); ++i )
     dim_string += std::to_string( m_dim[i] ) + ( i == m_dim.size() - 1 ? "" : "x" );
-  if ( m_dim.size()  > 1 ) INFO( "Rank=" << m_dim.size() << ", Dim=(" << dim_string << ")" );
+  if ( m_dim.size()  > 1 ) INFO("Rank=" << m_dim.size() << ", Dim=(" << dim_string << ")");
   if ( m_dim.size() == 0 )
     std::cout << m_elements[0].to_string() << std::endl;
   else if ( m_dim.size() == 1 ) {
@@ -360,7 +353,7 @@ void Tensor::print(const bool& eval) const
   } 
   else {
     for ( unsigned int i = 0; i < m_elements.size(); ++i ) {
-      INFO( "M(" + vectorToString( coords( i ) ) + ") = " << m_elements[i].to_string() );
+      INFO("M(" + vectorToString(coords(i)) + ") = " << m_elements[i].to_string());
     }
   }
 }
@@ -435,9 +428,9 @@ TensorProxy AmpGen::operator*( const TensorProxy& t1, const TensorProxy& t2 )
   Tensor value( finalTensorRank );
 
   size_t nElem = value.nElements();
-  DEBUG( "Got " << t1_tensor.dims().size() << " x " << t2_tensor.dims().size() << " with " << contractions.size() << " contractions " << nElementsInSum );
-  DEBUG( t1_tensor.dimString() << " x " << t2_tensor.dimString() << " -> " << value.dimString() );
-  DEBUG( "Contraction matrix = " << "[" << vectorToString( contractionMatrix, ", " ) << "]" );
+  DEBUG("Got " << t1_tensor.dims().size() << " x " << t2_tensor.dims().size() << " with " << contractions.size() << " contractions " << nElementsInSum);
+  DEBUG(t1_tensor.dimString() << " x " << t2_tensor.dimString() << " -> " << value.dimString());
+  DEBUG("Contraction matrix = " << "[" << vectorToString(contractionMatrix, ", ") << "]");
 
   for( size_t elem = 0; elem < nElem; ++elem ) {
     auto coords = Tensor::index_to_coordinates( elem, finalTensorRank );
@@ -521,7 +514,7 @@ TensorProxy AmpGen::operator+( const TensorProxy& t1, const TensorProxy& t2 )
     }
   }
   if ( t1_to_t2_mapping.size() != indices_t1.size() ) {
-    ERROR( "Mapping illformed!" << indices_t1.size() << " " << indices_t2.size()  );
+    ERROR("Mapping illformed!" << indices_t1.size() << " " << indices_t2.size());
     return TensorProxy( Tensor(), {} );
   }
   Tensor result( tensor_t1 );
@@ -549,7 +542,7 @@ void Tensor::imposeSymmetry( size_t indexA, size_t indexB)
   }
   m_uniqueElements.clear();
   for( auto& f : counter ) m_uniqueElements.push_back( f.first );
-  DEBUG("Imposing symmetries on " << indexA << " <--> " << indexB << " reduces size to: " << counter.size() );
+  DEBUG("Imposing symmetries on " << indexA << " <--> " << indexB << " reduces size to: " << counter.size());
 }
 
 void Tensor::imposeSymmetry( std::vector<size_t> indices )
@@ -573,7 +566,7 @@ TensorProxy::TensorProxy(const Tensor& tensor,
   : m_tensor( tensor )
 {
   if ( m_tensor.rank() != indices.size() ) {
-    ERROR( "Wrong number of indices set (#Indices=" << indices.size() << ", rank=" << m_tensor.nDim() << ")");
+    ERROR("Wrong number of indices set (#Indices=" << indices.size() << ", rank=" << m_tensor.nDim() << ")");
     return;  
   } 
   m_indices = indices; 
@@ -585,7 +578,7 @@ TensorProxy::TensorProxy(const Tensor& tensor,
       if( indices[i] != indices[j] ) continue;
       ERROR("Tensor self-contractions not implemented yet!");
       if( m_tensor.dims()[i] != m_tensor.dims()[j] ) 
-        ERROR( "Trying to contract over indices of differing rank");
+        ERROR("Trying to contract over indices of differing rank");
       contractions.emplace_back(i, j, indices[i].isUpper() != indices[j].isUpper() ); 
       i++;
       break; 
@@ -594,8 +587,6 @@ TensorProxy::TensorProxy(const Tensor& tensor,
   }
   if( contractions.size() == 0 ) return;
   if( rt_dim.size() == 0 ) m_tensor = Tensor( Tensor::dim(1) );
-
-  //  INFO("Dim = ["<< vectorToString( rt_dim , ", " ) << "]"); 
 }
 
 TensorProxy TensorProxy::reorder( const std::vector<Tensor::Index>& indices )

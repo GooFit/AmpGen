@@ -48,7 +48,9 @@ message( STATUS "ROOT_INCLUDE_DIRS = ${ROOT_INCLUDE_DIRS}")
 
 target_include_directories(AmpGen
   PUBLIC
-  "${CMAKE_SOURCE_DIR}"
+  "${CMAKE_SOURCE_DIR}")
+
+target_include_directories(AmpGen
   SYSTEM PUBLIC
   "${ROOT_INCLUDE_DIRS}")
 

@@ -105,12 +105,12 @@ CouplingConstant::CouplingConstant( const AmplitudeRule& pA)
     isCartesian = false; 
   }
   else if ( cartOrPolar != "cartesian" ){
-    ERROR("Coordinates for coupling constants must be either cartesian or polar");
+    FATAL("Coordinates for coupling constants must be either cartesian or polar");
   } 
   std::string degOrRad = NamedParameter<std::string>("CouplingConstant::AngularUnits","rad");
   if ( degOrRad == "deg") sf = M_PI / 180; 
   else if ( degOrRad != "rad"){
-    ERROR("CouplingConstant::AngularUnits must be either rad or deg");
+    FATAL("CouplingConstant::AngularUnits must be either rad or deg");
   } 
 }
 

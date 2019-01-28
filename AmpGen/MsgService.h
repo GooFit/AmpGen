@@ -6,6 +6,7 @@
    -Defines coloured and organised output macro streams using __PRETTY_FUNCTION__
    INFO()    - info level messages, always displayed
    ERROR()   - error level messages, always displayed
+   FATAL()   - error message that throws the process, always displayed 
    WARNING() - warning level messages, can be switched with the WARNINGLEVEL flag
    DEBUG()   - debug level messages, can be switched with the DEBUGLEVEL flag
    */
@@ -21,8 +22,12 @@
 
 inline std::string trimmedString( std::string thing, const unsigned int& length = FCNNAMELENGTH )
 {
-  size_t pos2                            = thing.find( "AmpGen::" );
+  size_t pos2=0;
+  do {
+  pos2                            = thing.find( "AmpGen::" );
   if ( pos2 != std::string::npos ) thing = thing.replace( pos2, 8, "" );
+  } while( pos2 != std::string::npos );
+
   pos2                                   = thing.find( "std::" );
   if ( pos2 != std::string::npos ) thing.replace( pos2, 5, "" );
 
@@ -54,8 +59,14 @@ inline std::string trimmedString( std::string thing, const unsigned int& length 
 
 #define ERROR( X )                                                                                                     \
   std::cout << "\033[1;31m" << std::left << std::setw( FCNNAMELENGTH ) << trimmedString( __PRETTY_FUNCTION__ )         \
-<< "  ERROR        "                                                                                       \
+<< "  ERROR        "                                                                                                   \
 << "\033[0m" << X << std::endl
+
+#define FATAL( X )                                                                                                     \
+  { std::cout << "\033[1;31m" << std::left << std::setw( FCNNAMELENGTH ) << trimmedString( __PRETTY_FUNCTION__ )         \
+<< "  FATAL        "                                                                                                   \
+<< "\033[0m" << X << std::endl;                                                                                         \
+throw std::runtime_error( trimmedString( __PRETTY_FUNCTION__)+ " FATAL" ) ;}
 
 #ifdef WARNINGLEVEL
 #define WARNING( X )                                                                                                   \

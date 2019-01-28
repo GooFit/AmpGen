@@ -1,5 +1,4 @@
 #define BOOST_TEST_DYN_LINK
-
 #define BOOST_TEST_MODULE "Tensor"
 
 #include <boost/test/included/unit_test.hpp>

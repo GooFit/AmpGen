@@ -23,6 +23,38 @@
 
 using namespace AmpGen;
 
+EventType::EventType( const std::vector<std::string>& particleNames, const bool& isTD ) : m_timeDependent( isTD )
+{  
+  if ( particleNames.size() < 3 ) { // Mother plus two daughters minimum required
+    ERROR( "Not enough particles in event type: " << particleNames[0] << " size =  " << particleNames.size() );
+    throw std::runtime_error( "Not enough particles listed in particle names! Was it defined?" );
+  }
+  m_mother           = particleNames.at( 0 );
+  for ( unsigned int i  = 1; i < particleNames.size(); ++i ) m_particleNames.push_back( particleNames[i] );
+  auto motherProperties = ParticlePropertiesList::get( m_mother );
+  if ( motherProperties != nullptr )
+    m_motherMass = motherProperties->mass();
+  else {
+    ERROR( "Particle not found: " << m_mother );
+    return;
+  }
+  for ( auto& particle : m_particleNames ) {
+    auto prop = ParticlePropertiesList::get( particle );
+    if ( prop != nullptr )
+      m_particleMasses.push_back( prop->mass() );
+    else {
+      ERROR( "Particle not found: " << particle );
+      return;
+    }
+    m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "~" ), "-", "#" ) );
+  }
+  DEBUG( m_mother << " = " << m_motherMass << " -> " );
+  for ( unsigned int i = 0; i < m_particleNames.size(); ++i ) {
+    DEBUG( m_particleNames[i] << " = " << m_particleNamesPickled[i] << " = " << m_particleMasses[i] );
+  }
+}
+
+
 std::map<std::string, size_t> EventType::getEventFormat( const bool& outputNames ) const
 {
   std::map<std::string, size_t> returnValue;
@@ -85,38 +117,6 @@ std::string EventType::label( const std::vector<size_t>& index, bool isRoot ) co
     thing += label( x, isRoot );
   }
   return thing;
-}
-
-EventType::EventType( const std::vector<std::string>& particleNames, const bool& isTD ) : m_timeDependent( isTD )
-{
-  
-  if ( particleNames.size() < 3 ) { // Mother plus two daughters minimum required
-    ERROR( "Not enough particles in event type: " << particleNames[0] << " size =  " << particleNames.size() );
-    throw std::runtime_error( "Not enough particles listed in particle names! Was it defined?" );
-  }
-  m_mother           = particleNames.at( 0 );
-  for ( unsigned int i  = 1; i < particleNames.size(); ++i ) m_particleNames.push_back( particleNames[i] );
-  auto motherProperties = ParticlePropertiesList::get( m_mother );
-  if ( motherProperties != nullptr )
-    m_motherMass = motherProperties->mass();
-  else {
-    ERROR( "Particle not found: " << m_mother );
-    return;
-  }
-  for ( auto& particle : m_particleNames ) {
-    auto prop = ParticlePropertiesList::get( particle );
-    if ( prop != nullptr )
-      m_particleMasses.push_back( prop->mass() );
-    else {
-      ERROR( "Particle not found: " << particle );
-      return;
-    }
-    m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "~" ), "-", "#" ) );
-  }
-  DEBUG( m_mother << " = " << m_motherMass << " -> " );
-  for ( unsigned int i = 0; i < m_particleNames.size(); ++i ) {
-    DEBUG( m_particleNames[i] << " = " << m_particleNamesPickled[i] << " = " << m_particleMasses[i] );
-  }
 }
 
 EventType EventType::conj( const bool& headOnly, const bool& dontConjHead ) const

@@ -281,7 +281,7 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   
   auto recoupling_constants = calculate_recoupling_constants( particle.spin(), Mz, L, S, d0.spin(), d1.spin() );
   auto mod = particle.attribute("helAmp");
-  if( mod.first ) recoupling_constants = userHelicityCouplings( mod.second );
+  if( mod != stdx::nullopt ) recoupling_constants = userHelicityCouplings( mod.value() );
 
   if( recoupling_constants.size() == 0 ){    
     WARNING( particle.uniqueString() << " " << particle.spin() << " " << 

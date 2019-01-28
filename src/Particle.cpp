@@ -382,7 +382,14 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
 
   std::string spinFormalism = NamedParameter<std::string>("Particle::SpinFormalism","Covariant");
   auto localFormalism = attribute("SpinFormalism"); 
-  if( localFormalism.first ) spinFormalism = localFormalism.second;
+  if( localFormalism != stdx::nullopt ) spinFormalism = localFormalism.value();
+  
+  if( spinFormalism != "Covariant" && spinFormalism != "Canonical")
+  {
+    FATAL("Invalid value for SpinFormalism: " << spinFormalism << ", possible values are: " << italic_on << " Covariant, Canonical." << italic_off  );
+    //throw std::runtime_error( trimmedString( __PRETTY_FUNCTION__)+ " FATAL" );
+  }
+
   Expression total( 0 );
   auto finalStateParticles  = getFinalStateParticles();
   auto orderings            = identicalDaughterOrderings();
@@ -407,7 +414,7 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
         else { spinFactor = is(a) * st(a) ; }
       }
     }
-    if ( includeSpin && spinFormalism == "Wigner" ){
+    if ( includeSpin && spinFormalism == "Canonical" ){
       spinFactor = helicityAmplitude( *this, TransformSequence(), double(polState())/2.0, db ); 
     }
     if( db != nullptr ){
@@ -808,12 +815,11 @@ int Particle::quasiCP() const
   return prod; 
 }
 
-std::pair<bool,std::string> Particle::attribute(const std::string& key) const 
+stdx::optional<std::string> Particle::attribute(const std::string& key) const 
 {
-  std::map<std::string,std::string> m_rt;
   for( auto& modifier : m_modifiers ){
     auto tokens = split( modifier, '=');
-    if( tokens.size() == 2 && tokens[0] == key ) return std::make_pair(true, tokens[1] );
+    if( tokens.size() == 2 && tokens[0] == key ) return stdx::optional<std::string>(tokens[1]);
   }
-  return std::make_pair(false, "");
+  return stdx::nullopt;
 }

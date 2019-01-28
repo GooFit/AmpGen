@@ -283,8 +283,8 @@ int main( int argc, char* argv[] )
 //  sig.reset( true ); //// reset PDFs to ensure correct cache state
 //  sig.setMC( flatMC );
 //  sig.prepare();
-//  if ( MPS["fComb"]->mean() != 1 )
-//    fr->addFractions( sig.fitFractions( fr->getErrorPropagator() ) );
+  if ( MPS["fComb"]->mean() != 1 )
+    fr->addFractions( sig.fitFractions( fr->getErrorPropagator() ) );
 //  else
 //    fr->addFractions( bkg.fitFractions( fr->getErrorPropagator() ) );
 

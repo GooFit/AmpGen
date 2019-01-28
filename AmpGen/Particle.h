@@ -5,6 +5,23 @@
 #include <vector>
 #include <memory>
 
+// hack to include optional from https://codereview.stackexchange.com/questions/136350/seamlessly-migrating-experimental-optional-to-optional
+#if __cplusplus >= 201703L
+#include <optional>
+namespace stdx {
+  using namespace ::std;
+}
+#elif __cplusplus >= 201402L
+  #include  <experimental/optional>
+  namespace stdx {
+    using namespace ::std;
+    using namespace ::std::experimental;
+  }
+#else 
+#   error "Require c++ std >=14"
+#endif
+
+
 #include "AmpGen/EventType.h"
 #include "AmpGen/Expression.h"
 #include "AmpGen/Tensor.h"
@@ -129,7 +146,7 @@ namespace AmpGen
       void setPolarisationState( const int& state );
       std::pair<size_t,size_t> orbitalRange( const bool& converseParity = true ) const; ///< Range of possible orbital angular momenta between decay products
       std::vector<std::pair<double,double>> spinOrbitCouplings( const bool& conserveParity = true ) const;
-      std::pair<bool,std::string> attribute(const std::string& key) const; 
+      stdx::optional<std::string> attribute(const std::string& key) const; 
       const ParticleProperties* props() const;
       QuarkContent quarks() const;
       QuarkContent daughterQuarks() const;

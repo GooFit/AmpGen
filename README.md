@@ -210,3 +210,40 @@ K(1)(1270)bar-_mass = K(1)(1270)+_mass
 ```
 Due to the abundance of **odd** glyphs such as brackets and +/- in parameter names, parameter expressions are white space delimited and somewhat sensitive to bracket usage. 
 
+## Spin Formalisms
+
+AmpGen implements both the covariant tensor (or Rarita-Schwinger) and canonical helicity formalism for describing the angular momentum component of decays. 
+Both formalisms refer to states of well-defined orbital angular momentum, as opposed to the helicity states, as the states with well-defined orbital angular momentum have a straightforward parity and momentum dependences. 
+The default formalism is the covariant tensor formalism, but this can be switched to the canonical formalism changing the flag 
+```
+Particle::SpinFormalism Canonical ## default = Covariant
+```
+in the options file. 
+The spin formalism for an individual decay chain can be specified by changing the attribute SpinFormalism in the decay descriptor. For example, 
+```
+D0[SpinFormalism=Canonical]{K*(892)bar0,rho(770)0}
+```
+selects the S-wave of the K*, rho system. The user can also specify systems of helicity couplings in the canonical formalism, using the attribute _helAmp_. 
+For example, suppose the transversity amplitudes were used rather than the canonical, then the user can specify
+```
+D0[SpinFormalism=Canonical;helAmp=Long]{K*(892)bar0,rho(770)0}
+D0[SpinFormalism=Canonical;helAmp=t1]{K*(892)bar0,rho(770)0}
+D0[SpinFormalism=Canonical;helAmp=t2]{K*(892)bar0,rho(770)0}
+```
+For the longitudinal and two transverse amplitudes. These must then be defined by the user in terms of the helicity amplitudes in the following structure:
+```
+Long {
+  1.0 0 0
+}
+
+t1 {
+  0.707106781 +1 +1
+  0.707106781 -1 -1
+}
+
+t2 {
+   0.707106781 +1 +1
+  -0.707106781 -1 -1
+}
+```
+That is specified as sets of three numbers, firstly the coupling, and then the two particle helicities. So in this example, the longitudinal amplitude is the 00 helicity state, while the two transverse amplitudes and the sum and difference of the two other helicity amplitudes. 

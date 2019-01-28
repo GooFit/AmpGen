@@ -17,25 +17,19 @@ ParticlePropertiesList* ParticlePropertiesList::ptr = nullptr;
 
 const ParticlePropertiesList* ParticlePropertiesList::getMe()
 {
-  if ( !ptr ) {
+  if(!ptr){
     ptr = new ParticlePropertiesList();
   }
-  if ( nullptr == ptr ) {
-    ERROR( " Couldn't get ParticlePropertiesList (i.e. myself)" );
-    throw std::runtime_error( "No ParticlePropertiesList" );
-  }
+  if(nullptr == ptr) FATAL("Couldn't get ParticlePropertiesList (i.e. myself)" );
   return ptr;
 }
 
 ParticlePropertiesList* ParticlePropertiesList::getMutable()
 {
-  if ( !ptr ) {
+  if(!ptr){
     ptr = new ParticlePropertiesList();
   }
-  if ( nullptr == ptr ) {
-    ERROR( " Couldn't get ParticlePropertiesList (i.e. myself)" );
-    throw std::runtime_error( "No ParticlePropertiesList" );
-  }
+  if(ptr == nullptr) FATAL( "Couldn't get ParticlePropertiesList (i.e. myself)" );
   return ptr;
 }
 
