@@ -57,12 +57,12 @@ DEFINE_LINESHAPE( GounarisSakurai )
   Expression BWRe      = M(s, width0, s0, ParticlePropertiesList::get("pi+")->mass() ) - s;
   const Expression q2  = abs( Q2( s, s1, s2 ) );
   const Expression J   = Constant(0,1);
-  Expression BF = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
-  ADD_DEBUG( BF   , dbexpressions);
+  Expression FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
+  if ( lineshapeModifier == "BL" ) FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
+  ADD_DEBUG( FormFactor   , dbexpressions);
   ADD_DEBUG( BWRe , dbexpressions);
   ADD_DEBUG( BWIm , dbexpressions);
   ADD_DEBUG( h(s) , dbexpressions);
   ADD_DEBUG( h(s0), dbexpressions);
-  //return 1./( BWRe + J * BWIm );
-  return kFactor( mass, width0, dbexpressions ) * BF / ( BWRe + J* BWIm );
+  return kFactor( mass, width0, dbexpressions ) * FormFactor / ( BWRe + J* BWIm );
 }

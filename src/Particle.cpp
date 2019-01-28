@@ -555,7 +555,7 @@ bool Particle::checkExists() const
           << spin() << " L  =  " << m_orbital << " l' = " << m_spinConfigurationNumber
           << " s1 = " << m_daughters[0]->spin() << " s2 = " << m_daughters[1]->spin() );
     }
-    success &= daughter( 0 )->checkExists() & daughter( 1 )->checkExists();
+    success &= daughter(0)->checkExists() & daughter(1)->checkExists();
   }
   if ( success == false ) ERROR( uniqueString() << " is not described in IVertex" );
   return success;
@@ -563,9 +563,10 @@ bool Particle::checkExists() const
 
 std::pair<size_t, size_t> Particle::orbitalRange( const bool& conserveParity ) const
 {
-  if ( m_daughters.size() == 0 ) return {0, 0};
-  if ( m_daughters.size() != 2 ) {
-    ERROR( "L not well defined for D == " << m_daughters.size() );
+  if( m_daughters.size() == 0 ) return {0, 0};
+  if( m_daughters.size() == 1 ) return {0,0};
+  if( m_daughters.size() != 2 ) {
+    ERROR( "L not well defined for nDaughters == " << m_daughters.size() );
     return {999, 998};
   }
   const int S  = m_props->twoSpin();

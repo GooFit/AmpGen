@@ -233,10 +233,10 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
                                      const double& Mz, 
                                      DebugSymbols* db, 
                                      int sgn )
-{
-  
+{  
   if( particle.daughters().size() > 2 ) return 1; 
-  
+  if( particle.daughters().size() == 1 ) return helicityAmplitude( *particle.daughter(0), parentFrame, Mz, db, sgn );
+
   Tensor::Index a,b,c; 
   auto myFrame = parentFrame; 
   if( particle.spin() == 0 ) myFrame.clear();
