@@ -8,7 +8,6 @@
 #include <iomanip>
 #include <iostream>
 #include <ratio>
-#include <cstdint>
 
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Event.h"

@@ -3,7 +3,6 @@
 #include <memory.h>
 #include <stddef.h>
 #include <array>
-#include <cstdint>
 #include <fstream>
 #include <functional>
 #include <iomanip>

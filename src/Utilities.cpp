@@ -1,5 +1,5 @@
 #include "AmpGen/Utilities.h"
-
+#include "AmpGen/Version.h"
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -268,7 +268,6 @@ void printReleaseNotes( const std::string& fname )
 
 void printSplash()
 {
-
   std::cout << "\n\033[2;31m";
   std::cout << "    █████╗ ███╗   ███╗██████╗  ██████╗ ███████╗███╗   ██╗" << std::endl;
   std::cout << "   ██╔══██╗████╗ ████║██╔══██╗██╔════╝ ██╔════╝████╗  ██║" << std::endl;
@@ -277,7 +276,16 @@ void printSplash()
   std::cout << "   ██║  ██║██║ ╚═╝ ██║██║     ╚██████╔╝███████╗██║ ╚████║" << std::endl;
   std::cout << "   ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝      ╚═════╝ ╚══════╝╚═╝  ╚═══╝" << std::endl;
   std::cout << "\033[0m\n";
-  std::cout << bold_on << "        Build: gcc " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__;
+  std::cout << bold_on << 
+               "                      version " << AMPGEN_VERSION_MAJOR << "." << AMPGEN_VERSION_MINOR << std::endl; 
+  std::cout << "        build: " ;
+  #if defined(__clang__)
+    std::cout << "clang " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__;
+  #elif defined(__ICC) || defined(__INTEL_COMPILER)
+    std::cout << "icc " << __INTEL_COMPILER;
+  #elif defined(__GNUC__) || defined(__GNUG__)
+    std::cout << "gcc " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__;
+  #endif
   std::cout << "  " << __DATE__ << " " << __TIME__ << bold_off << "\n\n";
 
   char* AmpGenRoot = getenv("AMPGENROOT");
@@ -343,10 +351,7 @@ bool isDir( const std::string& pathname )
 
 std::vector<std::string> getListOfFiles( const std::string& directory, std::string patternString )
 {
-
   std::string expanded_path = expandGlobals( directory );
-  /// wild-card structure ///
-
   std::vector<std::string> files;
   std::vector<std::string> top_paths;
 

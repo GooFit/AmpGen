@@ -19,16 +19,20 @@ std::string AmpGen::programatic_name( std::string s )
   std::replace( s.begin(), s.end(), '-', 'm' );
   std::replace( s.begin(), s.end(), '+', 'p' );
   std::replace( s.begin(), s.end(), '-', 'm' );
-  std::replace( s.begin(), s.end(), ',', '_' );
-  std::replace( s.begin(), s.end(), '(', '_' );
-  std::replace( s.begin(), s.end(), ')', '_' );
-  std::replace( s.begin(), s.end(), '[', '_' );
-  std::replace( s.begin(), s.end(), ']', '_' );
-  std::replace( s.begin(), s.end(), '{', '_' );
-  std::replace( s.begin(), s.end(), '}', '_' );
   std::replace( s.begin(), s.end(), '*', 's' );
-  std::replace( s.begin(), s.end(), ':', '_' );
+  std::replace_if( s.begin(), s.end(), [](auto& c){ return ! std::isalnum(c) ; }, '_' );
+  if( isdigit( s[0] ) ) s = "f" + s;
+ // std::replace( s.begin(), s.end(), ',', '_' );
+ // std::replace( s.begin(), s.end(), '(', '_' );
+ // std::replace( s.begin(), s.end(), ')', '_' );
+ // std::replace( s.begin(), s.end(), '[', '_' );
+ // std::replace( s.begin(), s.end(), ']', '_' );
+ // std::replace( s.begin(), s.end(), '{', '_' );
+ // std::replace( s.begin(), s.end(), '}', '_' );
+ // std::replace( s.begin(), s.end(), ':', '_' );
   std::replace( s.begin(), s.end(), '\'', '_' );
+ // std::replace( s.begin(), s.end(), '.', '_' );
+ // std::replace( s.begin(), s.end(), ';', '_' );
   return s;
 }
 
@@ -55,15 +59,18 @@ CompiledExpressionBase::CompiledExpressionBase( const Expression& expression,
     const std::map<std::string, size_t>& evtMapping )
   : m_obj( expression ), 
   m_name( name ),
+  m_progName( programatic_name(name) ),
   m_db(db),
   m_evtMap(evtMapping),
   m_readyFlag(nullptr) {}
 
 CompiledExpressionBase::CompiledExpressionBase( const std::string& name ) 
   : m_name( name ),
-  m_readyFlag(nullptr) {}
+    m_progName( programatic_name(name) ),
+    m_readyFlag(nullptr) {}
 
 std::string CompiledExpressionBase::name() const { return m_name; }
+std::string CompiledExpressionBase::progName() const { return m_progName; }
 unsigned int CompiledExpressionBase::hash() const { return FNV1a_hash(m_name); }
 
 void CompiledExpressionBase::prepare()
@@ -83,7 +90,7 @@ void CompiledExpressionBase::addDependentExpressions( std::ostream& stream, size
 void CompiledExpressionBase::to_stream( std::ostream& stream  ) const 
 {
   if( m_db.size() !=0 ) stream << "#include<iostream>\n"; 
-  stream << "extern \"C\" const char* " << m_name << "_name() {  return \"" << m_name << "\"; } \n";
+  stream << "extern \"C\" const char* " << progName() << "_name() {  return \"" << m_name << "\"; } \n";
   bool enable_cuda = NamedParameter<bool>("enable_cuda",false);
 
     size_t sizeOfStream = 0; 
@@ -92,7 +99,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     stream << "#pragma clang diagnostic push\n"
       << "#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
 
-    stream << "extern \"C\" " << returnTypename() << " " << m_name << "(" << fcnSignature() << "){\n";
+    stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );
     std::string objString = m_obj.to_string(m_resolver);
     stream << "return " << objString << ";\n}\n";
@@ -104,7 +111,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
       rt_cuda = "float* r, const int N";
     if( rt_cpp == "std::complex<double>" || rt_cpp == "std::complex<float>" || rt_cpp == "complex_t" ) 
       rt_cuda = "ampgen_cuda::complex_t* r, const int N";
-    stream << "__global__ void " << m_name << "( " << rt_cuda << ", const float_t* x0, const float3* x1){\n"; 
+    stream << "__global__ void " << progName() << "( " << rt_cuda << ", const float_t* x0, const float3* x1){\n"; 
     stream <<  "  int i     = blockIdx.x * blockDim.x + threadIdx.x;\n";
     addDependentExpressions( stream, sizeOfStream);
     std::string objString = m_obj.to_string(m_resolver);
@@ -113,8 +120,8 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
 
   if( NamedParameter<bool>("CompiledExpressionBase::Compat", false) == true ){
     stream << "#pragma clang diagnostic pop\n\n";
-    stream << "extern \"C\" void " <<  m_name << "_c" << "(double *real, double *imag, " << fcnSignature() << "){\n";
-    stream << "  auto val = " << m_name << "(" << args() << ") ;\n"; 
+    stream << "extern \"C\" void " <<  progName() << "_c" << "(double *real, double *imag, " << fcnSignature() << "){\n";
+    stream << "  auto val = " << progName() << "(" << args() << ") ;\n"; 
     stream << "  *real = val.real();\n";
     stream << "  *imag = val.imag();\n";
     stream << "}\n";
@@ -130,7 +137,7 @@ std::ostream& AmpGen::operator<<( std::ostream& os, const CompiledExpressionBase
 
 void CompiledExpressionBase::compile(const std::string& fname, const bool& wait  )
 {
-  if( ! wait ){
+  if(!wait){
   m_readyFlag = new std::shared_future<bool>( ThreadPool::schedule([this,fname](){
         CompilerWrapper().compile(*this,fname);
         return true;} ) );
@@ -144,7 +151,7 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
 {
   stream << "#include<string>\n";
   stream << "extern \"C\" std::vector<std::pair< std::string, std::complex<double>>> " 
-         << m_name << "_DB(" << fcnSignature() << "){\n";
+         << m_progName << "_DB(" << fcnSignature() << "){\n";
   for ( auto& dep : m_debugSubexpressions ) {
     std::string rt = "auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver) +";"; 
     stream << rt << "\n";

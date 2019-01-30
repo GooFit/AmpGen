@@ -24,7 +24,7 @@ void NormalOrderedExpression::Term::addExpression( const Expression& expression)
       addExpression( l );
       m_divisor = m_divisor * r ;  
     }
-  } 
+  }
   else if( is<Constant>(expression) ) m_prefactor *= expression();
   else m_terms.emplace_back( expression, expression.to_string() );
 }
@@ -50,7 +50,7 @@ NormalOrderedExpression::Term::operator Expression()
   return pf / m_divisor; 
 }
 
-NormalOrderedExpression::NormalOrderedExpression( const Expression& expression )
+NormalOrderedExpression::NormalOrderedExpression(const Expression& expression, const bool& expandSubtrees ) : m_expandSubTrees(expandSubtrees)
 {
   auto expanded = ExpandBrackets(expression);
   for( auto& t : expanded ){
@@ -116,6 +116,15 @@ std::vector<Expression> NormalOrderedExpression::ExpandBrackets( const Expressio
       for( auto& l : left ) rt.emplace_back(l/sum);
       return rt; 
     }
+  }
+  if( m_expandSubTrees && is<SubTree>(expression) ) 
+    return ExpandBrackets( cast<SubTree>(expression).m_expression );
+  if( is<Conj>(expression) ){
+    auto terms = ExpandBrackets( cast<Conj>(expression).arg() );
+    std::vector<Expression> rt;
+    for(auto& it : terms) 
+      rt.push_back( fcn::conj(it) );
+    return rt;
   }
   return {expression}; 
 }

@@ -1,7 +1,6 @@
 #include "AmpGen/ASTResolver.h"
 
 #include <algorithm>
-#include <cstdint>
 
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/NamedParameter.h"

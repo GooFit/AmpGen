@@ -48,7 +48,7 @@ namespace AmpGen
       void build_probunnormalised();
       Expression probExpression( const Tensor& T_matrix, const std::vector<Expression>& p ) const; 
       size_t size() const ;  
-      complex_t TE( const AmpGen::Event& event, const size_t& x, const size_t& y );
+//      complex_t TE( const AmpGen::Event& event, const size_t& x, const size_t& y );
       real_t norm() const;
       real_t prob_unnormalised( const AmpGen::Event& evt ) const;
       real_t prob(const AmpGen::Event& evt ) const ;
@@ -59,8 +59,6 @@ namespace AmpGen
       Tensor transitionMatrix();
     
     private: 
-      //size_t                        m_size        = {0}; 
-
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};
       EventList*                    m_events      = {nullptr};
@@ -70,14 +68,14 @@ namespace AmpGen
       std::vector<MinuitProxy>      m_pVector     = {}; 
       bool                          m_verbosity   = {0};
       Integrator<18>                m_integrator;
-      std::array<Bilinears,6>       m_norms;
+      std::vector<Bilinears>        m_norms;
       std::vector<std::vector<int>> m_polStates; 
       EventType                     m_eventType;
       std::string                   m_prefix      = "";
       std::vector<TransitionMatrix<std::vector<complex_t>>>        m_matrixElements;  
-      CompiledExpression< real_t, const real_t*, const complex_t*> m_probExpression; 
+      CompiledExpression<real_t, const real_t*, const complex_t*> m_probExpression; 
      
-      std::vector< std::vector< int > > polarisationOuterProduct( const std::vector< std::vector< int > >& A, const std::vector< int >& B ) const;
+      std::vector<std::vector<int>> polarisationOuterProduct( const std::vector<std::vector<int>>& A, const std::vector<int>& B ) const;
       std::vector<int> polarisations( const std::string& name ) const ;
   };
 } // namespace AmpGen

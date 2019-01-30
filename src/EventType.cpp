@@ -128,9 +128,9 @@ EventType EventType::conj( const bool& headOnly, const bool& dontConjHead ) cons
   return EventType( type );
 }
 
-std::vector<Projection> EventType::defaultProjections( const unsigned int& nBins ) const
+std::vector<Projection> EventType::defaultProjections(const size_t& nBins) const
 {
-  bool          useRootLabelling = NamedParameter<bool>( "EventType::UseRootTEX", false );
+  bool          useRootLabelling = NamedParameter<bool>(        "EventType::UseRootTEX", false );
   std::string unitName           = NamedParameter<std::string>( "EventType::Units", "MeV" );
   std::string defaultObservable  = NamedParameter<std::string>( "EventType::Observable", "mass2");
 
@@ -157,6 +157,16 @@ std::vector<Projection> EventType::defaultProjections( const unsigned int& nBins
   return axes;
 }
 
+Projection EventType::projection(const size_t& nBins, const std::vector<size_t>& indices) const 
+{
+  auto mm             = minmax( indices, true );
+  std::string gevcccc = "\\mathrm{GeV}^{2}/c^{4}";
+  return Projection( [indices]( const Event& evt ) { return evt.s( indices ); },
+                    "s" + vectorToString(indices),
+                    "s_{" + label(indices, false) + "}\\, \\left[" + gevcccc + "\\right]", nBins,
+                    ( mm.first - 0.05 ) ,  ( mm.second + 0.05 ) , gevcccc );
+}
+
 bool EventType::operator==( const EventType& other ) const
 {
   if ( m_mother != other.mother() || size() != other.size() ) return false;
@@ -169,9 +179,7 @@ bool EventType::operator==( const EventType& other ) const
 
 std::ostream& AmpGen::operator<<( std::ostream& os, const EventType& type )
 {
-  os << type.mother() << " → [";
-  auto fs = type.finalStates();
-  for ( unsigned int i = 0; i < fs.size(); ++i ) os << fs[i] << ( i == fs.size() - 1 ? "]" : ", " );
+  os << type.mother() << " → [" << vectorToString(type.finalStates() , ", ") << "]";
   return os;
 }
 
@@ -211,11 +219,15 @@ bool EventType::isTimeDependent() const { return m_timeDependent; }
 
 size_t EventType::eventSize() const { return 4 * size() + m_timeDependent; }
 
-std::pair< size_t, size_t > EventType::dim() const 
+std::pair<size_t, size_t> EventType::dim() const 
 {
-  size_t it = ParticlePropertiesList::get(m_mother)->twoSpin() + 1;
+  auto dimOfParticle = [](auto& name){
+    return name == "gamma0" ? 2 :
+    ParticlePropertiesList::get(name)->twoSpin() + 1;
+  };
+
+  size_t it = dimOfParticle(m_mother);
   size_t ft = 1;
-  for( auto& p : m_particleNames ) 
-    ft *= ParticlePropertiesList::get( p )->twoSpin() + 1; 
+  for( auto& p : m_particleNames ) ft *= dimOfParticle(p);
   return {it,ft};
 }

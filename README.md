@@ -146,7 +146,7 @@ In particular, the tree indicates the way in which data is by default loaded int
 This produces source code to evaluate the PDF, and normalises for use with other generators such as EvtGen, i.e. P(max) < 1. This can be used as
 
 ```shell
-./ConvertToSourceCode MyOpts.opt --sourceFile=MyFile.cpp
+./ConvertToSourceCode MyOpts.opt --Output=MyFile.cpp
 ```
 
 This can then be a compiled to a shared library using
@@ -155,25 +155,25 @@ This can then be a compiled to a shared library using
 g++ -Ofast -shared -rdynamic --std=c++14 -fPIC MyFile.cpp -o MyFile.so
 ```
 
-<!---
-(I broke the python bindings and haven't got round to fixing them yet, hence commented out of the instructions)
-You can then check the file by opening it it Python3, using the utility class provided:
-
+#### Python Bindings
+Models built into a shared library can be used in python using the following flags into ConvertToSourceCode:
+```shell 
+./ConvertToSourceCode MyOpts.opt --Output=MyFile.cpp --OutputEvents=events.csv --IncludePythonBindings
+```
+where normalisation events are also output for testing purposes in events.csv. 
+This can then be used with the python bindings in ampgen.py:  
 ```python
 from ampgen import FixedLib
-lib = FixedLib('MyModel.so')
-print(lib.matrix_elements[0]) # Print first matrix element
+model = FixedLib('MyModel.so')
+print(model.matrix_elements[0]) # Print first matrix element
 
 import pandas as pd
-model = pd.read_csv('Input.csv', nrows=100_000)
-fcn1 = lib.FCN_all(model)
+data = pd.read_csv('events.csv', nrows=100_000)
+fcn1 = model.FCN_all(data)
 
 # or, a bit slower, but just to show flexibility:
-fcn2 = model.apply(lib.FCN, axis=1)
+fcn2 = data.apply(model.FCN, axis=1)
 ```
-
-In this example, I've converted the output to csv to make it easy to import in Python without ROOT present. `.matrix_elements` gives you access to the parts of the PDF, with a `.amp` function that you can feed with P and E (`.vars` holds the current values).
--->
 
 ### Fitter
 ### Debugger

@@ -45,7 +45,8 @@ namespace AmpGen
 
     std::string label( const size_t& index, bool isRoot = true ) const;
     std::string label( const std::vector<size_t>& index, bool isRoot = true ) const;
-    std::vector<Projection> defaultProjections( const unsigned int& nBins ) const;
+    std::vector<Projection> defaultProjections(const size_t& nBins) const;
+    Projection projection(const size_t& nBins, const std::vector<size_t>& indices) const;
 
     bool operator==( const EventType& other ) const;
     bool has( const std::string& name ) const;
@@ -53,7 +54,7 @@ namespace AmpGen
     
     void setMotherMass( const double& mass ){ m_motherMass = mass ; } 
     std::function<void( Event& )> symmetriser() const;
-    std::pair< size_t, size_t> dim() const ;
+    std::pair<size_t, size_t> dim() const;
   };
   std::ostream& operator<<( std::ostream& os, const EventType& type );
 } // namespace AmpGen

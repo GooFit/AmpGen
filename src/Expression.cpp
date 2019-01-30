@@ -276,7 +276,7 @@ Expression AmpGen::fcn::abs(   const Expression& expression ) { return simplify_
 Expression AmpGen::fcn::cos(   const Expression& expression ) { return simplify_constant_unary<Cos>(expression) ; } 
 Expression AmpGen::fcn::acos(   const Expression& expression ){ return simplify_constant_unary<ACos>(expression) ; } 
 Expression AmpGen::fcn::sin(   const Expression& expression ) { return simplify_constant_unary<Sin>(expression); } 
-Expression AmpGen::fcn::conj(  const Expression& expression ) { return simplify_constant_unary<Conj>(expression); } 
+Expression AmpGen::fcn::conj(  const Expression& expression ) { return is<Parameter>(expression) ? expression : simplify_constant_unary<Conj>(expression); } 
 Expression AmpGen::fcn::norm(  const Expression& expression ) { return simplify_constant_unary<Norm>(expression); }
 Expression AmpGen::fcn::exp(   const Expression& expression ) { return simplify_constant_unary<Exp>(expression) ; }
 Expression AmpGen::fcn::log(   const Expression& expression ) { return simplify_constant_unary<Log>(expression) ; }

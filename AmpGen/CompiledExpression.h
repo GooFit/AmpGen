@@ -8,7 +8,6 @@
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
-#include "AmpGen/CompilerWrapper.h"
 #include "AmpGen/Types.h"
 
 #include <cxxabi.h>
@@ -109,11 +108,11 @@ namespace AmpGen
     Expression& expression() { return m_obj; }
     void compileDetails( std::ostream& stream ) const
     {
-      stream << "extern \"C\" int " << name() << "_pSize () {\n"
+      stream << "extern \"C\" int " << progName() << "_pSize () {\n"
              << "  return " << m_externals.size() << ";\n";
       stream << "}\n";
 
-      stream << "extern \"C\" double " << name() << "_pVal (int n) {\n";
+      stream << "extern \"C\" double " << progName() << "_pVal (int n) {\n";
       for ( size_t i = 0; i < m_externals.size(); i++ )
         stream << "  if(n == " << i << ") return  " << m_externals.at( i ) << ";\n";
       stream << "  return 0;\n}\n";
@@ -125,7 +124,7 @@ namespace AmpGen
       // Avoid a warning about std::complex not being C compatible (it is)
       stream << "#pragma clang diagnostic push\n"
              << "#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
-      stream << "extern \"C\" " << returnTypename() << " " << name() << "_wParams"
+      stream << "extern \"C\" " << returnTypename() << " " << progName() << "_wParams"
              << "( const double*__restrict__ E ){" << std::endl;
       stream << "  double externalParameters [] = {";
       if ( m_externals.size() != 0 ) {
@@ -134,7 +133,7 @@ namespace AmpGen
         }
         stream << m_externals[m_externals.size() - 1] << " }; " << std::endl;
       } else stream << "0};" << std::endl;
-      stream << "  return " << name() << "( externalParameters, E ); // E is P \n}\n";
+      stream << "  return " << progName() << "( externalParameters, E ); // E is P \n}\n";
       stream << "#pragma clang diagnostic pop\n\n" << std::endl;
     }
 
@@ -172,14 +171,14 @@ namespace AmpGen
 
     bool link( void* handle ) override
     {
-      const std::string symbol = name() ;
+      const std::string symbol = progName() ;
       if ( m_fcn.set( handle, symbol ) == 0 ) {
         ERROR( dlerror() );
         ERROR( name() << " (symbol = " << symbol << ") linking fails" );
         return false;
       }
       if ( m_db.size() ==0 ) return true;
-      if ( m_fdb.set( handle, name() + "_DB" ) == 0 ) {
+      if ( m_fdb.set( handle, progName() + "_DB" ) == 0 ) {
         ERROR( "Linking of " << name() << " symbol = " << symbol << ") for debugging fails" );
         return false;
       }
@@ -188,7 +187,7 @@ namespace AmpGen
     bool link( const std::string& handle ) override
     {
       DEBUG( "Linking " << name() << ( m_db.size() !=0  ? " (debugging)" : "" ) << "    hash = " << hash()  );
-      const std::string symbol = name();
+      const std::string symbol = progName();
       if ( m_fcn.set( handle, symbol ) == 0 ) {
         ERROR( "Function not linked: " << name() << " (sym="<< symbol << ")" );
         return false;
@@ -208,7 +207,7 @@ namespace AmpGen
       make_expression( const Expression& expression, const std::string& name , const bool& verbose=false)
       {
         CompiledExpression<RT,const double*, const double*> rt(expression,name);
-        CompilerWrapper(verbose).compile( rt, "");
+        rt.compile("", true);
         return rt;
       }
   template <class RT> 
@@ -218,7 +217,7 @@ namespace AmpGen
                        const MinuitParameterSet& mps )
       {
         CompiledExpression<RT,const double*, const double*> rt(expression,name,{},{},&mps);
-        CompilerWrapper().compile( rt, "");
+        rt.compile("", true);
         return rt;
       }
 } // namespace AmpGen

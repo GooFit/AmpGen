@@ -8,7 +8,6 @@
 
 #include <stddef.h>
 #include <complex>
-#include <cstdint>
 #include <functional>
 #include <iterator>
 #include <map>
@@ -35,10 +34,20 @@ EventList::EventList( const EventType& type ) : m_eventType( type ) {}
 void EventList::loadFromFile( const std::string& fname, const ArgumentPack& args )
 {
   auto current_file = gFile; 
-  TTree* tree =  split( fname, ':' ).size() == 2
-    ? (TTree*)TFile::Open( split( fname, ':' )[0].c_str(), "READ" )->Get( split( fname, ':' )[1].c_str() )
-    : (TTree*)TFile::Open( fname.c_str(), "READ" )->Get( "DalitzEventList" );
-
+  auto tokens = split( fname, ':'); 
+  TTree* tree = nullptr;
+  if( fname == "" ) FATAL("Filename must be specified to load data"); 
+  if( tokens.size() == 2 ){
+    gFile = TFile::Open( tokens[0].c_str(), "READ"); 
+    if( gFile == nullptr ) FATAL("Failed to load file: " << tokens[0] );
+    tree = (TTree*)gFile->Get( tokens[1].c_str() );
+  }
+  else {
+    gFile = TFile::Open( fname.c_str(), "READ");
+    if( gFile == nullptr ) FATAL("Failed to load file: " << tokens[0] );
+    tree = (TTree*)gFile->Get("DalitzEventList");
+  }
+  if( tree == nullptr ) FATAL( "Failed to load tree from file: " << fname );
   loadFromTree( tree, args );
   gFile->Close();
   gFile = current_file; 

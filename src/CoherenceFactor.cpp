@@ -8,7 +8,6 @@
 #include <numeric>
 #include <ostream>
 #include <utility>
-#include <cstdint>
 
 #include "AmpGen/ArgumentPack.h"
 #include "AmpGen/DynamicContainer.h"

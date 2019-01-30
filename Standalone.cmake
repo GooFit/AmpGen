@@ -3,6 +3,7 @@ set(AMPGEN_CXX ${CMAKE_CXX_COMPILER}  CACHE FILEPATH "This should be the path to
 file(GLOB_RECURSE AMPGEN_SRC src/*)
 file(GLOB_RECURSE AMPGEN_HDR AmpGen/*)
 
+
 if( NOT "${CMAKE_CXX_STANDARD}" ) 
   set(CMAKE_CXX_STANDARD 17) 
 endif() 
@@ -21,6 +22,8 @@ include(CMakePrintHelpers)
 
 option(AMPGEN_DEBUG "AmpGen Debug printout")
 option(AMPGEN_TRACE "AmpGen Trace printout")
+
+configure_file ("${PROJECT_SOURCE_DIR}/AmpGen/Version.h.in" "${PROJECT_SOURCE_DIR}/AmpGen/Version.h")
 
 add_library(AmpGen SHARED ${AMPGEN_SRC} ${AMPGEN_HDR})
 

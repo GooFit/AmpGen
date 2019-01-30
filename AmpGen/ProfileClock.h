@@ -13,11 +13,8 @@ namespace AmpGen{
 
   template <int N, class FCN> 
     double  Profile( const FCN& fcn ){
-      double mu    = 0;
       ProfileClock t; 
-      for( size_t i = 0 ; i < N; ++i ){
-        fcn();
-      }
+      for( size_t i = 0 ; i < N; ++i ) fcn();
       t.stop();
       INFO( typeof<FCN>() << " " << t/double(N) << "[ms] per iteration" );
       return t;

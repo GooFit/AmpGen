@@ -14,7 +14,7 @@ using namespace AmpGen;
 
 Projection::Projection( const std::function<double(const Event&)>& fcn, 
     const std::string& name, const std::string& xAxisTitle,
-    const unsigned int& nBins, const double& min, const double& max,
+    const size_t& nBins, const double& min, const double& max,
     const std::string& units 
     ) :
   m_func(fcn),

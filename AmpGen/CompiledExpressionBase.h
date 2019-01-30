@@ -34,6 +34,7 @@ namespace AmpGen
   protected:
     Expression                                      m_obj;
     std::string                                     m_name;
+    std::string                                     m_progName; 
     DebugSymbols                                    m_db;
     std::map<std::string, size_t>                   m_evtMap;
     std::shared_future<bool>*                       m_readyFlag = {nullptr};
@@ -55,6 +56,7 @@ namespace AmpGen
     void to_stream( std::ostream& stream ) const;
     unsigned int hash() const;
     std::string name() const;
+    std::string progName() const;
     virtual bool link( void* handle              )          = 0;
     virtual bool link( const std::string& handle )          = 0;
     virtual void setExternal( const double& value, const unsigned int& address ) = 0;
@@ -66,6 +68,7 @@ namespace AmpGen
     virtual void print() const                 = 0;
     virtual ~CompiledExpressionBase() = default;
     virtual size_t returnTypeSize() const      = 0;    
+    
   private:
     void addDebug( std::ostream& stream ) const;
     void addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const;

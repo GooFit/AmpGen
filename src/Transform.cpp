@@ -68,7 +68,6 @@ Tensor Transform::boost_spinor() const
 Tensor Transform::operator()(const Representation& repr, const bool& invert) const
 {
   Tensor::Index m,j,k;
-  complex_t i (0,1);
   Tensor I2 = Identity(2);
   Tensor I4 = Identity(4);
   if( m_type == Type::Rotate && repr == Representation::Spinor ) return rotate_spinor();

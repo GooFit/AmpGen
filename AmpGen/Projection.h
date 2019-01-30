@@ -26,7 +26,7 @@ namespace AmpGen
     std::string m_name;
     std::string m_xAxisTitle;
     std::string m_units;
-    unsigned int m_nBins;
+    size_t m_nBins;
     double m_min;
     double m_max;
     double m_width;
@@ -35,10 +35,10 @@ namespace AmpGen
     double operator()( const Event& evt ) const ;
     template <class FCN>
       Projection( const FCN& fcn, const std::string& name,
-          const std::string& xAxisTitle, const unsigned int& nBins, const double& min, const double& max,
+          const std::string& xAxisTitle, const size_t& nBins, const double& min, const double& max,
           const std::string& units = "" ) : Projection( std::function< double( const Event& )>( fcn ), name, xAxisTitle, nBins, min, max, units ) {}
     Projection( const std::function<double( const Event& )>& fcn, const std::string& name,
-        const std::string& xAxisTitle, const unsigned int& nBins, const double& min, const double& max,
+        const std::string& xAxisTitle, const size_t& nBins, const double& min, const double& max,
         const std::string& units = "" );
 
     TH1D* plot(const std::string& prefix="") const;

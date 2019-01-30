@@ -71,7 +71,7 @@ void CoherentSum::addMatrixElement( std::pair<Particle, CouplingConstant>& parti
   m_matrixElements.emplace_back(
     std::make_shared<Particle>( protoParticle ), coupling,
     CompiledExpression<complex_t, const real_t*, const real_t*>(
-      expression, "p" + std::to_string(FNV1a_hash(name)), m_evtType.getEventFormat(), m_dbThis ? dbExpressions : DebugSymbols() , &mps ) );
+      expression, name, m_evtType.getEventFormat(), m_dbThis ? dbExpressions : DebugSymbols() , &mps ) );
 }
 
 void CoherentSum::prepare()
@@ -287,7 +287,7 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
   Expression amplitude;
   for( unsigned int i = 0 ; i < size(); ++i ){
     auto& p = m_matrixElements[i];
-    Expression this_amplitude = p.coupling() * Function( p.pdf.name() + "_wParams", {event} ); 
+    Expression this_amplitude = p.coupling() * Function( programatic_name( p.pdf.name() ) + "_wParams", {event} ); 
     amplitude = amplitude + ( p.decayTree->finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
   }
   if( !enableCuda ){
@@ -298,9 +298,9 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
     stream << CompiledExpression< unsigned int >( m_matrixElements.size(), "matrix_elements_n" ) << std::endl;
     stream << CompiledExpression< double >      ( normalisation, "normalization") << std::endl;
     
-    stream << "extern \"C\" unsigned int matrix_elements(int n) {\n";
+    stream << "extern \"C\" const char* matrix_elements(int n) {\n";
     for ( size_t i = 0; i < m_matrixElements.size(); i++ ) {
-      stream << "  if(n ==" << i << ") return " << m_matrixElements.at( i ).pdf.hash() << " ;\n";
+      stream << "  if(n ==" << i << ") return \"" << m_matrixElements.at(i).pdf.progName() << "\" ;\n";
     }
     stream << "  return 0;\n}\n";
     stream << "extern \"C\" void FCN_all(double* out, double* events, unsigned int size, int parity, double* amps){\n";
@@ -322,7 +322,7 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
       int parity = p.decayTree->finalStateParity();
       if ( parity == -1 ) stream << "double(parity) * ";
       stream << "std::complex<double>(amps[" << i * 2 << "],amps[" << i * 2 + 1 << "]) * ";
-      stream << p.pdf.name()<< "_wParams( E )";
+      stream << programatic_name( p.pdf.name() )<< "_wParams( E )";
       stream << ( i == size() - 1 ? ";" : " +" ) << "\n";
     }
     stream << "  out[i] =  std::norm(amplitude) / " << normalisation << ";\n  }\n}\n";
@@ -333,8 +333,10 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
     stream << "  for(size_t i=0; i<n; i++) {\n";
     stream << "    size_t start = batch_size*i;\n";
     stream << "    size_t len = i+1!=n ? batch_size : size-start;\n";
-    stream << "    threads.emplace_back(FCN_all, out+start*" << ( *this->m_events )[0].size()
-      << ", events+start, len, parity, amps);\n";
+    stream << "    threads.emplace_back(FCN_all, out+start"
+           << ", events+start*" 
+           << ( *this->m_events )[0].size() 
+           << ", len, parity, amps);\n";
     stream << "  }\n";
     stream << "  for(auto &thread : threads)\n";
     stream << "    thread.join();\n";

@@ -56,9 +56,9 @@ int main( int argc, char** argv )
   OptionsParser::setArgs( argc, argv );
   //  ThreadPool::nThreads = 1;
   std::vector<std::string> oEventType = NamedParameter<std::string>( "EventType" ).getVector();
-  std::string sourceFile              = NamedParameter<std::string>( "sourceFile" , "output.cpp" );
+  std::string sourceFile              = NamedParameter<std::string>( "Output" , "output.cpp" );
   std::string type                    = NamedParameter<std::string>( "Type", "CoherentSum" );
-  std::string outputPS                = NamedParameter<std::string>( "outputPS", "" );
+  std::string outputPS                = NamedParameter<std::string>( "OutputEvents", "" );
   unsigned int NormEvents             = NamedParameter<unsigned int>( "NormEvents", 1000000 );
   double safetyFactor                 = NamedParameter<double>( "SafefyFactor", 3 );
 

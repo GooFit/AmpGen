@@ -21,13 +21,15 @@ namespace AmpGen {
         operator Expression() ;
       };
       void addTerm( const Expression& expression );
-      NormalOrderedExpression( const Expression& expression );
+      NormalOrderedExpression( const Expression& expression, const bool& expandSubTrees=false );
       void groupExpressions();
 
       operator Expression();
       std::vector<Expression> ExpandBrackets( const Expression& expression );
+      std::vector<Term> terms() const { return m_terms ; }
     private:
-      std::vector<Term> m_terms; 
+      std::vector<Term> m_terms;
+      bool m_expandSubTrees; 
   };
   Expression Simplify(const Expression& expression );
 }

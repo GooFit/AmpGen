@@ -205,14 +205,6 @@ Tensor AmpGen::basis_spinor(const Tensor& p, const int& polState, const int& id,
   return Tensor();
 }
 
-Expression cos_theta( const Tensor& P ){
-  return P[2] / fcn::sqrt( P[0]*P[0] +P[1]*P[1] + P[2]*P[2] );
-}
-
-Expression exp_phi( const Tensor& P ){
-  return ( P[0] + Constant(0.,1.) * P[1] ) / fcn::sqrt( P[0]*P[0] +P[1]*P[1]); 
-}
-
 std::vector<LS> userHelicityCouplings( const std::string& key ){
   std::vector<LS> couplings;  
   auto things = NamedParameter<double>( key, 0).getVector();

@@ -3,10 +3,11 @@ from numpy import ctypeslib
 import numpy as np
 from collections import namedtuple
 
+
 # Compile with:
 # clang++ -std=c++14 -shared -rdynamic -Ofast -fPIC model2.cpp -o model2.so
 
-MatrixElement = namedtuple('MatrixElement',('hash', 'name', 'varnames', 'vars', 'amp', 'coef', 'coef_nopol'))
+MatrixElement = namedtuple('MatrixElement',('pname', 'name', 'vars', 'amp', 'coef', 'coef_nopol'))
 
 class FixedLib:
     __slots__ = ('double_etype', 'lib', 'matrix_elements', 'normalization')
@@ -22,29 +23,25 @@ class FixedLib:
         self.normalization = lib.normalization()
 
         lib.matrix_elements.argtypes = [c_int] # Number of mat ele
-        lib.matrix_elements.restype = c_uint
-        hashes = [lib.matrix_elements(n) for n in range(n_matel)]
-
-        names_f = [getattr(lib, 'p'+str(h)+'_name') for h in hashes]
-
+        lib.matrix_elements.restype = c_char_p
+        progNames = [lib.matrix_elements(n).decode('ascii') for n in range(n_matel)]
+        
+        names_f = [getattr(lib, h+'_name') for h in progNames]
         for name_f in names_f: name_f.restype = c_char_p
+        
         names = [name_f().decode('ascii') for name_f in names_f]
 
-        plen_f = [getattr(lib, 'p'+str(h)+'_size') for h in hashes]
+        plen_f = [getattr(lib, h+'_pSize') for h in progNames]
         for l in plen_f: l.restype = c_int
         plen = [l() for l in plen_f]
 
-        pname_f = [getattr(lib, 'pname'+str(h)) for h in hashes]
-        for l in pname_f: l.restype = c_char_p
-        pname = [[l(n).decode('ascii') for n in range(q)] for q,l in zip(plen,pname_f)]
-
-        pval_f = [getattr(lib, 'pval'+str(h)) for h in hashes]
+        pval_f = [getattr(lib, h+'_pVal') for h in progNames]
         for l in pval_f: l.restype = c_double
         pval = [[l(n) for n in range(q)] for q,l in zip(plen,pval_f)]
 
-        pfuc_f = [getattr(lib, 'c_p'+str(h)) for h in hashes]
+        pfuc_f = [getattr(lib, h ) for h in progNames]
         pfunc = []
-        for l,f,h in zip(plen, pfuc_f, hashes):
+        for l,f,h in zip(plen, pfuc_f, progNames):
             f.argtypes = [POINTER(c_double), POINTER(c_double), self.double_etype, c_double*l]
             def wrapper(P,E,*,l=l,f=f):
                 real = c_double()
@@ -52,16 +49,15 @@ class FixedLib:
                 double_v = c_double * l
                 f(real, imag, self.double_etype(*P), double_v(*E))
                 return complex(real.value, imag.value)
-            wrapper.__qualname__ = 'p'+str(h)
-            wrapper.__name__ = 'p'+str(h)
+            wrapper.__qualname__ = h
+            wrapper.__name__     = h 
             pfunc.append(wrapper)
 
         lib.coefficients.argtypes = [c_int]*3 # n, which, parity
         lib.coefficients.restype = c_double
-        parity = [complex(lib.coefficients(n,0,-1),lib.coefficients(n,1,-1)) for n in range(n_matel)]
-        noparity = [complex(lib.coefficients(n,0,1),lib.coefficients(n,1,1)) for n in range(n_matel)]
-
-        self.matrix_elements = [MatrixElement(*l) for l in  zip(hashes, names, pname, pval, pfunc, parity, noparity)]
+        parity   = [complex(lib.coefficients(n,0,-1),lib.coefficients(n,1,-1)) for n in range(n_matel)]
+        noparity = [complex(lib.coefficients(n,0,+1),lib.coefficients(n,1,+1)) for n in range(n_matel)]
+        self.matrix_elements = [MatrixElement(*l) for l in  zip(progNames, names, pval, pfunc, parity, noparity)]
         self.lib = lib
 
     def __len__(self):
@@ -90,5 +86,6 @@ class FixedLib:
         if amps is not None:
             amps = ctypeslib.as_ctypes(np.as_array(amps, dtype=np.double))
             assert amps.shape == (len(self.matrix_elements)*2,)
+        print( out.shape )
         FCN(out, matrix, events, parity, amps)
         return out
