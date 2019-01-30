@@ -49,34 +49,28 @@ endif()
 
 message( STATUS "ROOT_INCLUDE_DIRS = ${ROOT_INCLUDE_DIRS}")
 
-target_include_directories(AmpGen
-  PUBLIC
-  "${CMAKE_SOURCE_DIR}")
+target_include_directories(AmpGen PUBLIC "${CMAKE_SOURCE_DIR}")
 
-target_include_directories(AmpGen
-  SYSTEM PUBLIC
-  "${ROOT_INCLUDE_DIRS}")
+target_include_directories(AmpGen SYSTEM PUBLIC "${ROOT_INCLUDE_DIRS}")
 
-target_link_libraries(AmpGen
-  PUBLIC
-  ${ROOT_LIBRARIES}
-  ${CMAKE_DL_LIBS})
+target_link_libraries(AmpGen PUBLIC ${ROOT_LIBRARIES} ${CMAKE_DL_LIBS})
 
-
-if(NOT TARGET ROOT::Minuit2 OR "${extern_minuit2}" )
-  message( STATUS "Use external Minuit2") 
+if( ( NOT TARGET ROOT::Minuit2 AND NOT TARGET Minuit2 ) OR "${extern_minuit2}" )
+  message( STATUS "Use external Minuit2")
   add_subdirectory("extern/Minuit2")
   set_target_properties(Minuit2     PROPERTIES FOLDER extern)
   set_target_properties(Minuit2Math PROPERTIES FOLDER extern)
   add_library(ROOT::Minuit2 ALIAS Minuit2)
-  target_include_directories( AmpGen PUBLIC "${CMAKE_SOURCE_DIR}/extern/Minuit2/inc/")  
+  target_include_directories( AmpGen PUBLIC "${CMAKE_SOURCE_DIR}/extern/Minuit2/inc/")
 else()
   message( STATUS "Use ROOT::Minuit2")
 endif()
+if ( TARGET Minuit2 AND NOT TARGET ROOT::Minuit2 )
+  find_package( ROOT CONFIG REQUIRED COMPONENTS Minuit2)
+  add_library(ROOT::Minuit2 ALIAS Minuit2)
+endif()
 
-target_link_libraries(AmpGen
-  PUBLIC 
-  ROOT::Minuit2 )
+target_link_libraries(AmpGen PUBLIC ROOT::Minuit2 )
 
 
 if(OpenMP_FOUND OR OpenMP_CXX_FOUND)
