@@ -30,7 +30,6 @@ BOOST_AUTO_TEST_CASE ( test_string )
 BOOST_AUTO_TEST_CASE ( test_pack )
 {
   Mock test( test_argument_string("this"), test_argument_double(12) );
-
   BOOST_CHECK( test.t1 == 12 );
   BOOST_CHECK( test.t2 == "this");
 }

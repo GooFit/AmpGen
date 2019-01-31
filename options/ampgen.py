@@ -3,11 +3,26 @@ from numpy import ctypeslib
 import numpy as np
 from collections import namedtuple
 
-
 # Compile with:
 # clang++ -std=c++14 -shared -rdynamic -Ofast -fPIC model2.cpp -o model2.so
 
 MatrixElement = namedtuple('MatrixElement',('pname', 'name', 'vars', 'amp', 'coef', 'coef_nopol'))
+
+class Generator:
+    __slots__ = ('lib','gen_phsp')
+
+    def __init__(self):
+        self.lib = cdll.LoadLibrary("/home/tim/sw/AmpGen/build/lib/libAmpGen.so")
+        self.gen_phsp = self.lib.PyGenerate
+        self.gen_phsp.argtypes = [ c_char_p
+        , np.ctypeslib.ndpointer(dtype=np.double, ndim=2, flags='C')
+        , c_uint]
+    
+    def makeEvents(self, eventType, nd, nEvts):
+        c_evtType = c_char_p(eventType.encode('utf-8'))
+        evts = np.zeros( shape = ( nEvts, 4*nd ) )
+        self.gen_phsp( c_evtType, evts, nEvts )
+        return evts 
 
 class FixedLib:
     __slots__ = ('double_etype', 'lib', 'matrix_elements', 'normalization')

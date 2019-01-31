@@ -134,6 +134,7 @@ namespace AmpGen
       fillEventListPhaseSpace( evts, nEvents, cacheSize );
       return evts;
     }
+
   };
   template <class FCN>
   class PDFWrapper {
@@ -146,6 +147,6 @@ namespace AmpGen
     size_t size() const { return 0; }
     void reset( const bool& flag = false ){};
   };
-
+  extern "C" void PyGenerate( const char* eventType, double* out, const unsigned int size );
 } // namespace AmpGen
 #endif

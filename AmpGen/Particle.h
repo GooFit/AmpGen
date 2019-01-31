@@ -93,6 +93,14 @@ namespace AmpGen
     Similar to other components of AmpGen, Particles will rarely be constructed in the C++ context, 
     and will instead be instantiated dynamically at runtime from a user supplied options file. */
   class ParticleProperties; 
+  //struct zFrame {
+  //  /// Frame where parent is at rest, particle 0 is along the z-axis
+  //  Tensor operator(const std::vector<size_t>& indices)() const
+  //  {
+  //    
+  //  }
+  //};
+
   class Particle
   {
     private:

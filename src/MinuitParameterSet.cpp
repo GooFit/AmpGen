@@ -136,6 +136,7 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
   if ( line.size() == 4 || line.size() == 6 ) {
     bool status = true;
     int flag    = lexical_cast<int>( line[1], status );
+    if( flag > 3 ) return ; 
     double mean = lexical_cast<double>( line[2], status );
     double step = lexical_cast<double>( line[3], status );
     double min  = line.size() == 6 ? lexical_cast<double>( line[4], status ) : 0;
@@ -166,14 +167,11 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
     if ( !status ) return;
 
     if ( NamedParameter<unsigned int>( "MinuitParameterSet::RegulateParameters", 0 ) == 1 ) {
-      // std::complex<double> z0 = mean_re*std::complex<double>( cos( mean_im) , sin(mean_im ) );
       if ( mean_re < 0 ) {
         mean_re = -mean_re;
         mean_im = mean_im + M_PI;
       }
       mean_im = atan2( sin( mean_im ), cos( mean_im ) );
-      // std::complex<double> zP = mean_re*std::complex<double>( cos( mean_im) , sin(mean_im ) );
-      // DEBUG("Normalised parameters = " << z0 << " " << zP );
       max_re = 1000;
     }
     if ( OptionsParser::printHelp() ) {

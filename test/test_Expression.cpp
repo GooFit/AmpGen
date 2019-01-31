@@ -34,6 +34,7 @@ BOOST_AUTO_TEST_CASE ( product_evaluate )
   AmpGen::Parameter B("B",5);
   BOOST_CHECK( (A*B)() == std::complex<double>(20,0) );
 }
+
 BOOST_AUTO_TEST_CASE( test_composite, * utf::tolerance(1e-6) )
 {
   AmpGen::Parameter A("A",4);

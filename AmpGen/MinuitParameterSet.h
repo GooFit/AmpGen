@@ -42,8 +42,10 @@ namespace AmpGen
     std::vector<MinuitParameter*>::const_iterator cend()   const { return _parPtrList.cend(); }
 
     std::vector<MinuitParameter*> parPtrs() { return _parPtrList; }
-    std::vector<MinuitParameter*>::iterator begin() { return _parPtrList.begin(); }
-    std::vector<MinuitParameter*>::iterator end() { return _parPtrList.end(); }
+    std::vector<MinuitParameter*>::iterator       begin() { return _parPtrList.begin(); }
+    std::vector<MinuitParameter*>::iterator       end()   { return _parPtrList.end(); }
+    std::vector<MinuitParameter*>::const_iterator begin() const { return _parPtrList.cbegin(); }
+    std::vector<MinuitParameter*>::const_iterator end()   const { return _parPtrList.cend(); }
 
     void deleteListAndObjects();
     void deleteListKeepObjects();

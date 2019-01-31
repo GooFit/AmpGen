@@ -208,6 +208,7 @@ namespace AmpGen
       {
         CompiledExpression<RT,const double*, const double*> rt(expression,name);
         rt.compile("", true);
+        rt.prepare();
         return rt;
       }
   template <class RT> 
@@ -218,6 +219,19 @@ namespace AmpGen
       {
         CompiledExpression<RT,const double*, const double*> rt(expression,name,{},{},&mps);
         rt.compile("", true);
+        rt.prepare();
+        return rt;
+      }
+  template <class RT> 
+    CompiledExpression<RT, const double*, const double*> 
+      make_expression( const Expression& expression, 
+                       const std::string& name,
+                       const std::map<std::string, size_t> & evtMap,
+                       const MinuitParameterSet& mps )
+      {
+        CompiledExpression<RT,const double*, const double*> rt(expression,name,evtMap,{},&mps);
+        rt.compile("", true);
+        rt.prepare();
         return rt;
       }
 } // namespace AmpGen

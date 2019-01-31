@@ -9,11 +9,20 @@
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Types.h"
+#include "AmpGen/MsgService.h"
 
 #include "TRandom.h"
 const Int_t kMAXP = 18;
 
 using namespace AmpGen;
+
+PhaseSpace::PhaseSpace( const EventType& type, TRandom* rand ) : m_rand( rand ), m_type(type) 
+{
+  INFO("Setting decay: " << type << " " << rand );
+  setDecay( type.motherMass(), type.masses() );
+  if ( type.isTimeDependent() )
+    m_decayTime = 6.582119514 / ( ParticlePropertiesList::get( type.mother() )->width() * pow( 10, 13 ) );
+}
 
 double PhaseSpace::PDK( double a, double b, double c )
 {
@@ -112,12 +121,6 @@ Bool_t PhaseSpace::setDecay( const double& m0, const std::vector<double>& mass )
 }
 
 
-PhaseSpace::PhaseSpace( const EventType& type, TRandom* rand ) : m_rand( rand ), m_type(type) 
-{
-  setDecay( type.motherMass(), type.masses() );
-  if ( type.isTimeDependent() )
-    m_decayTime = 6.582119514 / ( ParticlePropertiesList::get( type.mother() )->width() * pow( 10, 13 ) );
-}
 
 EventType PhaseSpace::eventType() const { return m_type; }
 

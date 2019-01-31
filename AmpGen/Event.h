@@ -65,7 +65,6 @@ namespace AmpGen {
       real_t s( const size_t& index1, const size_t& index2 ) const ;
       real_t s( const size_t& index1, const size_t& index2, const size_t& index3 ) const;
       real_t s( const std::vector<size_t>& indices ) const ;
-    
     private:
       std::vector<real_t>    m_event; 
       std::vector<complex_t> m_cache;
