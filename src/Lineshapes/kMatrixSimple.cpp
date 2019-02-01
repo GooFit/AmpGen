@@ -86,5 +86,5 @@ DEFINE_LINESHAPE( kMatrixSimple )
   for ( unsigned int i = 0; i < pole.couplings.size(); ++i ) {
     M = M + propagator[{0, i}] * pole.g( i );
   }
-  return SubTree( M / ( pole.s - sInGeV ) ); // /Sqrt(q2) ;
+  return SubTree( M / ( pole.s - sInGeV ) );
 }

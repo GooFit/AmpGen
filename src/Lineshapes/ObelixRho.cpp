@@ -84,10 +84,9 @@ DEFINE_LINESHAPE( ObelixRho )
 
   auto pole           = poleConfigs[pTerm];
   const Expression q2 = Abs( Q2( s, s1, s2 ) );
-  //  Expression FormFactor = Sqrt(BlattWeisskopf_Norm( q2*radius*radius,0, L));
 
   for ( unsigned int i = 0; i < nChannels; ++i ) {
     M = M + propagator[{0, i}] * pole.g( i );
   }
-  return SubTree( M / ( pole.s - sInGeV ) ); // /Sqrt(q2) ;
+  return SubTree( M / ( pole.s - sInGeV ) );
 }

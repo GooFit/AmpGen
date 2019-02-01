@@ -100,14 +100,12 @@ DEFINE_LINESHAPE( Flatte )
   double mK0     = ParticlePropertiesList::get("K0")->mass();
   double mKPlus  = ParticlePropertiesList::get("K+")->mass();
 
-  Expression Gpipi       = 
-    ( 1. / 3. ) * fSqrtTerm( s, mPi0 ) + ( 2. / 3. ) * fSqrtTerm( s, mPiPlus );
+  Expression Gpipi = (1./3.)*fSqrtTerm(s, mPi0) + (2./3.)*fSqrtTerm(s, mPiPlus);
 
-  Expression GKK = 
-    ( 1. / 2. ) * fSqrtTerm( s, mK0 ) + ( 1. / 2. ) * fSqrtTerm( s, mKPlus );
+  Expression GKK   = (1./2.)*fSqrtTerm(s, mK0)  + (1./2.)*fSqrtTerm(s, mKPlus);
 
   if ( lineshapeModifier == "CutKK" ) 
-    GKK = ( 1. / 2. ) * aSqrtTerm( s, mK0 ) + ( 1. / 2. ) * aSqrtTerm( s, mKPlus );
+    GKK = (1./2.) * aSqrtTerm(s, mK0) + (1./2.)*aSqrtTerm( s, mKPlus );
 
   Expression FlatteWidth = gPi * ( Gpipi + gK_by_gPi * GKK );
   const Expression q2    = abs( Q2( s, s1, s2 ) );

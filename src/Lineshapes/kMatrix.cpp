@@ -44,7 +44,7 @@ std::vector<Parameter> AmpGen::paramVector( const std::string& name, const unsig
 
 Expression AmpGen::gFromGamma( const Expression& m, const Expression& gamma, const Expression& rho )
 {
-  return Sqrt( m * gamma / rho );
+  return fcn::sqrt( m * gamma / rho );
 }
 
 Tensor AmpGen::getPropagator( const Tensor& kMatrix, const std::vector<Expression>& phaseSpace,

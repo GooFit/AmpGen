@@ -8,10 +8,11 @@
 #include "AmpGen/Units.h"
 
 using namespace AmpGen;
+using namespace AmpGen::fcn;
 
 Expression phase( const Expression& phi )
 { 
-  return Cos(phi) + Constant(0,1)*Sin(phi);
+  return cos(phi) + Constant(0,1)*sin(phi);
 }
 
 
@@ -26,25 +27,25 @@ DEFINE_LINESHAPE( LASS )
   const Expression g0              = Parameter( "LASS::g" + lineshapeModifier, 0.0 );
   const Expression q2              = Q2( s, s1, s2 ) / ( GeV*GeV );
   const Expression q20             = Q2( mass*mass, s1, s2 ) / (GeV*GeV) ;
-  const Expression q               = fcn::safe_sqrt( q2 );
+  const Expression q               = safe_sqrt( q2 );
   const Expression gamma           = width( s, s1, s2, mass, width0, radius, 0, dbexpressions );
-  const Expression scatteringPhase = ATan( 2 * a * q / ( 2 + a * r * q2 ) );
-  const Expression resonancePhase  = ATan( mass * gamma / ( mass * mass - s ) );
+  const Expression scatteringPhase = atan( 2 * a * q / ( 2 + a * r * q2 ) );
+  const Expression resonancePhase  = atan( mass * gamma / ( mass * mass - s ) );
   const Expression tphase          = scatteringPhase + resonancePhase;
-  const Expression rho             = GeV * fcn::safe_sqrt( q2 / s );
+  const Expression rho             = GeV * safe_sqrt( q2 / s );
   const Expression I               = Constant(0,1);
   const Expression returnValue     = Sin( tphase ) * phase(tphase) / rho;
 
   const Expression phi1            = ( 2 * a * q / ( 2 + a * r * q2 ) );
   const Expression phi2            = ( mass * gamma / ( mass * mass - s ) );
 
-  const Expression rho0            = GeV * fcn::safe_sqrt( q20 / (mass*mass) );
+  const Expression rho0            = GeV * safe_sqrt( q20 / (mass*mass) );
   const Expression ow              = width0 * rho / rho0; 
   const Expression mG              = mass*gamma;
   const Expression mG0             = mass*width0/rho0;
   const Expression del             = mass*mass - s;
 
-  const Expression phi1ByRho           = 2 * a * fcn::sqrt(s) / ( GeV* ( 2 + a * r *q2 ) );
+  const Expression phi1ByRho       = 2 * a * sqrt(s) / ( GeV*( 2 + a * r *q2 ) );
   const Expression numerator       = mG0 + phi1ByRho*del;
 
   const Expression denom           = del - mG*phi1 - I*( mG + phi1*del );
@@ -84,11 +85,11 @@ DEFINE_LINESHAPE( gLASS )
   Expression phiS      = Parameter( "gLASS::phiS" + lineshapeModifier, 0.0 ); /// R-phase
 
   const Expression q2              = Q2( s, s1, s2 ) / ( GeV * GeV );
-  const Expression q               = Sqrt( q2 );
+  const Expression q               = sqrt( q2 );
   const Expression gamma           = width( s, s1, s2, mass, width0, radius, 0 );
-  const Expression scatteringPhase = phiF + ATan( 2 * a * q / ( 2 + a * r * q2 ) );
-  const Expression resonancePhase  = phiS + ATan( mass * gamma / ( mass * mass - s ) );
-  const Expression rho             = GeV * Sqrt( q2 / s );
+  const Expression scatteringPhase = phiF + atan( 2 * a * q / ( 2 + a * r * q2 ) );
+  const Expression resonancePhase  = phiS + atan( mass * gamma / ( mass * mass - s ) );
+  const Expression rho             = GeV * sqrt( q2 / s );
   const Expression returnValue     = ( F * Sin( scatteringPhase ) * phase(scatteringPhase)  +
       R * Sin( resonancePhase ) * phase( resonancePhase + 2 * scatteringPhase ) ) / rho;
   ADD_DEBUG( q, dbexpressions );
