@@ -18,7 +18,6 @@ using namespace AmpGen;
 
 PhaseSpace::PhaseSpace( const EventType& type, TRandom* rand ) : m_rand( rand ), m_type(type) 
 {
-  INFO("Setting decay: " << type << " " << rand );
   setDecay( type.motherMass(), type.masses() );
   if ( type.isTimeDependent() )
     m_decayTime = 6.582119514 / ( ParticlePropertiesList::get( type.mother() )->width() * pow( 10, 13 ) );

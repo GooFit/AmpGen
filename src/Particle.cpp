@@ -199,7 +199,6 @@ void Particle::pdgLookup()
 Tensor Particle::P() const
 {
   Tensor momentum( std::vector<double>( {0., 0., 0., 0.} ), std::vector<size_t>( {4} ) );
-
   if ( isStable() ) {
     if ( m_index != 999 ) {
       const std::string index = std::to_string( m_index );
@@ -210,9 +209,9 @@ Tensor Particle::P() const
       rt[3] = make_cse( fcn::sqrt( mass()*mass() + rt[0]*rt[0] + rt[1]*rt[1] + rt[2]*rt[2] ) );
          //   Parameter( index + "_E" , 0, false, 1 )} ),
       return rt;
-    } else
-      ERROR( "Stable particle " << m_index << "is unindexed!" );
-  } else {
+    } else ERROR( "Stable particle " << m_index << "is unindexed!" );
+  } 
+  else {
     for ( auto& d : m_daughters ) momentum = momentum + d->P();
   }
   return momentum;
@@ -333,7 +332,7 @@ Expression Particle::propagator( DebugSymbols* db ) const
     DEBUG( "Three-body propagator defaults to fixed-width Breit-Wigner" );
     std::string shape = m_lineshape == "BW" ? "SBW" : m_lineshape;
     auto propagator   = ( LineshapeFactory::getGenericShape(
-          shape, {daughter( 0 )->P(), daughter( 1 )->P(), daughter( 2 )->P()}, m_name, m_orbital, db ) );
+          shape, massSq(), {daughter(0)->P(), daughter(1)->P(), daughter(2)->P()}, m_name, m_orbital, db ) );
 
     total = total * propagator ;  
   }  

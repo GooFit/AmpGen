@@ -23,7 +23,7 @@ double MomentumTransfer::operator()( const Event& evt ) const
   double s0 = evt.s( s );
   double s1 = evt.s( p1 );
   double s2 = evt.s( p2 );
-  return sqrt( MomentumTransfer::Q2( s0, s1, s2 ) ) / 1000.;
+  return sqrt( MomentumTransfer::Q2( s0, s1, s2 ) );
 }
 double MomentumTransfer::Q2( const double& s, const double& s1, const double& s2 ) const
 {
@@ -203,25 +203,6 @@ void AmpGen::rotate( Event& evt, const std::tuple<double,double,double>& n, cons
     evt[4*i + 1] = cv * iy + sv*( ix * nz - iz * nx )/norm + k * ny / ( norm * norm );
     evt[4*i + 2] = cv * iz + sv*( iy * nx - ix * ny )/norm + k * nz / ( norm * norm );
   }
-}
-using namespace fcn;
-
-AmpGen::Tensor AmpGen::BoostMatrix( const AmpGen::Tensor& p )
-{
-  auto norm = p[0]*p[0] + p[1]*p[1] + p[2]*p[2];
-  auto gamma = 1. / sqrt( 1. - norm/(p[3]*p[3]) );
-  Tensor boost_matrix = (std::vector<size_t>({4,4}));
-  for( int i = 0 ; i < 3 ; ++i ){
-    for( int j = 0 ; j < 3 ; ++j ){
-      boost_matrix(i,j) = ( (i==j) ? Constant(1) : Constant(0) ) + (gamma-1)*p[i]*p[j]/norm;
-    }
-  }
-  for( int i = 0 ; i < 3; ++i ){
-    boost_matrix(i,3) = -gamma * p[i]/p[3];
-    boost_matrix(3,i) = -gamma * p[i]/p[3];
-  }
-  boost_matrix(3,3) = gamma;
-  return boost_matrix; 
 }
 
 void AmpGen::rotateBasis( Event& evt, const TVector3& p1, const TVector3& p2, const TVector3& p3 )

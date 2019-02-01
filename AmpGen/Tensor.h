@@ -47,7 +47,6 @@ namespace AmpGen
 
     Tensor();
     Tensor(const std::vector<Expression>& elements);
-   // Tensor(const std::vector<Tensor>& elements );     
     Tensor(const std::vector<size_t>& dim);
 
     template <class TYPE> Tensor(const std::initializer_list<TYPE>& elements, 
@@ -173,9 +172,9 @@ namespace AmpGen
   {
     public:
       TensorExpression( const Tensor& tensor );
-      std::string to_string(const ASTResolver* resolver) const;
-      void resolve( ASTResolver& resolver ) ; 
-      complex_t operator()() const ;
+      std::string to_string(const ASTResolver* resolver) const override;
+      void resolve( ASTResolver& resolver ) override; 
+      complex_t operator()() const override;
       operator Expression() const;
     
     private:

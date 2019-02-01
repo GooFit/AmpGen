@@ -43,23 +43,22 @@
     static std::string _id;                                                                                     \
     public:                                                                                                     \
     X(){ DEBUG("Constructing lineshape") ;}                                                                     \
-    AmpGen::Expression get( const AmpGen::Expression& s, const AmpGen::Expression& s1,                          \
-                                    const AmpGen::Expression& s2, const std::string& particleName,              \
-                                    const unsigned int& L, const std::string& lineshapeModifier,                \
-                                    DebugSymbols* dbexpressions = 0 ) const override;                           \
-  }
-
-#define DECLARE_GENERIC_SHAPE( X )                                                                              \
-  class X : public AmpGen::ILineshape {                                                                         \
-    static std::string _id;                                                                                     \
-    public:                                                                                                     \
-    AmpGen::Expression get( const std::vector<AmpGen::Tensor>& p, const std::string& particleName,              \
-                                    const unsigned int& L, const std::string& lineshapeModifier,                \
-                                    AmpGen::DebugSymbols* dbexpressions = 0 ) const override ;                  \
+    AmpGen::Expression get(const AmpGen::Expression& s, const AmpGen::Expression& s1,                           \
+                                   const AmpGen::Expression& s2, const std::string& particleName,               \
+                                   const unsigned int& L, const std::string& lineshapeModifier,                 \
+                                   AmpGen::DebugSymbols* dbexpressions = 0) const override;                     \
+    AmpGen::Expression get(const AmpGen::Expression& s, const std::vector<AmpGen::Tensor>& p,                   \
+                           const std::string& particleName,                                                     \
+                           const unsigned int& L, const std::string& lineshapeModifier,                         \
+                           AmpGen::DebugSymbols* dbexpressions = nullptr ) const override;                      \
   }
 
 #define DEFINE_LINESHAPE( X )                                                                                   \
   REGISTER_WITH_KEY( ILineshape, Lineshape::X, #X, std::string );                                               \
+  AmpGen::Expression Lineshape::X::get( const AmpGen::Expression& s, const std::vector<AmpGen::Tensor>& p,      \
+                                        const std::string& particleName,                                        \
+                                        const unsigned int& L, const std::string& lineshapeModifier,            \
+                                        AmpGen::DebugSymbols* dbexpressions ) const { return 0;}                \
   AmpGen::Expression Lineshape::X::get( const AmpGen::Expression& s, const AmpGen::Expression& s1,              \
                                         const AmpGen::Expression& s2, const std::string& particleName,          \
                                         const unsigned int& L, const std::string& lineshapeModifier,            \
@@ -67,7 +66,12 @@
 
 #define DEFINE_GENERIC_SHAPE( X )                                                                               \
   REGISTER_WITH_KEY( ILineshape, Lineshape::X, #X, std::string );                                               \
-  AmpGen::Expression Lineshape::X::get( const std::vector<AmpGen::Tensor>& p, const std::string& particleName,  \
+  AmpGen::Expression Lineshape::X::get( const AmpGen::Expression& s, const AmpGen::Expression& s1,              \
+                                        const AmpGen::Expression& s2, const std::string& particleName,          \
+                                        const unsigned int& L, const std::string& lineshapeModifier,            \
+                                        AmpGen::DebugSymbols* dbexpressions ) const { return 0;}                \
+  AmpGen::Expression Lineshape::X::get( const AmpGen::Expression& s, const std::vector<AmpGen::Tensor>& p,      \
+                                        const std::string& particleName,                                        \
                                         const unsigned int& L, const std::string& lineshapeModifier,            \
                                         AmpGen::DebugSymbols* dbexpressions ) const 
 
@@ -80,17 +84,11 @@ namespace AmpGen
     virtual ~ILineshape() = default;
     virtual Expression get( const Expression& s, const Expression& s1, const Expression& s2,
                             const std::string& particleName, const unsigned int& L,
-                            const std::string& lineshapeModifier, DebugSymbols* dbexpressions = nullptr ) const 
-    {
-      return 1;
-    }
+                            const std::string& lineshapeModifier, DebugSymbols* dbexpressions = nullptr ) const = 0;
 
-    virtual Expression get( const std::vector<AmpGen::Tensor>& p, const std::string& particleName,
+    virtual Expression get( const Expression& s, const std::vector<AmpGen::Tensor>& p, const std::string& particleName,
                             const unsigned int& L, const std::string& lineshapeModifier,
-                            AmpGen::DebugSymbols* dbexpressions = nullptr ) const 
-    {
-      return 1;
-    }
+                            AmpGen::DebugSymbols* dbexpressions = nullptr ) const = 0; 
     ILineshape* create() { return this; }
   };
 
@@ -106,9 +104,10 @@ namespace AmpGen
       static Expression getLineshape( const std::string& lineshape, const Expression& s, const Expression& s1,
                                       const Expression& s2, const std::string& particleName, const unsigned int& L,
                                       std::vector<std::pair<std::string, Expression>>* dbexpressions = nullptr );
-      static Expression getGenericShape( const std::string& lineshape,
-                                         const std::vector<Tensor>& p, const std::string& particleName,
-                                         const unsigned int& L, AmpGen::DebugSymbols* dbexpressions );
+      static Expression getGenericShape(const std::string& lineshape,
+                                        const Expression& s,  
+                                        const std::vector<Tensor>& p, const std::string& particleName,
+                                        const unsigned int& L, AmpGen::DebugSymbols* dbexpressions );
       static bool isLineshape( const std::string& lineshape );
     };
     
@@ -248,7 +247,7 @@ namespace AmpGen
       */
     DECLARE_LINESHAPE( CoupledChannel );
     /// ``Lineshape'' that implements the Dalitz plot distribution for decays \f$ \eta \rightarrow \pi^{+}\pi^{-}\pi^{0}\f$
-    DECLARE_GENERIC_SHAPE( EtaDalitz );
+    DECLARE_LINESHAPE( EtaDalitz );
 
   } // namespace Lineshape
   

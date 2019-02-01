@@ -9,10 +9,7 @@ using namespace AmpGen;
 
 DEFINE_LINESHAPE( Poly )
 {
-
   unsigned int degree = NamedParameter<unsigned int>( lineshapeModifier + "::Degree" );
-
   auto params = parameterVector( lineshapeModifier + "_c", degree );
-
-  return pol( s / ( 1000 * 1000 ), params );
+  return pol(s, params);
 }

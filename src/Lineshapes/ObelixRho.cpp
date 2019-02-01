@@ -18,8 +18,7 @@ using namespace AmpGen;
 
 DEFINE_LINESHAPE( ObelixRho )
 {
-
-  Expression sInGeV = SubTree( s / ( 1000 * 1000 ) );
+  Expression sInGeV = SubTree( s / (GeV*GeV) );
   DEBUG( "kMatrix modifier " << lineshapeModifier << " particle = " << particleName );
   auto tokens = split( lineshapeModifier, '.' );
 
@@ -50,12 +49,12 @@ DEFINE_LINESHAPE( ObelixRho )
     poleConfig pole( mRho * mRho );
 
     pole.add( gFromGamma( mRho, gRho1, phsp_twoBody( mRho * mRho, mPiPlus, mPiPlus ) ),
-              BL( sInGeV, mRho * mRho, mPiPlus * mPiPlus, mPiPlus * mPiPlus, radius * 1000., 1 ) );
+              BL( sInGeV, mRho * mRho, mPiPlus * mPiPlus, mPiPlus * mPiPlus, radius, 1 ) );
 
     pole.add( gFromGamma( mRho, gRho2, phsp_fourPi( mRho * mRho ) ) );
 
     pole.add( gFromGamma( mRho, gRho3, phsp_twoBody( mRho * mRho, mKPlus, mKPlus ) ),
-              BL( sInGeV, mRho * mRho, mKPlus * mKPlus, mKPlus * mKPlus, radius * 1000., 1 ) );
+              BL( sInGeV, mRho * mRho, mKPlus * mKPlus, mKPlus * mKPlus, radius, 1 ) );
 
     poleConfigs.emplace_back( pole );
   }

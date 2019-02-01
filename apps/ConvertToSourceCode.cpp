@@ -18,14 +18,6 @@
 
 using namespace AmpGen;
 
-void print_conf(const MinuitParameterSet& mps){
-  for( auto& p : *OptionsParser::getMe() )
-  {
-    std::cout << p.first <<  " " << vectorToString(p.second, " ") << std::endl;
-  }
-}
-
-
 template <class T>
 void create_integration_tests(T& pdf, 
     const EventType& type,
@@ -84,7 +76,6 @@ template <class T> void generate_source(T& pdf, EventList& normEvents, const std
     double pMax = 0 ;
     pdf.setEvents( normEvents );
     pdf.prepare();
-
     for ( auto& evt : normEvents ) {
       if( type == "PolarisedSum" ){ 
         double px, py, pz; 
@@ -100,6 +91,7 @@ template <class T> void generate_source(T& pdf, EventList& normEvents, const std
     norm = pMax * sf ; 
   INFO( "Making binary with " << pMax << " x safety factor = " << sf );
   }
+  mps.resetToInit(); 
   pdf.generateSourceCode( sourceFile, norm, true );
 }
 
@@ -117,7 +109,6 @@ int main( int argc, char** argv )
 
   AmpGen::MinuitParameterSet MPS; //
   MPS.loadFromStream();
-  print_conf(MPS);
   Generator<PhaseSpace> phsp( eventType );
   TRandom3 rnd;
 

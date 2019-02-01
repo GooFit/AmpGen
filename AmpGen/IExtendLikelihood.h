@@ -13,6 +13,7 @@ namespace AmpGen
   class IExtendLikelihood
   {
   public:
+    virtual ~IExtendLikelihood() = default;
     virtual double getVal() const = 0;
     virtual void configure( const std::string& configString, const AmpGen::CoherentSum& pdf,
                             const MinuitParameterSet& mps ) = 0;

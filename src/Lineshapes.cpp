@@ -129,7 +129,7 @@ Expression Lineshape::LineshapeFactory::getLineshape( const std::string& linesha
   }
 }
 
-Expression Lineshape::LineshapeFactory::getGenericShape( const std::string& lineshape, const std::vector<Tensor>& p,
+Expression Lineshape::LineshapeFactory::getGenericShape( const std::string& lineshape, const Expression& s, const std::vector<Tensor>& p,
                                               const std::string& particleName, const unsigned int& L,
                                               DebugSymbols* dbexpressions )
 {
@@ -138,9 +138,9 @@ Expression Lineshape::LineshapeFactory::getGenericShape( const std::string& line
   if ( pos == std::string::npos ) {
     auto it = get( lineshape );
     if ( !it ) ERROR( "Lineshape : " << lineshape << " not found" );
-    return it->get( p, particleName, L, "", dbexpressions );
+    return it->get(s, p, particleName, L, "", dbexpressions );
   } else {
-    return get( lineshape.substr( 0, pos ) )->get( p, particleName, L, lineshape.substr( pos + 1 ), dbexpressions );
+    return get( lineshape.substr( 0, pos ) )->get(s, p, particleName, L, lineshape.substr( pos + 1 ), dbexpressions );
   }
 }
 

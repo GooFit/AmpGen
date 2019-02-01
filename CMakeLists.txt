@@ -7,7 +7,8 @@ if(COMMAND gaudi_subdir)
     gaudi_subdir(AmpGen v1r1)
 
     find_package(ROOT COMPONENTS RIO Hist Matrix Graf Minuit2 Tree MathMore MathCore Physics)
-
+    find_package(TBB REQUIRED)
+    find_package(GSL REQUIRED)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -Wno-unused-parameter -ldl")
@@ -19,8 +20,8 @@ if(COMMAND gaudi_subdir)
                       src/*.cpp
                       src/Lineshapes/*.cpp
                       NO_PUBLIC_HEADERS
-              INCLUDE_DIRS ROOT
-              LINK_LIBRARIES ROOT)
+              INCLUDE_DIRS ROOT 
+              LINK_LIBRARIES ROOT TBB GSL)
     target_compile_definitions(AmpGen PUBLIC "AMPGEN_CXX=\"${AMPGEN_CXX}\"")
     foreach(app Generator Fitter ConvertToSourceCode)
       gaudi_add_executable(${app} apps/${app}.cpp

@@ -19,8 +19,8 @@ namespace AmpGen
       CacheTransfer();
       CacheTransfer( const unsigned int& address, const double& value, const size_t& size=1);
       virtual ~CacheTransfer() = default;
-      virtual void transfer( CompiledExpressionBase* destination ) ; 
-      virtual void print() const ;
+      virtual void transfer( CompiledExpressionBase* destination ); 
+      virtual void print() const;
       virtual unsigned int address() const { return m_address ; }
       virtual unsigned int size() const { return m_size ; }  
   };
@@ -34,10 +34,10 @@ namespace AmpGen
   public:
     ParameterTransfer( const unsigned int& address, AmpGen::MinuitParameter* source );
     virtual ~ParameterTransfer() = default;
-    virtual void transfer( CompiledExpressionBase* destination );
-    virtual void print() const;
-    virtual unsigned int address() const { return m_address ; } 
-    virtual unsigned int size() const { return 1 ; }  
+    void transfer( CompiledExpressionBase* destination ) override;
+    void print() const override;
+    unsigned int address() const override { return m_address ; } 
+    unsigned int size() const override { return 1 ; }  
   };
 
 } // namespace AmpGen

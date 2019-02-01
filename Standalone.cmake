@@ -117,6 +117,9 @@ target_compile_options(AmpGen
   -Wall -Wextra -Wpedantic -g3
   -Wno-unused-parameter
   -Wno-unknown-pragmas
+  -Wnon-virtual-dtor
+  -Wsuggest-override 
+  -Woverloaded-virtual
   $<$<CONFIG:Release>:-Ofast>)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")

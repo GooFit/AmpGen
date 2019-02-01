@@ -10,8 +10,6 @@ DEFINE_LINESHAPE( Gaussian )
 {
   Expression mu           = Parameter( lineshapeModifier + "_mean" );
   Expression sigma        = Parameter( lineshapeModifier + "_sigma" );
-  const Expression sInGeV = s / ( 1000 * 1000 );
-  const Expression d      = sInGeV - mu;
-
+  const Expression d      = s - mu;
   return Exp( -d * d / ( 2 * sigma * sigma ) ) ;
 }

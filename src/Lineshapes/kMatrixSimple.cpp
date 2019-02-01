@@ -20,8 +20,7 @@ using namespace AmpGen;
 
 DEFINE_LINESHAPE( kMatrixSimple )
 {
-
-  Expression sInGeV = SubTree( s / ( 1000 * 1000 ) );
+  Expression sInGeV = SubTree( s/(GeV*GeV) );
   DEBUG( "kMatrix modifier " << lineshapeModifier << " particle = " << particleName );
   auto tokens = split( lineshapeModifier, '.' );
 

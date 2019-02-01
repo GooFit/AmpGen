@@ -18,10 +18,10 @@ DEFINE_LINESHAPE( PALANO )
 {
 
   const Expression I      = Constant( 0, 1 );
-  const Expression sInGeV = s / ( 1000 * 1000 );
-  const double mK         = ParticlePropertiesList::get( "K+" )->mass() / 1000.;
-  const double mPi        = ParticlePropertiesList::get( "pi+" )->mass() / 1000.;
-  const double mEtap      = ParticlePropertiesList::get( "eta0" )->mass() / 1000.;
+  const Expression sInGeV = s / ( GeV*GeV );
+  const double mK         = ParticlePropertiesList::get( "K+" )->mass()  ; 
+  const double mPi        = ParticlePropertiesList::get( "pi+" )->mass() ; 
+  const double mEtap      = ParticlePropertiesList::get( "eta0" )->mass(); 
 
   const Expression sNorm     = ( mK * mK + mPi * mPi );
   const Expression s12       = 0.87753; //

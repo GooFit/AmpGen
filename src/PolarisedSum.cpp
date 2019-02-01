@@ -91,9 +91,6 @@ PolarisedSum::PolarisedSum( const EventType& type,
   if( mps.find("Px") == nullptr ) WARNING("Polarisation parameters not defined, defaulting to (0,0,0)");
   m_pVector = {mps.addOrGet("Px",2,0,0), mps.addOrGet("Py",2,0,0), mps.addOrGet("Pz",2,0,0)};
   
-//  for(unsigned int i = 0 ; i < all_polarisation_states.size(); ++i){
-//    INFO( "Pol["<<i<<"] = (" << vectorToString( all_polarisation_states[i], ", " ) << ")" );
-//  }
   auto   d = m_eventType.dim();
   size_t normSize = d.second * d.first * ( d.first + 1)/2;
   for(size_t i=0; i < normSize; ++i) m_norms.emplace_back( m_matrixElements.size(), m_matrixElements.size() );

@@ -51,35 +51,33 @@ DEFINE_LINESHAPE( Bugg )
   Expression g_2K   = Parameter( "Bugg::g_2K", 0.6 );
   Expression g_2eta = Parameter( "Bugg::g_2eta", 0.2 );
   Expression alpha  = Parameter( "Bugg::alpha", 1.3 );
-  Constant mPiPlus( 139.570 / 1000. );
-  Constant mKPlus( 493.677 / 1000. );
-  Constant mEta( 547.863 / 1000. );
+  Constant mPiPlus( 0.139570 );
+  Constant mKPlus( 0.493677  );
+  Constant mEta( 0.547863  );
   Expression J = Constant(0,1);
 
   Expression sA         = Parameter( "Bugg::sA", 0.41 ) * mPiPlus * mPiPlus;
   Expression s0_4pi     = Parameter( "Bugg::s0_4pi", 7.082 / 2.845 );
   Expression lambda_4pi = Parameter( "Bugg::lambda_4pi", 2.845 );
 
-  Expression sInGeV = s / ( 1000. * 1000. );
+  Expression z = Buggj1(s, mPiPlus) - Buggj1(M * M, mPiPlus);
 
-  Expression z = Buggj1( sInGeV, mPiPlus ) - Buggj1( M * M, mPiPlus );
+  Expression g1sg      = M * ( b1 + b2 * s ) * Exp( -( s - M * M ) / A );
+  Expression adlerZero = ( s - sA ) / ( M * M - sA );
 
-  Expression g1sg      = M * ( b1 + b2 * sInGeV ) * Exp( -( sInGeV - M * M ) / A );
-  Expression adlerZero = ( sInGeV - sA ) / ( M * M - sA );
+  Expression gamma_2pi = g1sg * adlerZero * rho_2( s, mPiPlus * mPiPlus );
 
-  Expression gamma_2pi = g1sg * adlerZero * rho_2( sInGeV, mPiPlus * mPiPlus );
-
-  Expression gamma_2K = g_2K * g1sg * sInGeV / ( M * M ) * Exp( -alpha * q( sInGeV, mKPlus * mKPlus ) ) *
-                        rho_2( sInGeV, mKPlus * mKPlus );
+  Expression gamma_2K = g_2K * g1sg * s / ( M * M ) * Exp( -alpha * q( s, mKPlus * mKPlus ) ) *
+                        rho_2( s, mKPlus * mKPlus );
 
   Expression gamma_2eta =
-      g_2eta * g1sg * sInGeV / ( M * M ) * Exp( -alpha * q( sInGeV, mEta * mEta ) ) * rho_2( sInGeV, mEta * mEta );
-  Expression gamma_4pi = M * Gamma_4pi( sInGeV, mPiPlus, M, g_4pi, lambda_4pi, s0_4pi );
+      g_2eta * g1sg * s / ( M * M ) * Exp( -alpha * q( s, mEta * mEta ) ) * rho_2( s, mEta * mEta );
+  Expression gamma_4pi = M * Gamma_4pi( s, mPiPlus, M, g_4pi, lambda_4pi, s0_4pi );
 
   Expression Gamma_tot = gamma_2pi + gamma_2K + gamma_2eta + gamma_4pi;
   Expression az        = g1sg * adlerZero;
 
-  Expression iBW = M * M - sInGeV - az * z - J * Gamma_tot;
+  Expression iBW = M * M - s - az * z - J * Gamma_tot;
 
   Expression BW = 1. / iBW;
   ADD_DEBUG( M, dbexpressions );
@@ -93,9 +91,9 @@ DEFINE_LINESHAPE( Bugg )
   ADD_DEBUG( Gamma_tot, dbexpressions );
   ADD_DEBUG( s, dbexpressions );
   ADD_DEBUG( z, dbexpressions );
-  ADD_DEBUG( Buggj1( sInGeV, mPiPlus ), dbexpressions );
+  ADD_DEBUG( Buggj1( s, mPiPlus ), dbexpressions );
   ADD_DEBUG( iBW, dbexpressions );
   ADD_DEBUG( az * z, dbexpressions );
-  ADD_DEBUG( rho_4pi( sInGeV, lambda_4pi, s0_4pi ), dbexpressions ); 
-  return lineshapeModifier == "Az" ? BW * ( sInGeV - sA ) * g1sg : BW;
+  ADD_DEBUG( rho_4pi( s, lambda_4pi, s0_4pi ), dbexpressions ); 
+  return lineshapeModifier == "Az" ? BW * ( s - sA ) * g1sg : BW;
 }
