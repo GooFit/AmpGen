@@ -273,14 +273,19 @@ template <class TYPE> Expression simplify_constant_unary( const Expression& arg 
 
 Expression AmpGen::fcn::sqrt(  const Expression& expression ) { return simplify_constant_unary<Sqrt>(expression) ; }
 Expression AmpGen::fcn::abs(   const Expression& expression ) { return simplify_constant_unary<Abs>(expression); }
-Expression AmpGen::fcn::cos(   const Expression& expression ) { return simplify_constant_unary<Cos>(expression) ; } 
-Expression AmpGen::fcn::acos(   const Expression& expression ){ return simplify_constant_unary<ACos>(expression) ; } 
 Expression AmpGen::fcn::sin(   const Expression& expression ) { return simplify_constant_unary<Sin>(expression); } 
+Expression AmpGen::fcn::cos(   const Expression& expression ) { return simplify_constant_unary<Cos>(expression) ; } 
+Expression AmpGen::fcn::tan(   const Expression& expression ) { return simplify_constant_unary<Tan>(expression) ; } 
+
+Expression AmpGen::fcn::acos(   const Expression& expression ){ return simplify_constant_unary<ACos>(expression) ; } 
+Expression AmpGen::fcn::asin( const Expression& expression){ return simplify_constant_unary<ASin>(expression) ; } 
+Expression AmpGen::fcn::atan( const Expression& expression){ return simplify_constant_unary<ATan>(expression) ; } 
+Expression AmpGen::fcn::atan2( const Expression& y, const Expression& x){ return ATan2(y,x) ; } 
+
 Expression AmpGen::fcn::conj(  const Expression& expression ) { return is<Parameter>(expression) ? expression : simplify_constant_unary<Conj>(expression); } 
 Expression AmpGen::fcn::norm(  const Expression& expression ) { return simplify_constant_unary<Norm>(expression); }
 Expression AmpGen::fcn::exp(   const Expression& expression ) { return simplify_constant_unary<Exp>(expression) ; }
 Expression AmpGen::fcn::log(   const Expression& expression ) { return simplify_constant_unary<Log>(expression) ; }
-Expression AmpGen::fcn::atan2( const Expression& y, const Expression& x){ return ATan2(y,x) ; } 
 
 Expression AmpGen::fcn::safe_sqrt( const Expression& x )
 {

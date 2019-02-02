@@ -395,8 +395,11 @@ namespace AmpGen
     Expression isqrt( const Expression& expression );
     Expression cos( const Expression& expression );
     Expression sin( const Expression& expression );
+    Expression tan( const Expression& expression );
     Expression abs( const Expression& expression );
     Expression acos( const Expression& expression );
+    Expression asin( const Expression& expression );
+    Expression atan( const Expression& expression );
     Expression pow( const Expression& expression, const Expression& co );
     Expression fpow( const Expression& expression, const int& n );
     Expression norm( const Expression& expression );
@@ -404,6 +407,7 @@ namespace AmpGen
     Expression exp( const Expression& expression );
     Expression log( const Expression& expression );
     Expression atan2( const Expression& y, const Expression& x);
+
   }
 
   template < class T > bool is( const Expression& expression ){
