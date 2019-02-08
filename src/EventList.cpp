@@ -204,28 +204,6 @@ size_t EventList::getCacheIndex( const CompiledExpressionBase& PDF, bool& isRegi
   return 999;
 }
 
-size_t EventList::registerExpression( const CompiledExpressionBase& expression, const size_t& size_of )
-{
-  auto key = FNV1a_hash( expression.name() );
-  auto pdfIndex = m_pdfIndex.find( key );
-  if ( pdfIndex != m_pdfIndex.end() ) {
-    return pdfIndex->second;
-  } else {
-    size_t size            = m_lastCachePosition;
-    size_t expression_size = size_of == 0 ? expression.returnTypeSize() / sizeof( complex_t ) : size_of; 
-    if ( size >= at( 0 ).cacheSize() ) {
-
-      WARNING( "Cache index " << size << " exceeds cache size = " << at( 0 ).cacheSize() << " resizing to "
-          << size + expression_size );
-
-      for ( auto& evt : *this ) evt.resizeCache( size + expression_size );
-    }
-    m_pdfIndex[key] = m_lastCachePosition;
-    m_lastCachePosition += expression_size; 
-    return size;
-  }
-}
-
 void EventList::resetCache()
 {
   m_pdfIndex.clear();

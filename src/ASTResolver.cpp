@@ -131,7 +131,11 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
   auto address = addCacheFunction<CacheTransfer>( parameter.m_name, parameter.m_defaultValue );
   addResolvedParameter( &parameter, address );
 }
-std::map<std::string, std::shared_ptr<CacheTransfer>> ASTResolver::cacheFunctions() const { return m_cacheFunctions;}
+
+std::map<std::string, std::shared_ptr<CacheTransfer>> ASTResolver::cacheFunctions() const 
+{ 
+  return m_cacheFunctions;
+}
 
 void ASTResolver::addResolvedParameter(const IExpression* param, const std::string& thing) 
 {

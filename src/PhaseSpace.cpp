@@ -23,11 +23,9 @@ PhaseSpace::PhaseSpace( const EventType& type, TRandom* rand ) : m_rand( rand ),
     m_decayTime = 6.582119514 / ( ParticlePropertiesList::get( type.mother() )->width() * pow( 10, 13 ) );
 }
 
-double PhaseSpace::PDK( double a, double b, double c )
+double PhaseSpace::q( double m, double m1, double m2 ) const
 {
-  double x = ( a - b - c ) * ( a + b + c ) * ( a - b + c ) * ( a + b - c );
-  x        = sqrt( x ) / ( 2 * a );
-  return x;
+  return 0.5 * sqrt( m*m - 2*m1*m1 - 2*m2*m2 + (m1*m1-m2*m2)*(m1*m1-m2*m2)/(m*m) );
 }
 
 Event PhaseSpace::makeEvent(const size_t& cacheSize)
@@ -44,17 +42,16 @@ Event PhaseSpace::makeEvent(const size_t& cacheSize)
   do {
     wt     = m_wtMax;
     rno[0] = 0;
-    for ( n = 1; n < m_nt - 1; n++ ) rno[n] = rndm(); // m_nt-2 random numbers
-    rno[m_nt - 1]                           = 1;
+    for( n = 1; n < m_nt - 1; n++ ) rno[n] = rndm(); // m_nt-2 random numbers
+    rno[m_nt - 1]                          = 1;
     std::sort( rno.begin() + 1, rno.begin() + m_nt );
-
     double sum = 0;
     for ( n = 0; n < m_nt; n++ ) {
       sum += m_mass[n];
       invMas[n] = rno[n] * m_teCmTm + sum;
     }
     for ( n = 0; n < m_nt - 1; n++ ) {
-      pd[n] = PDK( invMas[n + 1], invMas[n], m_mass[n + 1] );
+      pd[n] = q( invMas[n + 1], invMas[n], m_mass[n + 1] );
       wt *= pd[n];
     }
   } while ( wt < rndm() );
@@ -62,12 +59,12 @@ Event PhaseSpace::makeEvent(const size_t& cacheSize)
   rt.set(0, { 0, pd[0], 0, sqrt( pd[0] * pd[0] + m_mass[0] * m_mass[0] )} );
 
   for( unsigned int i = 1 ; i != m_nt ; ++i ){  
-    rt.set( i, { 0, -pd[i - 1], 0, sqrt( pd[i - 1] * pd[i - 1] + m_mass[i] * m_mass[i] ) } );
+    rt.set( i, { 0, -pd[i-1], 0, sqrt( pd[i-1] * pd[i-1] + m_mass[i] * m_mass[i] ) } );
     double cZ   = 2 * rndm() - 1;
     double sZ   = sqrt( 1 - cZ * cZ );
     double angY = 2 * M_PI * rndm();
-    double cY   = cos( angY );
-    double sY   = sin( angY );
+    double cY   = cos(angY);
+    double sY   = sin(angY);
     for ( unsigned int j = 0; j <= i; j++ ) {
       double x          = rt[4*j+0];
       double y          = rt[4*j+1];
@@ -80,9 +77,9 @@ Event PhaseSpace::makeEvent(const size_t& cacheSize)
     }
     if ( i == ( m_nt - 1 ) ) break;
     double beta = pd[i] / sqrt( pd[i] * pd[i] + invMas[i] * invMas[i] );
-    double gamma = 1./sqrt( 1 -beta*beta);
+    double gamma = 1./sqrt( 1 - beta*beta);
     for ( unsigned int j = 0; j <= i; j++ ){
-      double E = rt[4*j+3];
+      double E  = rt[4*j+3];
       double py = rt[4*j+1];
       rt[4*j+1] = gamma*( py + beta * E );
       rt[4*j+3] = gamma*( E + beta * py );
@@ -93,7 +90,7 @@ Event PhaseSpace::makeEvent(const size_t& cacheSize)
   return rt;
 }
 
-Bool_t PhaseSpace::setDecay( const double& m0, const std::vector<double>& mass )
+bool PhaseSpace::setDecay( const double& m0, const std::vector<double>& mass )
 {
   unsigned int n;
   m_nt = mass.size();
@@ -112,14 +109,11 @@ Bool_t PhaseSpace::setDecay( const double& m0, const std::vector<double>& mass )
   for ( n = 1; n < m_nt; n++ ) {
     emmin += m_mass[n - 1];
     emmax += m_mass[n];
-    wtmax *= PDK( emmax, emmin, m_mass[n] );
+    wtmax *= q( emmax, emmin, m_mass[n] );
   }
   m_wtMax = 1 / wtmax;
-
   return true;
 }
-
-
 
 EventType PhaseSpace::eventType() const { return m_type; }
 

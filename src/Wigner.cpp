@@ -173,6 +173,7 @@ std::vector<LS> AmpGen::calculate_recoupling_constants(
   return rt;
 }
 
+/*
 Tensor AmpGen::basis_spinor(const Tensor& p, const int& polState, const int& id, DebugSymbols* db )
 {
   Expression pX   = p.get(0) ;
@@ -204,6 +205,17 @@ Tensor AmpGen::basis_spinor(const Tensor& p, const int& polState, const int& id,
   ERROR("Shouldn't reach here...");
   return Tensor();
 }
+*/
+Tensor AmpGen::basisSpinor(const int& polState, const int& id)
+{
+  if(id > 0 && polState ==  1 ) return Tensor({1, 0, 0, 0}, Tensor::dim(4));
+  if(id > 0 && polState == -1 ) return Tensor({0, 1, 0, 0}, Tensor::dim(4));
+  if(id < 0 && polState ==  1 ) return Tensor({0, 0, 1, 0}, Tensor::dim(4));
+  if(id < 0 && polState == -1 ) return Tensor({0, 0, 0, 1}, Tensor::dim(4));
+  ERROR("Shouldn't reach here...");
+  return Tensor();
+}
+
 
 std::vector<LS> userHelicityCouplings( const std::string& key ){
   std::vector<LS> couplings;  
@@ -227,7 +239,8 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
                                      int sgn )
 {  
   if( particle.daughters().size() > 2 ) return 1; 
-  if( particle.daughters().size() == 1 ) return helicityAmplitude( *particle.daughter(0), parentFrame, Mz, db, sgn );
+  if( particle.daughters().size() == 1 ) 
+    return helicityAmplitude( *particle.daughter(0), parentFrame, Mz, db, sgn );
 
   Tensor::Index a,b,c; 
   auto myFrame = parentFrame; 
@@ -247,7 +260,7 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
     if( particle.spin() == 0.5 )
     {
       auto tensor                   = particle.externalSpinTensor(particle.polState(), db); 
-      auto helicity_tensor          = Tensor( Mz == 0.5 ? std::vector<double>({1,0,0,0}) : std::vector<double>({0,1,0,0}), Tensor::dim(4) ); 
+      auto helicity_tensor          = basisSpinor( 2*Mz, particle.props()->pdgID() ); 
       auto it = myFrame.inverse();
       auto helicity_in_frame = it( helicity_tensor, Transform::Representation::Bispinor ); 
       auto w = Bar(helicity_in_frame)(a) * tensor(a);

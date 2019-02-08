@@ -155,9 +155,6 @@ namespace AmpGen
     /// Description of the \f$ K\pi \f$ S-wave, based on the fits to scattering data.
     DECLARE_LINESHAPE( LASS );
 
-    /// Generalisation of the LASS lineshape to include a free amplitude and phase between the ``resonant'' and ''nonresonant'' components.
-    DECLARE_LINESHAPE( gLASS );
-
     /// Lineshape to describe resonances with coupled channels such as \f$f_{0}(980)^{0} / a_{0}(980) \f$ (S.M.Flatté, Phys. Lett B. 63, 224 (1976))
     DECLARE_LINESHAPE( Flatte );
     DECLARE_LINESHAPE( Bugg );

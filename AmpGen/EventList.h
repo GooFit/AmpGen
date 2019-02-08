@@ -6,6 +6,7 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Event.h"
 #include "AmpGen/Projection.h"
+#include "AmpGen/Utilities.h"
 
 #include <chrono>
 #include <functional>
@@ -78,28 +79,50 @@ namespace AmpGen
     
     size_t getCacheIndex( const CompiledExpressionBase& PDF, bool& status ) const;
     size_t getCacheIndex( const CompiledExpressionBase& PDF ) const;
-    size_t registerExpression( const CompiledExpressionBase& expression, const size_t& size_of =0 );
+    //size_t registerExpression( const CompiledExpressionBase& expression, const size_t& size_of =0 );
+    template <class T>
+    size_t registerExpression(const T& expression, const size_t& size_of=0)
+    {
+      auto key = FNV1a_hash( expression.name() );
+      auto pdfIndex = m_pdfIndex.find( key );
+      if ( pdfIndex != m_pdfIndex.end() ) {
+        return pdfIndex->second;
+      } else {
+        size_t size            = m_lastCachePosition;
+        size_t expression_size = size_of == 0 ? 
+          expression.returnTypeSize() / sizeof(complex_t) : size_of; 
+        if ( size >= at( 0 ).cacheSize() ) { 
+          WARNING("Cache index " << size << " exceeds cache size = " 
+                                 << at(0).cacheSize() << " resizing to " 
+                                 << size + expression_size );
+    
+          for (auto& evt : *this) evt.resizeCache( size + expression_size );
+        }
+        m_pdfIndex[key] = m_lastCachePosition;
+        m_lastCachePosition += expression_size; 
+        return size;
+      }
+    }
 
     template <class FUNCTOR>
     unsigned int extendEvent( const std::string& name, FUNCTOR func )
     {
       unsigned int index = this->begin()->size();
-      for ( auto& evt : *this ) {
-        evt.extendEvent( func( evt ) );
-      }
+      for ( auto& evt : *this ) evt.extendEvent(func(evt));
       m_extensions[name] = index;
       return index;
     }
+
     template <class FCN>
     void updateCache( const FCN& fcn, const size_t& index )
     {
       #pragma omp parallel for
       for ( unsigned int i = 0; i < size(); ++i ) {
-        ( *this )[i].setCache( fcn( getEvent(i) ), index );
+        ( *this )[i].setCache(fcn(getEvent(i)), index);
       }
     }
-    TH2D* makeProjection( const Projection2D& projection, const ArgumentPack& args );
 
+    TH2D* makeProjection( const Projection2D& projection, const ArgumentPack& args );
     std::vector<TH1D*> makePlots( const std::vector<Projection>& projections, const ArgumentPack& args );
 
     template <class... ARGS>

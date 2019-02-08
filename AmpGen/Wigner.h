@@ -5,7 +5,6 @@
 #include "AmpGen/Particle.h"
 #include "AmpGen/Transform.h"
 
-
 namespace AmpGen {
 class Particle;
 
@@ -33,7 +32,8 @@ class Particle;
   
   Expression helicityAmplitude( const Particle& particle, const TransformSequence& parentFrame, const double& Mz,    DebugSymbols* db , const int sgn=1);
 
-  Tensor basis_spinor(const Tensor& p, const int& polState, const int& id, DebugSymbols* db=nullptr );
+  //Tensor basis_spinor(const Tensor& p, const int& polState, const int& id, DebugSymbols* db=nullptr );
+  Tensor basisSpinor(const int& polState, const int& id);
 
   struct LS {
     double factor;

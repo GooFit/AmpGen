@@ -65,7 +65,7 @@ Tensor Transform::boost_spinor() const
   return Identity(2) * fcn::sqrt(0.5*(m_arg+1)) + sigma_dot_p(m_k)*fcn::sqrt(0.5*(m_arg-1));
 }
 
-Tensor Transform::operator()(const Representation& repr, const bool& invert) const
+Tensor Transform::operator()(const Representation& repr) const
 {
   Tensor::Index m,j,k;
   Tensor I2 = Identity(2);
@@ -128,6 +128,14 @@ Tensor TransformSequence::operator()( const Tensor& tensor,
     const Transform::Representation& repr ) const 
 {
   Tensor::Index a,b,c;
+  auto seq = this->operator()(repr);
+  return seq(a,b)*tensor(b);
+}
+
+Tensor Transform::operator()( const Tensor& tensor, 
+    const Transform::Representation& repr ) const 
+{
+  Tensor::Index a,b;
   auto seq = this->operator()(repr);
   return seq(a,b)*tensor(b);
 }

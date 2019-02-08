@@ -41,7 +41,7 @@ namespace AmpGen
       EventType    m_type;                  // EventType to generate
 
       double rndm() { return m_rand->Rndm(); }
-      double PDK( double a, double b, double c );
+      double q(double a, double b, double c) const;
   };
 } // namespace AmpGen
 #endif

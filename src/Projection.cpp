@@ -31,11 +31,19 @@ Projection::Projection( const std::function<double(const Event&)>& fcn,
 TH1D* Projection::plot(const std::string& prefix) const {
   std::string p = ( prefix==""?"":prefix+"_");
   TH1D* plot = new TH1D( (p + m_name ).c_str(),"",m_nBins,m_min,m_max);
-  plot->GetXaxis()->SetTitle( m_xAxisTitle.c_str() );
+  //plot->GetXaxis()->SetTitle( m_xAxisTitle.c_str() );
   char buffer[100];
-  if( m_units != "" ) sprintf(buffer,"\\mathrm{Entries} / (%0.2f %s)", m_width,m_units.c_str());
-  else sprintf( buffer, "\\mathrm{Entries} / (%0.2f)",m_width);
+  if( m_units != "" ) 
+    sprintf(buffer,"\\mathrm{Entries} / (%0.2f %s)", m_width,m_units.c_str());
+  else 
+    sprintf( buffer, "\\mathrm{Entries} / (%0.2f)",m_width);
   plot->GetYaxis()->SetTitle( buffer );
+  if( m_units != "" ) 
+    sprintf(buffer,"%s \\left[%s\\right]", m_xAxisTitle.c_str(),m_units.c_str());
+  else 
+    sprintf( buffer, "%s", m_xAxisTitle.c_str() );
+  plot->GetXaxis()->SetTitle( buffer );
+
   plot->GetYaxis()->SetTitleOffset(1.35);
   plot->SetMarkerSize(0);
   plot->SetMinimum(0);

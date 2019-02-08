@@ -40,9 +40,6 @@ int main( int argc, char* argv[] )
   std::vector<std::string> branchFormat    = NamedParameter<std::string>( "BranchFormat" ).getVector();
   EventType evtType( NamedParameter<std::string>( "EventType" ).getVector() );
   
-  std::string cuts           = "";
-  unsigned int cIndex        = 0;
-  std::string cut            = "";
   INFO( "Reading file " << inputFilename );
 
   TFile* f = TFile::Open( inputFilename.c_str(), "READ" );
@@ -50,12 +47,7 @@ int main( int argc, char* argv[] )
 
   TTree* in_tree = (TTree*)f->Get( treeName.c_str() );
   in_tree->SetBranchStatus( "*", 1 );
-  do {
-    cut               = NamedParameter<std::string>( "Cuts" + std::to_string( cIndex++ ), ( std::string ) "" );
-    double efficiency = in_tree->Draw( "", cut.c_str() ) / (double)in_tree->GetEntries();
-    INFO( cut << " efficiency = " << efficiency );
-    if ( cut != "" ) cuts += ( cuts == "" ? "" : "&&" ) + cut;
-  } while ( cut != "" );
+  std::string cuts = vectorToString( NamedParameter<std::string>("Cut","").getVector() , " && "); 
 
   INFO( "Using cut = " << cuts );
   bool usePIDCalib              = NamedParameter<int>( "usePIDCalib", 0 ).getVal();

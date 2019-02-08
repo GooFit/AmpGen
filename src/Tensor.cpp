@@ -9,7 +9,7 @@
 
 #include "AmpGen/Utilities.h"
 #include "AmpGen/MsgService.h"
-
+#include "AmpGen/Simplify.h"
 using namespace AmpGen;
 
 std::ostream& AmpGen::operator <<( std::ostream& out, const Tensor::Index& index )
@@ -104,9 +104,10 @@ size_t Tensor::size() const { return m_elements.size(); }
 
 size_t Tensor::index( const std::vector<size_t>& _co ) const
 {
-  auto id = Tensor::coordinates_to_index( _co, m_dim );
-  if ( id > nElements() ) ERROR("Element (" << id << ") out of range");
-  return id;
+  return symmetrisedIndex(_co);
+  // auto id = Tensor::coordinates_to_index( _co, m_dim );
+  // if ( id > nElements() ) ERROR("Element (" << id << ") out of range");
+  // return id;
 }
 
 size_t Tensor::symmetrisedIndex( const std::vector<size_t>& co ) const 
@@ -281,44 +282,46 @@ Tensor Tensor::Invert() const
   if ( rank() != 2 ) ERROR("Inversion only implemented for rank 2 objects");
   
   Tensor data = *this;
+
   for ( int i = 1; i < actualsize; i++ ) data[i] = data[i] / data[0]; // normalize row 0
   for ( int i = 1; i < actualsize; i++ ) {
     for ( int j = i; j < actualsize; j++ ) {
       Expression sum = 0;
-      for ( int k = 0; k < i; k++ ) sum = sum + data[j * actualsize + k] * data[k * actualsize + i];
-      data[j * actualsize + i] = data[j * actualsize + i] - SubTree( sum );
+      for ( int k = 0; k < i; k++ ) 
+        sum = sum + data(j, k) * data(k, i);
+      data(j, i) = data(j, i) - make_cse(sum);
     }
     if ( i == actualsize - 1 ) continue;
     for ( int j = i + 1; j < actualsize; j++ ) { // do a row of U
       Expression sum = 0.0;
-      for ( int k = 0; k < i; k++ ) sum = sum + data[i * actualsize + k] * data[k * actualsize + j];
-      data[i * actualsize + j] = ( data[i * actualsize + j] - SubTree( sum ) ) / data[i * actualsize + i];
+      for ( int k = 0; k < i; k++ ) sum = sum + data(i, k) * data(k, j);
+      data(i, j)  = ( data(i, j) - make_cse(sum) ) / data(i, i);
     }
   }
-  for ( int i = 0; i < actualsize; i++ ) // invert L
-    for ( int j = i; j < actualsize; j++ ) {
-      Expression x = 1.0;
-      if ( i != j ) {
-        x = 0.0;
-        for ( int k = i; k < j; k++ ) x = x - data[j * actualsize + k] * data[k * actualsize + i];
-      }
-      data[j * actualsize + i] = x / data[j * actualsize + j];
+  for ( int i = 0; i < actualsize; i++ ){ // invert L
+    data(i,i) = 1. / data(i,i);
+    for ( int j = i+1; j < actualsize; j++ ) {
+      Expression sum = 0.0;
+      for ( int k = i; k < j; k++ ) sum = sum - data(j, k) * data(k, i);
+      data(j, i) = make_cse(sum) / data(j, j);
     }
-  for ( int i = 0; i < actualsize; i++ ) // invert U
-    for ( int j = i; j < actualsize; j++ ) {
-      if ( i == j ) continue;
+  }
+  for ( int i = 0; i < actualsize; i++ ){ // invert U
+    for ( int j = i+1; j < actualsize; j++ ) {
       Expression sum = 0.0;
       for ( int k = i; k < j; k++ )
-        sum = sum + data[k * actualsize + j] * ( ( i == k ) ? 1.0 : data[i * actualsize + k] );
-      data[i * actualsize + j] = -sum;
+        sum = sum + data(k, j) * ( ( i == k ) ? 1.0 : data(i, k) );
+      data(i, j) = -make_cse(sum);
     }
-  for ( int i = 0; i < actualsize; i++ ) // final inversion
+  }
+  for ( int i = 0; i < actualsize; i++ ){ // final inversion
     for ( int j = 0; j < actualsize; j++ ) {
       Expression sum = 0.0;
       for ( int k = ( ( i > j ) ? i : j ); k < actualsize; k++ )
-        sum = sum + ( ( j == k ) ? 1.0 : data[j * actualsize + k] ) * data[k * actualsize + i];
-      data[j * actualsize + i] = sum;
+        sum = sum + ( ( j == k ) ? 1.0 : data(j, k) ) * data(k, i);
+      data(j, i) = sum; // Simplify(sum);
     }
+  }
   return data;
 }
 

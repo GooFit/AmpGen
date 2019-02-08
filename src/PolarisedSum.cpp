@@ -193,6 +193,9 @@ void   PolarisedSum::prepare()
                                << "norm = " << tIntegral << " ms; "
                                << "pdfs = " << changedPdfIndices.size() << " ; "
                                << "zeros = " << count_zeros(m_norms, m_matrixElements.size() ) );
+  if( m_nCalls == 0 ){
+    INFO("Norm = " << m_norm );
+  }
   m_nCalls++;
 }
 

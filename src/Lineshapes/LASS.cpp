@@ -10,94 +10,42 @@
 using namespace AmpGen;
 using namespace AmpGen::fcn;
 
-Expression phase( const Expression& phi )
-{ 
-  return cos(phi) + Constant(0,1)*sin(phi);
-}
-
-
 DEFINE_LINESHAPE( LASS )
 {
-  const auto props                 = ParticlePropertiesList::get( particleName );
-  const Expression mass            = Parameter( particleName + "_mass", props->mass() );
-  const Expression radius          = Parameter( particleName + "_radius", props->radius() );
-  const Expression width0          = Parameter( particleName + "_width", props->width() );
-  const Expression a               = Parameter( "LASS::a", 2.07 );
-  const Expression r               = Parameter( "LASS::r", 3.32 );
-  const Expression g0              = Parameter( "LASS::g" + lineshapeModifier, 0.0 );
-  const Expression q2              = Q2( s, s1, s2 ) / ( GeV*GeV );
-  const Expression q20             = Q2( mass*mass, s1, s2 ) / (GeV*GeV) ;
-  const Expression q               = safe_sqrt( q2 );
-  const Expression gamma           = width( s, s1, s2, mass, width0, radius, 0, dbexpressions );
-  const Expression scatteringPhase = atan( 2 * a * q / ( 2 + a * r * q2 ) );
-  const Expression resonancePhase  = atan( mass * gamma / ( mass * mass - s ) );
-  const Expression tphase          = scatteringPhase + resonancePhase;
-  const Expression rho             = GeV * safe_sqrt( q2 / s );
-  const Expression I               = Constant(0,1);
-  const Expression returnValue     = Sin( tphase ) * phase(tphase) / rho;
-
-  const Expression phi1            = ( 2 * a * q / ( 2 + a * r * q2 ) );
-  const Expression phi2            = ( mass * gamma / ( mass * mass - s ) );
-
-  const Expression rho0            = GeV * safe_sqrt( q20 / (mass*mass) );
-  const Expression ow              = width0 * rho / rho0; 
-  const Expression mG              = mass*gamma;
-  const Expression mG0             = mass*width0/rho0;
-  const Expression del             = mass*mass - s;
-
-  const Expression phi1ByRho       = 2 * a * sqrt(s) / ( GeV*( 2 + a * r *q2 ) );
-  const Expression numerator       = mG0 + phi1ByRho*del;
-
-  const Expression denom           = del - mG*phi1 - I*( mG + phi1*del );
-  ADD_DEBUG( s, dbexpressions );
-  ADD_DEBUG( q2, dbexpressions );
-  ADD_DEBUG( q, dbexpressions );
-  ADD_DEBUG( scatteringPhase, dbexpressions );
-  ADD_DEBUG( resonancePhase, dbexpressions );
-  ADD_DEBUG( rho, dbexpressions );
-  ADD_DEBUG( returnValue, dbexpressions );
-  ADD_DEBUG( gamma, dbexpressions );
-  ADD_DEBUG( numerator / (denom), dbexpressions );
-
-
-  Expression production_form_factor = 1;
-
-  if ( lineshapeModifier == "pFF" ) {
-    production_form_factor = 1 - Parameter( "LASS::pFF::f" ) * Exp( -q2 * Parameter( "LASS::pFF::alpha" ) );
-  }
-  ADD_DEBUG( production_form_factor, dbexpressions );
-  return production_form_factor * numerator / denom;
-}
-
-DEFINE_LINESHAPE( gLASS )
-{
-  auto props           = ParticlePropertiesList::get( particleName );
+  const auto props     = ParticlePropertiesList::get( particleName );
   Expression mass      = Parameter( particleName + "_mass", props->mass() );
   Expression radius    = Parameter( particleName + "_radius", props->radius() );
   Expression width0    = Parameter( particleName + "_width", props->width() );
-  const Expression sK  = 493.677 * 493.677;
-  const Expression sPi = 139.57 * 139.57;
-  Expression a         = Parameter( "gLASS::a" + lineshapeModifier, 2.07 );   /// short distance coupling
-  Expression r         = Parameter( "gLASS::r" + lineshapeModifier, 3.32 );   /// range parameter
-  Expression F         = Parameter( "gLASS::F" + lineshapeModifier, 1.0 );    /// vec[0];
-  Expression R         = Parameter( "gLASS::R" + lineshapeModifier, 1.0 );    /// resonant coupling
-  Expression phiF      = Parameter( "gLASS::phiF" + lineshapeModifier, 0.0 ); /// F-phase
-  Expression phiS      = Parameter( "gLASS::phiS" + lineshapeModifier, 0.0 ); /// R-phase
+  Expression s0        = mass*mass;
+  Expression a         = Parameter( "LASS::a", 2.07 );
+  Expression r         = Parameter( "LASS::r", 3.32 );
+  Expression q2        = Q2(s, s1, s2);
+  Expression q20       = Q2(s0, s1, s2);
+  Expression q         = safe_sqrt( q2 );
+  Expression rho       = q/sqrt(s);
+  Expression rho0      = sqrt(q20)/mass;
+  Expression gamma     = width0 * rho / rho0;
 
-  const Expression q2              = Q2( s, s1, s2 ) / ( GeV * GeV );
-  const Expression q               = sqrt( q2 );
-  const Expression gamma           = width( s, s1, s2, mass, width0, radius, 0 );
-  const Expression scatteringPhase = phiF + atan( 2 * a * q / ( 2 + a * r * q2 ) );
-  const Expression resonancePhase  = phiS + atan( mass * gamma / ( mass * mass - s ) );
-  const Expression rho             = GeV * sqrt( q2 / s );
-  const Expression returnValue     = ( F * Sin( scatteringPhase ) * phase(scatteringPhase)  +
-      R * Sin( resonancePhase ) * phase( resonancePhase + 2 * scatteringPhase ) ) / rho;
-  ADD_DEBUG( q, dbexpressions );
-  ADD_DEBUG( rho, dbexpressions );
-  ADD_DEBUG( gamma, dbexpressions );
-  ADD_DEBUG( rho, dbexpressions );
-  ADD_DEBUG( scatteringPhase, dbexpressions );
-  ADD_DEBUG( resonancePhase, dbexpressions );
+  Expression i         = Constant(0,1);
 
-  return returnValue;
+  Expression tan_phi1   = 2*a*q/(2 + a*r*q2);
+  Expression tan_phi2   = mass*gamma / (s0 - s);
+  Expression phase      = atan(tan_phi1) + atan(tan_phi2);
+  
+  ADD_DEBUG(sin(phase) * exp( i * phase ) / rho, dbexpressions );
+  Expression bw           = ( mass * width0 ) / ( rho0 * ( s0 -s -i*mass*gamma ) );
+  Expression nrPhaseShift = ( 2 + a * r * q2 + i * 2*a*q ) / ( 2+a*r*q2 - i*2*a*q );
+  Expression NR           = 2*a*sqrt(s)/( 2 + a*r*q*q -2*i*a*q );
+  ADD_DEBUG(nrPhaseShift*bw, dbexpressions );
+  ADD_DEBUG(NR, dbexpressions );
+  ADD_DEBUG(NR + bw*nrPhaseShift, dbexpressions );
+  
+  // Takes the splitting of the LASS into a "resonant" and "nonresonant"
+  // component from Laura++, as a better implementation of the "gLASS" lineshape
+  // the BW and NR amplitudes can be included separately with separate amplitudes and 
+
+  if( lineshapeModifier == "BW" ) return bw * nrPhaseShift; 
+  if( lineshapeModifier == "NR" ) return NR;
+  return NR + bw*nrPhaseShift;
+
 }

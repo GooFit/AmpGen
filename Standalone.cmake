@@ -5,7 +5,7 @@ file(GLOB_RECURSE AMPGEN_HDR AmpGen/*)
 
 
 if( NOT "${CMAKE_CXX_STANDARD}" ) 
-  set(CMAKE_CXX_STANDARD 17) 
+  set(CMAKE_CXX_STANDARD 14) 
 endif() 
 
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -127,8 +127,16 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 endif()
 
 file(GLOB_RECURSE applications apps/*.cpp )
+file(GLOB_RECURSE examples examples/*.cpp )
 
 foreach( file ${applications} )
+  get_filename_component( Executable ${file} NAME_WE )
+  cmake_print_variables(Executable)
+  add_executable(${Executable} ${file})
+  target_link_libraries(${Executable} PUBLIC AmpGen)
+endforeach()
+
+foreach( file ${examples} )
   get_filename_component( Executable ${file} NAME_WE )
   cmake_print_variables(Executable)
   add_executable(${Executable} ${file})

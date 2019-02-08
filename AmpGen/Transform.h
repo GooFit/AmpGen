@@ -22,7 +22,8 @@ namespace AmpGen {
 
       Transform( const Expression& arg, const Tensor& k, const Type& type );
       Transform inverse() const; 
-      Tensor operator()(const Representation& repr, const bool& invert=false) const;
+      Tensor operator()(const Representation& repr) const;
+      Tensor operator()(const Tensor& tensor, const Representation& repr=Representation::Vector) const; 
     private:
 
       Tensor sigma_dot_p(const Tensor& p) const;
