@@ -46,17 +46,22 @@ int main( int argc, char* argv[] )
      using the NamedParameter<T> class. The name of the parameter is the first option,
      then the default value, and then the help string that will be printed if --h is specified 
      as an option. */
-  const std::string dataFile = NamedParameter<std::string>("DataSample", ""          , "Name of file containing data sample to fit." );
-  const std::string logFile  = NamedParameter<std::string>("LogFile"   , "Fitter.log", "Name of the output log file");
-  const std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
-  auto evtType_particles     = NamedParameter<std::string>("EventType" , ""          , "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
+  std::string dataFile = NamedParameter<std::string>("DataSample", ""          , "Name of file containing data sample to fit." );
+  std::string logFile  = NamedParameter<std::string>("LogFile"   , "Fitter.log", "Name of the output log file");
+  std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
+  
+  auto bNames = NamedParameter<std::string>("Branches", std::vector<std::string>()
+              ,"List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m" ).getVector();
+
+  auto pNames = NamedParameter<std::string>("EventType" , ""    
+              , "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
   
   if( dataFile == "" ) FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off );
-  if( evtType_particles.size() == 0 ) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
+  if( pNames.size() == 0 ) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
 
   [[maybe_unused]]
-  const size_t      nThreads = NamedParameter<size_t>     ("nCores"    , 8           , "Number of threads to use" );
-  const size_t      seed     = NamedParameter<size_t>     ("Seed"      , 0           , "Random seed used" );
+  size_t      nThreads = NamedParameter<size_t>     ("nCores"    , 8           , "Number of threads to use" );
+  size_t      seed     = NamedParameter<size_t>     ("Seed"      , 0           , "Random seed used" );
   
   TRandom3 rndm;
   rndm.SetSeed( seed );
@@ -77,7 +82,7 @@ int main( int argc, char* argv[] )
 
   /* An EventType specifies the initial and final state particles as a vector that will be described by the fit. 
      It is typically loaded from the interface parameter EventType. */
-  EventType evtType(evtType_particles);
+  EventType evtType(pNames);
   
   /* A CoherentSum is the typical amplitude to be used, that is some sum over quasi two-body contributions 
      weighted by an appropriate complex amplitude. The CoherentSum is generated from the couplings described 
@@ -87,8 +92,9 @@ int main( int argc, char* argv[] )
   CoherentSum sig(evtType, MPS);
   
   /* Events are read in from ROOT files. If only the filename and the event type are specified, 
-     the file is assumed to be in the specific format that is defined by the event type. */
-  EventList events(dataFile, evtType);
+     the file is assumed to be in the specific format that is defined by the event type, 
+     unless the branches to load are specified in the user options */
+  EventList events(dataFile, evtType, Branches(bNames), GetGenPdf(false) );
   
   /* Generate events to normalise the PDF with. This can also be loaded from a file, 
      which will be the case when efficiency variations are included. Default number of normalisation events 

@@ -92,13 +92,13 @@ namespace AmpGen
     }
     */
 
-    NamedParameter( const std::string& name, const std::vector<T>& defVec, const std::string& helpString="" )
+    NamedParameter(const std::string& name, const std::vector<T>& defVec, const std::string& helpString="")
         : m_name(name),
           m_helpString(helpString)
     {
       setVal( defVec );
       setFromOptionsParser();
-      if ( OptionsParser::printHelp() ) help( defVec[0] );
+      if ( OptionsParser::printHelp() ) help( defVec.size() > 0 ? defVec[0] : T() );
     }
     
     void help(const T& def){

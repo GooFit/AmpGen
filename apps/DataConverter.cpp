@@ -30,11 +30,11 @@ int main( int argc, char* argv[] )
 {
   OptionsParser::setArgs( argc, argv );
 
-  std::string inputFilename  = NamedParameter<std::string>( "Input", ( std::string ) "" ).getVal();
-  std::string outputFilename = NamedParameter<std::string>( "Output", ( std::string ) "" ).getVal();
-  std::string pdfLibrary     = NamedParameter<std::string>( "PdfLibrary", ( std::string ) "" ).getVal();
-  std::string motherID       = NamedParameter<std::string>( "MotherID", ( std::string ) "" ).getVal();
-  std::string treeName       = NamedParameter<std::string>( "Tree", ( std::string ) "" );
+  std::string inputFilename  = NamedParameter<std::string>("Input"     , "", "Input ROOT file" );
+  std::string outputFilename = NamedParameter<std::string>("Output"    , "", "Output ROOT file" );
+  std::string pdfLibrary     = NamedParameter<std::string>("PdfLibrary", "", "PDF Library that used to generate this sample for MC reweighting (MC only)" );
+  std::string motherID       = NamedParameter<std::string>("Mother"    , "", "" );
+  std::string treeName       = NamedParameter<std::string>("Tree"      , "", "Input ROOT file" );
   std::vector<std::string> particles       = NamedParameter<std::string>( "ParticleNames" ).getVector();
   std::vector<std::string> monitorBranches = NamedParameter<std::string>( "Monitors" ).getVector();
   std::vector<std::string> branchFormat    = NamedParameter<std::string>( "BranchFormat" ).getVector();
@@ -155,9 +155,7 @@ int main( int argc, char* argv[] )
     in_tree->SetBranchAddress( motherID.c_str(), &id );
     for ( unsigned int i = 0; i < eventsToTake.size(); ++i ) {
       in_tree->GetEntry( eventsToTake[i] );
-      if ( id < 0 ) {
-        evts[i].invertParity( 4 );
-      }
+      if ( id < 0 ) evts[i].invertParity( 4 );
     }
   }
 
