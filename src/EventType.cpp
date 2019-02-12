@@ -143,12 +143,12 @@ std::vector<Projection> EventType::defaultProjections(const size_t& nBins) const
       if( defaultObservable == "mass2" )
         axes.emplace_back( [indices]( const Event& evt ) { return evt.s( indices ); },
                          "s" + vectorToString( indices ),
-                         "s_{" + label( indices, useRootLabelling ) + "}\\, \\left[" + gevcccc + "\\right]", nBins,
+                         "s_{" + label( indices, useRootLabelling ) + "}", nBins,
                          ( mm.first - 0.05 ) ,  ( mm.second + 0.05 ) , gevcccc );
       else if( defaultObservable == "mass" )
         axes.emplace_back( [indices]( const Event& evt ) { return sqrt( evt.s( indices ) ); },
                          "m" + vectorToString( indices ),
-                         "m_{" + label( indices, useRootLabelling ) + "}\\, \\left[" + gevcc + "\\right]", nBins,
+                         "m_{" + label( indices, useRootLabelling ) + "}", nBins,
                          sqrt( mm.first - 0.05 ) ,  sqrt( mm.second + 0.05 ) , gevcc );
     }
   }
