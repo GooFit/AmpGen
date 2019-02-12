@@ -118,12 +118,13 @@ target_compile_options(AmpGen
   -Wno-unused-parameter
   -Wno-unknown-pragmas
   -Wnon-virtual-dtor
-  -Wsuggest-override 
   -Woverloaded-virtual
   $<$<CONFIG:Release>:-Ofast>)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm -lstdc++")
+else()
+  target_compile_options(AmpGen PUBLIC -Wsuggest-override)
 endif()
 
 file(GLOB_RECURSE applications apps/*.cpp )

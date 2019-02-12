@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <map>
 #include <utility>
+#include <numeric>
 
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/MsgService.h"
@@ -132,6 +133,14 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
   argp.push_back( fname.c_str() );
   argp.push_back( "-o");
   argp.push_back( oname.c_str() );
+
+  if(NamedParameter<bool>("CompilerWrapper::Verbose", false)) {
+    std::string result = std::accumulate(std::begin(argp), std::end(argp),
+      std::string(),
+      [](std::string a, const char* b){return a + " " + b;});
+    INFO("Compiling: " << result);
+  }
+
   argp.push_back( NULL );
   
   childPID = vfork();
