@@ -131,11 +131,9 @@ EventType EventType::conj( const bool& headOnly, const bool& dontConjHead ) cons
 std::vector<Projection> EventType::defaultProjections(const size_t& nBins) const
 {
   bool          useRootLabelling = NamedParameter<bool>(        "EventType::UseRootTEX", false );
-  std::string unitName           = NamedParameter<std::string>( "EventType::Units", "MeV" );
   std::string defaultObservable  = NamedParameter<std::string>( "EventType::Observable", "mass2");
 
   std::vector<Projection> axes;
-  std::vector<std::vector<size_t>> permutations;
   std::string gevcccc            = useRootLabelling ? "GeV^{2}/c^{4}" : "\\mathrm{GeV}^{2}/c^{4}";
   std::string gevcc              = useRootLabelling ? "GeV/c^{2}" : "\\mathrm{GeV}/c^{2}";
   for ( size_t r = 2; r < size(); ++r ) { /// loop over sizes ///

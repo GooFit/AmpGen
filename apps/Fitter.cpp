@@ -94,7 +94,6 @@ template <typename PDF>
 FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS )
 {
   INFO( "Type = " << typeof<PDF>() );
-  const std::string fLib = NamedParameter<std::string>( "Lib", std::string( "" ) ).getVal();
 
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time      = std::clock();
@@ -266,10 +265,10 @@ int main( int argc, char* argv[] )
   else if ( MPS["fPDF"]->mean() == 0.0 && MPS["fComb"]->mean() == 1.0 )
     fr = doFit( make_pdf( bkg ), events, eventsMC, MPS );
 
-  else if ( MPS["fMisID"]->mean() == 0 )
+  else if ( MPS["fMisID"]->mean() == 0.0 )
     fr = doFit( make_pdf( sig, bkg ), events, eventsMC, MPS );
 
-  else if ( MPS["fMisID"]->mean() != 0 )
+  else if ( MPS["fMisID"]->mean() != 0.0 )
     fr = doFit( make_pdf( sig, bkg, misID ), events, eventsMC, MPS );
 
   if ( fr == nullptr ) {

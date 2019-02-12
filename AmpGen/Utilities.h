@@ -107,6 +107,16 @@ RETURN_TYPE lexical_cast( const std::string& word, bool& status )
   return RETURN_TYPE();
 }
 
+template <class ...ARGS>
+  std::string mysprintf(const std::string& format,
+      ARGS&&... args){
+  auto size = std::snprintf(nullptr, 0, format.c_str(), std::forward<ARGS>(args)...);
+  std::string output(size+1,'\0');
+  std::sprintf(&output[0],format.c_str(), std::forward<ARGS>(args)...);
+  return output;
+}
+
+
 template <> double       lexical_cast( const std::string& word, bool& status );
 template <> unsigned int lexical_cast( const std::string& word, bool& status );
 template <> std::string  lexical_cast( const std::string& word, bool& status );

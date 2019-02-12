@@ -189,11 +189,7 @@ unsigned int edit_distance( const std::string& s1, const std::string& s2 )
 std::string round( const double& number, const unsigned int& nsf )
 {
   double value = round( number * pow( 10, nsf ) ) / pow( 10, nsf );
-  char buffer[20];
-  sprintf( buffer, ( "%." + std::to_string( nsf ) + "f" ).c_str(), value );
-  // return std::to_string( value / pow(10,nsf) ) ;
-  std::string returnValue( buffer );
-  return returnValue;
+  return mysprintf( ( "%." + std::to_string( nsf ) + "f" ).c_str(), value );
 }
 
 std::string numberWithError( const double& number, const double& error, const unsigned int& nDigits )
@@ -372,9 +368,9 @@ std::vector<std::string> getListOfFiles( const std::string& directory, std::stri
     }
   } else
     top_paths.push_back( expanded_path );
-  DIR* dir;
   struct dirent* ent;
   for ( auto& top_path : top_paths ) {
+    DIR* dir;
     if ( ( dir = opendir( top_path.c_str() ) ) != nullptr ) {
       /* print all the files and directories within directory */
       while ( ( ent = readdir( dir ) ) != nullptr ) {

@@ -30,57 +30,51 @@ int main( int argc, char* argv[] )
 {
   OptionsParser::setArgs( argc, argv );
 
-  std::string inputFilename  = NamedParameter<std::string>("Input"     , "", "Input ROOT file" );
-  std::string outputFilename = NamedParameter<std::string>("Output"    , "", "Output ROOT file" );
-  std::string pdfLibrary     = NamedParameter<std::string>("PdfLibrary", "", "PDF Library that used to generate this sample for MC reweighting (MC only)" );
-  std::string motherID       = NamedParameter<std::string>("Mother"    , "", "" );
-  std::string treeName       = NamedParameter<std::string>("Tree"      , "", "Input ROOT file" );
-  std::vector<std::string> particles       = NamedParameter<std::string>( "ParticleNames" ).getVector();
-  std::vector<std::string> monitorBranches = NamedParameter<std::string>( "Monitors" ).getVector();
-  std::vector<std::string> branchFormat    = NamedParameter<std::string>( "BranchFormat" ).getVector();
+  std::string inputFilename                = NamedParameter<std::string>("Input"     , "", "Input ROOT file" );
+  std::string treeName                     = NamedParameter<std::string>("Tree"      , "", "Input ROOT tree." );
+  std::string outputFilename               = NamedParameter<std::string>("Output"    , "", "Output ROOT file" );
+  std::string pdfLibrary                   = NamedParameter<std::string>("PdfLibrary", "", "PDF Library that used to generate this sample for MC reweighting (MC only)" );
+  std::string motherID                     = NamedParameter<std::string>("MotherIDBranch"    , "", "Name of branch that contains the ID of the parent, i.e. > 0 for particles, < 0 for antiparticles." );
+  std::string plotsName                    = NamedParameter<std::string>("Plots"     ,"plots.root", "Output file for ROOT plots");
+  std::vector<std::string> particles       = NamedParameter<std::string>("ParticleNames" , std::vector<std::string>() ).getVector();
+  std::vector<std::string> monitorBranches = NamedParameter<std::string>("Monitors"      , std::vector<std::string>() ).getVector();
+  std::vector<std::string> branchFormat    = NamedParameter<std::string>("BranchFormat"  , std::vector<std::string>() ).getVector();
+  bool usePIDCalib                         = NamedParameter<bool>("usePIDCalib"             , false );
+  bool rejectMultipleCandidates            = NamedParameter<bool>("rejectMultipleCandidates", true  );
+  std::string cuts                         = vectorToString( NamedParameter<std::string>("Cut","").getVector() , " && "); 
   EventType evtType( NamedParameter<std::string>( "EventType" ).getVector() );
-  
-  INFO( "Reading file " << inputFilename );
 
+  INFO( "Reading file " << inputFilename );
   TFile* f = TFile::Open( inputFilename.c_str(), "READ" );
   INFO( "Reading tree " << treeName );
 
   TTree* in_tree = (TTree*)f->Get( treeName.c_str() );
   in_tree->SetBranchStatus( "*", 1 );
-  std::string cuts = vectorToString( NamedParameter<std::string>("Cut","").getVector() , " && "); 
 
   INFO( "Using cut = " << cuts );
-  bool usePIDCalib              = NamedParameter<int>( "usePIDCalib", 0 ).getVal();
-  bool isMC                     = NamedParameter<int>( "isMC", 0 ).getVal();
-  bool rejectMultipleCandidates = NamedParameter<int>( "rejectMultipleCandidates", 1 ).getVal();
-  std::string plotsName         = NamedParameter<std::string>( "Plots", ( std::string ) "plots.root" ).getVal();
 
-  if ( inputFilename == "" ) {
-    ERROR( "No input specified in options" );
-    return -1;
-  }
-  if ( treeName == "" ) {
-    ERROR( "No tree specified in options" );
-    return -1;
-  }
-  if ( outputFilename == "" ) {
-    ERROR( "No output specified in options" );
-    return -1;
-  }
-  if ( f == nullptr ) ERROR( inputFilename + " not found" );
-
-  if ( in_tree == nullptr ) {
-    ERROR( treeName + " not found" );
-    return -1;
-  } else
-    INFO( "Got tree " << inputFilename << ":" << treeName );
-  INFO( "Is MC ? " << ( isMC ? " True " : " False " ) );
+  if(inputFilename  == "") FATAL("No input specified in options" );
+  if(treeName       == "") FATAL("No tree specified in options" );
+  if(outputFilename == "") FATAL("No output specified in options" );
+  if(f       == nullptr  ) FATAL(inputFilename + " not found" );
+  if(in_tree == nullptr  ) FATAL(treeName + " not found" );
+  
+  INFO( "Got tree " << inputFilename << ":" << treeName );
 
   in_tree->Draw( ">>elist", cuts.c_str() );
   TEventList* elist = (TEventList*)gDirectory->Get( "elist" );
   INFO( "Total efficiency = " << elist->GetN() / (double)in_tree->GetEntries() );
 
   std::vector<size_t> eventsToTake;
+  
+  std::vector<std::string> branches;
+  for( auto& particle : particles ) {
+    for(size_t i = 0 ; i < 4; ++i ) 
+      branches.push_back( mysprintf(branchFormat[i], particle.c_str()));
+  }
+  for(auto& branch : monitorBranches) branches.push_back( branch );
+  //if( motherID != "" ) branches.push_back( motherID );
+  
   if ( rejectMultipleCandidates ) {
     ULong64_t totCandidate;
     ULong64_t eventNumber;
@@ -103,13 +97,12 @@ int main( int argc, char* argv[] )
       if ( totCandidate == 1 ) {
         eventsToTake.push_back( entry );
       } else {
-        auto evtId = std::make_pair( eventNumber, runNumber );
+        auto evtId = std::make_pair(eventNumber, runNumber);
         multipleCandidateIds[evtId].push_back( entry );
       }
     }
 
-    std::mt19937 rng( 7 ); // random-number engine used (Mersenne-Twister in this case)
-    // unsigned int multipleCandidatesRejected = 0;
+    std::mt19937 rng(7); // random-number engine used (Mersenne-Twister in this case)
     for ( auto& candidate : multipleCandidateIds ) {
       unsigned int nCand = candidate.second.size();
       unsigned int j     = nCand == 1 ? 0 : std::uniform_int_distribution<int>( 0, nCand - 1 )( rng );
@@ -123,29 +116,12 @@ int main( int argc, char* argv[] )
     }
   }
 
-  std::vector<std::string> branches;
-  for ( auto& particle : particles ) {
-    char buffer[100];
-    sprintf( buffer, branchFormat[0].c_str(), particle.c_str() );
-    branches.push_back( std::string( buffer ) );
-    
-    sprintf( buffer, branchFormat[1].c_str(), particle.c_str() );
-    branches.push_back( std::string( buffer ) );
-    
-    sprintf( buffer, branchFormat[2].c_str(), particle.c_str() );
-    branches.push_back( std::string( buffer ) );
-    
-    sprintf( buffer, branchFormat[3].c_str(), particle.c_str() );
-    branches.push_back( std::string( buffer ) );
-  }
-
-  for ( auto& branch : monitorBranches ) branches.push_back( branch );
+  EventList evts( in_tree, evtType, Branches(branches), EntryList(eventsToTake), GetGenPdf(false));
 
   INFO( "Branches = ["<< vectorToString(branches, ", " ) << "]" );
 
   in_tree->SetBranchStatus( "*", 0 );
   INFO("Constructing eventList");
-  EventList evts( in_tree, evtType, Branches(branches), EntryList(eventsToTake) );
 
   if ( motherID != "" ) {
     INFO( "Converting D0bar -> D0" );
@@ -155,7 +131,7 @@ int main( int argc, char* argv[] )
     in_tree->SetBranchAddress( motherID.c_str(), &id );
     for ( unsigned int i = 0; i < eventsToTake.size(); ++i ) {
       in_tree->GetEntry( eventsToTake[i] );
-      if ( id < 0 ) evts[i].invertParity( 4 );
+      if ( id < 0 ) evts[i].invertParity(4);
     }
   }
 

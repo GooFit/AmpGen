@@ -63,7 +63,6 @@ double Minimiser::FCN() const { return m_theFunction(); }
 
 void Minimiser::prepare()
 {
-  std::string minimiser = NamedParameter<std::string>( "Minimiser::Minimiser", "Minuit2" );
   std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse" );
   unsigned int maxCalls = NamedParameter<unsigned int>( "Minimiser::MaxCalls", 100000 );
   double tolerance      = NamedParameter<double>( "Minimiser::Tolerance", 0.01 );

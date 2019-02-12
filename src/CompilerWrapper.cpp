@@ -118,7 +118,6 @@ std::string get_cpp_version(){
 }
 void CompilerWrapper::compileSource( const std::string& fname, const std::string& oname )
 {
-  std::vector<pid_t> pids;
   pid_t childPID = 0; 
   using namespace std::chrono_literals;
   std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", 

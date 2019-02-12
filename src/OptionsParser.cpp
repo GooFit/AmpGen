@@ -131,7 +131,7 @@ std::vector<std::string> OptionsParser::makeParsedStrings( const std::string& li
   bool ignore                      = false;
   std::vector<std::string> fillThisList;
 
-  for ( std::string::const_iterator it = s.begin(); it != s.end(); it++ ) {
+  for ( std::string::const_iterator it = s.begin(); it != s.end(); ++it ) {
     if ( !insideQuotes && *it == '#' ) break; /// indicates a comment, except in speech marks ///
     if ( ( ( !insideQuotes ) && std::isblank( *it ) ) || *it == '"' || ignore ) {
       if ( !prevBlank ) {

@@ -94,7 +94,6 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
 {
   if( m_resolvedParameters.count(&parameter) != 0 || parameter.isResolved() ) return; 
   auto res = evtMap.find(parameter.m_name);
-  std::string compiled_string = "";
   if( res != evtMap.end() ){
     if( enable_cuda ) {
       size_t t = res->second; 

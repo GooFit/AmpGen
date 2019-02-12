@@ -78,8 +78,8 @@ MinuitParameter* MinuitParameterSet::getParPtr( unsigned int i ) const
 
 void MinuitParameterSet::deleteListAndObjects()
 {
-  for ( std::vector<MinuitParameter*>::iterator it = _parPtrList.begin(); it != _parPtrList.end(); it++ ) {
-    delete ( *it );
+  for ( auto it = _parPtrList.begin(); it != _parPtrList.end(); ++it ) {
+    delete *it;
   }
   _parPtrList.clear();
 }

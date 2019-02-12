@@ -118,7 +118,8 @@ TTree* EventList::tree( const std::string& name, const std::vector<std::string>&
     return nullptr;
   }
   Event tmp = *( begin() );
-  double genPdf( 1 ), weight( 1 );
+  double genPdf = 1;
+  double weight = 1;
   auto format = m_eventType.getEventFormat( true );
   for ( auto& f : format ) outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
   for ( auto& f : m_extensions ) outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
@@ -137,9 +138,8 @@ std::vector<TH1D*> EventList::makePlots( const std::vector<Projection>& projecti
 {
   std::vector<TH1D*> plots;
   for ( auto& proj : projections ) {
-    TH1D* plot= makeProjection(proj, args );
-    plot->SetLineColor( args.getArg<LineColor>( kBlack ) );
-    plot->SetMarkerSize( 0 );
+    TH1D* plot = makeProjection(proj, args );
+    DEBUG("Made plot ... " << plot->GetName() );
     plots.push_back( plot );
   }
   return plots;
@@ -151,10 +151,10 @@ TH1D* EventList::makeProjection( const Projection& projection, const ArgumentPac
   auto weightFunction = args.getArg<WeightFunction>().val;
   std::string prefix  = args.getArg<Prefix>();
   auto plot = projection.plot(prefix);
-  plot->SetLineColor( args.getArg<LineColor>(kBlack).val ); 
-
-  for ( auto& evt : m_data ){
-    if ( selection != nullptr && !selection(evt) ) continue;
+  plot->SetLineColor(args.getArg<LineColor>(kBlack).val); 
+  plot->SetMarkerSize(0);
+  for( auto& evt : m_data ){
+    if( selection != nullptr && !selection(evt) ) continue;
     auto pos = projection(evt);
     plot->Fill( pos, evt.weight() * ( weightFunction == nullptr ? 1 : weightFunction(evt) / evt.genPdf() ) );
   }
@@ -166,7 +166,7 @@ TH2D* EventList::makeProjection( const Projection2D& projection, const ArgumentP
 {
   auto selection      = args.getArg<Selection>().val;
   auto weightFunction = args.getArg<WeightFunction>().val;
-  std::string prefix  = args.getArg<Prefix>();
+  std::string prefix  = args.getArg<Prefix>().val;
   auto plot           = projection.plot(prefix);
   for ( auto& evt : m_data ){
     if ( selection != nullptr && !selection(evt) ) continue;

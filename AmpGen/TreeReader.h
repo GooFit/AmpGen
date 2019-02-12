@@ -20,14 +20,22 @@ namespace AmpGen
           virtual ~IReadBranch()               = default;
         };
 
-        template <class InputType>
-          struct ReadBranch : public IReadBranch {
-            InputType thing;
-            OutputType* output;
-            void* address() const override { return (void*)&thing; }
-            ReadBranch( const std::string& name, OutputType* outputBranch ) : IReadBranch( name ), output( outputBranch ) {}
-            void transfer() override { *output = thing; }
-          };
+        template <class InputType> struct ReadBranch : public IReadBranch {
+          InputType thing;
+          OutputType* output;
+          void* address() const override { return (void*)&thing; }
+          ReadBranch( const std::string& name, OutputType* outputBranch ) : IReadBranch( name ), output( outputBranch ) {}
+          void transfer() override { *output = thing; }
+        };
+  
+       template <class InputType> struct ReinterpretBranch : public IReadBranch {
+          InputType thing;
+          OutputType* output;
+          void* address() const override { return (void*)&thing; }
+          ReinterpretBranch( const std::string& name, OutputType* outputBranch ) : IReadBranch( name ), output( outputBranch ) {}
+          void transfer() override { *output = reinterpret_cast<OutputType>(thing); }
+        };
+
         struct Branch {
           OutputType* value;
           Branch() : value( new OutputType() ) {}
@@ -66,12 +74,13 @@ namespace AmpGen
             return; 
           }
           std::string branchType                     = leaf->GetTypeName();
-          if ( branchType == "Double_t" ) new_branch = new ReadBranch<Double_t>( name, ptr );
-          if ( branchType == "Float_t" )  new_branch = new ReadBranch<Float_t>( name, ptr );
-          if ( branchType == "Bool_t" )   new_branch = new ReadBranch<Bool_t>( name, ptr );
-          if ( branchType == "Int_t" )    new_branch = new ReadBranch<Int_t>( name, ptr );
-          if ( branchType == "UInt_t" )   new_branch = new ReadBranch<UInt_t>( name, ptr );
-          if ( new_branch == nullptr ){
+          if( branchType == "Double_t" ) new_branch = new ReadBranch<Double_t>( name, ptr );
+          if( branchType == "Float_t" )  new_branch = new ReadBranch<Float_t>( name, ptr );
+          if( branchType == "Bool_t" )   new_branch = new ReadBranch<Bool_t>( name, ptr );
+          if( branchType == "Int_t" )    new_branch = new ReadBranch<Int_t>( name, ptr );
+          if( branchType == "UInt_t" )   new_branch = new ReadBranch<UInt_t>( name, ptr );
+          if( branchType == "ULong64_t") new_branch = new ReadBranch<ULong64_t>( name, ptr );
+          if( new_branch == nullptr ){
             ERROR( "Branch type:" << branchType <<  " not recognised" );
             return;   
           }
