@@ -5,6 +5,7 @@
 #include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/MsgService.h"
+#include "AmpGen/ProfileClock.h"
 
 #include <tuple>
 /* A SumPDF is the log-likelihood of the form
@@ -30,13 +31,18 @@ namespace AmpGen
     
     double getVal()
     {
+//      ProfileClock pc;  
       double LL = 0;
       for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
-      #pragma omp parallel for reduction( + : LL )
+//      pc.stop();
+//      ProfileClock eval;
+      #pragma omp parallel for reduction( +: LL )
       for ( unsigned int i = 0; i < m_events->size(); ++i ) {
         auto prob = ((*this))(( *m_events)[i] );
         LL += log(prob);
       }
+//      eval.stop();
+//      std::cout << "t [prepare] = " << pc << "; t[eval] = " << eval << "ms" << std::endl; 
       return -2 * LL;
     }
     double operator()( const Event& evt )

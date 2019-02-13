@@ -324,17 +324,16 @@ Expression Particle::propagator( DebugSymbols* db ) const
   Expression total( 1. );
   DEBUG( "Getting lineshape " << m_lineshape << " for " << m_name );
   //Expression s = m_isHead ? dot(P(),P()) : massSq();
-  Expression s= massSq();
+  Expression s = massSq();
   if ( m_daughters.size() == 2 ) {
-    total = total * make_cse( LineshapeFactory::getLineshape( m_lineshape, s, daughter( 0 )->massSq(), daughter( 1 )->massSq(), m_name, m_orbital, db ) );
+    auto prop = make_cse(LineshapeFactory::getLineshape(m_lineshape, s, daughter(0)->massSq(), daughter(1)->massSq(), m_name, m_orbital, db));
+    total = total * prop;
   }
-  else if ( !m_isHead && m_daughters.size() == 3 ) {
-    DEBUG( "Three-body propagator defaults to fixed-width Breit-Wigner" );
+  else if ( m_daughters.size() == 3 ) {
     std::string shape = m_lineshape == "BW" ? "SBW" : m_lineshape;
-    auto propagator   = ( LineshapeFactory::getGenericShape(
+    auto prop   = ( LineshapeFactory::getGenericShape(
           shape, massSq(), {daughter(0)->P(), daughter(1)->P(), daughter(2)->P()}, m_name, m_orbital, db ) );
-
-    total = total * propagator ;  
+    total = total * prop;  
   }  
   for ( auto& d : m_daughters ) total = total * make_cse( d->propagator( db ) );
   if ( db != nullptr ) db->emplace_back( "A(" + uniqueString() + ")", total );

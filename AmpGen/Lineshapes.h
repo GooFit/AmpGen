@@ -9,7 +9,7 @@
 #include "AmpGen/Expression.h"
 #include "AmpGen/Factory.h"
 #include "AmpGen/MsgService.h"
-
+#include "AmpGen/Tensor.h"
 /**
   @defgroup Lineshapes Lineshapes
   @brief Lineshapes are semi-empirical complex functions for describing the propagation and decay of short-lived resonances. 
@@ -58,7 +58,9 @@
   AmpGen::Expression Lineshape::X::get( const AmpGen::Expression& s, const std::vector<AmpGen::Tensor>& p,      \
                                         const std::string& particleName,                                        \
                                         const unsigned int& L, const std::string& lineshapeModifier,            \
-                                        AmpGen::DebugSymbols* dbexpressions ) const { return 0;}                \
+                                        AmpGen::DebugSymbols* dbexpressions ) const { return                    \
+                                           get(s, dot(p[0],p[0]), dot(p[1],p[1]),                               \
+                                           particleName, L, lineshapeModifier, dbexpressions) ;}                 \
   AmpGen::Expression Lineshape::X::get( const AmpGen::Expression& s, const AmpGen::Expression& s1,              \
                                         const AmpGen::Expression& s2, const std::string& particleName,          \
                                         const unsigned int& L, const std::string& lineshapeModifier,            \
@@ -77,8 +79,6 @@
 
 namespace AmpGen
 {
-  class Tensor;
-
   class  ILineshape {
     public:
     virtual ~ILineshape() = default;

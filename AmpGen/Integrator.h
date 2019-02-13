@@ -86,8 +86,10 @@ namespace AmpGen
             real_t w  = evt.weight() / evt.genPdf();
             for ( size_t roll = 0; roll < NROLL; ++roll ) {
               auto c = evt.getCache( m_integrals[roll].i ) * std::conj( evt.getCache( m_integrals[roll].j ) );
-              re[roll] += w * std::real( c );
-              im[roll] += w * std::imag( c );
+             // auto p1 = evt.getCache( m_integrals[roll].i );
+             // auto p2 = evt.getCache( m_integrals[roll].j );
+              re[roll] += w * std::real(c);
+              im[roll] += w * std::imag(c);
             }
           }
           real_t nv = m_events->norm();

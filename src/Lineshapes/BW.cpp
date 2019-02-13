@@ -130,17 +130,10 @@ DEFINE_LINESHAPE( SBW )
 {
   auto props        = ParticlePropertiesList::get( particleName );
   Expression mass   = Parameter( particleName + "_mass", props->mass() );
-  Expression radius = Parameter( particleName + "_radius", props->radius() );
   Expression width0 = Parameter( particleName + "_width", props->width() );
-
-  const Expression q2  = Abs( Q2( s, s1, s2 ) );
-  const Expression q20 = Abs( Q2( mass * mass, s1, s2 ) );
-  Expression BF        = BlattWeisskopf_Norm( q2 * radius * radius, 0, L );
   const Expression kF = kFactor( mass, width0 ) ;
   const Expression BW = 1 / ( mass * mass - s - Constant(0,1) *mass * width0 );
-  ADD_DEBUG( q2, dbexpressions );
-  ADD_DEBUG( q20, dbexpressions );
-  ADD_DEBUG( BF, dbexpressions );
+  ADD_DEBUG( kF, dbexpressions );
   ADD_DEBUG( BW, dbexpressions );
   return kF * BW;
 }

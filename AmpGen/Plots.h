@@ -18,10 +18,9 @@
 
 namespace AmpGen
 {
-  template <class PDF>
     void perAmplitudePlot( const EventList& evts, 
                            const Projection& projection,
-                           PDF pdf )
+                           const CoherentSum& pdf )
     {
       struct PlotIJ {
         unsigned int i;
@@ -51,7 +50,6 @@ namespace AmpGen
           unsigned int index_i   = evts.getCacheIndex( pdf[i].pdf );
           unsigned int index_j   = evts.getCacheIndex( pdf[j].pdf );
           const std::string name = pdf_i.name() + "_" + pdf_j.name();
-      //    INFO( name << " " << index_i << " " << index_j );
           tmpPlots[s].hist       = projection.plot(name);
           tmpPlots[s].i          = index_i;
           tmpPlots[s].j          = index_j;
@@ -100,16 +98,12 @@ namespace AmpGen
   template <size_t NBINS, size_t NROLLS>
     std::array<Bilinears, NBINS> getNorms( IncoherentSum& fcn, BinnedIntegrator<NBINS, NROLLS>& bid )
     {
-
       std::array<Bilinears, NBINS> normalisations;
       for ( unsigned int i = 0; i < NBINS; ++i ) normalisations[i] = Bilinears( fcn.size(), fcn.size() );
-
       for ( unsigned int i = 0; i < fcn.size(); ++i ) {
         bid.addIntegral( fcn[i].pdf, fcn[i].pdf, [i, &normalisations]( const auto& val ) {
-            for ( unsigned int bin = 0; bin < NBINS; ++bin ) {
-            normalisations[bin].set( i, 0, val[bin] );
-            }
-            } );
+            for ( unsigned int bin = 0; bin < NBINS; ++bin ) normalisations[bin].set( i, 0, val[bin] );  
+        } );
       }
       bid.flush();
       return normalisations;

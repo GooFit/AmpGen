@@ -134,7 +134,7 @@ Expression Lineshape::LineshapeFactory::getGenericShape( const std::string& line
                                               DebugSymbols* dbexpressions )
 {
   size_t pos = lineshape.find( "." );
-
+  
   if ( pos == std::string::npos ) {
     auto it = get( lineshape );
     if ( !it ) ERROR( "Lineshape : " << lineshape << " not found" );

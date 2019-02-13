@@ -21,7 +21,7 @@
 #include "AmpGen/SumPDF.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Generator.h"
-
+#include "AmpGen/ErrorPropagator.h"
 #ifdef _OPENMP
   #include <omp.h>
   #include <thread>
@@ -108,6 +108,12 @@ int main( int argc, char* argv[] )
   /* Do the fit and return the fit results, which can be written to the log and contains the 
      covariance matrix, fit parameters, and other observables such as fit fractions */
   FitResult* fr = doFit(make_pdf(sig), events, eventsMC, MPS );
+  /* Calculate the `fit fractions` using the signal model and the error propagator (i.e. 
+     fit results + covariance matrix) of the fit result, and write them to a file. 
+   */
+  auto fitFractions = sig.fitFractions( fr->getErrorPropagator() ); 
+  
+  fr->addFractions( fitFractions );
   fr->writeToFile( logFile );
   output->cd();
   
@@ -155,7 +161,7 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
      down to a minimum bin population of 15, and add it to the output. */
   Chi2Estimator chi2( data, mc, pdf, 15 );
   fr->addChi2( chi2.chi2(), chi2.nBins() );
-
+  
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double time_cpu = ( std::clock() - time ) / (double)CLOCKS_PER_SEC;
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - time_wall ).count();

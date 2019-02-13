@@ -114,8 +114,8 @@ void BinDT::readFromStream( std::istream& stream )
       ERROR("Could not parse line: " << line );
     }
   }
-  INFO( "Read: " << nodes.size()
-      << " nodes from plain-text file" ); // , now re-establishing tree structure; EndNodes=" << edc );
+  DEBUG( "Read: " << nodes.size()
+     << " nodes from plain-text file" ); // , now re-establishing tree structure; EndNodes=" << edc );
   m_top = nodes[topAddress].second;
   for ( auto& node : nodes ) {
     Decision* node_ptr = dynamic_cast<Decision*>( node.second.second.get() );
