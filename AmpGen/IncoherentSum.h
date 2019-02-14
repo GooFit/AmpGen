@@ -31,8 +31,9 @@ namespace AmpGen
       double prob_unnormalised( const Event& evt ) const;
       void prepare();
       double norm() const;
+      complex_t norm(const size_t& i, const size_t& j){ return i==j ? m_normalisations.get(i, 0) : 0; }
+      complex_t norm(const size_t& i) { return m_normalisations.get(i, 0); }
       double norm( const Bilinears& norms ) const;
-      std::complex<double> norm( const unsigned int& i ) { return m_normalisations.get( i, 0 ); }
       std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
   };
 } // namespace AmpGen

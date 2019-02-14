@@ -219,10 +219,6 @@ int main( int argc, char* argv[] )
   IncoherentSum bkg( evtType, MPS, "Inco" );
   CoherentSum misID( evtType.conj(true) , MPS );
 
-  if ( !sig.isStateGood() || !bkg.isStateGood() || !misID.isStateGood() ) {
-    ERROR( "Amplitude incorrectly configured" );
-    return -1;
-  }
   INFO( "fPDF = " << MPS["fPDF"]->mean() << " "
       << "fComb = " << MPS["fComb"]->mean() << " "
       << "fMisID = " << MPS["fMisID"]->mean() );

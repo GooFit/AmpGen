@@ -5,56 +5,105 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "AmpGen/Types.h"
+#include "AmpGen/ErrorPropagator.h"
 
 namespace AmpGen
 {
   class EventType;
-  class CoherentSum;
-  class IncoherentSum;
   class Particle;
 
-  struct FFCalculator {
-    double operator()();
-    std::vector<size_t> index_i;
-    std::vector<size_t> index_j;
-    std::vector<size_t> denom;
-    CoherentSum* fcs;
-    std::string name;
-    FFCalculator( const std::string& name, CoherentSum* fcs, const std::vector<size_t>& indices,
-                  const std::vector<size_t>& denom );
-
-    FFCalculator( const std::string& name, CoherentSum* fcs, const std::vector<size_t>& indexI,
-                  const std::vector<size_t>& indexJ, const std::vector<size_t>& denom );
-  };
-
-  struct IFFCalculator {
-    double operator()();
-    size_t index;
-    IncoherentSum* fcs;
-    IFFCalculator( const size_t& index, IncoherentSum* fcs );
-  };
 
   class FitFraction
   {
-    std::string m_name;
-    double m_value;
-    double m_error;
+    public:
+      FitFraction(const std::string& line, const AmpGen::EventType& evtType);
+      FitFraction(const std::string& name, const double& frac, const double& err);
+      FitFraction() = default;
 
-  public:
-    FitFraction( const std::string& line, const AmpGen::EventType& evtType );
-    FitFraction( const std::string& name, const double& frac, const double& err );
-    FitFraction() = default;
+      void setFracErr(const double& f, const double& e);
+      double val() const;
+      double err() const;
+      std::string name() const;
+      std::shared_ptr<Particle> particle() const;
 
-    void setFracErr( const double& f, const double& e )
-    {
-      m_value = f;
-      m_error = e;
-    }
-    double val() const { return m_value; }
-    double err() const { return m_error; }
-    std::string name() const { return m_name; }
-    std::shared_ptr<Particle> particle() const;
+    private:
+      std::string m_name;
+      double m_value;
+      double m_error;
   };
+  bool operator  <(const FitFraction& lhs, const FitFraction& rhs);
+  bool operator  >(const FitFraction& lhs, const FitFraction& rhs);
+  bool operator ==(const FitFraction& lhs, const FitFraction& rhs);
+  std::ostream& operator<<(std::ostream& os, const FitFraction& obj);
+  
+  template <class pdf_type>
+  struct FitFractionCalculator {
+    struct fcalc {
+      std::string name; 
+      std::vector<size_t> i;
+      std::vector<size_t> j;
+      fcalc(const std::string& name, const std::vector<size_t>& i) :
+        name(name), i(i), j(i) {};
+      fcalc(const std::string& name, const std::vector<size_t>& i, const std::vector<size_t>& j) :
+        name(name), i(i), j(j) {};
+    };
+    pdf_type* pdf;
+    std::vector<fcalc> calculators;
+    std::vector<size_t> normSet; 
+    bool recalculateIntegrals;
+    template <class... ARGS> void emplace_back( ARGS&&... args ){ calculators.emplace_back(args...); }
+  
+    FitFractionCalculator(pdf_type* pdf, 
+                          const std::vector<size_t>& normSet, 
+                          const bool& recalculateIntegrals=false) : 
+      pdf(pdf),
+      normSet(normSet),
+      recalculateIntegrals(recalculateIntegrals) {}
+    std::vector<double> operator()(){
+      if ( recalculateIntegrals ) pdf->prepare();
+      else pdf->transferParameters();
+      std::vector<double> rv;
+      double sum = 0; 
+      for (size_t i = 0 ; i< calculators.size(); ++i){
+        auto v = getVal(i);
+        rv.push_back(v);
+        sum += v;
+      }
+      rv.push_back( sum );
+      return rv; 
+    }
+    real_t norm() const {
+      complex_t sum = 0;
+      for ( auto& i : normSet ) {
+        for ( auto& j : normSet ) {
+          sum += (*pdf)[i].coefficient * std::conj( (*pdf)[j].coefficient ) * pdf->norm(i, j);
+        }
+      }
+      return std::real(sum);
+    }
+    real_t getVal( const size_t& index ) const {
+      complex_t sum = 0; 
+      for ( auto& i : calculators[index].i ) {
+        for ( auto& j : calculators[index].j ) {
+          sum += (*pdf)[i].coefficient * std::conj( (*pdf)[j].coefficient ) * pdf->norm(i, j);
+        }
+      }
+      return std::real(sum) / norm();
+    }
+    std::vector<FitFraction> operator()(const std::string& name, const LinearErrorPropagator& linProp )
+    {
+      auto values = (*this)();
+      auto errors = linProp.getVectorError(*this,calculators.size()+1);
+      std::vector<FitFraction> fractions; 
+      for(size_t i = 0; i < calculators.size(); ++i) 
+        fractions.emplace_back(calculators[i].name, values[i],errors[i]);
+      std::sort(fractions.begin(), fractions.end());
+      std::reverse(fractions.begin(), fractions.end());
+      fractions.emplace_back("Sum_"+name, *values.rbegin(), *errors.rbegin() );
+      return fractions;
+    }   
+  }; 
 } // namespace AmpGen
 
 #endif

@@ -31,6 +31,7 @@ AmplitudeRule::AmplitudeRule( const std::string& reName,
     m_re     = ire->second;
     m_im     = iim->second;
     m_isGood = true;
+    
   } else if ( tokens.size() == 2 ) {
     m_prefix = "";
     m_name   = tokens[0];
@@ -49,12 +50,13 @@ AmplitudeRule::AmplitudeRule( const std::string& reName,
   }
   if ( m_isGood ) {
     size_t pos = find_next_of( m_name, {"[", "{"} );
-    if ( pos != std::string::npos ) m_head = m_name.substr( 0, pos );
-    else {
+    if ( pos == std::string::npos ) 
+    {
       ERROR( "Does not seem to be well formed decay descriptor [" << reName << "]" );
       m_isGood = false;
     }
   }
+  m_particle = Particle(m_name);
 }
 
 AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
@@ -62,7 +64,7 @@ AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
   for ( auto& o : mps.const_map() ) {
     if ( o.first.find( "_Re" ) == std::string::npos ) continue;
     AmplitudeRule pAmp( o.first, mps.const_map() );
-    if ( pAmp.m_isGood ) m_rules[pAmp.m_head].push_back( pAmp );
+    if ( pAmp.m_isGood ) m_rules[pAmp.m_particle.name()].push_back( pAmp );
   }
 }
 
@@ -76,15 +78,24 @@ CouplingConstant::CouplingConstant( const CouplingConstant& other,
 }
 
 
-bool AmplitudeRules::hasDecay( const std::string& head ) { return m_rules.find( head ) != m_rules.end(); }
-
-std::vector<AmplitudeRule> AmplitudeRules::rulesForDecay( const std::string& head )
-{
-  if ( !hasDecay( head ) ) return std::vector<AmplitudeRule>();
-  return m_rules[head];
+bool AmplitudeRules::hasDecay(const std::string& head) 
+{ 
+  return m_rules.find(head) != m_rules.end(); 
 }
 
-std::map<std::string, std::vector<AmplitudeRule>> AmplitudeRules::rules() { return m_rules; }
+std::vector<AmplitudeRule> AmplitudeRules::rulesForDecay(const std::string& head, const std::string&  prefix)
+{
+  if(!hasDecay(head)) return std::vector<AmplitudeRule>();
+  if( prefix == "" )return m_rules[head];
+  std::vector<AmplitudeRule> rt = m_rules[head];
+  rt.erase( std::remove_if( std::begin(rt), std::end(rt), [&prefix](auto& p){ return p.prefix() != prefix; } ) );
+  return rt;
+}
+
+std::map<std::string, std::vector<AmplitudeRule>> AmplitudeRules::rules() 
+{ 
+  return m_rules;
+}
 
 EventType AmplitudeRule::eventType() const
 {
@@ -93,11 +104,11 @@ EventType AmplitudeRule::eventType() const
   particleNames.push_back( particle.name() );
   std::vector<std::shared_ptr<Particle>> fs = particle.getFinalStateParticles();
   std::stable_sort( fs.begin(), fs.end(), []( auto& A, auto& B ) { return *A < *B; } );
-  for ( auto& f : fs ) particleNames.push_back( f->name() );
+  for( auto& f : fs ) particleNames.push_back( f->name() );
   return EventType( particleNames );
 }
 
-CouplingConstant::CouplingConstant( const AmplitudeRule& pA)
+CouplingConstant::CouplingConstant(const AmplitudeRule& pA)
 {
   couplings.emplace_back( std::make_pair(pA.m_re,pA.m_im) );  
   std::string cartOrPolar = NamedParameter<std::string>("CouplingConstant::Coordinates","cartesian");
@@ -157,7 +168,7 @@ std::vector< std::pair<Particle, CouplingConstant > > AmplitudeRules::getMatchin
     const EventType& type, const std::string& prefix ){
 
   auto rules        = rulesForDecay( type.mother() );
-  std::vector< std::pair< Particle, CouplingConstant > > rt; 
+  std::vector<std::pair<Particle, CouplingConstant>> rt; 
 
   for ( auto& rule : rules ) {
     if ( rule.prefix() != prefix ) continue;
@@ -195,8 +206,7 @@ std::vector< std::pair<Particle, CouplingConstant > > AmplitudeRules::getMatchin
 bool CouplingConstant::isFixed() const
 {
   for( auto& c : couplings ) 
-    if( c.first->iFixInit() == 0 or 
-        c.second->iFixInit() == 0 ) return false; 
+    if( c.first->iFixInit() == 0 or c.second->iFixInit() == 0 ) return false; 
   return true;
 }
 

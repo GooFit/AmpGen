@@ -22,61 +22,34 @@ FitFraction::FitFraction( const std::string& line, const EventType& evtType )
   }
 }
 
-FFCalculator::FFCalculator( const std::string& name, 
-                            CoherentSum* fcs, 
-                            const std::vector<size_t>& indices,
-                            const std::vector<size_t>& denom )
-    : FFCalculator( name,fcs, indices, indices, denom ) {}
-
-FFCalculator::FFCalculator( const std::string& name, 
-                            CoherentSum* fcs, 
-                            const std::vector<size_t>& indexI,
-                            const std::vector<size_t>& indexJ, 
-                            const std::vector<size_t>& denom )
-    : index_i( indexI ), 
-      index_j( indexJ ), 
-      denom( denom ), 
-      fcs( fcs ), 
-      name( name ) {}
-
-IFFCalculator::IFFCalculator( const size_t& index, IncoherentSum* fcs ) :
-  index(index),
-  fcs(fcs) {}
-
-double FFCalculator::operator()()
-{
-  std::complex<double> J = 0;
-  auto& amp              = *fcs;
-  for ( auto& i : index_i ) {
-    for ( auto& j : index_j ) {
-      J += amp[i].coefficient * std::conj( amp[j].coefficient ) * fcs->norm( i, j );
-    }
-  }
-  double norm = 0;
-  if ( denom.size() != 0 ) {
-    std::complex<double> N = 0;
-    for ( auto& i : denom ) {
-      for ( auto& j : denom ) {
-        N += amp[i].coefficient * std::conj( amp[j].coefficient ) * fcs->norm( i, j );
-      }
-    }
-    norm = std::real( N );
-  } else
-    norm = fcs->norm();
-  return std::real( J ) / norm;
-}
-
-double IFFCalculator::operator()()
-{
-  fcs->transferParameters();
-  double J = std::norm( ( *fcs )[index].coefficient ) * std::real( fcs->norm( index ) );
-  return J / fcs->norm();
-}
-
 std::shared_ptr<Particle> FitFraction::particle() const { return std::make_shared<Particle>( m_name ); }
 
 FitFraction::FitFraction( const std::string& name, const double& frac, const double& err )
-    : m_name( name ), m_value( frac ), m_error( err )
+  : m_name( name ), m_value( frac ), m_error( err )
 {
 }
+void FitFraction::setFracErr(const double& f, const double& e)
+{
+  m_value = f;
+  m_error = e;
+}
+double FitFraction::val() const { return m_value; }
+double FitFraction::err() const { return m_error; }
+std::string FitFraction::name() const { return m_name; }
 
+bool AmpGen::operator  <(const FitFraction& lhs, const FitFraction& rhs){
+  return std::abs(lhs.val()) < std::abs(rhs.val());
+}
+bool AmpGen::operator  >(const FitFraction& lhs, const FitFraction& rhs){
+  return std::abs(lhs.val()) > std::abs(rhs.val());
+}
+bool AmpGen::operator ==(const FitFraction& lhs, const FitFraction& rhs){
+  return lhs.name() == rhs.name();
+}
+
+std::ostream& AmpGen::operator <<(std::ostream& os, const FitFraction& obj )
+{
+  return os << std::left  << std::setw(60) << obj.name()              << " = " 
+            << std::right << std::setw(8)  << round(obj.val()*100, 3) << " ± " 
+            << std::left  << std::setw(8)  << round(obj.err()*100, 3) << " %";
+}

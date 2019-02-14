@@ -75,13 +75,12 @@ void IncoherentSum::prepare()
 std::vector<FitFraction> IncoherentSum::fitFractions( const LinearErrorPropagator& linProp )
 {
   std::vector<FitFraction> outputFractions;
-  for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) {
-    IFFCalculator calc(i, this);
-    outputFractions.emplace_back( m_matrixElements[i].decayTree->uniqueString(), calc(), linProp.getError( calc ) );
-  }
-  for ( auto& p : outputFractions ) {
-    INFO( std::setw( 100 ) << p.name() << " " << std::setw( 7 ) << p.val() << " ± " << p.err() );
-  }
+  std::vector<size_t> normSet(m_matrixElements.size());
+  std::iota( std::begin(normSet), std::end(normSet), 0 );
+  FitFractionCalculator<IncoherentSum> calc(this, normSet ); 
+  for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) 
+    calc.emplace_back(m_matrixElements[i].decayDescriptor(), std::vector<size_t>({i}));
+  for ( auto& p : outputFractions ) INFO(p);
   return outputFractions;
 }
 double IncoherentSum::getVal( const Event& evt ) const

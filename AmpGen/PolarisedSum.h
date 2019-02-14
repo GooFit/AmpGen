@@ -50,6 +50,7 @@ namespace AmpGen
       size_t size() const ;  
 //      complex_t TE( const AmpGen::Event& event, const size_t& x, const size_t& y );
       real_t norm() const;
+      complex_t norm(const size_t& i, const size_t& j) const; 
       real_t prob_unnormalised( const AmpGen::Event& evt ) const;
       real_t prob(const AmpGen::Event& evt ) const ;
       real_t getValNoCache( const AmpGen::Event& evt ) ;
@@ -57,7 +58,8 @@ namespace AmpGen
       std::vector<TransitionMatrix<std::vector<complex_t>>> matrixElements() const;
       void transferParameters(); 
       Tensor transitionMatrix();
-    
+      TransitionMatrix<std::vector<complex_t>> operator[](const size_t& i) const { return m_matrixElements[i] ; } 
+
     private: 
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};
@@ -74,7 +76,7 @@ namespace AmpGen
       std::string                   m_prefix      = "";
       std::vector<TransitionMatrix<std::vector<complex_t>>>        m_matrixElements;  
       CompiledExpression<real_t, const real_t*, const complex_t*> m_probExpression; 
-     
+      AmplitudeRules                m_rules;  
       std::vector<std::vector<int>> polarisationOuterProduct( const std::vector<std::vector<int>>& A, const std::vector<int>& B ) const;
       std::vector<int> polarisations( const std::string& name ) const ;
   };

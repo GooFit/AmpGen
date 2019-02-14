@@ -5,6 +5,7 @@
 #include <TH2.h>
 #include <TTree.h>
 #include <TFile.h>
+#include <TROOT.h>
 
 #include <stddef.h>
 #include <complex>
@@ -26,7 +27,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Event.h"
 #include "AmpGen/Types.h"
-
+#include "AmpGen/ProfileClock.h"
 using namespace AmpGen;
 
 EventList::EventList( const EventType& type ) : m_eventType( type ) {} 
@@ -55,10 +56,13 @@ void EventList::loadFromFile( const std::string& fname, const ArgumentPack& args
 
 void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
 {
+  ProfileClock read_time; 
+  ROOT::EnableImplicitMT(1);
   auto pdfSize      = args.getArg<CacheSize>().val;
   auto filter       = args.getArg<Filter>().val;
   auto getGenPdf    = args.getArg<GetGenPdf>(true).val;
   auto weightBranch = args.getArg<WeightBranch>().val;
+  
   auto branches     = args.getArg<Branches>().val;
   auto applySym     = args.getArg<ApplySym>().val;
   auto entryList    = args.getArg<EntryList>().val; 
@@ -108,6 +112,10 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
     if( applySym ) symmetriser( temp );
     m_data.push_back( temp );
   }
+  read_time.stop();
+
+  INFO("Time to read tree = " << read_time << "[ms]; nEntries = " << size() );
+  //ROOT::DisableImplicitMT();
 }
 
 TTree* EventList::tree( const std::string& name, const std::vector<std::string>& extraBranches )

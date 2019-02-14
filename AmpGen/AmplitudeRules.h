@@ -12,6 +12,7 @@
 #include "AmpGen/Expression.h"
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/Event.h"
+#include "AmpGen/Particle.h"
 
 namespace AmpGen
 {
@@ -19,26 +20,25 @@ namespace AmpGen
   class MinuitParameter;
   class MinuitParameterSet;
   class CouplingConstant;
-  class Particle;
 
   class AmplitudeRule
   {
     public:
       AmplitudeRule( const std::string& reName, const std::map<std::string, MinuitParameter*>& mapping );
       std::string name() const { return m_name; }
+      std::string head() const { return m_particle.name(); }
       std::string prefix() const { return m_prefix; }
-      std::string head() const { return m_head; }
       EventType eventType() const;
       friend class CouplingConstant;
       friend class AmplitudeRules;
 
     private:
-      std::string m_prefix;
-      std::string m_name;
+      std::string      m_prefix;
+      std::string      m_name;
       MinuitParameter* m_re;
       MinuitParameter* m_im;
-      std::string m_head;
-      bool m_isGood;
+      bool             m_isGood;
+      Particle         m_particle;
   };
   
   class AmplitudeRules
@@ -46,12 +46,12 @@ namespace AmpGen
     public:
       AmplitudeRules() = default; 
       AmplitudeRules( const MinuitParameterSet& mps );
-      std::vector<AmplitudeRule> rulesForDecay( const std::string& head );
+      std::vector<AmplitudeRule> rulesForDecay(const std::string& head, const std::string& prefix="");
       bool hasDecay( const std::string& head );
       std::map<std::string, std::vector<AmplitudeRule>> rules();
-      std::vector< std::pair< Particle, CouplingConstant > > getMatchingRules( 
+      std::vector<std::pair<Particle, CouplingConstant>> getMatchingRules( 
           const EventType& type, const std::string& prefix );
-
+      std::vector<AmplitudeRule> processesThatProduce(const Particle& particle) const; 
     private:
       std::map<std::string, std::vector<AmplitudeRule>> m_rules;
   };
@@ -79,20 +79,66 @@ namespace AmpGen
   template <class RT> struct TransitionMatrix 
   {
     TransitionMatrix() = default;
-    TransitionMatrix( const std::shared_ptr<Particle>& dt, 
-                      const CouplingConstant& coup, 
-                      const CompiledExpression<RT, const real_t*, const real_t*> & _pdf ) : 
-          decayTree( dt ), 
-          coupling( coup ), 
-          pdf( _pdf ) {}
-    const RT operator()( const Event& event ) const { return pdf(event.address() ); }
-    
-    std::shared_ptr<Particle>                           decayTree;
+    TransitionMatrix(const Particle& dt, 
+                     const CouplingConstant& coupling, 
+                     const CompiledExpression<RT, const real_t*, const real_t*> & pdf) : 
+          decayTree(dt), 
+          coupling(coupling), 
+          pdf(pdf) {}
+
+    TransitionMatrix(Particle& dt, 
+                     const CouplingConstant& coupling, 
+                     const MinuitParameterSet& mps,
+                     const std::map<std::string,size_t>& evtFormat, 
+                     const bool& debugThis=false) :
+      decayTree(dt),
+      coupling(coupling)
+    {
+      DebugSymbols db; 
+      auto expression = dt.getExpression(debugThis ? &db : nullptr);
+      pdf = CompiledExpression<RT,const real_t*, const real_t*>
+        (expression, dt.decayDescriptor(), evtFormat, debugThis ? db : DebugSymbols(), &mps );
+    }
+
+    const RT operator()(const Event& event) const { return pdf(event.address() ); }
+    const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
+
+    Particle                                            decayTree;
     CouplingConstant                                    coupling;
     complex_t                                           coefficient;
     CompiledExpression<RT,const real_t*,const real_t*>  pdf; 
     size_t                                              addressData = {999};
   };
+ 
+  template <class RT>  
+  std::vector<size_t> processIndex(const std::vector<TransitionMatrix<RT>>& tm, const std::string& label)
+  {
+    std::vector<size_t> indices;
+    for ( size_t i = 0; i < tm.size(); ++i ) {
+      if ( tm[i].coupling.contains(label) ) indices.push_back(i);
+    }
+    return indices;
+  }
+   
+  template <class RT>
+  size_t findIndex(const std::vector<TransitionMatrix<RT>>& tm, const std::string& decayDescriptor)
+  {
+    for ( size_t i = 0; i < tm.size(); ++i ) {
+      if ( tm[i].decayDescriptor() == decayDescriptor ) return i;
+    }
+    ERROR( "Component " << decayDescriptor << " not found" );
+    return 999;
+  }
+
+  template <class RT>   
+  std::vector<size_t> findIndices(const std::vector<TransitionMatrix<RT>>& tm, const std::string& decayDescriptor)
+  {
+    std::vector<size_t> rt; 
+    for ( size_t i = 0; i < tm.size(); ++i ) {
+      if ( tm[i].decayDescriptor().find(decayDescriptor) != std::string::npos ) rt.push_back(i);
+    }
+    return rt;
+  }
 
 } // namespace AmpGen
 

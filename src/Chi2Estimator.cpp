@@ -64,7 +64,7 @@ void   Chi2Estimator::doChi2( const EventList& dataEvents, const EventList& mcEv
   double total_data_weight = 0;
   double total_int_weight  = 0;
   for ( auto& d : dataEvents ) {
-    if ( j % 100000 == 0 ) INFO( "Binned " << j << " events" );
+    if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " data events" );
     double w = d.weight();
     data[m_binning.getBinNumber( d )].add( d.weight() );
     total_data_weight += w;
@@ -72,7 +72,7 @@ void   Chi2Estimator::doChi2( const EventList& dataEvents, const EventList& mcEv
   }
   j = 0;
   for ( auto& evt : mcEvents ) {
-    if ( j % 100000 == 0 ) INFO( "Binned " << j << " events" );
+    if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " sim. events" );
     double w = fcn( evt ) * evt.weight() / evt.genPdf();
     mc[m_binning.getBinNumber( evt )].add( w );
     total_int_weight += w;

@@ -47,12 +47,9 @@ void PartialWidthConstraint::configure( const std::string& configString,
   m_ratio                              = stod( tokens[3] );
   std::vector<std::string> denChannels = NamedParameter<std::string>( name + "_denChannels" ).getVector();
   std::vector<std::string> numChannels = NamedParameter<std::string>( name + "_numChannels" ).getVector();
-  for ( auto& p : denChannels ) {
-    m_denComponents.push_back( pdf.getPdfIndex( p ) );
-  }
-  for ( auto& p : numChannels ) {
-    m_numComponents.push_back( pdf.getPdfIndex( p ) );
-  }
+  for ( auto& p : denChannels ) m_denComponents.push_back( findIndex(pdf.matrixElements(), p ) );
+  for ( auto& p : numChannels ) m_numComponents.push_back( findIndex(pdf.matrixElements(), p ) );
+  
   INFO( "Constraining ratio of " );
   for ( unsigned int i = 0; i < m_denComponents.size(); ++i )
     INFO( denChannels[i] << " index = " << m_denComponents[i] );

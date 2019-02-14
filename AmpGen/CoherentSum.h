@@ -33,13 +33,11 @@ namespace AmpGen
     virtual ~CoherentSum() = default; 
 
     AmplitudeRules protoAmplitudes() { return m_protoAmplitudes; }
-    std::string getParentProcess( const std::string& label ) const;
     std::string prefix() const { return m_prefix; }
     
-    TransitionMatrix<complex_t> operator[]( const unsigned int& index ) { return m_matrixElements[index]; }
-    const TransitionMatrix<complex_t> operator[]( const unsigned int& index ) const { return m_matrixElements[index]; }
-    unsigned int size() const { return m_matrixElements.size(); }
-    unsigned int getPdfIndex( const std::string& name ) const;
+    TransitionMatrix<complex_t> operator[]( const size_t& index ) { return m_matrixElements[index]; }
+    const TransitionMatrix<complex_t> operator[]( const size_t& index ) const { return m_matrixElements[index]; }
+    size_t size() const { return m_matrixElements.size(); }
     
     real_t getWeight() const { return m_weight; }
     real_t operator()( const Event& evt ) const { return prob( evt ); }
@@ -54,7 +52,6 @@ namespace AmpGen
     complex_t getVal( const Event& evt ) const;
     complex_t getVal( const Event& evt, const std::vector<unsigned int>& cacheAddresses ) const;
     complex_t getValNoCache( const Event& evt ) const;
-    bool isStateGood() const { return m_stateIsGood; }
     
     void transferParameters();
     void prepare();
@@ -73,8 +70,7 @@ namespace AmpGen
 
     std::vector<unsigned int> cacheAddresses( const EventList& evts ) const; 
     std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
-    std::vector<TransitionMatrix<complex_t>> matrixElements() { return m_matrixElements; }
-    std::vector<size_t> processIndex( const std::string& label ) const;
+    std::vector<TransitionMatrix<complex_t>> matrixElements() const { return m_matrixElements; }
 
     std::map<std::string, std::vector<unsigned int>> getGroupedAmplitudes();
     Bilinears norms() const { return m_normalisations ; }
@@ -94,7 +90,6 @@ namespace AmpGen
     double m_weight                = {1};        ///< Weight number (i.e. the normalised yield)
     double m_norm                  = {0};        ///< Normalisation integral
     std::string m_prefix           = {""};       ///< Prefix for matrix elements
-    bool m_stateIsGood             = {true};     ///< Flag for the state being good
     bool m_isConstant              = {false};    ///< Flag for a constant PDF
     bool m_dbThis                  = {false};    ///< Flag to generate amplitude level debugging
     bool m_verbosity               = {false};    ///< Flag for verbose printing

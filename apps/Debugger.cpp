@@ -77,7 +77,7 @@ int invert_parameter( AmpGen::MinuitParameter* param, MinuitParameterSet& mps )
 template <class MatrixElements> void print( const Event& event, const MatrixElements& matrixElements, bool verbose )
 {
   for ( auto& mE : matrixElements ) {
-    INFO( mE.decayTree->uniqueString() << " " << mE.coupling() );
+    INFO( mE.decayDescriptor() << " " << mE.coupling() );
     auto terms = mE.coupling.couplings;
     if ( verbose ) {
       for ( auto& term : terms ) {

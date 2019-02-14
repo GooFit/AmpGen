@@ -97,7 +97,7 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
       m_isStateGood &= used;
     }
     if ( !isStateGood() ) {
-      WARNING( "Amplitude " << decayString << " does not match requested event type " << finalStateString );
+      DEBUG( "Amplitude " << decayString << " does not match requested event type " << finalStateString );
     }
   }
   m_uniqueString = makeUniqueString();

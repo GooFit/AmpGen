@@ -145,25 +145,23 @@ Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(
     const std::vector<TransitionMatrix<complex_t>>& elements, DebugSymbols* msym )
 {
   std::vector<Tensor> currents;
-
   for ( auto& element : elements ) {
-    auto perm = element.decayTree->identicalDaughterOrderings();
+    Particle particle(element.decayDescriptor(), type.finalStates() ); 
+    auto perm = particle.identicalDaughterOrderings();
     for ( auto& p : perm ) {
-      element.decayTree->setOrdering( p );
-      std::string current_lineshape = element.decayTree->lineshape();
-      element.decayTree->setLineshape( "FormFactor" );
-      Expression prop = make_cse( element.coupling.to_expression() ) * make_cse( element.decayTree->propagator( msym ) );
-      if ( msym != nullptr ) msym->emplace_back( element.decayTree->name() + "_g", element.coupling.to_expression() );
-      if ( msym != nullptr ) msym->emplace_back( element.decayTree->name() + "_p", element.decayTree->propagator() );
-      Tensor zt = element.decayTree->spinTensor( msym );
+      particle.setOrdering(p);
+      particle.setLineshape( "FormFactor" );
+      Expression prop = make_cse( element.coupling.to_expression() ) * make_cse( particle.propagator( msym ) );
+      if ( msym != nullptr ) msym->emplace_back( element.decayTree.name() + "_g", element.coupling.to_expression() );
+      if ( msym != nullptr ) msym->emplace_back( element.decayTree.name() + "_p", particle.propagator() );
+      Tensor zt = particle.spinTensor(msym);
       zt.st() ;
       currents.push_back( zt * prop );
-      element.decayTree->setLineshape( current_lineshape );
     }
   }
   Expression total;
   for ( auto& j_a : currents ) {
-    for ( auto& j_b : currents ) total     = total + dot( j_a, j_b.conjugate() );
+    for ( auto& j_b : currents ) total = total + dot( j_a, j_b.conjugate() );
   }
   ADD_DEBUG( total, msym );
   return pow(-1, ParticlePropertiesList::get(type.mother())->twoSpin() /2. ) * total;
@@ -239,16 +237,16 @@ TGraph* ThreeBodyCalculator::widthGraph( const double& mNorm )
 
 ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitParameterSet& mps ) :
     fcs( evt, mps, "" )
-    , integrator( 1, evt.mass( 0 ) * evt.mass(0) , evt.mass( 1 ) * evt.mass(1) , evt.mass( 2 ) * evt.mass(2) )
-    , type( evt )
+    , integrator(1, evt.mass(0)*evt.mass(0), evt.mass(1)*evt.mass(1) , evt.mass(2)*evt.mass(2) )
+    , type(evt)
 {
   DebugSymbols msym;
   Expression matrixElementTotal = spinAverageMatrixElement( fcs.matrixElements(), &msym );
   std::string name              = "";
   auto evtFormat = evt.getEventFormat();
   for ( auto& p : fcs.matrixElements() ) {
-    name += p.decayTree->uniqueString();
-    partialWidths.emplace_back( spinAverageMatrixElement( {p}, &msym ), p.decayTree->uniqueString(), evtFormat, DebugSymbols(), &mps );
+    name += p.decayDescriptor();
+    partialWidths.emplace_back( spinAverageMatrixElement( {p}, &msym ), p.decayDescriptor(), evtFormat, DebugSymbols(), &mps );
   }
   totalWidth = CompiledExpression< std::complex<real_t>, const real_t*, const real_t* > ( matrixElementTotal, "width", evtFormat, {} , &mps );
   CompilerWrapper(true).compile( totalWidth, "");

@@ -107,12 +107,12 @@ int main( int argc, char** argv )
   else if ( gen_type == "PolarisedSum" ){
     PolarisedSum sig( eventType, MPS );
     //PhaseSpace phsp(eventType,&rand);
-    RecursivePhaseSpace phsp( sig.matrixElements()[0].decayTree->quasiStableTree() , eventType, &rand );
+    RecursivePhaseSpace phsp( sig.matrixElements()[0].decayTree.quasiStableTree() , eventType, &rand );
     GenerateEvents( accepted, sig, phsp, nEvents, blockSize, &rand );
   }
   else if ( gen_type == "RGenerator" ) {
     CoherentSum sig( eventType, MPS, "" );
-    Generator<RecursivePhaseSpace> signalGenerator( sig[0].decayTree->quasiStableTree(), eventType );
+    Generator<RecursivePhaseSpace> signalGenerator( sig[0].decayTree.quasiStableTree(), eventType );
     signalGenerator.setRandom( &rand );
     signalGenerator.fillEventList( sig, accepted, nEvents );
   }

@@ -26,7 +26,7 @@
 #include "AmpGen/ProfileClock.h"
 
 #ifdef __USE_OPENMP__
-  #include <omp.h>
+#include <omp.h>
 #endif
 
 using namespace AmpGen;
@@ -34,7 +34,7 @@ using namespace AmpGen;
 CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
   : m_protoAmplitudes( mps )
   , m_evtType( type )
-  , m_prefix( prefix )
+    , m_prefix( prefix )
 {
   bool autoCompile     = NamedParameter<bool>(  "CoherentSum::AutoCompile"   , true ); 
   m_dbThis             = NamedParameter<bool>(  "CoherentSum::Debug"         , false );
@@ -56,22 +56,14 @@ void CoherentSum::addMatrixElement( std::pair<Particle, CouplingConstant>& parti
 {
   auto& protoParticle = particleWithCouplingConstant.first;
   auto& coupling      = particleWithCouplingConstant.second;
-  if ( !protoParticle.isStateGood() ) {
-    ERROR( "Decay tree not configured correctly for " << protoParticle.uniqueString() );
-    m_stateIsGood = false;
-    return;
-  }
+  if ( !protoParticle.isStateGood() ) return;
   const std::string name = protoParticle.uniqueString();
   DebugSymbols dbExpressions;
   INFO( name ); 
   for ( auto& mE : m_matrixElements ) {
-    if ( name == mE.decayTree->uniqueString() ) return;
+    if ( name == mE.decayTree.uniqueString() ) return;
   }
-  const Expression expression = protoParticle.getExpression( m_dbThis ? &dbExpressions : nullptr );
-  m_matrixElements.emplace_back(
-    std::make_shared<Particle>( protoParticle ), coupling,
-    CompiledExpression<complex_t, const real_t*, const real_t*>(
-      expression, name, m_evtType.getEventFormat(), m_dbThis ? dbExpressions : DebugSymbols() , &mps ) );
+  m_matrixElements.emplace_back(protoParticle, coupling, mps, m_evtType.getEventFormat(), m_dbThis);
 }
 
 void CoherentSum::prepare()
@@ -79,7 +71,7 @@ void CoherentSum::prepare()
   if ( m_weightParam != nullptr ) m_weight = m_weightParam->mean();
   if ( m_isConstant && m_prepareCalls != 0 ) return;
   transferParameters(); 
-  
+
   std::vector<unsigned int> changedPdfIndices;
   ProfileClock clockEval; 
   bool printed    = false;
@@ -90,7 +82,8 @@ void CoherentSum::prepare()
     if ( m_prepareCalls != 0 && !pdf.hasExternalsChanged() ) continue;
     ProfileClock clockThisElement;
     if ( m_events != nullptr ) {
-      if ( m_matrixElements[i].addressData == 999 ) m_matrixElements[i].addressData = m_events->registerExpression( pdf );
+      if ( m_matrixElements[i].addressData == 999 ) 
+        m_matrixElements[i].addressData = m_events->registerExpression( pdf );
       m_events->updateCache( pdf, m_matrixElements[i].addressData );
     } 
     else if ( i == 0 && m_verbosity ) WARNING( "No data events specified for " << this );
@@ -106,7 +99,7 @@ void CoherentSum::prepare()
   ProfileClock clockIntegral;
   if ( m_integrator.isReady())  updateNorms( changedPdfIndices );
   else if ( m_verbosity ) WARNING( "No simulated sample specified for " << this );
-  
+
   m_norm = norm();
   if ( m_verbosity && printed ) {
     clockIntegral.stop();
@@ -140,10 +133,10 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
     for ( auto& pdf : m_matrixElements ) {
       auto A = pdf(evt);
       auto gTimesA = pdf.coupling() * A; 
-      INFO( std::setw(70) << pdf.decayTree->uniqueString() << " A = [ " 
-                          << std::real(A)       << " " << std::imag(A) << " ] g × A = [ "
-                          << std::real(gTimesA) << " " << std::imag(gTimesA) << " ]" );
-                          //evt.getCache(  pdf.addressData ) );
+      INFO( std::setw(70) << pdf.decayTree.uniqueString() << " A = [ " 
+          << std::real(A)       << " " << std::imag(A) << " ] g × A = [ "
+          << std::real(gTimesA) << " " << std::imag(gTimesA) << " ]" );
+      //evt.getCache(  pdf.addressData ) );
       if( m_dbThis ) pdf.pdf.debug( evt );
     }
   else
@@ -153,115 +146,39 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
   INFO( "Pdf = " << prob_unnormalised( evt ) );
 }
 
-std::map<std::string, std::vector<unsigned int>> CoherentSum::getGroupedAmplitudes()
+std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& linProp)
 {
-  auto rules = m_protoAmplitudes.rulesForDecay( m_evtType.mother() );
-  std::map<std::string, std::vector<unsigned int>> ruleMapping;
-  for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) {
-    std::string parentProcessName = split( m_matrixElements[i].coupling[0].first->name(), '_' )[0];
-    ruleMapping[parentProcessName].push_back( i );
-  }
-  return ruleMapping;
-}
-
-std::vector<FitFraction> CoherentSum::fitFractions( const LinearErrorPropagator& linProp )
-{
-  struct processCalculator {
-    std::vector<FFCalculator> calculators;
-    std::vector<FitFraction> fractions;
-    FitFraction sumV;
-    std::string name;
-    double sum()
-    {
-      return std::accumulate( calculators.begin(), calculators.end(), 0., []( double a, auto& b ) { return a + b(); } );
-    }
-
-    size_t size() const { return calculators.size() + 1; }
-  };
-
+  bool recomputeIntegrals    = NamedParameter<bool>("RecomputeIntegrals", false );
   std::vector<FitFraction> outputFractions;
-  std::vector<processCalculator> AllCalculators( m_protoAmplitudes.rules().size() );
 
-  size_t counter = 0;
-  size_t pos     = 0;
-  for ( auto& processes : m_protoAmplitudes.rules() ) {
-    auto& pCalc = AllCalculators[counter++];
-    pCalc.name  = processes.first;
-    for ( auto& process : processes.second ) {
-      INFO( pCalc.name << " " << process.name() );
-      if ( process.head() == m_evtType.mother() && process.prefix() != m_prefix ) continue;
-      std::string parentProcessName = getParentProcess( process.name() );
-      if ( parentProcessName == "" ) continue;
-      std::string pName, ppName;
-      auto pIndex      = processIndex( process.name() );
-      auto parentIndex = processIndex( parentProcessName );
-      pCalc.calculators.emplace_back( process.name(), this, pIndex, parentIndex );
+  for(auto& rule : m_protoAmplitudes.rules()) 
+  {
+    FitFractionCalculator<CoherentSum> pCalc(this, findIndices(m_matrixElements, rule.first), recomputeIntegrals);
+    for(auto& process : rule.second) 
+    {
+      if(process.head() == m_evtType.mother() && process.prefix() != m_prefix) continue;
+      auto numeratorIndices   = processIndex(m_matrixElements,process.name());
+      if(numeratorIndices.size() == 0 || numeratorIndices == pCalc.normSet ) continue; 
+      pCalc.emplace_back(process.name(), numeratorIndices);
     }
-    pos += pCalc.size();
+    if( pCalc.calculators.size() == 0 ) continue;  
+    auto fractions = pCalc(rule.first, linProp);
+    for( auto& f : fractions ) outputFractions.emplace_back(f);
   }
-  for ( auto& calculator : AllCalculators ) {
-    INFO( calculator.name << ": " );
-    for ( auto& x : calculator.calculators ) {
-      INFO( x.name );
+  auto ffForHead = m_protoAmplitudes.rulesForDecay(m_evtType.mother(), m_prefix);
+  FitFractionCalculator<CoherentSum> iCalc(this, findIndices(m_matrixElements, m_evtType.mother()), recomputeIntegrals);
+  for ( size_t i = 0; i < ffForHead.size(); ++i ) 
+  {
+    for ( size_t j = i + 1; j < ffForHead.size(); ++j ) 
+    {
+      iCalc.emplace_back(ffForHead[i].name() + "x" + ffForHead[j].name(), 
+            processIndex(m_matrixElements, ffForHead[i].name()), 
+            processIndex(m_matrixElements, ffForHead[j].name()) );
     }
   }
-
-  bool hardcore     = NamedParameter<bool>( "Hardcore", false );
-  bool interference = NamedParameter<bool>( "Interference", false );
-  auto FitFractions = [this, &AllCalculators, &hardcore]() {
-    if ( hardcore ) this->prepare();
-    else this->transferParameters();
-    std::vector<double> rv;
-    for ( auto& pCalc : AllCalculators ) {
-      for ( auto& calc : pCalc.calculators ) rv.push_back( calc() );
-      rv.push_back( pCalc.sum() );
-    }
-    return rv;
-  };
-
-  auto values = FitFractions();
-  auto errors = linProp.getVectorError( FitFractions, values.size() );
-  counter     = 0;
-  for ( auto& pCalc : AllCalculators ) {
-    for ( auto& calc : pCalc.calculators ) {
-      pCalc.fractions.emplace_back( calc.name, values[counter], errors[counter] );
-      counter++;
-    }
-    std::sort( pCalc.fractions.begin(), pCalc.fractions.end(),
-        []( const FitFraction& f1, const FitFraction& f2 ) { return fabs( f1.val() ) > fabs( f2.val() ); } );
-    for ( auto& f : pCalc.fractions ) outputFractions.push_back( f );
-    pCalc.sumV = FitFraction( "Sum_" + pCalc.name, values[counter], errors[counter] );
-    outputFractions.push_back( pCalc.sumV );
-    counter++;
-  }
-  INFO( "Calculating interference fractions" );
-  if ( hardcore && interference ) {
-    std::vector<FitFraction> interferenceFractions;
-    auto ffForHead = m_protoAmplitudes.rulesForDecay( m_evtType.mother() );
-
-    for ( unsigned int i = 0; i < ffForHead.size(); ++i ) {
-      auto process_i = ffForHead[i];
-      if ( process_i.prefix() != m_prefix ) continue;
-      for ( unsigned int j = i + 1; j < ffForHead.size(); ++j ) {
-        auto process_j = ffForHead[j];
-        if ( process_j.prefix() != m_prefix ) continue;
-        std::string parent_process_name = getParentProcess( process_i.name() );
-        FFCalculator iCalc( process_i.name() + "x" + process_j.name(), this, processIndex( process_i.name() ),
-            processIndex( process_j.name() ), processIndex( parent_process_name ) );
-        interferenceFractions.emplace_back( iCalc.name, iCalc(), linProp.getError( [this, &iCalc]() {
-              this->prepare();
-              return iCalc();
-              } ) );
-      }
-    }
-    std::sort( interferenceFractions.begin(), interferenceFractions.end(),
-        []( const FitFraction& f1, const FitFraction& f2 ) { return fabs( f1.val() ) > fabs( f2.val() ); } );
-    for ( auto& f : interferenceFractions ) outputFractions.push_back( f );
-  }
-  for ( auto& p : outputFractions ) {
-    INFO( std::setw( 100 ) << p.name() << " " << std::setw( 5 ) << round( p.val() * 100, 3 ) << " ± "
-        << round( p.err() * 100, 3 ) << " %" );
-  }
+  std::vector<FitFraction> interferenceFractions = iCalc(m_evtType.mother()+"_interference",linProp);
+  for(auto& f : interferenceFractions) outputFractions.push_back(f); 
+  for(auto& p : outputFractions) INFO(p);
   return outputFractions;
 }
 
@@ -288,7 +205,7 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
   for( unsigned int i = 0 ; i < size(); ++i ){
     auto& p = m_matrixElements[i];
     Expression this_amplitude = p.coupling() * Function( programatic_name( p.pdf.name() ) + "_wParams", {event} ); 
-    amplitude = amplitude + ( p.decayTree->finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
+    amplitude = amplitude + ( p.decayTree.finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
   }
   if( !enableCuda ){
     stream << CompiledExpression< std::complex<double>, const double*, int>( amplitude  , "AMP" ) << std::endl; 
@@ -297,7 +214,7 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
   if( includePythonBindings ){
     stream << CompiledExpression< unsigned int >( m_matrixElements.size(), "matrix_elements_n" ) << std::endl;
     stream << CompiledExpression< double >      ( normalisation, "normalization") << std::endl;
-    
+
     stream << "extern \"C\" const char* matrix_elements(int n) {\n";
     for ( size_t i = 0; i < m_matrixElements.size(); i++ ) {
       stream << "  if(n ==" << i << ") return \"" << m_matrixElements.at(i).pdf.progName() << "\" ;\n";
@@ -319,7 +236,7 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
     for ( unsigned int i = 0; i < size(); ++i ) {
       stream << "    ";
       auto& p    = m_matrixElements[i];
-      int parity = p.decayTree->finalStateParity();
+      int parity = p.decayTree.finalStateParity();
       if ( parity == -1 ) stream << "double(parity) * ";
       stream << "std::complex<double>(amps[" << i * 2 << "],amps[" << i * 2 + 1 << "]) * ";
       stream << programatic_name( p.pdf.name() )<< "_wParams( E )";
@@ -334,9 +251,9 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
     stream << "    size_t start = batch_size*i;\n";
     stream << "    size_t len = i+1!=n ? batch_size : size-start;\n";
     stream << "    threads.emplace_back(FCN_all, out+start"
-           << ", events+start*" 
-           << ( *this->m_events )[0].size() 
-           << ", len, parity, amps);\n";
+      << ", events+start*" 
+      << ( *this->m_events )[0].size() 
+      << ", len, parity, amps);\n";
     stream << "  }\n";
     stream << "  for(auto &thread : threads)\n";
     stream << "    thread.join();\n";
@@ -345,7 +262,7 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
     stream << "extern \"C\" double coefficients( int n, int which, int parity){\n";
     for ( size_t i = 0; i < size(); i++ ) {
       auto& p    = m_matrixElements[i];
-      int parity = p.decayTree->finalStateParity();
+      int parity = p.decayTree.finalStateParity();
       stream << "  if(n == " << i << ") return ";
       if ( parity == -1 ) stream << "double(parity) * ";
       stream << "(which==0 ? " << p.coupling().real() << " : " << p.coupling().imag() << ");\n";
@@ -354,37 +271,6 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
   }
   INFO("Generating source-code for PDF: " << fname << " include MT symbols? " << add_mt << " normalisation = " << normalisation );
   stream.close();
-}
-
-std::vector<size_t> CoherentSum::processIndex( const std::string& label ) const
-{
-  std::vector<size_t> indices;
-  for ( size_t i = 0; i < m_matrixElements.size(); ++i ) {
-    if ( m_matrixElements[i].coupling.contains(label) ) indices.push_back( i );
-  }
-  return indices;
-}
-
-std::string CoherentSum::getParentProcess( const std::string& label ) const
-{
-  auto pI = processIndex( label );
-  if ( pI.size() == 0 ) return "";
-  auto coupling = m_matrixElements[pI[0]].coupling.couplings;
-  for ( size_t i = 0; i < coupling.size(); ++i ) {
-    if ( coupling[i].first->name().find( label ) != std::string::npos ) {
-      return i == 0 ? m_evtType.mother() : coupling[i - 1].first->name();
-    }
-  }
-  return "";
-}
-
-unsigned int CoherentSum::getPdfIndex( const std::string& name ) const
-{
-  for ( unsigned int i = 0; i < size(); ++i ) {
-    if ( m_matrixElements[i].decayTree->uniqueString() == name ) return i;
-  }
-  ERROR( "Component " << name << " not found" );
-  return 999;
 }
 
 bool CoherentSum::isFixedPDF(const MinuitParameterSet& mps) const
@@ -398,16 +284,16 @@ bool CoherentSum::isFixedPDF(const MinuitParameterSet& mps) const
 void CoherentSum::PConjugate()
 {
   for ( auto& matrixElement : m_matrixElements ) {
-    if ( matrixElement.decayTree->finalStateParity() == -1 ) matrixElement.coupling.changeSign();
+    if ( matrixElement.decayTree.finalStateParity() == -1 ) matrixElement.coupling.changeSign();
   }
 }
 
 complex_t CoherentSum::getValNoCache( const Event& evt ) const
 {
   return std::accumulate( m_matrixElements.begin(), 
-                          m_matrixElements.end(), 
-                          complex_t(0,0), 
-                          [&evt]( auto& a, auto& b ){ return a + b.coefficient * b(evt);} );
+      m_matrixElements.end(), 
+      complex_t(0,0), 
+      [&evt]( auto& a, auto& b ){ return a + b.coefficient * b(evt);} );
 }
 
 void CoherentSum::reset( bool resetEvents )
@@ -434,26 +320,26 @@ void CoherentSum::setMC( EventList& sim )
 
 real_t CoherentSum::norm() const
 {
-  return norm( m_normalisations );
+  return norm(m_normalisations);
 }
 
-real_t CoherentSum::norm( const Bilinears& norms ) const
+real_t CoherentSum::norm(const Bilinears& norms) const
 {
-  complex_t acc( 0, 0 );
+  complex_t acc(0, 0);
   for ( size_t i = 0; i < size(); ++i ) {
     for ( size_t j = 0; j < size(); ++j ) {
-      auto val = norms.get( i, j ) 
-               * m_matrixElements[i].coefficient 
-               * std::conj( m_matrixElements[j].coefficient );
+      auto val = norms.get(i, j) 
+        * m_matrixElements[i].coefficient 
+        * std::conj(m_matrixElements[j].coefficient);
       acc += val;
     }
   }
   return acc.real();
 }
 
-complex_t CoherentSum::norm( const unsigned int& x, const unsigned int& y ) const
+complex_t CoherentSum::norm(const unsigned int& x, const unsigned int& y) const
 {
-  return m_normalisations.get( x, y );
+  return m_normalisations.get(x, y);
 }
 
 void CoherentSum::transferParameters()
@@ -461,11 +347,11 @@ void CoherentSum::transferParameters()
   for ( auto& mE : m_matrixElements ) mE.coefficient = mE.coupling();
 }
 
-void CoherentSum::printVal( const Event& evt )
+void CoherentSum::printVal(const Event& evt)
 {
   for ( auto& mE : m_matrixElements ) {
     unsigned int address = mE.addressData;
-    std::cout << mE.decayTree->uniqueString() << " = " << mE.coefficient << " x " << evt.getCache( address )
+    std::cout << mE.decayTree.decayDescriptor() << " = " << mE.coefficient << " x " << evt.getCache( address )
       << " address = " << address << " " << mE( evt ) << std::endl;
     if( mE.coupling.couplings.size() != 1 ){
       std::cout << "CouplingConstants: " << std::endl;
