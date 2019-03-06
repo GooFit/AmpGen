@@ -26,10 +26,8 @@ namespace AmpGen {
       void set( const real_t* evt );
       void set( const size_t& i, const real_t& p ) ;
       void swap( const unsigned int& i , const unsigned int& j );
-      void invertParity( const size_t& nParticles=0); 
-
       void setCache(const complex_t& value, const size_t& pos) ;
-      template < size_t N > void setCache( const std::array<complex_t,N>& value, const size_t& pos )
+      template <size_t N> void setCache( const std::array<complex_t,N>& value, const size_t& pos )
       {
         std::memmove( m_cache.data() + pos, value.data(), sizeof(std::array<complex_t,N>) );
       }

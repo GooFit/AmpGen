@@ -1,4 +1,5 @@
 #include <string>
+#include <complex>
 
 #include "AmpGen/Expression.h"
 #include "AmpGen/Factory.h"
@@ -8,6 +9,8 @@
 
 using namespace AmpGen;
 using namespace AmpGen::fcn; 
+using namespace std::complex_literals;
+
 
 DEFINE_LINESHAPE( FormFactor )
 {
@@ -55,19 +58,17 @@ DEFINE_LINESHAPE( BW )
 {
   auto s_cse = make_cse(s);
   auto props = ParticlePropertiesList::get( particleName );
-
   const Expression& mass     = Parameter( particleName + "_mass", props->mass() );
   const Expression& width0   = Parameter( particleName + "_width", props->width() );
   const Expression& radius   = Parameter( particleName + "_radius", props->radius() );
   const Expression q2_sgned  = make_cse( Abs(Q2( s_cse, s1, s2 ) ) ) ;
   const Expression q20_sgned = make_cse( Abs(Q2( mass * mass, s1, s2 )) );
-  const Expression i = Constant(0,1);
   const Expression q2  = make_cse( q2_sgned); // Ternary( q2_sgned > 0, q2_sgned, 0 );
   const Expression q20 = q20_sgned;
   Expression FormFactor                       = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
   if ( lineshapeModifier == "BL" ) FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
   Expression runningWidth                     = width( s_cse, s1, s2, mass, width0, radius, L, dbexpressions );
-  const Expression BW = FormFactor / ( mass * mass - s_cse  -i*mass * runningWidth );
+  const Expression BW = FormFactor / ( mass * mass - s_cse  -1i * mass * runningWidth );
   const Expression kf = kFactor( mass, width0, dbexpressions );
   ADD_DEBUG( FormFactor, dbexpressions );
   ADD_DEBUG( runningWidth, dbexpressions );
@@ -110,7 +111,7 @@ DEFINE_LINESHAPE( Flatte )
   Expression FlatteWidth = gPi * ( Gpipi + gK_by_gPi * GKK );
   const Expression q2    = abs( Q2( s, s1, s2 ) );
   const Expression q20   = abs( Q2( mass * mass, s1, s2 ) );
-  auto D = mass*mass - Constant(0,1)*mass*FlatteWidth; 
+  auto D = mass*mass - 1i*mass*FlatteWidth; 
   const Expression BW    = 1. / ( D - s ); 
   ADD_DEBUG( gPi, dbexpressions );
   ADD_DEBUG( mass, dbexpressions );
@@ -132,7 +133,7 @@ DEFINE_LINESHAPE( SBW )
   Expression mass   = Parameter( particleName + "_mass", props->mass() );
   Expression width0 = Parameter( particleName + "_width", props->width() );
   const Expression kF = kFactor( mass, width0 ) ;
-  const Expression BW = 1 / ( mass * mass - s - Constant(0,1) *mass * width0 );
+  const Expression BW = 1 / ( mass * mass - s - 1i*mass * width0 );
   ADD_DEBUG( kF, dbexpressions );
   ADD_DEBUG( BW, dbexpressions );
   return kF * BW;

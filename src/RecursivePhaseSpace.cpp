@@ -8,25 +8,21 @@
 
 using namespace AmpGen;
 
-RecursivePhaseSpace::RecursivePhaseSpace( const EventType& type ) : m_eventType( type )
-{
-}
+RecursivePhaseSpace::RecursivePhaseSpace(const EventType& type) : m_eventType(type){}
 
-RecursivePhaseSpace::RecursivePhaseSpace( const Particle& decayChain, const EventType& type, TRandom*  rndm )
+RecursivePhaseSpace::RecursivePhaseSpace(const Particle& decayChain, const EventType& type, TRandom* rndm)
   : m_name( decayChain.name() ), m_eventType( type )
 {
   std::vector<double> masses;
   m_totalSize = decayChain.getFinalStateParticles().size();
-  DEBUG( "Decaying particle: " << decayChain.name() << " to " << decayChain.daughters().size()
-      << " decay products" );
-  DEBUG( "qsTree = " << decayChain.uniqueString() );
   for ( auto& d : decayChain.daughters() ) {
     masses.push_back( d->mass() );
     m_nodes.emplace_back( d->name() );
     auto decayForThisStep = std::make_shared<RecursivePhaseSpace>( *d, type );
-
     if ( decayForThisStep->size() != 0 ) {
       m_nodes.rbegin()->decayProds = decayForThisStep;
+      INFO( "Decaying particle: " << decayChain.name() << " to " << decayChain.daughters().size() << " decay products" );
+      INFO( "qsTree = " << decayChain.uniqueString() );
     }
   }
   auto fs = getFinalStates();
@@ -46,33 +42,31 @@ RecursivePhaseSpace::RecursivePhaseSpace( const Particle& decayChain, const Even
 
 AmpGen::Event RecursivePhaseSpace::makeEvent( const size_t& cacheSize )
 {
-  DEBUG( "Making event for decay of " << m_name << " to " << m_phsp.size()
-      << " daughters [type size = " << m_eventType.size() << "]" );
   AmpGen::Event evt = m_phsp.makeEvent( cacheSize );
   AmpGen::Event rt( 4 * m_eventType.size(), cacheSize );
-  for ( unsigned int i = 0; i < m_nodes.size(); ++i ) {
+  for (size_t i = 0; i < m_nodes.size(); ++i ) {
     auto& segment = m_nodes[i];
-    double px     = evt[4 * i + 0];
-    double py     = evt[4 * i + 1];
-    double pz     = evt[4 * i + 2];
-    double pE     = evt[4 * i + 3];
-    if ( segment.decayProds == nullptr ) {
-      rt[4 * segment.sink + 0] = px;
-      rt[4 * segment.sink + 1] = py;
-      rt[4 * segment.sink + 2] = pz;
-      rt[4 * segment.sink + 3] = pE;
+    double px     = evt[4*i + 0];
+    double py     = evt[4*i + 1];
+    double pz     = evt[4*i + 2];
+    double pE     = evt[4*i + 3];
+    if ( segment.decayProds == nullptr) {
+      if( segment.sink != -1 ){
+        rt[4*segment.sink + 0] = px;
+        rt[4*segment.sink + 1] = py;
+        rt[4*segment.sink + 2] = pz;
+        rt[4*segment.sink + 3] = pE;
+      }
     } else {
-      auto evtTmp = segment.decayProds->makeEvent( cacheSize );
-      double v    = -sqrt( px * px + py * py + pz * pz ) / pE;
+      auto evtTmp = segment.decayProds->makeEvent(cacheSize);
+      double v    = sqrt( px * px + py * py + pz * pz ) / pE;
       boost( evtTmp, {px, py, pz}, v );
-      for ( unsigned int i = 0; i < rt.size(); ++i ) rt[i] += evtTmp[i];
+      for(size_t j = 0; j < rt.size(); ++j) rt[j] += evtTmp[j];
     }
-    evt.setGenPdf( 1 );
+    evt.setGenPdf(1);
   }
   return rt;
 }
-
-//void RecursivePhaseSpace::SetDecay( const double& mother, const std::vector<double>& daughters ) {}
 
 std::vector<RecursivePhaseSpace::Node*> RecursivePhaseSpace::getFinalStates()
 {
@@ -86,7 +80,6 @@ std::vector<RecursivePhaseSpace::Node*> RecursivePhaseSpace::getFinalStates()
     }
   }
   return rt;
-
 }
 
 void RecursivePhaseSpace::print( const size_t& offset ) const
@@ -98,6 +91,7 @@ void RecursivePhaseSpace::print( const size_t& offset ) const
     else
       INFO( std::string( offset + 4, '-' ) << " Final state: " << d.name << " sink = " << d.sink );
 }
+
 size_t RecursivePhaseSpace::size() const { return m_phsp.size(); }
 
 void RecursivePhaseSpace::setRandom( TRandom* rand )

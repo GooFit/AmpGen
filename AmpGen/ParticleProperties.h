@@ -38,10 +38,7 @@ namespace AmpGen
     char m_status;              ///< status (estalished or not etc)
     QuarkContent m_netQuarkContent;
     bool m_isValid;
-
-    static double _defaultRadius;
-    static double _defaultCharmRadius;
-
+    
     void setRadius();
 
     void antiQuarks();

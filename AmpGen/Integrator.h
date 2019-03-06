@@ -136,6 +136,7 @@ namespace AmpGen
         template <class EXPRESSION>
           void prepareExpression( const EXPRESSION& expression, const size_t& size_of = 0 )
           {
+            if( m_events == nullptr ) return; 
             auto index = m_events->registerExpression( expression , size_of );
             m_events->updateCache( expression, index );
           }

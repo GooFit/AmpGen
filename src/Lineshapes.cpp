@@ -18,14 +18,11 @@ Expression AmpGen::Q2( const Expression& s, const Expression& M1sq, const Expres
 
 Expression AmpGen::kFactor( const Expression& mass, const Expression& width, DebugSymbols* dbexpressions )
 {
-  const Expression massInGeV  = mass / GeV;
-  const Expression widthInGeV = width / GeV;
-  const Expression gammaInGeV = massInGeV * sqrt( massInGeV * massInGeV + widthInGeV * widthInGeV );
-  const Expression kInGeV =
-      2 * sqrt( 2 ) * massInGeV * widthInGeV * gammaInGeV / ( M_PI * sqrt( massInGeV * massInGeV + gammaInGeV ) );
-  ADD_DEBUG( gammaInGeV  , dbexpressions );
-  ADD_DEBUG( sqrt(kInGeV), dbexpressions );
-  return sqrt( kInGeV );
+  const Expression gamma = mass * sqrt( mass * mass + width * width );
+  const Expression k = (2 * sqrt(2) / M_PI) * mass * width * gamma / sqrt( mass*mass + gamma );
+  ADD_DEBUG( gamma  , dbexpressions );
+  ADD_DEBUG( sqrt(k), dbexpressions );
+  return sqrt(k);
 }
 
 Expression AmpGen::BlattWeisskopf_Norm( const Expression& z, const Expression& z0, unsigned int L )

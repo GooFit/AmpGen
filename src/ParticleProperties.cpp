@@ -13,9 +13,6 @@
 
 using namespace AmpGen;
 
-double ParticleProperties::_defaultRadius      = 1.5 / GeV; // 1.5/GeV;
-double ParticleProperties::_defaultCharmRadius = 5.0 / GeV;
-
 void ParticleProperties::print( std::ostream& out ) const
 {
   out << "Mass  " << mass() << " +" << mErrPlus() << " -" << mErrMinus() << "\nWidth " << width() << " +" << wErrPlus()
@@ -28,7 +25,6 @@ void ParticleProperties::print( std::ostream& out ) const
 
 int ParticleProperties::chargeFromString( const std::string& ch, bool& status ) const
 {
-
   if ( ch == "+" ) return 1;
   if ( ch == "-" ) return -1;
   if ( ch == " " ) return 0;
@@ -50,16 +46,15 @@ ParticleProperties::ParticleProperties( const std::string& pdg_string ) : m_netQ
     return;
   }
   for ( auto& st : s ) st = trim( st );
-  bool status             = 1;
-  m_mass                  = lexical_cast<double>( s[0], status );
-  m_mErrPlus              = lexical_cast<double>( s[1], status );
-  m_mErrMinus             = lexical_cast<double>( s[2], status );
-  m_width                 = lexical_cast<double>( s[3], status );
-  m_wErrPlus              = lexical_cast<double>( s[4], status );
-  m_wErrMinus             = lexical_cast<double>( s[5], status );
-  m_pdgID                = lexical_cast<int>( s[12], status );
-  m_Rexist                = lexical_cast<int>( s[14], status );
-
+  bool status    = 1;
+  m_mass         = lexical_cast<double>( s[0], status );
+  m_mErrPlus     = lexical_cast<double>( s[1], status );
+  m_mErrMinus    = lexical_cast<double>( s[2], status );
+  m_width        = lexical_cast<double>( s[3], status );
+  m_wErrPlus     = lexical_cast<double>( s[4], status );
+  m_wErrMinus    = lexical_cast<double>( s[5], status );
+  m_pdgID        = lexical_cast<int>( s[12], status );
+  m_Rexist       = lexical_cast<int>( s[14], status );
   m_Gparity      = chargeFromString( s[7], status );
   m_Parity       = chargeFromString( s[9], status );
   m_Cparity      = chargeFromString( s[10], status );
@@ -82,42 +77,38 @@ ParticleProperties::ParticleProperties( const std::string& pdg_string ) : m_netQ
     DEBUG("Spin of particle: " << name() << " could not be interpretted (J=" << m_JtotalSpin << ")"  );
   }
   setRadius();
-
   m_isValid = true;
 }
 
 void ParticleProperties::setRadius()
 {
-  // set radius (not part of mass_width.csv):
-  bool isCharm = ( abs( pdgID() ) == 421 || abs( pdgID() ) == 411 || abs( pdgID() ) == 431 );
-  m_Radius     = isCharm ? _defaultCharmRadius : _defaultRadius;
+  double defaultRadius      = 1.5 / GeV; // 1.5/GeV;
+  double defaultCharmRadius = 5.0 / GeV;
+  bool isCharm = ( abs(pdgID()) == 421 || 
+                   abs(pdgID()) == 411 || 
+                   abs(pdgID()) == 431 || 
+                   abs(pdgID()) == 4122 );
+  m_Radius     = isCharm ? defaultCharmRadius : defaultRadius;
+}
+
+void swap_string(std::string& arg, const char a, const char b)
+{
+  for( auto& c : arg )
+  {
+    if( c == a ) c = b;
+    else if( c == b ) c = a;
+  }
 }
 
 void ParticleProperties::antiQuarks()
 {
   if ( m_quarks.empty() ) return;
-
-  replace( m_quarks.begin(), m_quarks.end(), 'U', 'h' );
-  replace( m_quarks.begin(), m_quarks.end(), 'D', 'l' );
-  replace( m_quarks.begin(), m_quarks.end(), 'C', 'i' );
-  replace( m_quarks.begin(), m_quarks.end(), 'S', 'm' );
-  replace( m_quarks.begin(), m_quarks.end(), 'T', 'j' );
-  replace( m_quarks.begin(), m_quarks.end(), 'B', 'n' );
-
-  replace( m_quarks.begin(), m_quarks.end(), 'u', 'U' );
-  replace( m_quarks.begin(), m_quarks.end(), 'd', 'D' );
-  replace( m_quarks.begin(), m_quarks.end(), 'c', 'C' );
-  replace( m_quarks.begin(), m_quarks.end(), 's', 'S' );
-  replace( m_quarks.begin(), m_quarks.end(), 't', 'T' );
-  replace( m_quarks.begin(), m_quarks.end(), 'b', 'B' );
-
-  replace( m_quarks.begin(), m_quarks.end(), 'h', 'u' );
-  replace( m_quarks.begin(), m_quarks.end(), 'l', 'd' );
-  replace( m_quarks.begin(), m_quarks.end(), 'i', 'c' );
-  replace( m_quarks.begin(), m_quarks.end(), 'm', 's' );
-  replace( m_quarks.begin(), m_quarks.end(), 'j', 't' );
-  replace( m_quarks.begin(), m_quarks.end(), 'n', 'b' );
-
+  swapChars(m_quarks, 'U', 'u');
+  swapChars(m_quarks, 'D', 'd');
+  swapChars(m_quarks, 'C', 'c');
+  swapChars(m_quarks, 'S', 's');
+  swapChars(m_quarks, 'T', 't');
+  swapChars(m_quarks, 'B', 'b');
   unsigned int pos = m_quarks.find( "SqrT" );
   if ( pos < m_quarks.size() ) {
     m_quarks.replace( pos, 4, "sqrt" );
@@ -128,9 +119,7 @@ void ParticleProperties::antiQuarkContent() { m_netQuarkContent.antiThis(); }
 
 void ParticleProperties::antiCharge()
 {
-  replace( m_chargeString.begin(), m_chargeString.end(), '+', 'f' );
-  replace( m_chargeString.begin(), m_chargeString.end(), '-', '+' );
-  replace( m_chargeString.begin(), m_chargeString.end(), 'f', '-' );
+  swapChars( m_chargeString, '+', '-');
   m_charge *= -1;
 }
 bool ParticleProperties::hasDistinctAnti() const { return !( m_Aformat == ' ' ); }

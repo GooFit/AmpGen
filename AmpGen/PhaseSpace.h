@@ -22,7 +22,7 @@ namespace AmpGen
   {
     public:
       PhaseSpace()  = default; 
-      PhaseSpace( const EventType& type, TRandom* rand = nullptr );
+      PhaseSpace( const EventType& type, TRandom* rand = gRandom );
       ~PhaseSpace() = default;
       
       bool setDecay( const double& m0, const std::vector<double>& mass );

@@ -33,9 +33,8 @@ namespace AmpGen
         Node( const std::string& _name ) : name( _name ) {};
       };
     public:
-      RecursivePhaseSpace( const EventType& type );
-
-      RecursivePhaseSpace( const Particle& decayChain, const EventType& type, TRandom*  rndm = gRandom );
+      RecursivePhaseSpace(const EventType& type);
+      RecursivePhaseSpace(const Particle& decayChain, const EventType& type, TRandom* rndm = gRandom);
       std::vector<Node*> getFinalStates();
 
       void print( const size_t& offset = 0 ) const;

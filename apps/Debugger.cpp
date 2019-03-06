@@ -35,6 +35,16 @@
 
 using namespace AmpGen;
 
+void invertParity( Event& event, const size_t& nParticles)
+{
+  for( size_t i = 0 ; i < nParticles; ++i )
+  {
+    event[4*i + 0] = -event[4*i+0];
+    event[4*i + 1] = -event[4*i+1];
+    event[4*i + 2] = -event[4*i+2];
+  }
+}
+
 int invert_parameter( AmpGen::MinuitParameter* param, MinuitParameterSet& mps )
 {
   const std::string name = param->name();
@@ -118,7 +128,7 @@ template < class FCN > void debug( FCN& sig, EventList& accepted, bool verbose, 
 //  INFO( "A(x)  = " << unboosted_value ) ;
 //  INFO( "A(Λx) = " << boosted_value );   
 //  
-  accepted[0].invertParity();
+  invertParity(accepted[0], accepted.eventType().size() );
   accepted[0].print();
   sig.reset();
   sig.prepare();

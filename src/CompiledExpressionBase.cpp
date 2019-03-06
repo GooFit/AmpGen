@@ -22,17 +22,7 @@ std::string AmpGen::programatic_name( std::string s )
   std::replace( s.begin(), s.end(), '*', 's' );
   std::replace_if( s.begin(), s.end(), [](auto& c){ return ! std::isalnum(c) ; }, '_' );
   if( isdigit( s[0] ) ) s = "f" + s;
- // std::replace( s.begin(), s.end(), ',', '_' );
- // std::replace( s.begin(), s.end(), '(', '_' );
- // std::replace( s.begin(), s.end(), ')', '_' );
- // std::replace( s.begin(), s.end(), '[', '_' );
- // std::replace( s.begin(), s.end(), ']', '_' );
- // std::replace( s.begin(), s.end(), '{', '_' );
- // std::replace( s.begin(), s.end(), '}', '_' );
- // std::replace( s.begin(), s.end(), ':', '_' );
   std::replace( s.begin(), s.end(), '\'', '_' );
- // std::replace( s.begin(), s.end(), '.', '_' );
- // std::replace( s.begin(), s.end(), ';', '_' );
   return s;
 }
 
@@ -40,8 +30,7 @@ void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
 {
   if( m_resolver != nullptr ) delete m_resolver ; 
   m_resolver = new ASTResolver( m_evtMap, mps );
-  m_resolver->getOrderedSubExpressions( m_obj,  m_dependentSubexpressions );
-  
+  m_resolver->getOrderedSubExpressions( m_obj,  m_dependentSubexpressions ); 
   for ( auto& sym : m_db ){ 
     sym.second.resolve( *m_resolver ); 
     m_resolver->getOrderedSubExpressions( sym.second, m_debugSubexpressions );
@@ -91,7 +80,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
 {
   if( m_db.size() !=0 ) stream << "#include<iostream>\n"; 
   stream << "extern \"C\" const char* " << progName() << "_name() {  return \"" << m_name << "\"; } \n";
-  bool enable_cuda = NamedParameter<bool>("enable_cuda",false);
+  bool enable_cuda = NamedParameter<bool>("EnableCUDA",false);
 
     size_t sizeOfStream = 0; 
   if( !enable_cuda ){
@@ -118,7 +107,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     stream << "  r[i] = " << objString << ";\n}\n";
   }
 
-  if( NamedParameter<bool>("CompiledExpressionBase::Compat", false) == true ){
+  if( NamedParameter<bool>("IncludePythonBindings", false) == true ){
     stream << "#pragma clang diagnostic pop\n\n";
     stream << "extern \"C\" void " <<  progName() << "_c" << "(double *real, double *imag, " << fcnSignature() << "){\n";
     stream << "  auto val = " << progName() << "(" << args() << ") ;\n"; 

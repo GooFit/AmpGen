@@ -28,7 +28,7 @@ Tensor VertexFactory::getSpinFactor( const Tensor& P, const Tensor& Q, const Ten
 {
   auto connector = VertexFactory::get( name );
   if ( connector == nullptr ) {
-    ERROR( "Could not find vertex: " << name ) ; 
+    FATAL( "Could not find vertex: " << name ) ; 
     return Tensor( std::vector<double>( {1.} ), {0} );
   } else
     return (*connector)( P, Q, V1, V2, db );
@@ -381,21 +381,13 @@ DEFINE_VERTEX( r_fS_D )
 {
   Tensor::Index a,b,c,d,e;
   Tensor sp = Spin3hProjector(P); 
-  if( NamedParameter<bool>("UseSimplifiedVertex", true ) ){
-    Tensor L = Orbital_PWave(P,Q);
-    Tensor F = Spin1hProjector(P);
-    L.st(1);
-    Expression L2 = make_cse(dot(L,L));
-    Tensor gt = gamma_twiddle(P);
-    Tensor rt =  ( L(mu) * F(a,b) * slash(L)(b,c) - (L2/3.) * F(a,b) * gt(mu,b,c) ) * Gamma[4](c,d) * V1(d) / (GeV*GeV); 
-    rt.st();
-    return rt;
-  } 
-  Tensor  L = Orbital_DWave(P,Q);
-  L.st();
-  Tensor psi = gamma_twiddle(P)(mu,a,b) * Gamma[4](b,c) * L(-mu,-nu) * V1(c) / (GeV*GeV) ; 
-  Tensor rt = (-1) * ( sp(mu,nu,a,b) * psi(b,-nu) );
-  rt.st(1);   
+  Tensor L = Orbital_PWave(P,Q);
+  Tensor F = Spin1hProjector(P);
+  L.st(1);
+  Expression L2 = make_cse(dot(L,L));
+  Tensor gt = gamma_twiddle(P);
+  Tensor rt =  ( L(mu) * F(a,b) * slash(L)(b,c) - (L2/3.) * F(a,b) * gt(mu,b,c) ) * Gamma[4](c,d) * V1(d) / (GeV*GeV); 
+  rt.st();
   return rt;
 }
 
@@ -403,7 +395,6 @@ DEFINE_VERTEX( r_fS_D )
 DEFINE_VERTEX( f_rS_D )
 {
   Tensor::Index a,b,c,d;
-//  Tensor X = LeviCivita()( -mu, -nu, -alpha, -beta ) * P(nu) * Orbital_DWave(P,Q)(alpha,c) * V1(-c,b) ;
   Tensor F = Spin1hProjector(P)(a,b) 
     * Gamma[4](b,d) 
     * gamma_twiddle(P)(mu,d,c)
@@ -459,4 +450,3 @@ DEFINE_VERTEX( V_ff_P1 )
   Tensor::Index a,b,c ; 
   return Bar( V2 )(a) * Gamma[4](a,b) * Gamma4Vec()(mu,b,c) * V1(c);
 }
-

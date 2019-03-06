@@ -119,7 +119,6 @@ std::string get_cpp_version(){
 }
 void CompilerWrapper::compileSource( const std::string& fname, const std::string& oname )
 {
-  pid_t childPID = 0; 
   using namespace std::chrono_literals;
   std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", 
    {"-Ofast", "--std="+get_cpp_version(),"-march=native"} ); 
@@ -140,10 +139,8 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
       [](std::string a, const char* b){return a + " " + b;});
     INFO("Compiling: " << result);
   }
-
   argp.push_back( NULL );
-  
-  childPID = vfork();
+  pid_t childPID = vfork();
   if( childPID == 0 )
   {
     execv( argp[0], const_cast<char**>( &argp[0] ) );

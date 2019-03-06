@@ -6,7 +6,6 @@
 #include "AmpGen/IncoherentSum.h"
 #include "AmpGen/Integrator.h"
 #include "AmpGen/MinuitParameterSet.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Projection.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/EventList.h"
@@ -113,19 +112,16 @@ namespace AmpGen
     TH1D* plotWithError( EventList& events, FCN& fcn, const Projection& projection, const std::string& prefix,
         LinearErrorPropagator& linProp, const std::function<bool( const Event& )>& selection = nullptr )
     {
-
-      bool hardcore = NamedParameter<bool>( "Hardcore", false );
       BinnedIntegrator<NBINS, 10> bid( &events );
       if ( selection != nullptr ) bid.setSlice( selection );
       bid.setView( projection.binFunctor() );
-
       TH1D* plot = projection.plot();
       plot->SetName( ( prefix + plot->GetName() ).c_str() );
       auto normalisations = getNorms<NBINS>( fcn, bid );
 
-      auto vectorBinFunctor = [&normalisations, &fcn, &hardcore, &bid] {
+      auto vectorBinFunctor = [&normalisations, &fcn, &bid] {
         fcn.transferParameters();
-        if ( hardcore ) bid.update( fcn, normalisations );
+        bid.update( fcn, normalisations );
         std::array<double, NBINS> values;
         double total = 0;
         for ( size_t bin = 0; bin < NBINS; ++bin ) {

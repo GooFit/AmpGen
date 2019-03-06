@@ -43,6 +43,7 @@ inline std::string trimmedString( std::string thing, const unsigned int& length 
   if ( thing.size() < length ) return thing;
 }
 
+
 #ifdef DEBUGLEVEL
 #define DEBUG( X )                                                                                                     \
   std::cout << "\033[2;32m" << std::left << std::setw( FCNNAMELENGTH ) << trimmedString( __PRETTY_FUNCTION__ )         \

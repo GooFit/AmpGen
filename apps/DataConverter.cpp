@@ -26,10 +26,20 @@
 
 using namespace AmpGen;
 
+void invertParity( Event& event, const size_t& nParticles=0)
+{
+  for( size_t i = 0 ; i < nParticles; ++i )
+  {
+    event[4*i + 0] = -event[4*i+0];
+    event[4*i + 1] = -event[4*i+1];
+    event[4*i + 2] = -event[4*i+2];
+  }
+}
+
+
 int main( int argc, char* argv[] )
 {
   OptionsParser::setArgs( argc, argv );
-
   std::string inputFilename                = NamedParameter<std::string>("Input"     , "", "Input ROOT file" );
   std::string treeName                     = NamedParameter<std::string>("Tree"      , "", "Input ROOT tree." );
   std::string outputFilename               = NamedParameter<std::string>("Output"    , "", "Output ROOT file" );
@@ -45,6 +55,7 @@ int main( int argc, char* argv[] )
   EventType evtType( NamedParameter<std::string>( "EventType" ).getVector() );
 
   INFO( "Reading file " << inputFilename );
+  INFO( "Outputting file: " << outputFilename);
   TFile* f = TFile::Open( inputFilename.c_str(), "READ" );
   INFO( "Reading tree " << treeName );
 
@@ -69,11 +80,9 @@ int main( int argc, char* argv[] )
   
   std::vector<std::string> branches;
   for( auto& particle : particles ) {
-    for(size_t i = 0 ; i < 4; ++i ) 
-      branches.push_back( mysprintf(branchFormat[i], particle.c_str()));
+    for(size_t i = 0 ; i < 4; ++i ) branches.push_back( mysprintf(branchFormat[i], particle.c_str()));
   }
   for(auto& branch : monitorBranches) branches.push_back( branch );
-  //if( motherID != "" ) branches.push_back( motherID );
   
   if ( rejectMultipleCandidates ) {
     ULong64_t totCandidate;
@@ -124,14 +133,14 @@ int main( int argc, char* argv[] )
   INFO("Constructing eventList");
 
   if ( motherID != "" ) {
-    INFO( "Converting D0bar -> D0" );
+    INFO( "Converting " << evtType.mother() << " " << eventsToTake.size() << " " << evts.size()  );
     in_tree->SetBranchStatus( "*", 0 );
     int id = 0;
     in_tree->SetBranchStatus( motherID.c_str() );
     in_tree->SetBranchAddress( motherID.c_str(), &id );
     for ( unsigned int i = 0; i < eventsToTake.size(); ++i ) {
       in_tree->GetEntry( eventsToTake[i] );
-      if ( id < 0 ) evts[i].invertParity(4);
+      if ( id < 0 ) invertParity( evts[i] , evtType.size() );
     }
   }
 
@@ -181,15 +190,19 @@ int main( int argc, char* argv[] )
         INFO( "Set for " << i << " events" );
       }
       evts[i].setGenPdf( fcn( (const real_t*)(evts[i]), 1 ) );
-    };
-  };
-
+    }
+  }
+  INFO("Writing file: " << outputFilename);
   TFile* outputFile = TFile::Open( outputFilename.c_str(), "RECREATE" );
-  TTree* outputTree = evts.tree( "DalitzEventList");
+  INFO("Made file :-> " );
+
+  TTree* outputTree = evts.tree("DalitzEventList");
   outputTree->Write();
+  
+  INFO("Closing file...");
   outputFile->Close();
   TFile* outputPlotFile = TFile::Open( plotsName.c_str(), "RECREATE" );
-  auto plots            = evts.makeDefaultPlots();
+  auto plots            = evts.makeDefaultProjections();
   for ( auto& plot : plots ) {
     INFO( "Writing plot " << plot->GetName() << " to file" );
     plot->Write();

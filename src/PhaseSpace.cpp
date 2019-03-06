@@ -16,7 +16,8 @@ const Int_t kMAXP = 18;
 
 using namespace AmpGen;
 
-PhaseSpace::PhaseSpace( const EventType& type, TRandom* rand ) : m_rand( rand ), m_type(type) 
+PhaseSpace::PhaseSpace( const EventType& type, TRandom* rand ) : 
+  m_rand(rand), m_type(type) 
 {
   setDecay( type.motherMass(), type.masses() );
   if ( type.isTimeDependent() )
@@ -94,15 +95,12 @@ bool PhaseSpace::setDecay( const double& m0, const std::vector<double>& mass )
 {
   unsigned int n;
   m_nt = mass.size();
-
   m_teCmTm = m0;
   for ( n = 0; n < m_nt; n++ ) {
     m_mass[n] = mass[n];
     m_teCmTm -= mass[n];
   }
-
   if ( m_teCmTm <= 0 ) return 0 ; 
-
   double emmax = m_teCmTm + m_mass[0];
   double emmin = 0;
   double wtmax = 1;

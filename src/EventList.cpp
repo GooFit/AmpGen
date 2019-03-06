@@ -57,12 +57,10 @@ void EventList::loadFromFile( const std::string& fname, const ArgumentPack& args
 void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
 {
   ProfileClock read_time; 
-  ROOT::EnableImplicitMT(1);
   auto pdfSize      = args.getArg<CacheSize>().val;
   auto filter       = args.getArg<Filter>().val;
   auto getGenPdf    = args.getArg<GetGenPdf>(true).val;
   auto weightBranch = args.getArg<WeightBranch>().val;
-  
   auto branches     = args.getArg<Branches>().val;
   auto applySym     = args.getArg<ApplySym>().val;
   auto entryList    = args.getArg<EntryList>().val; 
@@ -90,7 +88,6 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
       tr.setBranch( branch.first, &(temp[branch.second]) );
     }
   }
-
   if( getGenPdf )          tr.setBranch( "genPdf",     temp.pGenPdf() );
   if( weightBranch != "" ) tr.setBranch( weightBranch, temp.pWeight() );
   if( filter != "" ){
@@ -113,9 +110,7 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
     m_data.push_back( temp );
   }
   read_time.stop();
-
   INFO("Time to read tree = " << read_time << "[ms]; nEntries = " << size() );
-  //ROOT::DisableImplicitMT();
 }
 
 TTree* EventList::tree( const std::string& name, const std::vector<std::string>& extraBranches )
@@ -129,8 +124,12 @@ TTree* EventList::tree( const std::string& name, const std::vector<std::string>&
   double genPdf = 1;
   double weight = 1;
   auto format = m_eventType.getEventFormat( true );
-  for ( auto& f : format ) outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
-  for ( auto& f : m_extensions ) outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
+  for ( auto& f : format ){
+    outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
+  }
+  for ( auto& f : m_extensions ){
+    outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
+  } 
   outputTree->Branch( "genPdf", &genPdf );
   outputTree->Branch( "weight", &weight );
   for ( auto& evt : *this ) {
@@ -142,7 +141,7 @@ TTree* EventList::tree( const std::string& name, const std::vector<std::string>&
   return outputTree;
 }
 
-std::vector<TH1D*> EventList::makePlots( const std::vector<Projection>& projections, const ArgumentPack& args )
+std::vector<TH1D*> EventList::makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args )
 {
   std::vector<TH1D*> plots;
   for ( auto& proj : projections ) {

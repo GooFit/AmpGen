@@ -34,22 +34,19 @@ using namespace AmpGen;
 CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
   : m_protoAmplitudes( mps )
   , m_evtType( type )
-    , m_prefix( prefix )
+  , m_printFreq(NamedParameter<size_t>(     "CoherentSum::PrintFrequency", 100)  )
+  , m_dbThis   (NamedParameter<bool>(       "CoherentSum::Debug"         , false))
+  , m_verbosity(NamedParameter<bool>(       "CoherentSum::Verbosity"     , 0)    )
+  , m_objCache (NamedParameter<std::string>("CoherentSum::ObjectCache"   ,"")    )
+  , m_prefix( prefix )
 {
-  bool autoCompile     = NamedParameter<bool>(  "CoherentSum::AutoCompile"   , true ); 
-  m_dbThis             = NamedParameter<bool>(  "CoherentSum::Debug"         , false );
-  m_printFreq          = NamedParameter<size_t>("CoherentSum::PrintFrequency", 100 );
-  m_verbosity          = NamedParameter<bool>("CoherentSum::Verbosity"     , 0 );
-  std::string objCache = NamedParameter<std::string>("CoherentSum::ObjectCache",""); 
   auto amplitudes      = m_protoAmplitudes.getMatchingRules( m_evtType, prefix);
   for( auto& amp : amplitudes ) addMatrixElement( amp, mps );
   m_isConstant = isFixedPDF(mps);
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() );
-  if( autoCompile ){ 
-    ThreadPool tp(8);
-    for( auto& mE: m_matrixElements )
-      tp.enqueue( [&]{ CompilerWrapper().compile( mE.pdf, objCache); } );
-  }
+  ThreadPool tp(8);
+  for( auto& mE: m_matrixElements )
+    tp.enqueue( [&]{ CompilerWrapper().compile( mE.pdf, this->m_objCache); } );
 }
 
 void CoherentSum::addMatrixElement( std::pair<Particle, CouplingConstant>& particleWithCouplingConstant, const MinuitParameterSet& mps )
@@ -148,7 +145,7 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
 
 std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& linProp)
 {
-  bool recomputeIntegrals    = NamedParameter<bool>("RecomputeIntegrals", false );
+  bool recomputeIntegrals    = NamedParameter<bool>("CoherentSum::RecomputeIntegrals", false );
   std::vector<FitFraction> outputFractions;
 
   for(auto& rule : m_protoAmplitudes.rules()) 
@@ -191,8 +188,8 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
   stream << "#include <vector>\n";
   stream << "#include <math.h>\n";
   if ( add_mt ) stream << "#include <thread>\n";
-  bool includePythonBindings = NamedParameter<bool>("IncludePythonBindings",false);
-  bool enableCuda            = NamedParameter<bool>("enable_cuda",false);
+  bool includePythonBindings = NamedParameter<bool>("CoherentSum::IncludePythonBindings",false);
+  bool enableCuda            = NamedParameter<bool>("CoherentSum::EnableCuda",false);
 
   for ( auto& p : m_matrixElements ){
     stream << p.pdf << std::endl;

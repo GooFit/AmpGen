@@ -21,7 +21,7 @@ Event::Event( const real_t* data, const size_t& N, const size_t& cacheSize) :
   }
 
 void Event::print() const {
-  for( unsigned int i = 0 ; i< m_event.size()/4. ; ++i ){
+  for( unsigned int i = 0 ; i< m_event.size()/4 ; ++i ){
     double px = m_event[4*i+0];
     double py = m_event[4*i+1];
     double pz = m_event[4*i+2];
@@ -92,16 +92,6 @@ void Event::swap( const unsigned int& i , const unsigned int& j )
   std::memmove( tmp, &m_event[4*j], sizeof(tmp)); 
   std::memmove( &m_event[4*j], &m_event[4*i],sizeof(tmp));
   std::memmove( &m_event[4*i], &tmp,sizeof(tmp));
-}
-
-void Event::invertParity( const size_t& nParticles)
-{
-  for( size_t i = 0 ; i < ( nParticles == 0 ? size()/4 : nParticles); ++i )
-  {
-    m_event[4*i + 0 ] = -m_event[4*i+0];
-    m_event[4*i + 1 ] = -m_event[4*i+1];
-    m_event[4*i + 2 ] = -m_event[4*i+2];
-  }
 }
 
 void Event::setCache(const complex_t& value, const size_t& pos){ m_cache[pos] = value; }

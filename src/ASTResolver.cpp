@@ -17,8 +17,8 @@ ASTResolver::ASTResolver(const std::map<std::string, size_t>& evtMap,
   mps(mps), 
   nParameters(0)
 {
-  enable_cuda                 = NamedParameter<bool>("enable_cuda",false);
-  enable_compileTimeConstants = NamedParameter<bool>("enable_compileTimeConstants",false);
+  enable_cuda                 = NamedParameter<bool>("UseCUDA",false);
+  enable_compileTimeConstants = NamedParameter<bool>("ASTResolver::CompileTimeConstants",false);
 }
 
 bool ASTResolver::hasSubExpressions() const 

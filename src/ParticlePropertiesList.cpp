@@ -91,7 +91,7 @@ ParticlePropertiesList::ParticlePropertiesList( const std::string& fname_in )
 bool ParticlePropertiesList::readLatexLabels( const std::string& name )
 {
 
-  if ( !file_exists( name ) ) return false;
+  if ( !fileExists( name ) ) return false;
 
   m_latexLabels.clear();
   processFile( name, [this]( auto& line ) {
@@ -105,7 +105,7 @@ bool ParticlePropertiesList::readLatexLabels( const std::string& name )
 bool ParticlePropertiesList::readFile( const std::string& name )
 {
 
-  if ( !file_exists( name ) ) {
+  if ( !fileExists( name ) ) {
     DEBUG( "File not found: " << name );
     return false;
   }
@@ -162,7 +162,7 @@ const ParticleProperties* ParticlePropertiesList::find( const std::string& name,
     unsigned int minDistance = 9999;
     std::string suggestion   = "";
     for ( auto& particle : particleNames ) {
-      unsigned int distance = edit_distance( particle, name );
+      unsigned int distance = editDistance( particle, name );
       if ( distance < minDistance ) {
         suggestion  = particle;
         minDistance = distance;

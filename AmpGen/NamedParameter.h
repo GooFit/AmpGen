@@ -17,13 +17,9 @@
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/MetaUtils.h"
-#include "AmpGen/ArgumentPack.h"
 
 namespace AmpGen
 {
-  template <class T>
-  DECLARE_ARGUMENT( AcceptedValues, std::vector<T> ); 
-  DECLARE_ARGUMENT( HelpString    , std::string    ); 
   template <class T>
   class NamedParameter 
   {
@@ -37,14 +33,8 @@ namespace AmpGen
       auto parser = OptionsParser::getMe();
       auto line = parser->find( m_name );
       if( line == parser->end() ) return false ; 
-      DEBUG("Setting line from parsed file " << line->first );
       const std::vector<std::string>& vsl = line->second;
-
       if ( vsl.size() < 2 ) return false; // first element is parameter name
-      if ( vsl[0] != m_name ) {
-        ERROR( "Wrong parameter name. My name is " << m_name << " the line's first element is " << vsl[0] );
-        return false;
-      }
       m_valueArray.clear();
       m_valueArray.resize( vsl.size() - 1 );
       for ( unsigned int i = 1; i < vsl.size(); i++ ) {
@@ -105,7 +95,7 @@ namespace AmpGen
       std::map< std::string, std::string > aliases;  
       std::string type = typeof<T>();
       if( type == "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >" ) type = "string";
-      std::cout << " " << bold_on << std::left << std::setw(25) << m_name << bold_off 
+      std::cout << " " << bold_on << std::left << std::setw(27) << m_name << bold_off 
        << std::setw(20) << "[" + type + "]" ;
       auto tokens = split( m_helpString, '\n' );
       if( tokens.size() == 0 ) std::cout << std::endl; 
@@ -115,7 +105,7 @@ namespace AmpGen
           if( def != T() ) std::cout << " (default = " << def << ")";
           std::cout << std::endl;  
         }
-        else std::cout << std::string(46,' ') << tokens[i] << std::endl; 
+        else std::cout << std::string(48,' ') << tokens[i] << std::endl; 
       }
     }
 
@@ -175,7 +165,10 @@ namespace AmpGen
   };
   template <class T> 
   std::ostream& operator<<( std::ostream& os, const NamedParameter<T>& np );
+  
+  std::string optionalHelpString(const std::string& header, const std::vector<std::pair<std::string, std::string>>& args);
 }
+
 
 template <typename T>
 std::ostream& AmpGen::operator<<( std::ostream& os, const AmpGen::NamedParameter<T>& np )

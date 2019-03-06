@@ -22,6 +22,7 @@
 #include "AmpGen/Event.h"
 
 using namespace AmpGen;
+std::string convertTeXtoROOT(std::string input);
 
 EventType::EventType( const std::vector<std::string>& particleNames, const bool& isTD ) : m_timeDependent( isTD )
 {  
@@ -29,7 +30,7 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
     ERROR( "Not enough particles in event type: " << particleNames[0] << " size =  " << particleNames.size() );
     throw std::runtime_error( "Not enough particles listed in particle names! Was it defined?" );
   }
-  m_mother           = particleNames.at( 0 );
+  m_mother           = particleNames.at(0);
   for ( unsigned int i  = 1; i < particleNames.size(); ++i ) m_particleNames.push_back( particleNames[i] );
   auto motherProperties = ParticlePropertiesList::get( m_mother );
   if ( motherProperties != nullptr )
@@ -54,13 +55,11 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
   }
 }
 
-
 std::map<std::string, size_t> EventType::getEventFormat( const bool& outputNames ) const
 {
   std::map<std::string, size_t> returnValue;
   bool include_energy = NamedParameter<bool>("EventType::IncludeEnergy", true );
   size_t s = include_energy ? 4 : 3; 
-
   for ( unsigned int ip = 0; ip < size(); ++ip ) {
     std::string stub =
         outputNames ? "_" + std::to_string( ip + 1 ) + "_" + m_particleNamesPickled[ip] : std::to_string( ip );
@@ -70,12 +69,15 @@ std::map<std::string, size_t> EventType::getEventFormat( const bool& outputNames
     returnValue[stub + "_Pz"] = s * ip + 2;
   }
   if ( m_timeDependent ) returnValue[m_mother + "_ctau"] = 4 * size();
+  for( auto& extend : m_eventTypeExtensions ) returnValue[extend] = returnValue.size();
   return returnValue;
 }
-
+void EventType::extendEventType( const std::string& branch ) 
+{
+  m_eventTypeExtensions.push_back(branch);
+}
 std::pair<double, double> EventType::minmax( const std::vector<size_t>& indices, bool isGeV ) const
 {
-
   std::vector<size_t> ivec( size() );
   std::iota( ivec.begin(), ivec.end(), 0 );
   double min( 0 );
@@ -229,3 +231,14 @@ std::pair<size_t, size_t> EventType::dim() const
   for( auto& p : m_particleNames ) ft *= dimOfParticle(p);
   return {it,ft};
 }
+
+std::string convertTeXtoROOT( std::string input )
+{
+  input = replaceAll( input, "\\mathrm{K}", "K" );
+  input = replaceAll( input, "\\", "#" );
+  input = replaceAll( input, "#xspace", "" );
+  input = replaceAll( input, "#kern0.2em#overline{#kern-0.2em", "#bar{" );
+  input = replaceAll( input, "^*", "^{*}" );
+  return input;
+}
+

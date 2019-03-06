@@ -73,7 +73,7 @@ void OptionsParser::setCommandLineArgs( int argc, char** argv )
 void OptionsParser::import( const std::string& fName )
 {
   INFO( "Importing: " << fName );
-  if ( !file_exists( fName ) ) {
+  if ( !fileExists( fName ) ) {
     ERROR( "Cannot find file: " << fName );
     return;
   }

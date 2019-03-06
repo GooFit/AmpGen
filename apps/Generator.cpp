@@ -46,8 +46,7 @@ struct FixedLibPDF {
   void reset( const bool& flag = false ){};
 };
 
-
-template < class PDF_TYPE, class PRIOR_TYPE > 
+template <class PDF_TYPE, class PRIOR_TYPE> 
   void GenerateEvents( EventList& events
                        , PDF_TYPE& pdf 
                        , PRIOR_TYPE& prior
@@ -70,12 +69,11 @@ int main( int argc, char** argv )
   int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
   std::string outfile = NamedParameter<std::string>("Output"   , "Generate_Output.root" , "Name of output file" );
   
-  std::string gen_type = NamedParameter<std::string>( "Type", "default", 
-      "Generator configuration to use: \n" 
-      "\033[3m default            \033[0m: Full phase-space generator with scalar amplitude \n"
-      "\033[3m PolarisedSum \033[0m: Full phase-space generator with polarised spin 1/2 amplitude\n"
-      "\033[3m FixedLib           \033[0m: Full phase-space generator with an amplitude from a precompiled library\n"
-      "\033[3m RGenerator         \033[0m: Recursive phase-space generator for intermediate (quasi)stable states such as the D-mesons" );
+  std::string gen_type = NamedParameter<std::string>( "Type", "CoherentSum", optionalHelpString("Generator configuration to use:", 
+    { {"CoherentSum", "Full phase-space generator with (pseudo)scalar amplitude"}
+    , {"PolarisedSum", "Full phase-space generator with particles carrying spin in the initial/final states"}
+    , {"FixedLib", "Full phase-space generator with an amplitude from a precompiled library"}
+    , {"RGenerator", "Recursive phase-space generator for intermediate (quasi)stable states such as the D-mesons"} } ) );
   
   std::string lib = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
 
@@ -92,6 +90,8 @@ int main( int argc, char** argv )
   MinuitParameterSet MPS;
   MPS.loadFromStream();
   
+  Particle p;
+  
   EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
                        NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
 
@@ -99,14 +99,13 @@ int main( int argc, char** argv )
 
   INFO("Generating events with type = " << eventType );
 
-  if ( gen_type == "default" ) {
-    CoherentSum sig( eventType, MPS, "" );
+  if ( gen_type == "CoherentSum" ) {
+    CoherentSum sig( eventType, MPS );
     PhaseSpace phsp(eventType,&rand);
     GenerateEvents( accepted, sig, phsp , nEvents, blockSize, &rand );
   } 
   else if ( gen_type == "PolarisedSum" ){
     PolarisedSum sig( eventType, MPS );
-    //PhaseSpace phsp(eventType,&rand);
     RecursivePhaseSpace phsp( sig.matrixElements()[0].decayTree.quasiStableTree() , eventType, &rand );
     GenerateEvents( accepted, sig, phsp, nEvents, blockSize, &rand );
   }
@@ -130,7 +129,7 @@ int main( int argc, char** argv )
   if( accepted.size() == 0 ) return -1;
   TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
   accepted.tree( "DalitzEventList" )->Write();
-  auto plots = accepted.makeDefaultPlots( LineColor(kBlack) );
+  auto plots = accepted.makeDefaultProjections( LineColor(kBlack) );
   for ( auto& plot : plots ) plot->Write();
   if( NamedParameter<bool>("plots_2d",true) == true ){
     auto proj = eventType.defaultProjections(100);

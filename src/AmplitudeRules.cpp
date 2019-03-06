@@ -111,14 +111,14 @@ EventType AmplitudeRule::eventType() const
 CouplingConstant::CouplingConstant(const AmplitudeRule& pA)
 {
   couplings.emplace_back( std::make_pair(pA.m_re,pA.m_im) );  
-  std::string cartOrPolar = NamedParameter<std::string>("CouplingConstant::Coordinates","cartesian");
+  std::string cartOrPolar = NamedParameter<std::string>("CouplingConstant::Coordinates" ,"cartesian");
+  std::string degOrRad    = NamedParameter<std::string>("CouplingConstant::AngularUnits","rad");
   if( cartOrPolar == "polar" ){
     isCartesian = false; 
   }
   else if ( cartOrPolar != "cartesian" ){
     FATAL("Coordinates for coupling constants must be either cartesian or polar");
   } 
-  std::string degOrRad = NamedParameter<std::string>("CouplingConstant::AngularUnits","rad");
   if ( degOrRad == "deg") sf = M_PI / 180; 
   else if ( degOrRad != "rad"){
     FATAL("CouplingConstant::AngularUnits must be either rad or deg");

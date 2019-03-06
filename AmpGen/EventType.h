@@ -5,6 +5,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <initializer_list>
 
 namespace AmpGen
 {
@@ -24,12 +25,12 @@ namespace AmpGen
     std::vector<std::string> m_particleNamesPickled; ///< names of decay product pickled for ROOT
     std::vector<double> m_particleMasses;            ///< masses of decay products
     bool m_timeDependent;
-
+    std::vector<std::string> m_eventTypeExtensions;  ///< extended event data 
   public:
     EventType() = default;
     EventType( const std::vector<std::string>&, const bool& isTD = false );
     std::map<std::string, size_t> getEventFormat( const bool& outputNames = false ) const;
-
+   
     std::pair<double, double> minmax( const std::vector<size_t>& indices, bool isGeV = false ) const;
     std::vector<std::vector<unsigned int>> getBosePairs() const;
     std::vector<double> masses() const;
@@ -53,6 +54,7 @@ namespace AmpGen
     EventType conj( const bool& headOnly = 0, const bool& dontConjHead = 0 ) const;
     
     void setMotherMass( const double& mass ){ m_motherMass = mass ; } 
+    void extendEventType( const std::string& branch ); 
     std::function<void( Event& )> symmetriser() const;
     std::pair<size_t, size_t> dim() const;
   };

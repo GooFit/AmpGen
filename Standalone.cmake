@@ -134,6 +134,7 @@ foreach( file ${applications} )
   get_filename_component( Executable ${file} NAME_WE )
   cmake_print_variables(Executable)
   add_executable(${Executable} ${file})
+  target_compile_options(${Executable} PUBLIC -g3 -Ofast)
   target_link_libraries(${Executable} PUBLIC AmpGen)
 endforeach()
 

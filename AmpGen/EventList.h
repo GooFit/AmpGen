@@ -43,6 +43,10 @@ namespace AmpGen
     {
       loadFromFile( fname, ArgumentPack(args...) );
     }
+    template < class ... ARGS > EventList( const std::vector<std::string>& fname, const EventType& evtType, const ARGS&... args ) : EventList(evtType) 
+    {
+      for( auto& f : fname ) loadFromFile( f, ArgumentPack(args...) );
+    }
     template < class ... ARGS > EventList( TTree* tree, const EventType& evtType, const ARGS&... args ) : EventList(evtType)
     {
       loadFromTree( tree, ArgumentPack(args...) );
@@ -79,7 +83,6 @@ namespace AmpGen
     
     size_t getCacheIndex( const CompiledExpressionBase& PDF, bool& status ) const;
     size_t getCacheIndex( const CompiledExpressionBase& PDF ) const;
-    //size_t registerExpression( const CompiledExpressionBase& expression, const size_t& size_of =0 );
     template <class T>
     size_t registerExpression(const T& expression, const size_t& size_of=0)
     {
@@ -123,20 +126,20 @@ namespace AmpGen
     }
 
     TH2D* makeProjection( const Projection2D& projection, const ArgumentPack& args );
-    std::vector<TH1D*> makePlots( const std::vector<Projection>& projections, const ArgumentPack& args );
+    std::vector<TH1D*> makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args );
 
     template <class... ARGS>
-    std::vector<TH1D*> makeDefaultPlots( const ARGS&... args )
+    std::vector<TH1D*> makeDefaultProjections( const ARGS&... args )
     {
       auto argPack = ArgumentPack( args... );
       size_t nBins = argPack.getArg<Bins>(100);
       auto proj = eventType().defaultProjections(nBins); 
-      return makePlots( proj , argPack );
+      return makeProjections( proj , argPack );
     }
     template <class... ARGS> 
-    std::vector<TH1D*> makePlots( const std::vector<Projection>& projections, const ARGS&... args )
+    std::vector<TH1D*> makeProjections( const std::vector<Projection>& projections, const ARGS&... args )
     {
-      return makePlots( projections, ArgumentPack( args... ) );
+      return makeProjections( projections, ArgumentPack( args... ) );
     }
     template <class... ARGS>
     TH1D* makeProjection( const Projection& projection, const ARGS&... args )

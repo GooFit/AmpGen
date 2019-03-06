@@ -24,9 +24,9 @@ namespace AmpGen
   class Event;
 
   #define PACKET_SIZE 22
-  DECLARE_ARGUMENT( MaxDepth, size_t );
-  DECLARE_ARGUMENT( MinEvents, size_t );
-  DECLARE_ARGUMENT( Dim, size_t );
+  DECLARE_ARGUMENT(MaxDepth, size_t );
+  DECLARE_ARGUMENT(MinEvents, size_t );
+  DECLARE_ARGUMENT(Dim, size_t );
   DECLARE_ARGUMENT_PTR( Stream, std::ifstream );
   DECLARE_ARGUMENT_DEFAULT( Functor, std::function<std::vector<real_t>( const Event& )>, nullptr );
 
@@ -68,9 +68,8 @@ namespace AmpGen
         unsigned int m_binNumber;
     };
 
-      class Decision : public INode
+    class Decision : public INode
     {
-
       public:
         Decision( const unsigned int& index, const double& value, std::shared_ptr<INode> left = nullptr,
             std::shared_ptr<INode> right = nullptr );
@@ -79,7 +78,6 @@ namespace AmpGen
         void setChildren( std::shared_ptr<INode> l, std::shared_ptr<INode> r );
         void visit( const std::function<void(INode*)>& visit_function ) override;
         friend class BinDT;
-
       private :
         std::shared_ptr<INode> m_left;
         std::shared_ptr<INode> m_right;
@@ -153,8 +151,7 @@ namespace AmpGen
       unsigned int m_minEvents;
       unsigned int m_maxDepth;
       std::vector<size_t> m_queueOrdering; 
-      double getBestPost( std::vector<double*> source, std::vector<double*> target, int index, bool verbose = false );
-
+      double getBestPost(const std::vector<double*>& source, const std::vector<double*>& target, int index, bool verbose = false );
   };
 
 } // namespace AmpGen

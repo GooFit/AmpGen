@@ -1,3 +1,5 @@
+#ifndef AMPGEN_PROFILECLOCK_H
+#define AMPGEN_PROFILECLOCK_H 1
 #include <chrono>
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
@@ -19,5 +21,5 @@ namespace AmpGen{
       INFO( typeof<FCN>() << " " << t/double(N) << "[ms] per iteration" );
       return t;
     }
-
 }
+#endif

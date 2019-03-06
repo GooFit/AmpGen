@@ -14,7 +14,7 @@
 
 #include "AmpGen/MsgService.h"
 
-std::vector<std::string> vectorFromFile( const std::string& filename, const char ignoreLinesThatBeginWith )
+std::vector<std::string> AmpGen::vectorFromFile( const std::string& filename, const char ignoreLinesThatBeginWith )
 {
   std::vector<std::string> output;
   std::string tmp;
@@ -27,7 +27,7 @@ std::vector<std::string> vectorFromFile( const std::string& filename, const char
   return output;
 }
 
-std::vector<std::string> split( const std::string& s, char delim, bool ignoreWhitespace )
+std::vector<std::string> AmpGen::split( const std::string& s, char delim, bool ignoreWhitespace )
 {
   std::vector<std::string> elems;
   std::string item;
@@ -38,7 +38,7 @@ std::vector<std::string> split( const std::string& s, char delim, bool ignoreWhi
   return elems;
 }
 
-std::vector<std::string> split( const std::string& s, const std::vector<char>& delims )
+std::vector<std::string> AmpGen::split( const std::string& s, const std::vector<char>& delims )
 {
   std::vector<std::string> elems;
   std::stringstream ss( s );
@@ -59,7 +59,16 @@ std::vector<std::string> split( const std::string& s, const std::vector<char>& d
   return elems;
 }
 
-std::vector<size_t> findAll( const std::string& input, const std::string& ch )
+void AmpGen::swapChars(std::string& arg, const char a, const char b)
+{
+  for( auto& c : arg )
+  {
+    if( c == a ) c = b;
+    else if( c == b ) c = a;
+  }
+}
+
+std::vector<size_t> AmpGen::findAll( const std::string& input, const std::string& ch )
 {
   std::vector<size_t> output;
   size_t pos = 0;
@@ -73,7 +82,7 @@ std::vector<size_t> findAll( const std::string& input, const std::string& ch )
   return output;
 }
 
-std::map<size_t, std::string> vecFindAll( const std::string& input, const std::vector<std::string>& vCh )
+std::map<size_t, std::string> AmpGen::vecFindAll( const std::string& input, const std::vector<std::string>& vCh )
 {
   std::map<size_t, std::string> output;
   for ( auto& ch : vCh ) {
@@ -83,7 +92,7 @@ std::map<size_t, std::string> vecFindAll( const std::string& input, const std::v
   return output;
 }
 
-std::string replaceAll( const std::string& input, const std::string& toReplace, const std::string& replaceWith )
+std::string AmpGen::replaceAll( const std::string& input, const std::string& toReplace, const std::string& replaceWith )
 {
   size_t pos         = 0;
   std::string output = input;
@@ -102,21 +111,11 @@ std::string replaceAll( const std::string& input, const std::string& toReplace, 
   return output;
 }
 
-std::string convertTeXtoROOT( std::string input )
-{
-  input = replaceAll( input, "\\mathrm{K}", "K" );
-  input = replaceAll( input, "\\", "#" );
-  input = replaceAll( input, "#xspace", "" );
-  input = replaceAll( input, "#kern0.2em#overline{#kern-0.2em", "#bar{" );
-  input = replaceAll( input, "^*", "^{*}" );
-  return input;
-}
-
 // extracts tree structures of the form X{Y,Z,A}
 // where Y and Z and A are also tree elements, by finding
 // the matching delimiter and the Z, A elements.
 
-std::vector<std::string> getItems( const std::string& tree, const std::vector<std::string>& brackets,
+std::vector<std::string> AmpGen::getItems( const std::string& tree, const std::vector<std::string>& brackets,
                                    const std::string& seperator )
 {
   auto braces = vecFindAll( tree, brackets ); /// get a vector of positions of the brackets ///
@@ -159,7 +158,7 @@ std::vector<std::string> getItems( const std::string& tree, const std::vector<st
   return items;
 }
 
-size_t find_next_of( const std::string& input, const std::vector<std::string>& patterns, const size_t& begin )
+size_t AmpGen::find_next_of( const std::string& input, const std::vector<std::string>& patterns, const size_t& begin )
 {
   size_t minPos = std::string::npos;
   for ( auto& pattern : patterns ) {
@@ -169,7 +168,7 @@ size_t find_next_of( const std::string& input, const std::vector<std::string>& p
   return minPos;
 }
 
-unsigned int edit_distance( const std::string& s1, const std::string& s2 )
+unsigned int AmpGen::editDistance( const std::string& s1, const std::string& s2 )
 {
   const std::size_t len1 = s1.size(), len2 = s2.size();
   std::vector<std::vector<unsigned int>> d( len1 + 1, std::vector<unsigned int>( len2 + 1 ) );
@@ -180,24 +179,23 @@ unsigned int edit_distance( const std::string& s1, const std::string& s2 )
 
   for ( unsigned int i = 1; i <= len1; ++i )
     for ( unsigned int j = 1; j <= len2; ++j )
-      // note that std::min({arg1, arg2, arg3}) works only in C++11,
-      //                       // for C++98 use std::min(std::min(arg1, arg2), arg3)
       d[i][j] = std::min( {d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + ( s1[i - 1] == s2[j - 1] ? 0 : 1 )} );
   return d[len1][len2];
 }
 
-std::string round( const double& number, const unsigned int& nsf )
+std::string AmpGen::round( const double& number, const unsigned int& nsf )
 {
-  double value = round( number * pow( 10, nsf ) ) / pow( 10, nsf );
-  return mysprintf( ( "%." + std::to_string( nsf ) + "f" ).c_str(), value );
+  double value = std::round(number * pow(10, nsf)) / pow(10, nsf);
+  auto r = mysprintf( ( "%." + std::to_string(nsf) + "f" ).c_str(), value );
+  return r.substr(0,r.size()-1);
 }
 
-std::string numberWithError( const double& number, const double& error, const unsigned int& nDigits )
+std::string AmpGen::numberWithError( const double& number, const double& error, const unsigned int& nDigits )
 {
   return round( number, nDigits ) + "\\pm" + round( error * pow( 10, nDigits ), 0 );
 }
 
-bool stringMatchesWildcard( const std::string& input, const std::string& wildcard_string,
+bool AmpGen::stringMatchesWildcard( const std::string& input, const std::string& wildcard_string,
                             const char wildcard_character )
 {
   auto pos = wildcard_string.find( wildcard_character ); /// TEST_foobar -> *_foobar
@@ -226,8 +224,8 @@ bool stringMatchesWildcard( const std::string& input, const std::string& wildcar
   return false;
 }
 
-unsigned int FNV1a_hash( const std::string& toHash )
-{ //// implements FNV-1a hash function ////
+unsigned int AmpGen::FNV1a_hash( const std::string& toHash )
+{ 
   unsigned int hash = 2166136261;
   for ( auto& c : toHash ) {
     hash ^= c;
@@ -236,15 +234,15 @@ unsigned int FNV1a_hash( const std::string& toHash )
   return hash;
 }
 
-std::ostream& bold_on(std::ostream& os){ return os << "\033[1m"; }
+std::ostream& AmpGen::bold_on(std::ostream& os){ return os << "\033[1m"; }
 
-std::ostream& bold_off(std::ostream& os){ return os << "\033[0m";}
+std::ostream& AmpGen::bold_off(std::ostream& os){ return os << "\033[0m";}
 
-std::ostream& italic_on(std::ostream& os){ return os << "\033[3m"; }
+std::ostream& AmpGen::italic_on(std::ostream& os){ return os << "\033[3m"; }
 
-std::ostream& italic_off(std::ostream& os){ return os << "\033[0m";}
+std::ostream& AmpGen::italic_off(std::ostream& os){ return os << "\033[0m";}
 
-void printReleaseNotes( const std::string& fname )
+void AmpGen::printReleaseNotes( const std::string& fname )
 {
   bool printLines = false; 
   auto lines = vectorFromFile( fname ); 
@@ -262,7 +260,7 @@ void printReleaseNotes( const std::string& fname )
 }
 
 
-void printSplash()
+void AmpGen::printSplash()
 {
   std::cout << "\n\033[2;31m";
   std::cout << "    █████╗ ███╗   ███╗██████╗  ██████╗ ███████╗███╗   ██╗" << std::endl;
@@ -290,28 +288,28 @@ void printSplash()
   if( AmpGenRoot != nullptr ) printReleaseNotes( std::string(AmpGenRoot) + "/doc/release.notes"); 
 }
 
-bool file_exists( const std::string& name )
+bool AmpGen::fileExists( const std::string& name )
 {
   struct stat buffer;
   return ( stat( name.c_str(), &buffer ) == 0 );
 }
 
-std::string rtrim( std::string s )
+std::string AmpGen::rtrim( std::string s )
 {
   s.erase( std::find_if( s.rbegin(), s.rend(), [](unsigned char c){ return !std::isspace(c); }).base(), s.end() );
   return s;
 }
 
 // trim from both ends
-std::string trim( std::string s ) { return ltrim( rtrim( s ) ); }
+std::string AmpGen::trim( std::string s ) { return ltrim( rtrim( s ) ); }
 
-std::string ltrim( std::string s )
+std::string AmpGen::ltrim( std::string s )
 {
   s.erase( s.begin(), std::find_if( s.begin(), s.end(), [](unsigned char c){ return !std::isspace(c); }));
   return s;
 }
 
-std::string expandGlobals( std::string path )
+std::string AmpGen::expandGlobals( std::string path )
 {
   size_t pos;
   do {
@@ -341,13 +339,13 @@ std::string expandGlobals( std::string path )
   return path;
 }
 
-bool isDir( const std::string& pathname )
+bool AmpGen::isDir( const std::string& pathname )
 {
   struct stat sb;
   return stat( pathname.c_str(), &sb ) == 0 && S_ISDIR( sb.st_mode );
 }
 
-std::vector<std::string> getListOfFiles( const std::string& directory, std::string patternString )
+std::vector<std::string> AmpGen::getListOfFiles( const std::string& directory, std::string patternString )
 {
   std::string expanded_path = expandGlobals( directory );
   std::vector<std::string> files;
@@ -391,7 +389,7 @@ std::vector<std::string> getListOfFiles( const std::string& directory, std::stri
 }
 
 template <>
-double lexical_cast<double>( const std::string& word, bool& status )
+double AmpGen::lexical_cast<double>( const std::string& word, bool& status )
 {
   char* p;
   auto number = strtod( word.c_str(), &p );
@@ -400,7 +398,7 @@ double lexical_cast<double>( const std::string& word, bool& status )
 }
 
 template <>
-int lexical_cast<int>( const std::string& word, bool& status )
+int AmpGen::lexical_cast<int>( const std::string& word, bool& status )
 {
   char* p;
   auto number = strtol( word.c_str(), &p, 10 );
@@ -408,7 +406,7 @@ int lexical_cast<int>( const std::string& word, bool& status )
   return number;
 }
 template <>
-unsigned int lexical_cast<unsigned int>( const std::string& word, bool& status )
+unsigned int AmpGen::lexical_cast<unsigned int>( const std::string& word, bool& status )
 {
   char* p;
   auto number = strtoul( word.c_str(), &p, 10 );
@@ -417,13 +415,13 @@ unsigned int lexical_cast<unsigned int>( const std::string& word, bool& status )
 }
 
 template <>
-std::string lexical_cast<std::string>( const std::string& word, bool& status )
+std::string AmpGen::lexical_cast<std::string>( const std::string& word, bool& status )
 {
   return word;
 }
 
 template <>
-float lexical_cast<float>( const std::string& word, bool& status )
+float AmpGen::lexical_cast<float>( const std::string& word, bool& status )
 {
   char* p;
   auto number = strtof( word.c_str(), &p );
@@ -432,7 +430,7 @@ float lexical_cast<float>( const std::string& word, bool& status )
 }
 
 template <>
-bool lexical_cast<bool>( const std::string& word, bool& status )
+bool AmpGen::lexical_cast<bool>( const std::string& word, bool& status )
 {
   bool value = false;
   if ( word == "1" || word == "true" ) {
@@ -446,7 +444,7 @@ bool lexical_cast<bool>( const std::string& word, bool& status )
 }
 
 template <>
-long int lexical_cast<long int>( const std::string& word, bool& status )
+long int AmpGen::lexical_cast<long int>( const std::string& word, bool& status )
 {
   char* p;
   auto number = strtol( word.c_str(), &p, 10 );
@@ -455,7 +453,7 @@ long int lexical_cast<long int>( const std::string& word, bool& status )
 }
 
 template <>
-unsigned long int lexical_cast<unsigned long int>( const std::string& word, bool& status )
+unsigned long int AmpGen::lexical_cast<unsigned long int>( const std::string& word, bool& status )
 {
   char* p;
   auto number = strtoul( word.c_str(), &p, 10 );
@@ -463,3 +461,29 @@ unsigned long int lexical_cast<unsigned long int>( const std::string& word, bool
   return number;
 }
 
+std::pair<size_t,int> AmpGen::minSwaps(const std::vector<size_t>& indices, const std::vector<int>& exchangeParities) 
+{ 
+  std::vector<std::pair<size_t, size_t>> arrPos;
+  for(size_t i = 0; i < indices.size(); i++) arrPos.emplace_back( indices[i], i ); 
+  std::sort(arrPos.begin(), arrPos.end() ); 
+  std::vector<bool> visited(indices.size(), false); 
+  size_t ans = 0; 
+  int netExchangeParity = +1;
+  for (size_t i = 0; i < indices.size(); i++) 
+  { 
+    if (visited[i] || arrPos[i].second == i)  continue; 
+    size_t cycle_size = 0; 
+    size_t j = i; 
+    while (!visited[j]) 
+    { 
+      visited[j] = true; 
+      j = arrPos[j].second; 
+      cycle_size++; 
+    } 
+    if( cycle_size > 0 ){
+      netExchangeParity *= exchangeParities[i]; 
+      ans += (cycle_size - 1); 
+    }
+  } 
+  return {ans,netExchangeParity}; 
+}

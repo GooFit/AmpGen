@@ -11,8 +11,44 @@
 
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Event.h"
+#include <numeric>
 
 using namespace AmpGen;
+
+double nearestNeighbourVariance(std::vector<double*> evts, const size_t& index)
+{
+  auto dist  = [&index](const double* x, const double* y){ return fabs( *(x+index) -*(y+index)) ;};
+  auto dist2 = [&index](const double* x, const double* y){ return ( *(x+index) -*(y+index))*( *(x+index) - *(y+index) ) ;};
+  parallel_sort(evts.begin() 
+                , evts.end() 
+                , [index]( const double* evt1, const double* evt2 ) { return *( evt1 + index ) > *( evt2 + index ); }
+                , std::max(256ul, evts.size() / 4) );
+  size_t size                 = evts.size();
+  double x   = dist(evts[0], evts[1]) + dist(evts[size-1], evts[size-2]); 
+  double x2  = dist2(evts[0], evts[1]) + dist2(evts[size-1], evts[size-2]); 
+  for ( size_t i = 1; i < size-1; ++i ) {
+    double low  = dist(evts[i], evts[i-1]); 
+    double high = dist(evts[i], evts[i+1]);
+    x  += low > high ? high : low;
+    x2 += low > high ? high*high : low*low;
+  }
+  return x2/double(size) - x*x / double(size*size);
+}
+
+std::pair<std::vector<double*>, std::vector<double*>> splitEvents( std::vector<double*> evts, const size_t& index, double& midposition )
+{
+  auto sorter = [&index]( double* a, double* b ) { return *( a + index ) < *( b + index ); };
+  std::sort( evts.begin(), evts.end(), sorter );
+  unsigned int midpoint = evts.size() / 2;
+  midposition =
+    evts.size() % 2 == 0
+    ? ( *( evts[midpoint - 1] + index ) + *( evts[midpoint] + index ) ) / 2
+    : ( *( evts[midpoint + 1] + index ) + *( evts[midpoint - 1] + index ) + *( evts[midpoint] + index ) ) / 3;
+  midpoint += midposition > *( evts[midpoint] + index );
+  std::vector<double*> leftEvents( evts.begin(), evts.begin() + midpoint );
+  std::vector<double*> rightEvents( evts.begin() + midpoint, evts.end() );
+  return std::make_pair(leftEvents, rightEvents);
+}
 
 unsigned int BinDT::getBinNumber( const Event& evt ) const
 {
@@ -76,9 +112,7 @@ BinDT::BinDT( const ArgumentPack& args )
   std::ifstream* stream = args.getArg<Stream>().val;
   auto fname            = args.getArg<File>();
   if ( stream != nullptr && stream->is_open() ) {
-    // if( readType & std::ios::binary )
     readFromBinary( *stream );
-    // else readFromStream( *stream );
   } else if ( fname.name != "" ) {
     std::ifstream stream( fname.name, fname.mode | std::ios::in );
     if ( fname.mode & std::ios::binary )
@@ -96,7 +130,6 @@ void BinDT::readFromStream( std::istream& stream )
   while ( getline( stream, line ) ) {
     if( line == "end" ) break; 
     auto tokens = split( line, ' ' );
-
     try { 
       std::string address                = tokens[0];
       if ( topAddress == "" ) topAddress = address;
@@ -214,55 +247,8 @@ void BinDT::serialize( const std::string& filename )
   output.close();
 }
 
-double BinDT::nnUniformity( std::vector<double*> evts, const unsigned int& index ) const
-{
-
-  std::sort( evts.begin(), evts.end(),
-      [index]( const double* evt1, const double* evt2 ) { return *( evt1 + index ) > *( evt2 + index ); } );
-  double averageNNdistance = 0;
-  int size                 = evts.size();
-  for ( int i = 0; i < size; ++i ) {
-    int j = i - 1;
-    int k = i + 1;
-
-    if ( i == 0 ) {
-      averageNNdistance += fabs( *( evts[i] + index ) - *( evts[k] + index ) );
-      continue;
-    }
-    if ( k == size ) {
-      averageNNdistance += fabs( *( evts[i] + index ) - *( evts[j] + index ) );
-      continue;
-    } else {
-      double low  = fabs( *( evts[i] + index ) - *( evts[k] + index ) );
-      double high = fabs( *( evts[i] + index ) - *( evts[j] + index ) );
-      averageNNdistance += low > high ? high : low;
-    }
-  }
-  double avg = averageNNdistance / double( size );
-
-  double sigma = 0;
-  for ( int i = 0; i < size; ++i ) {
-    int j = i - 1;
-    int k = i + 1;
-    if ( i == 0 ) {
-      sigma += pow( fabs( *( evts[i] + index ) - *( evts[k] + index ) ) - avg, 2 );
-      continue;
-    }
-    if ( k == size ) {
-      sigma += pow( fabs( *( evts[i] + index ) - *( evts[j] + index ) ) - avg, 2 );
-      continue;
-    } else {
-      double low  = fabs( *( evts[i] + index ) - *( evts[k] + index ) );
-      double high = fabs( *( evts[i] + index ) - *( evts[j] + index ) );
-      sigma += fabs( low ) > fabs( high ) ? pow( high - avg, 2 ) : pow( low - avg, 2 );
-    }
-  }
-  return sigma / double( evts.size() );
-}
-
 std::shared_ptr<BinDT::INode> BinDT::makeNodes( std::vector<double*> evts )
 {
-
   INFO( "Making nodes" );
   std::queue<unsigned int> iq;
   refreshQueue( evts, iq, 0 );
@@ -286,28 +272,13 @@ std::shared_ptr<BinDT::INode> BinDT::makeNodes( std::vector<double*> evts, std::
     m_endNodes.push_back( node );
     return node;
   }
-
-  auto sorter = [&index]( double* a, double* b ) { return *( a + index ) < *( b + index ); };
-  DEBUG( "Sorting" );
-  std::sort( evts.begin(), evts.end(), sorter );
-
-  unsigned int midpoint = evts.size() / 2;
-  DEBUG( "Done sorting, midpoint = " << midpoint );
-  double midposition =
-    evts.size() % 2 == 0
-    ? ( *( evts[midpoint - 1] + index ) + *( evts[midpoint] + index ) ) / 2
-    : ( *( evts[midpoint + 1] + index ) + *( evts[midpoint - 1] + index ) + *( evts[midpoint] + index ) ) / 3;
-  DEBUG( "Splitting on midpoint = " << midpoint );
-  midpoint += midposition > *( evts[midpoint] + index );
-
-  std::vector<double*> leftEvents( evts.begin(), evts.begin() + midpoint );
-  std::vector<double*> rightEvents( evts.begin() + midpoint, evts.end() );
-  DEBUG( "Split list into: " << leftEvents.size() << " " << rightEvents.size() );
+  double mid_point; 
+  auto split_events = splitEvents(evts, index, mid_point);
   indexQueue.pop();
   if ( indexQueue.empty() ) refreshQueue( evts, indexQueue, depth + 1 );
-  auto left  = makeNodes( leftEvents, indexQueue, depth + 1 );
-  auto right = makeNodes( rightEvents, indexQueue, depth + 1 );
-  auto node  = std::make_shared<Decision>( index, midposition, right, left );
+  auto left  = makeNodes(split_events.first, indexQueue, depth + 1);
+  auto right = makeNodes(split_events.second, indexQueue, depth + 1);
+  auto node  = std::make_shared<Decision>( index, mid_point, right, left );
   return node;
 }
 
@@ -315,12 +286,45 @@ std::shared_ptr<BinDT::INode> BinDT::makeNodes( std::vector<double*> source, std
 {
   std::queue<unsigned int> iq;
   refreshQueue( source, iq, 0 );
-  auto node = makeNodes( source, target, iq, 0 );
-  m_top     = node;
-  return node;
+  m_top     = makeNodes(source, target, iq, 0);
+  return m_top;
 }
-
-double BinDT::getBestPost( std::vector<double*> source, std::vector<double*> target, int index, bool verbose )
+double bestCut_lineSearch(const std::vector<double*>& source, 
+                          const std::vector<double*>& target, 
+                          int index, 
+                          const size_t& dim,
+                          const size_t& minEvents)
+{
+  auto w                       = [dim](const double* evt){ return *(evt+dim); };
+  auto f                       = [index](const double* evt){ return *(evt+index); };
+  double maxChi2               = -9999;
+  double optPos                = 0;
+  double s_w1      = 0;
+  double s_wt      = parallel_accumulate(source.begin(), source.end()              , 0.0, w); //  sum_weights);
+  double t_w1      = parallel_accumulate(target.begin(), target.begin() + minEvents, 0.0, w); //  sum_weights);
+  double t_wt      = parallel_accumulate(target.begin(), target.end()  , 0.0, w); //  sum_weights);
+  unsigned int s_p1 = 0;
+  unsigned int s_pt = source.size();
+  auto sourceIt = source.begin();
+  for(size_t i = minEvents; i < target.size() - minEvents; i++ ) {
+    t_w1  += w( target[i] );
+    double pos = 0.5 * ( f(target[i]) + f(target[i + 1]) );
+    for(; sourceIt != source.end(); ++sourceIt) {
+      double positionOfThis = f(*sourceIt);
+      if ( positionOfThis > pos ) break;
+      s_w1  += w(*sourceIt);
+      s_p1++;
+    }
+    //INFO( sourceLeftWeight << " " << targetLeftWeight << " " << sourceRightWeight << " " << targetRightWeight ); 
+    double chi2 = (s_w1 - t_w1)*(s_w1 - t_w1)/(s_w1 + t_w1) + (s_wt - s_w1 - t_wt + t_w1)*(s_wt - s_w1 - t_wt + t_w1)/(s_wt - s_w1 + t_wt - t_w1);
+    if ( chi2 > maxChi2 && s_p1 >= minEvents && (s_pt-s_p1) >= minEvents ) {
+      maxChi2 = chi2;
+      optPos  = pos;
+    }
+  }
+  return optPos;
+}
+double BinDT::getBestPost( const std::vector<double*>& source, const std::vector<double*>& target, int index, bool verbose )
 {
   double optChi2                     = -9999;
   double optPos                      = 0;
@@ -331,20 +335,15 @@ double BinDT::getBestPost( std::vector<double*> source, std::vector<double*> tar
   unsigned int sourceLeftPopulation  = 0;
   unsigned int sourceRightPopulation = source.size();
   for ( auto& event : source ) sourceRightWeight += *( event + m_dim );
-  auto sourceIt = source.begin();
-  if ( verbose ) {
-    INFO( "Checking: " << source.size() << " " << target.size() );
-  }
+  auto sourceIt = source.begin(); 
+  INFO("target = " << targetLeftWeight << " " << targetRightWeight << " " << sourceLeftWeight << " " << sourceRightWeight );
   for ( unsigned int i = 0; i < target.size() - m_minEvents; i++ ) {
     targetLeftWeight += target[i][m_dim];
     targetRightWeight -= target[i][m_dim];
     if ( i < m_minEvents ) continue;
     double pos = ( target[i][index] + target[i + 1][index] ) / 2.;
-
     for ( ; sourceIt != source.end(); ++sourceIt ) {
       double positionOfThis = *( *sourceIt + index );
-      if ( verbose )
-        INFO( "Position = " << pos << " current = " << positionOfThis << " population = " << sourceLeftPopulation );
       if ( positionOfThis > pos ) break;
       sourceLeftWeight += *( *sourceIt + m_dim );
       sourceRightWeight -= *( *sourceIt + m_dim );
@@ -362,6 +361,7 @@ double BinDT::getBestPost( std::vector<double*> source, std::vector<double*> tar
   }
   return optPos;
 }
+
 std::shared_ptr<BinDT::INode> BinDT::makeNodes( std::vector<double*> source, std::vector<double*> target,
     std::queue<unsigned int> indexQueue, const unsigned int& depth )
 {
@@ -375,20 +375,15 @@ std::shared_ptr<BinDT::INode> BinDT::makeNodes( std::vector<double*> source, std
     return node;
   }
   auto sorter = [&index]( auto& a, auto& b ) { return *( a + index ) < *( b + index ); };
-  std::sort( source.begin(), source.end(), sorter );
-  std::sort( target.begin(), target.end(), sorter );
-  double optPos = getBestPost( source, target, index );
-
-  std::vector<double*> sourceLeft;  //( source.begin(), optSourceIt );
-  std::vector<double*> targetLeft;  //( target.begin(), optTargetIt );
-  std::vector<double*> sourceRight; //( optSourceIt, source.end() );
-  std::vector<double*> targetRight; //( optTargetIt, target.end() );
-  for ( auto& event : source ) {
-    ( event[index] > optPos ? sourceRight : sourceLeft ).push_back( event );
-  }
-  for ( auto& event : target ) {
-    ( event[index] > optPos ? targetRight : targetLeft ).push_back( event );
-  }
+  parallel_sort(source.begin(), source.end(), sorter, std::max(256ul, source.size() / 4) );
+  parallel_sort(target.begin(), target.end(), sorter, std::max(256ul, target.size() / 4) );
+  double optPos = bestCut_lineSearch(source, target, index, m_dim, m_minEvents);
+  auto sc = std::lower_bound( source.begin(), source.end(), optPos, [index](const auto& a, const auto& b){return b > *(a+index); } );
+  auto tc = std::lower_bound( target.begin(), target.end(), optPos, [index](const auto& a, const auto& b){return b > *(a+index); } );
+  std::vector<double*> sourceLeft(source.begin(), sc); 
+  std::vector<double*> sourceRight(sc, source.end());
+  std::vector<double*> targetLeft(target.begin(), tc);
+  std::vector<double*> targetRight(tc, target.end());
   if ( sourceLeft.size() == 0 || sourceRight.size() == 0 ) {
     DEBUG( "No data to divide into block" );
     DEBUG( "Dividing:  source=(" << sourceLeft.size() << ", " << sourceRight.size() << "); target=("
@@ -397,7 +392,6 @@ std::shared_ptr<BinDT::INode> BinDT::makeNodes( std::vector<double*> source, std
     auto node = std::make_shared<EndNode>( m_endNodes.size() );
     m_endNodes.push_back( node );
     return node;
-    /// getBestPost( source, target, index, true);
   }
   indexQueue.pop();
   if ( indexQueue.empty() ) refreshQueue( source, indexQueue, depth + 1 );
@@ -416,7 +410,7 @@ void BinDT::refreshQueue( const std::vector<double*>& evts, std::queue<unsigned 
     for ( unsigned int i = 0; i < m_dim; ++i ) indexQueue.push( m_queueOrdering[i] );
   } else {
     std::vector<std::pair<unsigned int, double>> indices;
-    for ( unsigned int i = 0; i < m_dim; ++i ) indices.emplace_back( i, nnUniformity( evts, i ) );
+    for ( unsigned int i = 0; i < m_dim; ++i ) indices.emplace_back( i, nearestNeighbourVariance( evts, i ) );
     std::sort( indices.begin(), indices.end(),
         []( auto& it1, auto& it2 ) { return it1.second > it2.second;} );
     for ( auto& item : indices ) indexQueue.push( item.first );
@@ -461,14 +455,16 @@ BinDT::EndNode::EndNode( const unsigned int& no, const unsigned int& binNumber )
   m_voxNumber( no ), 
   m_binNumber( binNumber ) {}
 
-  const BinDT::EndNode* BinDT::EndNode::operator()( const double* evt ) const { return this; }
+const BinDT::EndNode* BinDT::EndNode::operator()( const double* evt ) const { return this; }
 
-  void BinDT::EndNode::serialize( std::ostream& stream ) const
+void BinDT::EndNode::serialize( std::ostream& stream ) const
 {
   stream << this << " " << m_voxNumber << " " << m_binNumber << std::endl;
 }
+
 const BinDT::EndNode* BinDT::Decision::operator()( const double* evt ) const
 {
+//  INFO( m_index << " " << m_value << " " << *(evt+m_index));
   return *( evt + m_index ) < m_value ? ( *m_right )( evt ) : ( *m_left )( evt );
 }
 

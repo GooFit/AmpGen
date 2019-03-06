@@ -29,6 +29,7 @@ namespace AmpGen
   class CoherentSum
   {
   public:
+    CoherentSum();
     CoherentSum( const EventType& type, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "" );
     virtual ~CoherentSum() = default; 
 
@@ -89,11 +90,11 @@ namespace AmpGen
     size_t m_printFreq             = {0};        ///< Frequency to print verbose PDF info
     double m_weight                = {1};        ///< Weight number (i.e. the normalised yield)
     double m_norm                  = {0};        ///< Normalisation integral
-    std::string m_prefix           = {""};       ///< Prefix for matrix elements
     bool m_isConstant              = {false};    ///< Flag for a constant PDF
     bool m_dbThis                  = {false};    ///< Flag to generate amplitude level debugging
     bool m_verbosity               = {false};    ///< Flag for verbose printing
-
+    std::string m_objCache         = {""};       ///< Directory that contains (cached) amplitude objects
+    std::string m_prefix           = {""};       ///< Prefix for matrix elements
     void addMatrixElement( std::pair<Particle, CouplingConstant>& particleWithCoupling, const MinuitParameterSet& mps );
     bool isFixedPDF(const MinuitParameterSet& mps) const;
 

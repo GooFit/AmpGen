@@ -71,7 +71,7 @@ Expression phaseSpace(const Expression& s, const Particle& p, const size_t& l )
     auto s2 = p.daughter(1)->massSq();
     auto q2v             = make_cse( Q2(s,s1,s2) );
     const Expression q2  = Ternary( q2v > 0, q2v, 0 );
-    return rho_twoBody(s, s1,s2 ) * BlattWeisskopf( q2*radius*radius, l );
+    return rho_twoBody(s, s1, s2) * BlattWeisskopf(q2*radius*radius, l);
   }  
   if( fs.size() == 3 && ! p.daughter(0)->isStable() ) return rho_threeBody( s, *p.daughter(0), *p.daughter(1) );
   if( fs.size() == 3 && ! p.daughter(1)->isStable() ) return rho_threeBody( s, *p.daughter(1), *p.daughter(0) );
@@ -86,23 +86,26 @@ DEFINE_LINESHAPE( CoupledChannel )
   const Expression width        = Parameter( particleName + "_width", props->width() );
   const Expression radius       = Parameter( particleName + "_radius", props->radius() );
   const Expression I = Constant(0.,1.);
-  std::vector< std::string > channels = NamedParameter< std::string >( particleName + "_channels").getVector();  
+  std::vector<std::string> channels = NamedParameter<std::string>( particleName + "_channels").getVector();  
   Expression totalWidth = 0; 
   Expression totalWidthAtPole = 0 ; 
   ADD_DEBUG( s , dbexpressions );
-
   for( size_t i = 0 ; i < channels.size(); i+=2 ){
     Particle p( channels[i] ); 
     INFO( "Adding channel ... " << p.uniqueString() << " coupling = " << NamedParameter<std::string>( channels[i+1]  ) );
     Expression coupling = Parameter( channels[i+1],0);
     totalWidth       = totalWidth       + coupling * phaseSpace(s        , p, p.orbital() );
     totalWidthAtPole = totalWidthAtPole + coupling * phaseSpace(mass*mass, p, p.orbital() );    
-    ADD_DEBUG( coupling, dbexpressions );
-    ADD_DEBUG( phaseSpace(s,p,p.orbital() ), dbexpressions );
+    ADD_DEBUG(coupling, dbexpressions);
+    ADD_DEBUG(phaseSpace(s,p,p.orbital() ), dbexpressions);
+    ADD_DEBUG(phaseSpace(mass*mass,p,p.orbital() ), dbexpressions);
   }
-  const Expression q2  = make_cse( Abs(Q2( s, s1, s2 ) ) ) ;
-  const Expression formFactor                       = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
-  const Expression widthNorm = lineshapeModifier == "noNorm" ? 1 : width / totalWidthAtPole; 
+  ADD_DEBUG(totalWidth, dbexpressions);
+  ADD_DEBUG(totalWidthAtPole, dbexpressions);
+  const Expression q2  = make_cse(abs(Q2(s, s1, s2)));
+  Expression formFactor                        = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
+  if ( lineshapeModifier == "BL" )  formFactor = sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
+  const Expression widthNorm = lineshapeModifier == "norm" ? width / totalWidthAtPole : 1; 
   const Expression D  = mass*mass - Constant(0,1)*mass*totalWidth*widthNorm; 
   const Expression BW = 1. / ( D - s ); 
   const Expression kf = kFactor( mass, width, dbexpressions );

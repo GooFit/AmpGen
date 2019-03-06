@@ -120,6 +120,10 @@ namespace AmpGen
       bool m_usesDefaultLineshape            = {false};      ///< Flag to check if default shape is used
       std::vector<std::shared_ptr<Particle>> m_daughters;    ///< Array of daughter particles
       std::vector<std::string> m_modifiers;                  ///< Additional modifiers for amplitude
+      std::string m_spinFormalism            = {""};         ///< Spin formalism to use for this particle (global)
+      std::string m_spinBasis                = {""};         ///< Basis to use for external polarisations (global)
+      std::string m_defaultModifier          = {""};         ///< Default Modifier to use (global)
+ 
       void pdgLookup();                                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
       bool hasModifier( const std::string& modifier ) const; ///< Check if this particle has a given modifier
       std::string modifierString() const;                    ///< Re-generate modifier string used to create particle
@@ -127,7 +131,7 @@ namespace AmpGen
       void sortDaughters();                                  ///< Recursively order the particle's decay products. 
     public:
       /// @constructor default constructor
-      Particle() = default;            
+      Particle();
       
       /// @constructor Constructor that takes a pair of other particles (i.e. this particle's decay products) as arguments and looks up the properties of this particle using the particle name. 
       Particle( const std::string& name, const Particle& p1, const Particle& p2 ); 

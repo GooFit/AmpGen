@@ -142,7 +142,7 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
         std::function<double(const Event&)> FCN_sig = 
           [&](const Event& evt){ return f.prob_unnormalised(evt) ; };
         auto tStartIntegral2 = std::chrono::high_resolution_clock::now();
-        auto mc_plot3 = mc.makePlots( mc.eventType().defaultProjections(100), WeightFunction(f), Prefix("tMC_Category"+std::to_string(counter) ) );
+        auto mc_plot3 = mc.makeProjections( mc.eventType().defaultProjections(100), WeightFunction(f), Prefix("tMC_Category"+std::to_string(counter) ) );
 
         //        auto mc_plot3        = bandPlot<100>( mc, "tMC_Category" + std::to_string( counter ) + "_", f, ep );
         auto tEndIntegral2   = std::chrono::high_resolution_clock::now();
@@ -239,7 +239,6 @@ int main( int argc, char* argv[] )
   events.transform( scale_transform );
   eventsMC.transform( scale_transform );
   
-  if( BAR ) events.transform( [](auto& event ){ event.invertParity(4) ; } );
   INFO( "Data events: " << events.size() );  
   INFO( "MC events  : " << eventsMC.size() );
   if( mcFile == "" ){
@@ -287,7 +286,7 @@ int main( int argc, char* argv[] )
 
   fr->writeToFile( logFile );
   output->cd();
-  auto plots = events.makeDefaultPlots( Prefix( "Data_" ), Bins( NBins ) );
+  auto plots = events.makeDefaultProjections( Prefix( "Data_" ), Bins( NBins ) );
   for ( auto& plot : plots ) plot->Write();
 
   output->Write();

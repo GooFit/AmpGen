@@ -16,7 +16,6 @@ namespace AmpGen
 {
   class ParticlePropertiesList
   {
-
     static ParticlePropertiesList* ptr;
     std::map<int, std::pair<std::string, std::string>> m_latexLabels;
     std::string m_fname;
@@ -29,7 +28,6 @@ namespace AmpGen
 
   protected:
     const std::vector<std::string> dirList() const;
-
     bool readFile( const std::string& fname );
 
   public:

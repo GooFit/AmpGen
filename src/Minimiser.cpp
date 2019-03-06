@@ -63,36 +63,27 @@ double Minimiser::FCN() const { return m_theFunction(); }
 
 void Minimiser::prepare()
 {
-  std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse" );
-  unsigned int maxCalls = NamedParameter<unsigned int>( "Minimiser::MaxCalls", 100000 );
-  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance", 0.01 );
-  m_printLevel          = NamedParameter<unsigned int>( "Minimiser::PrintLevel", 4 );
+  std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse");
+  size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
+  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 0.01);
+  m_printLevel          = NamedParameter<size_t>( "Minimiser::PrintLevel", 4);
   if ( m_minimiser != nullptr ) delete m_minimiser;
-  m_minimiser = new Minuit2::Minuit2Minimizer(algorithm.c_str() ) ; // ROOT::Math::Factory::CreateMinimizer( minimiser, algorithm );
+  m_minimiser = new Minuit2::Minuit2Minimizer(algorithm.c_str() );
   DEBUG( "Error definition = " << m_minimiser->ErrorDef() );
   m_minimiser->SetMaxFunctionCalls( maxCalls );
   m_minimiser->SetMaxIterations( 100000 );
   m_minimiser->SetTolerance( tolerance );
   m_minimiser->SetPrintLevel( m_printLevel );
-
   m_mapping.clear();
   m_covMatrix.clear();
-
-  unsigned int counter = 0;
-
-  m_nParams = 0;
-
-  DEBUG( "# parameters = " << m_parSet->size() );
-  for ( unsigned int i = 0; i < m_parSet->size(); ++i ) {
-    MinuitParameter* par = m_parSet->getParPtr( i );
-    if ( par == nullptr ) {
-      ERROR( "Parameter " << i << " doesn't exist!" );
-      continue;
-    }
+  for(size_t i = 0 ; i < m_parSet->size(); ++i) 
+  {
+    auto par = m_parSet->getParPtr(i);
     if ( par->iFixInit() != 0 ) continue;
-    m_minimiser->SetVariable( counter, par->name(), par->mean(), par->stepInit() );
-    if ( par->minInit() != 0 || par->maxInit() != 0 ) m_minimiser->SetVariableLimits( counter, par->minInit(), par->maxInit() );
-    
+    m_minimiser->SetVariable(m_mapping.size(), par->name(), par->mean(), par->stepInit());
+    if ( par->minInit() != 0 || par->maxInit() != 0 ) 
+      m_minimiser->SetVariableLimits( m_mapping.size(), par->minInit(), par->maxInit() );
+    m_mapping.push_back(i);
     if ( m_printLevel != 0 ) {
       INFO( "Parameter: " << std::left  << std::setw(60) << par->name() << " = " 
                           << std::right << std::setw(12) << par->mean() << " ± " 
@@ -100,10 +91,8 @@ void Minimiser::prepare()
                           << ( ( par->minInit() != 0 || par->maxInit() != 0 ) ? 
                           ("["+ std::to_string(par->minInit()) + ", " + std::to_string(par->maxInit() ) ) + "]" : "" ) );
     }
-    m_mapping.push_back( i );
-    counter++;
   }
-  m_nParams = counter;
+  m_nParams = m_mapping.size();
   m_covMatrix.resize( m_nParams * m_nParams, 0 );
 }
 
@@ -162,13 +151,11 @@ TMatrixTSym<double> Minimiser::covMatrixFull() const
 {
   unsigned int internalPars = m_parSet->size();
   TMatrixTSym<double> matrix( internalPars );
-
   for ( unsigned int i = 0; i < m_mapping.size(); ++i ) {
     for ( unsigned int j = 0; j < m_mapping.size(); j++ ) {
       matrix( m_mapping[i], m_mapping[j] ) = m_covMatrix[i + j * m_mapping.size()];
     }
   }
-
   return matrix;
 }
 
