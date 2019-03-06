@@ -120,7 +120,7 @@ int main( int argc, char* argv[] )
   /* Write out the data plots. This also shows the first example of the named arguments 
      to functions, emulating python's behaviour in this area */
 
-  auto plots = events.makeDefaultPlots(Prefix("Data"), Bins(100));
+  auto plots = events.makeDefaultProjections(Prefix("Data"), Bins(100));
   for ( auto& plot : plots ) plot->Write();
 
   output->Close();
@@ -146,9 +146,7 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
   unsigned int counter = 1;
   for_each(pdf.m_pdfs, [&]( auto& f ){
     std::function<double(const Event&)> FCN_sig = [&](const Event& evt){ return f.prob_unnormalised(evt) ; };
-    auto mc_plot3 = mc.makePlots(mc.eventType().defaultProjections(100)
-                                , WeightFunction(f)
-                                , Prefix("Model_cat"+std::to_string(counter)));
+    auto mc_plot3 = mc.makeDefaultProjections(WeightFunction(f), Prefix("Model_cat"+std::to_string(counter)));
     for( auto& plot : mc_plot3 )
     {
       plot->Scale( ( data.integral() * f.getWeight() ) / plot->Integral() );
@@ -160,6 +158,7 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
   /* Estimate the chi2 using an adaptive / decision tree based binning, 
      down to a minimum bin population of 15, and add it to the output. */
   Chi2Estimator chi2( data, mc, pdf, 15 );
+  chi2.writeBinningToFile("chi2_binning.txt");
   fr->addChi2( chi2.chi2(), chi2.nBins() );
   
   auto twall_end  = std::chrono::high_resolution_clock::now();
