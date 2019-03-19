@@ -33,8 +33,7 @@ namespace AmpGen
 
   public:
     DynamicFCN() = default; 
-    DynamicFCN( const std::string& lib, const std::string& name ) :
-
+    DynamicFCN( const std::string& lib, const std::string& name ) : 
       m_handle(dlopen( lib.c_str(), RTLD_NOW )) {
         set(m_handle,name);
     }

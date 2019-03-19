@@ -404,6 +404,7 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   for( auto& p : finalStateParticles ) exchangeParities.push_back( p->props()->isFermion() ? -1 : 1 ); 
   for(auto& ordering : orderings){
     auto exchangeParity = minSwaps( ordering, exchangeParities );   
+    //INFO( vectorToString( ordering, ", ") << " "  << exchangeParity.second );
     setOrdering( ordering );
     Expression spinFactor = 1; 
     if( includeSpin && spinFormalism == "Covariant" ){

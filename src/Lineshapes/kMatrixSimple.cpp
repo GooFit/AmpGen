@@ -30,14 +30,13 @@ DEFINE_LINESHAPE( kMatrixSimple )
     ERROR( "Pole term not recognised: " << pTerm );
   }
 
-  const unsigned int nPoles    = NamedParameter<unsigned int>( "kMatrix::nPoles", 2 );
-  const unsigned int nChannels = NamedParameter<unsigned int>( "kMatrix::nChannels", 2 );
+  size_t nPoles    = NamedParameter<size_t>( "kMatrix::nPoles", 2 );
+  size_t nChannels = NamedParameter<size_t>( "kMatrix::nChannels", 2 );
 
   std::vector<Expression> phaseSpace;
   std::vector<std::pair<double, double>> masses;
   for ( unsigned int i = 1; i <= nChannels; ++i ) {
-    std::vector<std::string> particlesInThisChannel =
-        NamedParameter<std::string>( "kMatrix::Channel::" + std::to_string( i ) ).getVector();
+    std::vector<std::string> particlesInThisChannel = NamedParameter<std::string>( "kMatrix::Channel::" + std::to_string(i) ).getVector();
     if ( particlesInThisChannel.size() != 2 ) ERROR( "Only does two body channels for now" );
     double m1 = ParticlePropertiesList::get( particlesInThisChannel[0] )->mass();
     double m2 = ParticlePropertiesList::get( particlesInThisChannel[1] )->mass();
@@ -55,7 +54,6 @@ DEFINE_LINESHAPE( kMatrixSimple )
       Expression gPiPi = Parameter( ( stub + "::width::" + std::to_string( channel ) ) );
       Expression rho0  = phsp_twoBody( mass * mass, masses[channel].first, masses[channel].second );
       Expression g     = gFromGamma( mass, gPiPi, rho0 );
-
       thisPole.add( g );
       if ( dbexpressions != nullptr ) {
         Expression rhoRatio = phaseSpace[channel] / rho0;
@@ -71,20 +69,15 @@ DEFINE_LINESHAPE( kMatrixSimple )
   }
 
   auto kMatrix = constructKMatrix( sInGeV, nChannels, poleConfigs, nullptr, dbexpressions );
-  for ( unsigned int i = 0; i < nChannels; ++i ) {
-    for ( unsigned int j = 0; j < nChannels; ++j ) {
-      if ( dbexpressions != nullptr )
-        dbexpressions->emplace_back( "K[" + std::to_string( i ) + "," + std::to_string( j ) + "]", kMatrix[{i, j}] );
-    }
-  }
-
+  ADD_DEBUG_TENSOR( kMatrix, dbexpressions );
   Tensor propagator = getPropagator( kMatrix, phaseSpace );
   Expression M;
 
   auto pole = poleConfigs[pTerm];
   if ( dbexpressions != nullptr ) dbexpressions->emplace_back( "P[0,0]", propagator[{0, 0}] );
-  for ( unsigned int i = 0; i < pole.couplings.size(); ++i ) {
-    M = M + propagator[{0, i}] * pole.g( i );
+  for ( unsigned int i = 0; i < pole.couplings.size(); ++i ) 
+  {
+    M = M + propagator[{0, i}] * pole.g(i);
   }
   return SubTree( M / ( pole.s - sInGeV ) );
 }

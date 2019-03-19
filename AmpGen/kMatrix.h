@@ -20,10 +20,10 @@ namespace AmpGen
     Expression s;
     std::vector<Expression> couplings;
     std::vector<Expression> bl_factors;
-    poleConfig( const Expression& _s, const std::vector<Expression>& c = std::vector<Expression>() )
-        : s( _s ), couplings( c ), bl_factors( c.size(), Constant( 1 ) ){};
+    poleConfig(const Expression& s, const std::vector<Expression>& c = {})
+        : s(s), couplings(c), bl_factors(c.size(), 1){};
 
-    void add( const Expression& coupling, const Expression& bl_factor = Constant( 1 ) )
+    void add(const Expression& coupling, const Expression& bl_factor = 1)
     {
       couplings.push_back( coupling );
       bl_factors.push_back( bl_factor );

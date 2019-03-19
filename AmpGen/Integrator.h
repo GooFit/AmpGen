@@ -23,37 +23,20 @@ namespace AmpGen
       std::vector<bool> markAsZero; 
       std::vector<bool> calculate;   
     public:
-      Bilinears( const size_t& r = 0, const size_t& c = 0 ) : 
-        rows(r), 
-        cols(c), 
-        norms(c*r), 
-        markAsZero(c*r,0), 
-        calculate(c*r,1) {}
-      complex_t get( const size_t& x, const size_t& y ) const { return norms[x * cols + y]; }
-      void      set( const size_t& x, const size_t& y,  const complex_t& f ) { norms[x * cols + y] = f; calculate[x*cols+y] = false; }
-      void  setZero( const size_t& x, const size_t& y ){ markAsZero[x * cols + y] = true; }
-      void resetCalculateFlags(){ for( size_t i = 0 ; i < calculate.size(); ++i ) calculate[i] = true ; } 
-      complex_t& operator()( const size_t& x, const size_t& y ){ return norms[x*cols+y];}
-      bool   isZero( const size_t& x, const size_t& y ){ return markAsZero[ x*cols+y] ; } 
-      bool workToDo( const size_t& x, const size_t& y ) const { return calculate[x*cols+y] ; } // && ! markAsZero[x*cols+y] ; }
-      void   resize( const size_t& r, const size_t& c = 1 )
-      {
-        rows = r;
-        cols = c;
-        norms.resize( r * c );
-        markAsZero.resize( r * c );
-        calculate.resize(  r * c );
-        for( size_t i = 0 ; i < r*c; ++i ){
-          norms[i]      = 0;
-          markAsZero[i] = false;
-          calculate[i]  = true;
-        }
-      }
+      Bilinears( const size_t& r = 0, const size_t& c = 0 );
+      complex_t get(const size_t& x, const size_t& y) const;
+      void      set(const size_t& x, const size_t& y,  const complex_t& f );
+      void  setZero(const size_t& x, const size_t& y);
+      void resetCalculateFlags();
+      complex_t& operator()( const size_t& x, const size_t& y );
+      bool   isZero(const size_t& x, const size_t& y);
+      bool workToDo(const size_t& x, const size_t& y) const;
+      void   resize(const size_t& r, const size_t& c = 1 );
   };
 
   template <class TYPE = complex_t>
     struct Integral {
-      typedef std::function<void( TYPE )> TransferFCN;
+      typedef std::function<void(TYPE)> TransferFCN;
       size_t i = {0};
       size_t j = {0};
       TransferFCN transfer;
@@ -66,8 +49,7 @@ namespace AmpGen
     {
       private:
         typedef const complex_t& arg;
-        typedef std::function<void( arg )> TransferFCN;
-
+        typedef std::function<void(arg)> TransferFCN;
         size_t                           m_counter = {0};
         std::array<Integral<arg>, NROLL> m_integrals;
         EventList*                       m_events  = {nullptr};
@@ -85,9 +67,8 @@ namespace AmpGen
             auto& evt = ( *m_events )[i];
             real_t w  = evt.weight() / evt.genPdf();
             for ( size_t roll = 0; roll < NROLL; ++roll ) {
-              auto c = evt.getCache( m_integrals[roll].i ) * std::conj( evt.getCache( m_integrals[roll].j ) );
-             // auto p1 = evt.getCache( m_integrals[roll].i );
-             // auto p2 = evt.getCache( m_integrals[roll].j );
+              auto c = evt.getCache(m_integrals[roll].i) * 
+               std::conj(evt.getCache(m_integrals[roll].j));
               re[roll] += w * std::real(c);
               im[roll] += w * std::imag(c);
             }

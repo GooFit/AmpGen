@@ -16,7 +16,7 @@ namespace ROOT
   {
     class Minimizer;
   }
-} // namespace ROOT
+}
 class TGraph;
 
 namespace AmpGen

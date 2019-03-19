@@ -131,8 +131,8 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
       auto A = pdf(evt);
       auto gTimesA = pdf.coupling() * A; 
       INFO( std::setw(70) << pdf.decayTree.uniqueString() << " A = [ " 
-          << std::real(A)       << " " << std::imag(A) << " ] g × A = [ "
-          << std::real(gTimesA) << " " << std::imag(gTimesA) << " ]" );
+          << std::real(A)       << " " << std::imag(A) << " ] g = [ "
+          << std::real(pdf.coupling()) << " " << std::imag(pdf.coupling()) << " ]" );
       //evt.getCache(  pdf.addressData ) );
       if( m_dbThis ) pdf.pdf.debug( evt );
     }
@@ -147,7 +147,6 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
 {
   bool recomputeIntegrals    = NamedParameter<bool>("CoherentSum::RecomputeIntegrals", false );
   std::vector<FitFraction> outputFractions;
-
   for(auto& rule : m_protoAmplitudes.rules()) 
   {
     FitFractionCalculator<CoherentSum> pCalc(this, findIndices(m_matrixElements, rule.first), recomputeIntegrals);
@@ -161,7 +160,7 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
     if( pCalc.calculators.size() == 0 ) continue;  
     auto fractions = pCalc(rule.first, linProp);
     for( auto& f : fractions ) outputFractions.emplace_back(f);
-  }
+  };
   auto ffForHead = m_protoAmplitudes.rulesForDecay(m_evtType.mother(), m_prefix);
   FitFractionCalculator<CoherentSum> iCalc(this, findIndices(m_matrixElements, m_evtType.mother()), recomputeIntegrals);
   for ( size_t i = 0; i < ffForHead.size(); ++i ) 

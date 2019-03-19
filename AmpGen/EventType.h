@@ -25,7 +25,8 @@ namespace AmpGen
     std::vector<std::string> m_particleNamesPickled; ///< names of decay product pickled for ROOT
     std::vector<double> m_particleMasses;            ///< masses of decay products
     bool m_timeDependent;
-    std::vector<std::string> m_eventTypeExtensions;  ///< extended event data 
+    std::vector<std::string> m_eventTypeExtensions;  ///< extended event data
+    std::pair<size_t, size_t> m_dim;                 ///< Rank of the relevant transition matrix 
   public:
     EventType() = default;
     EventType( const std::vector<std::string>&, const bool& isTD = false );
@@ -56,7 +57,7 @@ namespace AmpGen
     void setMotherMass( const double& mass ){ m_motherMass = mass ; } 
     void extendEventType( const std::string& branch ); 
     std::function<void( Event& )> symmetriser() const;
-    std::pair<size_t, size_t> dim() const;
+    std::pair<size_t, size_t> dim() const;    ///< calculates the number of spin indices accociated with the initial and final state, i.e. the rank of the relevant transition matrix. 
   };
   std::ostream& operator<<( std::ostream& os, const EventType& type );
 } // namespace AmpGen

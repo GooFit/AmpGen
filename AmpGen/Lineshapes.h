@@ -243,6 +243,10 @@ namespace AmpGen
         @brief Description of a resonance that decays to multiple two and three-body final states. 
       */
     DECLARE_LINESHAPE( CoupledChannel );
+    /** @ingroup Lineshapes class GenericKmatrix
+        @brief Implementation of a generic K-matrix
+      */
+    DECLARE_LINESHAPE(GenericKmatrix);
     /// ``Lineshape'' that implements the Dalitz plot distribution for decays \f$ \eta \rightarrow \pi^{+}\pi^{-}\pi^{0}\f$
     DECLARE_LINESHAPE( EtaDalitz );
 

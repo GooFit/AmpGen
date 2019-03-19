@@ -75,7 +75,8 @@ int main( int argc, char** argv )
     , {"FixedLib", "Full phase-space generator with an amplitude from a precompiled library"}
     , {"RGenerator", "Recursive phase-space generator for intermediate (quasi)stable states such as the D-mesons"} } ) );
   
-  std::string lib = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
+  std::string lib     = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
+  size_t nBins        = NamedParameter<size_t>     ("nBins"     ,100, "Number of bins for monitoring plots." );
 
   #ifdef _OPENMP
     unsigned int concurentThreadsSupported = std::thread::hardware_concurrency();
@@ -129,10 +130,10 @@ int main( int argc, char** argv )
   if( accepted.size() == 0 ) return -1;
   TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
   accepted.tree( "DalitzEventList" )->Write();
-  auto plots = accepted.makeDefaultProjections( LineColor(kBlack) );
+  auto plots = accepted.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
   for ( auto& plot : plots ) plot->Write();
   if( NamedParameter<bool>("plots_2d",true) == true ){
-    auto proj = eventType.defaultProjections(100);
+    auto proj = eventType.defaultProjections(nBins);
     INFO("Making 2D projections...");
     for( size_t i = 0 ; i < proj.size(); ++i ){
       for( size_t j = i+1 ; j < proj.size(); ++j ){

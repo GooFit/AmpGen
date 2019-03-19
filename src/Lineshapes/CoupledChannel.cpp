@@ -7,21 +7,22 @@
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/NamedParameter.h"
+#include "AmpGen/CoupledChannel.h"
 
 using namespace AmpGen;
 using namespace AmpGen::fcn; 
 
-Expression H( const Expression& x, 
-              const Expression& y, 
-              const Expression& z )
+Expression H(const Expression& x, 
+             const Expression& y, 
+             const Expression& z )
 {
   auto k = ( x*x + y*y + z*z - 2.*x*y - 2.*x*z - 2.*z*y) ; 
   return Ternary( Imag(sqrt(k)) > 0 , sqrt(k) , -sqrt(k) ); /// change the branch of the sqrt
 }
 
-Expression Hr( const Expression& x, 
-               const Expression& y, 
-               const Expression& z )
+Expression Hr(const Expression& x, 
+              const Expression& y, 
+              const Expression& z )
 {
   auto k = ( x*x + y*y + z*z - 2.*x*y - 2.*x*z - 2.*z*y) ; 
   return complex_sqrt(k);
@@ -49,12 +50,10 @@ Expression rho_threeBody( const Expression& s,
   Expression i = Constant(0,1);
   Expression m = is.mass();
   Expression G = is.width();
-  auto z = is.mass() * ( is.mass() - i * is.width() ); 
-
-  auto  Hz     = H(s,z,s1);
-  auto  HsT  = Hr(s,sT,s1);
-
-  auto K = Hz*HsT + z*(sT-s-s1) + (s-s1)*(s-s1) - sT*(s+s1) ;
+  auto z   = is.mass() * ( is.mass() - i * is.width() ); 
+  auto Hz  = H(s,z,s1);
+  auto HsT = Hr(s,sT,s1);
+  auto K   = Hz*HsT + z*(sT-s-s1) + (s-s1)*(s-s1) - sT*(s+s1);
 
   return    Ternary( s23_max > sT, Imag( 
       z * log( (s+s1 -HsT -sT)/(2*sqrt(s*s1)) ) 
@@ -62,17 +61,26 @@ Expression rho_threeBody( const Expression& s,
       ) / (16.*M_PI*M_PI*s) , 0 );
 }
 
-Expression phaseSpace(const Expression& s, const Particle& p, const size_t& l )
+Expression AmpGen::phaseSpace(const Expression& s, const Particle& p, const size_t& l)
 {
   auto fs = p.getFinalStateParticles();
   if( fs.size() == 2 ){ 
-    const Expression radius       = Parameter( p.name()  + "_radius", p.props()->radius() );
     auto s1 = p.daughter(0)->massSq();
     auto s2 = p.daughter(1)->massSq();
-    auto q2v             = make_cse( Q2(s,s1,s2) );
-    const Expression q2  = Ternary( q2v > 0, q2v, 0 );
-    return rho_twoBody(s, s1, s2) * BlattWeisskopf(q2*radius*radius, l);
-  }  
+    auto k2 = make_cse( Q2(s,s1,s2) );
+    const Expression k2p  = Ternary( k2 > 0, k2, 0 );
+    auto phsp_parameterisation = p.attribute("phsp"); 
+    if( !phsp_parameterisation ){
+      const Expression radius       = Parameter(p.name()  + "_radius", p.props()->radius());
+      return rho_twoBody(s, s1, s2) * BlattWeisskopf(k2p*radius*radius, l);
+    }
+    if( phsp_parameterisation == "arXiv.0707.3596" ){
+      INFO("Got AS parametrisation");
+      Expression E = 1;
+ //     return 2*fpow(k2,l)*complex_sqrt(k2) * E * 2 / ((1.5+k2p) * sqrt(s) ); 
+      return 2 * complex_sqrt(k2/s);
+    }
+  }
   if( fs.size() == 3 && ! p.daughter(0)->isStable() ) return rho_threeBody( s, *p.daughter(0), *p.daughter(1) );
   if( fs.size() == 3 && ! p.daughter(1)->isStable() ) return rho_threeBody( s, *p.daughter(1), *p.daughter(0) );
   ERROR("Phase space only implemented for two and three body decays");
@@ -93,9 +101,9 @@ DEFINE_LINESHAPE( CoupledChannel )
   for( size_t i = 0 ; i < channels.size(); i+=2 ){
     Particle p( channels[i] ); 
     INFO( "Adding channel ... " << p.uniqueString() << " coupling = " << NamedParameter<std::string>( channels[i+1]  ) );
-    Expression coupling = Parameter( channels[i+1],0);
-    totalWidth       = totalWidth       + coupling * phaseSpace(s        , p, p.orbital() );
-    totalWidthAtPole = totalWidthAtPole + coupling * phaseSpace(mass*mass, p, p.orbital() );    
+    Expression coupling = Parameter(channels[i+1], 0);
+    totalWidth       = totalWidth       + coupling * phaseSpace(s        , p, p.orbital());
+    totalWidthAtPole = totalWidthAtPole + coupling * phaseSpace(mass*mass, p, p.orbital());    
     ADD_DEBUG(coupling, dbexpressions);
     ADD_DEBUG(phaseSpace(s,p,p.orbital() ), dbexpressions);
     ADD_DEBUG(phaseSpace(mass*mass,p,p.orbital() ), dbexpressions);

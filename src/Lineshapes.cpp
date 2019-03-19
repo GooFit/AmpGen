@@ -1,11 +1,9 @@
 #include "AmpGen/Lineshapes.h"
-
+#include "AmpGen/MsgService.h"
+#include "AmpGen/Units.h"
 #include <stddef.h>
 #include <cmath>
 #include <ostream>
-
-#include "AmpGen/MsgService.h"
-#include "AmpGen/Units.h"
 
 using namespace AmpGen;
 using namespace AmpGen::fcn;

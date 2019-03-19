@@ -53,6 +53,12 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
   for ( unsigned int i = 0; i < m_particleNames.size(); ++i ) {
     DEBUG( m_particleNames[i] << " = " << m_particleNamesPickled[i] << " = " << m_particleMasses[i] );
   }
+  auto dimOfParticle = [](auto& name){
+    return name == "gamma0" ? 2 : ParticlePropertiesList::get(name)->twoSpin() + 1;
+  };
+  m_dim.first = dimOfParticle(m_mother);
+  m_dim.second = 1;
+  for( auto& p : m_particleNames ) m_dim.second *= dimOfParticle(p);
 }
 
 std::map<std::string, size_t> EventType::getEventFormat( const bool& outputNames ) const
@@ -219,18 +225,7 @@ bool EventType::isTimeDependent() const { return m_timeDependent; }
 
 size_t EventType::eventSize() const { return 4 * size() + m_timeDependent; }
 
-std::pair<size_t, size_t> EventType::dim() const 
-{
-  auto dimOfParticle = [](auto& name){
-    return name == "gamma0" ? 2 :
-    ParticlePropertiesList::get(name)->twoSpin() + 1;
-  };
-
-  size_t it = dimOfParticle(m_mother);
-  size_t ft = 1;
-  for( auto& p : m_particleNames ) ft *= dimOfParticle(p);
-  return {it,ft};
-}
+std::pair<size_t, size_t> EventType::dim() const { return m_dim; }
 
 std::string convertTeXtoROOT( std::string input )
 {

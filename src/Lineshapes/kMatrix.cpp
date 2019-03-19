@@ -67,18 +67,16 @@ Tensor AmpGen::constructKMatrix(
     const std::function<Expression( const unsigned int& i, const unsigned int& j, const Expression& s )>& SVP,
     DebugSymbols* dbexpressions )
 {
-
   Tensor kMatrix( std::vector<size_t>( {nChannels, nChannels} ) );
   for ( unsigned int i = 0; i < nChannels; ++i ) {
     for ( unsigned int j = 0; j < nChannels; ++j ) {
       Expression sumOverPoles = 0;
       for ( auto& pole : poleConfigs ) {
         Expression term = ( pole.couplings[i] * pole.couplings[j] ) / ( pole.s - this_s );
-        ADD_DEBUG( term, dbexpressions );
         sumOverPoles = sumOverPoles + term;
       }
       Expression nr = SVP == nullptr ? Expression( 0 ) : SVP( i, j, this_s );
-      if ( dbexpressions != nullptr )
+      if ( dbexpressions != nullptr && SVP != nullptr )
         dbexpressions->emplace_back( "SVP[" + std::to_string( i ) + "," + std::to_string( j ) + "]", nr );
       kMatrix[{i, j}] = sumOverPoles + nr;
     }
@@ -119,9 +117,11 @@ DEFINE_LINESHAPE( kMatrix )
     poleConfigs.push_back( p );
   }
 
-  std::vector<Expression> phaseSpace = {phsp_twoBody( sInGeV, mPiPlus, mPiPlus ),
-                                        phsp_twoBody( sInGeV, mKPlus, mKPlus ), phsp_fourPi( sInGeV ),
-                                        phsp_twoBody( sInGeV, mEta, mEta ), phsp_twoBody( sInGeV, mEta, mEtap )};
+  std::vector<Expression> phaseSpace = {phsp_twoBody(sInGeV, mPiPlus, mPiPlus),
+                                        phsp_twoBody(sInGeV, mKPlus, mKPlus), 
+                                        phsp_fourPi(sInGeV),
+                                        phsp_twoBody(sInGeV, mEta, mEta), 
+                                        phsp_twoBody(sInGeV, mEta, mEtap)};
 
   auto scatteringTerm = [&]( const unsigned int& i, const unsigned int& j, const Expression& s ) {
     if ( i == 0 ) return fScatt[j] * ( 1 - s0_scatt ) / ( s - s0_scatt );

@@ -41,8 +41,7 @@
 
 using namespace AmpGen;
 
-template <class FCN>
-double dispersive( FCN& fcn , const double& s, double min , double max )
+template <class FCN> double dispersive( FCN& fcn , const double& s, double min , double max )
 {
   TF1 fcn_tf1 = TF1( "fcn_tf1",fcn, min, max, 0 );
   ROOT::Math::WrappedTF1* wf1 = new ROOT::Math::WrappedTF1( fcn_tf1 );

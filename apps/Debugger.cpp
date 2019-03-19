@@ -103,37 +103,13 @@ template < class FCN > void debug( FCN& sig, EventList& accepted, bool verbose, 
   sig.setEvents( accepted );
   sig.prepare();
   sig.debug( accepted[0] );
-  // Event accepted_boosted = accepted[0];
-  /// align proton frame //// 
-  //TVector3 pZ = pFromEvent( accepted[0], {0} ).Vect();
-  //TVector3 pX = TVector3(0,0,1).Cross( pZ );
-  //TVector3 pY = pZ.Cross(pX);
-  //rotateBasis( accepted[0], pX, pY, pZ );
   accepted[0].print();
-  //sig.reset();
-  //sig.prepare();
-  //sig.debug( accepted[0] );
   if( verbose ) print( accepted[0], sig.matrixElements(), verbose ); 
-//  boost( accepted_boosted,  { rndm->Uniform(-1,1), rndm->Uniform(-1,1), rndm->Uniform(-1,1)}, 0.99 );
-//  
-//  print( accepted[0], sig.matrixElements(), verbose );
-//  accepted[0].print();
-//  INFO( "A(x)  = " << sig.prob_unnormalised( accepted[0] ) );
-//
-//
-//  auto unboosted_value = sig.getValNoCache( accepted[0] );
-//  INFO("Boosted: ");
-//  accepted_boosted.print();
-//  auto boosted_value = sig.getValNoCache( accepted_boosted );
-//  INFO( "A(x)  = " << unboosted_value ) ;
-//  INFO( "A(Λx) = " << boosted_value );   
-//  
   invertParity(accepted[0], accepted.eventType().size() );
   accepted[0].print();
   sig.reset();
   sig.prepare();
   sig.debug( accepted[0] );
-//  INFO( "A(Px) = " << sig.getValNoCache( accepted[0] ) );
 }
 
 int main( int argc, char** argv )
@@ -158,7 +134,9 @@ int main( int argc, char** argv )
   
   std::string infile = NamedParameter<std::string>("InputFile","");
   EventList accepted = infile == "" ? EventList( eventType ) : EventList( infile, eventType );
-
+  
+  std::string input_units = NamedParameter<std::string>("Units","GeV");
+  if( input_units == "MeV" && infile != "") accepted.transform([](auto& event){ for( int i = 0;i<16;++i) event[i]/=1000; } );
   if( infile == "" ){
     Event evt = PhaseSpace( eventType, rndm ).makeEvent();
     accepted.push_back(evt);
@@ -181,6 +159,7 @@ int main( int argc, char** argv )
     CoherentSum sig(eventType, MPS);
     debug(sig, accepted, verbose, rndm, MPS);
     print(accepted[0], sig.matrixElements() , false);
+    INFO( "A(x) = " << sig.getValNoCache( accepted[0] ) );
   }
   else {
     ERROR( "Type: " << type << " is not recognised");
