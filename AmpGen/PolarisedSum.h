@@ -35,12 +35,6 @@ namespace AmpGen
   class PolarisedSum
   {
     public: 
-      struct queued_norm {
-        size_t i;
-        size_t j;
-        complex_t* result; 
-        queued_norm( const size_t& i, const size_t& j, complex_t* result) : i(i), j(j), result(result){} 
-      };
       PolarisedSum( const EventType& eventType, AmpGen::MinuitParameterSet& mps, const std::string& prefix="" );
       void prepare();
       void setEvents( AmpGen::EventList& events );
@@ -48,15 +42,16 @@ namespace AmpGen
       void reset( const bool& flag = false );
       void debug(const AmpGen::Event& event );
       void debug_norm(); 
-      void setWeight( MinuitParameter* param ){ m_weightParam = param ; } 
+      void setWeight( MinuitParameter* param );
+      double getWeight() const;
       void calculateNorms(const std::vector<bool>& hasChanged); 
       void generateSourceCode( const std::string& fname, const double& normalisation = 1, bool add_mt = false );
       void build_probunnormalised();
       Expression probExpression( const Tensor& T_matrix, const std::vector<Expression>& p ) const; 
       size_t size() const ;  
-//      complex_t TE( const AmpGen::Event& event, const size_t& x, const size_t& y );
       real_t norm() const;
-      complex_t norm(const size_t& i, const size_t& j) const; 
+      complex_t norm(const size_t& i, const size_t& j, Integrator<18>* integ = nullptr ); 
+      real_t operator()(const AmpGen::Event& event) const { return prob_unnormalised(event) ;}
       real_t prob_unnormalised( const AmpGen::Event& evt ) const;
       real_t prob(const AmpGen::Event& evt ) const ;
       real_t getValNoCache( const AmpGen::Event& evt ) ;
@@ -80,12 +75,13 @@ namespace AmpGen
       std::vector<std::vector<int>> m_polStates; 
       EventType                     m_eventType;
       std::string                   m_prefix      = "";
+      std::vector<complex_t>        m_psi;
+      std::vector<size_t>           m_integIndex; 
       std::vector<TransitionMatrix<std::vector<complex_t>>>        m_matrixElements;  
       CompiledExpression<real_t, const real_t*, const complex_t*> m_probExpression; 
       AmplitudeRules                m_rules;  
       std::vector<std::vector<int>> polarisationOuterProduct( const std::vector<std::vector<int>>& A, const std::vector<int>& B ) const;
       std::vector<int> polarisations( const std::string& name ) const ;
-      void appendNormQueue(const size_t& i, const size_t& j, std::vector<PolarisedSum::queued_norm>& rt);
   };
 } // namespace AmpGen
 

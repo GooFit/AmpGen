@@ -129,11 +129,9 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
   if ( nameMustContain == "" )
     for ( auto& pdf : m_matrixElements ) {
       auto A = pdf(evt);
-      auto gTimesA = pdf.coupling() * A; 
       INFO( std::setw(70) << pdf.decayTree.uniqueString() << " A = [ " 
           << std::real(A)       << " " << std::imag(A) << " ] g = [ "
           << std::real(pdf.coupling()) << " " << std::imag(pdf.coupling()) << " ]" );
-      //evt.getCache(  pdf.addressData ) );
       if( m_dbThis ) pdf.pdf.debug( evt );
     }
   else

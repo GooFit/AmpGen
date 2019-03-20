@@ -25,6 +25,12 @@ namespace AmpGen
     public:
       Bilinears( const size_t& r = 0, const size_t& c = 0 );
       complex_t get(const size_t& x, const size_t& y) const;
+      template <class T>
+      complex_t get(const size_t& x, const size_t& y, T* integ = nullptr, const size_t& kx=0, const size_t& ky=0){
+        if( integ != nullptr ) integ->queueIntegral(kx, ky, &norms[x*cols+y]);
+        /// will return the wrong answer for now, but queues for later.. 
+        return norms[x*cols+y];
+      }
       void      set(const size_t& x, const size_t& y,  const complex_t& f );
       void  setZero(const size_t& x, const size_t& y);
       void resetCalculateFlags();
@@ -41,7 +47,7 @@ namespace AmpGen
       size_t j = {0};
       TransferFCN transfer;
       Integral() = default; 
-      Integral( const size_t& i, const size_t& j, TransferFCN t ) : i(i), j(j), transfer(t) {}
+      Integral(const size_t& i, const size_t& j, TransferFCN t) : i(i), j(j), transfer(t) {}
     };
 
   template <size_t NROLL = 10>
@@ -67,8 +73,7 @@ namespace AmpGen
             auto& evt = ( *m_events )[i];
             real_t w  = evt.weight() / evt.genPdf();
             for ( size_t roll = 0; roll < NROLL; ++roll ) {
-              auto c = evt.getCache(m_integrals[roll].i) * 
-               std::conj(evt.getCache(m_integrals[roll].j));
+              auto c = evt.getCache(m_integrals[roll].i) * std::conj(evt.getCache(m_integrals[roll].j));
               re[roll] += w * std::real(c);
               im[roll] += w * std::imag(c);
             }
@@ -79,6 +84,7 @@ namespace AmpGen
         }
       public:
         Integrator( EventList* events = nullptr ) : m_events( events ){}
+        
         double sampleNorm() { return m_events->norm(); } 
         bool isReady() const { return m_events != nullptr ; }
         const EventList& events() const { return *m_events ; } 
@@ -87,12 +93,15 @@ namespace AmpGen
           {
             addIntegralKeyed( m_events->getCacheIndex(f1), m_events->getCacheIndex(f2), tFunc );
           }
-        void queueIntegral( const size_t& c1, 
-                            const size_t& c2, 
-                            const size_t& i, 
-                            const size_t& j, 
-                            Bilinears* out, 
-                            const bool& sim = true )
+        void queueIntegral(const size_t& i, const size_t& j, complex_t* result){
+          addIntegralKeyed(i, j, [result](arg& val){ *result = val ; } ); 
+        }
+        void queueIntegral(const size_t& c1, 
+                           const size_t& c2, 
+                           const size_t& i, 
+                           const size_t& j, 
+                           Bilinears* out, 
+                           const bool& sim = true )
         {
           if( out->workToDo(i,j) ){
             if( sim ) 

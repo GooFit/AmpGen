@@ -194,7 +194,7 @@ size_t EventType::dof() const { return 3 * size() - 7; }
 std::function<void( Event& )> EventType::symmetriser() const
 {
   auto shuffles = getBosePairs();
-  int seed      = NamedParameter<unsigned int>( "EventType::symmetriser::seed", 12 );
+  int seed      = NamedParameter<unsigned int>( "EventType::SymmetriserSeed", 12 );
   std::mt19937 rng( seed );
   for ( auto& shuffle : shuffles ) {
     std::string shuffle_string = "";

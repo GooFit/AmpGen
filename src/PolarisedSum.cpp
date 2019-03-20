@@ -30,6 +30,7 @@
 #include "AmpGen/Simplify.h"
 
 using namespace AmpGen;
+using namespace std::complex_literals; 
 
 PolarisedSum::PolarisedSum( const EventType& type, 
                             MinuitParameterSet& mps, 
@@ -142,12 +143,19 @@ void   PolarisedSum::prepare()
     t.pdf.resetExternals();
     hasChanged[i] = true; 
     nChanges++;
+    if( m_nCalls == 0 && m_integrator.isReady() ) m_integIndex.push_back( m_integrator.events().getCacheIndex( t.pdf ) );
   }
   if( !m_probExpression.isLinked() ) build_probunnormalised();
   m_weight = m_weightParam == nullptr ? 1 : m_weightParam->mean();
   tEval.stop(); 
-  ProfileClock tIntegral; 
-  std::vector<queued_norm> rt;
+  ProfileClock tIntegral;  
+  if( m_eventType.dim().first == 2 ){ 
+    double px = m_pVector[0];
+    double py = m_pVector[1];
+    double pz = m_pVector[2];
+    m_psi = {1+pz,px+1i*py,px-1i*py,1-pz};
+  }
+  else m_psi = {1};
   if( m_integrator.isReady() )
   {
     if(nChanges != 0) calculateNorms(hasChanged);
@@ -155,17 +163,16 @@ void   PolarisedSum::prepare()
     for(size_t i = 0; i < m_matrixElements.size(); ++i){
       for(size_t j = i; j < m_matrixElements.size(); ++j){
         z += ((i==j) ? 1. : 2. ) * m_matrixElements[i].coupling()*std::conj(m_matrixElements[j].coupling())*norm(i,j);
-        appendNormQueue(i,j, rt);        
       }
     }
     m_norm = std::real(z); 
-    if(m_nCalls == 0 && m_prefix == "") debug_norm();
+    if(m_nCalls % 100 == 0 && m_prefix == "") debug_norm();
   }
   tIntegral.stop();
   if(m_verbosity && nChanges != 0)
     INFO("Time to evaluate = " << tEval                  << " ms; "
       << "norm = "  << tIntegral << " ms; "
-      << "pdfs = "  << nChanges  << " size of norm_queue = " << rt.size() );
+      << "pdfs = "  << nChanges);
   m_nCalls++;
 }
 
@@ -180,48 +187,6 @@ void PolarisedSum::debug_norm()
       << "bilinears=" << m_norm 
       << "; exact="     << norm_slow /  m_integrator.sampleNorm() 
       << "; sample=" << m_integrator.sampleNorm() );
-  int nNorms       = 0;
-  int nZeros       = 0; 
-  int nConjugate   = 0;
-  int nNegatives   = 0; 
-  int nReplicas    = 0; 
-  int negConjugate = 0;
-  auto s = m_matrixElements.size(); 
-  size_t norm_size    = 8;
-  std::vector<bool> flagged( 8*s*s, false ); 
-  auto identify = [&flagged,&s]( const size_t i2, const size_t j2, const size_t& k2, int& counter ){
-    flagged[k2 + s * j2 + s*s*i2] = true;
-    counter++;
-  }; 
-  complex_t t(0,0);
-  for( size_t i = 0 ; i < s; ++i ){
-    for( size_t j = 0 ; j < s; ++j ){
-      complex_t c = m_matrixElements[i].coupling() * std::conj( m_matrixElements[j].coupling() );
-      t += c * norm(i,j);
-      for( size_t k = 0 ; k < norm_size ; ++k ) {
-        if( flagged[ k + s*j + s*s*i] ) continue; 
-        double re = std::real(m_norms[k].get(i,j));
-        double im = std::imag(m_norms[k].get(i,j));
-        if( re < 1e-8 && im < 1e-8 ) identify(i,j,k,nZeros);
-        for( size_t i2 = i; i2 < m_matrixElements.size(); ++i2 ){
-          for( size_t j2 = j; j2 < m_matrixElements.size(); ++j2 ){
-            for( size_t k2 = 0 ; k2 < norm_size ; ++k2 ) {
-              if( i2 == i && j2 == j && k2 == k ) continue;
-              if( flagged[k2 + s*j2 + s*s*i2] ) continue; 
-              double re2 = std::real( m_norms[k2].get(i2,j2) );
-              double im2 = std::imag( m_norms[k2].get(i2,j2) );
-              if( std::abs(re2 - re) < 1e-6 && std::abs(im2 - im) < 1e-6 ) identify(i2,j2,k2, nReplicas );
-              if( std::abs(re2 - re) < 1e-6 && std::abs(im2 + im) < 1e-6 ) identify(i2,j2,k2, nConjugate );
-              if( std::abs(re2 + re) < 1e-6 && std::abs(im2 + im) < 1e-6 ) identify(i2,j2,k2, nNegatives );
-              if( std::abs(re2 + re) < 1e-6 && std::abs(im2 - im) < 1e-6 ) identify(i2,j2,k2, negConjugate );
-            }  
-          }
-        }
-      }
-      nNorms += norm_size; 
-    }
-  }
-  INFO("#norms= " << nNorms << ", #zeros= " <<nZeros << " #clones=" << nReplicas << " #conjugates=" << nConjugate << " #negatives=" << nNegatives << " #negative conjugates=" << negConjugate );
 }
 
 void   PolarisedSum::setEvents( EventList& events )
@@ -281,52 +246,32 @@ double PolarisedSum::norm() const
   return m_norm;
 }
 
-complex_t PolarisedSum::norm(const size_t& i, const size_t& j) const 
+complex_t PolarisedSum::norm(const size_t& i, const size_t& j, Integrator<18>* integ)
 {
-  double px = m_pVector[0];
-  double py = m_pVector[1];
-  double pz = m_pVector[2];
-  return (1+pz)*(m_norms[0].get(i,j)+m_norms[1].get(i,j)) 
-       + (1-pz)*(m_norms[2].get(i,j)+m_norms[3].get(i,j))
-       + complex_t(px, py)*(m_norms[4].get(i,j) + m_norms[5].get(i,j)) 
-       + complex_t(px,-py)*(m_norms[6].get(i,j) + m_norms[7].get(i,j));
-}
-
-void PolarisedSum::appendNormQueue(const size_t& i, const size_t& j, std::vector<queued_norm>& rt )
-{
-   
-  std::vector<size_t> cacheIndex; 
-  for(auto& m : m_matrixElements) cacheIndex.push_back(m_integrator.events().getCacheIndex(m.pdf));
-  auto ai = cacheIndex[i];
-  auto aj = cacheIndex[j];
-  {
-    for(size_t k = 0; k < 4; ++k ) rt.emplace_back(ai+k, aj+k, &(m_norms[k](i,j))); 
-    rt.emplace_back(ai+0, aj+2, &(m_norms[4](i,j)));
-    rt.emplace_back(ai+1, aj+3, &(m_norms[5](i,j)));
-    rt.emplace_back(ai+2, aj+0, &(m_norms[6](i,j)));
-    rt.emplace_back(ai+3, aj+1, &(m_norms[7](i,j)));
+  auto   ai = m_integIndex[i];
+  auto   aj = m_integIndex[j];
+  complex_t total = 0;
+  auto   dim = m_eventType.dim();
+  auto    s1 = dim.first;
+  auto    s2 = dim.second;
+  for(size_t x = 0 ; x < m_norms.size(); ++x ){
+    auto f         = x % s2; // lowest bits // 
+    auto psiIndex  = (x-f) / s2; // = s1*m + m2 
+    auto m2        = psiIndex % s1;
+    auto m1        = (psiIndex-m2)/s1; 
+    auto normIndex = s2*psiIndex + f;
+    total          += m_psi[psiIndex] * m_norms[normIndex].get(i,j,integ, ai+m1*s2+f, aj+m2*s2+f);
   }
+  return total; 
 }
-
 void PolarisedSum::calculateNorms(const std::vector<bool>& hasChanged)
 {
-  std::vector<size_t> cacheIndex; 
-  for(auto& m : m_matrixElements) cacheIndex.push_back(m_integrator.events().getCacheIndex(m.pdf));
-  for(size_t i = 0 ; i < m_matrixElements.size(); ++i){
-    if( !hasChanged[i] ) continue; 
-    auto ai = cacheIndex[i];
-    for(size_t j = 0; j < m_matrixElements.size(); ++j){
-      auto aj = cacheIndex[j];
-      for(size_t k = 0; k < 4; ++k ) 
-        m_integrator.queueIntegral(ai+k, aj+k, i, j, &(m_norms[k]));
-      m_integrator.queueIntegral(ai+0, aj+2, i, j, &(m_norms[4]), false);
-      m_integrator.queueIntegral(ai+1, aj+3, i, j, &(m_norms[5]), false);
-      m_integrator.queueIntegral(ai+2, aj+0, i, j, &(m_norms[6]), false);
-      m_integrator.queueIntegral(ai+3, aj+1, i, j, &(m_norms[7]), false);
+  for( size_t i = 0 ; i < m_matrixElements.size(); ++i ){
+    for( size_t j = i ; j < m_matrixElements.size(); ++j ){
+      if( hasChanged[i] || hasChanged[j] ) norm(i, j, &m_integrator);
     }
   }
   m_integrator.flush();
-  for(auto& norm : m_norms) norm.resetCalculateFlags();
 }
 
 double PolarisedSum::prob(const Event& evt) const 
@@ -336,9 +281,8 @@ double PolarisedSum::prob(const Event& evt) const
 
 void PolarisedSum::debug(const Event& evt)
 {
-  auto dim = m_eventType.dim(); 
-  size_t size = dim.first * dim.second; 
-  
+  auto dim    = m_eventType.dim(); 
+  size_t size = dim.first * dim.second;   
   for(auto& me : m_matrixElements)
   {
     std::vector<complex_t> this_cache(0,size);
@@ -422,8 +366,7 @@ std::vector<FitFraction> PolarisedSum::fitFractions(const LinearErrorPropagator&
     auto fractions = pCalc(rule.first, prop);
     for( auto& f : fractions ) outputFractions.emplace_back(f);
   }
-  auto head_rules = m_rules.rulesForDecay(m_eventType.mother(), m_prefix); 
-  
+  auto head_rules = m_rules.rulesForDecay(m_eventType.mother(), m_prefix);   
   FitFractionCalculator<PolarisedSum> iCalc(this, findIndices(m_matrixElements, m_eventType.mother()), recomputeIntegrals);
   for(size_t i = 0 ; i < head_rules.size(); ++i)
   {
@@ -466,3 +409,7 @@ real_t PolarisedSum::getValNoCache( const Event& evt )
   }
   return m_probExpression( copy.getCachePtr() );
 }
+
+
+void PolarisedSum::setWeight( MinuitParameter* param ){ m_weightParam = param ; } 
+double PolarisedSum::getWeight() const { return m_weightParam == nullptr ? 1.0 : m_weightParam->mean() ; }
