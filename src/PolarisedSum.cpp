@@ -166,7 +166,7 @@ void   PolarisedSum::prepare()
       }
     }
     m_norm = std::real(z); 
-    if(m_nCalls % 100 == 0 && m_prefix == "") debug_norm();
+//    if(m_nCalls % 100 == 0 && m_prefix == "") debug_norm();
   }
   tIntegral.stop();
   if(m_verbosity && nChanges != 0)

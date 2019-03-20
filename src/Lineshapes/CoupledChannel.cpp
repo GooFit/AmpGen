@@ -74,7 +74,7 @@ Expression AmpGen::phaseSpace(const Expression& s, const Particle& p, const size
       const Expression radius       = Parameter(p.name()  + "_radius", p.props()->radius());
       return rho_twoBody(s, s1, s2) * BlattWeisskopf(k2p*radius*radius, l);
     }
-    if( phsp_parameterisation == "arXiv.0707.3596" ){
+    if( phsp_parameterisation == std::string("arXiv.0707.3596") ){
       INFO("Got AS parametrisation");
       Expression E = 1;
  //     return 2*fpow(k2,l)*complex_sqrt(k2) * E * 2 / ((1.5+k2p) * sqrt(s) ); 
