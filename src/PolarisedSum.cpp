@@ -166,7 +166,7 @@ void   PolarisedSum::prepare()
       }
     }
     m_norm = std::real(z); 
-//    if(m_nCalls % 100 == 0 && m_prefix == "") debug_norm();
+    if(m_nCalls % 100 == 0 && m_prefix == "") debug_norm();
   }
   tIntegral.stop();
   if(m_verbosity && nChanges != 0)
@@ -255,15 +255,16 @@ complex_t PolarisedSum::norm(const size_t& i, const size_t& j, Integrator<18>* i
   auto    s1 = dim.first;
   auto    s2 = dim.second;
   for(size_t x = 0 ; x < m_norms.size(); ++x ){
-    auto f         = x % s2; // lowest bits // 
-    auto psiIndex  = (x-f) / s2; // = s1*m + m2 
+    auto f         = x % s2;
+    auto psiIndex  = (x-f) / s2;
     auto m2        = psiIndex % s1;
-    auto m1        = (psiIndex-m2)/s1; 
+    auto m1        = (psiIndex-m2)/s1;
     auto normIndex = s2*psiIndex + f;
     total          += m_psi[psiIndex] * m_norms[normIndex].get(i,j,integ, ai+m1*s2+f, aj+m2*s2+f);
   }
   return total; 
 }
+
 void PolarisedSum::calculateNorms(const std::vector<bool>& hasChanged)
 {
   for( size_t i = 0 ; i < m_matrixElements.size(); ++i ){

@@ -122,7 +122,7 @@ std::string EventType::label( const std::vector<size_t>& index, bool isRoot ) co
 {
   std::string thing = "";
   for ( auto& x : index ) {
-    thing += label( x, isRoot );
+    thing += label(x, isRoot) +" ";
   }
   return thing;
 }

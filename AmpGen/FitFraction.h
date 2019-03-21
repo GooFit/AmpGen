@@ -1,10 +1,10 @@
 #ifndef AMPGEN_FITFRACTION_H
 #define AMPGEN_FITFRACTION_H
 
-#include <memory.h>
 #include <memory>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include "AmpGen/Types.h"
 #include "AmpGen/ErrorPropagator.h"
 
@@ -65,19 +65,19 @@ namespace AmpGen
       else pdf->transferParameters();
       std::vector<double> rv;
       double sum = 0; 
-      for (size_t i = 0 ; i< calculators.size(); ++i){
+      for (size_t i = 0; i != calculators.size(); ++i){
         auto v = getVal(i);
         rv.push_back(v);
         sum += v;
       }
-      rv.push_back( sum );
+      rv.push_back(sum);
       return rv; 
     }
     real_t norm() const {
       complex_t sum = 0;
       for ( auto& i : normSet ) {
         for ( auto& j : normSet ) {
-          sum += (*pdf)[i].coefficient * std::conj( (*pdf)[j].coefficient ) * pdf->norm(i, j);
+          sum += (*pdf)[i].coefficient * std::conj( (*pdf)[j].coefficient ) * ( j >= i ? pdf->norm(i, j) : std::conj(pdf->norm(j,i)) );
         }
       }
       return std::real(sum);
@@ -86,7 +86,7 @@ namespace AmpGen
       complex_t sum = 0; 
       for ( auto& i : calculators[index].i ) {
         for ( auto& j : calculators[index].j ) {
-          sum += (*pdf)[i].coefficient * std::conj( (*pdf)[j].coefficient ) * pdf->norm(i, j);
+          sum += (*pdf)[i].coefficient * std::conj( (*pdf)[j].coefficient ) * ( j >= i ? pdf->norm(i, j) : std::conj(pdf->norm(j,i)) );
         }
       }
       return std::real(sum) / norm();
