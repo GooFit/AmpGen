@@ -12,7 +12,7 @@ class Generator:
     __slots__ = ('lib','gen_phsp')
 
     def __init__(self):
-        self.lib = cdll.LoadLibrary("/home/tim/sw/AmpGen/build/lib/libAmpGen.so")
+        self.lib = cdll.LoadLibrary("libAmpGen.so")
         self.gen_phsp = self.lib.PyGenerate
         self.gen_phsp.argtypes = [ c_char_p
         , np.ctypeslib.ndpointer(dtype=np.double, ndim=2, flags='C')
