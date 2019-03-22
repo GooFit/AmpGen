@@ -2,7 +2,7 @@ image: alpine
 
 doxydocumentation:
   script:
-  - apk update && apk add doxygen
+  - apk update && apk add doxygen && apk add graphviz
   - cd doc
   - doxygen doxygen.conf
   - mv html/ ../public/
