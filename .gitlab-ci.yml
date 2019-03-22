@@ -6,8 +6,9 @@ pages:
   - apk update && apk add doxygen && apk add graphviz
   - cd doc
   - doxygen doxygen.conf
-  - mv html/ ../public/
-  - cp style.css ../public/
+  - cd ../
+  - mv doc/html/ public
+  - cp doc/style.css public/
   artifacts:
     paths:
     - public
