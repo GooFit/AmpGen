@@ -3,8 +3,10 @@ image: alpine
 doxydocumentation:
   script:
   - apk update && apk add doxygen
-  - doxygen doc/doxygen.conf
-  - mv html/ public/
+  - cd doc
+  - doxygen doxygen.conf
+  - mv html/ ../public/
+  - cp style.css ../public/
   artifacts:
     paths:
     - public
