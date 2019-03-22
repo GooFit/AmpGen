@@ -35,6 +35,7 @@ void create_integration_tests(T& pdf,
   unit_tests << "#include \"AmpGen/CompiledExpression.h\"" << std::endl; 
   unit_tests << "#include \"AmpGen/EventType.h\"" << std::endl; 
   unit_tests << "#include \"AmpGen/MinuitParameterSet.h\"" << std::endl; 
+  unit_tests << "#include \"AmpGen/OptionsParser.h\"" << std::endl; 
   unit_tests << "using namespace AmpGen;" << std::endl; 
   
   unit_tests << "void setupOptions(){" << std::endl; 
