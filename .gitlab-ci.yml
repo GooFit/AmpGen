@@ -1,6 +1,7 @@
-image: alpine
+image: alpine:latest
 
-doxydocumentation:
+pages:
+  stage: deploy
   script:
   - apk update && apk add doxygen && apk add graphviz
   - cd doc
