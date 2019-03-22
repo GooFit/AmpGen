@@ -10,7 +10,8 @@ pages:
   - cd ../
   - mv doc/html/ public
   - cp doc/style.css public/
-  - cp doc/figs public/
+  - mkdir public/figs/
+  - cp doc/figs/*.png public/figs/.
   artifacts:
     paths:
     - public
