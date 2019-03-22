@@ -39,23 +39,21 @@ DEFINE_LINESHAPE( PALANO )
   std::vector<Expression> K12_poly = {0.0738, 0.3866, 1.2195, 0.8390};
   double sTop                      = 5.832;
   double sBot                      = 0.360;
-  Tensor kMatrix                   = constructKMatrix( sInGeV, 2, poleConfigs,
-                                     [&]( const unsigned int& i, const unsigned int& j, const Expression& sInGeV ) {
-                                       const Expression X = ( 2 * sInGeV - sTop - sBot ) / ( sTop - sBot );
-                                       if ( i == 0 && j == 0 ) return pol( X, K11_poly );
-                                       if ( i == 1 && j == 1 )
-                                         return pol( X, K22_poly );
-                                       else
-                                         return pol( X, K12_poly );
-                                     },
-                                     dbexpressions );
-
+  const Expression X = ( 2 * sInGeV - sTop - sBot ) / ( sTop - sBot );
+  Tensor kMatrix                   = constructKMatrix( sInGeV, 2, poleConfigs); 
+  
+  Tensor scattPart( Tensor::dim(2,2));
+  scattPart(0,0) = pol(X, K11_poly);
+  scattPart(0,1) = pol(X, K12_poly);
+  scattPart(1,0) = pol(X, K12_poly);
+  scattPart(1,1) = pol(X, K22_poly);
+ 
+  kMatrix = kMatrix + scattPart; 
   const Expression K11  = I12_adler * kMatrix[{0, 0}];
   const Expression K12  = I12_adler * kMatrix[{0, 1}];
   const Expression K22  = I12_adler * kMatrix[{1, 1}];
-  const Expression Xpol = ( 2 * sInGeV - sTop - sBot ) / ( sTop - sBot );
 
-  const Expression K32 = I32_adler * pol( Xpol, {-0.04046, 0.08143, -0.08849} );
+  const Expression K32 = I32_adler * pol(X, {-0.04046, 0.08143, -0.08849});
 
   const Expression detK = K11 * K22 - K12 * K12;
 

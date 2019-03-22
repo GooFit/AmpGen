@@ -6,16 +6,6 @@
 
 namespace AmpGen
 {
-  Expression phsp_twoBody( const Expression& s, const double& m0, const double& m1 );
-  Expression phsp_fourPi( const Expression& s );
-  Expression phsp_FOCUS( const Expression& s, const double& m0, const double& m1 );
-  Expression gFromGamma( const Expression& m, const Expression& gamma, const Expression& rho );
-
-  std::vector<Parameter> paramVector( const std::string& name, const unsigned int& nParam );
-
-  Tensor getPropagator( const Tensor& kMatrix, const std::vector<Expression>& phaseSpace,
-                        const Expression& adlerTerm = Constant( 1 ) );
-
   struct poleConfig {
     Expression s;
     std::vector<Expression> couplings;
@@ -28,16 +18,23 @@ namespace AmpGen
       couplings.push_back( coupling );
       bl_factors.push_back( bl_factor );
     }
-    const Expression coupling( const unsigned int& i ) const { return couplings[i] * bl_factors[i]; }
-    const Expression g( const unsigned int& i ) const { return couplings[i]; }
+    const Expression coupling(const size_t& i) const { return couplings[i] * bl_factors[i]; }
+    const Expression g(const size_t& i) const { return couplings[i]; }
   };
 
-  Tensor constructKMatrix( const Expression& s, const unsigned int& nChannels,
-                           const std::vector<poleConfig>& poleConfigs,
+  Tensor constructKMatrix(const Expression& s, const size_t& nChannels,
+                          const std::vector<poleConfig>& poleConfigs);
+  
+  Expression phsp_twoBody( const Expression& s, const double& m0, const double& m1 );
+  Expression phsp_fourPi( const Expression& s );
+  Expression phsp_FOCUS( const Expression& s, const double& m0, const double& m1 );
+  Expression gFromGamma( const Expression& m, const Expression& gamma, const Expression& rho );
 
-                           const std::function<Expression( const unsigned int& i, const unsigned int& j,
-                                                           const Expression& s )>& SVP = nullptr,
-                           DebugSymbols* dbexpressions                                 = nullptr );
+  std::vector<Parameter> paramVector( const std::string& name, const unsigned int& nParam );
+
+  Tensor getPropagator(const Tensor& kMatrix, const std::vector<Expression>& phaseSpace);
+
+
 } // namespace AmpGen
 
 #endif /* end of include guard: AMPGEN_KMATRIX_H */

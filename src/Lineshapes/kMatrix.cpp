@@ -15,6 +15,7 @@
 #include "AmpGen/Units.h"
 
 using namespace AmpGen;
+using namespace std::complex_literals;
 
 Expression AmpGen::phsp_twoBody( const Expression& s, const double& m0, const double& m1 )
 {
@@ -38,7 +39,7 @@ Expression AmpGen::phsp_FOCUS( const Expression& s, const double& m0, const doub
 std::vector<Parameter> AmpGen::paramVector( const std::string& name, const unsigned int& nParam )
 {
   std::vector<Parameter> returnVector;
-  for ( unsigned int i = 0; i < nParam; ++i ) returnVector.emplace_back( name + std::to_string( i ) );
+  for(size_t i = 0; i < nParam; ++i ) returnVector.emplace_back( name + std::to_string(i) );
   return returnVector;
 }
 
@@ -47,38 +48,29 @@ Expression AmpGen::gFromGamma( const Expression& m, const Expression& gamma, con
   return fcn::sqrt( m * gamma / rho );
 }
 
-Tensor AmpGen::getPropagator( const Tensor& kMatrix, const std::vector<Expression>& phaseSpace,
-                              const Expression& adlerTerm )
+Tensor AmpGen::getPropagator(const Tensor& kMatrix, const std::vector<Expression>& phaseSpace)
 {
   unsigned int nChannels = kMatrix.dims()[0];
-  Tensor TMatrx( std::vector<size_t>( {nChannels, nChannels} ) );
-  DEBUG( "Constructing T-Matrix" );
-  Expression J = Constant(0,1);
-  for ( unsigned int i = 0; i < nChannels; ++i ) {
-    for ( unsigned int j = 0; j < nChannels; ++j ) {
-      TMatrx[{i, j}] = SubTree( ( i == j ? 1 : 0 ) - J * adlerTerm  * kMatrix[{i, j}] * phaseSpace[j] );
+  Tensor T( Tensor::dim(nChannels, nChannels) );
+  for (size_t i = 0; i < nChannels; ++i ) {
+    for (size_t j = 0; j < nChannels; ++j ) {
+      T[{i, j}] = SubTree( ( i == j ? 1 : 0 ) - 1i * kMatrix[{i, j}] * phaseSpace[j] );
     }
   }
-  return TMatrx.Invert();
+  return T.Invert();
 }
 
-Tensor AmpGen::constructKMatrix(
-    const Expression& this_s, const unsigned int& nChannels, const std::vector<poleConfig>& poleConfigs,
-    const std::function<Expression( const unsigned int& i, const unsigned int& j, const Expression& s )>& SVP,
-    DebugSymbols* dbexpressions )
+Tensor AmpGen::constructKMatrix(const Expression& this_s, const size_t& nChannels, const std::vector<poleConfig>& poleConfigs)
 {
-  Tensor kMatrix( std::vector<size_t>( {nChannels, nChannels} ) );
-  for ( unsigned int i = 0; i < nChannels; ++i ) {
-    for ( unsigned int j = 0; j < nChannels; ++j ) {
+  Tensor kMatrix( Tensor::dim(nChannels, nChannels));
+  for ( size_t i = 0; i < nChannels; ++i ) {
+    for ( size_t j = 0; j < nChannels; ++j ) {
       Expression sumOverPoles = 0;
       for ( auto& pole : poleConfigs ) {
         Expression term = ( pole.couplings[i] * pole.couplings[j] ) / ( pole.s - this_s );
         sumOverPoles = sumOverPoles + term;
       }
-      Expression nr = SVP == nullptr ? Expression( 0 ) : SVP( i, j, this_s );
-      if ( dbexpressions != nullptr && SVP != nullptr )
-        dbexpressions->emplace_back( "SVP[" + std::to_string( i ) + "," + std::to_string( j ) + "]", nr );
-      kMatrix[{i, j}] = sumOverPoles + nr;
+      kMatrix[{i, j}] = sumOverPoles;
     }
   }
   return kMatrix;
@@ -122,19 +114,21 @@ DEFINE_LINESHAPE( kMatrix )
                                         phsp_fourPi(sInGeV),
                                         phsp_twoBody(sInGeV, mEta, mEta), 
                                         phsp_twoBody(sInGeV, mEta, mEtap)};
-
-  auto scatteringTerm = [&]( const unsigned int& i, const unsigned int& j, const Expression& s ) {
-    if ( i == 0 ) return fScatt[j] * ( 1 - s0_scatt ) / ( s - s0_scatt );
-    if ( j == 0 ) return fScatt[i] * ( 1 - s0_scatt ) / ( s - s0_scatt );
-    return Expression( 0 );
-  };
-
-  auto kMatrix = constructKMatrix( sInGeV, 5, poleConfigs, scatteringTerm );
+  
+  auto kMatrix = constructKMatrix( sInGeV, 5, poleConfigs);
+  Tensor scattPart( Tensor::dim(5,5) );
+  for(size_t i = 0; i < 5;++i){
+    scattPart(i,0) = fScatt[i]*( 1 - s0_scatt )/( s - s0_scatt );
+    scattPart(0,i) = fScatt[i]*( 1 - s0_scatt )/( s - s0_scatt );
+  }
+  kMatrix = kMatrix + scattPart; 
 
   kMatrix.imposeSymmetry(0,1);
 
   Expression adlerTerm = SubTree( ( 1. - sA0 ) * ( sInGeV - sA * mPiPlus * mPiPlus / 2 ) / ( sInGeV - sA0 ) );
-  Tensor F             = getPropagator( kMatrix, phaseSpace, adlerTerm );
+  
+  kMatrix = adlerTerm * kMatrix; 
+  Tensor F             = getPropagator(kMatrix, phaseSpace);
 
   if ( dbexpressions != nullptr ) {
     for ( auto& p : poleConfigs ) {
@@ -151,11 +145,7 @@ DEFINE_LINESHAPE( kMatrix )
     ADD_DEBUG( sA * mPiPlus * mPiPlus / 2, dbexpressions );
     ADD_DEBUG( sA0, dbexpressions );
     ADD_DEBUG( adlerTerm, dbexpressions );
-    for ( unsigned int i = 0; i < 5; ++i ) {
-      for ( unsigned int j = 0; j < 5; ++j ) {
-        dbexpressions->emplace_back( "K[" + std::to_string( i ) + "," + std::to_string( j ) + "]", kMatrix[{i, j}] );
-      }
-    }
+    ADD_DEBUG_TENSOR( kMatrix, dbexpressions );
   }
 
   if ( tokens[0] == "scatt" ) {

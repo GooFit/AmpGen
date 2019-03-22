@@ -5,10 +5,11 @@
 
 #include "AmpGen/Tensor.h"
 
+using namespace std::complex_literals;
 using namespace AmpGen;
 
-extern const AmpGen::Expression               AmpGen::I      ( Constant(0., 1.) );
-extern const AmpGen::Expression               AmpGen::Z      ( Expression( 0 ) );
+extern const AmpGen::Expression  AmpGen::I = Constant(0, 1);
+extern const AmpGen::Expression  AmpGen::Z = Constant(0);
 
 extern const std::array<AmpGen::Tensor,5>     AmpGen::Gamma  ( { 
     Tensor ({ 0, 0, 0, 1, 
@@ -35,7 +36,7 @@ extern const std::array<AmpGen::Tensor,5>     AmpGen::Gamma  ( {
 extern const std::array<AmpGen::Tensor,3> AmpGen::Sigma ( 
     {
       Tensor({0,1,1,0},{2,2}),
-      Tensor({Z,-I,I,Z},{2,2}),
+      Tensor({Z,-I,Z,I},{2,2}),
       Tensor({1,0,0,-1},{2,2})
     } );
 

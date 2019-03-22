@@ -32,25 +32,20 @@ DEFINE_LINESHAPE( FOCUS )
   std::vector<poleConfig> poleConfigs = {poleConfig( 1.7919, {0.31072, -0.02323} )};
   Expression rho1                     = phsp_FOCUS( sInGeV, mK, mPi );
   Expression rho2                     = phsp_FOCUS( sInGeV, mK, mEtap );
+  const Expression X = ( sInGeV / sNorm ) - 1;
 
-  Tensor kMatrix = constructKMatrix( sInGeV, 2, poleConfigs,
-    [&]( const unsigned int& i, const unsigned int& j, const Expression& sInGeV ) {
-      const Expression X = ( sInGeV / sNorm ) - 1;
-      Expression nr = 0;
-      if ( i == 0 && j == 0 )
-        return pol( X, {0.79299, -0.15099, 0.00811} );
-      else if ( i == 1 && j == 1 )
-        return pol( X, {0.17054, -0.0219, 0.00085655} );
-      else
-        return pol( X, {0.15040, -0.038266, 0.0022596} );
-    },
-    dbexpressions );
+  Tensor kMatrix = constructKMatrix( sInGeV, 2, poleConfigs); 
+  Tensor scattPart( Tensor::dim(2,2));
+  scattPart(0,0) = pol(X, {0.79299, -0.15099, 0.00811} );
+  scattPart(1,1) = pol(X, {0.17054, -0.0219, 0.00085655} );
+  scattPart(0,1) = pol(X, {0.15040, -0.038266, 0.0022596} );
+  scattPart(1,0) = pol(X, {0.15040, -0.038266, 0.0022596} );
 
+  kMatrix = kMatrix + scattPart;   
   const Expression K11 = I12_adler * kMatrix[{0, 0}];
   const Expression K12 = I12_adler * kMatrix[{0, 1}];
   const Expression K22 = I12_adler * kMatrix[{1, 1}];
 
-  const Expression X   = ( sInGeV / sNorm ) - 1;
   const Expression K32 = I32_adler * pol( X, {-0.22147, 0.026637, -0.00092057} );
 
   const Expression detK = K11 * K22 - K12 * K12;

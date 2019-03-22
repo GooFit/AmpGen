@@ -68,7 +68,7 @@ DEFINE_LINESHAPE( kMatrixSimple )
     poleConfigs.push_back( thisPole );
   }
 
-  auto kMatrix = constructKMatrix( sInGeV, nChannels, poleConfigs, nullptr, dbexpressions );
+  auto kMatrix = constructKMatrix( sInGeV, nChannels, poleConfigs);
   ADD_DEBUG_TENSOR( kMatrix, dbexpressions );
   Tensor propagator = getPropagator( kMatrix, phaseSpace );
   Expression M;

@@ -3,6 +3,11 @@
 ! Responsible : Tim Evans
 ! Purpose     : 
 !-----------------------------------------------------------------------------
+!=================== AmpGen v1r1 2019-03-22 ==================
+! 2019-03-22 - Tim Evans
+ - Added support for fitting more general final states, i.e. with multiple fermions, photons etc.
+ - Added example fitter with generic polarisation (see examples/FitterWithPolarisation.cpp).
+ - Added published LHCb models of D->K3pi and D->KKpipi to options.
 !=================== AmpGen v1r0 2018-07-25 ==================
 ! 2018-07-25 - Tim Evans
  - Units switched to GeV, will break existing options. 

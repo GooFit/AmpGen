@@ -89,7 +89,7 @@ DEFINE_LINESHAPE(GenericKmatrix)
       else WARNING("Unknown shape: " << nrShape); 
     }
   }
-  Tensor kMatrix = constructKMatrix(s, nChannels, poleConfigs, nullptr, nullptr ) ; // dbexpressions);
+  Tensor kMatrix = constructKMatrix(s, nChannels, poleConfigs);
 
   ADD_DEBUG_TENSOR(kMatrix   , dbexpressions);
   kMatrix = kMatrix + non_resonant; 

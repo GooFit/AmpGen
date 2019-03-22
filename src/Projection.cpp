@@ -1,14 +1,11 @@
 #include "AmpGen/Projection.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/Event.h"
 #include <stdio.h>
 
 #include "TAxis.h"
 #include "TH1.h"
 #include "TH2.h"
-
-namespace AmpGen {
-class Event;
-}  // namespace AmpGen
 
 using namespace AmpGen;
 
