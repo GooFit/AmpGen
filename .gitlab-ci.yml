@@ -3,7 +3,7 @@ image: alpine:latest
 pages:
   stage: deploy
   script:
-  - apk update && apk add doxygen && apk add graphviz && apk add texlive-2018
+  - apk update && apk add doxygen && apk add graphviz && apk add texlive
   - cd doc
   - doxygen doxygen.conf
   - cd ../
