@@ -1,12 +1,17 @@
-image: alpine
+image: alpine:latest
 
-doxydocumentation:
+pages:
+  stage: deploy
   script:
-  - apk update && apk add doxygen
+  - apk update && apk add doxygen && apk add graphviz
+  - apk add texlive-full && apk add ghostscript
   - cd doc
   - doxygen doxygen.conf
-  - mv html/ ../public/
-  - cp style.css ../public/
+  - cd ../
+  - mv doc/html/ public
+  - cp doc/style.css public/
+  - mkdir public/figs/
+  - cp doc/figs/*.png public/figs/.
   artifacts:
     paths:
     - public
