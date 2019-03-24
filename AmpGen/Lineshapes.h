@@ -118,19 +118,23 @@ namespace AmpGen
         
         The propagator as a function of the invariant-mass squared @f$s@f$ for a two-body final state with relative orbital angular momentum @f$l@f$ is given by
         @f[
-            \mathcal{A}(s) = \frac{ k(m,\Gamma_0) B_L(q(s),0) }{ m^2 - s - i m_0 \Gamma_{l}(s) },
-        @f] <br> 
-        <B> Parameters: </B> <br>  
-        <DD>
-             @f$m@f$        : <EM>particleName_</EM>mass   Breit-Wigner mass, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
-             @f$\Gamma_0@f$ : <EM>particleName_</EM>width   Breit-Wigner width, defined as the width of resonance at the Breit-Wigner mass <br>
-             @f$r@f$        : <EM>particleName_</EM>radius   Hadronic radius for Blatt-Weisskopf form-factor (defaults to 1.5GeV for light resonances, 3.5GeV for charm) <br>
-        </DD> <br>
-        <B> Modifiers: </B> <br>
-        <DD>
+            \mathcal{A}(s) = \frac{ k(m,\Gamma_0) B_l(q(s),0) }{ m^2 - s - i m_0 \Gamma_{l}(s) },
+        @f] 
+        where the width @f$ \Gamma_{l}(s) @f$ is given by
+        @f[
+            \Gamma_{l}(s) = \frac{\Gamma_0 q m_0}{q_0 \sqrt{s}} \left(\frac{q}{q_0}\right)^{2L} B_l(q,q_0)^2,
+        @f] 
+        where @f$q@f$ is the linear momentum of either decay product in the rest frame of the parent, while @f$q_0@f$ the same quantity evaluated at the resonance mass. 
+        The Blatt-Weisskopf functions, @f$B_l(q,q_0)@f$ control the behaviour of functions at large momentum transfers. The width is normalised such that @f$\Gamma(m^2) = \Gamma_0 @f$.  
+        The parameters of the lineshape are tabulated below
+         Parameter              | User name                            | Description 
+         -----------------------|--------------------------------------|------------------------------------------------------------------------
+         @f$m@f$                | <EM>particleName_</EM>mass           | Breit-Wigner mass, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)
+         @f$\Gamma_0@f$         | <EM>particleName_</EM>width          | Breit-Wigner width, defined as the width of resonance at the Breit-Wigner mass
+         @f$r@f$                | <EM>particleName_</EM>radius         | Hadronic radius for Blatt-Weisskopf form-factor (defaults to 1.5GeV for light resonances, 3.5GeV for charm)
+        
         <EM> BL </EM> : Use Blatt-Weisskopf factors normalised at @f$ \sqrt{s}=m @f$ (by default, normalised at @f$\sqrt{s}=0@f$)
-        </DD>
-        \image html figs/BW_combined.png "Modulus and phase of the Relativistic Breit-Wigner propagator, for @f$l={0,4}@f$, using the mass and nominal width of the @f$\rho@f$ meson" 
+        \image html BW_combined.png "Modulus and phase of the Relativistic Breit-Wigner propagator, for @f$l={0,4}@f$, using the mass and nominal width of the @f$\rho@f$ meson" 
     */
     DECLARE_LINESHAPE( BW );
  
@@ -142,20 +146,41 @@ namespace AmpGen
     /** @ingroup Lineshapes class GounarisSakurai
         @brief Gounaris-Sakurai lineshape models dispersive corrections to the I=1,J=1 \f$\pi\pi\f$ propagator (G.J. Gounaris and J.J. Sakurai, Phys. Rev. Lett.21, 244 (1968))
         
-        <B> Parameters: </B> <br>  
-        <DD>
-             @f$m@f$        : <EM>particleName_</EM>mass   Breit-Wigner mass, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
-             @f$\Gamma_0@f$ : <EM>particleName_</EM>width   Breit-Wigner width, defined as the width of resonance at the Breit-Wigner mass <br>
-             @f$r@f$        : <EM>particleName_</EM>radius   Hadronic radius for Blatt-Weisskopf form-factor (defaults to 1.5GeV for light resonances, 3.5GeV for charm) <br>
-        </DD> <br>
-        \image html figs/GS_combined.png "Gounaris-Sakurai lineshape for the ϱ(770) meson, with the equivalent relativistic Breit Wigner lineshape shown for comparison.
+         Parameter              | User name                            | Description 
+         -----------------------|--------------------------------------|------------------------------------------------------------------------
+         @f$m@f$                | <EM>particleName_</EM>mass           | Breit-Wigner mass, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
+         @f$\Gamma_0@f$         | <EM>particleName_</EM>width          | Breit-Wigner width, defined as the width of resonance at the Breit-Wigner mass <br>
+         @f$r@f$                | <EM>particleName_</EM>radius         | Hadronic radius for Blatt-Weisskopf form-factor (defaults to 1.5GeV for light resonances, 3.5GeV for charm) <br>
+        
+         \image html figs/GS_combined.png "Gounaris-Sakurai lineshape for the ϱ(770) meson, with the equivalent relativistic Breit Wigner lineshape shown for comparison.
     */
     DECLARE_LINESHAPE( GounarisSakurai );
 
     /// Description of the \f$ K\pi \f$ S-wave, based on the fits to scattering data.
     DECLARE_LINESHAPE( LASS );
 
-    /// Lineshape to describe resonances with coupled channels such as \f$f_{0}(980)^{0} / a_{0}(980) \f$ (S.M.Flatté, Phys. Lett B. 63, 224 (1976))
+    /** @ingroup Lineshapes class Flatte
+        @brief Lineshape to describe resonances with coupled channels such as @f$f_{0}(980)^{0} / a_{0}(980) @f$.
+        
+        The lineshape was first described by S.M.Flatté in Phys. Lett B. 63, 224 (1976), and describes a single, isolated resonance that couples to a pair of 
+        channels, which can have a large impact on the lineshape if the opening of one of the channels is near to the mass of the resonance. This lineshape 
+        can be considered a special case of the K matrix or coupled channel formalisms, and is explicitly implemented with the couplings and channels for 
+        the @f$f_{0}(980)^{0}@f$ and @f$a_{0}(980)^{0}@f$ resonances, which couple to the channels @f$\pi\pi@f$ and @f$KK@f$ for the @f$f_{0}(980)^{0}@f$ and @f$\pi\eta@f$ and @f$KK@f$ for the @f$a_{0}(980)^{0}@f$. In particular, the opening of the @f$KK@f$ threshold close to the resonance mass strongly distorts the lineshape. For a generic implementation of a coupled channel, see the CoupledChannel lineshape.  
+
+        @f[
+            \mathcal{A}(s) = \frac{1}{ m^2 - s - i m \Gamma(s) },
+        @f] <br> 
+        where the running width is given by 
+       @f[
+         \Gamma(s) = g_{\pi\pi} \left( \Lambda^{1/2}(s,m_{\pi}^2,m_{\pi}^2)  + \frac{g_{KK}}{g_{\pi\pi}} \Lambda^{1/2}(s,m_K^2, m_K^2) \right)
+       @f] 
+       or 
+       @f[
+         \Gamma(s) = g_{\pi\eta} \left( \Lambda^{1/2}(s,m_{\pi}^2,m_{\eta}^2)  + \frac{g_{KK}}{g_{\pi\eta}} \Lambda^{1/2}(s,m_K^2, m_K^2) \right) 
+       @f]
+       for the @f$f_0(980)^{0}@f$ and the @f$a_0(980)^{0}@f$, respectively. 
+
+     */
     DECLARE_LINESHAPE( Flatte );
     DECLARE_LINESHAPE( Bugg );
     DECLARE_LINESHAPE( Isotensor );
@@ -221,13 +246,14 @@ namespace AmpGen
         Based on techniques first used by the E791 collaboration in studying @f$ K \pi @f$ scalars, see https://arxiv.org/abs/hep-ex/0510045. <br>
         The amplitude is given by 
          @f[
-            \mathcal{A}(s) = \sum_n ( a_n + b_n \tilde{s} + c_n \tilde{s}^2 + d_n \tilde{s}^3 ) \mathrm{rect}\left( \frac{s - nL}{nL} \right)
+            \mathcal{A}(s) = \sum_n ( a_n + b_n \tilde{s} + c_n \tilde{s}^2 + d_n \tilde{s}^3 ) \mathrm{rect}\left( \frac{s - nL}{nL} \right),
          @f]
-        <B> Parameters: </B> <br>
-      <DD>
-         @f$\mathcal{R}_j@f$ : <EM>particleName</EM>::Spline::Re::j  The real value of the lineshape evaluated at the @f$ j @f$th knot. <br>
-         @f$\mathcal{I}_j@f$ : <EM>particleName</EM>::Spline::Im::j  The imaginary value of the lineshape evaluated at the @f$ j @f$th knot.  <br>
-      </DD> <br>    
+         where @f$a_n@f$ is the value of the function evaluated at the @f$ n @f$ knot and the other polynomial coefficients are determined by imposing continuity and 
+         differentiability. 
+         Parameter              | User name                            | Description 
+         -----------------------|--------------------------------------|------------------------------------------------------------------------
+         @f$\mathcal{R}(a_j)@f$ | <EM>particleName</EM>::Spline::Re::j | The real value of the lineshape evaluated at the @f$ j @f$th knot.
+         @f$\mathcal{I}(a_j)@f$ | <EM>particleName</EM>::Spline::Im::j | The imaginary value of the lineshape evaluated at the @f$ j @f$th knot.
      */
     DECLARE_LINESHAPE( MIPWA );
     /** @ingroup Lineshapes class GSpline 

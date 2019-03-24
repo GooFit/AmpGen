@@ -4,12 +4,12 @@ pages:
   stage: deploy
   script:
   - apk update && apk add doxygen && apk add graphviz
-  - apk add texlive-full && apk add ghostscript
+  - apk add ghostscript
   - cd doc
-  - doxygen doxygen.conf
+  - doxygen doxyfile
   - cd ../
   - mv doc/html/ public
-  - cp doc/style.css public/
+  - cp doc/customdoxygen.css public/
   - mkdir public/figs/
   - cp doc/figs/*.png public/figs/.
   artifacts:

@@ -32,7 +32,7 @@ namespace AmpGen {
       void getOrderedSubExpressions( Expression& expression, std::vector<std::pair<uint64_t,Expression>>& dependentSubexpressions );
 
       template <class TYPE> void resolve( const TYPE& obj ){}
-      template <class TYPE, class ...ARGS> size_t addCacheFunction( const std::string& name, ARGS&... args )
+      template <class TYPE, class ...ARGS> size_t addCacheFunction( const std::string& name, const ARGS&... args )
       {
         auto it = m_cacheFunctions.find(name);
         if( it != m_cacheFunctions.end() ) return it->second->address();

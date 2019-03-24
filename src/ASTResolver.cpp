@@ -93,7 +93,7 @@ template <> void ASTResolver::resolve<Spline>( const Spline& spline )
 template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
 {
   if( m_resolvedParameters.count(&parameter) != 0 || parameter.isResolved() ) return; 
-  auto res = evtMap.find(parameter.m_name);
+  auto res = evtMap.find(parameter.name());
   if( res != evtMap.end() ){
     if( enable_cuda ) {
       size_t t = res->second; 
@@ -113,13 +113,13 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
     return;
   }
   else if( mps != nullptr ){
-    auto it = mps->find(parameter.m_name);
+    auto it = mps->find(parameter.name());
     if( it != nullptr ){
       if( enable_compileTimeConstants && 
           it->iFixInit() == MinuitParameter::Flag::CompileTimeConstant ){
         addResolvedParameter( &parameter, std::to_string(it->mean()) );
       }
-      else addResolvedParameter( &parameter, addCacheFunction<ParameterTransfer>( parameter.m_name, it )  );
+      else addResolvedParameter( &parameter, addCacheFunction<ParameterTransfer>( parameter.name(), it )  );
       return;
     }
   }
@@ -127,7 +127,7 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
     addResolvedParameter( &parameter, std::to_string( parameter.defaultValue() ) );
     return;
   }
-  auto address = addCacheFunction<CacheTransfer>( parameter.m_name, parameter.m_defaultValue );
+  auto address = addCacheFunction<CacheTransfer>( parameter.name(), parameter.defaultValue() );
   addResolvedParameter( &parameter, address );
 }
 

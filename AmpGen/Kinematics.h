@@ -12,19 +12,21 @@ namespace AmpGen
 {
   class Event; 
 
-  /// \defgroup Kin Kinematics
-  /// Assorted functors for computing kinematic quantities on events, such as helicity cosines and acoplanarities. 
-  /// Also contains utilities for boosting and rotating events  
+  /** @defgroup Kin Kinematics
+      @brief Functionality related to kinematics.
+      Assorted functors for calculating kinematic quantities on events, such as helicity cosines and acoplanarities. 
+      Also contains utilities for boosting and rotating four vectors and building general transform sequences on different Lorentz objects. 
+   */
 
-  /// \ingroup Kin class HelicityCosine 
-  /// \brief Functor to compute the angle between set of particles {1} and {2} in the rest frame of set {3}. 
-
+   /** @ingroup Kin class HelicityCosine 
+      @brief Functor to compute the angle between set of particles {1} and {2} in the rest frame of set {3}. 
+    */
   class HelicityCosine {
     public:
-      HelicityCosine( const std::vector<size_t>& p1, const std::vector<size_t>& p2,
-          const std::vector<size_t>& pR );
+      HelicityCosine(const std::vector<size_t>& p1, const std::vector<size_t>& p2,
+          const std::vector<size_t>& pR);
 
-      HelicityCosine( const size_t& i, const size_t& j, const std::vector<size_t>& pR );
+      HelicityCosine(const size_t& i, const size_t& j, const std::vector<size_t>& pR);
 
       double operator()( std::vector<Event>::iterator evt ) const;
       double operator()( const Event& evt ) const;
@@ -32,6 +34,9 @@ namespace AmpGen
       std::vector<size_t> _i, _j, _pR;
   };
 
+  /** @ingroup Kin class MomentumTransfer
+      @brief Functor to calculate the linear momemtum between particles {1} and {2} in the rest frame of {1} + {2}. 
+   */ 
   class MomentumTransfer {
     public:
       MomentumTransfer( const std::vector<size_t>& _p1, const std::vector<size_t>& _p2 );
@@ -43,11 +48,15 @@ namespace AmpGen
       std::vector<size_t> s;
   };
 
-  TLorentzVector pFromEvent( const Event& evt, const size_t& ref );
-  TLorentzVector pFromEvent( const Event& evt, const std::vector<size_t>& ref );
-
+  /** @ingroup Kin function acoplanarity
+      @brief The extent to which a four body decay occurs within a single decay frame. 
+      Defined by the angle between the normals of decay planes of two of the quasi two-body subsystems, i.e. 
+      \[
+        \chi = \cos^{-1}\left( \frac{ \left( p_0 \cross p_1 \right) \dot \left( p_2 \cross p_3 \right) }{ \left| p_0 \cross p_1 \right| \left| p_2 \cross \p_3 \right| } \right),
+      \]
+     where each of the three-vectors is calculated in the rest frame of the decaying particle. 
+    */
   double acoplanarity( const Event& evt );
-  double Product( const TLorentzVector& p1, const TLorentzVector& p2, const TLorentzVector& pX );
 
   double trihedralAngle( const Event& evt );
   double TripleProduct( const Event& evt );
@@ -60,6 +69,24 @@ namespace AmpGen
   void rotate( Event& evt, const std::tuple<double, double, double>& n, const double& v );
 
   void rotateBasis( Event& evt, const TVector3& p1, const TVector3& p2, const TVector3& p3 );
+  
+  /** @ingroup Kin function pFromEvent
+      @brief Helper function to extract a TLorentzVector of the ith decay product from an AmpGen::Event.
+    */
+  TLorentzVector pFromEvent( const Event& evt, const size_t& ref );
+
+  /** @ingroup Kin function pFromEvent
+      @brief Helper function to extract a TLorentzVector of the sum of {2} decay product from an AmpGen::Event.
+    */
+  TLorentzVector pFromEvent( const Event& evt, const std::vector<size_t>& ref );
+  /** @ingroup Kin function dotProduct 
+      @brief Helper function to calculate the (space-like) dot product between vectors p1 and p2 in the rest frame of pX. 
+      
+      @detailed Helper function to calculate the (space-like) dot product between vectors p1 and p2 in the rest frame of pX, which is given by \
+
+    
+    */
+  double dotProduct( const TLorentzVector& p1, const TLorentzVector& p2, const TLorentzVector& pX );
   
 } // namespace AmpGen
 #endif

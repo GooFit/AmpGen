@@ -47,7 +47,7 @@ double HelicityCosine::operator()( const Event& evt ) const
   TLorentzVector PR = pFromEvent( evt, _pR );
   TLorentzVector pi = pFromEvent( evt, _i );
   TLorentzVector pj = pFromEvent( evt, _j );
-  return Product( pi, pj, PR ) / sqrt( Product( pi, pi, PR ) * Product( pj, pj, PR ) );
+  return dotProduct(pi, pj, PR) / sqrt( dotProduct( pi, pi, PR ) * dotProduct( pj, pj, PR ) );
 }
 
 TLorentzVector AmpGen::pFromEvent( const Event& evt, const size_t& ref )
@@ -83,7 +83,7 @@ double AmpGen::acoplanarity( const Event& evt )
   return acos( t1.Dot( t2 ) );
 }
 
-double AmpGen::Product( const TLorentzVector& p1, const TLorentzVector& p2, const TLorentzVector& pX )
+double AmpGen::dotProduct( const TLorentzVector& p1, const TLorentzVector& p2, const TLorentzVector& pX )
 {
   return -p1.Dot( p2 ) + p1.Dot( pX ) * p2.Dot( pX ) / pX.Dot( pX );
 }

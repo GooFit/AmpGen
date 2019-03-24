@@ -6,13 +6,13 @@
 #include "AmpGen/DiracMatrices.h"
 
 namespace AmpGen {
-  Expression cosh( const Expression& x );
-  Expression sinh( const Expression& x );
-  Expression tanh( const Expression& x );
+  Expression cosh(const Expression& x);
+  Expression sinh(const Expression& x);
+  Expression tanh(const Expression& x);
 
-  Expression acosh( const Expression& x); 
-  Expression asinh( const Expression& x); 
-  Expression atanh( const Expression& x); 
+  Expression acosh(const Expression& x); 
+  Expression asinh(const Expression& x); 
+  Expression atanh(const Expression& x); 
 
   class Transform 
   {

@@ -96,7 +96,7 @@ namespace AmpGen
 {
   class ASTResolver;
   class Expression;
-  struct Parameter;
+  class Parameter;
 
   typedef std::pair<std::string, Expression> DebugSymbol;
   typedef std::vector<DebugSymbol> DebugSymbols;
@@ -169,7 +169,8 @@ namespace AmpGen
    such as masses and widths, as well as the event buffer (i.e. kinematic quantities), which should be stored in 
    two separated parameter packs. There is also limited support for handling more complex function parameters to functions, 
    such as cache states, but this currently requires manually specifying the argument ordering. */
-  struct Parameter : public IExpression {
+  class Parameter : public IExpression {
+    public:
     Parameter( const std::string& name     = "", 
                const double&  defaultValue = 0 , 
                const bool&        resolved = false,
@@ -179,8 +180,10 @@ namespace AmpGen
     operator Expression() const;
     complex_t operator()() const override { return complex_t( m_defaultValue, 0 ); }
     std::string name() const { return m_name; }
-    double defaultValue() const { return m_defaultValue ; }
+    const double& defaultValue() const { return m_defaultValue ; }
+    double& defaultValue() { return m_defaultValue ; }
     bool isResolved() const { return m_resolved ;}
+    private:
     std::string  m_name;
     double       m_defaultValue;
     bool         m_resolved; 
@@ -353,7 +356,7 @@ namespace AmpGen
   DECLARE_UNARY_OPERATOR( ISqrt );
   
   /// @ingroup ExpressionEngine struct LGamma
-  /// @brief Unary expression that returns \f$\log\left|\\Gamma(x)\right|\f$
+  /// @brief Unary expression that returns \f$\log\left|\Gamma(x)\right|\f$
   DECLARE_UNARY_OPERATOR( LGamma );
 
   Expression operator<( const Expression& A, const Expression& B );

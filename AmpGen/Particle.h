@@ -181,10 +181,10 @@ namespace AmpGen
       unsigned int index() const;
       unsigned int originalIndex() const;
 
-      /// @function name of the decaying particle.
+      /// @function Name of the decaying particle.
       std::string name() const;                   
             
-      /// @function Propagator to use for the decay of this particle.
+      /// @function Name of the propagator to use for the decay of this particle.
       std::string lineshape() const;
 
       /// @function Name of the (spin)vertex to use for the decay of this particle 
@@ -210,6 +210,7 @@ namespace AmpGen
       
       /// @function Returns the ``quasi'' CP Quantum number for this decay       
       int quasiCP() const; 
+
       /// @function Return the eventType for this decay (i.e. the initial and final state particles) 
       EventType eventType() const;
 
