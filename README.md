@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="doc/figs/logo.png">
+  <img src="https://gitlab.com/tevans1260/AmpGen/raw/master/doc/figs/logo.png">
 </p>
 AmpGen is a library and set of applications for fitting and generating multi-body particle decays using the isobar model.
 It developed out of the MINT project used in the fitting of three and four-body pseudoscalar decays by the CLEO-c and LHCb colloborations. The library can handle the fitting and generation of a wide variety of final states, including those involving fermions and photons, as well as polarised initial states.
@@ -103,6 +103,7 @@ The decay products of a particle are enclosed within curly braces, for example
 K*(892)0{K+,pi-}
 ```
 describes an excited vector kaon decaying into a charged kaon and pion. 
+For more details about the API for describing particle decays, see [AmpGen::Particle](https://tevans1260.gitlab.io/AmpGen/de/dd7/class_amp_gen_1_1_particle.html).
 The other numbers on the lines that describe the decays parameterise the coupling to this channel, 
 either in terms of real and imaginary parts or an amplitude and a phase.
 Each parameter is specified in terms of three numbers: the _fix_ flag, the initial value, and the step size. 
@@ -304,8 +305,10 @@ That is specified as sets of three numbers, firstly the coupling, and then the t
 The development of this software has been  supported by the National Science Foundation under grant PHY-1414736 and through a subcontract under Cooperative Agreement OAC-1836650.   Any opinions, findings, and conclusions or recommendations expressed in this material are those of the developers and do not necessarily reflect the views of the National Science Foundation.
 
 <p align="center">
-  <img src="doc/figs/UC_ID_PrimaryBlackRed.png">
-  <img src="doc/figs/Iris-hep-3-regular-complete.png">
-  <img src="doc/figs/NSF_4-Color_bitmap_Logo.png">
+  <div>
+  <img src="https://gitlab.com/tevans1260/AmpGen/raw/master/doc/figs/UC_ID_PrimaryBlackRed.png"> 
+  <img src="https://gitlab.com/tevans1260/AmpGen/raw/master/doc/figs/Iris-hep-3-regular-complete.png"> 
+  <img src="https://gitlab.com/tevans1260/AmpGen/raw/master/doc/figs/NSF_4-Color_bitmap_Logo.png">
+  </div>
 </p>
 

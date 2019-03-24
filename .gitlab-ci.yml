@@ -5,10 +5,11 @@ pages:
   script:
   - apk update && apk add doxygen && apk add graphviz
   - apk add ghostscript
+  - mkdir build 
   - cd doc
   - doxygen doxyfile
   - cd ../
-  - mv doc/html/ public
+  - mv build/html/ public
   - cp doc/customdoxygen.css public/
   - mkdir public/figs/
   - cp doc/figs/*.png public/figs/.
