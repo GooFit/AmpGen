@@ -118,11 +118,11 @@ namespace AmpGen
         
         The propagator as a function of the invariant-mass squared @f$s@f$ for a two-body final state with relative orbital angular momentum @f$l@f$ is given by
         @f[
-            \mathcal{A}(s) = \frac{ k(m,\Gamma_0) B_l(q(s),0) }{ m^2 - s - i m_0 \Gamma_{l}(s) },
+            \mathcal{A}(s) = \frac{ k(m,\Gamma_0) B_l(qr,0) }{ m^2 - s - i m \Gamma_{l}(s) },
         @f] 
         where the width @f$ \Gamma_{l}(s) @f$ is given by
         @f[
-            \Gamma_{l}(s) = \frac{\Gamma_0 q m_0}{q_0 \sqrt{s}} \left(\frac{q}{q_0}\right)^{2L} B_l(q,q_0)^2,
+            \Gamma_{l}(s) = \frac{\Gamma_0 q m_0}{q_0 \sqrt{s}} \left(\frac{q}{q_0}\right)^{2l} B_l( qr, q_0 r )^2,
         @f] 
         where @f$q@f$ is the linear momentum of either decay product in the rest frame of the parent, while @f$q_0@f$ the same quantity evaluated at the resonance mass. 
         The Blatt-Weisskopf functions, @f$B_l(q,q_0)@f$ control the behaviour of functions at large momentum transfers. The width is normalised such that @f$\Gamma(m^2) = \Gamma_0 @f$.  
@@ -138,19 +138,43 @@ namespace AmpGen
     */
     DECLARE_LINESHAPE( BW );
  
-    /// Breit-Wigner lineshape with fixed width
+    /** @ingroup Lineshapes class SBW 
+        @brief Breit-Wigner lineshape with fixed width
+        
+        Basic Breit-Wigner lineshape with a fixed width and without a form factor.
+        @f[
+            \mathcal{A}(s) = \frac{ k(m,\Gamma_0) }{ m^2 - s - i m \Gamma_0 },
+        @f] 
+        The parameters of the lineshape are tabulated below
+         Parameter              | User name                            | Description 
+         -----------------------|--------------------------------------|------------------------------------------------------------------------
+         @f$m@f$                | <EM>particleName_</EM>mass           | Breit-Wigner mass, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)
+         @f$\Gamma_0@f$         | <EM>particleName_</EM>width          | Breit-Wigner width, defined as the width of resonance at the Breit-Wigner mass
+     */
     DECLARE_LINESHAPE( SBW );
     /// Non-relativistic Breit-Wigner lineshape
     DECLARE_LINESHAPE( NonRelBW );
 
     /** @ingroup Lineshapes class GounarisSakurai
-        @brief Gounaris-Sakurai lineshape models dispersive corrections to the I=1,J=1 \f$\pi\pi\f$ propagator (G.J. Gounaris and J.J. Sakurai, Phys. Rev. Lett.21, 244 (1968))
+        @brief Gounaris-Sakurai lineshape models dispersive corrections to the @f$I=1,J=1@f$ @f$\pi\pi@f$ propagator.
         
-         Parameter              | User name                            | Description 
-         -----------------------|--------------------------------------|------------------------------------------------------------------------
-         @f$m@f$                | <EM>particleName_</EM>mass           | Breit-Wigner mass, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
-         @f$\Gamma_0@f$         | <EM>particleName_</EM>width          | Breit-Wigner width, defined as the width of resonance at the Breit-Wigner mass <br>
-         @f$r@f$                | <EM>particleName_</EM>radius         | Hadronic radius for Blatt-Weisskopf form-factor (defaults to 1.5GeV for light resonances, 3.5GeV for charm) <br>
+        The Gounaris-Sakurai lineshape models dispersive corrections to the I=1,J=1 @f$\pi\pi@f$ propagator (G.J. Gounaris and J.J. Sakurai, Phys. Rev. Lett.21, 244 (1968))
+        @f[
+            \mathcal{A}(s) = \frac{ k(m,\Gamma_0) B_l(qr,0) }{ m^2(s) - s - i m \Gamma(s) },
+        @f]
+        where the running mass @f$ m^2(s)@f$ is given by
+        @f[
+          m^2(s) = m^2 + \frac{\Gamma_0}{\pi} \left( \frac{ 2 q^3 m }{q_0^3 \sqrt{s} } \log\left(\frac{\sqrt{s} + q }{ 2 m_\pi }\right) +
+           \frac{ q^2 ( s - 3m^2) + s(m^2-s) }{ m q_0^2 } \log\left(\frac{m+q_0}{2 m_\pi}\right) +
+           \frac{m^2 - s}{q_0}
+          \right)
+        @f]
+
+        Parameter              | User name                            | Description 
+        -----------------------|--------------------------------------|------------------------------------------------------------------------
+        @f$m@f$                | <EM>particleName_</EM>mass           | Breit-Wigner mass, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
+        @f$\Gamma_0@f$         | <EM>particleName_</EM>width          | Breit-Wigner width, defined as the width of resonance at the Breit-Wigner mass <br>
+        @f$r@f$                | <EM>particleName_</EM>radius         | Hadronic radius for Blatt-Weisskopf form-factor (defaults to 1.5GeV for light resonances, 3.5GeV for charm) <br>
         
          \image html figs/GS_combined.png "Gounaris-Sakurai lineshape for the ϱ(770) meson, with the equivalent relativistic Breit Wigner lineshape shown for comparison.
     */
@@ -166,10 +190,9 @@ namespace AmpGen
         channels, which can have a large impact on the lineshape if the opening of one of the channels is near to the mass of the resonance. This lineshape 
         can be considered a special case of the K matrix or coupled channel formalisms, and is explicitly implemented with the couplings and channels for 
         the @f$f_{0}(980)^{0}@f$ and @f$a_{0}(980)^{0}@f$ resonances, which couple to the channels @f$\pi\pi@f$ and @f$KK@f$ for the @f$f_{0}(980)^{0}@f$ and @f$\pi\eta@f$ and @f$KK@f$ for the @f$a_{0}(980)^{0}@f$. In particular, the opening of the @f$KK@f$ threshold close to the resonance mass strongly distorts the lineshape. For a generic implementation of a coupled channel, see the CoupledChannel lineshape.  
-
         @f[
             \mathcal{A}(s) = \frac{1}{ m^2 - s - i m \Gamma(s) },
-        @f] <br> 
+        @f]
         where the running width is given by 
        @f[
          \Gamma(s) = g_{\pi\pi} \left( \Lambda^{1/2}(s,m_{\pi}^2,m_{\pi}^2)  + \frac{g_{KK}}{g_{\pi\pi}} \Lambda^{1/2}(s,m_K^2, m_K^2) \right)
@@ -190,7 +213,20 @@ namespace AmpGen
 
     DECLARE_LINESHAPE( FormFactor );
 
-    /// Gaussian lineshape \f$ = e^{ -(x-\mu)^2 / 2\sigma^{2} } \f$
+    /** @ingroup Lineshapes class Gaussian 
+        @brief Gaussian shape for (relatively) long lived states that are limited by experimental resolution, rather than natural width.
+        @detail The gaussian lineshape has the form 
+        @f[
+          \mathcal{A}(s) = e^{ -(s-\mu)^2 / 2\sigma^2 },
+        @f]
+        which is potentially useful for fitting very long-lived contributions that are essentially limited by the experimental resolution, 
+        rather than the natural lifetime. This type of parameterisation will assess contributions from interference incorrectly.
+
+        Parameter              | User name                            | Description 
+        -----------------------|--------------------------------------|------------------------------------------------------------------------
+        @f$\mu@f$              | <EM>lineshapeModifier</EM>_mean      | Mean of the gaussian distribution.
+        @f$\sigma@f$           | <EM>lineshapeModifier</EM>_sigma     | Width of the gaussian distribution. 
+      */
     DECLARE_LINESHAPE( Gaussian );
 
     /** @ingroup Lineshapes class Poly

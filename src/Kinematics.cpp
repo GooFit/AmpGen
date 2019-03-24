@@ -88,39 +88,6 @@ double AmpGen::dotProduct( const TLorentzVector& p1, const TLorentzVector& p2, c
   return -p1.Dot( p2 ) + p1.Dot( pX ) * p2.Dot( pX ) / pX.Dot( pX );
 }
 
-double AmpGen::trihedralAngle( const Event& evt )
-{
-  TLorentzVector p0 = pFromEvent( evt, 0 );
-  TLorentzVector p1 = pFromEvent( evt, 1 );
-  TLorentzVector p2 = pFromEvent( evt, 2 );
-  TLorentzVector p3 = pFromEvent( evt, 3 );
-  TLorentzVector pD = p0 + p1 + p2 + p3;
-  p0.Boost( -pD.BoostVector() );
-  p1.Boost( -pD.BoostVector() );
-  p2.Boost( -pD.BoostVector() );
-  p3.Boost( -pD.BoostVector() );
-  return p0.Vect().Dot( p1.Vect().Cross( p2.Vect() ) ) *
-         ( 1. / ( p1.Vect().Mag() * p0.Vect().Mag() * p2.Vect().Mag() ) );
-}
-
-double AmpGen::TripleProduct( const Event& evt )
-{
-
-  TLorentzVector p0 = pFromEvent( evt, 0 );
-  TLorentzVector p1 = pFromEvent( evt, 1 );
-  TLorentzVector p2 = pFromEvent( evt, 3 );
-  TLorentzVector p3 = pFromEvent( evt, 2 );
-  TLorentzVector pD = p0 + p1 + p2 + p3;
-  p0.Boost( -pD.BoostVector() );
-  p1.Boost( -pD.BoostVector() );
-  p2.Boost( -pD.BoostVector() );
-
-  TVector3 P2         = p2.Vect().Unit();
-  TVector3 DecayPlane = p0.Vect().Cross( p1.Vect() );
-  TVector3 f          = DecayPlane.Unit();
-  return P2.Dot( f );
-}
-
 double AmpGen::PHI( const Event& evt )
 {
   TLorentzVector pA_4vec = pFromEvent( evt, 0 );

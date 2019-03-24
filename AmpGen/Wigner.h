@@ -11,7 +11,7 @@ class Particle;
   Expression wigner_d( const Expression& cb, const double& j, const double& m, const double& n );
   Expression wigner_D( const Tensor& P, const double& J, const double& lA, const double& lB, DebugSymbols* db , const std::string& name = "");
 
-  /** \ingroup Vertices \function CG  
+  /** @ingroup Vertices function CG  
     Calculates the Clebsch-Gordan coefficient for (j1 m1 j2 m2 | J M), the expansion
     coefficients in  
     */
@@ -22,7 +22,7 @@ class Particle;
     const double& J,
     const double& M );
 
-  /** \function helicityTransformMatrix
+  /** @ingroup Vertices function helicityTransformMatrix 
     Generates a helicity transform tensor (matrix) that aligns tensor P (four-vector) to the +/- ve z-axis, then boosts to the rest frame. 
     The mass may be seperately specified. The parameter ve specifies whether the initial Euler rotation is to the +/- z-axis. 
     In the case where ve =-1, a second rotation is applied about the x-axis that aligns P to the +ve z-axis. 
@@ -32,7 +32,6 @@ class Particle;
   
   Expression helicityAmplitude( const Particle& particle, const TransformSequence& parentFrame, const double& Mz,    DebugSymbols* db , const int sgn=1);
 
-  //Tensor basis_spinor(const Tensor& p, const int& polState, const int& id, DebugSymbols* db=nullptr );
   Tensor basisSpinor(const int& polState, const int& id);
 
   struct LS {

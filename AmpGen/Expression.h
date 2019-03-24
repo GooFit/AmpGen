@@ -2,10 +2,7 @@
 #define AMPGEN_EXPRESSION_H
 
 /** @defgroup ExpressionEngine Expressions 
-    @brief 
-    are a set of classes for constructing functions from primatives 
-    such as the binary operators \f$(+,-,/,\times)\f$, and elementary functions such as trigonometric 
-    functions and sqrts. 
+    @brief are a set of classes for constructing mathematical functions from primitives.
    
     AmpGen Expressions are a set of classes for constructing functions from primatives 
     such as the binary operators \f$(+,-,/,\times)\f$, and elementary functions such as trigonometric 
@@ -31,8 +28,13 @@
     There is limited functionality for expressions to be evaluated in-situ to the default values associated with their parameters, which can useful for debugging purposes.
     The more typical usage is to use an expression to generate a CompiledExpression that compiles the expression and wraps the corresponding shared library with a functor. 
 
-    For unary functions, it is recommend to use the functions contained in the fcn:: namespace that have the same names as those in std::math. 
-    Use of the unary classes directly can cause unexpected behaviour if used in conjunction with the auto keyword.*/
+    For unary functions, it is recommend to use the functions contained in the fcn:: namespace that have the same names as those in std::math. For example, 
+    \code{.cpp}
+    Expression y = fcn::sin(x);
+    \endcode
+
+    Use of the unary classes directly can cause unexpected behaviour if used in conjunction with the auto keyword, and does not include some optimisations as readily such as constant folding. 
+    */
 
 /// @ingroup ExpressionEngine macro ADD_DEBUG
 /// Make a (named) debugging expression and add to a set of DebugSymbols.
@@ -120,7 +122,7 @@ namespace AmpGen
       virtual complex_t operator()() const = 0;
   };
 
-  /** @ingroup ExpressionEngine cclass Expression 
+  /** @ingroup ExpressionEngine class Expression 
       @brief Wrapper class for shared_ptrs to virtual expressions for use in conjunction with operators 
       to build expression trees. */
   class Expression { 
