@@ -36,11 +36,12 @@ PROJECT_NAME           = "AmpGen"
 PROJECT_NUMBER         = 1.1
 PROJECT_BRIEF          =
 PROJECT_LOGO           = "figs/logo_small.png" 
-OUTPUT_DIRECTORY       = "../build/"
+# OUTPUT_DIRECTORY       = "../build/"
 LAYOUT_FILE            = "DoxygenLayout.xml"
 HTML_EXTRA_STYLESHEET  = "customdoxygen.css"
-INPUT                  = "../AmpGen" "../README.md"
-USE_MDFILE_AS_MAINPAGE = "../README.md"
+INPUT                  = "../AmpGen" 
+# "../README.md"
+# USE_MDFILE_AS_MAINPAGE = "../README.md"
 IMAGE_PATH             = "figs/"
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create 4096 sub-
