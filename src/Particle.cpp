@@ -28,9 +28,6 @@
 #include "AmpGen/Types.h"
 
 using namespace AmpGen;
-using AmpGen::Lineshape::LineshapeFactory;
-
-static std::string spinBasis; 
 
 Particle::Particle()
 {
@@ -149,7 +146,7 @@ void Particle::parseModifier( const std::string& mod )
     parseModifier( mod.substr(0,1) );
     parseModifier( mod.substr(1,1) );
   }
-  else if ( LineshapeFactory::isLineshape( mod ) )
+  else if ( Lineshape::Factory::isLineshape( mod ) )
     m_lineshape = mod;
 }
 
@@ -337,14 +334,13 @@ Expression Particle::propagator( DebugSymbols* db ) const
   DEBUG( "Getting lineshape " << m_lineshape << " for " << m_name );
   Expression s = massSq();
   if ( m_daughters.size() == 2 ) {
-    auto prop = make_cse(LineshapeFactory::getLineshape(m_lineshape, s, daughter(0)->massSq(), daughter(1)->massSq(), m_name, m_orbital, db));
-    total = total * prop;
+    auto prop = Lineshape::Factory::get(m_lineshape, s, daughter(0)->massSq(), daughter(1)->massSq(), m_name, m_orbital, db);
+    total = total * make_cse(prop);
   }
   else if ( m_daughters.size() == 3 ) {
     std::string shape = m_lineshape == "BW" ? "SBW" : m_lineshape;
-    auto prop = LineshapeFactory::getGenericShape(
-      shape, massSq(), {daughter(0)->P(), daughter(1)->P(), daughter(2)->P()}, m_name, m_orbital, db );
-    total = total * prop;  
+    auto prop = Lineshape::Factory::get(shape, massSq(), {daughter(0)->P(), daughter(1)->P(), daughter(2)->P()}, m_name, m_orbital, db );
+    total = total * make_cse(prop);  
   }  
   for(auto& d : m_daughters) total = total*make_cse(d->propagator(db));
   if(db != nullptr) db->emplace_back("A("+uniqueString()+")", total);
@@ -460,13 +456,13 @@ Tensor Particle::spinTensor( DebugSymbols* db ) const
     return S;
   }
   else if ( m_daughters.size() == 2 ) {
-    Tensor value = VertexFactory::getSpinFactor( P(), Q(), 
+    Tensor value = Vertex::Factory::getSpinFactor( P(), Q(), 
         daughter(0)->spinTensor( db ),
         daughter(1)->spinTensor( db ), vertexName() , db );
     DEBUG( "Returning spin tensor" );
     return value;
   } else if ( m_daughters.size() == 3 ) {
-    return VertexFactory::getSpinFactorNBody( {
+    return Vertex::Factory::getSpinFactorNBody( {
         {daughter(0)->P(), daughter(0)->spinTensor()},
         {daughter(1)->P(), daughter(1)->spinTensor()},
         {daughter(2)->P(), daughter(2)->spinTensor()}}, spin() , db );
@@ -543,7 +539,7 @@ bool Particle::checkExists() const
 {
   bool success = true;
   if ( m_daughters.size() == 2 ) {
-    success &= VertexFactory::isVertex( vertexName() );
+    success &= Vertex::Factory::isVertex( vertexName() );
     if ( !success ) {
       ERROR( uniqueString() );
       ERROR( "Spin configuration not found J = "

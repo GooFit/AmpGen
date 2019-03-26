@@ -12,7 +12,7 @@
 #include "AmpGen/Units.h"
 
 using namespace AmpGen;
-using namespace AmpGen::Vertex;
+//using namespace AmpGen::Vertex;
 
 const Tensor::Index mu    = Tensor::Index();
 const Tensor::Index nu    = Tensor::Index();
@@ -21,12 +21,12 @@ const Tensor::Index beta  = Tensor::Index();
 
 template <> Factory<AmpGen::Vertex::VertexBase>* Factory<AmpGen::Vertex::VertexBase>::gImpl = nullptr;
 
-bool VertexFactory::isVertex( const std::string& hash ) { return get( hash ) != nullptr; }
+bool Vertex::Factory::isVertex( const std::string& hash ) { return get( hash ) != nullptr; }
 
-Tensor VertexFactory::getSpinFactor( const Tensor& P, const Tensor& Q, const Tensor& V1, const Tensor& V2,
+Tensor Vertex::Factory::getSpinFactor( const Tensor& P, const Tensor& Q, const Tensor& V1, const Tensor& V2,
     const std::string& name, DebugSymbols* db )
 {
-  auto connector = VertexFactory::get( name );
+  auto connector = Vertex::Factory::get( name );
   if ( connector == nullptr ) {
     FATAL( "Could not find vertex: " << name ) ; 
     return Tensor( std::vector<double>( {1.} ), {0} );
@@ -34,7 +34,7 @@ Tensor VertexFactory::getSpinFactor( const Tensor& P, const Tensor& Q, const Ten
     return (*connector)( P, Q, V1, V2, db );
 }
 
-Tensor VertexFactory::getSpinFactorNBody( const std::vector<std::pair<Tensor, Tensor>>& tensors, const unsigned int& mL,
+Tensor Vertex::Factory::getSpinFactorNBody( const std::vector<std::pair<Tensor, Tensor>>& tensors, const unsigned int& mL,
     DebugSymbols* db )
 {
   if ( tensors.size() != 3 ) {

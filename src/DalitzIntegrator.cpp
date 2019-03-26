@@ -52,19 +52,21 @@ double DalitzIntegrator::sqDp2( const Event& evt ) const
 void DalitzIntegrator::setEvent( const sqCo& x, double* event ) const
 {
   double mAB = getMAB( x );
-  double pA  = safe_sqrt( mAB * mAB / 4. - ( m_s1 + m_s2 ) / 2. + ( m_s1 - m_s2 ) * ( m_s1 - m_s2 ) / ( 4 * mAB * mAB ) );
-  double eA  = sqrt( pA * pA + m_s1 );
-  double eB  = sqrt( pA * pA + m_s2 );
+  double pA  = safe_sqrt(0.25*mAB*mAB - 0.5*(m_s1 + m_s2) + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB));
+  double eA  = sqrt(pA*pA + m_s1);
+  double eB  = sqrt(pA*pA + m_s2);
   double eC  = ( m_s0 - m_s3 - mAB * mAB ) / ( 2 * mAB );
   double pC  = safe_sqrt( eC * eC - m_s3 );
   event[2]  = pA;
   event[3]  = eA;
   event[6]  = -pA;
   event[7]  = eB;
-  event[9]  = pC * sin( M_PI * x.second );
-  event[10] = pC * cos( M_PI * x.second );
+  event[9]  = pC * sin(M_PI * x.second);
+  event[10] = pC * cos(M_PI * x.second);
   event[11] = eC;
 }
+
+
 
 void DalitzIntegrator::setMother( const double& s )
 {

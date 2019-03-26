@@ -13,7 +13,6 @@
 #include <string>
 #include <utility>
 
-
 class TH1D;
 class TH2D;
 
@@ -37,38 +36,31 @@ namespace AmpGen
       double integrate( FCN fcn, const double& s) const
       {
         double event[12];
-        for ( unsigned int i = 0; i < 12; ++i ) event[i] = 0;
-        TF2 f( "fcn",
-            [&]( double* x, double* p ) {
-            sqCo pos = {x[0], x[1]};
-            setEvent( pos, event, s);
-            return J( pos, s ) * std::real( fcn( event ) );
-            }, 0, 1, 0, 1, 0 );
+        for(size_t i = 0; i < 12; ++i) event[i] = 0; 
+        TF2 f( "fcn", [&]( double* x, double* p ) {
+          sqCo pos = {x[0], x[1]};
+          setEvent( pos, event, s);
+          return J(pos, s) * std::real( fcn(event) ); }, 0, 1, 0, 1, 0 );
         return integrate_internal(f) / s;
       }
       
-      template <class FCN>
-      double integrate( FCN fcn ) const
+      template <class FCN> double integrate( FCN fcn ) const
       {
         return integrate( fcn, m_s0 );
       }
-
-      double getMAB( sqCo coords )   const;
-      double J( const sqCo& coords ) const;
-     
-      double getMAB( sqCo coords  , const double& s )   const;
-      double J( const sqCo& coords, const double& s ) const;
-      void setEvent( const sqCo& x, double* event, const double& s ) const;
-
-      double sqDp1( const Event& evt ) const;
-      double sqDp2( const Event& evt ) const;
-      double safe_sqrt( const double& x ) const { return x > 0 ? sqrt(x) : 0; }
-
+      double getMAB(sqCo coords)   const;
+      double J(const sqCo& coords) const;
+      double getMAB(sqCo coords  , const double& s) const;
+      double J(const sqCo& coords, const double& s) const;
+      double sqDp1(const Event& evt) const;
+      double sqDp2(const Event& evt) const;
+      double safe_sqrt(const double& x ) const { return x > 0 ? sqrt(x) : 0; }
+      void setEvent(const sqCo& x, double* event, const double& s) const;
       void debug() const; 
-      void setEvent( const sqCo& x, double* event ) const;
-      void set(         const double& s0, const double& s1, const double& s2, const double& s3);
+      void setEvent(const sqCo& x, double* event) const;
+      void set(const double& s0, const double& s1, const double& s2, const double& s3);
       void setMin();
-      void setMother( const double& s );
+      void setMother(const double& s);
 
       TH1D* makePlot( const std::function<double(const double*)>& fcn, const Projection& projection,
           const std::string& name, const size_t& nSamples = 1000000 );

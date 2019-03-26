@@ -150,9 +150,9 @@ namespace AmpGen
       @brief Class to contain a constant (which can contain a complex value) */
    class Constant : public IExpression {
     public:
-    template < typename T1, 
-               typename T2,
-               typename = std::enable_if_t< std::is_constructible< complex_t, T1, T2 >::value > >
+    template <typename T1, 
+              typename T2,
+              typename = std::enable_if_t< std::is_constructible< complex_t, T1, T2 >::value > >
     Constant( const T1& real, const T2& imag=0 ) : m_value(real,imag) {}
 
     Constant( const complex_t& value ) : m_value(value) {}

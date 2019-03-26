@@ -30,10 +30,16 @@ namespace AmpGen
   {
   public:
     template <class TYPE>
-    Minimiser( TYPE& fitFunction, MinuitParameterSet* mps ) : 
-      m_parSet( mps )
+    Minimiser(TYPE& fitFunction, MinuitParameterSet* mps) : 
+      m_parSet(mps)
     {
       m_theFunction = [&fitFunction]() { return fitFunction.getVal(); };
+      prepare();
+    }
+    Minimiser(std::function<double(void)>& fitFunction, MinuitParameterSet* mps) : 
+      m_parSet(mps),
+      m_theFunction(fitFunction)
+    {
       prepare();
     }
     ~Minimiser() = default;
@@ -56,14 +62,13 @@ namespace AmpGen
   
   private:
     void print( const double& LL );
-    MinuitParameterSet* m_parSet;
-    std::function<double( void )> m_theFunction;
+    MinuitParameterSet* m_parSet       = {nullptr};
+    std::function<double(void)> m_theFunction;
     ROOT::Math::Minimizer* m_minimiser = {nullptr};
-    std::vector<double> m_covMatrix    = {0};
-    std::vector<unsigned int> m_mapping;
+    std::vector<double>    m_covMatrix = {0};
+    std::vector<unsigned int>       m_mapping;
     std::vector<IExtendLikelihood*> m_extendedTerms;
-
-    int m_status              = {0};
+    int          m_status     = {0};
     unsigned int m_nParams    = {0};
     unsigned int m_lastPrint  = {0};
     unsigned int m_printLevel = {0};

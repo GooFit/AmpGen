@@ -153,16 +153,16 @@ namespace AmpGen
     DECLARE_VERTEX( S_ff_S1 );
     DECLARE_VERTEX( V_ff_P );
     DECLARE_VERTEX( V_ff_P1 );  
+    class Factory : public AmpGen::Factory<Vertex::VertexBase>
+    {
+    public:
+      static Tensor getSpinFactor( const Tensor& P, const Tensor& Q, const Tensor& V1, const Tensor& V2,
+                                   const std::string& name, DebugSymbols* db = nullptr );
+      static Tensor getSpinFactorNBody( const std::vector<std::pair<Tensor, Tensor>>& tensors, const unsigned int& mL,
+                                        DebugSymbols* db = nullptr );
+      static bool isVertex( const std::string& hash );
+    };
   } // namespace Vertex
-  class VertexFactory : public Factory<Vertex::VertexBase>
-  {
-  public:
-    static Tensor getSpinFactor( const Tensor& P, const Tensor& Q, const Tensor& V1, const Tensor& V2,
-                                 const std::string& name, DebugSymbols* db = nullptr );
-    static Tensor getSpinFactorNBody( const std::vector<std::pair<Tensor, Tensor>>& tensors, const unsigned int& mL,
-                                      DebugSymbols* db = nullptr );
-    static bool isVertex( const std::string& hash );
-  };
 
   /// \ingroup Vertices function Orbital_PWave 
   /// Helper function that computes the L=1 orbital momentum operator, i.e. 

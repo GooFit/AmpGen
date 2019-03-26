@@ -23,9 +23,11 @@ namespace AmpGen
       void resolve( ASTResolver& resolver ) override ;
       complex_t operator()() const override ;
       operator Expression() const ;
+      std::string name() const;
     private: 
       MinuitParameter* m_parameter;
   };
+
   class ExpressionPack : public IExpression {
     public:
       ExpressionPack( const std::vector<Expression>& expressions ){ m_expressions = expressions ; }

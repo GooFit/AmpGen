@@ -96,18 +96,18 @@ namespace AmpGen
       Namespace that contains all lineshapes, i.e. propagators for describing amplitudes and phases for resonances (and nonresonant) contributions to a total amplitude. 
    */
 
-   namespace Lineshape
+  namespace Lineshape
   {
-    class LineshapeFactory : public AmpGen::Factory<ILineshape>
+    class Factory : public AmpGen::Factory<ILineshape>
     {
     public:
-      static Expression getLineshape( const std::string& lineshape, const Expression& s, const Expression& s1,
-                                      const Expression& s2, const std::string& particleName, const unsigned int& L,
-                                      std::vector<std::pair<std::string, Expression>>* dbexpressions = nullptr );
-      static Expression getGenericShape(const std::string& lineshape,
-                                        const Expression& s,  
-                                        const std::vector<Tensor>& p, const std::string& particleName,
-                                        const unsigned int& L, AmpGen::DebugSymbols* dbexpressions );
+      static Expression get(const std::string& lineshape, const Expression& s, const Expression& s1,
+                            const Expression& s2, const std::string& particleName, const unsigned int& L,
+                            std::vector<std::pair<std::string, Expression>>* dbexpressions = nullptr );
+      static Expression get(const std::string& lineshape,
+                            const Expression& s,  
+                            const std::vector<Tensor>& p, const std::string& particleName,
+                            const unsigned int& L, AmpGen::DebugSymbols* dbexpressions );
       static bool isLineshape( const std::string& lineshape );
     };
     
@@ -292,10 +292,10 @@ namespace AmpGen
          @f$\mathcal{I}(a_j)@f$ | <EM>particleName</EM>::Spline::Im::j | The imaginary value of the lineshape evaluated at the @f$ j @f$th knot.
      */
     DECLARE_LINESHAPE( MIPWA );
+
     /** @ingroup Lineshapes class GSpline 
-        @brief 
+        @brief Lineshape with an arbitrary running width determined from a spline. 
       */
-    
     DECLARE_LINESHAPE( GSpline );
     DECLARE_LINESHAPE( FormFactorSpline );
     DECLARE_LINESHAPE( DecaySpline );
@@ -309,7 +309,18 @@ namespace AmpGen
         @brief Implementation of a generic K-matrix
       */
     DECLARE_LINESHAPE(GenericKmatrix);
-    /// ``Lineshape'' that implements the Dalitz plot distribution for decays \f$ \eta \rightarrow \pi^{+}\pi^{-}\pi^{0}\f$
+
+    /** @ingroup Lineshapes class EtaDalitz 
+        @brief Empirical Dalitz plot distribution for  @f$ \eta \rightarrow \pi^{+}\pi^{-}\pi^{0} @f$
+        
+        Lineshape that implements the Dalitz plot distribution for decays @f$ \eta \rightarrow \pi^{+}\pi^{-}\pi^{0} @f$, 
+        parameterised in terms of the kinetic energy @f$T_x@f$ of each decay product in the rest frame of the @f$\eta@f$ meson.
+        By convention, the third particle is neutral pion. The amplitude is given by: 
+        @f[
+          \mathcal{A}(T_1, T_2, T_3) = \sqrt{ 1 - 1.07\left( \frac{3 T_3}{T_1 + T_2 + T_3} -1 \right) } 
+        @f]
+        Multiplied by an arbitrary gaussian lineshape to account for the mass distribution in @f$s_{\pi^{+}\pi^{-}\pi^{0}}@f$.
+      */   
     DECLARE_LINESHAPE( EtaDalitz );
 
   } // namespace Lineshape

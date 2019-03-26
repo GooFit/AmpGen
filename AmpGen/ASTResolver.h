@@ -16,7 +16,7 @@
 namespace AmpGen {
   class MinuitParameter;
   class MinuitParameterSet;
-
+  class MinuitParameterLink;
   /// \class ASTResolver
   /// Traverses trees in IExpression::resolveDependencies()
   /// to keep track of the dependencies of the tree
@@ -66,4 +66,5 @@ namespace AmpGen {
   template <> void ASTResolver::resolve<Parameter>( const Parameter& obj );
   template <> void ASTResolver::resolve<SubTree>  ( const SubTree  & obj );
   template <> void ASTResolver::resolve<Spline>   ( const Spline   & obj );
+  template <> void ASTResolver::resolve<MinuitParameterLink>( const MinuitParameterLink& obj );  
 }

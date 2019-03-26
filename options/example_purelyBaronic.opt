@@ -1,0 +1,14 @@
+EventType Lambda(b)0 Lambda0 p+ pbar-
+
+EventType::Observable   mass
+Particle::SpinFormalism Canonical
+Type                    PolarisedSum
+
+# production polarisation parameters.
+Px 2 0 0 
+Py 2 0 0 
+Pz 2 0 0 
+
+Lambda(b)0{f(J)(2220)0{p+,pbar-},Lambda0}    2 1 0 2 0 0 
+Lambda(b)0{f(4)(2300)0{p+,pbar-},Lambda0}    0 1 0.051 0 0 0.05 
+Lambda(b)0{K(3)(2320)bar-{Lambda0,pbar-},p+} 0 1 0.1 0 0 0.1 

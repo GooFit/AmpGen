@@ -8,6 +8,7 @@
 #include "AmpGen/Array.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MsgService.h"
+#include "AmpGen/ExpressionParser.h"
 
 using namespace AmpGen;
 
@@ -129,6 +130,15 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
   }
   auto address = addCacheFunction<CacheTransfer>( parameter.name(), parameter.defaultValue() );
   addResolvedParameter( &parameter, address );
+}
+
+template <> void ASTResolver::resolve<MinuitParameterLink>(const MinuitParameterLink& parameter)
+{
+  if( m_resolvedParameters.count(&parameter) != 0 ) return; 
+  if( mps == nullptr ) return; 
+  auto it = mps->find(parameter.name());
+  if( it == nullptr ) return;
+  addResolvedParameter(&parameter, addCacheFunction<ParameterTransfer>( parameter.name(),it));
 }
 
 std::map<std::string, std::shared_ptr<CacheTransfer>> ASTResolver::cacheFunctions() const 

@@ -26,7 +26,7 @@ DEFINE_GENERIC_SHAPE( EtaDalitz )
   Expression amp = Ternary( z > 0.0, sqrt(z), 1 ); 
 
   if ( lineshapeModifier != "" ){
-    amp = amp * LineshapeFactory::getGenericShape(lineshapeModifier, s, p, particleName, L, dbexpressions);
+    amp = amp * Lineshape::Factory::get(lineshapeModifier, s, p, particleName, L, dbexpressions);
   }
   return amp;
 }

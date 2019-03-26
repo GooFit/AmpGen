@@ -205,11 +205,10 @@ void ThreeBodyCalculator::setAxis( const size_t& nKnots, const double& min, cons
 void ThreeBodyCalculator::updateRunningWidth( MinuitParameterSet& mps, const double& mNorm )
 {
   prepare();
-  setNorm( mNorm == 0 ? mps[m_name + "_mass"]->mean() : mNorm );
- 
+  setNorm( mNorm == 0 ? mps[m_name + "_mass"]->mean() : mNorm ); 
   for ( size_t c = 0; c < m_nKnots; ++c ) {
-    double s                   = m_min + double( c ) * m_step;
-    double I                   = getWidth( s );
+    double s                   = m_min + double(c) * m_step;
+    double I                   = getWidth(s);
     const std::string knotName = m_name + "::Spline::Gamma::" + std::to_string( c );
     if ( mps.map().find( knotName ) != mps.map().end() ) mps[knotName]->setCurrentFitVal( I );
     INFO( knotName << " = " << I );
@@ -265,34 +264,23 @@ double ThreeBodyCalculator::getWidth( const double& m )
 void ThreeBodyCalculator::setNorm( const double& mNorm )
 {
   m_norm = 1;
-  m_norm = getWidth( mNorm );
+  m_norm = getWidth(mNorm);
 }
 
 void ThreeBodyCalculator::makePlots(const double& mass, const size_t& x, const size_t& y)
 {
-
   auto& sq      = m_widths[0].integrator;
   auto& evtType = m_widths[0].type;
   if( mass != -1 ) evtType.setMotherMass( mass ); 
   auto& fcs     = m_widths[0].totalWidth;
-
   auto projection_operators = evtType.defaultProjections( 500 );
   int points = NamedParameter<int>( "nPoints", 50000000 );
-
   sq.setMother( evtType.motherMass() );
-
   prepare();
-
-  std::function<double( const double* evt )> fcn = [&]( const double* evt ) {
-    return std::real( fcs( evt ) );
-  };
+  auto fcn = [&](const double* evt) { return std::real(fcs(evt)); };
 
   sq.makePlot( fcn, Projection2D( projection_operators[x], projection_operators[y] ), "s01_vs_s02", points )->Write();
 
-//  Projection sqDp1( [&]( const Event& evt ) { return sq.sqDp1( evt ); }, "m", "m^{'}", 500, 0, 1 );
-//  Projection sqDp2( [&]( const Event& evt ) { return sq.sqDp2( evt ); }, "theta", "#theta^{'}", 500, 0, 1 );
-
-//  sq.makePlot( fcn, Projection2D( sqDp1, sqDp2 ), "m_vs_theta", points )->Write();
 }
 
 void ThreeBodyCalculator::debug( const double& m, const double& theta )

@@ -8,6 +8,7 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/MinuitParameter.h"
+#include "AmpGen/ASTResolver.h"
 
 using namespace AmpGen;
 
@@ -122,14 +123,20 @@ Expression ExpressionParser::processEndPoint( const std::string& name )
   }
   return Parameter( name, 0, true );
 }
+
 MinuitParameterLink::MinuitParameterLink( MinuitParameter* param ) : m_parameter( param ) {}
-std::string MinuitParameterLink::to_string(const ASTResolver* /*resolver*/ ) const 
-{ 
+std::string MinuitParameterLink::to_string(const ASTResolver* resolver) const
+{
+  return resolver == nullptr ? m_parameter->name() : resolver->resolvedParameter(this);
+}
+
+std::string MinuitParameterLink::name() const {
   return m_parameter->name();
 }
 
 void MinuitParameterLink::resolve( ASTResolver& resolver )
 {
+  resolver.resolve(*this);
 }
 
 complex_t MinuitParameterLink::operator()() const { 
