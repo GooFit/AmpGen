@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://gitlab.com/tevans1260/AmpGen/raw/master/doc/figs/logo.png">
+  <img src="https://github.com/GooFit/AmpGen/raw/master/doc/figs/logo.png">
 </p>
 AmpGen is a library and set of applications for fitting and generating multi-body particle decays using the isobar model.
 It developed out of the MINT project used in the fitting of three and four-body pseudoscalar decays by the CLEO-c and LHCb colloborations. The library can handle the fitting and generation of a wide variety of final states, including those involving fermions and photons, as well as polarised initial states.
@@ -306,9 +306,9 @@ The development of this software has been  supported by the National Science Fou
 
 <p align="center">
   <div>
-  <img src="https://gitlab.com/tevans1260/AmpGen/raw/master/doc/figs/UC_ID_PrimaryBlackRed.png"> 
-  <img src="https://gitlab.com/tevans1260/AmpGen/raw/master/doc/figs/Iris-hep-3-regular-complete.png"> 
-  <img src="https://gitlab.com/tevans1260/AmpGen/raw/master/doc/figs/NSF_4-Color_bitmap_Logo.png">
+  <img src="https://github.com/GooFit/AmpGen/raw/master/doc/figs/UC_ID_PrimaryBlackRed.png"> 
+  <img src="https://github.com/GooFit/AmpGen/raw/master/doc/figs/Iris-hep-3-regular-complete.png"> 
+  <img src="https://github.com/GooFit/AmpGen/raw/master/doc/figs/NSF_4-Color_bitmap_Logo.png">
   </div>
 </p>
 
