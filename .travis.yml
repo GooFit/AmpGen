@@ -1,7 +1,32 @@
-deploy:
-  provider: pages
-  skip_cleanup: true
-  github_token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
-  keep_history: true
-  on:
-    branch: master
+# This will run on Travis' 'new' container-based infrastructure
+sudo: false
+
+# Blacklist
+branches:
+  except:
+    - gh-pages
+
+# Environment variables
+env:
+  global:
+    - GH_REPO_NAME: AmpGen
+    - DOXYFILE: $TRAVIS_BUILD_DIR/doc/doxyfile
+    - GH_REPO_REF: github.com/GooFit/AmpGen.git
+
+# Install dependencies
+addons:
+  apt:
+    packages:
+      - doxygen
+      - doxygen-doc
+      - doxygen-latex
+      - doxygen-gui
+      - graphviz
+
+# Build your code e.g. by calling make
+script:
+  - make
+
+# Generate and deploy documentation
+after_success:
+  - .ci/build_docs.sh
