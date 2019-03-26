@@ -44,7 +44,7 @@ GH_REPO_REF="github.com/$GH_REPO_ORG/$GH_REPO_NAME.git"
 
 # Create a clean working directory for this script.
 # Get the current gh-pages branch
-cd docs
+cd doc
 git clone -b gh-pages https://git@$GH_REPO_REF html
 cd html
 
