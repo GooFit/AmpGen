@@ -19,13 +19,13 @@ addons:
     packages:
       - doxygen
       - doxygen-doc
-      - doxygen-latex
+#      - doxygen-latex
       - doxygen-gui
       - graphviz
 
 # Build your code e.g. by calling make
 script:
-  - make
+  - echo true 
 
 # Generate and deploy documentation
 after_success:
