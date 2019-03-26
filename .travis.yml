@@ -29,4 +29,5 @@ script:
 
 # Generate and deploy documentation
 after_success:
-  - .ci/build_docs.sh
+  - chmod +x .ci/build_docs.sh
+  - source .ci/build_docs.sh
