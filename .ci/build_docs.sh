@@ -16,8 +16,7 @@ __AUTHOR__="Jeroen de Bruijn"
 # - TRAVIS_BUILD_NUMBER : The number of the current build.
 # - TRAVIS_COMMIT       : The commit that the current build is testing.
 # - DOXYFILE            : The Doxygen configuration file.
-# - GH_REPO_NAME        : The name of the repository.
-# - GH_REPO_REF         : The GitHub reference to the repository.
+# - TRAVIS_REPO_SLUG    : The username / reponame for the repository.
 # - GH_REPO_TOKEN       : Secure token to the github repository.
 #
 # For information on how to encrypt variables for Travis CI please go to
@@ -39,13 +38,15 @@ echo 'Setting up the script...'
 # Exit with nonzero exit code if anything fails
 set -e
 
-# Create a clean working directory for this script.
-mkdir code_docs
-cd code_docs
+GH_REPO_ORG=`echo $TRAVIS_REPO_SLUG | cut -d "/" -f 1`
+GH_REPO_NAME=`echo $TRAVIS_REPO_SLUG | cut -d "/" -f 2`
+GH_REPO_REF="github.com/$GH_REPO_ORG/$GH_REPO_NAME.git"
 
+# Create a clean working directory for this script.
 # Get the current gh-pages branch
-git clone -b gh-pages https://git@$GH_REPO_REF
-cd $GH_REPO_NAME
+cd docs
+git clone -b gh-pages https://git@$GH_REPO_REF html
+cd html
 
 ##### Configure git.
 # Set the push default to simple i.e. push only the current branch.
@@ -71,10 +72,8 @@ echo "" > .nojekyll
 ##### Generate the Doxygen code documentation and log the output.          #####
 echo 'Generating Doxygen code documentation...'
 # Redirect both stderr and stdout to the log file AND the console.
-cp -r $(dirname $DOXYFILE)/* .
-pwd 
-ls 
-
+cd ..
+cp -r $(dirname $DOXYFILE)/* . 
 doxygen $DOXYFILE 2>&1 | tee doxygen.log
 
 ################################################################################
@@ -82,10 +81,9 @@ doxygen $DOXYFILE 2>&1 | tee doxygen.log
 # Only upload if Doxygen successfully created the documentation.
 # Check this by verifying that the html directory and the file html/index.html
 # both exist. This is a good indication that Doxygen did it's work.
-mv html/* .
+if [ -d "html" ] && [ -f "html/index.html" ]; then
 
-if [ -d "index.html" ]; then
-
+    cd html
     echo 'Uploading documentation to the gh-pages branch...'
     # Add everything in this directory (the Doxygen code documentation) to the
     # gh-pages branch.
