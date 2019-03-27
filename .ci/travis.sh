@@ -11,7 +11,7 @@ set +evx
 
 cd ..
 
-./build/bin/Generator options/example_b2kstarll.opt --nEvents 1000
+./build/bin/Generator options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 1000
 
 
 # echo -e 'travis_fold:end:script.build\\r'
