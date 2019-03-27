@@ -29,11 +29,16 @@ addons:
       - doxygen-doc
       - doxygen-gui
       - graphviz
+      
+before_install:
+- source .ci/build_root.sh
 
 # Build your code e.g. by calling make
 script:
   - chmod +x .ci/travis.sh
   - source .ci/travis.sh
+
+
 
 # Generate and deploy documentation
 after_success:
