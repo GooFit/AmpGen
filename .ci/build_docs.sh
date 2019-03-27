@@ -73,7 +73,9 @@ echo "" > .nojekyll
 echo 'Generating Doxygen code documentation...'
 # Redirect both stderr and stdout to the log file AND the console.
 cd ..
-# cp -r $(dirname $DOXYFILE)/* . 
+
+doxygen --version
+
 doxygen $DOXYFILE 2>&1 | tee doxygen.log
 
 ################################################################################
