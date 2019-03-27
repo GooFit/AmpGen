@@ -16,7 +16,7 @@ T rsqrt( const T& arg ){ return 1. / sqrt(arg) ; }
 DEFINE_UNARY_OPERATOR( Log , log )
 DEFINE_UNARY_OPERATOR( Sqrt, sqrt )
 DEFINE_UNARY_OPERATOR( Exp , exp )
-DEFINE_UNARY_OPERATOR( Abs , abs )
+DEFINE_UNARY_OPERATOR( Abs , std::abs )
 DEFINE_UNARY_OPERATOR( Sin , sin )
 DEFINE_UNARY_OPERATOR( Cos , cos )
 DEFINE_UNARY_OPERATOR( Tan , tan )
