@@ -60,7 +60,7 @@ AmpGen::Event RecursivePhaseSpace::makeEvent( const size_t& cacheSize )
     } else {
       auto evtTmp = segment.decayProds->makeEvent(cacheSize);
       double v    = sqrt( px * px + py * py + pz * pz ) / pE;
-      boost( evtTmp, {px, py, pz}, v );
+      boost( evtTmp, std::tuple<double,double,double>(px, py, pz), v );
       for(size_t j = 0; j < rt.size(); ++j) rt[j] += evtTmp[j];
     }
     evt.setGenPdf(1);
