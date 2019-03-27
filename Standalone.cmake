@@ -3,10 +3,13 @@ set(AMPGEN_CXX ${CMAKE_CXX_COMPILER}  CACHE FILEPATH "This should be the path to
 file(GLOB_RECURSE AMPGEN_SRC src/*)
 file(GLOB_RECURSE AMPGEN_HDR AmpGen/*)
 
-
 if( NOT "${CMAKE_CXX_STANDARD}" ) 
   set(CMAKE_CXX_STANDARD 14) 
 endif() 
+
+SET(USE_OPENMP TRUE CACHE BOOL "USE_OPENMP")
+
+message(STATUS "USE_OPENMP = ${USE_OPENMP}")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -32,7 +35,10 @@ if(DEFINED ENV{ROOTSYS})
 endif()
 
 find_package(ROOT CONFIG REQUIRED COMPONENTS Matrix MathMore MathCore Gpad Tree Graf)
-find_package(OpenMP)
+
+if( USE_OPENMP )
+  find_package(OpenMP)
+endif()
 
 cmake_print_variables(CMAKE_SOURCE_DIR)
 
@@ -73,22 +79,23 @@ endif()
 
 target_link_libraries(AmpGen PUBLIC ROOT::Minuit2 )
 
-
-if(OpenMP_FOUND OR OpenMP_CXX_FOUND)
-  if(NOT TARGET OpenMP::OpenMP_CXX)
-    add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
-    set_property(TARGET OpenMP::OpenMP_CXX PROPERTY INTERFACE_COMPILE_OPTIONS ${OpenMP_CXX_FLAGS})
-    set_property(TARGET OpenMP::OpenMP_CXX PROPERTY INTERFACE_LINK_LIBRARIES  ${OpenMP_CXX_FLAGS})
-    if(CMAKE_VERSION VERSION_LESS 3.4)
-      set_property(TARGET OpenMP::OpenMP_CXX APPEND PROPERTY INTERFACE_LINK_LIBRARIES -pthread)
-    else()
-      find_package(Threads REQUIRED)
-      set_property(TARGET OpenMP::OpenMP_CXX APPEND PROPERTY INTERFACE_LINK_LIBRARIES Threads::Threads)
+if( USE_OPENMP )
+  if(OpenMP_FOUND OR OpenMP_CXX_FOUND)
+    if(NOT TARGET OpenMP::OpenMP_CXX)
+      add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
+      set_property(TARGET OpenMP::OpenMP_CXX PROPERTY INTERFACE_COMPILE_OPTIONS ${OpenMP_CXX_FLAGS})
+      set_property(TARGET OpenMP::OpenMP_CXX PROPERTY INTERFACE_LINK_LIBRARIES  ${OpenMP_CXX_FLAGS})
+      if(CMAKE_VERSION VERSION_LESS 3.4)
+        set_property(TARGET OpenMP::OpenMP_CXX APPEND PROPERTY INTERFACE_LINK_LIBRARIES -pthread)
+      else()
+        find_package(Threads REQUIRED)
+        set_property(TARGET OpenMP::OpenMP_CXX APPEND PROPERTY INTERFACE_LINK_LIBRARIES Threads::Threads)
+      endif()
     endif()
+    target_link_libraries(AmpGen PUBLIC OpenMP::OpenMP_CXX)
+  else()
+    message(STATUS "OpenMP not found for CXX, you might have forgotten lb-run ROOT bash or CXX=`which g++` in CERN stack")
   endif()
-  target_link_libraries(AmpGen PUBLIC OpenMP::OpenMP_CXX)
-else()
-  message(STATUS "OpenMP not found for CXX, you might have forgotten lb-run ROOT bash or CXX=`which g++` in CERN stack")
 endif()
 
 # Default to XROOTD only if on CMT system. Can be overridden with -DAMPGEN_XROOTD=ON

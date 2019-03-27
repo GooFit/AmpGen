@@ -68,7 +68,7 @@ namespace AmpGen
         {
           real_t re[NROLL] = {0};
           real_t im[NROLL] = {0};
-          #pragma omp parallel for reduction( +: re, im )
+          #pragma omp parallel for reduction(+: re, im)
           for ( size_t i = 0; i < m_events->size(); ++i ) {
             auto& evt = ( *m_events )[i];
             real_t w  = evt.weight() / evt.genPdf();
