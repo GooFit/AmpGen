@@ -30,7 +30,7 @@ addons:
       - doxygen-doc
       - doxygen-gui
       - graphviz
-      - libtbb
+      - libtbb-dev
       
 before_install:
 - source .ci/build_root.sh
