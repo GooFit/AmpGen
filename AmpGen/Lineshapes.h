@@ -180,7 +180,12 @@ namespace AmpGen
     */
     DECLARE_LINESHAPE( GounarisSakurai );
 
-    /// Description of the \f$ K\pi \f$ S-wave, based on the fits to scattering data.
+    /** @ingroup Lineshapes class LASS 
+        @brief Description of the @f$ K\pi @f$ S-wave, based on the fits to scattering data.
+        The LASS parameterisation of the @$$ K\pi@$f S-wave is derived from fits to ~ elastic @f$ K \pi @f$ scattering data, which is approximately up to the $f@ K \eta^\prime $f@ threshold. 
+        In this regime, unitarity implies that phases, rather than amplitudes should be summed. In this context, a slow varying nonresonant phases is summed with the phase of a Breit-Wigner,
+        corresponding to the @f$ K_0*(1430) @f$.    
+    */  
     DECLARE_LINESHAPE( LASS );
 
     /** @ingroup Lineshapes class Flatte
@@ -343,6 +348,5 @@ namespace AmpGen
   Expression width( const Expression& s, const Expression& s1, const Expression& s2, const Expression& mass,
                     const Expression& width, const Expression& radius, unsigned int L,
                     DebugSymbols* dbexpressions = nullptr );
-
 } // namespace AmpGen
 #endif
