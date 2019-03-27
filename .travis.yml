@@ -20,6 +20,7 @@ env:
     - GH_REPO_NAME: AmpGen
     - DOXYFILE: $TRAVIS_BUILD_DIR/doc/doxyfile
     - GH_REPO_REF: github.com/GooFit/AmpGen.git
+    - DEPS_DIR: "${TRAVIS_BUILD_DIR}/deps"
 
 # Install dependencies
 addons:
