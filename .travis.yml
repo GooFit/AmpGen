@@ -40,8 +40,6 @@ script:
   - chmod +x .ci/travis.sh
   - source .ci/travis.sh
 
-
-
 # Generate and deploy documentation
 after_success:
   - chmod +x .ci/build_docs.sh
