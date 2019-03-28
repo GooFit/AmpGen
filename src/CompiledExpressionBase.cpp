@@ -80,31 +80,25 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
 {
   if( m_db.size() !=0 ) stream << "#include<iostream>\n"; 
   stream << "extern \"C\" const char* " << progName() << "_name() {  return \"" << m_name << "\"; } \n";
-  bool enable_cuda = NamedParameter<bool>("EnableCUDA",false);
+  bool enable_cuda = NamedParameter<bool>("UseCUDA",false);
 
-    size_t sizeOfStream = 0; 
+  INFO("Enabling CUDA ...");
+
+  size_t sizeOfStream = 0; 
   if( !enable_cuda ){
     // Avoid a warning about std::complex not being C compatible (it is)
     stream << "#pragma clang diagnostic push\n"
       << "#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
-
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );
-    std::string objString = m_obj.to_string(m_resolver);
-    stream << "return " << objString << ";\n}\n";
+    stream << "return " << m_obj.to_string(m_resolver) << ";\n}\n";
   }
   else {
-    std::string rt_cpp = returnTypename();
-    std::string rt_cuda = "";
-    if( rt_cpp == "double"               || rt_cpp == "float"               || rt_cpp == "real_t" ) 
-      rt_cuda = "float* r, const int N";
-    if( rt_cpp == "std::complex<double>" || rt_cpp == "std::complex<float>" || rt_cpp == "complex_t" ) 
-      rt_cuda = "ampgen_cuda::complex_t* r, const int N";
+    std::string rt_cuda = returnTypename() +"* r, const int N" ; 
     stream << "__global__ void " << progName() << "( " << rt_cuda << ", const float_t* x0, const float3* x1){\n"; 
     stream <<  "  int i     = blockIdx.x * blockDim.x + threadIdx.x;\n";
     addDependentExpressions( stream, sizeOfStream);
-    std::string objString = m_obj.to_string(m_resolver);
-    stream << "  r[i] = " << objString << ";\n}\n";
+    stream << "  r[i] = " << m_obj.to_string(m_resolver) << ";\n}\n";
   }
 
   if( NamedParameter<bool>("IncludePythonBindings", false) == true ){
