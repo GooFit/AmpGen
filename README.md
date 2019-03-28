@@ -1,3 +1,6 @@
+[![Build Status][travis-badge]][https://travis-ci.org/GooFit/AmpGen]
+[![License: LGPL v3][license-badge]](./LICENSE)
+
 <p align="center">
   <img src="https://github.com/GooFit/AmpGen/raw/master/doc/figs/logo.png">
 </p>
