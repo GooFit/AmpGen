@@ -18,7 +18,7 @@
 #include "AmpGen/MetaUtils.h"
 namespace AmpGen {
   template <class T>
-    static bool isIn( const std::vector<T>& container, const T& obj )
+    bool isIn( const std::vector<T>& container, const T& obj )
     {
       for ( auto& it : container )
         if ( obj == it ) return true;
@@ -26,7 +26,7 @@ namespace AmpGen {
     }
 
   template <class T, class B, class F>
-    static bool isIn( const std::vector<T>& container, const B& obj, F f )
+    bool isIn( const std::vector<T>& container, const B& obj, F f )
     {
       for ( auto& it : container )
         if ( f( it, obj ) ) return true;
