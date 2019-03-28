@@ -7,6 +7,7 @@
 #include "AmpGen/Expression.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Types.h"
+#include "AmpGen/ASTResolver.h"
 
 using namespace AmpGen;
 
@@ -34,7 +35,7 @@ ISqrt::ISqrt( const Expression& expression) : IUnaryExpression(expression) {}
 ISqrt::operator Expression() const { return Expression( std::make_shared<ISqrt>(*this) ) ; } 
 complex_t ISqrt::operator()() const { return 1./sqrt( m_expression() ); } 
 std::string ISqrt::to_string(const ASTResolver* resolver) const {   
-  return NamedParameter<bool>("enable_cuda",false)  ?
+  return resolver != nullptr && resolver->enableCuda()  ?
       "rsqrt("+m_expression.to_string(resolver)+")" :
     "1./sqrt("+m_expression.to_string(resolver)+")" ;
 }

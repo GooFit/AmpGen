@@ -20,6 +20,7 @@ ASTResolver::ASTResolver(const std::map<std::string, size_t>& evtMap,
 {
   enable_cuda                 = NamedParameter<bool>("UseCUDA",false);
   enable_compileTimeConstants = NamedParameter<bool>("ASTResolver::CompileTimeConstants",false);
+  INFO("Flags: " << enableCuda() << " " << enableCompileConstants() );
 }
 
 bool ASTResolver::hasSubExpressions() const 
@@ -99,13 +100,13 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
     if( enable_cuda ) {
       size_t t = res->second; 
       std::string it = ""; 
-      if( t % 3 == 0 ) it = "x";
-      if( t % 3 == 1 ) it = "y";
-      if( t % 3 == 2 ) it = "z";
+      if( t % 3 == 0 ) it = ".x";
+      if( t % 3 == 1 ) it = ".y";
+      if( t % 3 == 2 ) it = ".z";
       int stg = t/3;
       std::string nTimesStg = "+"+std::to_string(stg) +"*N"; 
       if( stg == 0 ) nTimesStg = "";
-      if( stg == 1 ) nTimesStg = "N";
+      if( stg == 1 ) nTimesStg = "+N";
       addResolvedParameter( &parameter, "x1[i"+nTimesStg+"]" +it );
     }
     else {

@@ -54,8 +54,9 @@ std::string Constant::to_string(const ASTResolver* resolver) const {
     return str; 
   };
   std::string complex_type_string = resolver != nullptr && resolver->enableCuda() ? "ampgen_cuda::complex_t" : typeof<complex_t>() ;
-  return std::imag( m_value ) == 0 ? "(" + rounded_string(std::real(m_value)) +")" : 
-      complex_type_string +"("+rounded_string(std::real(m_value))+","+rounded_string(std::imag(m_value))+")";
+  std::string literalSuffix = resolver != nullptr && resolver->enableCuda() ? "f" : ""; 
+  return std::imag(m_value) == 0 ? "(" + rounded_string(std::real(m_value)) +literalSuffix + ")" : 
+      complex_type_string +"("+rounded_string(std::real(m_value))+literalSuffix+","+rounded_string(std::imag(m_value))+literalSuffix+")";
 }
 
 Expression simplify_constant_addition( const Constant& constant, const Expression& expression )
