@@ -61,6 +61,8 @@ void CoherentSum::addMatrixElement( std::pair<Particle, CouplingConstant>& parti
     if ( name == mE.decayTree.uniqueString() ) return;
   }
   m_matrixElements.emplace_back(protoParticle, coupling, mps, m_evtType.getEventFormat(), m_dbThis);
+  m_matrixElements.rbegin()->pdf.print();
+
 }
 
 void CoherentSum::prepare()
