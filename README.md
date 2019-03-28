@@ -314,3 +314,6 @@ The development of this software has been  supported by the National Science Fou
   </div>
 </p>
 
+[travis-badge]:      https://travis-ci.org/GooFit/AmpGen.svg?branch=master
+[license-badge]:     https://img.shields.io/badge/License-GPL%20v2-blue.svg
+
