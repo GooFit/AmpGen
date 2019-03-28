@@ -1,3 +1,6 @@
+[![Build Status][travis-badge]][travis-link]
+[![License: LGPL v3][license-badge]](./LICENSE)
+
 <p align="center">
   <img src="https://github.com/GooFit/AmpGen/raw/master/doc/figs/logo.png">
 </p>
@@ -310,4 +313,8 @@ The development of this software has been  supported by the National Science Fou
   <img src="https://github.com/GooFit/AmpGen/raw/master/doc/figs/NSF_4-Color_bitmap_Logo.png">
   </div>
 </p>
+
+[travis-badge]:      https://travis-ci.org/GooFit/AmpGen.svg?branch=master
+[license-badge]:     https://img.shields.io/badge/License-GPL%20v2-blue.svg
+[travis-link]:       https://travis-ci.org/GooFit/AmpGen
 
