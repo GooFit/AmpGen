@@ -183,8 +183,28 @@ namespace AmpGen
     /** @ingroup Lineshapes class LASS 
         @brief Description of the @f$ K\pi @f$ S-wave, based on the fits to scattering data.
         The LASS parameterisation of the @$$ K\pi@$f S-wave is derived from fits to ~ elastic @f$ K \pi @f$ scattering data, which is approximately up to the $f@ K \eta^\prime $f@ threshold. 
-        In this regime, unitarity implies that phases, rather than amplitudes should be summed. In this context, a slow varying nonresonant phases is summed with the phase of a Breit-Wigner,
-        corresponding to the @f$ K_0*(1430) @f$.    
+        In this regime, unitarity implies that phases, rather than amplitudes should be summed. 
+        In this context, a slow varying nonresonant phase,
+         @f[
+           \tan(\phi_{NR}) = \frac{2 a q}{2 + arq^2},
+         @f]
+         where @f$a, r@f$ are parameters determined from scattering data, is added to the phase shift of a Breit-Wigner, 
+         @f[
+           \tan(\phi_{BW}) = \frac{m\Gamma(s)}{m^2 -s },
+         @f] 
+         normally associated to the @f$ K^*(1430)^{0} @f$ resonance.
+         The total amplitude is therefore:
+         @f[
+          \mathcal{A}(s)  = \frac{2 a \sqrt{s} }{ 2 + arq^2 - 2iaq} + \frac{2+arq^2 + 2iaq}{2+arq^2 - 2iaq }\mathcal{A}_{BW}(s).
+         @f]
+         As this expression somewhat resembles the sum of a Breit-Wigner with a slowly varying nonresonant component, the two parts are sometimes split apart with an additional production amplitude placed on one or the other. These can be accessed separately using the modifiers LASS.BW and LASS.NR.
+        
+        Parameter              | User name                            | Description 
+        -----------------------|--------------------------------------|------------------------------------------------------------------------
+        @f$m@f$                | <EM>particleName_</EM>mass           | Breit-Wigner mass of the resonant component, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
+        @f$\Gamma_0@f$         | <EM>particleName_</EM>width          | Breit-Wigner width of the resonant component, defined as the width of resonance at the Breit-Wigner mass <br>
+        @f$a@f$                | LASS::a                              | Scattering length of the nonresonant component, defaults to @f$2.07\mathrm{G\kern -0.1em eV}^{-1}@f$
+        @f$a@f$                | LASS::r                              | Scattering length of the nonresonant component, defaults to @f$3.32\mathrm{G\kern -0.1em eV}^{-1}@f$
     */  
     DECLARE_LINESHAPE( LASS );
 
