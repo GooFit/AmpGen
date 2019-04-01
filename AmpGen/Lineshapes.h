@@ -39,7 +39,7 @@
   */
 
 #define DECLARE_LINESHAPE( X )                                                                                  \
-  class X : public AmpGen::ILineshape {                                                                         \
+  class X : public AmpGen::Lineshape::Base {                                                                    \
     static std::string _id;                                                                                     \
     public:                                                                                                     \
     X(){ DEBUG("Constructing lineshape") ;}                                                                     \
@@ -54,7 +54,7 @@
   }
 
 #define DEFINE_LINESHAPE( X )                                                                                   \
-  REGISTER_WITH_KEY( ILineshape, Lineshape::X, #X, std::string );                                               \
+  REGISTER_WITH_KEY( Lineshape::Base, Lineshape::X, #X, std::string );                                               \
   AmpGen::Expression Lineshape::X::get( const AmpGen::Expression& s, const std::vector<AmpGen::Tensor>& p,      \
                                         const std::string& particleName,                                        \
                                         const unsigned int& L, const std::string& lineshapeModifier,            \
@@ -67,7 +67,7 @@
                                         AmpGen::DebugSymbols* dbexpressions ) const
 
 #define DEFINE_GENERIC_SHAPE( X )                                                                               \
-  REGISTER_WITH_KEY( ILineshape, Lineshape::X, #X, std::string );                                               \
+  REGISTER_WITH_KEY( Lineshape::Base, Lineshape::X, #X, std::string );                                               \
   AmpGen::Expression Lineshape::X::get( const AmpGen::Expression& s, const AmpGen::Expression& s1,              \
                                         const AmpGen::Expression& s2, const std::string& particleName,          \
                                         const unsigned int& L, const std::string& lineshapeModifier,            \
@@ -79,26 +79,25 @@
 
 namespace AmpGen
 {
-  class  ILineshape {
-    public:
-    virtual ~ILineshape() = default;
-    virtual Expression get( const Expression& s, const Expression& s1, const Expression& s2,
-                            const std::string& particleName, const unsigned int& L,
-                            const std::string& lineshapeModifier, DebugSymbols* dbexpressions = nullptr ) const = 0;
-
-    virtual Expression get( const Expression& s, const std::vector<AmpGen::Tensor>& p, const std::string& particleName,
-                            const unsigned int& L, const std::string& lineshapeModifier,
-                            AmpGen::DebugSymbols* dbexpressions = nullptr ) const = 0; 
-    ILineshape* create() { return this; }
-  };
-
   /** @ingroup Lineshapes namespace Lineshape 
       Namespace that contains all lineshapes, i.e. propagators for describing amplitudes and phases for resonances (and nonresonant) contributions to a total amplitude. 
    */
 
   namespace Lineshape
   {
-    class Factory : public AmpGen::Factory<ILineshape>
+    class  Base {
+      public:
+      virtual ~Base() = default;
+      virtual Expression get( const Expression& s, const Expression& s1, const Expression& s2,
+                              const std::string& particleName, const unsigned int& L,
+                              const std::string& lineshapeModifier, DebugSymbols* dbexpressions = nullptr ) const = 0;
+      virtual Expression get( const Expression& s, const std::vector<AmpGen::Tensor>& p, const std::string& particleName,
+                              const unsigned int& L, const std::string& lineshapeModifier,
+                              AmpGen::DebugSymbols* dbexpressions = nullptr ) const = 0; 
+      Base* create() { return this; }
+    };
+
+    class Factory : public AmpGen::Factory<Lineshape::Base>
     {
     public:
       static Expression get(const std::string& lineshape, const Expression& s, const Expression& s1,
@@ -134,7 +133,7 @@ namespace AmpGen
          @f$r@f$                | <EM>particleName_</EM>radius         | Hadronic radius for Blatt-Weisskopf form-factor (defaults to 1.5GeV for light resonances, 3.5GeV for charm)
         
         <EM> BL </EM> : Use Blatt-Weisskopf factors normalised at @f$ \sqrt{s}=m @f$ (by default, normalised at @f$\sqrt{s}=0@f$)
-        \image html BW_combined.png "Modulus and phase of the Relativistic Breit-Wigner propagator, for @f$l={0,4}@f$, using the mass and nominal width of the @f$\rho@f$ meson" 
+        \image html BW_combined.png "Modulus and phase of the Relativistic Breit-Wigner propagator, for orbital momentum up-to four, using the mass and nominal width of the rho meson." 
     */
     DECLARE_LINESHAPE( BW );
  
@@ -182,7 +181,7 @@ namespace AmpGen
 
     /** @ingroup Lineshapes class LASS 
         @brief Description of the @f$ K\pi @f$ S-wave, based on the fits to scattering data.
-        The LASS parameterisation of the @$$ K\pi@$f S-wave is derived from fits to ~ elastic @f$ K \pi @f$ scattering data, which is approximately up to the $f@ K \eta^\prime $f@ threshold. 
+        The LASS parameterisation of the @f$ K\pi @f$ S-wave is derived from fits to ~ elastic @f$ K \pi @f$ scattering data, which is approximately up to the @f$ K \eta^\prime @f$ threshold. 
         In this regime, unitarity implies that phases, rather than amplitudes should be summed. 
         In this context, a slow varying nonresonant phase,
          @f[
@@ -204,7 +203,7 @@ namespace AmpGen
         @f$m@f$                | <EM>particleName_</EM>mass           | Breit-Wigner mass of the resonant component, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
         @f$\Gamma_0@f$         | <EM>particleName_</EM>width          | Breit-Wigner width of the resonant component, defined as the width of resonance at the Breit-Wigner mass <br>
         @f$a@f$                | LASS::a                              | Scattering length of the nonresonant component, defaults to @f$2.07\mathrm{G\kern -0.1em eV}^{-1}@f$
-        @f$a@f$                | LASS::r                              | Scattering length of the nonresonant component, defaults to @f$3.32\mathrm{G\kern -0.1em eV}^{-1}@f$
+        @f$r@f$                | LASS::r                              | Scattering length of the nonresonant component, defaults to @f$3.32\mathrm{G\kern -0.1em eV}^{-1}@f$
     */  
     DECLARE_LINESHAPE( LASS );
 
@@ -220,11 +219,11 @@ namespace AmpGen
         @f]
         where the running width is given by 
        @f[
-         \Gamma(s) = g_{\pi\pi} \left( \Lambda^{1/2}(s,m_{\pi}^2,m_{\pi}^2)  + \frac{g_{KK}}{g_{\pi\pi}} \Lambda^{1/2}(s,m_K^2, m_K^2) \right)
+         \Gamma(s) = \frac{ g_{\pi\pi} }{s} \left( \Lambda^{1/2}(s,m_{\pi}^2,m_{\pi}^2)  + \frac{g_{KK}}{g_{\pi\pi}} \Lambda^{1/2}(s,m_K^2, m_K^2) \right)
        @f] 
        or 
        @f[
-         \Gamma(s) = g_{\pi\eta} \left( \Lambda^{1/2}(s,m_{\pi}^2,m_{\eta}^2)  + \frac{g_{KK}}{g_{\pi\eta}} \Lambda^{1/2}(s,m_K^2, m_K^2) \right) 
+         \Gamma(s) = \frac{ g_{\pi\eta}}{s} \left( \Lambda^{1/2}(s,m_{\pi}^2,m_{\eta}^2)  + \frac{g_{KK}}{g_{\pi\eta}} \Lambda^{1/2}(s,m_K^2, m_K^2) \right) 
        @f]
        for the @f$f_0(980)^{0}@f$ and the @f$a_0(980)^{0}@f$, respectively. 
 
@@ -240,7 +239,7 @@ namespace AmpGen
 
     /** @ingroup Lineshapes class Gaussian 
         @brief Gaussian shape for (relatively) long lived states that are limited by experimental resolution, rather than natural width.
-        @detail The gaussian lineshape has the form 
+        The gaussian lineshape has the form 
         @f[
           \mathcal{A}(s) = e^{ -(s-\mu)^2 / 2\sigma^2 },
         @f]
@@ -258,22 +257,6 @@ namespace AmpGen
      *  @brief Polynominal shape \f$ \mathcal{A}(s) = \sum^n_i c_i s^{i} \f$ where the sum is to lineshapeModifier::Degree, and the free parameters of the shape are lineshapeModifier_ci 
      */
     DECLARE_LINESHAPE( Poly );
-
-    /** @ingroup Lineshapes class kMatrix 
-        @brief Anisovich-Sarantsev Isoscalar K-matrix from https://arxiv.org/abs/hep-ph/0204328
-
-        Describes the isoscalar @f$ \pi\pi, KK, 4\pi \eta\eta, \eta\eta^\prime@f$ S-wave in terms of a five-by-five K-matrix and corresponding P-vector couplings.
-        Includes a large number of parameters that can be fixed from the above publication. 
-        These parameters can be found in the options directory, which in turn can be includes in the fit by adding 
-
-        \code{cpp}
-          Import $AMPGENROOT/options/kMatrix.opt
-        \endcode 
-        
-        to the user configuration file. 
-     */ 
-    DECLARE_LINESHAPE( kMatrix );
-
     /** @ingroup Lineshapes class FOCUS
      *  @brief K matrix amplitudes used for I=1/2 and I=3/2 in the description of the \f$ K\pi \f$ S-wave in the analysis of @f$ D^{+}\rightarrow K^{-}\pi^{+}\pi^{+}@f$ https://arxiv.org/abs/0705.2248
      */
@@ -283,11 +266,10 @@ namespace AmpGen
     DECLARE_LINESHAPE( PALANO );
 
     /** @ingroup Lineshapes class ObelixRho
-     *  @brief Amplitude to describe the vector-isovector system, otherwise known as the @f$ \rho @f$ mesons. WARNING untested. 
+       @brief Amplitude to describe the vector-isovector system, otherwise known as the @f$ \rho @f$ mesons. WARNING untested. 
 
          Vector-Isovector amplitude @f$(I=1, J=1)@f$ using a K-matrix to describe the @f$\pi\pi,  KK, \pi\pi\pi\pi @f$ channels using three poles, commonly associated with 
-     the @f$ \rho(770), \rho(1450), \rho(1900) @f$ resonances. 
-     */
+     the @f$ \rho(770), \rho(1450), \rho(1900) @f$ resonances.*/
     DECLARE_LINESHAPE( ObelixRho );
 
     /// K matrix to describe \f$K_1(1270) / K_1(1400)\f$. WARNING incompleted. 
@@ -326,10 +308,6 @@ namespace AmpGen
     DECLARE_LINESHAPE( DecaySpline );
     DECLARE_LINESHAPE( InelasticSpline );
 
-    /** @ingroup Lineshapes class CoupledChannel 
-        @brief Description of a resonance that decays to multiple two and three-body final states. 
-      */
-    DECLARE_LINESHAPE( CoupledChannel );
     /** @ingroup Lineshapes class GenericKmatrix
         @brief Implementation of a generic K-matrix
       */

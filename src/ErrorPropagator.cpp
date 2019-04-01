@@ -70,11 +70,10 @@ LinearErrorPropagator::LinearErrorPropagator( const std::vector<MinuitParameter*
 
 LinearErrorPropagator::LinearErrorPropagator( const MinuitParameterSet& mps )
 {
-  for( size_t i = 0 ; i < mps.size(); ++i ){
-    MinuitParameter* param = mps.getParPtr(i);
+  for(auto& param : mps){
     if( param->iFixInit() != MinuitParameter::Float ) continue; 
     if( param->err() == 0 ) continue;
-    m_parameters.push_back( param );
+    m_parameters.push_back(param);
   }
   m_cov.ResizeTo( m_parameters.size(), m_parameters.size() );
   for( size_t i = 0 ; i < m_parameters.size(); ++i ) 

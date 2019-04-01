@@ -348,7 +348,6 @@ namespace AmpGen
   /// @ingroup ExpressionEngine struct ACos
   /// @brief Unary expression that returns \f$\cos^{-1}(z)\f$
   DECLARE_UNARY_OPERATOR( ACos );
-
   /// @ingroup ExpressionEngine struct ATan
   /// @brief Unary expression that returns \f$\tan^{-1}(z)\f$
   DECLARE_UNARY_OPERATOR( ATan );
@@ -412,7 +411,6 @@ namespace AmpGen
     Expression exp( const Expression& expression );
     Expression log( const Expression& expression );
     Expression atan2( const Expression& y, const Expression& x);
-
   }
 
   template < class T > bool is( const Expression& expression ){

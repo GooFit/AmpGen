@@ -10,7 +10,6 @@ class TGraph;
 
 namespace AmpGen
 {
-
   class MinuitParameterSet;
 
   class ThreeBodyCalculator

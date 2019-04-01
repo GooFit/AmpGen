@@ -44,14 +44,9 @@ using namespace AmpGen;
 template <class FCN> double dispersive( FCN& fcn , const double& s, double min , double max )
 {
   TF1 fcn_tf1 = TF1( "fcn_tf1",fcn, min, max, 0 );
-  ROOT::Math::WrappedTF1* wf1 = new ROOT::Math::WrappedTF1( fcn_tf1 );
-  ROOT::Math::GSLIntegrator ig( ROOT::Math::IntegrationOneDim::kADAPTIVE );
-  ROOT::Math::IGenFunction& stupid = *( wf1->Clone() );
-  ig.SetFunction( stupid );
-  ig.SetRelTolerance( 0.001 );
-  double rt = ig.IntegralCauchy(stupid,min,max,s);
-  delete wf1;
-  return rt;
+  ROOT::Math::GSLIntegrator ig(ROOT::Math::IntegrationOneDim::kADAPTIVE, 0.0001);
+  ig.SetFunction( ROOT::Math::WrappedTF1(fcn_tf1) );
+  return ig.IntegralCauchy(min,max,s);
 }
 
 TGraph* ThreeBodyCalculator::runningMass(

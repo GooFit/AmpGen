@@ -342,8 +342,6 @@ Expression PolarisedSum::probExpression(const Tensor& T_matrix, const std::vecto
   size_t it = T_matrix.dims()[0]; 
   Tensor rho = Identity(it);
   if(it == 2) rho = rho + Sigma[0] * p[0] + Sigma[1] * p[1] + Sigma[2]*p[2];
-  rho.print();
-  
   Expression rt = rho(a,b) * TT(b,a);
   return Real(rt);  
 }
@@ -410,7 +408,6 @@ real_t PolarisedSum::getValNoCache( const Event& evt )
   }
   return m_probExpression( copy.getCachePtr() );
 }
-
 
 void PolarisedSum::setWeight( MinuitParameter* param ){ m_weightParam = param ; } 
 double PolarisedSum::getWeight() const { return m_weightParam == nullptr ? 1.0 : m_weightParam->mean() ; }

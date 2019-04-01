@@ -59,14 +59,14 @@ Event PhaseSpace::makeEvent(const size_t& cacheSize)
   
   rt.set(0, { 0, pd[0], 0, sqrt( pd[0] * pd[0] + m_mass[0] * m_mass[0] )} );
 
-  for( unsigned int i = 1 ; i != m_nt ; ++i ){  
+  for(size_t i = 1 ; i != m_nt ; ++i ){  
     rt.set( i, { 0, -pd[i-1], 0, sqrt( pd[i-1] * pd[i-1] + m_mass[i] * m_mass[i] ) } );
     double cZ   = 2 * rndm() - 1;
     double sZ   = sqrt( 1 - cZ * cZ );
     double angY = 2 * M_PI * rndm();
     double cY   = cos(angY);
     double sY   = sin(angY);
-    for ( unsigned int j = 0; j <= i; j++ ) {
+    for (size_t j = 0; j <= i; j++ ) {
       double x          = rt[4*j+0];
       double y          = rt[4*j+1];
       double z          = rt[4*j+2];
@@ -79,7 +79,7 @@ Event PhaseSpace::makeEvent(const size_t& cacheSize)
     if ( i == ( m_nt - 1 ) ) break;
     double beta = pd[i] / sqrt( pd[i] * pd[i] + invMas[i] * invMas[i] );
     double gamma = 1./sqrt( 1 - beta*beta);
-    for ( unsigned int j = 0; j <= i; j++ ){
+    for (size_t j = 0; j <= i; j++ ){
       double E  = rt[4*j+3];
       double py = rt[4*j+1];
       rt[4*j+1] = gamma*( py + beta * E );
@@ -93,10 +93,9 @@ Event PhaseSpace::makeEvent(const size_t& cacheSize)
 
 bool PhaseSpace::setDecay( const double& m0, const std::vector<double>& mass )
 {
-  unsigned int n;
   m_nt = mass.size();
   m_teCmTm = m0;
-  for ( n = 0; n < m_nt; n++ ) {
+  for (size_t n = 0; n < m_nt; n++) {
     m_mass[n] = mass[n];
     m_teCmTm -= mass[n];
   }
@@ -104,7 +103,7 @@ bool PhaseSpace::setDecay( const double& m0, const std::vector<double>& mass )
   double emmax = m_teCmTm + m_mass[0];
   double emmin = 0;
   double wtmax = 1;
-  for ( n = 1; n < m_nt; n++ ) {
+  for (size_t n = 1; n < m_nt; n++) {
     emmin += m_mass[n - 1];
     emmax += m_mass[n];
     wtmax *= q( emmax, emmin, m_mass[n] );

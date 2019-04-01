@@ -64,6 +64,7 @@ namespace AmpGen
     MinuitParameterSet* MPS() const { return &( *m_mps ); }
     TMatrixD cov() const { return m_covarianceMatrix; }
     double cov( const size_t& x, const size_t& y ) const { return m_covarianceMatrix( x, y ); }
+    double cov( const std::string& x, const std::string& y ) const { return m_covarianceMatrix( m_covMapping.at(x), m_covMapping.at(y) ); }
 
     void print() const;
 

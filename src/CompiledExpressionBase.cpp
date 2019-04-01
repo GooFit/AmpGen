@@ -70,7 +70,7 @@ void CompiledExpressionBase::prepare()
 void CompiledExpressionBase::addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const
 {
   for ( auto& dep : m_dependentSubexpressions ) {
-    std::string rt = "auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver) +";"; 
+    std::string rt = "  auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver) +";"; 
     stream << rt << "\n";
     sizeOfStream += sizeof(char) * rt.size(); /// bytes /// 
   }
@@ -81,21 +81,15 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   if( m_db.size() !=0 ) stream << "#include<iostream>\n"; 
   stream << "extern \"C\" const char* " << progName() << "_name() {  return \"" << m_name << "\"; } \n";
   bool enable_cuda = NamedParameter<bool>("UseCUDA",false);
-
-  INFO("Enabling CUDA ...");
-
   size_t sizeOfStream = 0; 
   if( !enable_cuda ){
-    // Avoid a warning about std::complex not being C compatible (it is)
-    stream << "#pragma clang diagnostic push\n"
-      << "#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
+    stream << "#pragma clang diagnostic push\n#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );
     stream << "return " << m_obj.to_string(m_resolver) << ";\n}\n";
   }
   else {
-    std::string rt_cuda = returnTypename() +"* r, const int N" ; 
-    stream << "__global__ void " << progName() << "( " << rt_cuda << ", const float_t* x0, const float3* x1){\n"; 
+    stream << "__global__ void " << progName() << "( " << returnTypename() + "* r, const int N, " << fcnSignature() << "){\n"; 
     stream <<  "  int i     = blockIdx.x * blockDim.x + threadIdx.x;\n";
     addDependentExpressions( stream, sizeOfStream);
     stream << "  r[i] = " << m_obj.to_string(m_resolver) << ";\n}\n";

@@ -15,7 +15,12 @@
 namespace AmpGen
 {
   class ASTResolver;
-  
+
+  /** @ingroup ExpressionEngine class Array
+      @brief Expression for a fixed size array of values.
+      Expression for an array, i.e. a set of values with an index.
+      Can be used to return an expression from the array, which is resolved at (second) compile time. 
+      */  
   class Array : public IExpression 
   {
     public:

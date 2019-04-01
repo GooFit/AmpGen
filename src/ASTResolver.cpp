@@ -19,8 +19,7 @@ ASTResolver::ASTResolver(const std::map<std::string, size_t>& evtMap,
   nParameters(0)
 {
   enable_cuda                 = NamedParameter<bool>("UseCUDA",false);
-  enable_compileTimeConstants = NamedParameter<bool>("ASTResolver::CompileTimeConstants",false);
-  INFO("Flags: " << enableCuda() << " " << enableCompileConstants() );
+  enable_compileTimeConstants = NamedParameter<bool>("ASTResolver::CompileTimeConstants", false);
 }
 
 bool ASTResolver::hasSubExpressions() const 
@@ -119,7 +118,7 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
     if( it != nullptr ){
       if( enable_compileTimeConstants && 
           it->iFixInit() == MinuitParameter::Flag::CompileTimeConstant ){
-        addResolvedParameter( &parameter, std::to_string(it->mean()) );
+        addResolvedParameter( &parameter, "("+std::to_string(it->mean()) +")" );
       }
       else addResolvedParameter( &parameter, addCacheFunction<ParameterTransfer>( parameter.name(), it )  );
       return;

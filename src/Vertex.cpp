@@ -19,7 +19,7 @@ const Tensor::Index nu    = Tensor::Index();
 const Tensor::Index alpha = Tensor::Index();
 const Tensor::Index beta  = Tensor::Index();
 
-template <> Factory<AmpGen::Vertex::VertexBase>* Factory<AmpGen::Vertex::VertexBase>::gImpl = nullptr;
+template <> Factory<AmpGen::Vertex::Base>* Factory<AmpGen::Vertex::Base>::gImpl = nullptr;
 
 bool Vertex::Factory::isVertex( const std::string& hash ) { return get( hash ) != nullptr; }
 
@@ -54,19 +54,19 @@ const Tensor Metric4x4(){
   return Tensor( {-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1}, {4, 4} );
 }
 
-Tensor AmpGen::Orbital_PWave( const Tensor& P, const Tensor& Q )
+Tensor AmpGen::Orbital_PWave(const Tensor& p, const Tensor& q)
 { 
-  auto is = 1./make_cse( dot(P,P) ,true);
-  return Q - P * make_cse( dot( P, Q ) * is );
+  auto is = 1./make_cse( dot(p,p) ,true);
+  return q - p * make_cse( dot(p, q) * is );
 }
 
 
-Tensor AmpGen::Orbital_DWave( const Tensor& P, const Tensor& Q )
+Tensor AmpGen::Orbital_DWave(const Tensor& p, const Tensor& q)
 {
   Tensor::Index mu;
   Tensor::Index nu;
-  Tensor L = Orbital_PWave( P, Q );
-  Tensor f =  L(mu) * L(nu) - make_cse( dot( L, L ) / 3. ) * Spin1Projector(P) ( mu, nu );
+  Tensor L = Orbital_PWave(p, q);
+  Tensor f =  L(mu) * L(nu) - make_cse( dot( L, L ) / 3. ) * Spin1Projector(p) ( mu, nu );
   f.imposeSymmetry(0,1); 
   f.st();
   return f;  
@@ -149,9 +149,8 @@ DEFINE_VERTEX( S_VV_S1 ) { return Spin1Projector(P)(mu,nu) * V1( -mu ) * V2( -nu
 
 DEFINE_VERTEX( S_VV_D )
 {
-  Tensor L2   = Orbital_DWave( P, Q ) / ( GeV * GeV );
-  Tensor vtol = V1( mu ) * L2( -mu, -nu ) * V2( nu );
-  return vtol;
+  Tensor L2   = Orbital_DWave(P, Q);
+  return V1(mu)*L2(-mu,-nu)*V2(nu);
 }
 
 DEFINE_VERTEX( S_VV_P )

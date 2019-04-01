@@ -48,8 +48,6 @@ bool FitResult::readFile( const std::string& fname )
     return false;
   }
   CHECK.close();
-
-  // auto lines = vectorFromFile( fname );
   std::vector<std::string> parameterLines;
 
   processFile( fname, [this, &parameterLines]( auto& line ) {
@@ -105,12 +103,12 @@ void FitResult::writeToFile( const std::string& fname )
   std::ofstream outlog;
   outlog.open( fname );
 
-  for ( int i = 0; i < m_covarianceMatrix.GetNrows(); ++i ) {
-    auto param = m_mps->getParPtr( i );
+  for (size_t i = 0; i < (size_t)m_covarianceMatrix.GetNrows(); ++i ) {
+    auto param = m_mps->at(i);
     outlog << "Parameter"
            << " " << param->name() << " " << param->iFixInit() << " " << param->mean() << " "
-           << m_mps->getParPtr( i )->err() << " ";
-    for ( int j = 0; j < m_covarianceMatrix.GetNcols(); ++j ) outlog << m_covarianceMatrix[i][j] << " ";
+           << m_mps->at(i)->err() << " ";
+    for (size_t j = 0; j < (size_t)m_covarianceMatrix.GetNcols(); ++j ) outlog << m_covarianceMatrix[i][j] << " ";
     outlog << std::endl;
   }
   outlog << std::setprecision( 8 );
@@ -134,9 +132,9 @@ FitResult::FitResult( const Minimiser& mini )
   m_covarianceMatrix = M;
   m_status           = mini.status();
   m_nParam           = 0;
-  for ( unsigned int i = 0; i < m_mps->size(); ++i ) {
-    if ( m_mps->getParPtr( i )->iFixInit() == 0 ) m_nParam++;
-    m_covMapping[ m_mps->getParPtr(i)->name() ] = i;
+  for (size_t i = 0; i < m_mps->size(); ++i ) {
+    if ( m_mps->at(i)->iFixInit() == 0 ) m_nParam++;
+    m_covMapping[ m_mps->at(i)->name() ] = i;
   }
 }
 
@@ -148,8 +146,8 @@ FitResult::FitResult( const MinuitParameterSet& mps, const TMatrixD& covMini ) :
   }
   m_covarianceMatrix.ResizeTo( covMini.GetNcols(), covMini.GetNrows() );
   m_covarianceMatrix = covMini;
-  for ( unsigned int i = 0; i < m_mps->size(); ++i ) {
-    if ( m_mps->getParPtr( i )->iFixInit() == 0 ) m_nParam++;
+  for (size_t i = 0; i < m_mps->size(); ++i ) {
+    if ( m_mps->at(i)->iFixInit() == 0 ) m_nParam++;
   }
 }
 
@@ -203,8 +201,8 @@ std::vector<MinuitParameter*> FitResult::getFloating( const bool& extended ) con
 TMatrixD FitResult::getReducedCovariance( const bool& extended ) const
 {
   std::vector<unsigned int> floating_indices;
-  for ( unsigned int i = 0; i < m_mps->size(); ++i ) {
-    auto param = m_mps->getParPtr( i );
+  for (size_t i = 0; i < m_mps->size(); ++i ) {
+    auto param = m_mps->at(i);
     if ( ( param->iFixInit() == 0 || extended ) && param->err() > 1e-6 ) floating_indices.push_back( i );
   }
   TMatrixD reducedCov( floating_indices.size(), floating_indices.size() );
