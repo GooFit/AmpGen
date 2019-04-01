@@ -103,9 +103,9 @@ bool Lineshape::Factory::isLineshape( const std::string& lineshape )
 
   size_t pos = lineshape.find( "." );
   if ( pos == std::string::npos )
-    return AmpGen::Factory<ILineshape>::get(lineshape, true) != nullptr;
+    return AmpGen::Factory<Lineshape::Base>::get(lineshape, true) != nullptr;
   else
-    return AmpGen::Factory<ILineshape>::get(lineshape.substr(0, pos), true ) != nullptr;
+    return AmpGen::Factory<Lineshape::Base>::get(lineshape.substr(0, pos), true ) != nullptr;
 }
 
 Expression Lineshape::Factory::get( const std::string& lineshape, const Expression& s, const Expression& s1,
@@ -115,11 +115,11 @@ Expression Lineshape::Factory::get( const std::string& lineshape, const Expressi
   size_t pos = lineshape.find( "." );
 
   if ( pos == std::string::npos ) {
-    auto it = AmpGen::Factory<ILineshape>::get( lineshape );
+    auto it = AmpGen::Factory<Lineshape::Base>::get( lineshape );
     if ( !it ) ERROR( "Lineshape : " << lineshape << " not found" );
     return it->get( s, s1, s2, particleName, L, "", dbexpressions );
   } else {
-    return AmpGen::Factory<ILineshape>::get(lineshape.substr(0, pos))->get( s, s1, s2, particleName, L, lineshape.substr( pos + 1 ), dbexpressions );
+    return AmpGen::Factory<Lineshape::Base>::get(lineshape.substr(0, pos))->get( s, s1, s2, particleName, L, lineshape.substr( pos + 1 ), dbexpressions );
   }
 }
 
@@ -130,11 +130,11 @@ Expression Lineshape::Factory::get(const std::string& lineshape, const Expressio
   size_t pos = lineshape.find( "." );
   
   if ( pos == std::string::npos ) {
-    auto it = AmpGen::Factory<ILineshape>::get( lineshape );
+    auto it = AmpGen::Factory<Lineshape::Base>::get( lineshape );
     if ( !it ) ERROR( "Lineshape : " << lineshape << " not found" );
     return it->get(s, p, particleName, L, "", dbexpressions );
   } else {
-    return AmpGen::Factory<ILineshape>::get( lineshape.substr( 0, pos ) )->get(s, p, particleName, L, lineshape.substr( pos + 1 ), dbexpressions );
+    return AmpGen::Factory<Lineshape::Base>::get( lineshape.substr( 0, pos ) )->get(s, p, particleName, L, lineshape.substr( pos + 1 ), dbexpressions );
   }
 }
 

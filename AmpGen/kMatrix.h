@@ -3,9 +3,28 @@
 
 #include "AmpGen/Expression.h"
 #include "AmpGen/Tensor.h"
+#include "AmpGen/Lineshapes.h"
 
 namespace AmpGen
 {
+  namespace Lineshape {
+
+    /** @ingroup Lineshapes class kMatrix 
+        @brief Anisovich-Sarantsev Isoscalar K-matrix from https://arxiv.org/abs/hep-ph/0204328
+
+        Describes the isoscalar @f$ \pi\pi, KK, 4\pi \eta\eta, \eta\eta^\prime@f$ S-wave in terms of a five-by-five K-matrix and corresponding P-vector couplings.
+        Includes a large number of parameters that can be fixed from the above publication. 
+        These parameters can be found in the options directory, which in turn can be includes in the fit by adding 
+
+        \code{cpp}
+          Import $AMPGENROOT/options/kMatrix.opt
+        \endcode 
+        
+        to the user configuration file. 
+     */ 
+    DECLARE_LINESHAPE( kMatrix );
+  }
+
   struct poleConfig {
     Expression s;
     std::vector<Expression> couplings;

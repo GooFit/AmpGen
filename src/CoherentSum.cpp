@@ -61,8 +61,6 @@ void CoherentSum::addMatrixElement( std::pair<Particle, CouplingConstant>& parti
     if ( name == mE.decayTree.uniqueString() ) return;
   }
   m_matrixElements.emplace_back(protoParticle, coupling, mps, m_evtType.getEventFormat(), m_dbThis);
-  m_matrixElements.rbegin()->pdf.print();
-
 }
 
 void CoherentSum::prepare()
@@ -178,7 +176,7 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
   return outputFractions;
 }
 
-void CoherentSum::generateSourceCode( const std::string& fname, const double& normalisation, bool add_mt )
+void CoherentSum::generateSourceCode(const std::string& fname, const double& normalisation, bool add_mt)
 {
   std::ofstream stream( fname );
   transferParameters();
@@ -188,11 +186,10 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
   stream << "#include <math.h>\n";
   if ( add_mt ) stream << "#include <thread>\n";
   bool includePythonBindings = NamedParameter<bool>("CoherentSum::IncludePythonBindings",false);
-  bool enableCuda            = NamedParameter<bool>("CoherentSum::EnableCuda",false);
 
   for ( auto& p : m_matrixElements ){
     stream << p.pdf << std::endl;
-    if( ! enableCuda ) p.pdf.compileWithParameters( stream );
+    p.pdf.compileWithParameters( stream );
     if( includePythonBindings ) p.pdf.compileDetails( stream );
   }
   Expression event = Parameter("x0",0,true,0);
@@ -203,10 +200,8 @@ void CoherentSum::generateSourceCode( const std::string& fname, const double& no
     Expression this_amplitude = p.coupling() * Function( programatic_name( p.pdf.name() ) + "_wParams", {event} ); 
     amplitude = amplitude + ( p.decayTree.finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
   }
-  if( !enableCuda ){
-    stream << CompiledExpression< std::complex<double>, const double*, int>( amplitude  , "AMP" ) << std::endl; 
-    stream << CompiledExpression< double, const double*, int>(fcn::norm(amplitude) / normalisation, "FCN" ) << std::endl; 
-  }
+  stream << CompiledExpression< std::complex<double>, const double*, int>( amplitude  , "AMP" ) << std::endl; 
+  stream << CompiledExpression< double, const double*, int>(fcn::norm(amplitude) / normalisation, "FCN" ) << std::endl; 
   if( includePythonBindings ){
     stream << CompiledExpression< unsigned int >( m_matrixElements.size(), "matrix_elements_n" ) << std::endl;
     stream << CompiledExpression< double >      ( normalisation, "normalization") << std::endl;

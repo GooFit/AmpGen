@@ -32,8 +32,8 @@ void Minimiser::print( const double& LL )
 
 double Minimiser::operator()( const double* xx )
 {
-  for ( unsigned int i = 0; i < m_mapping.size(); ++i ) {
-    m_parSet->getParPtr( m_mapping[i] )->setCurrentFitVal( xx[i] );
+  for(size_t i = 0; i < m_mapping.size(); ++i ) {
+    m_parSet->at( m_mapping[i] )->setCurrentFitVal( xx[i] );
   }
   double LL = m_theFunction();
   for ( auto& extendTerm : m_extendedTerms ) {
@@ -44,8 +44,8 @@ double Minimiser::operator()( const double* xx )
 
 void Minimiser::GradientTest()
 {
-  for ( unsigned int i = 0; i < m_mapping.size(); ++i ) {
-    auto parameter = m_parSet->getParPtr( m_mapping[i] );
+  for (size_t i = 0; i < m_mapping.size(); ++i) {
+    auto parameter = m_parSet->at( m_mapping[i] );
     double m       = parameter->mean();
     parameter->setCurrentFitVal( parameter->meanInit() + parameter->stepInit() );
     double vp = FCN();
@@ -78,7 +78,7 @@ void Minimiser::prepare()
   m_covMatrix.clear();
   for(size_t i = 0 ; i < m_parSet->size(); ++i) 
   {
-    auto par = m_parSet->getParPtr(i);
+    auto par = m_parSet->at(i);
     if ( par->iFixInit() != 0 ) continue;
     m_minimiser->SetVariable(m_mapping.size(), par->name(), par->mean(), par->stepInit());
     if ( par->minInit() != 0 || par->maxInit() != 0 ) 
@@ -100,8 +100,8 @@ bool Minimiser::doFit()
 {
   m_lastPrint = 999;
   ROOT::Math::Functor f( *this, m_nParams );
-  for ( unsigned int i = 0; i < m_mapping.size(); ++i ) {
-    MinuitParameter* par = m_parSet->getParPtr( m_mapping[i] );
+  for (size_t i = 0; i < m_mapping.size(); ++i ) {
+    MinuitParameter* par = m_parSet->at( m_mapping[i] );
     m_minimiser->SetVariable( i, par->name(), par->mean(), par->stepInit() );
     if ( par->minInit() != 0 || par->maxInit() != 0 )
       m_minimiser->SetVariableLimits( i, par->minInit(), par->maxInit() );
@@ -109,8 +109,8 @@ bool Minimiser::doFit()
 
   m_minimiser->SetFunction( f );
   m_minimiser->Minimize();
-  for ( unsigned int i = 0; i < m_nParams; ++i ) {
-    auto par = m_parSet->getParPtr( m_mapping[i] );
+  for (size_t i = 0; i < m_nParams; ++i ) {
+    auto par = m_parSet->at( m_mapping[i] );
     double error = *( m_minimiser->Errors() + i );
     par->setResult( *( m_minimiser->X() + i ), error, error, error );
     for ( unsigned int j = 0; j < m_nParams; ++j ) {

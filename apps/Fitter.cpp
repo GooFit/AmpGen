@@ -52,13 +52,12 @@ std::vector<ThreeBodyCalculator> threeBodyCalculators( MinuitParameterSet& mps )
 void randomizeStartingPoint( MinuitParameterSet& MPS, TRandom3& rand, bool SplineOnly = false )
 {
   double range = 5;
-  for ( unsigned int i = 0; i < MPS.size(); ++i ) {
-    auto param = MPS.getParPtr( i );
+  for (auto& param : MPS) {
     if ( param->iFixInit() == 0 ) {
       if ( SplineOnly && param->name().find( "::Spline::" ) == std::string::npos ) continue;
       range = param->maxInit() - param->minInit();
-      MPS.getParPtr( i )->setInit( range * rand.Rndm() + param->meanInit() );
-      MPS.getParPtr( i )->print();
+      param->setInit( range * rand.Rndm() + param->meanInit() );
+      param->print();
       std::cout << std::endl;
     }
   }

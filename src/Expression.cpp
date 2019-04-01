@@ -18,11 +18,11 @@
 
 using namespace AmpGen;
 
-DEFINE_CAST( Constant )
-DEFINE_CAST( Parameter )
-DEFINE_CAST( SubTree )
-DEFINE_CAST( Ternary )
-DEFINE_CAST( Function )
+DEFINE_CAST(Constant )
+DEFINE_CAST(Parameter )
+DEFINE_CAST(SubTree )
+DEFINE_CAST(Ternary )
+DEFINE_CAST(Function )
 
 Expression::Expression( const std::shared_ptr<IExpression>& expression ) : m_expression( expression ) {}
 

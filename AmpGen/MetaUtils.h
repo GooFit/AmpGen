@@ -10,9 +10,10 @@
 namespace AmpGen
 {
   /** Utility classes for (library) compile-level metaprogramming, such as identifying the types of 
-    * arguments for generating source code, compile-time unrolling of tuples and loops, and identifying if a class can be constructed in different ways. 
+      arguments for generating source code, compile-time unrolling of tuples and loops, 
+      and identifying if a class can be constructed in different ways. 
     */
-
+ 
   template <class TYPE> std::string typeof()
   {
     int status = 0;

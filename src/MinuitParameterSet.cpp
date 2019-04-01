@@ -22,7 +22,7 @@ using namespace AmpGen;
 MinuitParameterSet::MinuitParameterSet() = default;
 
 MinuitParameterSet::MinuitParameterSet( const MinuitParameterSet& other )
-    : _parPtrList( other._parPtrList ), _keyAccess( other._keyAccess )
+  : m_parameters( other.m_parameters ), m_keyAccess( other.m_keyAccess )
 {
 }
 
@@ -40,96 +40,97 @@ bool MinuitParameterSet::addToEnd( MinuitParameter* parPtr )
   bool success = true;
   if ( nullptr == parPtr ) return false;
 
-  _parPtrList.push_back( parPtr );
+  m_parameters.push_back( parPtr );
 
-  if ( _keyAccess.find( parPtr->name() ) != _keyAccess.end() ) {
+  if ( m_keyAccess.find( parPtr->name() ) != m_keyAccess.end() ) {
     WARNING( "Parameter with name " << parPtr->name() << " already exists!" );
   }
-  _keyAccess[parPtr->name()] = parPtr;
+  m_keyAccess[parPtr->name()] = parPtr;
   return success;
 }
 
 MinuitParameter* MinuitParameterSet::add( const std::string& name, const unsigned int& flag, const double& mean,
-                                          const double& sigma, const double& min, const double& max )
+    const double& sigma, const double& min, const double& max )
 {
   addToEnd( new MinuitParameter( name, MinuitParameter::Flag(flag), mean, sigma, min, max ) );
-  return _keyAccess[name];
+  return m_keyAccess[name];
 }
 
 bool MinuitParameterSet::add( MinuitParameter* parPtr ) { return addToEnd( parPtr ); }
 
 bool MinuitParameterSet::unregister( MinuitParameter* parPtr )
 {
-  if ( _parPtrList.end() == std::find( _parPtrList.begin(), _parPtrList.end(), parPtr ) ) {
+  if ( m_parameters.end() == std::find( m_parameters.begin(), m_parameters.end(), parPtr ) ) {
     WARNING( "parPtr you want to unregister is not part of this list!" );
     return false;
   }
-  _parPtrList.erase( remove( _parPtrList.begin(), _parPtrList.end(), parPtr ), _parPtrList.end() );
+  m_parameters.erase( remove( m_parameters.begin(), m_parameters.end(), parPtr ), m_parameters.end() );
   return true;
 }
 
-unsigned int MinuitParameterSet::size() const { return _parPtrList.size(); }
-
-MinuitParameter* MinuitParameterSet::getParPtr( unsigned int i ) const
-{
-  if ( i >= _parPtrList.size() ) return nullptr;
-  return _parPtrList[i];
-}
+unsigned int MinuitParameterSet::size() const { return m_parameters.size(); }
 
 void MinuitParameterSet::deleteListAndObjects()
 {
-  for ( auto it = _parPtrList.begin(); it != _parPtrList.end(); ++it ) {
-    delete *it;
-  }
-  _parPtrList.clear();
+  for ( auto it = m_parameters.begin(); it != m_parameters.end(); ++it )  delete *it;
+  m_parameters.clear();
 }
 
-void MinuitParameterSet::deleteListKeepObjects() { _parPtrList.clear(); }
+void MinuitParameterSet::deleteListKeepObjects() { m_parameters.clear(); }
 
 void MinuitParameterSet::print( std::ostream& os ) const
 {
-  for ( unsigned int i = 0; i < size(); i++ ) {
-    if ( nullptr == getParPtr( i ) ) continue;
+  for (size_t i = 0; i < size(); i++ ) {
     os << '\n';
-    getParPtr( i )->print( os );
+    m_parameters[i]->print(os);
   }
   os << '\n';
 }
 void MinuitParameterSet::printVariable( std::ostream& os ) const
 {
-  for ( unsigned int i = 0; i < size(); i++ ) {
-    if ( nullptr == getParPtr( i ) ) continue;
-    if ( getParPtr( i )->iFixInit() == 1 ) continue; /// hide parameter
+  for (size_t i = 0; i < size(); i++ ) {
+    if ( m_parameters[i]->iFixInit() == 1 ) continue; /// hide parameter
     os << '\n';
-    getParPtr( i )->print( os );
+    m_parameters[i]->print( os );
   }
 }
 
 MinuitParameter* MinuitParameterSet::operator[]( const std::string& key )
 {
-  auto it = _keyAccess.find( key );
-  if ( it == _keyAccess.end() ) {
+  auto it = m_keyAccess.find( key );
+  if ( it == m_keyAccess.end() ) {
     WARNING( "Parameter: " << key << " not found" );
   }
   return it->second;
 }
+
 MinuitParameter* MinuitParameterSet::operator[]( const std::string& key ) const
 {
-  auto it = _keyAccess.find( key );
-  if ( it == _keyAccess.end() ) {
+  auto it = m_keyAccess.find( key );
+  if ( it == m_keyAccess.end() ) {
     WARNING( "Parameter: " << key << " not found" );
   }
   return it->second;
 }
-MinuitParameter* MinuitParameterSet::operator[]( const unsigned int& key ) { return _parPtrList[key]; }
+
+MinuitParameter* MinuitParameterSet::operator[]( const size_t& key ) { return m_parameters[key]; }
+
 MinuitParameter* MinuitParameterSet::at( const std::string& key )
 {
-  if ( _keyAccess.count( key ) == 0 ) {
+  if ( m_keyAccess.count( key ) == 0 ) {
     ERROR( key << " not found" );
     return nullptr;
   } else
-    return _keyAccess[key];
+    return m_keyAccess[key];
 }
+
+MinuitParameter* MinuitParameterSet::at( const size_t& index ) const
+{
+  if( index >= m_parameters.size() )
+    ERROR( "Attempting to access parameter " << index << " when only " << m_parameters.size() << " have been defined" );
+  return index < m_parameters.size() ? m_parameters[index] : nullptr; 
+}
+
 
 void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
 {
@@ -145,7 +146,7 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
     if ( status ) {
       if ( OptionsParser::printHelp() )
         INFO( "MINUIT: Registered " << line[0] << " (flag " << flag << ") = " << mean << ", step=" << step << " ("
-                                    << min << "," << max << ")" );
+            << min << "," << max << ")" );
       add( new MinuitParameter( line[0], MinuitParameter::Flag(flag), mean, step, min, max ) );
     }
     return;
@@ -165,20 +166,11 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
     double min_im = 0;
     double max_im = 0;
     if ( !status ) return;
-
-    if ( NamedParameter<unsigned int>( "MinuitParameterSet::RegulateParameters", 0 ) == 1 ) {
-      if ( mean_re < 0 ) {
-        mean_re = -mean_re;
-        mean_im = mean_im + M_PI;
-      }
-      mean_im = atan2( sin( mean_im ), cos( mean_im ) );
-      max_re = 1000;
-    }
     if ( OptionsParser::printHelp() ) {
       INFO( "MINUIT: Complex " << line[0] << "_Re (flag " << flag_re << ") = " << mean_re << ", step=" << step_re
-                               << " (" << min_re << "," << max_re << ")" );
+          << " (" << min_re << "," << max_re << ")" );
       INFO( "MINUIT: Complex " << line[0] << "_Im (flag " << flag_im << ") = " << mean_im << ", step=" << step_im
-                               << " (" << min_im << "," << max_im << ")" );
+          << " (" << min_im << "," << max_im << ")" );
     }
     add( new MinuitParameter( line[0] + "_Re", MinuitParameter::Flag(flag_re), mean_re, step_re, min_re, max_re ) );
     add( new MinuitParameter( line[0] + "_Im", MinuitParameter::Flag(flag_im), mean_im, step_im, min_im, max_im ) );
@@ -197,7 +189,6 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
     double min_im  = lexical_cast<double>( line[9], status );
     double max_im  = lexical_cast<double>( line[10], status );
     if ( !status ) return;
-
     add( new MinuitParameter( line[0] + "_Re", MinuitParameter::Flag(flag_re), mean_re, step_re, min_re, max_re ) );
     add( new MinuitParameter( line[0] + "_Im", MinuitParameter::Flag(flag_im), mean_im, step_im, min_im, max_im ) );
   }
@@ -210,8 +201,8 @@ void MinuitParameterSet::tryAlias( const std::vector<std::string>& line )
     std::string name       = line[0];
     MinuitExpression* expr = new MinuitExpression( line, this );
     if ( expr->isGood() ) {
-      _aliasList.push_back( expr );
-      _keyAccess[name] = expr;
+      m_expressions.push_back( expr );
+      m_keyAccess[name] = expr;
     } else {
       ERROR( "Expression is ill-formed: " << line[0] );
       delete expr;
@@ -222,23 +213,20 @@ void MinuitParameterSet::tryAlias( const std::vector<std::string>& line )
 void MinuitParameterSet::loadFromStream()
 {
   auto ppfl = OptionsParser::getMe();
-  
   std::vector<std::vector<std::string>> protoAliases;
-
   for ( auto it = ppfl->begin(); it != ppfl->end(); ++it ) {
     tryParameter( it->second );
     if ( it->second.size() >= 3 && it->second[1] == "=" ) protoAliases.push_back( it->second );
   }
   for ( auto& alias : protoAliases ) tryAlias( alias );
-  //  print();
 }
 
 void MinuitParameterSet::loadFromFile( const std::string& file )
 {
   processFile( file, [this]( auto& line ) {
-    this->tryParameter( split( line, {' ', '\t'} ) );
-    this->tryAlias( split( line, {' ', '\t'} ) );
-  } );
+      this->tryParameter( split( line, {' ', '\t'} ) );
+      this->tryAlias( split( line, {' ', '\t'} ) );
+      } );
 }
 
 MinuitParameterSet::~MinuitParameterSet() = default;
@@ -257,8 +245,30 @@ void MinuitParameterSet::resetToInit()
 }
 
 MinuitParameter* MinuitParameterSet::addOrGet( const std::string& name, const unsigned int& flag, const double& mean,
-                                               const double& sigma, const double& min, const double& max )
+    const double& sigma, const double& min, const double& max )
 {
-  if ( _keyAccess.count( name ) != 0 ) return _keyAccess[name];
+  if ( m_keyAccess.count( name ) != 0 ) return m_keyAccess[name];
   return add( name, flag, mean, sigma, min, max );
+}
+std::map<std::string, MinuitParameter*>&       MinuitParameterSet::map() { return m_keyAccess; }
+const std::map<std::string, MinuitParameter*>& MinuitParameterSet::const_map() const { return m_keyAccess; }
+MinuitParameterSet::const_iterator  MinuitParameterSet::cbegin() const { return m_parameters.cbegin(); }
+MinuitParameterSet::const_iterator  MinuitParameterSet::cend()   const { return m_parameters.cend(); }
+MinuitParameterSet::iterator        MinuitParameterSet::begin()        { return m_parameters.begin(); }
+MinuitParameterSet::iterator        MinuitParameterSet::end()          { return m_parameters.end(); }
+MinuitParameterSet::const_iterator  MinuitParameterSet::begin()  const { return m_parameters.cbegin(); }
+MinuitParameterSet::const_iterator  MinuitParameterSet::end()    const { return m_parameters.cend(); }
+
+MinuitParameter* MinuitParameterSet::find( const std::string& key ) const 
+{
+  auto it = m_keyAccess.find(key);
+  return it == m_keyAccess.end() ? nullptr : it->second;   
+}
+
+double MinuitParameterSet::operator()( const std::string& name )
+{
+  if ( m_keyAccess.find(name) == m_keyAccess.end() ) {
+    ERROR( "Cannot find parameter " << name );
+  }
+  return m_keyAccess[name]->mean();
 }

@@ -24,31 +24,31 @@
   * Macro to declare a vertex 
   */
 #define DECLARE_VERTEX(NAME)                                                                                         \
-  struct NAME : public VertexBase {                                                                                       \
+  struct NAME : public Base {                                                                                       \
     NAME(){ DEBUG("Constructing vertex");                    }                                                         \
-    virtual Tensor operator()( const Tensor& P, const Tensor& Q, const Tensor& V1, const Tensor& V2, DebugSymbols* db = 0 ) override;  \
+    virtual Tensor operator()(const Tensor& P, const Tensor& Q, const Tensor& V1, const Tensor& V2, DebugSymbols* db = 0 ) override;  \
     static std::string _id;                                                                                            \
   }
 
 #define DEFINE_VERTEX(VERTEX)                                                                                   \
-  REGISTER_WITH_KEY( Vertex::VertexBase, Vertex::VERTEX, #VERTEX, std::string );                                                     \
+  REGISTER_WITH_KEY( Vertex::Base, Vertex::VERTEX, #VERTEX, std::string );                                                     \
   Tensor Vertex::VERTEX::operator()( const Tensor& P, const Tensor& Q, const Tensor& V1, const Tensor& V2, DebugSymbols* db )
 
 namespace AmpGen
 {
   /** @ingroup Vertices namespace Vertex 
-      Namespace that contains the base class for vertices, VertexBase, as well as the implementations 
+      Namespace that contains the base class for vertices, Vertex::Base, as well as the implementations 
       of specific spin couplings and some helper functions such as the orbital operators. 
     */
   namespace Vertex
   {
-    /** @ingroup Vertices class VertexBase
+    /** @ingroup Vertices class Base
         @brief Base class for all spin vertices.  
       Virtual base class from which all the other vertices derive, in essence this is 
        just a named function pointer that can create a pointer to itself, i.e. such 
        that it can be constructed using a Factory.
      */
-    struct VertexBase {
+    struct Base {
       
       /** Calculate the generalised current for this decay process, as a function of:
          @param P The momentum of the decaying particle
@@ -64,8 +64,8 @@ namespace AmpGen
                                         const AmpGen::Tensor& V2,
                                         AmpGen::DebugSymbols* db = nullptr ) = 0;
 
-      virtual ~VertexBase() = default;
-      VertexBase* create() { return this; }   
+      virtual ~Base() = default;
+      Base* create() { return this; }   
     };
     /// \ingroup Vertices class S_SS_S 
     /// \brief \f$ S = S_1 S_2 \f$
@@ -153,7 +153,7 @@ namespace AmpGen
     DECLARE_VERTEX( S_ff_S1 );
     DECLARE_VERTEX( V_ff_P );
     DECLARE_VERTEX( V_ff_P1 );  
-    class Factory : public AmpGen::Factory<Vertex::VertexBase>
+    class Factory : public AmpGen::Factory<Vertex::Base>
     {
     public:
       static Tensor getSpinFactor( const Tensor& P, const Tensor& Q, const Tensor& V1, const Tensor& V2,
@@ -164,14 +164,43 @@ namespace AmpGen
     };
   } // namespace Vertex
 
-  /// \ingroup Vertices function Orbital_PWave 
-  /// Helper function that computes the L=1 orbital momentum operator, i.e. 
-  /// \f$ L_{\mu} = q_{\mu} - \frac{p_{\nu}q^{\nu} p_{\mu} }{ p_{\alpha} p^{\alpha}} \f$
-  Tensor Orbital_PWave( const Tensor& A, const Tensor& B );
-  Tensor Orbital_DWave( const Tensor& A, const Tensor& B );
-  Tensor Spin1Projector( const Tensor& A );
-  Tensor Spin2Projector( const Tensor& A );
+  /** @ingroup Vertices function Orbital_PWave 
+      @brief Helper function that computes the @f$L=1@f$ orbital momentum operator.
+      Helper function that computes the @f$L=1@f$ orbital momentum operator, which is given by 
+      @f[ L_{\mu} = q_{\mu} - p_{\mu} \frac{p_{\nu}q^{\nu}}{ p^2 }, @f]
+      where @f$ p @f$ is total momentum and @f$ q @f$ is the momentum difference between 
+      the two particles in the state.
+   */
+  Tensor Orbital_PWave(const Tensor& p, const Tensor& q);
+  
+  /** @ingroup Vertices function Orbital_DWave 
+      @brief Helper function that computes the @f$L=2@f$ orbital momentum operator.  
+      Helper function that computes the @f$L=2@f$ orbital momentum operator, which is given by
+      @f[ L_{\mu\nu} = L_{\mu}L_{\nu} - \frac{L^2}{3} S_{\mu\nu}, @f]
+      where @f$ L_{\mu} @f$ is the Orbital_PWave operator and @f$ S_{\mu\nu} @f$ is the 
+      Spin1Projector. */
+  Tensor Orbital_DWave(const Tensor& p, const Tensor& q);
 
+  /** @ingroup Vertices function Spin1Projector
+      @brief Helper function that computes the projection operator onto a spin one state.
+      Helper function that projects some lorentz object onto the momentum @f$p_\mu @f$ of state, 
+      and is given by 
+      @f[ S_{\mu\nu} = g_{\mu\nu} - \frac{p_{\mu}p_{\nu}}{p^2}. @f] */
+  Tensor Spin1Projector(const Tensor& p);
+  
+  /** @ingroup Vertices function Spin2Projector
+      @brief Helper function that computes the projection operator onto a spin one state.
+      Helper function that projects some lorentz object onto the momentum @f$p_\mu @f$ of state, 
+      and is given by 
+      @f[ S_{\mu\nu\alpha\beta} = \frac{1}{2}\left( S_{\mu\alpha} S_{\nu\beta} + S_{\mu\beta}S_{\nu\alpha} \right) - \frac{1}{3} S_{\mu\nu} S_{\alpha\beta}, @f]
+      where @f$ S_{\mu\nu} @f$ is the spin-one projection operator (see Spin1Projector). */
+  Tensor Spin2Projector(const Tensor& p);
+  
+  /** @ingroup Vertices function Spin1hProjector
+      @brief Helper function that projects a spinor.
+      Helper function that projects out a spin-half state 
+      @f[ S_{ab} = \frac{1}{2m}\left( {p\!\!\!/} + m I \right) @f]
+    */
   Tensor Spin1hProjector( const Tensor& B );
   Tensor Spin3hProjector( const Tensor& A );
 

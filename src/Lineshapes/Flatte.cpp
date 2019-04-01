@@ -10,12 +10,12 @@ using namespace std::complex_literals;
 Expression aSqrtTerm( const Expression& s, const Expression& m0 )
 {
   Expression a2 = 1.0 - ( 4 * m0 * m0 ) / s;
-  return Ternary( a2 > Constant( 0 ), sqrt( a2 ), Constant( 0 ) );
+  return Ternary( a2 > 0., sqrt( a2 ), Constant( 0 ) );
 }
 
 Expression fSqrtTerm( const Expression& s, const Expression& m0 )
 {
-  return complex_sqrt( 1.0 - ( 4 * m0 * m0 ) / s );
+  return complex_sqrt( 1.0 - 4*m0*m0/ s );
 }
 DEFINE_LINESHAPE( Flatte )
 {

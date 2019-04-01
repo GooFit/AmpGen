@@ -191,6 +191,5 @@ double DalitzIntegrator::integrate_internal( TF2& fcn ) const
   ig.SetRelTolerance( 0.000001 );
   double xmin[] = {0, 0};
   double xmax[] = {1, 1};
-  double v = ig.Integral( xmin, xmax );
-  return v ;
+  return ig.Integral(xmin,xmax);
 }

@@ -17,6 +17,9 @@ namespace AmpGen
   class MinuitParameterSet
   {
   public:
+    typedef std::vector<MinuitParameter*>::iterator iterator; 
+    typedef std::vector<MinuitParameter*>::const_iterator const_iterator; 
+    
     MinuitParameterSet();
     MinuitParameterSet( const MinuitParameterSet& other );
     ~MinuitParameterSet();
@@ -24,28 +27,23 @@ namespace AmpGen
     MinuitParameterSet getFloating();
 
     bool add( MinuitParameter* parPtr );
-    MinuitParameter* add( const std::string& name, const unsigned int& flag, const double& mean, const double& sigma,
-                          const double& min = 0, const double& max = 0 );
+    MinuitParameter* add(const std::string& name, const unsigned int& flag, const double& mean, const double& sigma, const double& min = 0, const double& max = 0 );
     bool unregister( MinuitParameter* patPtr );
-    MinuitParameter* addOrGet( const std::string& name, const unsigned int& flag, const double& mean,
-                               const double& sigma, const double& min = 0, const double& max = 0 );
+    MinuitParameter* addOrGet(const std::string& name, const unsigned int& flag, const double& mean,
+                              const double& sigma, const double& min = 0, const double& max = 0 );
     void loadFromStream();
     void loadFromFile( const std::string& name );
     void resetToInit();
     unsigned int size() const;
 
-    MinuitParameter* getParPtr( unsigned int i ) const;
-
-    std::map<std::string, MinuitParameter*>& map() { return _keyAccess; }
-    const std::map<std::string, MinuitParameter*>& const_map() const { return _keyAccess; }
-    std::vector<MinuitParameter*>::const_iterator cbegin() const { return _parPtrList.cbegin(); }
-    std::vector<MinuitParameter*>::const_iterator cend()   const { return _parPtrList.cend(); }
-
-    std::vector<MinuitParameter*> parPtrs() { return _parPtrList; }
-    std::vector<MinuitParameter*>::iterator       begin() { return _parPtrList.begin(); }
-    std::vector<MinuitParameter*>::iterator       end()   { return _parPtrList.end(); }
-    std::vector<MinuitParameter*>::const_iterator begin() const { return _parPtrList.cbegin(); }
-    std::vector<MinuitParameter*>::const_iterator end()   const { return _parPtrList.cend(); }
+    std::map<std::string, MinuitParameter*>& map();
+    const std::map<std::string, MinuitParameter*>& const_map() const;
+    const_iterator cbegin() const;
+    const_iterator cend()   const;
+    iterator       begin();
+    iterator       end();
+    const_iterator begin() const;
+    const_iterator end()   const;
 
     void deleteListAndObjects();
     void deleteListKeepObjects();
@@ -55,28 +53,20 @@ namespace AmpGen
 
     void set( const MinuitParameterSet& mps );
     MinuitParameter* at( const std::string& key );
+    MinuitParameter* at( const size_t& index ) const;
     MinuitParameter* operator[]( const std::string& key );
     MinuitParameter* operator[]( const std::string& key ) const;
-    MinuitParameter* operator[]( const unsigned int& key );
-    MinuitParameter* find( const std::string& key ) const 
-    {
-      auto it = _keyAccess.find(key);
-      return it == _keyAccess.end() ? nullptr : it->second;   
-    }
-    double operator()( const std::string& name )
-    {
-      if ( _keyAccess.find( name ) == _keyAccess.end() ) {
-        std::cout << "Cannot find parameter " << name << std::endl;
-      }
-      return _keyAccess[name]->mean();
-    }
+    MinuitParameter* operator[]( const size_t& key );
+    MinuitParameter* find( const std::string& key ) const;
+    double operator()( const std::string& name );
   private:
     void tryParameter( const std::vector<std::string>& line );
     void tryAlias( const std::vector<std::string>& line );
-    std::vector<MinuitParameter*> _parPtrList;
-    std::vector<MinuitExpression*> _aliasList;
-    std::map<std::string, MinuitParameter*> _keyAccess;
     bool addToEnd( MinuitParameter* parPtr );
+ 
+    std::vector<MinuitParameter*>           m_parameters;
+    std::vector<MinuitExpression*>          m_expressions;
+    std::map<std::string, MinuitParameter*> m_keyAccess;
 
   };
 

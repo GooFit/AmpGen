@@ -14,8 +14,9 @@ namespace AmpGen
     virtual ~IArgument() = default;
   };
   /** @class Argument 
+    @brief Structure to pass "named" parameters to functions. 
     Structure to flexibly pass blocks of "Named" parameters to functions, to 
-    approximate the behaviour of python's named arguments. 
+    approximate the behaviour of Python's named arguments. 
     Typical usage is for constructors with variable arguments, such as 
     to read data from the disk. The interface for the user is typically 
     \code{cpp}
@@ -36,7 +37,7 @@ namespace AmpGen
     auto applySym     = args.getArg<ApplySym>().val;
     auto entryList    = args.getArg<EntryList>().val; 
     \endcode
-    @tparam: TYPE type of the argument, such as a string, a number, a bool etc.  
+    @tparam TYPE Type of the argument, such as a string, a number, a bool etc.  
     */
   template <class TYPE> struct Argument : public IArgument 
   {
