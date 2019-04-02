@@ -129,8 +129,6 @@ target_compile_options(AmpGen
   -Woverloaded-virtual
   $<$<CONFIG:Release>:-Ofast>)
 
-target_link_libraries(AmpGen PUBLIC "tbb")
-
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm -lstdc++")
 else()

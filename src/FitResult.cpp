@@ -32,8 +32,7 @@ FitResult::FitResult( const std::string& filename, const EventType& evtType )
 std::string FitResult::getLastLine( std::ifstream& in ) const
 {
   std::string line;
-  while ( in >> std::ws && std::getline( in, line ) )
-    ;
+  while ( in >> std::ws && std::getline( in, line ) ) ;
   return line;
 }
 
@@ -52,25 +51,20 @@ bool FitResult::readFile( const std::string& fname )
 
   processFile( fname, [this, &parameterLines]( auto& line ) {
     const std::string name = split( line, ' ' )[0];
-    if ( name == "Parameter" )
-      parameterLines.push_back( line );
-    else if ( name == "FitQuality" )
-      this->setFitQuality( line );
-    else if ( name == "FitFraction" )
-      this->m_fitFractions.emplace_back( line, m_eventType );
-    else if ( name == "Observable" )
-      this->addToObservables( line );
+    if ( name == "Parameter" ) parameterLines.push_back( line );
+    else if ( name == "FitQuality" ) this->setFitQuality( line );
+    else if ( name == "FitFraction" ) this->m_fitFractions.emplace_back( line, m_eventType );
+    else if ( name == "Observable" ) this->addToObservables( line );
   } );
 
-  unsigned int nParameters = parameterLines.size();
-
+  size_t nParameters = parameterLines.size();
   m_covarianceMatrix.ResizeTo( parameterLines.size(), parameterLines.size() );
   m_mps = std::make_shared<MinuitParameterSet>();
-  for ( unsigned int i = 0; i < nParameters; ++i ) {
+  for (size_t i = 0; i < nParameters; ++i ) {
     auto tokens             = split( parameterLines[i], ' ' );
     m_covMapping[tokens[1]] = i;
     m_mps->add( new MinuitParameter( tokens[1], MinuitParameter::Flag(stoi( tokens[2] ) ), stod( tokens[3] ), stod( tokens[4] ), 0, 0 ) );
-    for ( unsigned int j = 0; j < nParameters; ++j ) m_covarianceMatrix( i, j ) = stod( tokens[5 + j] );
+    for (size_t j = 0; j < nParameters; ++j ) m_covarianceMatrix( i, j ) = stod( tokens[5 + j] );
   }
 
   return true;
@@ -187,14 +181,6 @@ std::vector<MinuitParameter*> FitResult::getFloating( const bool& extended ) con
   for ( auto& param : *m_mps ) {
     if ( ( param->iFixInit() == 0 || extended ) && param->err() > 1e-6 ) floating.push_back( param );
   }
-  /*
-  if( extended ){
-    DEBUG("Got extended error propagator:");
-    for( auto& param : floating ){
-      INFO( param->name() );
-    }
-  }
-  */
   return floating;
 }
 
