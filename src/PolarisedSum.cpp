@@ -159,7 +159,6 @@ void   PolarisedSum::prepare()
     for(size_t i = 0; i < m_matrixElements.size(); ++i){
       for(size_t j = i; j < m_matrixElements.size(); ++j){
          z += ((i==j) ? 1. : 2. ) * m_matrixElements[i].coupling()*std::conj(m_matrixElements[j].coupling())*norm(i,j);
-//         z += m_matrixElements[i].coupling()*std::conj(m_matrixElements[j].coupling())*norm(i,j);
       }
     }
     m_norm = std::real(z); 
@@ -185,11 +184,6 @@ void PolarisedSum::debug_norm()
       << "; exact="     << norm_slow /  m_integrator.sampleNorm()
       << "; d = " << m_norm - norm_slow / m_integrator.sampleNorm()  
       << "; sample=" << m_integrator.sampleNorm() );
-//  for( int i = 0 ; i < m_matrixElements.size(); ++i){
-//    for( int j = 0 ; j < m_matrixElements.size(); ++j){
-//      INFO( "Norm(i="<<i<<", j=" << j << ") = " << norm(i,j) );
-//    }
-//  }
 }
 
 void   PolarisedSum::setEvents( EventList& events )

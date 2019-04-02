@@ -86,7 +86,6 @@ namespace AmpGen
       return plot;
     }
 
-
   template <size_t NBINS, class FCN>
     std::vector<TH1D*> bandPlot( EventList& events, const std::string& prefix, FCN& fcn, LinearErrorPropagator& linProp )
     {
