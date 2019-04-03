@@ -26,7 +26,7 @@ include(CMakePrintHelpers)
 option(AMPGEN_DEBUG "AmpGen Debug printout")
 option(AMPGEN_TRACE "AmpGen Trace printout")
 
-configure_file ("${PROJECT_SOURCE_DIR}/AmpGen/Version.h.in" "${PROJECT_SOURCE_DIR}/AmpGen/Version.h")
+configure_file ("${PROJECT_SOURCE_DIR}/AmpGen/Version.h.in" "${CMAKE_BINARY_DIR}/AmpGenVersion.h")
 
 add_library(AmpGen SHARED ${AMPGEN_SRC} ${AMPGEN_HDR})
 
@@ -56,7 +56,7 @@ endif()
 message( STATUS "ROOT_INCLUDE_DIRS = ${ROOT_INCLUDE_DIRS}")
 
 target_include_directories(AmpGen PUBLIC "${CMAKE_SOURCE_DIR}")
-
+target_include_directories(AmpGen PUBLIC "${CMAKE_BINARY_DIR}")
 target_include_directories(AmpGen SYSTEM PUBLIC "${ROOT_INCLUDE_DIRS}")
 
 target_link_libraries(AmpGen PUBLIC ${ROOT_LIBRARIES} ${CMAKE_DL_LIBS})

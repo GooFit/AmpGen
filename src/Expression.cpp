@@ -148,14 +148,6 @@ Expression AmpGen::operator/( const Expression& A, const Expression& B )
     if( is<Constant>( as_prod.l() ) ) return ( Constant( 1./as_prod.l()() ) * A )/ as_prod.r();
     if( is<Constant>( as_prod.r() ) ) return ( Constant( 1./as_prod.r()() ) * A )/ as_prod.l();
   }
-//  else if( is<Divide>(A) ) {
-//    auto A_divide = cast<Divide>(A);
-//    if( is<Divide>(B) ){
-//      auto B_divide = cast<Divide>(B);
-//      return Divide( A_divide.l() * B_divide.r() , ( A_divide.r() * B_divide.l() ) );
-//    }
-//    return  A_divide.l() * B / A_divide.r() ; 
-//  }
   else if( is<Divide>(B) ) return ( A * cast<Divide>(B).r() ) / cast<Divide>(B).l();
   else if( is<Sqrt>(B) ) return ( A * fcn::isqrt( cast<Sqrt>(B).arg() ) ); 
   return Expression( Divide( A, B ) );
@@ -166,12 +158,10 @@ Expression AmpGen::operator==( const Expression& A, const Expression& B ){ retur
 Expression AmpGen::operator==( const double& A, const Expression& B ){ return Constant(A) == B ; } 
 Expression AmpGen::operator==( const Expression& A, const double& B ){ return A == Constant(B) ; } 
 
-Parameter::Parameter( const std::string& name, const double& defaultValue, const bool& resolved,
-    const unsigned int& fromArg )
+Parameter::Parameter( const std::string& name, const double& defaultValue, const bool& resolved)
   : m_name( name )
   , m_defaultValue( defaultValue )
   , m_resolved( resolved )
-  , m_fromArg( fromArg )
 {
 }
 

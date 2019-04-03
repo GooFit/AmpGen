@@ -122,8 +122,8 @@ namespace AmpGen
     {
       DEBUG( "Compiling " << name() << " = " << hash() );
       // Avoid a warning about std::complex not being C compatible (it is)
-      stream << "#pragma clang diagnostic push\n"
-             << "#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
+      // stream << "#pragma clang diagnostic push\n"
+      //        << "#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
       stream << "extern \"C\" " << returnTypename() << " " << progName() << "_wParams"
              << "( const double*__restrict__ E ){" << std::endl;
       stream << "  double externalParameters [] = {";
@@ -134,7 +134,7 @@ namespace AmpGen
         stream << m_externals[m_externals.size() - 1] << " }; " << std::endl;
       } else stream << "0};" << std::endl;
       stream << "  return " << progName() << "( externalParameters, E ); // E is P \n}\n";
-      stream << "#pragma clang diagnostic pop\n\n" << std::endl;
+      // stream << "#pragma clang diagnostic pop\n\n" << std::endl;
     }
 
     bool isReady()          const override { return (m_readyFlag != nullptr && m_readyFlag->get() ) && m_fcn.isLinked(); }

@@ -173,10 +173,9 @@ namespace AmpGen
    such as cache states, but this currently requires manually specifying the argument ordering. */
   class Parameter : public IExpression {
     public:
-    Parameter( const std::string& name     = "", 
-               const double&  defaultValue = 0 , 
-               const bool&        resolved = false,
-               const unsigned int& fromArg = 0 );
+    Parameter(const std::string& name     = "", 
+              const double&  defaultValue = 0 , 
+              const bool&        resolved = false);
     std::string to_string(const ASTResolver* resolver = nullptr) const override;
     void resolve( ASTResolver& resolver ) override;
     operator Expression() const;
@@ -189,7 +188,6 @@ namespace AmpGen
     std::string  m_name;
     double       m_defaultValue;
     bool         m_resolved; 
-    unsigned int m_fromArg;
   };
 
   /** @ingroup ExpressionEngine class Ternary 

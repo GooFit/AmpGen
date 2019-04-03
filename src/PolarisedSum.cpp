@@ -294,7 +294,7 @@ void PolarisedSum::generateSourceCode(const std::string& fname, const double& no
   auto dim = m_eventType.dim(); 
   size_t size = dim.first * dim.second; 
   CompilerWrapper().preamble( stream );
-  Expression event = Parameter("x0",0,true,0); 
+  Expression event = Parameter("x0",0,true); 
   std::vector<Expression> expressions(size);
   for( auto& p : m_matrixElements ){
     p.pdf.prepare();

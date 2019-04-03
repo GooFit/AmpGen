@@ -81,9 +81,9 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   if( m_db.size() !=0 ) stream << "#include<iostream>\n"; 
   stream << "extern \"C\" const char* " << progName() << "_name() {  return \"" << m_name << "\"; } \n";
   bool enable_cuda = NamedParameter<bool>("UseCUDA",false);
-  size_t sizeOfStream = 0; 
+  size_t sizeOfStream = 0;
   if( !enable_cuda ){
-    stream << "#pragma clang diagnostic push\n#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
+//    stream << "#pragma clang diagnostic push\n#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );
     stream << "return " << m_obj.to_string(m_resolver) << ";\n}\n";
@@ -96,7 +96,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   }
 
   if( NamedParameter<bool>("IncludePythonBindings", false) == true ){
-    stream << "#pragma clang diagnostic pop\n\n";
+//    stream << "#pragma clang diagnostic pop\n\n";
     stream << "extern \"C\" void " <<  progName() << "_c" << "(double *real, double *imag, " << fcnSignature() << "){\n";
     stream << "  auto val = " << progName() << "(" << args() << ") ;\n"; 
     stream << "  *real = val.real();\n";
