@@ -213,9 +213,9 @@ Tensor Particle::P() const
     if ( m_index != 999 ) {
       const std::string index = std::to_string( m_index );
       Tensor rt( std::vector<Expression>( {
-            Parameter( index + "_Px", 0, false, 1 ), 
-            Parameter( index + "_Py", 0, false, 1 ),
-            Parameter( index + "_Pz", 0, false, 1 ), 0 } ) , {4} );
+            Parameter(index + "_Px"), 
+            Parameter(index + "_Py"),
+            Parameter(index + "_Pz"), 0 }) , Tensor::dim(4) );
       rt[3] = make_cse( fcn::sqrt( mass()*mass() + rt[0]*rt[0] + rt[1]*rt[1] + rt[2]*rt[2] ) );
          //   Parameter( index + "_E" , 0, false, 1 )} ),
       return rt;

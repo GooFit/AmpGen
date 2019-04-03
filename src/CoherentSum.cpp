@@ -192,16 +192,16 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
     p.pdf.compileWithParameters( stream );
     if( includePythonBindings ) p.pdf.compileDetails( stream );
   }
-  Expression event = Parameter("x0",0,true,0);
-  Expression pa    = Parameter("double(x1)",0,true,0);
+  Expression event = Parameter("x0",0,true);
+  Expression pa    = Parameter("double(x1)",0,true);
   Expression amplitude;
   for( unsigned int i = 0 ; i < size(); ++i ){
     auto& p = m_matrixElements[i];
     Expression this_amplitude = p.coupling() * Function( programatic_name( p.pdf.name() ) + "_wParams", {event} ); 
     amplitude = amplitude + ( p.decayTree.finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
   }
-  stream << CompiledExpression< std::complex<double>, const double*, int>( amplitude  , "AMP" ) << std::endl; 
-  stream << CompiledExpression< double, const double*, int>(fcn::norm(amplitude) / normalisation, "FCN" ) << std::endl; 
+  stream << CompiledExpression< std::complex<double>, const double*, const int&>( amplitude  , "AMP" ) << std::endl; 
+  stream << CompiledExpression< double, const double*, const int&>(fcn::norm(amplitude) / normalisation, "FCN" ) << std::endl; 
   if( includePythonBindings ){
     stream << CompiledExpression< unsigned int >( m_matrixElements.size(), "matrix_elements_n" ) << std::endl;
     stream << CompiledExpression< double >      ( normalisation, "normalization") << std::endl;
