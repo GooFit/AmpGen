@@ -271,7 +271,7 @@ void AmpGen::printSplash()
   std::cout << "   ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝      ╚═════╝ ╚══════╝╚═╝  ╚═══╝" << std::endl;
   std::cout << "\033[0m\n";
   std::cout << bold_on << 
-               "                      version " << AMPGEN_VERSION_MAJOR << "." << AMPGEN_VERSION_MINOR << std::endl; 
+               "                      version " << AMPGEN_MAJOR_VERSION << "." << AMPGEN_MINOR_VERSION << std::endl; 
   std::cout << "        build: " ;
   #if defined(__clang__)
     std::cout << "clang " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__;
