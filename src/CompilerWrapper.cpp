@@ -33,7 +33,8 @@ CompilerWrapper::CompilerWrapper( const bool& verbose ) :
       INFO( "Using original compiler; set global variable CXX if another needed: " << AMPGEN_CXX );
     m_cxx = AMPGEN_CXX;
 #else
-    ERROR( "No configured compiler; set global variable CXX" );
+    m_cxx = getenv("AMPGEN_CXX") != nullptr ? std::string( getenv( "AMPGEN_CXX" ) ) : "";
+    if( m_cxx == "" ) ERROR( "No configured compiler; set global variable CXX" );
 #endif
   }
 }
