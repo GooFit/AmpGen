@@ -40,37 +40,35 @@ void ASTResolver::reduceSubTrees()
   tempTrees.clear();
 }
 
-void ASTResolver::getOrderedSubExpressions( 
-    Expression& expression, 
-    std::vector< std::pair< uint64_t,Expression>>& dependentSubexpressions )
+std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpressions( const Expression& expression )
 {
+  std::vector<std::pair<uint64_t, Expression>> subexpressions; 
   expression.resolve( *this );
-  std::map< uint64_t , size_t> used_functions;
-  for( size_t i = 0 ; i < dependentSubexpressions.size(); ++i ) 
-    used_functions[ dependentSubexpressions[i].first ] = i;
+  std::map<uint64_t, size_t> used_functions;
   do { 
     reduceSubTrees();
-    for( auto& expression : subTrees ) {     
-      expression.second.resolve( *this );
-      auto stack_pos = used_functions.find( expression.first );
+    bool verbose = false;
+    for( auto& st : subTrees ) {
+      st.second.resolve( *this );
+      auto stack_pos = used_functions.find( st.first );
       if ( stack_pos == used_functions.end() ) {
-        dependentSubexpressions.emplace_back( expression.first , expression.second );
-        used_functions[expression.first] = dependentSubexpressions.size() - 1;
+        if( verbose ) INFO("Function: " << st.first << " is at the end of stack");
+        subexpressions.emplace_back( st.first , st.second );
+        used_functions[st.first] = subexpressions.size() - 1;
         continue;
       }
-      unsigned int oldPos = stack_pos->second;
-      auto it             = dependentSubexpressions.begin() + oldPos;
-      if ( it == dependentSubexpressions.end() - 1 ) continue;
-
-      std::rotate( it, it + 1, dependentSubexpressions.end() );
-
+      auto oldPos = stack_pos->second;
+      auto it     = subexpressions.begin() + oldPos;
+      if ( it == subexpressions.end() - 1 ) continue;
+      std::rotate( it, it + 1, subexpressions.end() );
       for ( auto uf = used_functions.begin(); uf != used_functions.end(); ++uf ) {
         if ( uf->second >= oldPos ) uf->second = uf->second - 1;
       }
-      used_functions[expression.first] = dependentSubexpressions.size() - 1;
+      used_functions[st.first] = subexpressions.size() - 1;
     }
   } while ( hasSubExpressions() );
-  std::reverse( dependentSubexpressions.begin(), dependentSubexpressions.end() );
+  std::reverse( subexpressions.begin(), subexpressions.end() );
+  return subexpressions;
 }
 
 template <> void ASTResolver::resolve<SubTree>( const SubTree& subTree )

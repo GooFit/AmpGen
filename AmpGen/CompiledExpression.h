@@ -154,10 +154,10 @@ namespace AmpGen
     void debug( const double* event ) const
     {
       if ( !m_fcn.isLinked() ) {
-        ERROR( "Function " << name() << " not linked" );
+        FATAL( "Function " << name() << " not linked" );
       }
       if ( !m_fdb.isLinked() ) {
-        ERROR( "Function" << name() << " debugging symbols not linked" );
+        FATAL( "Function" << name() << " debugging symbols not linked" );
       }
       auto debug_results = m_fdb( &( m_externals[0] ), event );
       for( auto& debug_result : debug_results ){ 
@@ -174,7 +174,7 @@ namespace AmpGen
       const std::string symbol = progName() ;
       if ( m_fcn.set( handle, symbol ) == 0 ) {
         ERROR( dlerror() );
-        ERROR( name() << " (symbol = " << symbol << ") linking fails" );
+        FATAL( name() << " (symbol = " << symbol << ") linking fails" );
         return false;
       }
       if ( m_db.size() ==0 ) return true;

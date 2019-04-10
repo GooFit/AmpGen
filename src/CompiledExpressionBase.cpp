@@ -30,10 +30,16 @@ void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
 {
   if( m_resolver != nullptr ) delete m_resolver ; 
   m_resolver = new ASTResolver( m_evtMap, mps );
-  m_resolver->getOrderedSubExpressions( m_obj,  m_dependentSubexpressions ); 
-  for ( auto& sym : m_db ){ 
-    sym.second.resolve( *m_resolver ); 
-    m_resolver->getOrderedSubExpressions( sym.second, m_debugSubexpressions );
+  m_dependentSubexpressions = m_resolver->getOrderedSubExpressions( m_obj ); 
+  for ( auto& sym : m_db ){
+    auto expressions_for_this = m_resolver->getOrderedSubExpressions( sym.second); 
+    for( auto& it : expressions_for_this ){
+      bool isAlreadyInStack = false;
+      for( auto& jt : m_debugSubexpressions ){
+        if( it.first == jt.first ){ isAlreadyInStack = true; break ; }
+      }
+      if( !isAlreadyInStack ) m_debugSubexpressions.push_back( it );
+    }
   }
   m_cacheTransfers.clear();
   for( auto& expression : m_resolver->cacheFunctions() ) 

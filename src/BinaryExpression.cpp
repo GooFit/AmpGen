@@ -64,7 +64,7 @@ std::string Pow::to_string(const ASTResolver* resolver)         const { return "
 std::string Fmod::to_string(const ASTResolver* resolver)        const { return "fmod(" + lval.to_string(resolver) + ","   + rval.to_string(resolver) +")"; }
 std::string ATan2::to_string( const ASTResolver* resolver)      const { return "atan2("+ lval.to_string(resolver) + ","   + rval.to_string(resolver) +")"; }
 
-void IBinaryExpression::resolve( ASTResolver& resolver )
+void IBinaryExpression::resolve( ASTResolver& resolver ) const 
 {
   lval.resolve( resolver );
   rval.resolve( resolver );

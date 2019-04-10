@@ -63,7 +63,7 @@ namespace AmpGen{
             const double& max );
  
     Spline( const Spline& spline, const Expression& x );
-    void resolve( ASTResolver& resolver ) override ;
+    void resolve( ASTResolver& resolver ) const override ;
     std::string to_string(const ASTResolver* resolver=nullptr) const override;
     operator Expression() ;
     complex_t operator()() const override ;

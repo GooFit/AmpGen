@@ -49,6 +49,7 @@ int main( int argc, char* argv[] )
   std::vector<std::string> particles       = NamedParameter<std::string>("ParticleNames" , std::vector<std::string>() ).getVector();
   std::vector<std::string> monitorBranches = NamedParameter<std::string>("Monitors"      , std::vector<std::string>() ).getVector();
   std::vector<std::string> branchFormat    = NamedParameter<std::string>("BranchFormat"  , std::vector<std::string>() ).getVector();
+  std::vector<std::string> friends         = NamedParameter<std::string>("Friends"       , std::vector<std::string>() ).getVector();
   bool usePIDCalib                         = NamedParameter<bool>("usePIDCalib"             , false );
   bool rejectMultipleCandidates            = NamedParameter<bool>("rejectMultipleCandidates", true  );
   std::string cuts                         = vectorToString( NamedParameter<std::string>("Cut","").getVector() , " && "); 
@@ -61,6 +62,10 @@ int main( int argc, char* argv[] )
 
   TTree* in_tree = (TTree*)f->Get( treeName.c_str() );
   in_tree->SetBranchStatus( "*", 1 );
+  for( auto& frie : friends ){
+    auto tokens = split( frie, ':');
+    in_tree->AddFriend( tokens[1].c_str(), tokens[0].c_str() );
+  }
 
   INFO( "Using cut = " << cuts );
 
@@ -125,7 +130,7 @@ int main( int argc, char* argv[] )
     }
   }
 
-  EventList evts( in_tree, evtType, Branches(branches), EntryList(eventsToTake), GetGenPdf(false));
+  EventList evts( in_tree, evtType, Branches(branches), EntryList(eventsToTake), GetGenPdf(false), ApplySym(true) );
 
   INFO( "Branches = ["<< vectorToString(branches, ", " ) << "]" );
 

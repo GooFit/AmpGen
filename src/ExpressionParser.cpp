@@ -134,7 +134,7 @@ std::string MinuitParameterLink::name() const {
   return m_parameter->name();
 }
 
-void MinuitParameterLink::resolve( ASTResolver& resolver )
+void MinuitParameterLink::resolve( ASTResolver& resolver ) const
 {
   resolver.resolve(*this);
 }
@@ -165,7 +165,7 @@ std::string ExpressionPack::to_string(const ASTResolver* resolver) const
   return rt.substr( 0, rt.length() - 2 );
 }
 
-void ExpressionPack::resolve( ASTResolver& resolver )
+void ExpressionPack::resolve( ASTResolver& resolver ) const
 {
   for ( auto& expr : m_expressions ) expr.resolve( resolver );
 }

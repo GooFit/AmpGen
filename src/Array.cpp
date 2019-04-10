@@ -31,7 +31,7 @@ std::string Array::to_string(const ASTResolver* resolver) const {
   else return head +"[ int("+offset+")]";
 }
 
-void Array::resolve( ASTResolver& resolver )
+void Array::resolve( ASTResolver& resolver ) const
 {
   m_top.resolve( resolver );
   m_address.resolve( resolver );

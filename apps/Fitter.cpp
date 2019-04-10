@@ -135,13 +135,14 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
 
   if ( makePlots ) {
     auto ep = fr->getErrorPropagator();
+    const size_t      NBins    = NamedParameter<size_t>     ("nBins"     , 100         , "Number of bins used for plotting.");
 
     unsigned int counter = 1;
     for_each( pdf.m_pdfs, [&]( auto& f ) {
         std::function<double(const Event&)> FCN_sig = 
           [&](const Event& evt){ return f.prob_unnormalised(evt) ; };
         auto tStartIntegral2 = std::chrono::high_resolution_clock::now();
-        auto mc_plot3 = mc.makeProjections( mc.eventType().defaultProjections(100), WeightFunction(f), Prefix("tMC_Category"+std::to_string(counter) ) );
+        auto mc_plot3 = mc.makeProjections( mc.eventType().defaultProjections(NBins), WeightFunction(f), Prefix("tMC_Category"+std::to_string(counter) ) );
 
         //        auto mc_plot3        = bandPlot<100>( mc, "tMC_Category" + std::to_string( counter ) + "_", f, ep );
         auto tEndIntegral2   = std::chrono::high_resolution_clock::now();
@@ -233,10 +234,13 @@ int main( int argc, char* argv[] )
 
   EventList events( dataFile, !BAR ? evtType : evtType.conj() , CacheSize(defaultCacheSize), Filter(cut) );
   EventList eventsMC = mcFile == "" ? EventList( evtType) : EventList( mcFile, !BAR ? evtType : evtType.conj() , CacheSize(defaultCacheSize), Filter(simCut) ) ;
-  auto scale_transform = [](auto& event){ for( size_t x = 0 ; x < event.size(); ++x ) event[x] /= 1000.; };
-  INFO("Changing units from MeV -> GeV");
-  events.transform( scale_transform );
-  eventsMC.transform( scale_transform );
+  
+    auto scale_transform = [](auto& event){ for( size_t x = 0 ; x < event.size(); ++x ) event[x] /= 1000.; };
+  if( NamedParameter<std::string>("Units", "GeV").getVal()  == "MeV") {
+    INFO("Changing units from MeV -> GeV");
+    events.transform( scale_transform );
+  }
+    eventsMC.transform( scale_transform );
   
   INFO( "Data events: " << events.size() );  
   INFO( "MC events  : " << eventsMC.size() );
