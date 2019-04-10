@@ -67,4 +67,4 @@ Expression Norm::d() const { return 0;}
 Expression Real::d() const { return 0;} 
 Expression Imag::d() const { return 0;} 
 Expression LGamma::d() const { return 0;}
-void IUnaryExpression::resolve( ASTResolver& resolver ) { m_expression.resolve( resolver ); }
+void IUnaryExpression::resolve( ASTResolver& resolver ) const { m_expression.resolve( resolver ); }

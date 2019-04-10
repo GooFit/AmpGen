@@ -112,7 +112,6 @@ Tensor TransformSequence::operator()( const Transform::Representation& repr ) co
     else return Identity(4);
   }
   Tensor::Index a,b,c;
-
   Tensor rt = m_transforms[0](repr);
   rt.st();
   for( size_t i = 1 ; i < m_transforms.size(); ++i )

@@ -29,7 +29,7 @@ namespace AmpGen {
       bool hasSubExpressions() const;
       void reduceSubTrees(); 
       void cleanup();
-      void getOrderedSubExpressions( Expression& expression, std::vector<std::pair<uint64_t,Expression>>& dependentSubexpressions );
+      std::vector<std::pair<uint64_t,Expression>> getOrderedSubExpressions( const Expression& expression);
 
       template <class TYPE> void resolve( const TYPE& obj ){}
       template <class TYPE, class ...ARGS> size_t addCacheFunction( const std::string& name, const ARGS&... args )

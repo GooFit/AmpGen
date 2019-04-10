@@ -107,6 +107,7 @@ int main( int argc, char** argv )
   } 
   else if ( gen_type == "PolarisedSum" ){
     PolarisedSum sig( eventType, MPS );
+    
     RecursivePhaseSpace phsp( sig.matrixElements()[0].decayTree.quasiStableTree() , eventType, &rand );
     GenerateEvents( accepted, sig, phsp, nEvents, blockSize, &rand );
   }

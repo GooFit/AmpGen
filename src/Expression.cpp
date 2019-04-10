@@ -188,11 +188,11 @@ Expression::Expression( const double& value ) : m_expression( std::make_shared<C
 Expression::Expression( const complex_t& value ) : m_expression( std::make_shared<Constant>( value ) ) {}
 Expression::Expression() : m_expression( std::make_shared<Constant>( 0. ) ) {}
 
-void Expression::resolve( ASTResolver& resolver ) { m_expression->resolve( resolver ); }
+void Expression::resolve( ASTResolver& resolver ) const { m_expression->resolve( resolver ); }
                            
-void Constant::resolve( ASTResolver& resolver ) {}
+void Constant::resolve( ASTResolver& resolver ) const {}
 
-void Parameter::resolve( ASTResolver& resolver )
+void Parameter::resolve( ASTResolver& resolver ) const
 {
   if( !m_resolved ) resolver.resolve(*this);
 }
@@ -206,7 +206,7 @@ std::string Ternary::to_string(const ASTResolver* resolver) const
   return "(" + m_cond.to_string(resolver) + "?" + m_v1.to_string(resolver) + ":" + m_v2.to_string(resolver) + ")";
 }
 
-void Ternary::resolve( ASTResolver& resolver )
+void Ternary::resolve( ASTResolver& resolver ) const
 {
   m_cond.resolve( resolver );
   m_v1.resolve( resolver );
@@ -229,14 +229,14 @@ std::string Function::to_string(const ASTResolver* resolver) const {
   for( auto& arg : m_args ) rt += arg.to_string(resolver) + ", ";
   return rt.substr(0,rt.size()-2) + ")";
 }
-void Function::resolve( ASTResolver& resolver ) {}
+void Function::resolve( ASTResolver& resolver ) const {}
 
 std::string SubTree::to_string(const ASTResolver* /*resolver*/) const 
 {
   return "v"+ std::to_string(key());
 }
 
-void SubTree::resolve( ASTResolver& resolver ) 
+void SubTree::resolve( ASTResolver& resolver ) const  
 { 
   resolver.resolve( *this );
   m_expression.resolve( resolver );

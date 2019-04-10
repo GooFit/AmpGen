@@ -114,7 +114,7 @@ namespace AmpGen
       /// Resolve the dependencies of a tree using an ASTResolver,
       /// which keeps track of parameters, dependent sub-trees, etc.
       /// \param resolver resolver object to use 
-      virtual void resolve( ASTResolver& resolver ) = 0;
+      virtual void resolve( ASTResolver& resolver ) const = 0;
       /// virtual descructor
       virtual ~IExpression() = default;
       /// Evaluate the expression using the tree, 
@@ -134,7 +134,7 @@ namespace AmpGen
     ~Expression() = default;
     std::string to_string(const ASTResolver* resolver=nullptr) const;
     IExpression* get() const;
-    void resolve( ASTResolver& resolver );
+    void resolve( ASTResolver& resolver ) const;
     Expression operator+=( const Expression& other ) const;
     Expression operator*=( const Expression& other ) const;
     Expression operator-=( const Expression& other ) const;
@@ -157,7 +157,7 @@ namespace AmpGen
 
     Constant( const complex_t& value ) : m_value(value) {}
     std::string to_string(const ASTResolver* resolver=nullptr) const override;
-    void resolve( ASTResolver& resolver ) override;
+    void resolve( ASTResolver& resolver ) const override;
     operator Expression() const;
     complex_t operator()() const override { return m_value; }
     private:
@@ -177,7 +177,7 @@ namespace AmpGen
               const double&  defaultValue = 0 , 
               const bool&        resolved = false);
     std::string to_string(const ASTResolver* resolver = nullptr) const override;
-    void resolve( ASTResolver& resolver ) override;
+    void resolve( ASTResolver& resolver ) const override;
     operator Expression() const;
     complex_t operator()() const override { return complex_t( m_defaultValue, 0 ); }
     std::string name() const { return m_name; }
@@ -200,7 +200,7 @@ namespace AmpGen
   struct Ternary : public IExpression {
     Ternary( const Expression& cond, const Expression& v1, const Expression& v2 );
     std::string to_string(const ASTResolver* resolver = nullptr ) const override;
-    void resolve( ASTResolver& resolver ) override;
+    void resolve( ASTResolver& resolver ) const override;
     operator Expression() const ;
     complex_t operator()() const override { return std::real(m_cond()) ? m_v1() : m_v2(); }
     Expression m_cond;
@@ -212,7 +212,7 @@ namespace AmpGen
   struct SubTree : public IExpression { 
     SubTree( const Expression& other ) ;
     std::string to_string(const ASTResolver* resolver = nullptr ) const override ;
-    void resolve( ASTResolver& resolver ) override;
+    void resolve( ASTResolver& resolver ) const override;
     operator Expression() const ;
     complex_t operator()() const override { return m_expression(); }
     uint64_t key() const;
@@ -224,7 +224,7 @@ namespace AmpGen
   struct Function : public IExpression {
     Function( const std::string& name, const std::vector<Expression>& args ) ;
     std::string to_string(const ASTResolver* resolver = nullptr ) const override ;
-    void resolve( ASTResolver& resolver ) override;
+    void resolve( ASTResolver& resolver ) const override;
     operator Expression() const ;
     complex_t operator()() const override { return 0; }  
     std::string m_name;
@@ -236,7 +236,7 @@ namespace AmpGen
   class IBinaryExpression : public IExpression {
     public:
     IBinaryExpression( const Expression& l, const Expression& r ) : lval( l ), rval( r ){};
-    void resolve( ASTResolver& resolver ) override;
+    void resolve( ASTResolver& resolver ) const override;
     complex_t operator()() const override = 0;
     Expression l() const { return lval ; }
     Expression r() const { return rval ; }
@@ -288,7 +288,7 @@ namespace AmpGen
   class IUnaryExpression : public IExpression {
     public:
     IUnaryExpression( const Expression& other ) : m_expression( other ){};
-    void resolve( ASTResolver& resolver ) override;
+    void resolve( ASTResolver& resolver ) const override;
     complex_t operator()() const override = 0;
     virtual Expression d() const = 0; 
     Expression arg() const { return m_expression ;} 

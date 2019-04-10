@@ -91,7 +91,6 @@ namespace AmpGen
     Tensor operator-() const; 
 
     void st(const bool simplify=false);
-
     bool rankMatches( const Tensor& other );
    
     void imposeSymmetry( size_t indexA, size_t indexB);
@@ -137,7 +136,7 @@ namespace AmpGen
       auto up = std::tuple<ARGS...>(args...);
       for_each(up, [&rt]( auto& f ) { rt.emplace_back(f); } );
       return rt;
-    } 
+    }
   private:
     std::vector<size_t> m_dim;   
     std::vector<size_t> m_symmetrisedCoordinates; 
@@ -173,7 +172,7 @@ namespace AmpGen
     public:
       TensorExpression( const Tensor& tensor );
       std::string to_string(const ASTResolver* resolver) const override;
-      void resolve( ASTResolver& resolver ) override; 
+      void resolve( ASTResolver& resolver ) const override; 
       complex_t operator()() const override;
       operator Expression() const;
     

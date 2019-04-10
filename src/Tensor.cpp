@@ -658,7 +658,7 @@ TensorExpression::TensorExpression( const Tensor& tensor ) :
 std::string TensorExpression::to_string(const ASTResolver* resolver) const {
   return m_tensor.to_string(resolver);
 }
-void TensorExpression::resolve( ASTResolver& resolver ){ 
+void TensorExpression::resolve( ASTResolver& resolver ) const { 
   for( size_t i = 0 ; i < m_tensor.size(); ++i ) m_tensor[i].resolve( resolver );
 }
 

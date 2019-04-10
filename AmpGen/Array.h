@@ -26,7 +26,7 @@ namespace AmpGen
     public:
       Array( const Expression& top, const size_t& size, const Expression& address = 0 );
       std::string to_string(const ASTResolver* resolver=nullptr) const override ;
-      void resolve( ASTResolver& resolver ) override;
+      void resolve( ASTResolver& resolver ) const override;
       operator Expression(); 
       complex_t operator()() const override;
       Expression operator[]( const Expression& address ) const;

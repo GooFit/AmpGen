@@ -103,7 +103,6 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
   for ( auto& include : m_includes ) output << "#include <" << include << ">\n";
   for ( auto& expression : expressions ) output << *expression << std::endl; 
   output.close();
-
   compileSource( cname, oname );
   for( auto& expression : expressions ) expression->link( oname );
   auto twall_end  = std::chrono::high_resolution_clock::now();
@@ -169,6 +168,5 @@ void CompilerWrapper::preamble( std::ostream& os ) const
   #endif
   os << '\n';
   os << "*/\n";
-
   for ( auto& include : m_includes ) os << "#include <" << include << ">\n";
 }

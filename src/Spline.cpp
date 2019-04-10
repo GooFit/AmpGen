@@ -154,7 +154,7 @@ void SplineTransfer::transfer( CompiledExpressionBase* destination )
   }
 }
 
-void Spline::resolve( ASTResolver& resolver )
+void Spline::resolve( ASTResolver& resolver ) const
 {
   resolver.resolve(*this);
   m_x.resolve(resolver);

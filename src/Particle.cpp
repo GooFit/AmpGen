@@ -28,6 +28,7 @@
 #include "AmpGen/Types.h"
 
 using namespace AmpGen;
+using namespace std::complex_literals; 
 
 Particle::Particle()
 {
@@ -390,7 +391,8 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   {
     FATAL("Invalid value for SpinFormalism: " << spinFormalism << ", possible values are: " << italic_on << " Covariant, Canonical." << italic_off  );
   }
-  Expression total( 0 );
+  Expression total = 0;
+  Tensor::Index a;
   auto finalStateParticles  = getFinalStateParticles();
   auto orderings            = identicalDaughterOrderings();
   bool doSymmetrisation = !hasModifier("NoSym");
@@ -410,16 +412,20 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
         Tensor is = Bar( externalSpinTensor(m_polState) );
         ADD_DEBUG_TENSOR( externalSpinTensor(m_polState), db );
         ADD_DEBUG_TENSOR( st, db );
-        Tensor::Index a;
         if( st.size() != 4 ){ 
           ERROR("Spin tensor is the wrong rank = " << st.dimString() ); 
           spinFactor = 1; 
         }
         else { spinFactor = is(a) * st(a) ; }
       }
+      if( m_props->twoSpin() == 2 ){
+        Tensor is  = externalSpinTensor(m_polState).conjugate();
+        ADD_DEBUG_TENSOR(is, db );
+        spinFactor = dot(is,st);
+      }
     }
     if ( includeSpin && spinFormalism == "Canonical" ){
-      spinFactor = helicityAmplitude( *this, TransformSequence(), double(polState())/2.0, db ); 
+      spinFactor = helicityAmplitude(*this, TransformSequence(), m_props->isBoson() ? polState() : double(polState())/2.0, db);
     }
     if( db != nullptr ){
       std::string finalStateString="";
@@ -479,35 +485,33 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
   if ( spin() == 0 )
     return Tensor( std::vector<double>( {1.} ), std::vector<size_t>( {1} ) );
   Tensor p        = P();
-  Expression pX   = p.get(0) ;
-  Expression pY   = p.get(1) ;
-  Expression pZ   = p.get(2) ;
-  Expression pE   = p.get(3) ;
+  Expression pX   = p.get(0);
+  Expression pY   = p.get(1);
+  Expression pZ   = p.get(2);
+  Expression pE   = p.get(3);
   Expression pP   = fcn::sqrt( pX*pX + pY*pY + pZ*pZ );
-  Expression m    = fcn::sqrt( dot( p, p ) );
-  complex_t I(0,1);
-  Expression z    = pX + I*pY; 
-  Expression zb   = pX - I*pY;
+  Expression m    = mass();
+  Expression z    = pX + 1i*pY; 
+  Expression zb   = pX - 1i*pY;
   auto id = props()->pdgID(); 
   if ( m_props->twoSpin() == 2 && m_spinBasis == "Weyl" ) {
-    Expression N = 1 / ( m * fcn::sqrt( 2 ) );
-    Expression em = pE+m;
-    if( polState ==  0 ) return    Tensor( { pX*pZ/(m*em), pY*pZ/(m*em), 1. + pZ*pZ/(m*em), pZ/m } );
-    if( polState ==  1 ) return -N*Tensor( { m + pX*zb/em, pY*zb/em -m*I, pZ*zb, zb } ); 
-    if( polState == -1 ) return  N*Tensor( { m + pX*z/em, pY*z/em + m*I, pZ*z, z } ); 
+    Expression N = 1./(sqrt(2)); 
+    Expression invPT2 = make_cse(Ternary( pX*pX + pY*pY > 1e-6, 1./(pX*pX+pY*pY), 0 ));
+    Expression invP   = make_cse(Ternary( pP            > 1e-6, 1./pP,0));
+    Expression pZoverP = make_cse(Ternary( pP > 1e-6, pZ/pP, 1) );
+    Expression f = (pP-pZ)*invPT2;
+    if(polState ==  1) return N * Tensor({-pZoverP + 1i*z *pY*f*invP, -1i*pZoverP - 1i*z *pX*f*invP, z*invP           , 0.  }); 
+    if(polState == -1) return N * Tensor({ pZoverP + 1i*zb*pY*f*invP, -1i*pZoverP - 1i*zb*pX*f*invP,-zb*invP          , 0.  });
+    if(polState ==  0) return     Tensor({pX*pE*invP/m    , pY*pE*invP/m       , pZoverP*pE/m, pP/m}); 
   }
   if( m_props->twoSpin() == 2 && m_spinBasis == "Dirac" ){
-    Expression invPT2 = Ternary( pX*pX + pY*pY > 1e-6, 1./(pX*pX+pY*pY), 0 );
-    if( m_props->mass() == 0  ){
-      Expression N = 1./(pP*sqrt(2)); 
-      if( polState ==  1 ) return N * Tensor({ -pZ - pY*invPT2*(pP-pZ)*(pY-I*pX), 
-          -I*pZ + pX*invPT2*(pP-pZ)*(pY-I*pX),
-          ( pX + I*pY), 0 } );
-      if( polState == -1 ) return N * Tensor({ pZ + pY*invPT2*(pP-pZ)*(pY+I*pX), 
-          I*pZ - pX*invPT2*(pP-pZ)*(pY+I*pX),
-          ( -pX + I*pY), 0 } );
-      if( polState == 0 ) ERROR("Photon should does not have a rest frame, cannot be in m=0 state");
-    }
+    if( name() == "gamma0" ){
+      ERROR("Use the Weyl (helicity) basis for calculations involving photons, as they don't have a rest frame. This will result in ill-defined amplitudes.");
+    } 
+    Expression N = make_cse(1./(m*(pE + m)));
+    if( polState ==  1 ) return -Tensor({1.+ z *pX*N,  1i +  z*pY*N,  z*pZ*N    ,  z*m })/sqrt(2);
+    if( polState == -1 ) return  Tensor({1.+ zb*pX*N, -1i + zb*pY*N, zb*pZ*N    , zb*m })/sqrt(2);
+    if( polState == -1 ) return  Tensor({pX*pZ*N    ,       pY*pZ*N, 1 + pZ*pZ*N, pZ/m });
   }
   if( m_props->twoSpin() == 1 && m_spinBasis == "Weyl" ){
     Expression n       = fcn::sqrt( 2 * pP*(pP+pZ) );
@@ -518,10 +522,10 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
     Expression xi11    = make_cse(Ternary( aligned,  0,  z/n ));
     Expression xi00    = make_cse(Ternary( aligned,  0, -zb/n ));
     Expression xi01    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
-    if(id > 0 && polState ==  1 ) return Tensor({ fa*xi10,  fa*xi11,  fb*xi10,  fb*xi11 } );
-    if(id > 0 && polState == -1 ) return Tensor({ fa*xi00,  fa*xi01, -fb*xi00, -fb*xi01 } );
-    if(id < 0 && polState ==  1 ) return Tensor({ fb*xi00,  fb*xi01,  -fa*xi00,  -fa*xi01 } );
-    if(id < 0 && polState == -1 ) return Tensor({ fb*xi10,  fb*xi11, -fa*xi01,  -fa*xi11 } );
+    if(id > 0 && polState ==  1) return Tensor({ fa*xi10,  fa*xi11,  fb*xi10,  fb*xi11 } );
+    if(id > 0 && polState == -1) return Tensor({ fa*xi00,  fa*xi01, -fb*xi00, -fb*xi01 } );
+    if(id < 0 && polState ==  1) return Tensor({ fb*xi00,  fb*xi01,  -fa*xi00,  -fa*xi01 } );
+    if(id < 0 && polState == -1) return Tensor({ fb*xi10,  fb*xi11, -fa*xi01,  -fa*xi11 } );
   } 
   if ( m_props->twoSpin() == 1 && m_spinBasis == "Dirac" )
   {
@@ -563,17 +567,14 @@ std::pair<size_t, size_t> Particle::orbitalRange( const bool& conserveParity ) c
   const int S  = m_props->twoSpin();
   const int s1 = daughter( 0 )->props()->twoSpin();
   const int s2 = daughter( 1 )->props()->twoSpin();
-
   int min                                  = std::abs( S - s1 - s2 );
   if ( std::abs( S + s1 - s2 ) < min ) min = std::abs( S + s1 - s2 );
   if ( std::abs( S - s1 + s2 ) < min ) min = std::abs( S - s1 + s2 );
   int max                                  = S + s1 + s2;
-
   min /= 2;
   max /= 2;
   DEBUG( "Range = " << min << " -> " << max << " conserving parity ? " << conserveParity << " J = " << S << " s1= " << s1 << " s2= " << s2 );
-  if ( conserveParity == false ) return {min, max};
-  
+  if ( conserveParity == false ) return {min, max}; 
   int l = min;
   for ( ; l < max + 1; ++l ) if( conservesParity(l) ) break;
   if ( l == max + 1 ) return {999, 999};

@@ -194,9 +194,36 @@ namespace AmpGen
          normally associated to the @f$ K^*(1430)^{0} @f$ resonance.
          The total amplitude is therefore:
          @f[
-          \mathcal{A}(s)  = \frac{2 a \sqrt{s} }{ 2 + arq^2 - 2iaq} + \frac{2+arq^2 + 2iaq}{2+arq^2 - 2iaq }\mathcal{A}_{BW}(s).
+          \mathcal{A}(s)  = \frac{2 a \sqrt{s} }{ 2 + arq^2 - 2iaq} + \frac{2+arq^2 + 2iaq}{2+arq^2 - 2iaq }\mathcal{A}_{BW}(s) = \mathcal{A}_{NR}(s) + \mathcal{A}^{\prime}_{BW}(s).
          @f]
-         As this expression somewhat resembles the sum of a Breit-Wigner with a slowly varying nonresonant component, the two parts are sometimes split apart with an additional production amplitude placed on one or the other. These can be accessed separately using the modifiers LASS.BW and LASS.NR.
+         As this expression somewhat resembles the sum of a Breit-Wigner with a slowly varying nonresonant component, the two parts are sometimes split apart with an additional production amplitude placed on one or the other. 
+         These can be accessed separately using the modifiers LASS.BW and LASS.NR, and given independent coupling constants. From the user interface:
+         \code{.cpp}
+           K*(1430)bar0[LASS.NR]{K-,pi+}  0 2.0 0.1 0 -90  0.1
+           K*(1430)bar0[LASS.BW]{K-,pi+}  0 1.5 0.1 0  20  0.1
+         \endcode 
+         Corresponds to the overall lineshape: 
+         @f[
+           \mathcal{A}(s)
+           = \left(\texttt{K*(1430)bar0[LASS.NR]{K-,pi+}}\right) \mathcal{A}_{NR}(s) + 
+             \left(\texttt{K*(1430)bar0[LASS.BW]{K-,pi+}}\right) \mathcal{A}^{\prime}_{BW}(s) 
+           = 2.0 e^{-90^\mathrm{o}} \mathcal{A}_{NR}(s) + 1.5 e^{-20^\mathrm{o}} \mathcal{A}^{\prime}_{BW}(s).
+         @f]
+         An alternative way to introduce a different coupling between the two components is to fix one coupling and to introduce an additional production coupling. 
+         In the user interface, this might for example in @f$ D^{0} \to K^{-} \pi^{+} \pi^{0} @f$ decays:
+         \code{.cpp}
+           D0{K*(1430)bar0,pi0}           0 1.3 0.0 0  15  0.1
+           K*(1430)bar0[LASS.NR]{K-,pi+}  0 2.0 0.1 0 -90  0.1
+           K*(1430)bar0[LASS.BW]{K-,pi+}  2 1.0 0.0 0   0  0.0
+         \endcode 
+         Then the lineshape with production couplings will be: 
+         @f[
+           \mathcal{A}(s)
+           = \left(\texttt{D0{K*(1430)bar0,pi0}}\right)\left(
+           = \left(\texttt{K*(1430)bar0[LASS.NR]{K-,pi+}}\right) \mathcal{A}_{NR}(s) + 
+             \mathcal{A}^{\prime}_{BW}(s) \right)
+           = 1.3 e^{15^\mathrm{o}} \left( 2.0 e^{-90^\mathrm{o}} \mathcal{A}_{NR}(s) + \mathcal{A}^{\prime}_{BW}(s) \right).
+         @f]
         
         Parameter              | User name                            | Description 
         -----------------------|--------------------------------------|------------------------------------------------------------------------

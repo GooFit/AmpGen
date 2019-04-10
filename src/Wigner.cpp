@@ -21,6 +21,7 @@
 
 using namespace AmpGen;
 using namespace AmpGen::fcn;
+using namespace std::complex_literals; 
 
 double fact( const double& z )
 {
@@ -97,7 +98,7 @@ double AmpGen::CG(
   return sqrt(norm) * sum ; 
 }
 
-TransformSequence AmpGen::helicityTransformMatrix( const Tensor& P, 
+TransformSequence AmpGen::wickTransform( const Tensor& P, 
     const Expression& mass,
     const int& ve,
     const bool& handleZero )
@@ -112,12 +113,13 @@ TransformSequence AmpGen::helicityTransformMatrix( const Tensor& P,
   Transform rot  = ve == + 1 ? Transform( cos_theta,  sin_phi*x - cos_phi*y, Transform::Type::Rotate) :
                                Transform(-cos_theta, -sin_phi*x + cos_phi*y, Transform::Type::Rotate) ;
 
-//  Transform boost( P[3]/mass, (ve==+1) ? z : -z, Transform::Type::Boost );
-  Transform boost( P[3]/mass, z, Transform::Type::Boost );
   TransformSequence sequence;
-  sequence.add( rot );
+  sequence.add(rot);
   if( ve == -1 ) sequence.add( Transform( -1, x, Transform::Type::Rotate ) );
-  sequence.add( boost ) ;
+  if( std::real(mass()) != 0. ){
+    Transform boost( P[3]/mass, z, Transform::Type::Boost );
+    sequence.add(boost); 
+  }
   return sequence; 
 }
 
@@ -130,12 +132,13 @@ Expression AmpGen::wigner_D(const Tensor& P,
 {
   Expression pz = make_cse( P[2] / sqrt( P[0]*P[0] + P[1] * P[1] + P[2]*P[2] ) );  
   Expression pt2 = make_cse( P[0]*P[0] + P[1]*P[1] );
-  Expression px = P[0] / sqrt( pt2 );
-  Expression py = P[1] / sqrt( pt2 );
+  Expression px = P[0] / sqrt(pt2);
+  Expression py = P[1] / sqrt(pt2);
 
-  Expression I(std::complex<double>(0,1));
   auto little_d = make_cse ( wigner_d( pz, J, lA, lB ) );
   if( J != 0 && db != nullptr ){
+    db->emplace_back("pt2", pt2 );
+    db->emplace_back("p2" , sqrt( P[0]*P[0] + P[1] * P[1] + P[2]*P[2] ) );
     db->emplace_back("ϕ("+name+")", atan2( py, px ) );
     db->emplace_back("θ("+name+")", pz );
     db->emplace_back("d[" + std::to_string(J)  +", " + 
@@ -143,9 +146,9 @@ Expression AmpGen::wigner_D(const Tensor& P,
                             std::to_string(lB) +"](θ)", little_d );
     db->emplace_back("D[" + std::to_string(J)  +", " + 
                             std::to_string(lA) +", " + 
-                            std::to_string(lB) +"](Ω)", fpow(px+I*py,lB-lA) * little_d );
+                            std::to_string(lB) +"](Ω)", fpow(px+1i*py,lB-lA) * little_d );
   }
-  return  fpow( px + I * py, lB - lA ) * little_d; 
+  return  fpow( px + 1i* py, lB - lA ) * little_d; 
 }
 
 std::vector<LS> AmpGen::calculate_recoupling_constants( 
@@ -173,62 +176,38 @@ std::vector<LS> AmpGen::calculate_recoupling_constants(
   return rt;
 }
 
-/*
-Tensor AmpGen::basis_spinor(const Tensor& p, const int& polState, const int& id, DebugSymbols* db )
-{
-  Expression pX   = p.get(0) ;
-  Expression pY   = p.get(1) ;
-  Expression pZ   = p.get(2) ;
-  Expression pE   = p.get(3) ;
-  Expression pP   = fcn::sqrt( pX*pX + pY*pY + pZ*pZ );
-  Expression m    = fcn::sqrt( dot( p, p ) );
-  
-  complex_t I(0,1);
-  Expression z         = pX + I*pY; 
-  Expression zb        = pX - I*pY;
-  Expression n         = fcn::sqrt( 2 * pP*(pP+pZ) );
-  Expression fa      = fcn::sqrt( (pE + m)/(2*m) );
-  Expression fb      = fcn::sqrt( (pE - m)/(2*m) );
-  Expression aligned = make_cse( Abs(pP + pZ) < 10e-6 ) ;
- 
-  Expression xi10    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
-  Expression xi11    = make_cse(Ternary( aligned,  0, z/n ));
-
-  Expression xi00    = make_cse(Ternary( aligned,  0, -zb/n ));
-  Expression xi01    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
-    
-  if(id > 0 && polState ==  1 ) return Tensor({fa*xi10, fa*xi11,  fb*xi10,  fb*xi11});
-  if(id > 0 && polState == -1 ) return Tensor({fa*xi00, fa*xi01, -fb*xi00, -fb*xi01});
-  if(id < 0 && polState ==  1 ) return Tensor({fb*xi00, fb*xi01, -fa*xi00, -fa*xi01});
-  if(id < 0 && polState == -1 ) return Tensor({fb*xi10, fb*xi11, -fa*xi01, -fa*xi11});
-
-  ERROR("Shouldn't reach here...");
-  return Tensor();
-}
-*/
 Tensor AmpGen::basisSpinor(const int& polState, const int& id)
 {
   if(id > 0 && polState ==  1 ) return Tensor({1, 0, 0, 0}, Tensor::dim(4));
   if(id > 0 && polState == -1 ) return Tensor({0, 1, 0, 0}, Tensor::dim(4));
   if(id < 0 && polState ==  1 ) return Tensor({0, 0, 1, 0}, Tensor::dim(4));
   if(id < 0 && polState == -1 ) return Tensor({0, 0, 0, 1}, Tensor::dim(4));
-  ERROR("Shouldn't reach here...");
+  ERROR("Shouldn't reach here..., polState = " << polState << " id = " << id );
   return Tensor();
 }
 
+Tensor AmpGen::basisVector(const int& polState)
+{
+  double N    = 1./sqrt(2);
+  if( polState ==  0 ) return    Tensor(std::vector<complex_t>({0., 0.,1.,0.}), Tensor::dim(4));
+  if( polState ==  1 ) return -N*Tensor(std::vector<complex_t>({1., 1i,0.,0.}), Tensor::dim(4));
+  if( polState == -1 ) return  N*Tensor(std::vector<complex_t>({1.,-1i,0.,0.}), Tensor::dim(4));
+  ERROR("Shouldn't reach here..., polState = " << polState);
+  return Tensor();
+}
 
 std::vector<LS> userHelicityCouplings( const std::string& key ){
   std::vector<LS> couplings;  
   auto things = NamedParameter<double>( key, 0).getVector();
-    if( things.size() % 3 != 0 ) ERROR("Wrong number of tokens");
-    for( size_t i = 0 ; i < things.size(); i+=3 ){
-      LS coupling; 
-      coupling.factor = things[i+0];
-      coupling.m1     = things[i+1];
-      coupling.m2     = things[i+2];
-      couplings.push_back(coupling);
-    }
-    return couplings;
+  if( things.size() % 3 != 0 ) ERROR("Wrong number of tokens");
+  for( size_t i = 0 ; i < things.size(); i+=3 ){
+    LS coupling; 
+    coupling.factor = things[i+0];
+    coupling.m1     = things[i+1];
+    coupling.m2     = things[i+2];
+    couplings.push_back(coupling);
+  }
+  return couplings;
 }
 
 
@@ -241,57 +220,55 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   if( particle.daughters().size() > 2 ) return 1; 
   if( particle.daughters().size() == 1 ) 
     return helicityAmplitude( *particle.daughter(0), parentFrame, Mz, db, sgn );
-
   Tensor::Index a,b,c; 
   auto myFrame = parentFrame; 
   if( particle.spin() == 0 ) myFrame.clear();
-  Tensor pInParentFrame = parentFrame( particle.P() );
+  Tensor pInParentFrame = parentFrame(particle.P());
   pInParentFrame.st();
-  if( ! particle.isHead() ){
-    auto my_sequence = helicityTransformMatrix( pInParentFrame, 
-                                                fcn::sqrt(particle.massSq()), 
-                                                sgn, 
-                                                true );
-    myFrame.add( my_sequence );
-  } 
+  auto my_sequence = wickTransform(pInParentFrame, fcn::sqrt(particle.massSq()), sgn, true );
+  if( ! particle.isHead() ) myFrame.add( my_sequence );
   if( particle.isStable() )
   {
     if( particle.spin() == 0 ) return Mz==0;
+    // polarisation spinor / vector etc. in the quantisation of the lab (i.e. along the z-axis or lab particle momentum)
+    auto labPol = particle.externalSpinTensor(particle.polState(), db); 
+    ADD_DEBUG_TENSOR(labPol, db);
+    auto inverseMyTransform = myFrame.inverse();
     if( particle.spin() == 0.5 )
     {
-      auto tensor                   = particle.externalSpinTensor(particle.polState(), db); 
-      auto helicity_tensor          = basisSpinor( 2*Mz, particle.props()->pdgID() ); 
-      auto it = myFrame.inverse();
-      auto helicity_in_frame = it( helicity_tensor, Transform::Representation::Bispinor ); 
-      auto w = Bar(helicity_in_frame)(a) * tensor(a);
-      ADD_DEBUG_TENSOR( helicity_tensor, db ); 
-      ADD_DEBUG_TENSOR( helicity_in_frame ,db);
-      ADD_DEBUG_TENSOR( tensor ,db ); 
-      ADD_DEBUG(w, db);
-      return w;
+      auto basisSpinor_m1         = basisSpinor( 2*Mz, particle.props()->pdgID() );
+      auto labSpinor_m1           = inverseMyTransform( basisSpinor_m1, Transform::Representation::Bispinor );
+      ADD_DEBUG_TENSOR(labSpinor_m1, db); 
+      return make_cse( Bar(labSpinor_m1)(a)*labPol(a) );
+    }
+    if( particle.spin() == 1 )
+    {
+      auto frameVector = basisVector(Mz);
+      auto labVector   = inverseMyTransform( frameVector, Transform::Representation::Vector );   
+      auto rp = dot( labVector.conjugate(), labPol );
+      ADD_DEBUG_TENSOR(labVector, db); 
+      ADD_DEBUG(rp, db );
+      return rp; 
     }
   }
-
   auto particle_couplings = particle.spinOrbitCouplings(false);
   auto L = particle.orbital();
-  auto& d0 = *particle.daughter(0);
-  auto& d1 = *particle.daughter(1);
-
+  auto& d1 = *particle.daughter(0);
+  auto& d2 = *particle.daughter(1);
   double S = 999;
   if( particle.S() == 0 ){ 
     for( auto& l : particle_couplings ) if( l.first == L ){ S = l.second ; break; }
     if( S == 999 ) ERROR("Spin orbital coupling impossible!");
   }
-  else S = particle.S() /2.;
-  
-  auto recoupling_constants = calculate_recoupling_constants( particle.spin(), Mz, L, S, d0.spin(), d1.spin() );
+  else S = particle.S()/2.;
+  auto recoupling_constants = calculate_recoupling_constants( particle.spin(), Mz, L, S, d1.spin(), d2.spin() );
   auto mod = particle.attribute("helAmp");
   if( mod != stdx::nullopt ) recoupling_constants = userHelicityCouplings( mod.value() );
 
   if( recoupling_constants.size() == 0 ){    
     WARNING( particle.uniqueString() << " " << particle.spin() << " " << 
         particle.orbitalRange(false).first << " " << particle.orbitalRange(false).second 
-        <<  " transition Mz="<< Mz << " to " << d0.spin() << " x " << d0.spin() << " cannot be coupled in (LS) = " << L << ", " << S ); 
+        <<  " transition Mz="<< Mz << " to " << d1.spin() << " x " << d2.spin() << " cannot be coupled in (LS) = " << L << ", " << S ); 
     WARNING( "Possible (LS) combinations = " << 
       vectorToString( particle_couplings, ", ", []( auto& ls ){ return "("+std::to_string(int(ls.first)) + ", " + std::to_string(ls.second) +")";} ) );
   } 
@@ -299,9 +276,11 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   for( auto& coupling : recoupling_constants )
   {          
     auto dm = coupling.m1 - coupling.m2;
-    auto term = wigner_D(myFrame(d0.P()), particle.spin(), Mz, dm,db, d0.name() );
-    auto h1   = helicityAmplitude(d0, myFrame, coupling.m1, db, +1);
-    auto h2   = helicityAmplitude(d1, myFrame, coupling.m2, db, -1);
+    if( (d1.name() == "gamma0" && coupling.m1 == 0) || 
+        (d2.name() == "gamma0" && coupling.m2 == 0) ) continue;
+    auto term = wigner_D(myFrame(d1.P()), particle.spin(), Mz, dm,db, d1.name());
+    auto h1   = helicityAmplitude(d1, myFrame, coupling.m1, db, +1);
+    auto h2   = helicityAmplitude(d2, myFrame, coupling.m2, db, -1);
     if( db != nullptr ){ 
       db->emplace_back( "coupling" , coupling.factor );
       if( coupling.factor != 1 ) db->emplace_back( "C x DD'", coupling.factor * term * h1 * h2 );

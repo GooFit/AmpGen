@@ -44,7 +44,6 @@ PolarisedSum::PolarisedSum( const EventType& type,
   std::string objCache = NamedParameter<std::string>("PolarisedSum::ObjectCache",""    );
   m_verbosity          = NamedParameter<bool>(       "PolarisedSum::Verbosity"  ,0     );
   m_rules = AmplitudeRules(mps);
-
   auto proto_amplitudes = m_rules.getMatchingRules( type, prefix);
   auto production_polarisations = polarisations( type.mother() ); 
   std::vector<std::vector<int>> allStates;
@@ -62,12 +61,12 @@ PolarisedSum::PolarisedSum( const EventType& type,
     DebugSymbols syms;  
     for( auto& polState : allStates ){
       set_polarisation_state( matrix_element, polState );
-      thisExpression[ i++ ] = make_cse( matrix_element.first.getExpression(&syms) ); 
+      thisExpression[i++] = make_cse( matrix_element.first.getExpression(&syms) ); 
     }
     CompiledExpression< std::vector<complex_t> , const real_t*, const real_t* > expression( 
         TensorExpression( thisExpression), 
         matrix_element.first.decayDescriptor(),
-        type.getEventFormat(),debug ? syms : DebugSymbols() ,&mps ); 
+        type.getEventFormat(), debug ? syms : DebugSymbols() ,&mps ); 
     m_matrixElements.emplace_back(matrix_element.first, matrix_element.second, expression );
   } 
   for( auto& polState : allStates){
