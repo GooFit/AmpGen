@@ -135,14 +135,14 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
 
   if ( makePlots ) {
     auto ep = fr->getErrorPropagator();
-    const size_t      NBins    = NamedParameter<size_t>     ("nBins"     , 100         , "Number of bins used for plotting.");
+//    const size_t      NBins    = NamedParameter<size_t>     ("nBins"     , 100         , "Number of bins used for plotting.");
 
     unsigned int counter = 1;
     for_each( pdf.m_pdfs, [&]( auto& f ) {
         std::function<double(const Event&)> FCN_sig = 
           [&](const Event& evt){ return f.prob_unnormalised(evt) ; };
         auto tStartIntegral2 = std::chrono::high_resolution_clock::now();
-        auto mc_plot3 = mc.makeProjections( mc.eventType().defaultProjections(NBins), WeightFunction(f), Prefix("tMC_Category"+std::to_string(counter) ) );
+        auto mc_plot3 = mc.makeProjections( mc.eventType().defaultProjections(100), WeightFunction(f), Prefix("tMC_Category"+std::to_string(counter) ) );
 
         //        auto mc_plot3        = bandPlot<100>( mc, "tMC_Category" + std::to_string( counter ) + "_", f, ep );
         auto tEndIntegral2   = std::chrono::high_resolution_clock::now();
