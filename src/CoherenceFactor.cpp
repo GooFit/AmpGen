@@ -517,32 +517,6 @@ void CoherenceFactor::calculateNorms()
   id.flush();
 }
 
-std::vector<unsigned int> CoherentSum::cacheAddresses( const EventList& evts ) const
-{
-  std::vector<unsigned int> addresses;
-  for ( auto& mE : m_matrixElements ) {
-    addresses.push_back( evts.getCacheIndex( mE.pdf ) );
-  }
-  return addresses;
-}
-
-complex_t CoherentSum::getVal( const Event& evt ) const
-{
-  complex_t value( 0., 0. );
-  for ( auto& mE : m_matrixElements ) {
-    value += mE.coefficient * evt.getCache( mE.addressData );
-  }
-  return value;
-}
-
-complex_t CoherentSum::getVal( const Event& evt, const std::vector<unsigned int>& cacheAddresses ) const
-{
-  complex_t value( 0., 0. );
-  for ( unsigned int i = 0; i < m_matrixElements.size(); ++i )
-    value += m_matrixElements[i].coefficient * evt.getCache( cacheAddresses[i] );
-  return value;
-}
-
 unsigned int CoherenceFactor::getBinNumber( const Event& event ) const
 {
   int voxelID = m_voxels.getBinNumber( event );

@@ -77,6 +77,9 @@ template <class T> void generate_source(T& pdf, EventList& normEvents, const std
     double pMax = 0 ;
     pdf.setEvents( normEvents );
     pdf.prepare();
+    normEvents[0].print();
+    normEvents[0].printCache();
+    INFO( pdf.prob_unnormalised( normEvents[0] ) );
     for ( auto& evt : normEvents ) {
       if( type == "PolarisedSum" ){ 
         double px, py, pz; 

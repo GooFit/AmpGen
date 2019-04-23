@@ -100,7 +100,7 @@ DEFINE_LINESHAPE( CoupledChannel )
   ADD_DEBUG( s , dbexpressions );
   for( size_t i = 0 ; i < channels.size(); i+=2 ){
     Particle p( channels[i] ); 
-    INFO( "Adding channel ... " << p.uniqueString() << " coupling = " << NamedParameter<std::string>( channels[i+1]  ) );
+    DEBUG( "Adding channel ... " << p.uniqueString() << " coupling = " << NamedParameter<std::string>( channels[i+1]  ) );
     Expression coupling = Parameter(channels[i+1], 0);
     totalWidth       = totalWidth       + coupling * phaseSpace(s        , p, p.orbital());
     totalWidthAtPole = totalWidthAtPole + coupling * phaseSpace(mass*mass, p, p.orbital());    
