@@ -515,17 +515,18 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
   }
   if( m_props->twoSpin() == 1 && m_spinBasis == "Weyl" ){
     Expression n       = fcn::sqrt( 2 * pP*(pP+pZ) );
-    Expression fa      = fcn::sqrt( (pE + m)/(2*m) );
-    Expression fb      = fcn::sqrt( (pE - m)/(2*m) );
+    double isqrt_two   = 1./sqrt(2);
+    Expression fa      = fcn::sqrt(pE/m + 1);
+    Expression fb      = fcn::sqrt(pE/m - 1);
     Expression aligned = make_cse( Abs(pP + pZ) < 10e-6 ) ;
     Expression xi10    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
     Expression xi11    = make_cse(Ternary( aligned,  0,  z/n ));
     Expression xi00    = make_cse(Ternary( aligned,  0, -zb/n ));
     Expression xi01    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
-    if(id > 0 && polState ==  1) return Tensor({ fa*xi10,  fa*xi11,  fb*xi10,  fb*xi11 } );
-    if(id > 0 && polState == -1) return Tensor({ fa*xi00,  fa*xi01, -fb*xi00, -fb*xi01 } );
-    if(id < 0 && polState ==  1) return Tensor({ fb*xi00,  fb*xi01,  -fa*xi00,  -fa*xi01 } );
-    if(id < 0 && polState == -1) return Tensor({ fb*xi10,  fb*xi11, -fa*xi01,  -fa*xi11 } );
+    if(id > 0 && polState ==  1) return isqrt_two * Tensor({ fa*xi10,  fa*xi11,  fb*xi10,  fb*xi11 } );
+    if(id > 0 && polState == -1) return isqrt_two * Tensor({ fa*xi00,  fa*xi01, -fb*xi00, -fb*xi01 } );
+    if(id < 0 && polState ==  1) return isqrt_two * Tensor({ fb*xi00,  fb*xi01,  -fa*xi00,  -fa*xi01 } );
+    if(id < 0 && polState == -1) return isqrt_two * Tensor({ fb*xi10,  fb*xi11, -fa*xi01,  -fa*xi11 } );
   } 
   if ( m_props->twoSpin() == 1 && m_spinBasis == "Dirac" )
   {

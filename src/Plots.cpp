@@ -1,4 +1,4 @@
-
+#if __cplusplus >= 201402L
 #include "AmpGen/ErrorPropagator.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/CoherentSum.h"
@@ -69,3 +69,4 @@ void AmpGen::perAmplitudePlot( const EventList& evts,
   dir->Write();
   gFile->cd();
 }
+#endif

@@ -65,7 +65,7 @@ void Minimiser::prepare()
 {
   std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse");
   size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
-  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 0.01);
+  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 0.1);
   m_printLevel          = NamedParameter<size_t>( "Minimiser::PrintLevel", 4);
   if ( m_minimiser != nullptr ) delete m_minimiser;
   m_minimiser = new Minuit2::Minuit2Minimizer(algorithm.c_str() );

@@ -51,7 +51,7 @@ namespace AmpGen
 
   std::vector<Parameter> paramVector( const std::string& name, const unsigned int& nParam );
 
-  Tensor getPropagator(const Tensor& kMatrix, const std::vector<Expression>& phaseSpace);
+  Tensor getPropagator(const Tensor& kMatrix, const std::vector<Expression>& phaseSpace, DebugSymbols* db = nullptr);
 
 
 } // namespace AmpGen

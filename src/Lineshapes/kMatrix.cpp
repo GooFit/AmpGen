@@ -48,7 +48,7 @@ Expression AmpGen::gFromGamma( const Expression& m, const Expression& gamma, con
   return fcn::sqrt( m * gamma / rho );
 }
 
-Tensor AmpGen::getPropagator(const Tensor& kMatrix, const std::vector<Expression>& phaseSpace)
+Tensor AmpGen::getPropagator(const Tensor& kMatrix, const std::vector<Expression>& phaseSpace, DebugSymbols* db )
 {
   unsigned int nChannels = kMatrix.dims()[0];
   Tensor T( Tensor::dim(nChannels, nChannels) );
@@ -57,6 +57,7 @@ Tensor AmpGen::getPropagator(const Tensor& kMatrix, const std::vector<Expression
       T[{i, j}] = SubTree( ( i == j ? 1 : 0 ) - 1i * kMatrix[{i, j}] * phaseSpace[j] );
     }
   }
+  ADD_DEBUG_TENSOR( T, db );
   return T.Invert();
 }
 
@@ -128,7 +129,7 @@ DEFINE_LINESHAPE( kMatrix )
   Expression adlerTerm = SubTree( ( 1. - sA0 ) * ( sInGeV - sA * mPiPlus * mPiPlus / 2 ) / ( sInGeV - sA0 ) );
   
   kMatrix = adlerTerm * kMatrix; 
-  Tensor F             = getPropagator(kMatrix, phaseSpace);
+  Tensor F             = getPropagator(kMatrix, phaseSpace, dbexpressions);
 
   if ( dbexpressions != nullptr ) {
     for ( auto& p : poleConfigs ) {
@@ -146,6 +147,7 @@ DEFINE_LINESHAPE( kMatrix )
     ADD_DEBUG( sA0, dbexpressions );
     ADD_DEBUG( adlerTerm, dbexpressions );
     ADD_DEBUG_TENSOR( kMatrix, dbexpressions );
+    ADD_DEBUG_TENSOR( F, dbexpressions );
   }
 
   if ( tokens[0] == "scatt" ) {

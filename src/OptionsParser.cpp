@@ -58,12 +58,6 @@ void OptionsParser::setCommandLineArgs( int argc, char** argv )
     if( key == "help" ) m_printHelp = true; 
     m_parsedLines[key] = makeParsedStrings( key + " " + val, depth ); 
   }
-  for( auto& line : m_parsedLines )
-  {
-    std::string to_string = "";
-    for( auto& thing : line.second ) to_string += thing + " ";
-  }
-
   if( m_printHelp ){
     std::cout << bold_on << "Usage: " << bold_off << argv[0] << italic_on << " options_file1.opt options_file2.opt --key1=value1 --key2=value2 ..." << italic_off << std::endl; 
     std::cout << bold_on << "Options: " << bold_off << std::endl; 
