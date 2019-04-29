@@ -81,10 +81,8 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
   m_modifiers = getItems( items[0], {"[", "]"}, ";" );
   m_name      = m_modifiers[0];
   m_modifiers.erase( m_modifiers.begin() );
-  for ( auto& modifier : m_modifiers ) parseModifier( modifier );
-
-  for ( unsigned int it = 1; it < items.size(); ++it ) m_daughters.push_back( std::make_shared<Particle>( items[it] ) );
-
+  for( auto& modifier : m_modifiers ) parseModifier( modifier );
+  for( size_t it = 1; it < items.size(); ++it ) m_daughters.push_back( std::make_shared<Particle>( items[it] ) );
   m_props = ParticlePropertiesList::get( m_name );
   pdgLookup();
   auto fs = getFinalStateParticles( false );
@@ -100,7 +98,6 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
   }
   if ( orderDaughters ) sortDaughters();
   for ( auto& d : m_daughters ) m_isStateGood &= d->isStateGood();
-
   if ( !isStateGood() ) {
     ERROR( "Amplitude " << decayString << " not configured correctly" );
   }
@@ -180,11 +177,11 @@ void Particle::pdgLookup()
     return;
   }
   if ( m_lineshape == "BW" || m_usesDefaultLineshape ) {
-    if ( m_name.find( "NonRes" ) != std::string::npos || m_props->width() < 1e-3 ) 
-      m_lineshape = "FormFactor";
+    if ( m_name.find("NonRes") != std::string::npos || m_props->width() < 1e-3 ) m_lineshape = "FormFactor";
+    if ( m_name == "gamma0" )                                                    m_lineshape = "Photon";
     m_usesDefaultLineshape = true;
-  } else
-    m_usesDefaultLineshape = false;
+  } 
+  else m_usesDefaultLineshape = false;
   m_parity                 = m_props->P();
   if ( !isdigit( m_props->J()[0] ) ) {
     ERROR( "Spin not recognised! : " << m_name << " J = " << m_props->J() );
@@ -314,12 +311,11 @@ Particle Particle::quasiStableTree() const
 {
   Particle returnVal( m_name );
   for ( auto& d : m_daughters ) {
-    auto qTree = d->quasiStableTree();
-    if ( d->isQuasiStable() ) {
-      returnVal.addDaughter( std::make_shared<Particle>( qTree ) );
-    } else {
-      for ( auto& dp : qTree.daughters() ) returnVal.addDaughter( dp );
-    }
+    auto qTree = d->quasiStableTree(); 
+    if( qTree.daughters().size() == 0 || (qTree.isQuasiStable() && m_daughters.size() != 1 ) )      
+      returnVal.addDaughter( std::make_shared<Particle>(qTree) );
+    else 
+      for( auto& it : qTree.daughters() ) returnVal.addDaughter(it); 
   }
   returnVal.sortDaughters();
   returnVal.makeUniqueString();
@@ -511,7 +507,7 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
     Expression N = make_cse(1./(m*(pE + m)));
     if( polState ==  1 ) return -Tensor({1.+ z *pX*N,  1i +  z*pY*N,  z*pZ*N    ,  z*m })/sqrt(2);
     if( polState == -1 ) return  Tensor({1.+ zb*pX*N, -1i + zb*pY*N, zb*pZ*N    , zb*m })/sqrt(2);
-    if( polState == -1 ) return  Tensor({pX*pZ*N    ,       pY*pZ*N, 1 + pZ*pZ*N, pZ/m });
+    if( polState ==  0 ) return  Tensor({pX*pZ*N    ,       pY*pZ*N, 1 + pZ*pZ*N, pZ/m });
   }
   if( m_props->twoSpin() == 1 && m_spinBasis == "Weyl" ){
     Expression n       = fcn::sqrt( 2 * pP*(pP+pZ) );
@@ -536,7 +532,8 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
     if(id < 0 && polState == -1 ) return norm * Tensor({ pZ/(pE+m),  z/(pE+m) , 1        ,0           });
     if(id < 0 && polState ==  1 ) return norm * Tensor({ zb/(pE+m),-pZ/(pE+m) , 0        ,1           }); 
   }
-  WARNING("Spin tensors not implemented for spin J = " << m_props->twoSpin() << " / 2 m = " << m_polState << " " << m_name ); 
+  std::string js = m_props->isBoson() ? std::to_string(m_props->twoSpin()/2) : std::to_string(m_props->twoSpin()) +"/2";
+  WARNING("Spin tensors not implemented for spin J = " << js << "; m = " << m_polState << " " << m_name ); 
   return Tensor( std::vector<double>( {1.} ), Tensor::dim(0) );
 }
 
@@ -717,7 +714,7 @@ bool Particle::isStable() const { return m_daughters.size() == 0; }
 
 bool Particle::isQuasiStable() const
 {
-  return props()->width() < ParticlePropertiesList::getMe()->quasiStableThreshold();
+  return props()->width() < ParticlePropertiesList::getMe()->quasiStableThreshold() && name() != "gamma0";
 }
 unsigned int Particle::orbital()  const { return m_orbital; }
 int Particle::polState() const { return m_polState; }

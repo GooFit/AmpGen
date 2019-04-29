@@ -48,7 +48,7 @@ namespace AmpGen
     std::string label( const size_t& index, bool isRoot = true ) const;
     std::string label( const std::vector<size_t>& index, bool isRoot = true ) const;
     std::vector<Projection> defaultProjections(const size_t& nBins) const;
-    Projection projection(const size_t& nBins, const std::vector<size_t>& indices) const;
+    Projection projection(const size_t& nBins, const std::vector<size_t>& indices, const std::string& observable = "mass2") const;
 
     bool operator==( const EventType& other ) const;
     bool has( const std::string& name ) const;

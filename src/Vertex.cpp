@@ -428,24 +428,24 @@ DEFINE_VERTEX( f_rS_P1 )
 DEFINE_VERTEX( S_ff_S )
 {
   Tensor::Index a; 
-  return Bar( V2 )(a) * V1(a);
+  return Bar(V2)(a) * V1(a);
 }
 
 DEFINE_VERTEX( S_ff_S1 )
 {
   Tensor::Index a,b; 
-  return Bar( V2 )(a) * Gamma[4](a,b) * V1(b);
+  return Bar(V2)(a) * Gamma[4](a,b) * V1(b);
 }
 
 
 DEFINE_VERTEX( V_ff_P )
 {
   Tensor::Index a,b ; 
-  return Bar( V2 )(a) * Gamma4Vec()(mu,a,b) * V1(b);
+  return Bar(V2)(a) * Gamma4Vec()(mu,a,b) * V1(b);
 }
 
 DEFINE_VERTEX( V_ff_P1 )
 {
   Tensor::Index a,b,c ; 
-  return Bar( V2 )(a) * Gamma[4](a,b) * Gamma4Vec()(mu,b,c) * V1(c);
+  return Bar(V2)(a) * Gamma[4](a,b) * Gamma4Vec()(mu,b,c) * V1(c);
 }
