@@ -68,7 +68,7 @@ std::map<std::string, size_t> EventType::getEventFormat( const bool& outputNames
   size_t s = include_energy ? 4 : 3; 
   for ( unsigned int ip = 0; ip < size(); ++ip ) {
     std::string stub =
-        outputNames ? "_" + std::to_string( ip + 1 ) + "_" + m_particleNamesPickled[ip] : std::to_string( ip );
+      outputNames ? "_" + std::to_string( ip + 1 ) + "_" + m_particleNamesPickled[ip] : std::to_string( ip );
     if( include_energy ) returnValue[stub + "_E"]  = s * ip + 3;
     returnValue[stub + "_Px"] = s * ip + 0;
     returnValue[stub + "_Py"] = s * ip + 1;
@@ -138,49 +138,34 @@ EventType EventType::conj( const bool& headOnly, const bool& dontConjHead ) cons
 
 std::vector<Projection> EventType::defaultProjections(const size_t& nBins) const
 {
-  bool          useRootLabelling = NamedParameter<bool>(        "EventType::UseRootTEX", false );
   std::string defaultObservable  = NamedParameter<std::string>( "EventType::Observable", "mass2");
-
-  std::vector<Projection> axes;
-  std::string gevcccc            = useRootLabelling ? "GeV^{2}/c^{4}" : "\\mathrm{GeV}^{2}/c^{4}";
-  std::string gevcc              = useRootLabelling ? "GeV/c^{2}" : "\\mathrm{GeV}/c^{2}";
+  std::vector<Projection> projections;
   for ( size_t r = 2; r < size(); ++r ) { /// loop over sizes ///
     std::vector<std::vector<size_t>>  combR = nCr( size(), r );
-    for ( auto& indices : combR ) {
-      auto mm = minmax( indices, true );
-      if( defaultObservable == "mass2" )
-        axes.emplace_back( [indices]( const Event& evt ) { return evt.s( indices ); },
-                         "s" + vectorToString( indices ),
-                         "s_{" + label( indices, useRootLabelling ) + "}", nBins,
-                         ( mm.first - 0.05 ) ,  ( mm.second + 0.05 ) , gevcccc );
-      else if( defaultObservable == "mass" ){
-        axes.emplace_back( [indices]( const Event& evt ) { return sqrt( evt.s( indices ) ); },
-                         "m" + vectorToString( indices ),
-                         "m_{" + label( indices, useRootLabelling ) + "}", nBins,
-                         mm.first > 0.05 ? sqrt(mm.first - 0.05) :0 ,  sqrt( mm.second + 0.05 ) , gevcc );
-      }
-    }
+    for ( auto& indices : combR )
+      projections.emplace_back( projection(nBins, indices, defaultObservable ) );
   }
-  return axes;
+  return projections;
 }
 
-Projection EventType::projection(const size_t& nBins, const std::vector<size_t>& indices) const 
+Projection EventType::projection(const size_t& nBins, const std::vector<size_t>& indices, const std::string& observable) const 
 {
-  std::string defaultObservable  = NamedParameter<std::string>( "EventType::Observable", "mass2");
-  auto mm             = minmax( indices, true );
-  std::string gevcccc = "\\mathrm{GeV}^{2}/c^{4}";
-  std::string gevcc   = "\\mathrm{GeV}/c^{2}";
-      if( defaultObservable == "mass2" )
-        return Projection( [indices]( const Event& evt ) { return evt.s( indices ); },
-                         "s" + vectorToString( indices ),
-                         "s_{" + label( indices ) + "}", nBins,
-                         ( mm.first - 0.05 ) ,  ( mm.second + 0.05 ) , gevcccc );
-      else if( defaultObservable == "mass" ){
-        return Projection( [indices]( const Event& evt ) { return sqrt( evt.s( indices ) ); },
-                         "m" + vectorToString( indices ),
-                         "m_{" + label( indices ) + "}", nBins,
-                         mm.first > 0.05 ? sqrt(mm.first - 0.05) :0 ,  sqrt( mm.second + 0.05 ) , gevcc );
-      }
+  bool useRootLabelling = NamedParameter<bool>("EventType::UseRootTEX", false );
+  auto mm               = minmax(indices, true);
+  std::string gevcccc   = useRootLabelling ? "GeV^{2}/c^{4}" : "\\mathrm{GeV}^{2}/c^{4}";
+  std::string gevcc     = useRootLabelling ? "GeV/c^{2}" : "\\mathrm{GeV}/c^{2}";
+  if( observable == "mass2" )
+    return Projection( [indices]( const Event& evt ) { return evt.s( indices ); },
+        "s" + vectorToString( indices ),
+        "s_{" + label( indices ) + "}", nBins,
+        ( mm.first - 0.05 ) ,  ( mm.second + 0.05 ) , gevcccc );
+  else if( observable == "mass" ){
+    return Projection( [indices]( const Event& evt ) { return sqrt( evt.s( indices ) ); },
+        "m" + vectorToString( indices ),
+        "m_{" + label( indices ) + "}", nBins,
+        mm.first > 0.05 ? sqrt(mm.first - 0.05) :0 ,  sqrt( mm.second + 0.05 ) , gevcc );
+  }
+  return Projection();
 }
 
 bool EventType::operator==( const EventType& other ) const

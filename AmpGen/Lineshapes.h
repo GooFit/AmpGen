@@ -230,9 +230,39 @@ namespace AmpGen
         @f$m@f$                | <EM>particleName_</EM>mass           | Breit-Wigner mass of the resonant component, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
         @f$\Gamma_0@f$         | <EM>particleName_</EM>width          | Breit-Wigner width of the resonant component, defined as the width of resonance at the Breit-Wigner mass <br>
         @f$a@f$                | LASS::a                              | Scattering length of the nonresonant component, defaults to @f$2.07\mathrm{G\kern -0.1em eV}^{-1}@f$
-        @f$r@f$                | LASS::r                              | Scattering length of the nonresonant component, defaults to @f$3.32\mathrm{G\kern -0.1em eV}^{-1}@f$
+        @f$r@f$                | LASS::r                              | Effective interaction length of the nonresonant component, defaults to @f$3.32\mathrm{G\kern -0.1em eV}^{-1}@f$
     */  
     DECLARE_LINESHAPE( LASS );
+    /** @ingroup Lineshapes class GLASS 
+        @brief Generalised description of the @f$ K\pi@f$ S-wave, taken from BABAR / BELLE analysis of @f$ D^{0} \to K_{S}^{0} \pi^{+} \pi^{-} @f$ https://journals.aps.org/prd/pdf/10.1103/PhysRevD.98.112012 
+        
+        Alternative parameterisation of the @f$ K \pi @f$ S-wave taken from the BABAR/BELLE analysis of @f$ D^{0} \to K_{S}^{0} \pi^{+} \pi^{-} @f$ https://journals.aps.org/prd/pdf/10.1103/PhysRevD.98.112012. 
+        It introduces four additional parameters, two amplitudes and two phases, and is written 
+        @f[
+          \mathcal{A}(s) = R\sin\delta_R e^{i(\delta_R + 2\delta_F)} + F\sin\delta_F e^{i\delta_F}
+        @f]
+        where 
+        @f[
+          \delta_R = \phi_R + \tan^{-1}\left(\frac{m\Gamma(s)}{m^2 -s }\right)
+        @f]
+        and 
+        @f[
+          \delta_F = \phi_F + \tan^{-1}\left(\frac{2 a q}{2 + arq^2}\right),
+        @f]
+        that is, the 'resonant' and 'nonresonant' phases of the LASS formulation with additional 'proudction' phases @f$ \phi_R @f$ and @f$\phi_F @f$, and production couplings @f$R, F@f$. One of the production couplings can typically be fixed to 1, normally the resonant coupling, @f$R @f$.  
+
+        Parameter              | User name                            | Description 
+        -----------------------|--------------------------------------|------------------------------------------------------------------------
+        @f$m@f$                | <EM>particleName_</EM>mass           | Breit-Wigner mass of the resonant component, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
+        @f$\Gamma_0@f$         | <EM>particleName_</EM>width          | Breit-Wigner width of the resonant component, defined as the width of resonance at the Breit-Wigner mass <br>
+        @f$a@f$                | <EM>particleName</EM>::GLASS::a      | Scattering length of the nonresonant component, defaults to @f$2.07\mathrm{G\kern -0.1em eV}^{-1}@f$
+        @f$r@f$                | <EM>particleName</EM>::GLASS::r      | Effective interaction length of the nonresonant component, defaults to @f$3.32\mathrm{G\kern -0.1em eV}^{-1}@f$
+        @f$\phi_R@f$           | <EM>particleName</EM>::GLASS::phiR   | Additional production phase of the resonant component, defaults to @f$0^{\mathrm{o}}@f$, measured in degrees. 
+        @f$\phi_F@f$           | <EM>particleName</EM>::GLASS::phiF   | Additional production phase of the nonresonant component, defaults to @f$0^{\mathrm{o}}@f$, measured in degrees. 
+        @f$R@f$                | <EM>particleName</EM>::GLASS::R      | Additional production coupling of the resonant component, defaults to @f$1@f$.
+        @f$F@f$                | <EM>particleName</EM>::GLASS::F      | Additional production coupling of the nonresonant component, defaults to @f$1@f$.
+    */  
+    DECLARE_LINESHAPE(GLASS);
 
     /** @ingroup Lineshapes class Flatte
         @brief Lineshape to describe resonances with coupled channels such as @f$f_{0}(980)^{0} / a_{0}(980) @f$.
@@ -353,6 +383,7 @@ namespace AmpGen
       */   
     DECLARE_LINESHAPE( EtaDalitz );
 
+    DECLARE_LINESHAPE( Photon );
   } // namespace Lineshape
   
   Expression Q2( const Expression& Msq, const Expression& M1sq, const Expression& M2sq );

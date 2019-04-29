@@ -1,6 +1,6 @@
 #define BOOST_TEST_DYN_LINK
 
-#define BOOST_TEST_MODULE "Expression"
+#define BOOST_TEST_MODULE "ParticlePropertiesList"
 
 #include <boost/test/unit_test.hpp>
 #include "AmpGen/ParticlePropertiesList.h"
