@@ -44,7 +44,7 @@ namespace AmpGen
     size_t size()      const;
     size_t dof()       const;
     std::string operator[]( const size_t& index ) const;
-
+    std::string decayDescriptor() const; 
     std::string label( const size_t& index, bool isRoot = true ) const;
     std::string label( const std::vector<size_t>& index, bool isRoot = true ) const;
     std::vector<Projection> defaultProjections(const size_t& nBins) const;

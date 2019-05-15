@@ -164,12 +164,10 @@ void CouplingConstant::print() const
     for ( auto& coupling : couplings ) INFO( coupling.first->name() << " x exp(i" <<  coupling.second->name() );
 }
 
-std::vector< std::pair<Particle, CouplingConstant > > AmplitudeRules::getMatchingRules( 
-    const EventType& type, const std::string& prefix ){
-
+std::vector<std::pair<Particle, CouplingConstant>> AmplitudeRules::getMatchingRules(const EventType& type, const std::string& prefix )
+{
   auto rules        = rulesForDecay( type.mother() );
   std::vector<std::pair<Particle, CouplingConstant>> rt; 
-
   for ( auto& rule : rules ) {
     if ( rule.prefix() != prefix ) continue;
     std::vector<std::pair<Particle, CouplingConstant>> tmpParticles;
@@ -200,6 +198,13 @@ std::vector< std::pair<Particle, CouplingConstant > > AmplitudeRules::getMatchin
       tmpParticles = newTmpParticles;
     } while ( tmpParticles.size() != 0 );
   }
+  rt.erase( std::remove_if( std::begin(rt), std::end(rt), [](auto& p){ return !p.first.isStateGood(); } ), rt.end() );
+  auto end = std::end(rt);
+  for (auto it = rt.begin(); it != end; ++it) {
+    auto dd = it->first.decayDescriptor();
+    end = std::remove_if(it + 1, end, [dd](auto p){ return p.first.decayDescriptor() == dd;} );
+  }
+  rt.erase(end, rt.end());
   return rt;
 }
 

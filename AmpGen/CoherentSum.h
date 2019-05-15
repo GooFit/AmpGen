@@ -75,7 +75,8 @@ namespace AmpGen
 
     std::map<std::string, std::vector<unsigned int>> getGroupedAmplitudes();
     Bilinears norms() const { return m_normalisations ; }
-  
+ 
+
   protected:
     std::vector<TransitionMatrix<complex_t>> m_matrixElements; ///< Vector of (expanded) matrix elements
     Bilinears m_normalisations;                  ///< Normalisation integrals

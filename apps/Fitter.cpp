@@ -93,10 +93,8 @@ template <typename PDF>
 FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS )
 {
   INFO( "Type = " << typeof<PDF>() );
-
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time      = std::clock();
-
   pdf.setEvents( data );
 
   Minimiser mini( pdf, &MPS );

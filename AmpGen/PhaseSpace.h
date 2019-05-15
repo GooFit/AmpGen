@@ -17,12 +17,14 @@ namespace AmpGen
    * which saves a large amount of CPU. Further modified to remove the dependencies on TLorentzVector 
    * and to only use the AmpGen::Event classes, and to add the option to include a time dependence.  
    */
+  class Particle;
 
   class PhaseSpace
   {
     public:
       PhaseSpace()  = default; 
       PhaseSpace( const EventType& type, TRandom* rand = gRandom );
+      PhaseSpace( const Particle& type, TRandom* rand = gRandom );
       ~PhaseSpace() = default;
       
       bool setDecay( const double& m0, const std::vector<double>& mass );

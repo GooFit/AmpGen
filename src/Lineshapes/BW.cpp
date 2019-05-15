@@ -74,7 +74,6 @@ DEFINE_LINESHAPE( BW )
   return kf * BW;
 }
 
-
 DEFINE_LINESHAPE( SBW )
 {
   auto props        = ParticlePropertiesList::get( particleName );
