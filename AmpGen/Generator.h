@@ -12,11 +12,11 @@ namespace AmpGen
   class Generator
   {
   private:
-    EventType    m_eventType;
-    PHASESPACE   m_gps;
-    unsigned int m_generatorBlock = {5000000};
-    TRandom*     m_rnd            = {gRandom};
-    bool         m_normalise      = {true};
+    EventType  m_eventType;
+    PHASESPACE m_gps;
+    size_t     m_generatorBlock = {5000000};
+    TRandom*   m_rnd            = {gRandom};
+    bool       m_normalise      = {true};
 
   public:
     template <class... ARGS>
@@ -32,7 +32,7 @@ namespace AmpGen
       m_rnd = rand;
       m_gps.setRandom( m_rnd );
     }
-    void fillEventListPhaseSpace( EventList& list, const unsigned int& N, unsigned int cacheSize = 0 )
+    void fillEventListPhaseSpace( EventList& list, const size_t& N, const size_t& cacheSize = 0 )
     {
       fillEventListPhaseSpace( list, N, cacheSize, []( const Event& evt ) { return 1; } );
     }
@@ -40,7 +40,7 @@ namespace AmpGen
     void setNormFlag( const bool& normSetting ) { m_normalise = normSetting; }
 
     template <class HARD_CUT>
-    void fillEventListPhaseSpace( EventList& list, const unsigned int& N, const unsigned int& cacheSize, HARD_CUT cut )
+    void fillEventListPhaseSpace( EventList& list, const size_t& N, const size_t& cacheSize, HARD_CUT cut )
     {
       unsigned int rejected = 0;
       #ifdef DEBUGLEVEL
@@ -61,20 +61,20 @@ namespace AmpGen
                                      << " time = " << time );
     }
     template <class PDF>
-    void fillEventList( PDF& pdf, EventList& list, const unsigned int& N )
+    void fillEventList( PDF& pdf, EventList& list, const size_t& N )
     {
       fillEventList( pdf, list, N, []( const Event& evt ) { return 1; } );
     }
 
     template <class PDF, class HARD_CUT>
-    void fillEventList( PDF& pdf, EventList& list, const unsigned int& N, HARD_CUT cut )
+    void fillEventList( PDF& pdf, EventList& list, const size_t& N, HARD_CUT cut )
     {
       if ( m_rnd == nullptr ) {
         ERROR( "Random generator not set!" );
         return;
       }
       double normalisationConstant = m_normalise ? 0 : 1;
-      unsigned int size0           = list.size();
+      size_t size0                 = list.size();
       auto tStartTotal             = std::chrono::high_resolution_clock::now();
       pdf.reset( true );
       while ( list.size() - size0 < N ) {
@@ -121,20 +121,22 @@ namespace AmpGen
           std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tStartTotal ).count();
       INFO( "Generated " << N << " events in " << time << " ms" );
     }
-    template <class PDF>
-    EventList generate( PDF& pdf, const unsigned int& nEvents )
+    template <class PDF, 
+              class = typename std::enable_if<!std::is_integral<PDF>::value>::type>
+    EventList generate(PDF& pdf, const size_t& nEvents )
     {
       EventList evts( m_eventType );
       fillEventList( pdf, evts, nEvents );
       return evts;
     }
-    EventList generate( const unsigned int& nEvents, const size_t& cacheSize=0 )
+   // template <class N, 
+   //           class = typename std::enable_if<std::is_integral<N>::value>::type>
+    EventList generate(const size_t& nEvents, const size_t& cacheSize=0)
     {
       EventList evts( m_eventType );
       fillEventListPhaseSpace( evts, nEvents, cacheSize );
       return evts;
     }
-
   };
   template <class FCN>
   class PDFWrapper {

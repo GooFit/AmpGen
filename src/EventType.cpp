@@ -232,3 +232,7 @@ std::string convertTeXtoROOT( std::string input )
   return input;
 }
 
+std::string EventType::decayDescriptor() const
+{
+  return mother()+"{" + vectorToString(m_particleNames,",") +"}" ;
+}

@@ -45,44 +45,39 @@ void invertParity( Event& event, const size_t& nParticles)
   }
 }
 
-int invert_parameter( AmpGen::MinuitParameter* param, MinuitParameterSet& mps )
+void invert( MinuitParameter* param, MinuitParameterSet& mps )
 {
   const std::string name = param->name();
-  size_t pos             = 0;
-  std::string prefix     = "";
-  std::string new_name   = name;
-  int sgn                = 1;
-  if ( name.find( "::" ) != std::string::npos ) {
-    pos                              = name.find( "::" );
-    auto props                       = AmpGen::ParticlePropertiesList::get( name.substr( 0, pos ), true );
-    if ( props != nullptr ) new_name = props->anti().name() + name.substr( pos );
-  } else {
-    auto tokens        = split( name, '_' );
+  size_t pos=0;
+  std::string new_name = name; 
+  int sgn=1;
+  if( name.find("::") != std::string::npos ){
+    pos = name.find("::");
+    auto props = AmpGen::ParticlePropertiesList::get( name.substr(0,pos), true );
+    if( props != 0 ) new_name = props->anti().name() + name.substr(pos); 
+  }
+  else { 
+    auto tokens=split(name,'_');
     std::string reOrIm = *tokens.rbegin();
-    std::string prefix = "";
     std::string name   = tokens[0];
-    if ( tokens.size() == 3 ) {
-      prefix = tokens[0];
-      name   = tokens[1];
+    if ( reOrIm == "Re" || reOrIm == "Im" ){
+      Particle test = Particle(name).conj();
+      sgn = reOrIm == "Re" ? test.quasiCP() : 1; 
+      new_name = test.uniqueString() +"_"+reOrIm;
     }
-    if ( reOrIm == "Re" || reOrIm == "Im" ) {
-      std::vector<std::string> final_state_ordering;
-      AmpGen::Particle test( name, final_state_ordering );
-      sgn                       = test.conjugate( true );
-      if ( reOrIm == "Re" ) sgn = 1;
-      new_name                  = ( prefix != "" ? prefix + "_" : "" ) + test.uniqueString() + "_" + reOrIm;
-    } else if ( tokens.size() == 2 ) {
-      auto props                       = AmpGen::ParticlePropertiesList::get( name );
-      if ( props != nullptr ) new_name = props->anti().name() + "_" + tokens[1];
+    else if( tokens.size() == 2 ) {
+      auto props = AmpGen::ParticlePropertiesList::get( name );
+      if( props != 0  ) new_name = props->anti().name() + "_" + tokens[1]; 
     }
   }
-  DEBUG( param->name() << " →  " << new_name << " sgn = " << sgn );
-  mps.map().erase( param->name() );
-  param->setName( new_name );
-  mps.map().emplace( param->name(), param );
-  if ( sgn == -1 ) param->setCurrentFitVal( param->mean() + M_PI );
-  return sgn;
+  if( param->name() != new_name && mps.find(new_name) == nullptr ){
+    mps.map().erase( param->name() );
+    param->setName( new_name );
+    mps.map().emplace( param->name(), param );
+  }
+  if( sgn == -1 ) param->setCurrentFitVal( -1 * param->mean() );
 }
+
 
 template <class MatrixElements> void print( const Event& event, const MatrixElements& matrixElements, bool verbose )
 {
@@ -127,8 +122,8 @@ int main( int argc, char** argv )
   AmpGen::MinuitParameterSet MPS;
   MPS.loadFromStream();
   if ( NamedParameter<bool>( "conj", false ) == true ) {
-    eventType = eventType.conj( false );
-    for ( auto& param : MPS ) invert_parameter( param, MPS );
+    eventType = eventType.conj(false);
+    for ( auto& param : MPS ) invert( param, MPS );
   }
   INFO( "EventType = " << eventType );
   

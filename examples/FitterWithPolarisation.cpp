@@ -100,7 +100,7 @@ int main( int argc, char* argv[] )
   /* Generate events to normalise the PDF with. This can also be loaded from a file, 
      which will be the case when efficiency variations are included. Default number of normalisation events 
      is 5 million. */
-  EventList eventsMC = Generator<>(evtType, &rndm).generate(5e6);
+  EventList eventsMC = Generator<>(evtType, &rndm).generate(int(5e6));
   
   sig.setMC( eventsMC );
 

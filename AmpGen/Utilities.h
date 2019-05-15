@@ -12,7 +12,7 @@
 #include <typeinfo>
 #include <vector>
 #include <future>
-#include <omp.h>
+//#include <omp.h>
 
 #include "AmpGen/MsgService.h"
 #include "AmpGen/MetaUtils.h"

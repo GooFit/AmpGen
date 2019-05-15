@@ -93,14 +93,6 @@ namespace AmpGen
     Similar to other components of AmpGen, Particles will rarely be constructed in the C++ context, 
     and will instead be instantiated dynamically at runtime from a user supplied options file. */
   class ParticleProperties; 
-  //struct zFrame {
-  //  /// Frame where parent is at rest, particle 0 is along the z-axis
-  //  Tensor operator(const std::vector<size_t>& indices)() const
-  //  {
-  //    
-  //  }
-  //};
-
   class Particle
   {
     private:
@@ -116,8 +108,8 @@ namespace AmpGen
       unsigned int m_spinConfigurationNumber = {0};          ///< Spin configuration quantum number 'S'
       unsigned int m_minL                    = {0};          ///< Minimum orbital angular momentum
       bool m_isHead                          = {true};       ///< Flag that particle is head of decay chain
-      bool m_isStateGood                     = {true};       ///< Flag to check the decay is well-formed
       bool m_usesDefaultLineshape            = {false};      ///< Flag to check if default shape is used
+      bool m_isStateGood                     = {true};       ///< Flag to check the decay is well-formed
       std::vector<std::shared_ptr<Particle>> m_daughters;    ///< Array of daughter particles
       std::vector<std::string> m_modifiers;                  ///< Additional modifiers for amplitude
       std::string m_spinFormalism            = {""};         ///< Spin formalism to use for this particle (global)
@@ -145,18 +137,25 @@ namespace AmpGen
       /// @constructor Constructor that takes a decay descriptor as an argument and a list of final state particles to match to the event type. Constructs the entire decay tree.  
       Particle( const std::string& decayString, const std::vector<std::string>& finalStates = {}, const bool& orderDaughters = true );
 
+      /// @function (Quasi) Constructor that returns the (quasi)CP conjugated amplitude. The full behaviour of the amplitude is made more complicated by the ordering convention. 
+      Particle conj(bool invertHead = true, bool reorder = true);
+      
       void setOrbital( const unsigned int& orbital );
       void setLineshape( const std::string& lineshape );
       void setDaughter( const Particle& particle, const unsigned int& index );
       void setTop( bool state = true );
       void setIndex( const unsigned int& index, const bool& setOri = false );
+      void clearDecayProducts();
 
       void addModifier( const std::string& mod );
       void parseModifier( const std::string& mod );
       void setOrdering( const std::vector<size_t>& ordering );
+      void setName(const std::string& name);
       void addDaughter( const std::shared_ptr<Particle>& particle );
       void setPolarisationState( const int& state );
-      std::pair<size_t,size_t> orbitalRange( const bool& converseParity = true ) const; ///< Range of possible orbital angular momenta between decay products
+
+      /// @function Returns the range of orbital angular momentum between the decay products
+      std::pair<size_t,size_t> orbitalRange( const bool& converseParity = true ) const;
       std::vector<std::pair<double,double>> spinOrbitCouplings( const bool& conserveParity = true ) const;
       stdx::optional<std::string> attribute(const std::string& key) const; 
       const ParticleProperties* props() const;
@@ -165,7 +164,6 @@ namespace AmpGen
       int parity() const;
       int finalStateParity() const;
       int polState() const;
-      int conjugate( bool invertHead = false , bool reorder = true);
       double mass() const;
       double spin() const;    
       double S() const; 
@@ -208,8 +206,11 @@ namespace AmpGen
       /// @function Decay descriptor formatted as LaTeX for this decay. 
       std::string texLabel( const bool& printHead = false, const bool& recurse=true ) const;
       
-      /// @function Returns the ``quasi'' CP Quantum number for this decay       
+      /// @function Returns the ``quasi'' CP Quantum number for this decay, see the Particle       
       int quasiCP() const; 
+
+      /// @function Returns the C quantum number for this decay
+      int C() const; 
 
       /// @function Return the eventType for this decay (i.e. the initial and final state particles) 
       EventType eventType() const;
@@ -270,6 +271,7 @@ namespace AmpGen
       /// @function matches Check the matching between two decay chains, according to the MatchState enum. 
       unsigned int matches( const Particle& other ) const; 
   };
+  std::ostream& operator<<( std::ostream& os, const Particle& particle );
 } // namespace AmpGen
 
 #endif

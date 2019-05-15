@@ -26,11 +26,11 @@
 #include "AmpGen/ProfileClock.h"
 
 #ifdef __USE_OPENMP__
-#include <omp.h>
+  #include <omp.h>
 #endif
 
 using namespace AmpGen;
-
+CoherentSum::CoherentSum(){}
 CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
   : m_protoAmplitudes( mps )
   , m_evtType( type )
@@ -41,38 +41,26 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   , m_prefix( prefix )
 {
   auto amplitudes      = m_protoAmplitudes.getMatchingRules( m_evtType, prefix);
-  for( auto& amp : amplitudes ) addMatrixElement( amp, mps );
-  m_isConstant = isFixedPDF(mps);
-  m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() );
-  ThreadPool tp(8);
-  for( auto& mE: m_matrixElements )
-    tp.enqueue( [&]{ CompilerWrapper().compile( mE.pdf, this->m_objCache); } );
-}
-
-void CoherentSum::addMatrixElement( std::pair<Particle, CouplingConstant>& particleWithCouplingConstant, const MinuitParameterSet& mps )
-{
-  auto& protoParticle = particleWithCouplingConstant.first;
-  auto& coupling      = particleWithCouplingConstant.second;
-  if ( !protoParticle.isStateGood() ) return;
-  const std::string name = protoParticle.uniqueString();
-  DebugSymbols dbExpressions;
-  INFO( name ); 
-  for ( auto& mE : m_matrixElements ) {
-    if ( name == mE.decayTree.uniqueString() ) return;
+  for( auto& amp : amplitudes ) INFO( amp.first.decayDescriptor() );
+  m_matrixElements.resize( amplitudes.size() );
+  m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() ); 
+  ThreadPool tp(1);
+  for(size_t i = 0; i < m_matrixElements.size(); ++i){
+    tp.enqueue( [i,this,&mps,&amplitudes]{ 
+    m_matrixElements[i] = TransitionMatrix<complex_t>( amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), this->m_dbThis);
+    CompilerWrapper().compile( m_matrixElements[i].pdf, this->m_objCache); } );
   }
-  m_matrixElements.emplace_back(protoParticle, coupling, mps, m_evtType.getEventFormat(), m_dbThis);
+  m_isConstant = isFixedPDF(mps);
 }
-
+ 
 void CoherentSum::prepare()
 {
   if ( m_weightParam != nullptr ) m_weight = m_weightParam->mean();
   if ( m_isConstant && m_prepareCalls != 0 ) return;
   transferParameters(); 
-
   std::vector<unsigned int> changedPdfIndices;
   ProfileClock clockEval; 
   bool printed    = false;
-
   for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) {
     auto& pdf = m_matrixElements[i].pdf;
     pdf.prepare();
@@ -129,15 +117,15 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
   if ( nameMustContain == "" )
     for ( auto& pdf : m_matrixElements ) {
       auto A = pdf(evt);
-      INFO( std::setw(70) << pdf.decayTree.uniqueString() << " A = [ " 
-          << std::real(A)       << " " << std::imag(A) << " ] g = [ "
-          << std::real(pdf.coupling()) << " " << std::imag(pdf.coupling()) << " ]" );
+      INFO( std::setw(70) << pdf.decayTree.uniqueString() 
+          << " A = [ "  << std::real(A)              << " " << std::imag(A) 
+          << " ] g = [ "<< std::real(pdf.coupling()) << " " << std::imag(pdf.coupling()) << " ]" );
       if( m_dbThis ) pdf.pdf.debug( evt );
     }
   else
     for ( auto& pdf : m_matrixElements )
       if ( pdf.pdf.name().find( nameMustContain ) != std::string::npos ) pdf.pdf.debug( evt );
-
+  if( evt.cacheSize() != 0 ) 
   INFO( "Pdf = " << prob_unnormalised( evt ) );
 }
 
@@ -292,7 +280,10 @@ void CoherentSum::reset( bool resetEvents )
   m_prepareCalls                                     = 0;
   m_lastPrint                                        = 0;
   for ( auto& mE : m_matrixElements ) mE.addressData = 999;
-  if ( resetEvents ) m_events = nullptr;
+  if ( resetEvents ){ 
+    m_events = nullptr;
+    m_integrator = Integrator<10>();
+  }
 }
 
 void CoherentSum::setEvents( EventList& list )
