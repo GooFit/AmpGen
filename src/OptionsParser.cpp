@@ -31,7 +31,7 @@ bool OptionsParser::ignoreThisLine( const std::string& line )
   return false;
 }
 
-void OptionsParser::setCommandLineArgs( int argc, char** argv )
+void OptionsParser::setCommandLineArgs( int argc, char** argv, const std::string& description )
 {
   printSplash();
   int x = 0;
@@ -60,6 +60,7 @@ void OptionsParser::setCommandLineArgs( int argc, char** argv )
   }
   if( m_printHelp ){
     std::cout << bold_on << "Usage: " << bold_off << argv[0] << italic_on << " options_file1.opt options_file2.opt --key1=value1 --key2=value2 ..." << italic_off << std::endl; 
+    if( description != "") std::cout << description << std::endl; 
     std::cout << bold_on << "Options: " << bold_off << std::endl; 
   }
 }
@@ -152,7 +153,7 @@ std::vector<std::string> OptionsParser::makeParsedStrings( const std::string& li
 
 
 bool                          OptionsParser::printHelp() { return getMe()->m_printHelp ; }   
-void                          OptionsParser::setArgs( int argc, char** argv ){ getMe()->setCommandLineArgs(argc, argv ) ; } 
+void                          OptionsParser::setArgs( int argc, char** argv , const std::string& description){ getMe()->setCommandLineArgs(argc, argv, description); } 
 void                          OptionsParser::setArg( const std::string& arg ){ getMe()->addArg( arg ); }
 OptionsParser::iterator       OptionsParser::find( const std::string& name )  { return m_parsedLines.find( name ); }
 OptionsParser::iterator       OptionsParser::begin() { return m_parsedLines.begin(); }

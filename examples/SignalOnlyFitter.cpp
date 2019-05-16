@@ -56,13 +56,13 @@ int main( int argc, char* argv[] )
   auto pNames = NamedParameter<std::string>("EventType" , ""    
               , "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
   
-  if( dataFile == "" ) FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off );
-  if( pNames.size() == 0 ) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
-
   [[maybe_unused]]
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , 8           , "Number of threads to use" );
   size_t      seed     = NamedParameter<size_t>     ("Seed"      , 0           , "Random seed used" );
-  
+   
+  if( dataFile == "" ) FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off );
+  if( pNames.size() == 0 ) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
+
   TRandom3 rndm;
   rndm.SetSeed( seed );
   gRandom = &rndm;

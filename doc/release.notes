@@ -3,6 +3,8 @@
 ! Responsible : Tim Evans
 ! Purpose     : 
 !-----------------------------------------------------------------------------
+ - Improved thread support for CoherentSum
+ - Add examples/QcGenerator for Ψ(3770) decays 
 !=================== AmpGen v1r1 2019-03-22 ==================
 ! 2019-03-22 - Tim Evans
  - Added support for fitting more general final states, i.e. with multiple fermions, photons etc.
