@@ -275,6 +275,14 @@ complex_t CoherentSum::getValNoCache( const Event& evt ) const
       [&evt]( auto& a, auto& b ){ return a + b.coefficient * b(evt);} );
 }
 
+complex_t CoherentSum::getValNoCache(const Event& evt, const size_t& offset) const
+{
+  return std::accumulate( m_matrixElements.begin(), 
+      m_matrixElements.end(), 
+      complex_t(0,0), 
+      [&evt,&offset]( auto& a, auto& b ){ return a + b.coefficient * b(evt, offset);} );
+}
+
 void CoherentSum::reset( bool resetEvents )
 {
   m_prepareCalls                                     = 0;

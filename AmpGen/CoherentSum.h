@@ -53,6 +53,7 @@ namespace AmpGen
     complex_t getVal( const Event& evt ) const;
     complex_t getVal( const Event& evt, const std::vector<unsigned int>& cacheAddresses ) const;
     complex_t getValNoCache( const Event& evt ) const;
+    complex_t getValNoCache( const Event& evt, const size_t& offset ) const;
     
     void transferParameters();
     void prepare();

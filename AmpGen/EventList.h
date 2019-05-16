@@ -18,9 +18,9 @@
 #include <TH2D.h>
 #include <TTree.h>
 
-// #ifdef __USE_OPENMP__
-// #include <omp.h>
-// #endif
+#ifdef __USE_OPENMP__
+#include <omp.h>
+#endif
 
 namespace AmpGen
 {

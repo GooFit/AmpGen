@@ -101,6 +101,7 @@ namespace AmpGen
     }
 
     const RT operator()(const Event& event) const { return pdf(event.address() ); }
+    const RT operator()(const Event& event, const size_t& cacheOffset) const { return pdf(event.address() + cacheOffset); }
     const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
 
     Particle                                            decayTree;

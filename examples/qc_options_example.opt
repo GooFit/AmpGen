@@ -1,0 +1,47 @@
+
+EventType D0 K+ pi- pi- pi+
+
+TagTypes { "KK       D0{K+,K-}"
+           "KPi      D0{K-,pi+}"
+           "KsPi0    D0{K0S0,pi0}" 
+           "PiK      D0{K+,pi-}"
+           "PiKPiPi  D0{K+,pi-,pi-,pi+}"
+           "KPiPiPi  D0{K-,pi+,pi+,pi-}" 
+         }
+
+Efficiencies {
+  "D0{K+,K-}             0.57"
+  "D0{K0S0,pi0}          0.31" 
+  "D0{pi+,pi-}           0.71"
+  "D0{K-,pi+,pi+,pi-}    0.46" 
+  "D0{K+,pi-,pi-,pi+}    0.46"
+  "D0{K-,pi+}            0.60"
+  "D0{K+,pi-}            0.60"
+}
+
+BranchingRatios {
+  "D0{K+,K-}             0.003970"
+  "D0{K0S0,pi0}          0.011900"
+  "D0{pi+,pi-}           0.001407"
+  "D0{K-,pi+,pi+,pi-}    0.0811" 
+  "D0{K+,pi-,pi-,pi+}    0.000245" 
+  "D0{K-,pi+}            0.0389"
+  "D0{K+,pi-}            0.0001366"
+}
+
+Import $AMPGENROOT/options/D02piKpipi.opt
+
+D0{K+,K-}       2 1 0 2 0   0 
+Dbar0{K+,K-}    2 1 0 2 0   0 
+
+D0{pi+,pi-}     2 1 0 2 0   0 
+Dbar0{pi+,pi-}  2 1 0 2 0   0 
+
+D0{K0S0,pi0}    2 1 0 2 0   0 
+Dbar0{K0S0,pi0} 2 1 0 2 180 0 
+
+D0{K-,pi+}      2 1 0 2     0.0   0
+Dbar0{K-,pi+}   2 1 0 2  -191.8   0
+
+D0{K+,pi-,pi-,pi+}::strongPhase     2 -130.0 0  #overall phase shift to add to the D0->K+,pi-,pi-,pi+
+Dbar0{K-,pi+,pi+,pi-}::strongPhase  = D0{K+,pi-,pi-,pi+}::strongPhase

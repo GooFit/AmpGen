@@ -93,6 +93,21 @@ std::pair<double, double> EventType::minmax( const std::vector<size_t>& indices,
     if ( std::find( indices.begin(), indices.end(), x ) == indices.end() ) max -= mass( x );
   return std::pair<double, double>( min * min / GeV, max * max / GeV );
 }
+std::pair<size_t, size_t> EventType::count(const size_t& index) const 
+{
+  if( index >= size() ){
+    ERROR("Looking for matching particles to index = " << index << " > size of eventType");
+    return std::pair<size_t, size_t>(0, 0);
+  }
+  std::pair<size_t,size_t> rt(0,0);
+  for( size_t j = 0 ; j < size(); ++j ){ 
+    if( EventType::operator[](j) == EventType::operator[](index) ){
+      rt.second++;
+      if( j < index ) rt.first++;
+    }
+  }
+  return rt;
+}
 
 std::vector<std::vector<unsigned int>> EventType::getBosePairs() const
 {

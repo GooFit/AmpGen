@@ -17,10 +17,10 @@ namespace AmpGen
     
     static OptionsParser* getMe();
     static bool printHelp();
-    static void setArgs( int argc, char** argv );
+    static void setArgs( int argc, char** argv, const std::string& description="" );
     static void setArg( const std::string& arg ); 
     void addArg( const std::string& arg );
-    void setCommandLineArgs( int argc, char** argv ); 
+    void setCommandLineArgs( int argc, char** argv, const std::string& description =""); 
     void import( const std::string& fName );
     iterator find( const std::string& name );
     iterator begin();

@@ -32,6 +32,7 @@ namespace AmpGen
     EventType( const std::vector<std::string>&, const bool& isTD = false );
     std::map<std::string, size_t> getEventFormat( const bool& outputNames = false ) const;
    
+    std::pair<size_t,size_t>  count(const size_t& index) const; ///< Count the number of particles with name.
     std::pair<double, double> minmax( const std::vector<size_t>& indices, bool isGeV = false ) const;
     std::vector<std::vector<unsigned int>> getBosePairs() const;
     std::vector<double> masses() const;
@@ -49,7 +50,7 @@ namespace AmpGen
     std::string label( const std::vector<size_t>& index, bool isRoot = true ) const;
     std::vector<Projection> defaultProjections(const size_t& nBins) const;
     Projection projection(const size_t& nBins, const std::vector<size_t>& indices, const std::string& observable = "mass2") const;
-
+    
     bool operator==( const EventType& other ) const;
     bool has( const std::string& name ) const;
     EventType conj( const bool& headOnly = 0, const bool& dontConjHead = 0 ) const;
@@ -57,7 +58,8 @@ namespace AmpGen
     void setMotherMass( const double& mass ){ m_motherMass = mass ; } 
     void extendEventType( const std::string& branch ); 
     std::function<void( Event& )> symmetriser() const;
-    std::pair<size_t, size_t> dim() const;    ///< calculates the number of spin indices accociated with the initial and final state, i.e. the rank of the relevant transition matrix. 
+    ///< calculates the number of spin indices associated with the initial and final state, i.e. the rank of the relevant transition matrix. 
+    std::pair<size_t, size_t> dim() const;
   };
   std::ostream& operator<<( std::ostream& os, const EventType& type );
 } // namespace AmpGen
