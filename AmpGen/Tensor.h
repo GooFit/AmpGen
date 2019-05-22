@@ -120,9 +120,8 @@ namespace AmpGen
 
     void print(const bool& eval = false) const;
 
-    const std::vector<size_t>& uniqueElements() const {
-      return m_uniqueElements; 
-    }
+    const std::vector<size_t>& uniqueElements() const { return m_uniqueElements; }
+
     void operator+=( const Tensor& rhs );
     void operator-=( const Tensor& rhs );
     Tensor conjugate() const;

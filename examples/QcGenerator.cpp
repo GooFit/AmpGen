@@ -281,7 +281,7 @@ void add_CP_conjugate( MinuitParameterSet& mps )
         if( props != 0  ) new_name = props->anti().name() + "_" + tokens[1]; 
       }
     }
-    if( mps.map().count( new_name ) == 0 ){
+    if( mps.find( new_name ) == nullptr ){
       tmp.push_back( new MinuitParameter(new_name, MinuitParameter::Flag::Float, sgn * param->mean(), param->err(), 0, 0));
     }
   }

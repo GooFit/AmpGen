@@ -23,12 +23,11 @@ namespace AmpGen
 {
   class Event;
 
-  #define PACKET_SIZE 22
   DECLARE_ARGUMENT(MaxDepth, size_t );
   DECLARE_ARGUMENT(MinEvents, size_t );
   DECLARE_ARGUMENT(Dim, size_t );
-  DECLARE_ARGUMENT_PTR( Stream, std::ifstream );
-  DECLARE_ARGUMENT_DEFAULT( Functor, std::function<std::vector<real_t>( const Event& )>, nullptr );
+  DECLARE_ARGUMENT(Stream, std::ifstream* );
+  DECLARE_ARGUMENT(Functor, std::function<std::vector<real_t>( const Event& )>);
 
   class BinDT
   {
@@ -121,10 +120,8 @@ namespace AmpGen
       unsigned int getBin( const double* evt ) const;
       unsigned int size() const;
       void readFromStream( std::istream& stream );
-      void readFromBinary( std::ifstream& stream );
       void serialize( std::ofstream& output );
       void serialize( const std::string& filename );
-      void writeToBinary( std::ofstream& file );
       void setQueueOrdering( const std::vector<size_t>& queueOrdering ){ m_queueOrdering = queueOrdering ; }
       std::vector<std::shared_ptr<EndNode>>& nodes() { return m_endNodes; }
       const std::vector<std::shared_ptr<EndNode>>& const_nodes() const { return m_endNodes; }

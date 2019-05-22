@@ -35,19 +35,7 @@ Tensor::Tensor( const std::vector<Expression>& elements )
   setupCoordinates();
   for(auto& element : elements) append( element );
 }
-/*
-Tensor::Tensor( const std::vector<Tensor>& elements )
-{
-  if( elements.size() == 0 ) return Tensor();
-  std::vector<size_t> rank;
-  rank.push_back( elements.size() ); 
-  for( auto& d : element[0].dims() ) rank.push_back( d );
-  for( int i = 0 ; i < elements.size(); ++i )
-  {
-   
-  } 
-}
-*/
+
 Expression Tensor::get( const size_t& co )
 {
   if ( co >= m_elements.size() )

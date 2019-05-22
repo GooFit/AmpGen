@@ -102,8 +102,7 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
     ERROR( "Amplitude " << decayString << " not configured correctly" );
   }
   if ( finalStates.size() == fs.size() ) {
-    std::string finalStateString = "";
-    for ( auto& fs : finalStates ) finalStateString += fs + " ";
+    std::string finalStateString = vectorToString( finalStates, " ");
     for ( auto used : hasUsedFinalState ) {
       m_isStateGood &= used;
     }
@@ -391,7 +390,6 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   for( auto& p : finalStateParticles ) exchangeParities.push_back( p->props()->isFermion() ? -1 : 1 ); 
   for(auto& ordering : orderings){
     auto exchangeParity = minSwaps( ordering, exchangeParities );   
-    //INFO( vectorToString( ordering, ", ") << " "  << exchangeParity.second );
     setOrdering( ordering );
     Expression spinFactor = 1; 
     if( includeSpin && spinFormalism == "Covariant" ){
@@ -694,9 +692,7 @@ bool Particle::conservesParity( unsigned int L ) const
 
 std::string Particle::topologicalString() const
 {
-  std::string topo = "";
-  for ( auto& d : m_daughters ) topo += d->m_props->J();
-  return topo;
+  return std::accumulate( m_daughters.begin(), m_daughters.end(), std::string(""), [](auto& s, auto& d){ return s+d->props()->J() ; } );
 }
 const ParticleProperties* Particle::props() const { return m_props; }
 bool Particle::isHead() const { return m_isHead; }

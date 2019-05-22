@@ -168,7 +168,7 @@ Projection EventType::projection(const size_t& nBins, const std::vector<size_t>&
   bool useRootLabelling = NamedParameter<bool>("EventType::UseRootTEX", false );
   auto mm               = minmax(indices, true);
   std::string gevcccc   = useRootLabelling ? "GeV^{2}/c^{4}" : "\\mathrm{GeV}^{2}/c^{4}";
-  std::string gevcc     = useRootLabelling ? "GeV/c^{2}" : "\\mathrm{GeV}/c^{2}";
+  std::string gevcc     = useRootLabelling ? "GeV/c^{2}"     : "\\mathrm{GeV}/c^{2}";
   if( observable == "mass2" )
     return Projection( [indices]( const Event& evt ) { return evt.s( indices ); },
         "s" + vectorToString( indices ),

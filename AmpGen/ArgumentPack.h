@@ -12,6 +12,7 @@ namespace AmpGen
 {
   struct IArgument {
     virtual ~IArgument() = default;
+    
   };
   /** @class Argument 
     @brief Structure to pass "named" parameters to functions. 
@@ -38,20 +39,20 @@ namespace AmpGen
     auto entryList    = args.getArg<EntryList>().val; 
     \endcode
     @tparam TYPE Type of the argument, such as a string, a number, a bool etc.  
-    */
-  template <class TYPE> struct Argument : public IArgument 
+  */
+  template <typename TYPE>
+  struct Argument : public IArgument 
   {
-    Argument( const TYPE& x = TYPE() ) : val( x ) {}
+    template <typename T>
+    Argument( T x ) : val(x) {}
+    Argument() {
+      if constexpr(std::is_pointer_v<TYPE>) val = nullptr;
+      else val = TYPE();
+    }
     operator TYPE() const { return val; }
     TYPE val;
   };
-
-  template <class TYPE> struct ArgumentPtr : public IArgument 
-  {
-    ArgumentPtr( TYPE* x = nullptr ) : val( x ) {}
-    TYPE* val;
-  };
-
+  
   struct File : public IArgument 
   {
     std::string name;
@@ -63,39 +64,30 @@ namespace AmpGen
   class ArgumentPack
   {
     public:
-      template <class... ARGS>
+      template <typename... ARGS>
         ArgumentPack( const ARGS&... args )
         {
           std::tuple<ARGS...> argTuple( args... );
           for_each( argTuple, [this]( auto& f ) { m_parameters.emplace_back( makeShared( f ) ); } );
         }
-      template <class ARG>
-        ARG getArg( const ARG& default_argument = ARG() ) const
-        {
-          for ( auto& param : m_parameters ) {
-            auto ptr = dynamic_cast<ARG*>( param.get() );
-            if ( ptr != nullptr ) return *ptr;
-          }
-          return default_argument;
+      template <typename ARG, typename DEFAULT_TYPE=ARG> 
+        ARG getArg( const DEFAULT_TYPE& default_argument = DEFAULT_TYPE() ) const
+      {
+        for ( auto& param : m_parameters ) {
+          auto ptr = dynamic_cast<ARG*>( param.get() );
+          if ( ptr != nullptr ) return *ptr;
         }
+        return ARG(default_argument);
+      }
     private:
       std::vector<std::shared_ptr<IArgument>> m_parameters;
   };
-#define DECLARE_ARGUMENT( X, Y )                               \
-  struct X : public AmpGen::Argument<Y> {                      \
-    X( const Y& val = Y() ) : AmpGen::Argument<Y>( val ){};    \
+#define DECLARE_ARGUMENT(X, Y)                            \
+  struct X : public AmpGen::Argument<Y> {                 \
+    template<class Z>                                     \
+    X(Z val) : AmpGen::Argument<Y>(val){}                 \
+    X() : AmpGen::Argument<Y>(){}                         \
   }
-
-#define DECLARE_ARGUMENT_PTR( X, Y )                           \
-  struct X : public AmpGen::ArgumentPtr<Y> {                   \
-    X( Y* val = nullptr ) : AmpGen::ArgumentPtr<Y>( val ){};   \
-  }
-
-#define DECLARE_ARGUMENT_DEFAULT( X, Y, Z )                    \
-  struct X : public AmpGen::Argument<Y> {                      \
-    X( const Y& val = Z ) : AmpGen::Argument<Y>( val ){};      \
-  }
-
 } // namespace AmpGen
 
 #endif

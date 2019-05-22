@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "AmpGen/Chi2Estimator.h"
-#include "AmpGen/CoherenceFactor.h"
 #include "AmpGen/ErrorPropagator.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
@@ -109,11 +108,10 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
   std::vector<MinuitParameter*> slowParamPtrs;
   if ( nIterations != 0 ) {
     for ( auto& param : SlowParams ) {
-      auto mps_map = MPS.map();
-      auto it      = mps_map.find( param );
-      if ( it != mps_map.end() ) {
-        slowParamPtrs.push_back( it->second );
-        it->second->fix();
+      auto it      = MPS.find( param );
+      if ( it != nullptr ) {
+        slowParamPtrs.push_back( it );
+        it->fix();
       } else {
         WARNING( "Trying to release non-existent parameter: " << param );
       }

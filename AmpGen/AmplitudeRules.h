@@ -24,7 +24,7 @@ namespace AmpGen
   class AmplitudeRule
   {
     public:
-      AmplitudeRule( const std::string& reName, const std::map<std::string, MinuitParameter*>& mapping );
+      AmplitudeRule(MinuitParameter* re, MinuitParameter* im);
       std::string name() const { return m_name; }
       std::string head() const { return m_particle.name(); }
       std::string prefix() const { return m_prefix; }
@@ -33,11 +33,10 @@ namespace AmpGen
       friend class AmplitudeRules;
 
     private:
-      std::string      m_prefix;
-      std::string      m_name;
-      MinuitParameter* m_re;
-      MinuitParameter* m_im;
-      bool             m_isGood;
+      std::string      m_prefix = {""};
+      std::string      m_name   = {""};
+      MinuitParameter* m_re     = {nullptr};
+      MinuitParameter* m_im     = {nullptr};
       Particle         m_particle;
   };
   
@@ -50,7 +49,7 @@ namespace AmpGen
       bool hasDecay( const std::string& head );
       std::map<std::string, std::vector<AmplitudeRule>> rules();
       std::vector<std::pair<Particle, CouplingConstant>> getMatchingRules( 
-          const EventType& type, const std::string& prefix );
+          const EventType& type, const std::string& prefix="" );
       std::vector<AmplitudeRule> processesThatProduce(const Particle& particle) const; 
     private:
       std::map<std::string, std::vector<AmplitudeRule>> m_rules;
@@ -68,7 +67,6 @@ namespace AmpGen
       std::pair<MinuitParameter*, MinuitParameter*> operator[]( const size_t& index ) { return couplings[index]; }
       bool isFixed() const; 
       bool contains( const std::string& name ) const;
-      void changeSign();
       std::vector<std::pair<MinuitParameter*, MinuitParameter*>> couplings;
 
     private:

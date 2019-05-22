@@ -10,9 +10,10 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/EventList.h"
 
-#include "TFile.h"
-#include "TH1D.h"
-#include "TH2D.h"
+#include <TFile.h>
+#include <TH1D.h>
+#include <TH2D.h>
+#include <TGraph.h>
 #include <chrono>
 
 namespace AmpGen
@@ -97,6 +98,9 @@ namespace AmpGen
       }
       return plots;
     }
+  TGraph* boundary(const AmpGen::EventType& type, 
+                   const std::function<double(const AmpGen::Event&)>& p1, 
+                   const std::function<double(const AmpGen::Event&)>& p2 );
 } // namespace AmpGen
 
 #endif

@@ -65,7 +65,6 @@ namespace AmpGen
     void reset( bool resetEvents = false );
     void setEvents( EventList& list );
     void setMC( EventList& sim );
-    void PConjugate();
     void debug( const Event& evt, const std::string& nameMustContain="");
     void generateSourceCode( const std::string& fname, const double& normalisation = 1, bool add_mt = false );
     void resync();
@@ -76,7 +75,6 @@ namespace AmpGen
 
     std::map<std::string, std::vector<unsigned int>> getGroupedAmplitudes();
     Bilinears norms() const { return m_normalisations ; }
- 
 
   protected:
     std::vector<TransitionMatrix<complex_t>> m_matrixElements; ///< Vector of (expanded) matrix elements
