@@ -259,8 +259,9 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   auto& d2 = *particle.daughter(1);
   double S = 999;
   if( particle.S() == 0 ){ 
-    for( auto& l : particle_couplings ) if( l.first == L ){ S = l.second ; break; }
-    if( S == 999 ) ERROR("Spin orbital coupling impossible!");
+    auto it = std::find_if( particle_couplings.begin(), particle_couplings.end(), [&L](auto& l){ return l.second == L; } );
+    if( it != particle_couplings.end() ) S = it->second; 
+    else ERROR("Spin orbital coupling impossible!");
   }
   else S = particle.S()/2.;
   auto recoupling_constants = calculate_recoupling_constants( particle.spin(), Mz, L, S, d1.spin(), d2.spin() );

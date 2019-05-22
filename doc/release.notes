@@ -3,6 +3,7 @@
 ! Responsible : Tim Evans
 ! Purpose     : 
 !-----------------------------------------------------------------------------
+!=================== AmpGen v1r2 2019-05-17 ==================
  - Improved thread support for CoherentSum
  - Add examples/QcGenerator for Ψ(3770) decays 
 !=================== AmpGen v1r1 2019-03-22 ==================
@@ -21,8 +22,6 @@
 !=============================================================
 ! 2016-09-06 - Tim Evans 
  - First import of source, apps, headers
-
-
 ! 2016-09-02 - Tim Evans
  - Empty structure for the package
 !=============================================================

@@ -69,25 +69,6 @@ unsigned int BinDT::getBinNumber( const double* evt ) const { return ( *m_top )(
 
 unsigned int BinDT::size() const { return m_endNodes.size(); }
 
-namespace AmpGen
-{
-  struct PackedDecision {
-    uint8_t header;   //      = 2 bytes
-    uint8_t index;    //      = 8 bytes
-    uint32_t address; //      = 2 + 4 bytes
-    uint32_t left;    //      = 18
-    uint32_t right;   //      = 24 bytes
-    double cutVal;    //      = 14 bytes
-  };
-  struct PackedNode {
-    uint8_t header;
-    uint8_t packingBit[1];
-    uint32_t address;
-    uint32_t binNumber;
-    uint32_t voxNumber;
-    uint16_t packingBits[3];
-  };
-} // namespace AmpGen
 std::function<std::vector<double>( const Event& )> BinDT::makeDefaultFunctors()
 {
   if ( m_dim == 5 ) {
@@ -109,16 +90,10 @@ BinDT::BinDT( const ArgumentPack& args )
   m_maxDepth            = args.getArg<MaxDepth>( 999 );
   m_dim                 = args.getArg<Dim>( 5 );
   m_functors            = args.getArg<Functor>( makeDefaultFunctors() ).val;
-  std::ifstream* stream = args.getArg<Stream>().val;
   auto fname            = args.getArg<File>();
-  if ( stream != nullptr && stream->is_open() ) {
-    readFromBinary( *stream );
-  } else if ( fname.name != "" ) {
+  if ( fname.name != "" ) {
     std::ifstream stream( fname.name, fname.mode | std::ios::in );
-    if ( fname.mode & std::ios::binary )
-      readFromBinary( stream );
-    else
-      readFromStream( stream );
+    readFromStream( stream );
   }
 }
 
@@ -157,79 +132,6 @@ void BinDT::readFromStream( std::istream& stream )
       node_ptr->setChildren( nodes[tokens[3]].second, nodes[tokens[4]].second );
     }
   }
-}
-
-void BinDT::readFromBinary( std::ifstream& stream )
-{
-  std::map<uint32_t, std::shared_ptr<INode>> nodes;
-  std::map<uint32_t, std::pair<uint32_t, uint32_t>> fti;
-  char buffer[PACKET_SIZE]; // 24 byte word for the nodes //
-  size_t edc = 0;
-  while ( stream.read( buffer, PACKET_SIZE ) ) {
-    if ( ( uint8_t( buffer[0] ) ) == 0xAA ) {
-      PackedDecision pd;
-      memcpy( &pd, buffer, PACKET_SIZE );
-      nodes.emplace( pd.address, std::make_shared<Decision>( pd.index, pd.cutVal ) );
-      DEBUG( "header = " << std::hex << (uint8_t)pd.header << std::dec << " index = " << pd.index
-          << " cut-val = " << pd.cutVal << " left-node = " << pd.left << " right-node=" << std::hex
-          << pd.right << " " << std::dec << sizeof( PackedDecision ) << " " << PACKET_SIZE );
-      fti[pd.address] = std::make_pair( pd.left, pd.right );
-    } else if ( uint8_t( buffer[0] ) == 0xBB ) {
-      edc++;
-      PackedNode pd;
-      memcpy( &pd, buffer, PACKET_SIZE );
-      nodes.emplace( pd.address, std::make_shared<EndNode>( pd.voxNumber, pd.binNumber ) );
-    } else {
-      ERROR( "Packet header: " << std::hex << uint8_t( buffer[0] ) << " not recognised" );
-    }
-    if ( nodes.size() == 1 ) m_top = nodes.begin()->second;
-  }
-  INFO( "Read: " << nodes.size() << " nodes from binary file, now re-establishing tree structure; EndNodes=" << edc );
-
-  for ( auto& node : nodes ) {
-    Decision* node_ptr = dynamic_cast<Decision*>( node.second.get() );
-    if ( node_ptr == nullptr ) continue;
-    auto child_nodes = fti.find( node.first );
-    if ( child_nodes == fti.end() ) {
-      ERROR( "Child nodes not found!" );
-    }
-    auto pL = nodes.find( child_nodes->second.first );
-    auto pR = nodes.find( child_nodes->second.second );
-    if ( pL == nodes.end() || pR == nodes.end() ) {
-      ERROR( "Nodes for " << node_ptr << " not found! success counter "
-          << " " << child_nodes->second.first << " " << child_nodes->second.second );
-    } else {
-      node_ptr->setChildren( pL->second, pR->second );
-    }
-  }
-}
-
-void BinDT::writeToBinary( std::ofstream& stream )
-{
-  AddressCompressor counter;
-  m_top->visit( [&stream, &counter]( const INode* node ) {
-      std::array<char, PACKET_SIZE> word;
-      const BinDT::Decision* decision = dynamic_cast<const BinDT::Decision*>( node );
-      if ( decision != nullptr ) {
-      PackedDecision pd;
-      pd.header  = 0xAA;
-      pd.address = counter[decision]; // uint32_t ( 0xFFFFFFFF &  (uint64_t)this );
-      pd.index   = decision->m_index;
-      pd.cutVal  = decision->m_value;
-      pd.left    = counter[decision->m_left.get()];  // (uint32_t)m_left.get();
-      pd.right   = counter[decision->m_right.get()]; // (uint32_t)m_right.get();
-      memcpy( word.data(), &pd, PACKET_SIZE );
-      } else if ( dynamic_cast<const BinDT::EndNode*>( node ) != nullptr ) {
-      const BinDT::EndNode* endNode = dynamic_cast<const BinDT::EndNode*>( node );
-      PackedNode pd;
-      pd.header    = 0xBB;
-      pd.address   = counter[endNode];
-      pd.binNumber = endNode->m_binNumber;
-      pd.voxNumber = endNode->m_voxNumber;
-      memcpy( word.data(), &pd, PACKET_SIZE );
-      }
-      stream.write( (char*)( &word ), sizeof( word ) );
-  } );
 }
 
 void BinDT::serialize( std::ofstream& output )

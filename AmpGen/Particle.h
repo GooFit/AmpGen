@@ -95,32 +95,6 @@ namespace AmpGen
   class ParticleProperties; 
   class Particle
   {
-    private:
-      const ParticleProperties* m_props;                     ///< Particle Properties from the PDG
-      std::string m_name                     = {""};         ///< Name of the particle
-      std::string m_lineshape                = {"BW"};       ///< Propagator to use
-      std::string m_uniqueString             = {""};         ///< Unique string of particle tree
-      int m_parity                           = {0};          ///< Intrinsic parity of particle
-      int m_polState                         = {0};          ///< polarisation state 
-      unsigned int m_index                   = {999};        ///< Index, for constructing four-momenta
-      unsigned int m_originalIndex           = {999};        ///< Starting index, used in Bose-symmetrisation
-      unsigned int m_orbital                 = {0};          ///< Orbital angular momentum between daughters
-      unsigned int m_spinConfigurationNumber = {0};          ///< Spin configuration quantum number 'S'
-      unsigned int m_minL                    = {0};          ///< Minimum orbital angular momentum
-      bool m_isHead                          = {true};       ///< Flag that particle is head of decay chain
-      bool m_usesDefaultLineshape            = {false};      ///< Flag to check if default shape is used
-      bool m_isStateGood                     = {true};       ///< Flag to check the decay is well-formed
-      std::vector<std::shared_ptr<Particle>> m_daughters;    ///< Array of daughter particles
-      std::vector<std::string> m_modifiers;                  ///< Additional modifiers for amplitude
-      std::string m_spinFormalism            = {""};         ///< Spin formalism to use for this particle (global)
-      std::string m_spinBasis                = {""};         ///< Basis to use for external polarisations (global)
-      std::string m_defaultModifier          = {""};         ///< Default Modifier to use (global)
- 
-      void pdgLookup();                                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
-      bool hasModifier( const std::string& modifier ) const; ///< Check if this particle has a given modifier
-      std::string modifierString() const;                    ///< Re-generate modifier string used to create particle
-      std::string makeUniqueString();                        ///< Generate the decay descriptor for this decay. 
-      void sortDaughters();                                  ///< Recursively order the particle's decay products. 
     public:
       /// @constructor default constructor
       Particle();
@@ -139,10 +113,17 @@ namespace AmpGen
 
       /// @function (Quasi) Constructor that returns the (quasi)CP conjugated amplitude. The full behaviour of the amplitude is made more complicated by the ordering convention. 
       Particle conj(bool invertHead = true, bool reorder = true);
-      
+
+      /// @function Set the orbital quantum number 'L' for this decay.       
       void setOrbital( const unsigned int& orbital );
+
+      /// @function Set the lineshape for the decay of this particle. 
       void setLineshape( const std::string& lineshape );
+
+      /// @function Set the index'th daughter of this to particle. 
       void setDaughter( const Particle& particle, const unsigned int& index );
+
+      /// @function Set the flag to say this 
       void setTop( bool state = true );
       void setIndex( const unsigned int& index, const bool& setOri = false );
       void clearDecayProducts();
@@ -270,6 +251,33 @@ namespace AmpGen
       };
       /// @function matches Check the matching between two decay chains, according to the MatchState enum. 
       unsigned int matches( const Particle& other ) const; 
+    
+    private:
+      const ParticleProperties* m_props;                     ///< Particle Properties from the PDG
+      std::string m_name                     = {""};         ///< Name of the particle
+      std::string m_lineshape                = {"BW"};       ///< Propagator to use
+      std::string m_uniqueString             = {""};         ///< Unique string of particle tree
+      int m_parity                           = {0};          ///< Intrinsic parity of particle
+      int m_polState                         = {0};          ///< polarisation state 
+      unsigned int m_index                   = {999};        ///< Index, for constructing four-momenta
+      unsigned int m_originalIndex           = {999};        ///< Starting index, used in Bose-symmetrisation
+      unsigned int m_orbital                 = {0};          ///< Orbital angular momentum between daughters
+      unsigned int m_spinConfigurationNumber = {0};          ///< Spin configuration quantum number 'S'
+      unsigned int m_minL                    = {0};          ///< Minimum orbital angular momentum
+      bool m_isHead                          = {true};       ///< Flag that particle is head of decay chain
+      bool m_usesDefaultLineshape            = {false};      ///< Flag to check if default shape is used
+      bool m_isStateGood                     = {true};       ///< Flag to check the decay is well-formed
+      std::vector<std::shared_ptr<Particle>> m_daughters;    ///< Array of daughter particles
+      std::vector<std::string> m_modifiers;                  ///< Additional modifiers for amplitude
+      std::string m_spinFormalism            = {""};         ///< Spin formalism to use for this particle (global)
+      std::string m_spinBasis                = {""};         ///< Basis to use for external polarisations (global)
+      std::string m_defaultModifier          = {""};         ///< Default Modifier to use (global)
+ 
+      void pdgLookup();                                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
+      bool hasModifier( const std::string& modifier ) const; ///< Check if this particle has a given modifier
+      std::string modifierString() const;                    ///< Re-generate modifier string used to create particle
+      std::string makeUniqueString();                        ///< Generate the decay descriptor for this decay. 
+      void sortDaughters();                                  ///< Recursively order the particle's decay products. 
   };
   std::ostream& operator<<( std::ostream& os, const Particle& particle );
 } // namespace AmpGen

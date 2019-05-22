@@ -183,9 +183,6 @@ ThreeBodyCalculator::ThreeBodyCalculator( const std::string& head, MinuitParamet
     finalStates.push_back( type );
   }
   for ( auto& type : finalStates ) m_widths.emplace_back( type, mps );
-
-  bool isReady = true; 
-  for( auto& width : m_widths ) isReady &= width.totalWidth.isReady();  
   if( nKnots != 999) setAxis( nKnots, min, max ); 
 }
 
@@ -205,7 +202,7 @@ void ThreeBodyCalculator::updateRunningWidth( MinuitParameterSet& mps, const dou
     double s                   = m_min + double(c) * m_step;
     double I                   = getWidth(s);
     const std::string knotName = m_name + "::Spline::Gamma::" + std::to_string( c );
-    if ( mps.map().find( knotName ) != mps.map().end() ) mps[knotName]->setCurrentFitVal( I );
+    if ( mps.find( knotName ) != nullptr ) mps[knotName]->setCurrentFitVal( I );
     INFO( knotName << " = " << I );
   }
 }

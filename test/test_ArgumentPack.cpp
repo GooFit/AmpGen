@@ -7,13 +7,15 @@ namespace utf = boost::unit_test;
 
 #include "AmpGen/ArgumentPack.h"
 
-DECLARE_ARGUMENT_DEFAULT( test_argument_string, std::string, "hello world");
+DECLARE_ARGUMENT( test_argument_string, std::string);
 DECLARE_ARGUMENT( test_argument_double , double );
+
+static const test_argument_double value;
 
 struct Mock {
   Mock( const AmpGen::ArgumentPack& args ){
     t1 = args.getArg<test_argument_double>().val;
-    t2 = args.getArg<test_argument_string>().val;
+    t2 = args.getArg<test_argument_string>("hello world").val;
   }
   template <class ...ARGS> Mock( const ARGS&... args ) : 
     Mock( AmpGen::ArgumentPack(args...) ) {}

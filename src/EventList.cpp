@@ -57,12 +57,12 @@ void EventList::loadFromFile( const std::string& fname, const ArgumentPack& args
 void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
 {
   ProfileClock read_time; 
-  auto pdfSize      = args.getArg<CacheSize>().val;
-  auto filter       = args.getArg<Filter>().val;
-  auto getGenPdf    = args.getArg<GetGenPdf>(true).val;
-  auto weightBranch = args.getArg<WeightBranch>().val;
+  auto pdfSize      = args.getArg<CacheSize>(0).val;
+  auto filter       = args.getArg<Filter>(std::string("")).val;
+  auto getGenPdf    = args.getArg<GetGenPdf>(false).val;
+  auto weightBranch = args.getArg<WeightBranch>(std::string("")).val;
   auto branches     = args.getArg<Branches>().val;
-  auto applySym     = args.getArg<ApplySym>().val;
+  auto applySym     = args.getArg<ApplySym>(false).val;
   auto entryList    = args.getArg<EntryList>().val; 
   auto eventFormat  = m_eventType.getEventFormat( true );
 
@@ -156,7 +156,7 @@ TH1D* EventList::makeProjection( const Projection& projection, const ArgumentPac
 {
   auto selection      = args.getArg<Selection>().val;
   auto weightFunction = args.getArg<WeightFunction>().val;
-  std::string prefix  = args.getArg<Prefix>();
+  std::string prefix  = args.getArg<Prefix>(std::string(""));
   auto plot = projection.plot(prefix);
   plot->SetLineColor(args.getArg<LineColor>(kBlack).val); 
   plot->SetMarkerSize(0);

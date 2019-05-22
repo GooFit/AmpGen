@@ -70,7 +70,6 @@ namespace AmpGen
   {
     return std::is_constructible<T,R...>::value && (false == std::is_same<T, R...>::value);
   }
-   
   template <typename arg=void, typename... args> std::vector<std::string> typelist()
   {
     std::vector< std::string > rt;

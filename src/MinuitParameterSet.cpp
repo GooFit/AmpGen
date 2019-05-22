@@ -21,10 +21,12 @@ using namespace AmpGen;
 
 MinuitParameterSet::MinuitParameterSet() = default;
 
-MinuitParameterSet::MinuitParameterSet( const MinuitParameterSet& other )
-  : m_parameters( other.m_parameters ), m_keyAccess( other.m_keyAccess )
+MinuitParameterSet::MinuitParameterSet(const std::vector<MinuitParameter*>& params )
 {
+  for( auto& param : params ) add(param); 
 }
+MinuitParameterSet::MinuitParameterSet( const MinuitParameterSet& other )
+  : m_parameters( other.m_parameters ), m_keyAccess( other.m_keyAccess ){}
 
 MinuitParameterSet MinuitParameterSet::getFloating()
 {
@@ -39,9 +41,7 @@ bool MinuitParameterSet::addToEnd( MinuitParameter* parPtr )
 {
   bool success = true;
   if ( nullptr == parPtr ) return false;
-
   m_parameters.push_back( parPtr );
-
   if ( m_keyAccess.find( parPtr->name() ) != m_keyAccess.end() ) {
     WARNING( "Parameter with name " << parPtr->name() << " already exists!" );
   }
@@ -69,14 +69,6 @@ bool MinuitParameterSet::unregister( MinuitParameter* parPtr )
 }
 
 unsigned int MinuitParameterSet::size() const { return m_parameters.size(); }
-
-void MinuitParameterSet::deleteListAndObjects()
-{
-  for ( auto it = m_parameters.begin(); it != m_parameters.end(); ++it )  delete *it;
-  m_parameters.clear();
-}
-
-void MinuitParameterSet::deleteListKeepObjects() { m_parameters.clear(); }
 
 void MinuitParameterSet::print( std::ostream& os ) const
 {
@@ -229,8 +221,6 @@ void MinuitParameterSet::loadFromFile( const std::string& file )
       } );
 }
 
-MinuitParameterSet::~MinuitParameterSet() = default;
-
 void MinuitParameterSet::set( const MinuitParameterSet& other )
 {
   for ( auto& param : *this ) {
@@ -244,14 +234,29 @@ void MinuitParameterSet::resetToInit()
   for ( auto& param : *this ) param->resetToInit();
 }
 
+void MinuitParameterSet::rename(const std::string& name, const std::string& new_name)
+{
+  auto it = at(name);
+  if( it == nullptr ){
+    ERROR("Parameter: " << name << " not found");
+    return;
+  }
+  if( name == new_name ) return;
+  if( at(new_name) != nullptr ){
+    ERROR("New key for " << name << " =  " << new_name << " already exists");
+    return;
+  } 
+  it->setName(new_name);
+  m_keyAccess.erase(name);
+  m_keyAccess.emplace(new_name, it);
+}
+
 MinuitParameter* MinuitParameterSet::addOrGet( const std::string& name, const unsigned int& flag, const double& mean,
     const double& sigma, const double& min, const double& max )
 {
   if ( m_keyAccess.count( name ) != 0 ) return m_keyAccess[name];
   return add( name, flag, mean, sigma, min, max );
 }
-std::map<std::string, MinuitParameter*>&       MinuitParameterSet::map() { return m_keyAccess; }
-const std::map<std::string, MinuitParameter*>& MinuitParameterSet::const_map() const { return m_keyAccess; }
 MinuitParameterSet::const_iterator  MinuitParameterSet::cbegin() const { return m_parameters.cbegin(); }
 MinuitParameterSet::const_iterator  MinuitParameterSet::cend()   const { return m_parameters.cend(); }
 MinuitParameterSet::iterator        MinuitParameterSet::begin()        { return m_parameters.begin(); }

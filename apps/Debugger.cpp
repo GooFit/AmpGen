@@ -70,11 +70,7 @@ void invert( MinuitParameter* param, MinuitParameterSet& mps )
       if( props != 0  ) new_name = props->anti().name() + "_" + tokens[1]; 
     }
   }
-  if( param->name() != new_name && mps.find(new_name) == nullptr ){
-    mps.map().erase( param->name() );
-    param->setName( new_name );
-    mps.map().emplace( param->name(), param );
-  }
+  mps.rename( param->name(), new_name );
   if( sgn == -1 ) param->setCurrentFitVal( -1 * param->mean() );
 }
 

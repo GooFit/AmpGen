@@ -21,8 +21,9 @@ namespace AmpGen
     typedef std::vector<MinuitParameter*>::const_iterator const_iterator; 
     
     MinuitParameterSet();
+    MinuitParameterSet(const std::vector<MinuitParameter*>& params );
     MinuitParameterSet( const MinuitParameterSet& other );
-    ~MinuitParameterSet();
+    ~MinuitParameterSet() = default;
 
     MinuitParameterSet getFloating();
 
@@ -34,24 +35,19 @@ namespace AmpGen
     void loadFromStream();
     void loadFromFile( const std::string& name );
     void resetToInit();
+    void print( std::ostream& os = std::cout ) const;
+    void printVariable( std::ostream& os = std::cout ) const;
+    void set( const MinuitParameterSet& mps );
+    void rename(const std::string& name, const std::string& new_name); 
     unsigned int size() const;
 
-    std::map<std::string, MinuitParameter*>& map();
-    const std::map<std::string, MinuitParameter*>& const_map() const;
     const_iterator cbegin() const;
     const_iterator cend()   const;
     iterator       begin();
     iterator       end();
     const_iterator begin() const;
     const_iterator end()   const;
-
-    void deleteListAndObjects();
-    void deleteListKeepObjects();
-
-    void print( std::ostream& os = std::cout ) const;
-    void printVariable( std::ostream& os = std::cout ) const;
-
-    void set( const MinuitParameterSet& mps );
+    
     MinuitParameter* at( const std::string& key );
     MinuitParameter* at( const size_t& index ) const;
     MinuitParameter* operator[]( const std::string& key );
@@ -67,9 +63,7 @@ namespace AmpGen
     std::vector<MinuitParameter*>           m_parameters;
     std::vector<MinuitExpression*>          m_expressions;
     std::map<std::string, MinuitParameter*> m_keyAccess;
-
   };
-
 } // namespace AmpGen
 #endif
 //

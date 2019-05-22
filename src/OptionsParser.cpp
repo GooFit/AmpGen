@@ -75,31 +75,30 @@ void OptionsParser::import( const std::string& fName )
   int braceDepth = 0 ; 
   std::vector<std::string> currentTokens; 
   processFile( fName, [this, &currentTokens, &braceDepth]( auto& line ) {
-      if ( this->ignoreThisLine( line ) ) return;
-      auto tokens = this->makeParsedStrings( line, braceDepth );
-      for ( auto& token : tokens ) currentTokens.push_back( token );
-      if ( tokens.size() == 0 ) return;
-      std::string name = currentTokens[0];
-      if ( name == "Import" && currentTokens.size() == 2 ) {
+    if ( this->ignoreThisLine( line ) ) return;
+    auto tokens = this->makeParsedStrings( line, braceDepth );
+    for ( auto& token : tokens ) currentTokens.push_back( token );
+    if ( tokens.size() == 0 ) return;
+    std::string name = currentTokens[0];
+    if ( name == "Import" && currentTokens.size() == 2 ) {
       this->import( expandGlobals( tokens[1] ) );
       currentTokens.clear();
       return;
-      }
-      if ( name == "Alias" && currentTokens.size() == 3 ) {
+    }
+    if ( name == "ParticlePropertiesList::Alias" && currentTokens.size() == 3 ) {
       ParticlePropertiesList::getMutable()->makeAlias( tokens[1], tokens[2] );
       currentTokens.clear();
       return;
-      }
-      if ( braceDepth == 0 ) {
-      if ( this->m_parsedLines.find( name ) != this->m_parsedLines.end() ) {
+    }
+    if ( braceDepth != 0 ) return;
+    if ( this->m_parsedLines.find( name ) != this->m_parsedLines.end() ) {
       WARNING( "Overwriting parameter: " << name );
-      }
-      currentTokens.erase( std::remove_if( currentTokens.begin(), currentTokens.end(),
-            []( const std::string& o ) { return o == "{" || o == "}"; } ),
-          currentTokens.end() );
-      this->m_parsedLines[name] = currentTokens;
-      currentTokens.clear();
-      }
+    }
+    currentTokens.erase( std::remove_if( currentTokens.begin(), currentTokens.end(),
+    []( const std::string& o ) { return o == "{" || o == "}"; } ),
+    currentTokens.end() );
+    this->m_parsedLines[name] = currentTokens;
+    currentTokens.clear();
   } );
 
 
@@ -117,7 +116,6 @@ std::vector<std::string> OptionsParser::makeParsedStrings( const std::string& li
 {
   std::string s = line;
   if ( s.empty() ) return {};
-
   s.push_back( ' ' );                         // makes sure we get last element
   s                                = " " + s; // makes things easier when we start with quotes.
   std::string::const_iterator prev = s.begin();

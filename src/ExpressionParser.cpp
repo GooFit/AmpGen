@@ -112,13 +112,10 @@ Expression ExpressionParser::processEndPoint( const std::string& name )
   if ( name == "i" ) return Constant( 0, 1 );
 
   if ( m_mps != nullptr ) {
-    auto map = m_mps->map();
-    auto it  = map.find( name );
-    if ( it != map.end() )
-      return MinuitParameterLink( it->second );
+    auto it = m_mps->find(name);
+    if ( it != nullptr ) return MinuitParameterLink( it );
     else {
-      WARNING( "Token not understood: " << name << " [map size = " << map.size() << "]" );
-      for ( auto& ip : map ) INFO( "map entry = " << ip.first );
+      WARNING( "Token not understood: " << name << " [map size = " << m_mps->size() << "]" );
     }
   }
   return Parameter( name, 0, true );

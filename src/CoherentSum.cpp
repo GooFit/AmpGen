@@ -50,7 +50,7 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
     m_matrixElements[i] = TransitionMatrix<complex_t>( amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), this->m_dbThis);
     CompilerWrapper().compile( m_matrixElements[i].pdf, this->m_objCache); } );
   }
-  m_isConstant = isFixedPDF(mps);
+  m_isConstant = false ; // isFixedPDF(mps);
 }
  
 void CoherentSum::prepare()
@@ -258,13 +258,6 @@ bool CoherentSum::isFixedPDF(const MinuitParameterSet& mps) const
     if( ! matrixElement.coupling.isFixed() ) return false; 
   }
   return true;
-}
-
-void CoherentSum::PConjugate()
-{
-  for ( auto& matrixElement : m_matrixElements ) {
-    if ( matrixElement.decayTree.finalStateParity() == -1 ) matrixElement.coupling.changeSign();
-  }
 }
 
 complex_t CoherentSum::getValNoCache( const Event& evt ) const
