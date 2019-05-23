@@ -222,9 +222,11 @@ int main( int argc, char** argv )
   auto tags           = NamedParameter<std::string>("TagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();
   
   gRandom = new TRandom3(seed);
+  #ifdef _OPENMP
   omp_set_num_threads( nThreads );
   INFO("Setting " << nThreads << " fixed threads for OpenMP");
   omp_set_dynamic(0);  
+  #endif
   MinuitParameterSet MPS; 
   MPS.loadFromStream();
   add_CP_conjugate( MPS );
