@@ -11,8 +11,10 @@
 #include <TFile.h>
 #include <TRandom3.h>
 #include <TRandom.h>
-#include <omp.h>
-#include <thread>
+#ifdef _OPENMP
+  #include <omp.h>
+  #include <thread>
+#endif
 
 using namespace AmpGen;
 using namespace std::complex_literals;
