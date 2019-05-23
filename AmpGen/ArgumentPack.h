@@ -45,12 +45,9 @@ namespace AmpGen
   {
     template <typename T>
     Argument( T x ) : val(x) {}
-    Argument() {
-      if constexpr(std::is_pointer_v<TYPE>) val = nullptr;
-      else val = TYPE();
-    }
+    Argument() = default;
     operator TYPE() const { return val; }
-    TYPE val;
+    TYPE val = { TYPE() };
   };
   
   struct File : public IArgument 
