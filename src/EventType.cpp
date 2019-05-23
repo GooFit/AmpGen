@@ -158,7 +158,7 @@ std::vector<Projection> EventType::defaultProjections(const size_t& nBins) const
   for ( size_t r = 2; r < size(); ++r ) { /// loop over sizes ///
     std::vector<std::vector<size_t>>  combR = nCr( size(), r );
     std::transform( combR.begin(), combR.end(), std::back_inserter(projections), 
-      [&](auto& index){ return projection(nBins, index, defaultObservable )  ; } );
+      [&](auto& index){ return this->projection(nBins, index, defaultObservable ); } );
   }
   return projections;
 }
