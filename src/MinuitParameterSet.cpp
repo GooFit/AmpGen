@@ -32,7 +32,9 @@ MinuitParameterSet MinuitParameterSet::getFloating()
 {
   MinuitParameterSet floating;
   for ( auto& param : *this ) {
-    if ( param->iFixInit() == MinuitParameter::Flag::Float ) floating.add(param);
+    if ( param->iFixInit() == MinuitParameter::Flag::Float && 
+         dynamic_cast<MinuitExpression*>(param) != nullptr 
+       ) floating.add(param);
   }
   return floating;
 }
@@ -193,8 +195,8 @@ void MinuitParameterSet::tryAlias( const std::vector<std::string>& line )
     std::string name       = line[0];
     MinuitExpression* expr = new MinuitExpression( line, this );
     if ( expr->isGood() ) {
-      m_expressions.push_back( expr );
-      m_keyAccess[name] = expr;
+      addToEnd( expr );
+     // m_keyAccess[name] = expr;
     } else {
       ERROR( "Expression is ill-formed: " << line[0] );
       delete expr;

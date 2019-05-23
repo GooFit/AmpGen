@@ -17,18 +17,14 @@ ParticlePropertiesList* ParticlePropertiesList::ptr = nullptr;
 
 const ParticlePropertiesList* ParticlePropertiesList::getMe()
 {
-  if(!ptr){
-    ptr = new ParticlePropertiesList();
-  }
+  if(!ptr) ptr = new ParticlePropertiesList();
   if(nullptr == ptr) FATAL("Couldn't get ParticlePropertiesList (i.e. myself)" );
   return ptr;
 }
 
 ParticlePropertiesList* ParticlePropertiesList::getMutable()
 {
-  if(!ptr){
-    ptr = new ParticlePropertiesList();
-  }
+  if(!ptr) ptr = new ParticlePropertiesList();
   if(ptr == nullptr) FATAL( "Couldn't get ParticlePropertiesList (i.e. myself)" );
   return ptr;
 }
@@ -72,17 +68,13 @@ const std::vector<std::string> ParticlePropertiesList::dirList() const
 
 ParticlePropertiesList::ParticlePropertiesList( const std::string& fname_in )
 {
-
-  auto _dirList = dirList();
-
-  for ( auto& d : _dirList ) {
-    if ( readLatexLabels( d + "pdgID_to_latex.dat" ) ) break;
-  }
-  for ( auto& d : _dirList ) {
-    if ( readFile( d + "mass_width.csv" ) ) break;
-  }
-  for ( auto& d : _dirList ) {
-    if ( readFile( d + "MintDalitzSpecialParticles.csv" ) ) break;
+  auto dl = dirList();
+  bool status = true; 
+  status &= std::any_of( dl.begin(), dl.end(), [this](auto& d){ return this->readLatexLabels(d +"pdgID_to_latex.dat") ; } );
+  status &= std::any_of( dl.begin(), dl.end(), [this](auto& d){ return this->readFile(d +"mass_width.csv") ; } );
+  status &= std::any_of( dl.begin(), dl.end(), [this](auto& d){ return this->readFile(d +"MintDalitzSpecialParticles.csv") ; } );
+  if( !status ){
+    WARNING("Failed to load full PDG configuration, beware of unexpected behaviour");
   }
   makeMappings();
   m_quasiStableThreshold = NamedParameter<double>( "ParticleProperties::qsThreshold", KeV ); /// limit is 1 keV
@@ -90,15 +82,12 @@ ParticlePropertiesList::ParticlePropertiesList( const std::string& fname_in )
 
 bool ParticlePropertiesList::readLatexLabels( const std::string& name )
 {
-
   if ( !fileExists( name ) ) return false;
-
   m_latexLabels.clear();
   processFile( name, [this]( auto& line ) {
     auto tokens                            = split( line, ' ' );
     this->m_latexLabels[stoi( tokens[0] )] = std::make_pair( tokens[1], tokens[2] );
   } );
-
   return true;
 }
 
@@ -117,7 +106,6 @@ bool ParticlePropertiesList::readFile( const std::string& name )
       WARNING( line << " is not valid" );
       return;
     }
-
     auto label = m_latexLabels.find( P.pdgID() );
     if ( label != m_latexLabels.end() ) P.setLabel( label->second.first );
     m_theList.push_back( P );

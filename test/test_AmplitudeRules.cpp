@@ -1,6 +1,6 @@
 #define BOOST_TEST_DYN_LINK
 
-#define BOOST_TEST_MODULE "ArgumentPack"
+#define BOOST_TEST_MODULE "AmplitudeRules"
 
 #include <boost/test/included/unit_test.hpp>
 namespace utf = boost::unit_test;

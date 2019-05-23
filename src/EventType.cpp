@@ -146,8 +146,8 @@ EventType EventType::conj( const bool& headOnly, const bool& dontConjHead ) cons
 {
   std::vector<std::string> type;
   type.push_back( dontConjHead ? m_mother : ParticlePropertiesList::get( m_mother )->anti().name() );
-
-  for ( auto& x : m_particleNames ) type.push_back( headOnly ? x : ParticlePropertiesList::get( x )->anti().name() );
+  std::transform( m_particleNames.begin(), m_particleNames.end(), std::back_inserter(type), 
+      [&](auto& x){ return headOnly ? x : ParticlePropertiesList::get(x)->anti().name() ; } );
   return EventType( type );
 }
 
@@ -157,8 +157,8 @@ std::vector<Projection> EventType::defaultProjections(const size_t& nBins) const
   std::vector<Projection> projections;
   for ( size_t r = 2; r < size(); ++r ) { /// loop over sizes ///
     std::vector<std::vector<size_t>>  combR = nCr( size(), r );
-    for ( auto& indices : combR )
-      projections.emplace_back( projection(nBins, indices, defaultObservable ) );
+    std::transform( combR.begin(), combR.end(), std::back_inserter(projections), 
+      [&](auto& index){ return projection(nBins, index, defaultObservable )  ; } );
   }
   return projections;
 }
@@ -226,9 +226,7 @@ std::function<void( Event& )> EventType::symmetriser() const
 
 bool EventType::has( const std::string& name ) const
 {
-  for ( auto& it : m_particleNames )
-    if ( it == name ) return true;
-  return false;
+  return std::any_of( m_particleNames.begin(), m_particleNames.end(), [&name](auto& it) { return it == name ; } );
 }
 
 bool EventType::isTimeDependent() const { return m_timeDependent; }

@@ -18,7 +18,7 @@ DEFINE_CAST( ExpressionPack )
 void ExpressionParser::processBinaryOperators( std::vector<std::string>& opCodes, std::vector<Expression>& expressions )
 {
   for ( auto& fcn : m_binaryFunctions ) {
-    for ( int pos = 0; pos < (int)opCodes.size(); ++pos ) {
+    for ( int pos = 0; pos < int(opCodes.size()); ++pos ) {
       if ( opCodes[pos] != fcn.first ) continue;
       expressions[pos] = fcn.second( expressions[pos], expressions[pos + 1] );
       expressions.erase( expressions.begin() + pos + 1 );
@@ -30,7 +30,7 @@ void ExpressionParser::processBinaryOperators( std::vector<std::string>& opCodes
 
 void ExpressionParser::processUnaryOperators( std::vector<std::string>& opCodes, std::vector<Expression>& expressions )
 {
-  for ( int pos = 0; pos < (int)opCodes.size(); ++pos ) {
+  for ( int pos = 0; pos < int(opCodes.size()); ++pos ) {
     auto fcn = m_unaryFunctions.find( opCodes[pos] );
     DEBUG( " op = " << opCodes[pos] << " pos = " << pos );
     if ( fcn == m_unaryFunctions.end() ) continue;
@@ -40,37 +40,47 @@ void ExpressionParser::processUnaryOperators( std::vector<std::string>& opCodes,
   }
 }
 
-Expression ExpressionParser::parseTokens( const std::vector<std::string>& tokens )
+std::vector<std::string>::iterator findMatchingBracket( 
+   const std::vector<std::string>::iterator& begin, 
+   const std::vector<std::string>::iterator& end )
 {
-  int nOpenedBrackets = 0;
-  std::vector<std::vector<std::string>> expressions;
-  expressions.push_back( std::vector<std::string>() );
-  for ( auto iToken = tokens.begin(); iToken != tokens.end(); ++iToken ) {
-    auto& token = *iToken;
-    expressions.rbegin()->push_back( token );
-    if ( token == "(" ) nOpenedBrackets++;
-    if ( token == ")" ) nOpenedBrackets--;
-    if ( nOpenedBrackets == 0 && iToken != tokens.end() - 1 ) expressions.push_back( std::vector<std::string>() );
+  int openedBrackets = 1;
+  if( begin + 1 >= end ) return end; 
+  for( auto it = begin+1; it != end; ++it )
+  {
+    if( *it == "(")  openedBrackets++;
+    if( *it == ")" ) openedBrackets--;
+    if( openedBrackets == 0 ) return it;
   }
-  for ( auto& eC : expressions ) {
-    if ( eC.size() > 2 && *eC.begin() == "(" && *eC.rbegin() == ")" ) {
-      eC.erase( eC.end() - 1 );
-      eC.erase( eC.begin() );
+  ERROR("Unmatched brace in expression");
+  return end; 
+}
+
+Expression ExpressionParser::parseTokens( const std::vector<std::string>::iterator& begin,
+                                          const std::vector<std::string>::iterator& end )
+{
+  std::vector<std::string> opCodes;
+  std::vector<Expression> expressions; 
+  for( auto it = begin; it != end; ++it )
+  {
+    if( *it == "(" ){
+      auto begin_2 = it;
+      auto end_2   = findMatchingBracket(it, end);
+      expressions.emplace_back( parseTokens(begin_2+1, end_2) );
+      it = end_2;
+    }
+    else {
+      auto f = std::find_if(m_binaryFunctions.begin(), m_binaryFunctions.end(), [it](auto& jt){ return jt.first == *it; } );
+      if( f != m_binaryFunctions.end() || m_unaryFunctions.count(*it) ) opCodes.push_back(*it);
+      else expressions.push_back( processEndPoint( *it ) );
     }
   }
-  if ( expressions.size() == 1 ) return processEndPoint( expressions[0][0] );
-
-  std::vector<std::string> opCodes;
-  std::vector<Expression> parsedExpressions;
-  for ( size_t pos = 0; pos < expressions.size(); pos++ ) {
-    if ( pos % 2 == expressions.size() % 2 )
-      opCodes.push_back( expressions[pos][0] );
-    else
-      parsedExpressions.push_back( parseTokens( expressions[pos] ) );
+  processUnaryOperators( opCodes, expressions );
+  processBinaryOperators( opCodes, expressions );
+  if( expressions.size() != 1 ){
+    ERROR("Could not process expression!");
   }
-  processUnaryOperators( opCodes, parsedExpressions );
-  processBinaryOperators( opCodes, parsedExpressions );
-  return parsedExpressions[0];
+  return expressions[0];
 }
 
 ExpressionParser::ExpressionParser() : m_mps( nullptr )
@@ -86,31 +96,37 @@ ExpressionParser::ExpressionParser() : m_mps( nullptr )
   add_unary<Sqrt>( "sqrt" );
   add_unary<Exp>( "exp" );
   add_unary<Log>( "log" );
+  add_unary<Real>("real");
+  add_unary<Imag>("imag");
+  add_unary<Abs>("abs");
 
-  add_binary( "/", []( auto& A, auto& B ) { return A / B; } ); ///  operator ordering here matters!
-  add_binary( "*", []( auto& A, auto& B ) { return A * B; } );
-  add_binary( "+", []( auto& A, auto& B ) { return A + B; } );
-  add_binary( "-", []( auto& A, auto& B ) { return A - B; } );
-  add_binary( ">", []( auto& A, auto& B ) { return A > B; } );
-  add_binary( "<", []( auto& A, auto& B ) { return A < B; } );
+  add_binary( "^" , [](auto& A, auto& B ) { return fcn::pow(A,B); } );
+  add_binary( "/" , [](auto& A, auto& B ) { return A / B; } ); 
+  add_binary( "*" , [](auto& A, auto& B ) { return A * B; } );
+  add_binary( "+" , [](auto& A, auto& B ) { return A + B; } );
+  add_binary( "-" , [](auto& A, auto& B ) { return A - B; } );
+  add_binary( ">" , [](auto& A, auto& B ) { return A > B; } );
+  add_binary( "<" , [](auto& A, auto& B ) { return A < B; } );
   add_binary( "&&", []( auto& A, auto& B ) { return A && B; } );
-  add_binary( ",", []( auto& A, auto& B ) { return ExpressionPack( A, B ); } );
+  add_binary( "," , []( auto& A, auto& B ) { return ExpressionPack( A, B ); } );
 }
 
-Expression ExpressionParser::Parse( const std::string& str ) { return getMe()->parseTokens( split( str, ' ' ) ); }
+Expression ExpressionParser::Parse( const std::string& str ) { 
+  auto tokens = split(str, ' ');
+  return getMe()->parseTokens(tokens.begin(), tokens.end() ); 
+}
 ExpressionParser* ExpressionParser::gExpressionParser = nullptr;
 
 Expression ExpressionParser::processEndPoint( const std::string& name )
 {
   bool status  = true;
   double value = lexical_cast<double>( name, status );
-  if ( status == true ) return Constant( value );
-  if ( name == "PI" ) return Constant( M_PI );
-  if ( name == "pi" ) return Constant( M_PI );
-  if ( name == "e" ) return Constant( std::exp(1) );
-  if ( name == "I" ) return Constant( 0, 1 );
-  if ( name == "i" ) return Constant( 0, 1 );
-
+  if ( status == true ) return value;
+  if ( name == "PI" ) return M_PI;
+  if ( name == "pi" ) return M_PI;
+  if ( name == "e" ) return std::exp(1);
+  if ( name == "I" ) return complex_t( 0, 1 );
+  if ( name == "i" ) return complex_t( 0, 1 );
   if ( m_mps != nullptr ) {
     auto it = m_mps->find(name);
     if ( it != nullptr ) return MinuitParameterLink( it );

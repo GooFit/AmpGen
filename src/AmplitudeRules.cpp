@@ -184,8 +184,8 @@ std::vector<std::pair<Particle, CouplingConstant>> AmplitudeRules::getMatchingRu
 
 bool CouplingConstant::isFixed() const
 {
-  return ! std::any_of( couplings.begin(), couplings.end(), 
-      [](auto& c){ return c.first->iFixInit() == 0 or c.second->iFixInit() == 0 ; } );
+  return std::all_of( couplings.begin(), couplings.end(), 
+      [](auto& c){ return c.first->iFixInit() != 0 && c.second->iFixInit() != 0 ; } );
 }
 
 bool CouplingConstant::contains( const std::string& label ) const 

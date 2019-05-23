@@ -112,13 +112,13 @@ std::string AmpGen::replaceAll( const std::string& input, const std::string& toR
 // where Y and Z and A are also tree elements, by finding
 // the matching delimiter and the Z, A elements.
 
-std::vector<std::string> AmpGen::getItems( const std::string& tree, const std::vector<std::string>& brackets,
-                                   const std::string& seperator )
+std::vector<std::string> AmpGen::getItems( const std::string& tree, 
+                                           const std::vector<std::string>& brackets,
+                                           const std::string& seperator )
 {
   auto braces = vecFindAll( tree, brackets ); /// get a vector of positions of the brackets ///
   if ( braces.size() % 2 != 0 ) {
     ERROR( "Unmatched braces in expression: " << tree << " check string: " << braces.size() );
-    for ( auto& x : braces ) INFO( "char[" << x.first << "] = " << x.second );
     return std::vector<std::string>();
   }
 

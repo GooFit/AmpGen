@@ -117,9 +117,7 @@ SplineTransfer::SplineTransfer( const unsigned int& address, const unsigned int&
 
 bool SplineTransfer::isConfigured()
 {
-  for ( auto& x : m_parameters )
-    if ( x == nullptr ) return false;
-  return true;
+  return std::all_of( m_parameters.begin(), m_parameters.end(), [](auto& p ){ return p != nullptr ; } );
 }
 
 void SplineTransfer::set( const unsigned int& N, MinuitParameter* f )
