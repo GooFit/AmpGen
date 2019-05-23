@@ -61,7 +61,6 @@ namespace AmpGen
     bool addToEnd( MinuitParameter* parPtr );
  
     std::vector<MinuitParameter*>           m_parameters;
-    std::vector<MinuitExpression*>          m_expressions;
     std::map<std::string, MinuitParameter*> m_keyAccess;
   };
 } // namespace AmpGen

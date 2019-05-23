@@ -63,9 +63,8 @@ size_t Tensor::rank() const { return m_dim.size(); }
 
 int Tensor::metricSgn( const std::vector<size_t>& coordinates ) const
 {
-  int sgn = 1;
-  for ( auto& coord : coordinates ) sgn *= ( coord == 3 ) ? 1 : -1;
-  return sgn;
+  return std::accumulate( coordinates.begin(), coordinates.end(), 1, 
+      [](auto& prod, auto& co){ return prod * ( ( co == 3) ? 1 : -1 ) ;} ); 
 }
 
 int Tensor::metricSgn( const size_t& index ) const { return metricSgn( coords( index ) ); }

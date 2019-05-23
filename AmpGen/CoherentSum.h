@@ -96,8 +96,6 @@ namespace AmpGen
     std::string m_objCache         = {""};       ///< Directory that contains (cached) amplitude objects
     std::string m_prefix           = {""};       ///< Prefix for matrix elements
     void addMatrixElement( std::pair<Particle, CouplingConstant>& particleWithCoupling, const MinuitParameterSet& mps );
-    bool isFixedPDF(const MinuitParameterSet& mps) const;
-
   };
 } // namespace AmpGen
 

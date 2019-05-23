@@ -50,9 +50,9 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
     m_matrixElements[i] = TransitionMatrix<complex_t>( amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), this->m_dbThis);
     CompilerWrapper().compile( m_matrixElements[i].pdf, this->m_objCache); } );
   }
-  m_isConstant = false ; // isFixedPDF(mps);
+  m_isConstant = false ;
 }
- 
+
 void CoherentSum::prepare()
 {
   if ( m_weightParam != nullptr ) m_weight = m_weightParam->mean();
@@ -100,9 +100,9 @@ void CoherentSum::prepare()
 void CoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIndices )
 {
   for ( auto& i : changedPdfIndices ) m_integrator.prepareExpression( m_matrixElements[i].pdf );
-  std::vector<size_t> cacheIndex; 
-  for( auto& m : m_matrixElements )  
-    cacheIndex.push_back( m_integrator.events().getCacheIndex( m.pdf ) );
+  std::vector<size_t> cacheIndex;
+  std::transform( m_matrixElements.begin(), m_matrixElements.end(), std::back_inserter(cacheIndex), 
+    [this](auto& m){ return this->m_integrator.events().getCacheIndex( m.pdf ) ; } );
   for ( auto& i : changedPdfIndices )
     for ( size_t j = 0; j < size(); ++j )
       m_integrator.queueIntegral( cacheIndex[i], cacheIndex[j] ,i, j, &m_normalisations );
@@ -145,7 +145,7 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
     }
     if( pCalc.calculators.size() == 0 ) continue;  
     auto fractions = pCalc(rule.first, linProp);
-    for( auto& f : fractions ) outputFractions.emplace_back(f);
+    std::transform( fractions.begin(), fractions.end(), std::back_inserter(outputFractions),[](auto& p){ return p;} );
   };
   auto ffForHead = m_protoAmplitudes.rulesForDecay(m_evtType.mother(), m_prefix);
   FitFractionCalculator<CoherentSum> iCalc(this, findIndices(m_matrixElements, m_evtType.mother()), recomputeIntegrals);
@@ -252,14 +252,6 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
   stream.close();
 }
 
-bool CoherentSum::isFixedPDF(const MinuitParameterSet& mps) const
-{
-  for ( auto& matrixElement : m_matrixElements ) {
-    if( ! matrixElement.coupling.isFixed() ) return false; 
-  }
-  return true;
-}
-
 complex_t CoherentSum::getValNoCache( const Event& evt ) const
 {
   return std::accumulate( m_matrixElements.begin(), 
@@ -347,9 +339,8 @@ void CoherentSum::printVal(const Event& evt)
 std::vector<unsigned int> CoherentSum::cacheAddresses( const EventList& evts ) const
 {
   std::vector<unsigned int> addresses;
-  for ( auto& mE : m_matrixElements ) {
-    addresses.push_back( evts.getCacheIndex( mE.pdf ) );
-  }
+  std::transform( m_matrixElements.begin(), m_matrixElements.end(), std::back_inserter(addresses),
+      [&evts](auto& it ){ return evts.getCacheIndex( it.pdf ) ; } );
   return addresses;
 }
 

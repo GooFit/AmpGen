@@ -91,15 +91,6 @@ void ParticleProperties::setRadius()
   m_Radius     = isCharm ? defaultCharmRadius : defaultRadius;
 }
 
-void swap_string(std::string& arg, const char a, const char b)
-{
-  for( auto& c : arg )
-  {
-    if( c == a ) c = b;
-    else if( c == b ) c = a;
-  }
-}
-
 void ParticleProperties::antiQuarks()
 {
   if ( m_quarks.empty() ) return;

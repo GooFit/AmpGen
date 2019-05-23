@@ -68,12 +68,11 @@ namespace AmpGen
         if ( !gExpressionParser ) gExpressionParser = new ExpressionParser();
         return gExpressionParser;
       }
-
     private:
       ExpressionParser();
 
       Expression processEndPoint( const std::string& name );
-      Expression parseTokens( const std::vector<std::string>& tokens );
+      Expression parseTokens( const std::vector<std::string>::iterator& begin, const std::vector<std::string>::iterator& end );
 
       void processBinaryOperators( std::vector<std::string>& opCodes, std::vector<Expression>& expressions );
       void processUnaryOperators( std::vector<std::string>& opCodes, std::vector<Expression>& expressions );

@@ -20,13 +20,10 @@ namespace AmpGen
 
   public:
     MinuitExpression( const std::vector<std::string>& tokens, MinuitParameterSet* mps );
-
     double getVal() const { return std::real( m_expression() ); }
+    double mean()   const override { return getVal(); }
     operator double() const override { return getVal(); }
-
     ~MinuitExpression() override = default;
-
-    double mean() const override { return getVal(); }
     bool isGood() const { return m_isGood; }
   };
 } // namespace AmpGen
