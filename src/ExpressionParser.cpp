@@ -11,6 +11,7 @@
 #include "AmpGen/ASTResolver.h"
 
 using namespace AmpGen;
+using namespace std::complex_literals; 
 
 DEFINE_CAST( MinuitParameterLink )
 DEFINE_CAST( ExpressionPack )
@@ -130,8 +131,12 @@ Expression ExpressionParser::processEndPoint( const std::string& name )
   if ( m_mps != nullptr ) {
     auto it = m_mps->find(name);
     if ( it != nullptr ) return MinuitParameterLink( it );
-    else {
+    else if ( m_mps->find(name+"_Re") != nullptr && m_mps->find(name+"_Im") != nullptr ) {
+      return MinuitParameterLink( m_mps->find(name+"_Re") ) + 1i * MinuitParameterLink( m_mps->find(name+"_Im") );
+    }
+    else { 
       WARNING( "Token not understood: " << name << " [map size = " << m_mps->size() << "]" );
+      for( auto& m : *m_mps ) INFO( m->name() );
     }
   }
   return Parameter( name, 0, true );

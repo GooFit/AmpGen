@@ -26,7 +26,6 @@ namespace AmpGen
   DECLARE_ARGUMENT(MaxDepth, size_t );
   DECLARE_ARGUMENT(MinEvents, size_t );
   DECLARE_ARGUMENT(Dim, size_t );
-  DECLARE_ARGUMENT(Stream, std::ifstream* );
   DECLARE_ARGUMENT(Functor, std::function<std::vector<real_t>( const Event& )>);
 
   class BinDT

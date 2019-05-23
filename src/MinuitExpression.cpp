@@ -17,4 +17,5 @@ MinuitExpression::MinuitExpression( const std::vector<std::string>& tokens, Minu
   ExpressionParser::getMe()->setMPS( mps );
   m_expression = ExpressionParser::Parse( total_line );
   m_isGood     = true;
+  fix(); 
 }

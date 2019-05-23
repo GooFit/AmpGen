@@ -196,7 +196,6 @@ void MinuitParameterSet::tryAlias( const std::vector<std::string>& line )
     MinuitExpression* expr = new MinuitExpression( line, this );
     if ( expr->isGood() ) {
       addToEnd( expr );
-     // m_keyAccess[name] = expr;
     } else {
       ERROR( "Expression is ill-formed: " << line[0] );
       delete expr;
