@@ -192,8 +192,7 @@ void MinuitParameterSet::tryAlias( const std::vector<std::string>& line )
 {
   if ( line.size() < 3 ) return;
   if ( line[1] == "=" ) {
-    std::string name       = line[0];
-    MinuitExpression* expr = new MinuitExpression( line, this );
+    MinuitExpression* expr = new MinuitExpression(line, this );
     if ( expr->isGood() ) {
       addToEnd( expr );
     } else {

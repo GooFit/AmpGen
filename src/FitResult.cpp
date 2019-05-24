@@ -170,8 +170,8 @@ FitResult::FitResult( const FitResult& other )
 
 std::vector<MinuitParameter*> FitResult::getParameters() const
 {
-  std::vector<MinuitParameter*> params;
-  for ( auto& param : *m_mps ) params.push_back( param );
+  std::vector<MinuitParameter*> params( m_mps->size() );
+  std::copy( m_mps->begin(), m_mps->end(), params.begin() );
   return params;
 }
 

@@ -100,6 +100,12 @@ bool QuarkState::operator==( const QuarkState& rhs ) const
     if ( rhs[i] != m_quarks[i] ) return false;
   return true;
 }
+
+bool QuarkState::operator!=( const QuarkState& rhs ) const 
+{
+  return !( *this == rhs );
+}
+
 int QuarkState::operator[]( const size_t& index ) const { return m_quarks[index]; }
 
 QuarkContent::QuarkContent() : m_quarks(1) {}
@@ -185,6 +191,10 @@ std::ostream& AmpGen::operator<<( std::ostream& st, const QuarkContent& qc )
 
 bool QuarkContent::operator==( const QuarkContent& rhs ) const
 {
+//  for ( auto& l : m_quarks ) {
+//    if( std::any_of( rhs.quarks().begin(), rhs.quarks().end(), [&l](auto& r){ return l == r ; } ) ) 
+//      return true; 
+//  }
   for ( auto& l : m_quarks ) {
     for ( auto& r : rhs.quarks() ) {
       if ( l == r ) return true;

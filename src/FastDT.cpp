@@ -17,7 +17,7 @@ int FastDT::findNode( const double* event )
 }
 
 FastDT::FastDT( const std::string& fname ){
-  std::ifstream s(fname);
+  //std::ifstream s(fname);
 }
 
 double nnVariance(std::vector<double*>& evts, const size_t& index)

@@ -19,11 +19,10 @@ BOOST_AUTO_TEST_CASE( test_ExpressionParser ) {
       new MinuitParameter("a",MinuitParameter::Flag::Float, a,0. )
   ,   new MinuitParameter("b",MinuitParameter::Flag::Float, b,0. )
   });
-  ExpressionParser::getMe()->setMPS( &mps );
 
   double pi = M_PI;
 
-  auto test = [](const std::string& expr) -> double { 
+  auto test = [mps](const std::string& expr) -> double { 
     std::string newLine=""; 
     for( auto& ch : expr ){
     if( ch == '(' ||
@@ -41,7 +40,7 @@ BOOST_AUTO_TEST_CASE( test_ExpressionParser ) {
     }
     else newLine.push_back(ch);
   }
-    return std::real( ExpressionParser::Parse(newLine)() ); }; 
+  return std::real( ExpressionParser::parse(newLine, &mps)() ); }; 
 
   BOOST_CHECK( test("a+(cos(b-sin(2/a*pi))-sin(a-cos(2*b/pi)))-b") == a+(cos(b-sin(2/a*pi))-sin(a-cos(2*b/pi)))-b );
   BOOST_CHECK( test("sin(a)+sin(b)")                               == sin(a)+sin(b) );                                  
