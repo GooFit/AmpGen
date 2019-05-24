@@ -179,13 +179,13 @@ std::ostream& operator<<( std::ostream& out, const ParticlePropertiesList& ppl )
 std::vector<std::string> ParticlePropertiesList::getParticleNames() const
 {
   std::vector<std::string> particleNames;
-  for ( auto& particle : m_byName ) particleNames.push_back( particle.first );
+  std::transform( m_byName.begin(), m_byName.end(), std::back_inserter(particleNames), [](auto& p ) -> std::string { return p.first ; } );
   return particleNames;
 }
 std::vector<int> ParticlePropertiesList::getParticleIds() const
 {
   std::vector<int> particleIds;
-  for ( auto& particle : m_byID ) particleIds.push_back( particle.first );
+  std::transform( m_byID.begin(), m_byID.end(), std::back_inserter(particleIds), [](auto& p ) -> int { return p.first ; } );
   return particleIds;
 }
 

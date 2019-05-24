@@ -60,8 +60,10 @@ namespace AmpGen
         }
       void add_binary( const std::string& name, binaryFCN op ) { m_binaryFunctions.emplace_back( name, op ); }
 
-      void setMPS( MinuitParameterSet* mps ) { m_mps = mps; }
-      static Expression Parse( const std::string& str );
+      static Expression parse( const std::string& str, const MinuitParameterSet* mps=nullptr );
+      static Expression parse(std::vector<std::string>::const_iterator begin,
+                              std::vector<std::string>::const_iterator end  ,
+                               const MinuitParameterSet* mps = nullptr ); 
       static ExpressionParser* gExpressionParser;
       static ExpressionParser* getMe()
       {
@@ -71,13 +73,12 @@ namespace AmpGen
     private:
       ExpressionParser();
 
-      Expression processEndPoint( const std::string& name );
-      Expression parseTokens( const std::vector<std::string>::iterator& begin, const std::vector<std::string>::iterator& end );
+      Expression processEndPoint( const std::string& name, const MinuitParameterSet* mps = nullptr );
+      Expression parseTokens( std::vector<std::string>::const_iterator begin, std::vector<std::string>::const_iterator end , const MinuitParameterSet* mps = nullptr );
 
       void processBinaryOperators( std::vector<std::string>& opCodes, std::vector<Expression>& expressions );
       void processUnaryOperators( std::vector<std::string>& opCodes, std::vector<Expression>& expressions );
 
-      MinuitParameterSet*                            m_mps;
       std::map<std::string, unaryFCN>                m_unaryFunctions;
       std::vector<std::pair<std::string, binaryFCN>> m_binaryFunctions;
   };

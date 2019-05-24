@@ -41,9 +41,9 @@ void ExpressionParser::processUnaryOperators( std::vector<std::string>& opCodes,
   }
 }
 
-std::vector<std::string>::iterator findMatchingBracket( 
-   const std::vector<std::string>::iterator& begin, 
-   const std::vector<std::string>::iterator& end )
+std::vector<std::string>::const_iterator findMatchingBracket( 
+   std::vector<std::string>::const_iterator begin, 
+   std::vector<std::string>::const_iterator end )
 {
   int openedBrackets = 1;
   if( begin + 1 >= end ) return end; 
@@ -57,8 +57,9 @@ std::vector<std::string>::iterator findMatchingBracket(
   return end; 
 }
 
-Expression ExpressionParser::parseTokens( const std::vector<std::string>::iterator& begin,
-                                          const std::vector<std::string>::iterator& end )
+Expression ExpressionParser::parseTokens(std::vector<std::string>::const_iterator begin,
+                                         std::vector<std::string>::const_iterator end,
+                                         const MinuitParameterSet* mps )
 {
   std::vector<std::string> opCodes;
   std::vector<Expression> expressions; 
@@ -67,13 +68,13 @@ Expression ExpressionParser::parseTokens( const std::vector<std::string>::iterat
     if( *it == "(" ){
       auto begin_2 = it;
       auto end_2   = findMatchingBracket(it, end);
-      expressions.emplace_back( parseTokens(begin_2+1, end_2) );
+      expressions.emplace_back( parseTokens(begin_2+1, end_2, mps) );
       it = end_2;
     }
     else {
       auto f = std::find_if(m_binaryFunctions.begin(), m_binaryFunctions.end(), [it](auto& jt){ return jt.first == *it; } );
       if( f != m_binaryFunctions.end() || m_unaryFunctions.count(*it) ) opCodes.push_back(*it);
-      else expressions.push_back( processEndPoint( *it ) );
+      else expressions.push_back( processEndPoint( *it , mps ) );
     }
   }
   processUnaryOperators( opCodes, expressions );
@@ -84,7 +85,7 @@ Expression ExpressionParser::parseTokens( const std::vector<std::string>::iterat
   return expressions[0];
 }
 
-ExpressionParser::ExpressionParser() : m_mps( nullptr )
+ExpressionParser::ExpressionParser()
 {
   add_unary<Sin>( "sin" ); /// "function" operator ordering is irrelevant
   add_unary<Cos>( "cos" );
@@ -112,13 +113,22 @@ ExpressionParser::ExpressionParser() : m_mps( nullptr )
   add_binary( "," , []( auto& A, auto& B ) { return ExpressionPack( A, B ); } );
 }
 
-Expression ExpressionParser::Parse( const std::string& str ) { 
-  auto tokens = split(str, ' ');
-  return getMe()->parseTokens(tokens.begin(), tokens.end() ); 
+Expression ExpressionParser::parse( 
+    std::vector<std::string>::const_iterator begin,
+    std::vector<std::string>::const_iterator end,
+    const MinuitParameterSet* mps ) { 
+  return getMe()->parseTokens(begin, end, mps ); 
 }
+Expression ExpressionParser::parse( 
+    const std::string& expr,
+    const MinuitParameterSet* mps ) { 
+  auto tokens = split( expr , ' ' );
+  return getMe()->parseTokens(tokens.cbegin(), tokens.cend() , mps ); 
+}
+
 ExpressionParser* ExpressionParser::gExpressionParser = nullptr;
 
-Expression ExpressionParser::processEndPoint( const std::string& name )
+Expression ExpressionParser::processEndPoint( const std::string& name, const MinuitParameterSet* mps )
 {
   bool status  = true;
   double value = lexical_cast<double>( name, status );
@@ -128,15 +138,14 @@ Expression ExpressionParser::processEndPoint( const std::string& name )
   if ( name == "e" ) return std::exp(1);
   if ( name == "I" ) return complex_t( 0, 1 );
   if ( name == "i" ) return complex_t( 0, 1 );
-  if ( m_mps != nullptr ) {
-    auto it = m_mps->find(name);
+  if ( mps != nullptr ) {
+    auto it = mps->find(name);
     if ( it != nullptr ) return MinuitParameterLink( it );
-    else if ( m_mps->find(name+"_Re") != nullptr && m_mps->find(name+"_Im") != nullptr ) {
-      return MinuitParameterLink( m_mps->find(name+"_Re") ) + 1i * MinuitParameterLink( m_mps->find(name+"_Im") );
+    else if ( mps->find(name+"_Re") != nullptr && mps->find(name+"_Im") != nullptr ) {
+      return MinuitParameterLink( mps->find(name+"_Re") ) + 1i * MinuitParameterLink( mps->find(name+"_Im") );
     }
     else { 
-      WARNING( "Token not understood: " << name << " [map size = " << m_mps->size() << "]" );
-      for( auto& m : *m_mps ) INFO( m->name() );
+      WARNING( "Token not understood: " << name << " [map size = " << mps->size() << "]" );
     }
   }
   return Parameter( name, 0, true );

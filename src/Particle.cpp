@@ -337,7 +337,8 @@ std::vector<std::vector<size_t>> Particle::identicalDaughterOrderings() const
   std::vector<std::vector<size_t>> orderings;
   auto finalStateParticles = getFinalStateParticles();
   std::vector<std::string> zero_perm;
-  for( auto& particle : finalStateParticles ) zero_perm.push_back( particle->name() ); 
+  std::transform( finalStateParticles.begin(), finalStateParticles.end(), std::back_inserter(zero_perm), 
+      [](auto& p ){ return p->name() ; } );
   std::vector<size_t> indices( finalStateParticles.size() );
   std::iota(indices.begin(), indices.end(), 0);
   do {

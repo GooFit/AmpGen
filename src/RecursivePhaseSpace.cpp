@@ -72,8 +72,7 @@ std::vector<RecursivePhaseSpace::Node*> RecursivePhaseSpace::getFinalStates()
 {
   std::vector<RecursivePhaseSpace::Node*> rt;
   for ( auto& f : m_nodes ) {
-    if ( f.decayProds == nullptr )
-      rt.push_back( &f );
+    if ( f.decayProds == nullptr ) rt.push_back( &f );
     else {
       auto segs = f.decayProds->getFinalStates();
       for ( auto& s : segs ) rt.push_back( s );
