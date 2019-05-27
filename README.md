@@ -255,14 +255,15 @@ For example, if we wished to vary the K(1)(1270)+ mass in the above example, but
 K(1)(1270)+_mass 0 1.27 0.01 0.0 2.0
 ```
 
-(Scalar) parameters can also be related to each other via simple expressions, although the implementation of this is rather unreliable so should be used with caution. 
+(Scalar) parameters can also be related to each other via expressions. 
 Suppose for example we have K(1)(1270)+ and K(1)(1270)bar- in the same fit (for example, for D-\>KKpipi) 
 The properties of one can be allowed to vary, for example the K(1)(1270)+, and the other fixed to the same value, using:
 ```
 K(1)(1270)+_mass 0 1.27 0.01 0.0 2.0 
 K(1)(1270)bar-_mass = K(1)(1270)+_mass 
 ```
-Due to the abundance of **odd** glyphs such as brackets and +/- in parameter names, parameter expressions are white space delimited and somewhat sensitive to bracket usage. 
+Parameter expressions are whitespace delimited due to the abundance of **odd** glyphs such as brackets and +/- in the names of parameters. 
+Expressions support the binary operations (+,-,/,*,^), as well as common unary functions such as sqrt, trigonometric functions etc. 
 
 ### Spin Formalisms
 
