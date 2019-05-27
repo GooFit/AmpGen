@@ -191,10 +191,9 @@ std::ostream& AmpGen::operator<<( std::ostream& st, const QuarkContent& qc )
 
 bool QuarkContent::operator==( const QuarkContent& rhs ) const
 {
-//  for ( auto& l : m_quarks ) {
-//    if( std::any_of( rhs.quarks().begin(), rhs.quarks().end(), [&l](auto& r){ return l == r ; } ) ) 
-//      return true; 
-//  }
+//  return std::any_of( m_quarks.begin(), m_quarks.end(), [rhs](auto& ql){ 
+//    return std::any_of( rhs.quarks().begin(), rhs.quarks().end(),  
+//      [ql](auto& qr){ return ql == qr; } )  ;} ); 
   for ( auto& l : m_quarks ) {
     for ( auto& r : rhs.quarks() ) {
       if ( l == r ) return true;
