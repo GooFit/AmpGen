@@ -105,8 +105,8 @@ ExpressionParser::ExpressionParser()
   add_binary( "^" , [](auto& A, auto& B ) { return fcn::pow(A,B); } );
   add_binary( "/" , [](auto& A, auto& B ) { return A / B; } ); 
   add_binary( "*" , [](auto& A, auto& B ) { return A * B; } );
-  add_binary( "+" , [](auto& A, auto& B ) { return A + B; } );
   add_binary( "-" , [](auto& A, auto& B ) { return A - B; } );
+  add_binary( "+" , [](auto& A, auto& B ) { return A + B; } );
   add_binary( ">" , [](auto& A, auto& B ) { return A > B; } );
   add_binary( "<" , [](auto& A, auto& B ) { return A < B; } );
   add_binary( "&&", []( auto& A, auto& B ) { return A && B; } );
@@ -166,9 +166,11 @@ void MinuitParameterLink::resolve( ASTResolver& resolver ) const
   resolver.resolve(*this);
 }
 
-complex_t MinuitParameterLink::operator()() const { 
+complex_t MinuitParameterLink::operator()() const 
+{ 
   if( m_parameter == nullptr ) ERROR("Parameter does not have end-point");
-  return m_parameter->mean(); }
+  return m_parameter->mean(); 
+}
 
 ExpressionPack::ExpressionPack( const Expression& A, const Expression& B )
 {
@@ -183,6 +185,7 @@ ExpressionPack::ExpressionPack( const Expression& A, const Expression& B )
   } else
     m_expressions.push_back( B );
 }
+
 std::string ExpressionPack::to_string(const ASTResolver* resolver) const
 {
   std::string rt = "";
