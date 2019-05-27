@@ -61,18 +61,19 @@ namespace AmpGen
     These will be denoted by the use of [] braces, so for example 
 
     \code{cpp}
-    Delta(1232)++{p+,pi+}
-    Delta(1232)++[D]{p+,pi+}
+    a(1)(1260)+{rho(770)0,pi+}
+    a(1)(1260)+[D]{rho(770)0,pi+} 
     \endcode
 
-    correspond to the S-wave and D-wave decays of the @f$\Delta(1232)^{++}@f$ baryon.
+    correspond to the S-wave and D-wave decays of the @f$a(1)(1260)^{+}@f$ meson.
     As a rule, the lowest orbital state permitted by the relevant conservation laws of the decay is 
     used if the orbital state is not specified, so the conservation of angular momentum, 
     and the conservation of parity if the decay proceeds via the strong or electromagnetic force.
 
     The modifier syntax is also used to specify a different choice of lineshape for the resonance. 
     For example, a common parameterisation for the @f$\rho(770)@f$ meson is the Gounaris-Sakurai propagator, 
-    which accounts for dispersive corrections to the @f$I=1@f$ dipion scattering. In this example
+    which accounts for dispersive corrections to the @f$I=1@f$ dipion system. 
+    In this example
 
     \code{cpp}
     rho(770)0[GounarisSakurai]{pi+,pi-}
