@@ -10,8 +10,6 @@
 
 using namespace AmpGen;
 
-OptionsParser::OptionsParser() : m_printHelp(false) {}
-
 OptionsParser* OptionsParser::gOptionsParser = nullptr; 
 
 OptionsParser* OptionsParser::getMe()
@@ -20,6 +18,9 @@ OptionsParser* OptionsParser::getMe()
   return gOptionsParser;
 }
 
+void OptionsParser::setQuiet(){
+  m_quiet = true; 
+}
 
 bool OptionsParser::ignoreThisLine( const std::string& line )
 {
@@ -33,7 +34,7 @@ bool OptionsParser::ignoreThisLine( const std::string& line )
 
 void OptionsParser::setCommandLineArgs( int argc, char** argv, const std::string& description )
 {
-  printSplash();
+  if( !m_quiet ) printSplash();
   int x = 0;
   while ( ++x < argc ) {
     std::string token = std::string( argv[x] );
@@ -67,7 +68,7 @@ void OptionsParser::setCommandLineArgs( int argc, char** argv, const std::string
 
 void OptionsParser::import( const std::string& fName )
 {
-  INFO( "Importing: " << fName );
+  if( !m_quiet) INFO( "Importing: " << fName );
   if ( !fileExists( fName ) ) {
     ERROR( "Cannot find file: " << fName );
     return;

@@ -100,7 +100,7 @@ SplineTransfer::SplineTransfer( const unsigned int& address, const unsigned int&
 
 {
   unsigned int size = N - 2;
-  TMatrixD M( N - 2, N - 2 );
+  TMatrixD M(size, size);
   for ( unsigned int i = 0; i < size; ++i ) {
     M[i][i] = 4;
     if ( i != size - 1 ) {

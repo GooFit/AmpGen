@@ -19,6 +19,7 @@ namespace AmpGen
     static bool printHelp();
     static void setArgs( int argc, char** argv, const std::string& description="" );
     static void setArg( const std::string& arg ); 
+    void setQuiet(); 
     void addArg( const std::string& arg );
     void setCommandLineArgs( int argc, char** argv, const std::string& description =""); 
     void import( const std::string& fName );
@@ -30,10 +31,11 @@ namespace AmpGen
   
   private:
     std::map<std::string,std::vector<std::string>>   m_parsedLines; 
-    bool m_printHelp;  
+    bool m_printHelp = {false};  
+    bool m_quiet     = {false}; 
     static OptionsParser* gOptionsParser;
     
-    OptionsParser();
+    OptionsParser() = default;
     bool ignoreThisLine( const std::string& line );
     void readStream( std::istream& is );
     std::vector<std::string> makeParsedStrings( const std::string& line, int& braceDepth ) const;

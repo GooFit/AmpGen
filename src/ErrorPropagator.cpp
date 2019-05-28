@@ -82,11 +82,9 @@ LinearErrorPropagator::LinearErrorPropagator( const MinuitParameterSet& mps )
 
 void LinearErrorPropagator::add( const LinearErrorPropagator& p2 )
 {
-
   size_t superSet = size();
   size_t oldSize  = size();
   auto p1_pMap    = posMap();
-
   std::vector<size_t> props( p2.size() );
   for ( size_t x = 0; x != p2.size(); ++x ) {
     auto it = p1_pMap.find( p2.params()[x]->name() );
@@ -96,14 +94,11 @@ void LinearErrorPropagator::add( const LinearErrorPropagator& p2 )
     } else
       props[x] = it->second;
   }
-
   TMatrixD old_cov = m_cov;
   if ( superSet != oldSize ) m_cov.ResizeTo( superSet, superSet );
-
   for ( size_t x = 0; x != oldSize; ++x ) {
     for ( size_t y = 0; y != oldSize; ++y ) m_cov( x, y ) = old_cov( x, y );
   }
-
   auto p2_cov = p2.cov();
   for ( size_t x = 0; x < p2.size(); ++x ) {
     for ( size_t y = 0; y < p2.size(); ++y ) {
@@ -113,6 +108,46 @@ void LinearErrorPropagator::add( const LinearErrorPropagator& p2 )
     }
   }
 }
+
+double LinearErrorPropagator::getError( const std::function<double(void)>& fcn ) const
+{
+  unsigned int N = m_cov.GetNrows();
+  TVectorD errorVec( N );
+  for ( unsigned int i = 0; i < N; ++i ) {
+    DEBUG( "Perturbing parameter: [" << m_parameters[i]->name() << "] " << startingValue << " by "
+        << sqrt( m_cov( i, i ) ) << " " << m_parameters[i] );
+    errorVec(i) = derivative(fcn,i);
+    fcn(); 
+  }
+  return sqrt( errorVec * ( m_cov * errorVec ) );
+}
+
+std::vector<double> LinearErrorPropagator::getVectorError( const std::function<std::vector<double>(void)>& fcn, size_t RANK ) const
+{
+  unsigned int N = m_cov.GetNrows();
+  std::vector<TVectorD> errorVec( RANK, TVectorD( N ) );
+  for ( unsigned int i = 0; i < N; ++i ) {
+    double startingValue = m_parameters[i]->mean();
+    double error         = sqrt( m_cov( i, i ) );
+    double min           = m_parameters[i]->mean() - error;
+    double max           = m_parameters[i]->mean() + error;
+    DEBUG( "Perturbing parameter: " << m_parameters[i]->name() << " -> [" << min << ", " << max << "]" );
+
+    m_parameters[i]->setCurrentFitVal( max );
+    auto plus_variation = fcn();
+    m_parameters[i]->setCurrentFitVal( min );
+    auto minus_variation = fcn();
+    m_parameters[i]->setCurrentFitVal( startingValue );
+    for ( size_t j = 0; j < RANK; ++j ) {
+      errorVec[j]( i ) = ( plus_variation[j] - minus_variation[j] ) / ( 2 * error );
+    }
+  }
+  fcn();
+  std::vector<double> rt( RANK, 0 );
+  for ( unsigned int j = 0; j < RANK; ++j ) rt[j] = sqrt( errorVec[j] * ( m_cov * errorVec[j] ) );
+  return rt;
+}
+
 
 void LinearErrorPropagator::reset()
 {

@@ -16,17 +16,17 @@ namespace AmpGen
   class FitResult
   {
   private:
-    double                              m_chi2;
-    double                              m_LL;
-    double                              m_nBins;
-    double                              m_nParam;
-    int                                 m_status;
+    double                              m_chi2   = {0};
+    double                              m_LL     = {-999};
+    double                              m_nBins  = {0};
+    double                              m_nParam = {0};
+    int                                 m_status = {-1};
+    bool                                m_fitted = {false};
     EventType                           m_eventType;
     std::map<std::string, double>       m_observables;
     std::vector<FitFraction>            m_fitFractions;
     TMatrixD                            m_covarianceMatrix;
     std::shared_ptr<MinuitParameterSet> m_mps;
-    bool                                m_fitted;
     std::map<std::string, unsigned int> m_covMapping;
 
     std::string getLastLine( std::ifstream& in ) const;
@@ -42,7 +42,7 @@ namespace AmpGen
     FitResult( const MinuitParameterSet& mps, const TMatrixD& covMini );
 
     FitResult( const std::string& filename, const EventType& evtType = EventType() );
-    FitResult() : m_chi2( 0 ), m_LL( -999 ), m_nBins( 0 ), m_nParam( 0 ), m_status( -1 ), m_fitted( 0 ) {}
+    FitResult() = default; 
 
     bool readFile( const std::string& fname );
     void writeToFile( const std::string& fname );
