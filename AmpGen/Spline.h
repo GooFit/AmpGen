@@ -12,7 +12,6 @@
 #include "AmpGen/Expression.h"
 #include "AmpGen/CacheTransfer.h"
 #include "AmpGen/Types.h"
-#include "TMatrixDUtilsfwd.h"
 #include "TMatrixTBase.h"
 
 #include "TMatrixD.h"
