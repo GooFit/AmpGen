@@ -231,19 +231,19 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   if( ! particle.isHead() ) myFrame.add( my_sequence );
   if( particle.isStable() )
   {
-    if( particle.spin() == 0 ) return Mz==0;
+    if( particle.props()->twoSpin() == 0 ) return Mz==0; // a scalar
     // polarisation spinor / vector etc. in the quantisation of the lab (i.e. along the z-axis or lab particle momentum)
     auto labPol = particle.externalSpinTensor(particle.polState(), db); 
     ADD_DEBUG_TENSOR(labPol, db);
     auto inverseMyTransform = myFrame.inverse();
-    if( particle.spin() == 0.5 )
+    if( particle.props()->twoSpin() == 1 ) // so a fermion 
     {
       auto basisSpinor_m1         = basisSpinor( 2*Mz, particle.props()->pdgID() );
       auto labSpinor_m1           = inverseMyTransform( basisSpinor_m1, Transform::Representation::Bispinor );
       ADD_DEBUG_TENSOR(labSpinor_m1, db); 
       return make_cse( Bar(labSpinor_m1)(a)*labPol(a) );
     }
-    if( particle.spin() == 1 )
+    if( particle.props()->twoSpin() == 2 ) // so a spin-one boson
     {
       auto frameVector = basisVector(Mz);
       auto labVector   = inverseMyTransform( frameVector, Transform::Representation::Vector );   
