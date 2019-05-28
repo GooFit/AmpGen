@@ -38,7 +38,12 @@ double DalitzIntegrator::sqDp1( const Event& evt ) const
   TLorentzVector p2( ( evt.address( 4 ) ) );
   TLorentzVector p3( ( evt.address( 8 ) ) );
   TLorentzVector pA = p1 + p2;
-  return acos( 2 * ( pA.Mag() - m_min ) / ( m_max - m_min ) - 1 ) / M_PI;
+  auto arg = 2 * ( pA.Mag() - m_min ) / ( m_max - m_min ) - 1;
+  if( arg > 1 || arg < -1 ){
+    ERROR("Argument: " << arg << " is out-of-bounds");
+    return -1;
+  }
+  return acos(arg)/M_PI;
 }
 double DalitzIntegrator::sqDp2( const Event& evt ) const
 {

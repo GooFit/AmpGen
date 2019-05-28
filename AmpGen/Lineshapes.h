@@ -314,6 +314,7 @@ namespace AmpGen
      *  @brief Polynominal shape \f$ \mathcal{A}(s) = \sum^n_i c_i s^{i} \f$ where the sum is to lineshapeModifier::Degree, and the free parameters of the shape are lineshapeModifier_ci 
      */
     DECLARE_LINESHAPE( Poly );
+
     /** @ingroup Lineshapes class FOCUS
      *  @brief K matrix amplitudes used for I=1/2 and I=3/2 in the description of the \f$ K\pi \f$ S-wave in the analysis of @f$ D^{+}\rightarrow K^{-}\pi^{+}\pi^{+}@f$ https://arxiv.org/abs/0705.2248
      */
@@ -322,16 +323,6 @@ namespace AmpGen
     /// I=1/2 and I=3/2 K Matrices used in the description of the \f$ K\pi\f$ S-wave in the analysis of @f$\eta_{c}\rightarrow K^{+} K^{-} \pi^{0}@f$ https://arxiv.org/abs/1701.04881
     DECLARE_LINESHAPE( PALANO );
 
-    /** @ingroup Lineshapes class ObelixRho
-       @brief Amplitude to describe the vector-isovector system, otherwise known as the @f$ \rho @f$ mesons. WARNING untested. 
-
-         Vector-Isovector amplitude @f$(I=1, J=1)@f$ using a K-matrix to describe the @f$\pi\pi,  KK, \pi\pi\pi\pi @f$ channels using three poles, commonly associated with 
-     the @f$ \rho(770), \rho(1450), \rho(1900) @f$ resonances.*/
-    DECLARE_LINESHAPE( ObelixRho );
-
-    /// K matrix to describe \f$K_1(1270) / K_1(1400)\f$. WARNING incompleted. 
-    DECLARE_LINESHAPE( AxialKaon );
-    
     /** @ingroup Lineshapes class kMatrixSimple 
         @brief Simple and flexible K matrix that implements a variable number of scalar channels and poles.   
         Flexible K matrix implementation that accepts a variable number of scalar channels and pole terms.

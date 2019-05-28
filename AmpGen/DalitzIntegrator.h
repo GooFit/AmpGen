@@ -32,18 +32,8 @@ namespace AmpGen
 
       DalitzIntegrator( const double& s0, const double& s1, const double& s2, const double& s3);
 
-      template <class FCN>
-      double integrate( FCN fcn, const double& s) const
-      {
-        double event[12];
-        for(size_t i = 0; i < 12; ++i) event[i] = 0; 
-        TF2 f( "fcn", [&]( double* x, double* p ) {
-          sqCo pos = {x[0], x[1]};
-          setEvent( pos, event, s);
-          return J(pos, s) * std::real( fcn(event) ); }, 0, 1, 0, 1, 0 );
-        return integrate_internal(f) / s;
-      }
-      
+      template <class FCN> double integrate( FCN fcn, const double& s) const;
+
       template <class FCN> double integrate( FCN fcn ) const
       {
         return integrate( fcn, m_s0 );
@@ -80,6 +70,18 @@ namespace AmpGen
       double integrate_internal( TF2& fcn ) const ;
    
   };
+  template <class FCN>
+  double DalitzIntegrator::integrate( FCN fcn, const double& s) const
+  {
+    double event[12];
+    for(size_t i = 0; i < 12; ++i) event[i] = 0; 
+    TF2 f( "fcn", [&]( double* x, double* p ) {
+      sqCo pos = {x[0], x[1]};
+      setEvent( pos, event, s);
+      return J(pos, s) * std::real( fcn(event) ); }, 0, 1, 0, 1, 0 );
+    return integrate_internal(f) / s;
+  }
+
 } // namespace AmpGen
 
 #endif

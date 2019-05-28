@@ -24,6 +24,7 @@ Expression AmpGen::phsp_twoBody( const Expression& s, const double& m0, const do
 
 Expression AmpGen::phsp_fourPi( const Expression& s )
 {
+  // Parameterisation of the 4pi phase-space taken from Laura++ (https://laura.hepforge.org/  or Ref. https://arxiv.org/abs/1711.09854) 
   double mPiPlus( 0.139570 );
   Expression rho_4pi = pol( s, {0.00051, -0.01933, 0.13851, -0.20840, -0.29744, 0.13655, 1.07885} );
   return Ternary( s > 1, phsp_twoBody( s, 2 * mPiPlus, 2 * mPiPlus ), rho_4pi );

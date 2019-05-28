@@ -65,11 +65,10 @@ namespace AmpGen
       TH1D* plot = projection.plot();
       plot->SetName( ( prefix + plot->GetName() ).c_str() );
       auto normalisations = getNorms<NBINS>( fcn, bid );
-
       auto vectorBinFunctor = [&normalisations, &fcn, &bid] {
         fcn.transferParameters();
         bid.update( fcn, normalisations );
-        std::array<double, NBINS> values;
+        std::vector<double> values(NBINS);
         double total = 0;
         for ( size_t bin = 0; bin < NBINS; ++bin ) {
           values[bin] = fcn.norm( normalisations[bin] );
@@ -79,7 +78,7 @@ namespace AmpGen
         return values;
       };
       auto values = vectorBinFunctor();
-      auto errors = linProp.getVectorError<NBINS>( vectorBinFunctor );
+      auto errors = linProp.getVectorError( vectorBinFunctor, NBINS );
       for ( size_t bin = 0; bin < NBINS; ++bin ) {
         plot->SetBinContent( bin + 1, values[bin] );
         plot->SetBinError( bin + 1, errors[bin] );

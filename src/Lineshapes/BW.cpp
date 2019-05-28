@@ -15,17 +15,19 @@ DEFINE_LINESHAPE( FormFactor )
 {
   auto props                  = ParticlePropertiesList::get( particleName );
   Expression radius           = Parameter( particleName + "_radius", props->radius() );
-
+  Expression mass             = Parameter( particleName + "_mass"  , props->mass() );
   const Expression q2         = make_cse( Q2( s, s1, s2 ) );
+  const Expression q20        = make_cse( Q2( mass*mass, s1, s2 ) );
   int Lp = L;
   if( lineshapeModifier == "L0" ) Lp = 0;
   if( lineshapeModifier == "L1" ) Lp = 1;
   if( lineshapeModifier == "L2" ) Lp = 2;
   if( lineshapeModifier == "L3" ) Lp = 3;
   
-  const Expression FormFactor = lineshapeModifier.find("BL") == std::string::npos ? 
-    sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, Lp ) ) : 
-    sqrt( BlattWeisskopf(q2*radius*radius, Lp ) );
+  Expression                              FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, Lp ) );
+  if ( lineshapeModifier == "BL" )        FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, Lp ) );
+  if ( lineshapeModifier == "BELLE2018" ) FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, q20 * radius * radius, Lp ) );
+
   if( L != 0 ){
     ADD_DEBUG( q2      , dbexpressions );
     ADD_DEBUG( radius  , dbexpressions );
@@ -62,8 +64,9 @@ DEFINE_LINESHAPE( BW )
   const Expression& radius   = Parameter( particleName + "_radius", props->radius() );
   const Expression q2        = make_cse( Abs(Q2( s_cse, s1, s2 ) ) ) ;
   const Expression q20       = make_cse( Abs(Q2( mass * mass, s1, s2 )) );
-  Expression FormFactor                       = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
-  if ( lineshapeModifier == "BL" ) FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
+  Expression                              FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
+  if ( lineshapeModifier == "BL" )        FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
+  if ( lineshapeModifier == "BELLE2018" ) FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, q20 * radius * radius, L ) );
   Expression runningWidth                     = width( s_cse, s1, s2, mass, width0, radius, L, dbexpressions );
   const Expression BW = FormFactor / ( mass * mass - s_cse  -1i * mass * runningWidth );
   const Expression kf = kFactor( mass, width0, dbexpressions );
@@ -71,7 +74,7 @@ DEFINE_LINESHAPE( BW )
   ADD_DEBUG( runningWidth, dbexpressions );
   ADD_DEBUG( BW, dbexpressions );
   ADD_DEBUG( kf, dbexpressions );
-  return kf * BW;
+  return lineshapeModifier == "BELLE2018" ? BW : kf*BW;
 }
 
 DEFINE_LINESHAPE( SBW )
