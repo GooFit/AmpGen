@@ -28,9 +28,8 @@ namespace AmpGen
       QuarkState& operator-=( const QuarkState& rhs );
       QuarkState  operator+ ( const QuarkState& rhs ) const;
       QuarkState  operator- ( const QuarkState& rhs ) const;
-      bool        operator==( const QuarkState& rhs ) const;
-      bool        operator!=( const QuarkState& rhs ) const;
-      int         operator[]( const size_t& index ) const;
+      bool                operator==( const QuarkState& rhs ) const;
+      int                 operator[]( const size_t& index ) const;
   };
 
   class QuarkContent
