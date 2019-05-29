@@ -28,8 +28,9 @@ namespace AmpGen
       QuarkState& operator-=( const QuarkState& rhs );
       QuarkState  operator+ ( const QuarkState& rhs ) const;
       QuarkState  operator- ( const QuarkState& rhs ) const;
-      bool                operator==( const QuarkState& rhs ) const;
-      int                 operator[]( const size_t& index ) const;
+      bool        operator==( const QuarkState& rhs ) const;
+      bool        operator!=( const QuarkState& rhs ) const;
+      int         operator[]( const size_t& index ) const;
   };
 
   class QuarkContent
@@ -50,7 +51,7 @@ namespace AmpGen
       QuarkContent  operator- ( const QuarkContent& rhs ) const;
       bool          operator==( const QuarkContent& rhs ) const;
       bool          operator!=( const QuarkContent& rhs ) const;
-      QuarkState  operator[]( const size_t& index) const; 
+      QuarkState    operator[]( const size_t& index) const; 
       std::vector<QuarkState> quarks() const; 
   };
   std::ostream& operator<<( std::ostream& st, const QuarkState& qc );
