@@ -8,6 +8,7 @@
 #include <iostream>
 #include <numeric>
 #include <ratio>
+#include <thread>
 
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/ErrorPropagator.h"
@@ -44,7 +45,8 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   for( auto& amp : amplitudes ) INFO( amp.first.decayDescriptor() );
   m_matrixElements.resize( amplitudes.size() );
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() ); 
-  ThreadPool tp(1);
+  size_t      nThreads = NamedParameter<size_t>     ("nCores"    , std::thread::hardware_concurrency(), "Number of threads to use" );
+  ThreadPool tp(nThreads);
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
     tp.enqueue( [i,this,&mps,&amplitudes]{ 
     m_matrixElements[i] = TransitionMatrix<complex_t>( amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), this->m_dbThis);
