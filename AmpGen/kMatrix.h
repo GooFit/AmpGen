@@ -51,9 +51,7 @@ namespace AmpGen
 
   std::vector<Parameter> paramVector( const std::string& name, const unsigned int& nParam );
 
-  Tensor getPropagator(const Tensor& kMatrix, const std::vector<Expression>& phaseSpace, DebugSymbols* db = nullptr);
-
-
+  Tensor getPropagator(const Tensor& kMatrix, const std::vector<Expression>& phaseSpace, DebugSymbols* db=nullptr);
 } // namespace AmpGen
 
 #endif /* end of include guard: AMPGEN_KMATRIX_H */

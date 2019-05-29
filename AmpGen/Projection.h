@@ -31,17 +31,18 @@ namespace AmpGen
     double m_max;
     double m_width;
     public:
-    Projection();
+    const std::string name() const  ; 
+    double operator()( const Event& evt ) const ;
     template <class FCN>
-    Projection( const FCN& fcn, const std::string& name,
+      Projection( const FCN& fcn, const std::string& name,
           const std::string& xAxisTitle, const size_t& nBins, const double& min, const double& max,
           const std::string& units = "" ) : Projection( std::function< double( const Event& )>( fcn ), name, xAxisTitle, nBins, min, max, units ) {}
     Projection( const std::function<double( const Event& )>& fcn, const std::string& name,
         const std::string& xAxisTitle, const size_t& nBins, const double& min, const double& max,
         const std::string& units = "" );
+    Projection();
     TH1D* plot(const std::string& prefix="") const;
-    const std::string name() const  ; 
-    double operator()( const Event& evt ) const ;
+
     std::function<size_t( const Event& evt )> binFunctor() const;
     void setRange( const double& min, const double& max ){ m_min = (min); m_max = (max) ; }
   };

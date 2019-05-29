@@ -19,7 +19,7 @@
 #include <TTree.h>
 
 #ifdef __USE_OPENMP__
-#include <omp.h>
+  #include <omp.h>
 #endif
 
 namespace AmpGen
@@ -106,6 +106,7 @@ namespace AmpGen
         return size;
       }
     }
+
     template <class FUNCTOR>
     unsigned int extendEvent( const std::string& name, FUNCTOR func )
     {
@@ -118,7 +119,9 @@ namespace AmpGen
     template <class FCN>
     void updateCache( const FCN& fcn, const size_t& index )
     {
+      #ifdef __USE_OPENMP__
       #pragma omp parallel for
+      #endif
       for ( unsigned int i = 0; i < size(); ++i ) {
         ( *this )[i].setCache(fcn(getEvent(i)), index);
       }
@@ -165,17 +168,17 @@ namespace AmpGen
       INFO("Filter removes: " << currentSize - size() << " / " << currentSize << " events");
     }
   };
-  DECLARE_ARGUMENT(LineColor, int );
-  DECLARE_ARGUMENT(DrawStyle, std::string );
-  DECLARE_ARGUMENT(Selection, std::function<bool( const Event& )> );
-  DECLARE_ARGUMENT(WeightFunction, std::function<double( const Event& ) > );
-  DECLARE_ARGUMENT(Branches, std::vector<std::string> );
-  DECLARE_ARGUMENT(EntryList, std::vector<size_t> );
+  DECLARE_ARGUMENT(LineColor, int);
+  DECLARE_ARGUMENT(DrawStyle, std::string);
+  DECLARE_ARGUMENT(Selection, std::function<bool( const Event& )>);
+  DECLARE_ARGUMENT(WeightFunction, std::function<double( const Event& )>);
+  DECLARE_ARGUMENT(Branches, std::vector<std::string>);
+  DECLARE_ARGUMENT(EntryList, std::vector<size_t>);
   DECLARE_ARGUMENT(GetGenPdf, bool);
   DECLARE_ARGUMENT(CacheSize, size_t);
   DECLARE_ARGUMENT(Filter, std::string);
   DECLARE_ARGUMENT(WeightBranch, std::string);      
-  DECLARE_ARGUMENT(ApplySym, bool );  
+  DECLARE_ARGUMENT(ApplySym, bool);  
   DECLARE_ARGUMENT(Prefix, std::string);
 } // namespace AmpGen
 

@@ -3,9 +3,12 @@
 ! Responsible : Tim Evans
 ! Purpose     : 
 !-----------------------------------------------------------------------------
-!=================== AmpGen v1r2 2019-05-17 ==================
+!=================== AmpGen v1r2 2019-05-29 ==================
  - Improved thread support for CoherentSum
  - Add examples/QcGenerator for Ψ(3770) decays 
+! 2019-05-29 - Tim Evans 
+ - Updated ExpressionParser with improved stability.
+ - Removed unused / untested lineshapes AxialKaon and ObelixRho 
 !=================== AmpGen v1r1 2019-03-22 ==================
 ! 2019-03-22 - Tim Evans
  - Added support for fitting more general final states, i.e. with multiple fermions, photons etc.
