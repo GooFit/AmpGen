@@ -27,17 +27,11 @@ namespace AmpGen
   DECLARE_ARGUMENT(MinEvents, size_t );
   DECLARE_ARGUMENT(Dim, size_t );
   DECLARE_ARGUMENT(Functor, std::function<std::vector<real_t>( const Event& )>);
+  DECLARE_ARGUMENT(File, std::string);
 
   class BinDT
   {
     public:
-      struct AddressCompressor 
-      {
-        AddressCompressor() = default; 
-        uint32_t operator[]( const void* ptr );
-        uint32_t counter = {0};
-        std::map<const void*, uint32_t> elements;
-      };
       class EndNode;
 
       class INode

@@ -16,6 +16,13 @@ MinuitParameter::MinuitParameter( const std::string& name, const MinuitParameter
   resetToInit();
 }
 
+MinuitParameter::MinuitParameter( const std::string& name, const double& mean, const double& step, const double& mi, const double& ma )
+  : MinuitParameter(name, MinuitParameter::Flag::Float, m_meanInit, m_stepInit, m_minInit, m_maxInit ) 
+{
+  DEBUG( "Building parameter : " << name );
+  resetToInit();
+}
+
 MinuitParameter::Flag MinuitParameter::iFixInit() const { return m_iFixInit; }
 
 double MinuitParameter::meanInit()                const { return m_meanInit; }

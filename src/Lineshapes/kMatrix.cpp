@@ -25,7 +25,7 @@ Expression AmpGen::phsp_twoBody( const Expression& s, const double& m0, const do
 Expression AmpGen::phsp_fourPi( const Expression& s )
 {
   // Parameterisation of the 4pi phase-space taken from Laura++ (https://laura.hepforge.org/  or Ref. https://arxiv.org/abs/1711.09854) 
-  double mPiPlus( 0.139570 );
+  double mPiPlus = 0.139570;
   Expression rho_4pi = pol( s, {0.00051, -0.01933, 0.13851, -0.20840, -0.29744, 0.13655, 1.07885} );
   return Ternary( s > 1, phsp_twoBody( s, 2 * mPiPlus, 2 * mPiPlus ), rho_4pi );
 }
@@ -93,7 +93,7 @@ DEFINE_LINESHAPE( kMatrix )
   double mPiPlus = 0.139570;
   double mKPlus  = 0.493677;
   double mEta    = 0.547862;
-  double mEtap   = 0.96778;
+  double mEtap   = 0.967780;
 
   Expression sA0      = Parameter( "sA0", -0.15 );
   Expression sA       = Parameter( "sA", 1.0 );

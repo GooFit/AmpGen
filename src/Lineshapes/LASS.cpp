@@ -14,7 +14,6 @@ DEFINE_LINESHAPE( LASS )
 {
   const auto props     = ParticlePropertiesList::get( particleName );
   Expression mass      = Parameter( particleName + "_mass", props->mass() );
-  Expression radius    = Parameter( particleName + "_radius", props->radius() );
   Expression width0    = Parameter( particleName + "_width", props->width() );
   Expression s0        = mass*mass;
   Expression a         = Parameter( "LASS::a", 2.07 );
@@ -35,6 +34,7 @@ DEFINE_LINESHAPE( LASS )
   Expression bw           = ( mass * width0 ) / ( rho0 * ( s0 -s -i*mass*gamma ) );
   Expression nrPhaseShift = ( 2 + a * r * q2 + i * 2*a*q ) / ( 2+a*r*q2 - i*2*a*q );
   Expression NR           = 2*a*sqrt(s)/( 2 + a*r*q*q -2*i*a*q );
+  ADD_DEBUG(s, dbexpressions );
   ADD_DEBUG(nrPhaseShift*bw, dbexpressions );
   ADD_DEBUG(NR, dbexpressions );
   ADD_DEBUG(NR + bw*nrPhaseShift, dbexpressions );

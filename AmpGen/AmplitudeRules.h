@@ -51,6 +51,7 @@ namespace AmpGen
       std::vector<std::pair<Particle, CouplingConstant>> getMatchingRules( 
           const EventType& type, const std::string& prefix="" );
       std::vector<AmplitudeRule> processesThatProduce(const Particle& particle) const; 
+
     private:
       std::map<std::string, std::vector<AmplitudeRule>> m_rules;
   };

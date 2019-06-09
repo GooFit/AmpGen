@@ -80,24 +80,21 @@ void SplineTransfer::print() const { INFO( "Source: " << m_parameters[0]->name()
 SplineTransfer::SplineTransfer() = default;
 
 SplineTransfer::SplineTransfer( const SplineTransfer& other )
-  : CacheTransfer()
+  : CacheTransfer(other.m_address, other.m_value, other.m_size)
   , m_transferMatrix( other.m_transferMatrix )
   , m_parameters( other.m_parameters )
   , m_min( other.m_min )
   , m_max( other.m_max )
-    , m_address( other.m_address )
 {
 }
 
-SplineTransfer::SplineTransfer( const unsigned int& address, const unsigned int& N, const double& min, const double& max )
-  : CacheTransfer()
+SplineTransfer::SplineTransfer( const size_t& address, const unsigned int& N, const double& min, const double& max )
+  : CacheTransfer(address)
   , m_transferMatrix( TMatrixD( N - 2, N - 2 ) )
   , m_parameters( N, nullptr )
   , m_nKnots(N)
   , m_min( min )
   , m_max( max )
-    , m_address( address )
-
 {
   unsigned int size = N - 2;
   TMatrixD M(size, size);
@@ -129,7 +126,6 @@ void SplineTransfer::set( const unsigned int& N, const double& value )
   m_parameters[N] = new MinuitParameter("dumb",MinuitParameter::Fix,value,0);
 }
 
-void SplineTransfer::setAddress( const unsigned int& address ) { m_address = ( address ); }
 void SplineTransfer::transfer( CompiledExpressionBase* destination )
 {
   unsigned int size = m_parameters.size() - 2;

@@ -90,10 +90,10 @@ BinDT::BinDT( const ArgumentPack& args )
   m_maxDepth            = args.getArg<MaxDepth>( 999 );
   m_dim                 = args.getArg<Dim>( 5 );
   m_functors            = args.getArg<Functor>( makeDefaultFunctors() ).val;
-  auto fname            = args.getArg<File>();
-  if ( fname.name != "" ) {
-    std::ifstream stream( fname.name, fname.mode | std::ios::in );
-    readFromStream( stream );
+  auto fname            = args.getArg<File>("").val;
+  if ( fname != "" ) {
+    auto stream = std::ifstream(fname);
+    readFromStream(stream);
   }
 }
 
@@ -342,17 +342,6 @@ void BinDT::Decision::setChildren( std::shared_ptr<INode> l, std::shared_ptr<INo
   m_right->m_parent = this;
 }
 
-uint32_t BinDT::AddressCompressor::operator[]( const void* ptr )
-{
-  auto it = elements.find( ptr );
-  if ( it != elements.end() )
-    return it->second;
-  else {
-    elements[ptr] = counter++;
-    return elements[ptr];
-  }
-}
-
 BinDT::EndNode::EndNode( const unsigned int& no, const unsigned int& binNumber ) : 
   m_voxNumber( no ), 
   m_binNumber( binNumber ) {}
@@ -366,7 +355,6 @@ void BinDT::EndNode::serialize( std::ostream& stream ) const
 
 const BinDT::EndNode* BinDT::Decision::operator()( const double* evt ) const
 {
-//  INFO( m_index << " " << m_value << " " << *(evt+m_index));
   return *( evt + m_index ) < m_value ? ( *m_right )( evt ) : ( *m_left )( evt );
 }
 

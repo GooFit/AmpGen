@@ -179,7 +179,8 @@ std::string ParticleProperties::spinName() const {
   return "?";
 }
 
-const ParticleProperties* ParticleProperties::get( const std::string& name, const bool& quiet ){
+const ParticleProperties* ParticleProperties::get( const std::string& name, const bool& quiet )
+{
   return ParticlePropertiesList::get( name, quiet );
 }
 

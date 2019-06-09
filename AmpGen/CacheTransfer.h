@@ -11,33 +11,36 @@ namespace AmpGen
 
   class CacheTransfer 
   {
-    protected: 
-      unsigned int m_address;
-      double       m_value; 
-      size_t       m_size; 
     public:
       CacheTransfer();
-      CacheTransfer( const unsigned int& address, const double& value, const size_t& size=1);
+      CacheTransfer( const size_t& address, const double& value=0, const size_t& size=1);
       virtual ~CacheTransfer() = default;
+      
+      size_t address() const { return m_address ; }
+      
       virtual void transfer( CompiledExpressionBase* destination ); 
-      virtual void print() const;
-      virtual unsigned int address() const { return m_address ; }
-      virtual unsigned int size() const { return m_size ; }  
+      virtual void print()     const;
+      virtual size_t size()    const { return m_size ; }  
+    
+    protected: 
+      size_t       m_address = {0};
+      size_t       m_size    = {0}; 
+      double       m_value   = {0}; 
   };
 
   class ParameterTransfer : public CacheTransfer
   {
-  protected:
-    unsigned int m_address;
-    AmpGen::MinuitParameter* m_source;
-
   public:
-    ParameterTransfer( const unsigned int& address, AmpGen::MinuitParameter* source );
+    ParameterTransfer( const size_t& address, AmpGen::MinuitParameter* source );
     virtual ~ParameterTransfer() = default;
+    
+    size_t size()    const override { return 1 ; }  
+    
     void transfer( CompiledExpressionBase* destination ) override;
-    void print() const override;
-    unsigned int address() const override { return m_address ; } 
-    unsigned int size() const override { return 1 ; }  
+    void print()     const override;
+  
+  protected:
+    AmpGen::MinuitParameter* m_source = {nullptr};
   };
 
 } // namespace AmpGen

@@ -26,6 +26,10 @@ namespace AmpGen
   class FitFraction;
   class Particle;
 
+  /** @class CoherentSum
+      @brief An coherent sum of amplitudes 
+      Fuck you doxygen.
+  */
   class CoherentSum
   {
   public:
@@ -47,7 +51,6 @@ namespace AmpGen
     real_t norm( const Bilinears& norms ) const;
     real_t norm() const;
     real_t getNorm( const Bilinears& normalisations );
-    real_t get_norm() const { return m_norm ; }
 
     complex_t norm( const unsigned int& x, const unsigned int& y ) const;
     complex_t getVal( const Event& evt ) const;
@@ -67,7 +70,6 @@ namespace AmpGen
     void setMC( EventList& sim );
     void debug( const Event& evt, const std::string& nameMustContain="");
     void generateSourceCode( const std::string& fname, const double& normalisation = 1, bool add_mt = false );
-    void resync();
 
     std::vector<unsigned int> cacheAddresses( const EventList& evts ) const; 
     std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
@@ -78,23 +80,23 @@ namespace AmpGen
 
   protected:
     std::vector<TransitionMatrix<complex_t>> m_matrixElements; ///< Vector of (expanded) matrix elements
-    Bilinears m_normalisations;                  ///< Normalisation integrals
-    AmplitudeRules m_protoAmplitudes;            ///< Proto amplitudes from user rule-set
-    Integrator<10> m_integrator;                 ///< Integral dispatch tool (with default unroll = 10) 
-    TransitionMatrix<complex_t> m_total;         ///< Total Matrix Element 
-    EventList* m_events            = {nullptr};  ///< Data events to evaluate PDF on
-    EventType  m_evtType;                        ///< Final state for this amplitude
-    MinuitParameter* m_weightParam = {nullptr};  ///< Weight parameter (i.e. the normalised yield)
-    size_t m_prepareCalls          = {0};        ///< Number of times prepare has been called
-    size_t m_lastPrint             = {0};        ///< Last time verbose PDF info was printed
-    size_t m_printFreq             = {0};        ///< Frequency to print verbose PDF info
-    double m_weight                = {1};        ///< Weight number (i.e. the normalised yield)
-    double m_norm                  = {0};        ///< Normalisation integral
-    bool m_isConstant              = {false};    ///< Flag for a constant PDF
-    bool m_dbThis                  = {false};    ///< Flag to generate amplitude level debugging
-    bool m_verbosity               = {false};    ///< Flag for verbose printing
-    std::string m_objCache         = {""};       ///< Directory that contains (cached) amplitude objects
-    std::string m_prefix           = {""};       ///< Prefix for matrix elements
+    Bilinears m_normalisations;                   ///< Normalisation integrals
+    AmplitudeRules m_protoAmplitudes;             ///< Proto amplitudes from user rule-set
+    Integrator<10> m_integrator;                  ///< Integral dispatch tool (with default unroll = 10) 
+    TransitionMatrix<complex_t> m_total;          ///< Total Matrix Element 
+    EventList*       m_events       = {nullptr};  ///< Data events to evaluate PDF on
+    EventType        m_evtType;                   ///< Final state for this amplitude
+    MinuitParameter* m_weightParam  = {nullptr};  ///< Weight parameter (i.e. the normalised yield)
+    size_t           m_prepareCalls = {0};        ///< Number of times prepare has been called
+    size_t           m_lastPrint    = {0};        ///< Last time verbose PDF info was printed
+    size_t           m_printFreq    = {0};        ///< Frequency to print verbose PDF info
+    double           m_weight       = {1};        ///< Weight number (i.e. the normalised yield)
+    double           m_norm         = {0};        ///< Normalisation integral
+    bool             m_isConstant   = {false};    ///< Flag for a constant PDF
+    bool             m_dbThis       = {false};    ///< Flag to generate amplitude level debugging
+    bool             m_verbosity    = {false};    ///< Flag for verbose printing
+    std::string m_objCache          = {""};       ///< Directory that contains (cached) amplitude objects
+    std::string m_prefix            = {""};       ///< Prefix for matrix elements
     void addMatrixElement( std::pair<Particle, CouplingConstant>& particleWithCoupling, const MinuitParameterSet& mps );
   };
 } // namespace AmpGen

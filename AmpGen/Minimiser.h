@@ -29,7 +29,7 @@ namespace AmpGen
   class Minimiser
   {
   public:
-    template <class TYPE>
+    template <typename TYPE>
     Minimiser(TYPE& fitFunction, MinuitParameterSet* mps) : 
       m_parSet(mps)
     {
@@ -72,7 +72,8 @@ namespace AmpGen
     unsigned int m_nParams    = {0};
     unsigned int m_lastPrint  = {0};
     unsigned int m_printLevel = {0};
-
+    double       m_ll_zero    = {0};
+    bool         m_normalise  = {false};
   };
 } // namespace AmpGen
 #endif

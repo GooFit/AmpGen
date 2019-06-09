@@ -13,11 +13,10 @@ namespace AmpGen
   class EventType;
   class Particle;
 
-
   class FitFraction
   {
     public:
-      FitFraction(const std::string& line, const AmpGen::EventType& evtType);
+      FitFraction(const std::string& line);
       FitFraction(const std::string& name, const double& frac, const double& err);
       FitFraction() = default;
 
@@ -32,6 +31,7 @@ namespace AmpGen
       double m_value;
       double m_error;
   };
+  
   bool operator  <(const FitFraction& lhs, const FitFraction& rhs);
   bool operator  >(const FitFraction& lhs, const FitFraction& rhs);
   bool operator ==(const FitFraction& lhs, const FitFraction& rhs);

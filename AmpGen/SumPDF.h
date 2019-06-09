@@ -8,17 +8,17 @@
 #include "AmpGen/ProfileClock.h"
 
 #include <tuple>
-/* A SumPDF is the log-likelihood of the form
-   -2*LL(event) = -2*log( Sum( i, P_i(event) ) )
-   Where P_i are some probability density functions
-   The sum is variadically unrolled at compile time, i.e. the wrapper
-   is the same for 1..N pdfs. The unrolling should be properly inlined,
-   hence N can be reasonably large with out afflicting either
-   compile time or binary size.
-   */
 
 namespace AmpGen
 {
+  /** @class SumPDF
+      @brief A pdf with the log-likelihood of the form
+      -2*LL(event) = -2*log( Sum( i, P_i(event) ) )
+      Where P_i are some probability density functions
+      The sum is variadically unrolled at compile time, i.e. the wrapper
+      is the same for 1..N pdfs. The unrolling should be properly inlined,
+      hence N can be reasonably large with out afflicting either
+      compile time or binary size. */
   template <class... TYPES>
   class SumPDF
   {

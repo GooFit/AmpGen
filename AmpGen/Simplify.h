@@ -8,6 +8,9 @@
 #include "AmpGen/Expression.h"
 
 namespace AmpGen { 
+  
+  Expression Simplify(const Expression& expression );
+  
   class NormalOrderedExpression { 
     public:
       struct Term {
@@ -31,7 +34,6 @@ namespace AmpGen {
       std::vector<Term> m_terms;
       bool m_expandSubTrees; 
   };
-  Expression Simplify(const Expression& expression );
 }
 
 #endif

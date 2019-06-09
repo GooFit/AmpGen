@@ -47,6 +47,7 @@ int main( int argc, char* argv[] )
      then the default value, and then the help string that will be printed if --h is specified 
      as an option. */
   std::string dataFile = NamedParameter<std::string>("DataSample", ""          , "Name of file containing data sample to fit." );
+  std::string intFile  = NamedParameter<std::string>("IntegrationSample",""    , "Name of file containing events to use for MC integration.");
   std::string logFile  = NamedParameter<std::string>("LogFile"   , "Fitter.log", "Name of the output log file");
   std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
   
@@ -99,7 +100,7 @@ int main( int argc, char* argv[] )
   /* Generate events to normalise the PDF with. This can also be loaded from a file, 
      which will be the case when efficiency variations are included. Default number of normalisation events 
      is 5 million. */
-  EventList eventsMC = Generator<>(evtType, &rndm).generate(5e6);
+  EventList eventsMC = intFile == "" ? Generator<>(evtType, &rndm).generate(5e6) : EventList(intFile, evtType, GetGenPdf(true));
   
   sig.setMC( eventsMC );
 

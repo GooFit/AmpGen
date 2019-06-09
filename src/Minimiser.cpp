@@ -8,7 +8,6 @@
 #include <iomanip>
 #include <Minuit2/Minuit2Minimizer.h>
 
-
 #include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MinuitParameterSet.h"
@@ -35,11 +34,11 @@ double Minimiser::operator()( const double* xx )
   for(size_t i = 0; i < m_mapping.size(); ++i ) {
     m_parSet->at( m_mapping[i] )->setCurrentFitVal( xx[i] );
   }
-  double LL = m_theFunction();
+  double LL = m_theFunction() ;
   for ( auto& extendTerm : m_extendedTerms ) {
     LL -= 2 * extendTerm->getVal();
   }
-  return LL;
+  return LL - m_ll_zero;
 }
 
 void Minimiser::GradientTest()
@@ -59,6 +58,7 @@ void Minimiser::GradientTest()
     parameter->setCurrentFitVal( m );
   }
 }
+
 double Minimiser::FCN() const { return m_theFunction(); }
 
 void Minimiser::prepare()
@@ -67,6 +67,7 @@ void Minimiser::prepare()
   size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
   double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 1);
   m_printLevel          = NamedParameter<size_t>( "Minimiser::PrintLevel", 4);
+  m_normalise           = NamedParameter<bool>(   "Minimiser::Normalise",false);
   if ( m_minimiser != nullptr ) delete m_minimiser;
   m_minimiser = new Minuit2::Minuit2Minimizer(algorithm.c_str() );
   DEBUG( "Error definition = " << m_minimiser->ErrorDef() );
@@ -98,7 +99,7 @@ void Minimiser::prepare()
 
 bool Minimiser::doFit()
 {
-  m_lastPrint = 999;
+  if( m_normalise ) m_ll_zero = m_theFunction();
   ROOT::Math::Functor f( *this, m_nParams );
   for (size_t i = 0; i < m_mapping.size(); ++i ) {
     MinuitParameter* par = m_parSet->at( m_mapping[i] );
@@ -106,7 +107,6 @@ bool Minimiser::doFit()
     if ( par->minInit() != 0 || par->maxInit() != 0 )
       m_minimiser->SetVariableLimits( i, par->minInit(), par->maxInit() );
   }
-
   m_minimiser->SetFunction( f );
   m_minimiser->Minimize();
   for (size_t i = 0; i < m_nParams; ++i ) {

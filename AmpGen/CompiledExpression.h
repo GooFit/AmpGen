@@ -27,11 +27,10 @@ namespace AmpGen
   {
 
   private:
-    DynamicFCN<RETURN_TYPE( ARGS... )> m_fcn;
-    DynamicFCN<std::vector<std::pair<std::string, 
-               std::complex<double>>>( ARGS... )> m_fdb;
-    std::vector<real_t> m_externals;
-    bool m_hasExternalsChanged;
+    DynamicFCN<RETURN_TYPE( ARGS... )>                                    m_fcn;
+    DynamicFCN<std::vector<std::pair<std::string, complex_t>>(ARGS...)> m_fdb;
+    std::vector<real_t>  m_externals             = {};
+    bool                 m_hasExternalsChanged   = {false};
    
   public:
 
@@ -41,8 +40,7 @@ namespace AmpGen
                               std::map<std::string, size_t>(),
                         const DebugSymbols& db = {},
                         const MinuitParameterSet* mps = nullptr )
-      : CompiledExpressionBase( expression, name, db, evtMapping ), 
-        m_hasExternalsChanged( false )
+      : CompiledExpressionBase( expression, name, db, evtMapping ) 
     {
       resolve(mps);
     }
@@ -137,7 +135,7 @@ namespace AmpGen
       // stream << "#pragma clang diagnostic pop\n\n" << std::endl;
     }
 
-    bool isReady()          const override { return (m_readyFlag != nullptr && m_readyFlag->get() ) && m_fcn.isLinked(); }
+    bool isReady()          const override { return m_fcn.isLinked(); }
     bool isLinked()         const { return m_fcn.isLinked() ; } 
     size_t returnTypeSize() const override { return sizeof( RETURN_TYPE ); }
    
@@ -207,7 +205,7 @@ namespace AmpGen
       make_expression( const Expression& expression, const std::string& name , const bool& verbose=false)
       {
         CompiledExpression<RT,const double*, const double*> rt(expression,name);
-        rt.compile("", true);
+        rt.compile();
         rt.prepare();
         return rt;
       }
@@ -218,7 +216,7 @@ namespace AmpGen
                        const MinuitParameterSet& mps )
       {
         CompiledExpression<RT,const double*, const double*> rt(expression,name,{},{},&mps);
-        rt.compile("", true);
+        rt.compile();
         rt.prepare();
         return rt;
       }
@@ -230,7 +228,7 @@ namespace AmpGen
                        const MinuitParameterSet& mps )
       {
         CompiledExpression<RT,const double*, const double*> rt(expression,name,evtMap,{},&mps);
-        rt.compile("", true);
+        rt.compile();
         rt.prepare();
         return rt;
       }

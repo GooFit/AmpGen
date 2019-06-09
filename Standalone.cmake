@@ -127,6 +127,7 @@ target_compile_options(AmpGen
   -Wno-unknown-pragmas
   -Wnon-virtual-dtor
   -Woverloaded-virtual
+  -march=native
   $<$<CONFIG:Release>:-Ofast>)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")

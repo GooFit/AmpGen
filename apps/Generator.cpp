@@ -81,6 +81,7 @@ int main( int argc, char** argv )
   #ifdef _OPENMP
     unsigned int concurentThreadsSupported = std::thread::hardware_concurrency();
     unsigned int nCores                    = NamedParameter<unsigned int>( "nCores", concurentThreadsSupported, "Number of cores to use (OpenMP only)" );
+    INFO("Using: " << nCores  << " / " << concurentThreadsSupported  << " threads" );
     omp_set_num_threads( nCores );
     omp_set_dynamic( 0 );
   #endif
@@ -106,8 +107,7 @@ int main( int argc, char** argv )
     GenerateEvents( accepted, sig, phsp , nEvents, blockSize, &rand );
   } 
   else if ( gen_type == "PolarisedSum" ){
-    PolarisedSum sig( eventType, MPS );
-    
+    PolarisedSum sig( eventType, MPS ); 
     RecursivePhaseSpace phsp( sig.matrixElements()[0].decayTree.quasiStableTree() , eventType, &rand );
     GenerateEvents( accepted, sig, phsp, nEvents, blockSize, &rand );
   }

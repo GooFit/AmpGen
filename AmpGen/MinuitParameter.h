@@ -18,6 +18,8 @@ namespace AmpGen
     MinuitParameter() = default;
     MinuitParameter(const std::string& name, const Flag& iFixInit, const double& mean, const double& step,
                      const double& min = 0, const double& max = 0 );
+    MinuitParameter(const std::string& name, const double& mean, const double& step,
+                     const double& min = 0, const double& max = 0 );
 
     Flag iFixInit() const;
     bool hidden() const;

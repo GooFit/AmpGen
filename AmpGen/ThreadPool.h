@@ -4,7 +4,6 @@
 /* @class ThreadPool ThreadPool.h AmpGen/ThreadPool.h
  * Thread pool implementation taken from https://github.com/progschj/ThreadPool
  * Modified to allow explicit clearing of queues.
- * A single static thread pool exists that can be used as a sceduler.
  *
  * Copyright (c) 2012 Jakob Progsch, Václav Zeman
  *
@@ -48,27 +47,12 @@ namespace AmpGen
   class ThreadPool
   {
     public:
-      static size_t nThreads;
-
-      ~ThreadPool();
-
-      template <class F, class... Args> static auto schedule( F&& f, Args&&... args ) -> std::future<typename std::result_of<F( Args... )>::type>
-      {
-        return getMe()->enqueue( f, args... );
-      }
-
-      template<class F, class... Args> auto enqueue(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type>;
-      
       ThreadPool(const size_t& nt);
+      ~ThreadPool();
+      template<class F, class... Args> auto enqueue(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type>;
       void waitForStoppedThreads(); 
+
     private:
-      static ThreadPool* gThreadPool;
-      static ThreadPool* getMe()
-      {
-        if ( !gThreadPool ) 
-          gThreadPool = new ThreadPool(ThreadPool::nThreads);
-        return gThreadPool;
-      }
       std::vector<std::thread>          m_workers;
       std::queue<std::function<void()>> m_tasks;
       std::mutex                        m_queue_mutex;

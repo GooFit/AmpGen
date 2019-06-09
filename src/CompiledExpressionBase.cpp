@@ -56,13 +56,11 @@ CompiledExpressionBase::CompiledExpressionBase( const Expression& expression,
   m_name( name ),
   m_progName( programatic_name(name) ),
   m_db(db),
-  m_evtMap(evtMapping),
-  m_readyFlag(nullptr) {}
+  m_evtMap(evtMapping) {}
 
 CompiledExpressionBase::CompiledExpressionBase( const std::string& name ) 
   : m_name( name ),
-    m_progName( programatic_name(name) ),
-    m_readyFlag(nullptr) {}
+    m_progName( programatic_name(name) ) {}
 
 std::string CompiledExpressionBase::name() const { return m_name; }
 std::string CompiledExpressionBase::progName() const { return m_progName; }
@@ -118,16 +116,9 @@ std::ostream& AmpGen::operator<<( std::ostream& os, const CompiledExpressionBase
   return os; 
 }
 
-void CompiledExpressionBase::compile(const std::string& fname, const bool& wait  )
+void CompiledExpressionBase::compile(const std::string& fname)
 {
-  if(!wait){
-  m_readyFlag = new std::shared_future<bool>( ThreadPool::schedule([this,fname](){
-        CompilerWrapper().compile(*this,fname);
-        return true;} ) );
-  }
-  else {
-    CompilerWrapper(false).compile(*this,fname );
-  }
+  CompilerWrapper(false).compile(*this,fname );
 }
 
 void CompiledExpressionBase::addDebug( std::ostream& stream ) const

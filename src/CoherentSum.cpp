@@ -26,12 +26,13 @@
 #include "AmpGen/ThreadPool.h"
 #include "AmpGen/ProfileClock.h"
 
-#ifdef __USE_OPENMP__
+#ifdef _OPENMP
   #include <omp.h>
 #endif
 
 using namespace AmpGen;
-CoherentSum::CoherentSum(){}
+CoherentSum::CoherentSum() = default; 
+
 CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
   : m_protoAmplitudes( mps )
   , m_evtType( type )
@@ -86,7 +87,6 @@ void CoherentSum::prepare()
   ProfileClock clockIntegral;
   if ( m_integrator.isReady())  updateNorms( changedPdfIndices );
   else if ( m_verbosity ) WARNING( "No simulated sample specified for " << this );
-
   m_norm = norm();
   if ( m_verbosity && printed ) {
     clockIntegral.stop();
@@ -362,4 +362,3 @@ complex_t CoherentSum::getVal( const Event& evt, const std::vector<unsigned int>
     value += m_matrixElements[i].coefficient * evt.getCache( cacheAddresses[i] );
   return value;
 }
-

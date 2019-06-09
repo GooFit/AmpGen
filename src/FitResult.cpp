@@ -23,98 +23,26 @@
 
 using namespace AmpGen;
 
-FitResult::FitResult( const std::string& filename, const EventType& evtType )
+FitResult::FitResult() = default; 
+
+FitResult::FitResult( const FitResult& other )
+  : m_mps( std::make_shared<MinuitParameterSet>( *other.mps() ) )
+  , m_chi2( other.chi2() )
+  , m_LL( other.LL() )
+  , m_nBins( other.nBins() )
+  , m_nParam( other.nParam() )
+  , m_status( other.status() )
+  , m_observables( other.observables() )
+  , m_fitFractions( other.fitFractions() )
 {
-  m_eventType = evtType;
-  m_fitted    = readFile( filename );
+  m_covarianceMatrix.ResizeTo( other.cov().GetNrows(), other.cov().GetNcols() );
+  m_covarianceMatrix = other.cov();
 }
 
-std::string FitResult::getLastLine( std::ifstream& in ) const
+FitResult::FitResult( const std::string& filename ) :
+  m_mps( std::make_shared<MinuitParameterSet>() ) 
 {
-  std::string line;
-  while ( in >> std::ws && std::getline( in, line ) ) ;
-  return line;
-}
-
-bool FitResult::readFile( const std::string& fname )
-{
-  std::ifstream CHECK( fname );
-  if ( !CHECK.is_open() || CHECK.peek() == std::ifstream::traits_type::eof() ) {
-    return false;
-  }
-  if ( getLastLine( CHECK ) != "End Log" ) {
-    ERROR( "File not properly close " << fname );
-    return false;
-  }
-  CHECK.close();
-  std::vector<std::string> parameterLines;
-
-  processFile( fname, [this, &parameterLines]( auto& line ) {
-    const std::string name = split( line, ' ' )[0];
-    if ( name == "Parameter" ) parameterLines.push_back( line );
-    else if ( name == "FitQuality" ) this->setFitQuality( line );
-    else if ( name == "FitFraction" ) this->m_fitFractions.emplace_back( line, m_eventType );
-    else if ( name == "Observable" ) this->addToObservables( line );
-  } );
-
-  size_t nParameters = parameterLines.size();
-  m_covarianceMatrix.ResizeTo( parameterLines.size(), parameterLines.size() );
-  m_mps = std::make_shared<MinuitParameterSet>();
-  for (size_t i = 0; i < nParameters; ++i ) {
-    auto tokens             = split( parameterLines[i], ' ' );
-    m_covMapping[tokens[1]] = i;
-    m_mps->add( new MinuitParameter( tokens[1], MinuitParameter::Flag(stoi( tokens[2] ) ), stod( tokens[3] ), stod( tokens[4] ), 0, 0 ) );
-    for (size_t j = 0; j < nParameters; ++j ) m_covarianceMatrix( i, j ) = stod( tokens[5 + j] );
-  }
-
-  return true;
-}
-
-void FitResult::setFitQuality( const std::string& line )
-{
-  auto tokens = split( line, ' ' );
-  bool status=true;
-  if( tokens.size() != 6 ){
-   WARNING("Cannot pass FitQuality line: " << line );
-   return;
-  }
-  m_chi2      = lexical_cast<double>( tokens[1] , status );
-  m_nBins     = lexical_cast<double>( tokens[2] , status );
-  m_nParam    = lexical_cast<double>( tokens[3] , status );
-  m_LL        = lexical_cast<double>( tokens[4] , status );
-  m_status    = lexical_cast<int>   ( tokens[5] , status );
-}
-void FitResult::addToObservables( const std::string& line )
-{
-  auto tokens              = split( line, ' ' );
-  m_observables[tokens[1]] = stod( tokens[2] );
-}
-
-void FitResult::addObservable( const std::string& name, const double& F ) { m_observables[name] = F; }
-
-void FitResult::writeToFile( const std::string& fname )
-{
-  std::ofstream outlog;
-  outlog.open( fname );
-
-  for (size_t i = 0; i < (size_t)m_covarianceMatrix.GetNrows(); ++i ) {
-    auto param = m_mps->at(i);
-    outlog << "Parameter"
-           << " " << param->name() << " " << param->iFixInit() << " " << param->mean() << " "
-           << m_mps->at(i)->err() << " ";
-    for (size_t j = 0; j < (size_t)m_covarianceMatrix.GetNcols(); ++j ) outlog << m_covarianceMatrix[i][j] << " ";
-    outlog << std::endl;
-  }
-  outlog << std::setprecision( 8 );
-  outlog << "FitQuality " << m_chi2 << " " << m_nBins << " " << m_nParam << " " << m_LL << " " << m_status << "\n";
-  for ( auto& p : m_fitFractions ) {
-    outlog << "FitFraction " << p.name() << " " << p.val() << " " << p.err() << "\n";
-  }
-  for ( auto& ob : m_observables ) {
-    outlog << "Observable " << ob.first << " " << ob.second << "\n";
-  }
-  outlog << "End Log\n";
-  outlog.close();
+  m_fitted = readFile( filename );
 }
 
 FitResult::FitResult( const Minimiser& mini )
@@ -132,9 +60,9 @@ FitResult::FitResult( const Minimiser& mini )
   }
 }
 
-FitResult::FitResult( const MinuitParameterSet& mps, const TMatrixD& covMini ) : FitResult()
+FitResult::FitResult( const MinuitParameterSet& mps, const TMatrixD& covMini ) :
+  m_mps( std::make_shared<MinuitParameterSet>( mps ) )
 {
-  m_mps = std::make_shared<MinuitParameterSet>( mps );
   if ( int( mps.size() ) != covMini.GetNcols() ) {
     ERROR( "Minuit parameter set size does not match covariance matrix size!" );
   }
@@ -145,6 +73,80 @@ FitResult::FitResult( const MinuitParameterSet& mps, const TMatrixD& covMini ) :
   }
 }
 
+bool FitResult::readFile( const std::string& fname )
+{
+  std::ifstream checkIsClosed( fname );
+  if ( !checkIsClosed.is_open() 
+      || checkIsClosed.peek() == std::ifstream::traits_type::eof() ) return false;
+  checkIsClosed.close();
+  auto lines = vectorFromFile(fname);
+  if( *lines.rbegin() != "End Log" ){
+    ERROR("File not properly closed: " << *lines.rbegin() );
+    return false; 
+  }
+  std::vector<std::string> parameterLines;
+  for( auto& line : lines ){
+    const std::string name = split( line, ' ' )[0];
+    if ( name == "Parameter" ) parameterLines.push_back( line );
+    else if ( name == "FitQuality" )  this->setFitQuality( line );
+    else if ( name == "FitFraction" ) this->m_fitFractions.emplace_back(line);
+    else if ( name == "Observable" )  this->addToObservables( line );
+  }
+  size_t nParameters = parameterLines.size();
+  m_covarianceMatrix.ResizeTo( parameterLines.size(), parameterLines.size() );
+  for (size_t i = 0; i < nParameters; ++i ) {
+    INFO("parsing line: "  << parameterLines[i] );
+    auto tokens             = split( parameterLines[i], ' ' );
+    m_covMapping[tokens[1]] = i;
+    m_mps->add( new MinuitParameter( tokens[1], MinuitParameter::Flag(stoi( tokens[2] ) ), stod( tokens[3] ), stod( tokens[4] ), 0, 0 ) );
+    for (size_t j = 0; j < nParameters; ++j ) m_covarianceMatrix( i, j ) = stod( tokens[5 + j] );
+  }
+  return true;
+}
+
+void FitResult::setFitQuality( const std::string& line )
+{
+  auto tokens = split( line, ' ' );
+  bool status=true;
+  if( tokens.size() != 6 ){
+    WARNING("Cannot pass FitQuality line: " << line );
+    return;
+  }
+  m_chi2      = lexical_cast<double>( tokens[1] , status );
+  m_nBins     = lexical_cast<double>( tokens[2] , status );
+  m_nParam    = lexical_cast<double>( tokens[3] , status );
+  m_LL        = lexical_cast<double>( tokens[4] , status );
+  m_status    = lexical_cast<int>   ( tokens[5] , status );
+}
+
+void FitResult::addToObservables( const std::string& line )
+{
+  auto tokens              = split( line, ' ' );
+  m_observables[tokens[1]] = stod( tokens[2] );
+}
+
+void FitResult::addObservable( const std::string& name, const double& F ) { m_observables[name] = F; }
+
+void FitResult::writeToFile( const std::string& fname )
+{
+  std::ofstream outlog;
+  outlog.open( fname );
+  for (size_t i = 0; i < (size_t)m_covarianceMatrix.GetNrows(); ++i ) {
+    auto param = m_mps->at(i);
+    outlog << "Parameter"
+      << " " << param->name() << " " << param->iFixInit() << " " << param->mean() << " "
+      << m_mps->at(i)->err() << " ";
+    for (size_t j = 0; j < (size_t)m_covarianceMatrix.GetNcols(); ++j ) outlog << m_covarianceMatrix[i][j] << " ";
+    outlog << std::endl;
+  }
+  outlog << std::setprecision( 8 );
+  outlog << "FitQuality " << m_chi2 << " " << m_nBins << " " << m_nParam << " " << m_LL    << " " << m_status << "\n";
+  for ( auto& f : m_fitFractions )  outlog << "FitFraction " << f.name() << " " << f.val() << " " << f.err()  << "\n";
+  for ( auto& o : m_observables )   outlog << "Observable "  << o.first  << " " << o.second << "\n";
+  outlog << "End Log\n";
+  outlog.close();
+}
+
 void FitResult::print() const
 {
   INFO( "Chi2 per bin = " << m_chi2 / m_nBins );
@@ -153,29 +155,14 @@ void FitResult::print() const
   INFO( "Fit Status   = " << m_status );
 }
 
-FitResult::FitResult( const FitResult& other )
-    : m_chi2( other.chi2() )
-    , m_LL( other.LL() )
-    , m_nBins( other.nBins() )
-    , m_nParam( other.nParam() )
-    , m_status( other.status() )
-    , m_eventType( other.eventType() )
-    , m_observables( other.observables() )
-    , m_fitFractions( other.fitFractions() )
-    , m_mps( std::make_shared<MinuitParameterSet>( *other.mps() ) )
-{
-  m_covarianceMatrix.ResizeTo( other.cov().GetNrows(), other.cov().GetNcols() );
-  m_covarianceMatrix = other.cov();
-}
-
-std::vector<MinuitParameter*> FitResult::getParameters() const
+std::vector<MinuitParameter*> FitResult::parameters() const
 {
   std::vector<MinuitParameter*> params( m_mps->size() );
   std::copy( m_mps->begin(), m_mps->end(), params.begin() );
   return params;
 }
 
-std::vector<MinuitParameter*> FitResult::getFloating( const bool& extended ) const
+std::vector<MinuitParameter*> FitResult::floating( const bool& extended ) const
 {
   std::vector<MinuitParameter*> floating;
   for ( auto& param : *m_mps ) {
@@ -194,7 +181,7 @@ TMatrixD FitResult::getReducedCovariance( const bool& extended ) const
   TMatrixD reducedCov( floating_indices.size(), floating_indices.size() );
   if ( int( floating_indices.size() ) > m_covarianceMatrix.GetNrows() ) {
     ERROR( "Looking for more floating indices than real indices: " << m_covarianceMatrix.GetNrows() << " "
-                                                                   << floating_indices.size() );
+        << floating_indices.size() );
     return reducedCov;
   }
   for ( unsigned int i = 0; i < floating_indices.size(); ++i ) {
@@ -207,7 +194,7 @@ TMatrixD FitResult::getReducedCovariance( const bool& extended ) const
 
 LinearErrorPropagator FitResult::getErrorPropagator( const bool& extended ) const
 {
-  return LinearErrorPropagator( getReducedCovariance( extended ), getFloating( extended ) );
+  return LinearErrorPropagator( getReducedCovariance( extended ), floating( extended ) );
 }
 
 void FitResult::addChi2( const double& chi2, const double& nBins )
@@ -216,4 +203,39 @@ void FitResult::addChi2( const double& chi2, const double& nBins )
   m_nBins = nBins;
 }
 
-void FitResult::addFractions( const std::vector<FitFraction>& fractions ) { m_fitFractions = fractions; }
+void FitResult::addFractions( const std::vector<FitFraction>& fractions ) 
+{ 
+  m_fitFractions = fractions; 
+}
+
+double FitResult::chi2() const { return m_chi2; }
+double FitResult::LL() const { return m_LL; }
+int FitResult::status() const { return m_status; }
+int FitResult::nParam() const { return m_nParam; }
+int FitResult::nBins() const { return m_nBins; }
+
+std::map<std::string, double> FitResult::observables() const { return m_observables; }
+std::shared_ptr<MinuitParameterSet> FitResult::mps() const { return m_mps; }
+
+double FitResult::dof() const { return m_nBins - m_nParam - 1; }
+std::vector<FitFraction> FitResult::fitFractions() const { return m_fitFractions; }
+TMatrixD FitResult::cov() const { return m_covarianceMatrix; }
+double FitResult::cov( const size_t& x, const size_t& y ) const { return m_covarianceMatrix( x, y ); }
+double FitResult::cov( const std::string& x, const std::string& y ) const { return m_covarianceMatrix( m_covMapping.at(x), m_covMapping.at(y) ); }
+
+void FitResult::addFraction( const std::string& name, const double& frac, const double& err )
+{
+  m_fitFractions.emplace_back( name, frac, err );
+}
+void FitResult::clearFitFractions() { m_fitFractions.clear(); }
+void FitResult::setCov( const size_t& x, const size_t& y, const double& F ) { m_covarianceMatrix( x, y ) = F; }
+double FitResult::correlation( const std::string& x, const std::string& y ) const
+{
+  auto tx = m_covMapping.find(x);
+  auto ty = m_covMapping.find(y);
+  if( tx == m_covMapping.end() || ty == m_covMapping.end() ){
+    ERROR("Parameter not found: " << x << ", " << y );
+    return -1;
+  }
+  return cov(tx->second, ty->second)/sqrt(cov(tx->second, tx->second)*cov(ty->second, ty->second));
+}

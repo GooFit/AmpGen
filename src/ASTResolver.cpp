@@ -14,30 +14,30 @@ using namespace AmpGen;
 
 ASTResolver::ASTResolver(const std::map<std::string, size_t>& evtMap, 
     const MinuitParameterSet* mps ) : 
-  evtMap(evtMap),
-  mps(mps), 
-  nParameters(0)
+  m_evtMap(evtMap),
+  m_mps(mps), 
+  m_nParameters(0)
 {
-  enable_cuda                 = NamedParameter<bool>("UseCUDA",false);
-  enable_compileTimeConstants = NamedParameter<bool>("ASTResolver::CompileTimeConstants", false);
+  m_enable_cuda                 = NamedParameter<bool>("UseCUDA",false);
+  m_enable_compileTimeConstants = NamedParameter<bool>("ASTResolver::CompileTimeConstants", false);
 }
 
 bool ASTResolver::hasSubExpressions() const 
 { 
-  return subTrees.size() != 0; 
+  return m_subTrees.size() != 0; 
 }
 
 void ASTResolver::reduceSubTrees()
 {
-  subTrees.clear();
-  for( auto& t : tempTrees ){
+  m_subTrees.clear();
+  for( auto& t : m_tempTrees ){
     auto expr = t.first->m_expression;
     uint64_t key = t.first->key(); 
-    if( subTrees.count( key ) == 0 ){
-      subTrees[ key ] = t.first->m_expression ;
+    if( m_subTrees.count( key ) == 0 ){
+      m_subTrees[ key ] = t.first->m_expression ;
     }
   }
-  tempTrees.clear();
+  m_tempTrees.clear();
 }
 
 std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpressions( const Expression& expression )
@@ -48,7 +48,7 @@ std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpression
   do { 
     reduceSubTrees();
     bool verbose = false;
-    for( auto& st : subTrees ) {
+    for( auto& st : m_subTrees ) {
       st.second.resolve( *this );
       auto stack_pos = used_functions.find( st.first );
       if ( stack_pos == used_functions.end() ) {
@@ -73,8 +73,8 @@ std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpression
 
 template <> void ASTResolver::resolve<SubTree>( const SubTree& subTree )
 {
-  if( tempTrees.count( &subTree ) != 0 ) return;
-  tempTrees[&subTree] = 1;
+  if( m_tempTrees.count( &subTree ) != 0 ) return;
+  m_tempTrees[&subTree] = 1;
 }
 
 template <> void ASTResolver::resolve<Spline>( const Spline& spline )
@@ -84,17 +84,17 @@ template <> void ASTResolver::resolve<Spline>( const Spline& spline )
   addResolvedParameter( &spline, address );
   addResolvedParameter( spline.m_points.top().get(), address );  
   auto splineTransfer = dynamic_cast<SplineTransfer*>( m_cacheFunctions[spline.m_name].get() );
-  if( mps == nullptr ) ERROR("Fix me!");
+  if( m_mps == nullptr ) ERROR("Fix me!");
   for( unsigned int i = 0 ; i < spline.m_nKnots; ++i ) 
-    splineTransfer->set(i, mps->find(spline.m_name+"::"+std::to_string(i)) );
+    splineTransfer->set(i, m_mps->find(spline.m_name+"::"+std::to_string(i)) );
 }
 
 template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
 {
   if( m_resolvedParameters.count(&parameter) != 0 || parameter.isResolved() ) return; 
-  auto res = evtMap.find(parameter.name());
-  if( res != evtMap.end() ){
-    if( enable_cuda ) {
+  auto res = m_evtMap.find(parameter.name());
+  if( res != m_evtMap.end() ){
+    if( m_enable_cuda ) {
       size_t t = res->second; 
       std::string it = ""; 
       if( t % 3 == 0 ) it = ".x";
@@ -111,10 +111,10 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
     }
     return;
   }
-  else if( mps != nullptr ){
-    auto it = mps->find(parameter.name());
+  else if( m_mps != nullptr ){
+    auto it = m_mps->find(parameter.name());
     if( it != nullptr ){
-      if( enable_compileTimeConstants && 
+      if( m_enable_compileTimeConstants && 
           it->iFixInit() == MinuitParameter::Flag::CompileTimeConstant ){
         addResolvedParameter( &parameter, "("+std::to_string(it->mean()) +")" );
       }
@@ -122,7 +122,7 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
       return;
     }
   }
-  else if( enable_compileTimeConstants ){
+  else if( m_enable_compileTimeConstants ){
     addResolvedParameter( &parameter, std::to_string( parameter.defaultValue() ) );
     return;
   }
@@ -133,8 +133,8 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
 template <> void ASTResolver::resolve<MinuitParameterLink>(const MinuitParameterLink& parameter)
 {
   if( m_resolvedParameters.count(&parameter) != 0 ) return; 
-  if( mps == nullptr ) return; 
-  auto it = mps->find(parameter.name());
+  if( m_mps == nullptr ) return; 
+  auto it = m_mps->find(parameter.name());
   if( it == nullptr ) return;
   addResolvedParameter(&parameter, addCacheFunction<ParameterTransfer>( parameter.name(),it));
 }
