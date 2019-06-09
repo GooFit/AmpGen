@@ -18,7 +18,7 @@
 #include <TH2D.h>
 #include <TTree.h>
 
-#ifdef __USE_OPENMP__
+#ifdef _OPENMP
   #include <omp.h>
 #endif
 
@@ -119,7 +119,7 @@ namespace AmpGen
     template <class FCN>
     void updateCache( const FCN& fcn, const size_t& index )
     {
-      #ifdef __USE_OPENMP__
+      #ifdef _OPENMP
       #pragma omp parallel for
       #endif
       for ( unsigned int i = 0; i < size(); ++i ) {

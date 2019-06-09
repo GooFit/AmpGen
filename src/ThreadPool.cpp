@@ -6,10 +6,7 @@
 
 using namespace AmpGen;
 
-ThreadPool* ThreadPool::gThreadPool = nullptr;
-size_t ThreadPool::nThreads         = 10;
-
-ThreadPool::ThreadPool(const size_t& nt) : m_stop(false)
+ThreadPool::ThreadPool(const size_t& nt)
 { 
   for ( size_t i = 0; i < nt; ++i )
     m_workers.emplace_back( [this] {

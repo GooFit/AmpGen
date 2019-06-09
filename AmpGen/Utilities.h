@@ -12,7 +12,7 @@
 #include <typeinfo>
 #include <vector>
 #include <future>
-#ifdef __USE_OPENMP__
+#ifdef _OPENMP
 #include <omp.h>
 #endif
 
@@ -171,7 +171,7 @@ namespace AmpGen {
       {
         auto total = init; 
         auto size  = end-begin;
-        #ifdef __USE_OPENMP__
+        #ifdef _OPENMP
         #pragma omp parallel for reduction( +: total )
         #endif
         for( int it = 0; it < size; ++it ){

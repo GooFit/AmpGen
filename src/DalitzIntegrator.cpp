@@ -174,14 +174,11 @@ TH2D* DalitzIntegrator::makePlot( const std::function<double(const double*)>& fc
     const std::string& name, const size_t& nSamples )
 {
   auto plot = projection.plot();
-  double event[12];
-  for ( unsigned int i = 0; i < 12; ++i ) event[i] = 0;
-  Event evtCache( 12 );
+  Event event( 12 );
   for ( unsigned int i = 0; i < nSamples; ++i ) {
     sqCo pos = {gRandom->Uniform(), gRandom->Uniform()};
     setEvent( pos, event );
-    evtCache.set( event );
-    auto obs_cos = projection( evtCache );
+    auto obs_cos = projection( event );
     plot->Fill( obs_cos.first, obs_cos.second, J( pos ) * fcn( event ) );
   }
   return plot;

@@ -11,15 +11,12 @@
 
 using namespace AmpGen;
 
-FitFraction::FitFraction( const std::string& line, const EventType& evtType )
+FitFraction::FitFraction( const std::string& line )
 {
   auto tokens = split( line, ' ' );
   m_name      = tokens[1];
   m_value     = stod( tokens[2] );
   m_error     = stod( tokens[3] );
-  if ( evtType.size() != 0 ) {
-    std::vector<std::string> finalStates = evtType.finalStates();
-  }
 }
 
 std::shared_ptr<Particle> FitFraction::particle() const { return std::make_shared<Particle>( m_name ); }

@@ -31,17 +31,6 @@ namespace AmpGen
    */
   class CompiledExpressionBase
   {
-  protected:
-    Expression                                      m_obj;
-    std::string                                     m_name;
-    std::string                                     m_progName; 
-    DebugSymbols                                    m_db;
-    std::map<std::string, size_t>                   m_evtMap;
-    std::shared_future<bool>*                       m_readyFlag = {nullptr};
-    std::vector<std::pair<uint64_t, Expression>>    m_dependentSubexpressions;
-    std::vector<std::pair<uint64_t, Expression>>    m_debugSubexpressions; 
-    std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;
-    ASTResolver*                                    m_resolver  = {nullptr};
   public:
     CompiledExpressionBase( const Expression& expression, 
                             const std::string& name,
@@ -52,7 +41,7 @@ namespace AmpGen
 
     void resolve(const MinuitParameterSet* mps = nullptr);
     void prepare();
-    void compile(const std::string& fname="", const bool& wait = false ); 
+    void compile(const std::string& fname=""); 
     void to_stream( std::ostream& stream ) const;
     unsigned int hash() const;
     std::string name() const;
@@ -66,8 +55,18 @@ namespace AmpGen
     virtual std::string fcnSignature()   const = 0;
     virtual std::string args()           const = 0;
     virtual void print() const                 = 0;
-    virtual ~CompiledExpressionBase() = default;
+    virtual ~CompiledExpressionBase()          = default;
     virtual size_t returnTypeSize() const      = 0;    
+  protected:
+    Expression                                      m_obj;
+    std::string                                     m_name;
+    std::string                                     m_progName; 
+    DebugSymbols                                    m_db;
+    std::map<std::string, size_t>                   m_evtMap;
+    std::vector<std::pair<uint64_t, Expression>>    m_dependentSubexpressions;
+    std::vector<std::pair<uint64_t, Expression>>    m_debugSubexpressions; 
+    std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;
+    ASTResolver*                                    m_resolver  = {nullptr};
     
   private:
     void addDebug( std::ostream& stream ) const;

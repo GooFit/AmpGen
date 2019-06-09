@@ -107,6 +107,7 @@ template <class T1, class T2> class Psi3770 {
     PhaseSpace          m_tagPhsp;
     PhaseSpace          m_headPhsp;
     bool                m_printed     = {false};
+    bool                m_ignoreQc    = {NamedParameter<bool>("IgnoreQC",false)};
     size_t              m_blockSize   = {1000000}; 
   public:
     template <class T> std::tuple<double,double,double> 
@@ -147,16 +148,18 @@ template <class T1, class T2> class Psi3770 {
         INFO( "Signal: R = " << round(std::get<0>(z1),5) << "; δ = " << round(std::get<1>(z1),3) << "° ; r = " << round(std::get<2>(z1),5) );
         INFO( "Tag   : R = " << round(std::get<0>(z2),5) << "; δ = " << round(std::get<1>(z2),3) << "° ; r = " << round(std::get<2>(z2),5) );
       }
-    complex_t operator()( const DTEvent& event )                const { return operator()( event.signal, event.tag ); }
-    complex_t operator()( const Event& signal, const Event& tag) const { return m_signal(signal)*m_tagBar(tag) - m_signalBar(signal) * m_tag(tag); }
-    double P(const DTEvent& event)                              const { return std::norm(operator()(event)); }
+    complex_t operator()(const DTEvent& event )                 const { return operator()( event.signal, event.tag ); }
+    complex_t operator()(const Event& signal, const Event& tag) const { return m_signal(signal)*m_tagBar(tag) - m_signalBar(signal) * m_tag(tag); }
+    double P(const DTEvent& event)                              const { return m_ignoreQc ? prob_noQC(event) : std::norm(operator()(event)); }
     double prob_noQC (const DTEvent& event)                     const { return std::norm(m_signal(event.signal)*m_tagBar(event.tag)) + std::norm(m_signalBar(event.signal)*m_tag(event.tag)); } 
     DTEvent generatePhaseSpace()                                      { return DTEvent( m_signalPhsp.makeEvent(), m_tagPhsp.makeEvent() ); }
     DTEventList generate( const size_t& N )
     {
       DTEventList output( m_signalType, m_tagType );
-      double norm = -1;
-      ProfileClock pc; 
+      ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__));
+      auto tStartTotal = std::chrono::high_resolution_clock::now();
+      int currentSize  = 0;
+      double norm      = -1;
       while( output.size() < N ){
         auto events = generatePHSP(m_blockSize);
         if(norm == -1 ){
@@ -164,23 +167,26 @@ template <class T1, class T2> class Psi3770 {
           norm *= 1.5;
           INFO("Calculated normalisation of PDF = " << norm );
         }
-        int currentSize = output.size();
         for( auto& event : events ){
           if( event.prob > norm * gRandom->Uniform() ) output.push_back( event ); 
           if( output.size() >= N ) break ; 
         }
-        INFO( "size = " << output.size() << " / " << N << " efficiency = " << 100 * double(output.size()-currentSize)/double(m_blockSize) );
+        double efficiency = 100 * double(output.size() - currentSize )/double(m_blockSize);
+        double time = std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tStartTotal ).count();
+        pb.print( double(output.size()) / double(N), " ε[gen] = " + mysprintf("%.2f",efficiency) + "% , " + std::to_string(int(time/1000.))  + " seconds" );
+        currentSize = output.size();
       }
       auto psi_q = PhaseSpace(m_headPhsp); 
       auto beta  = [](const Event& event, const size_t&j){ return sqrt( event[4*j+0]*event[4*j+0] + event[4*j+1]*event[4*j+1] + event[4*j+2]*event[4*j+2] )/event[4*j+3] ; };
-      auto p     = [](const Event& event, const size_t&j){ return std::make_tuple( event[4*j+0], event[4*j+1], event[4*j+2] ) ; };
+      auto p     = [](const Event& event, const size_t&j){ return std::make_tuple(event[4*j+0], event[4*j+1], event[4*j+2]); };
       for( auto& event : output ){
         auto psi_event = psi_q.makeEvent();
         boost( event.signal, p(psi_event,0), beta(psi_event,0));
         boost( event.tag   , p(psi_event,1), beta(psi_event,1));
       }
-      pc.stop();
-      INFO("Requested: " << N << " events t=" << pc << "[ms]");
+      double time = std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tStartTotal ).count();
+      pb.finish();
+      INFO("Requested: " << N << " events t=" << time/1000 << "[ms]");
       return output;
     }
     DTEventList generatePHSP(const size_t& N, const bool& eval=true){
@@ -191,6 +197,7 @@ template <class T1, class T2> class Psi3770 {
       return output;
     }
     double rho() {
+      if( m_ignoreQc ) return 1;
       double withQC=0;
       double withoutQC =0;
       DTEventList evts = generatePHSP(m_blockSize, false); 
@@ -210,22 +217,22 @@ int main( int argc, char** argv )
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time      = std::clock();
   size_t hwt = std::thread::hardware_concurrency();
-  size_t nThreads     = NamedParameter<size_t>("nCores"        , hwt          , "Number of threads to use");
-  double luminosity   = NamedParameter<double>("Luminosity"    , 818.3        , "Luminosity to generate. Defaults to CLEO-c integrated luminosity.");
-  size_t nEvents      = NamedParameter<size_t>("nEvents"       , 0            , "Can also generate a fixed number of events per tag, if unspecified use the CLEO-c integrated luminosity.");
-  size_t seed         = NamedParameter<size_t>("Seed"          , 0            , "Random seed to use.");
-  bool   poissonYield = NamedParameter<bool>("PoissonYield"    , true         , "Flag to include Poisson fluctuations in expected yields (only if nEvents is not specified)");
-  double crossSection = NamedParameter<double>("CrossSection"  ,  3.26 * 1000 , "Cross section for e⁺e⁻ → Ψ(3770) → DD'");
-  std::string output  = NamedParameter<std::string>("Output"   , "ToyMC.root" , "File containing output events"); 
+  size_t nThreads     = NamedParameter<size_t>("nCores"      , hwt         , "Number of threads to use");
+  double luminosity   = NamedParameter<double>("Luminosity"  , 818.3       , "Luminosity to generate. Defaults to CLEO-c integrated luminosity.");
+  size_t nEvents      = NamedParameter<size_t>("nEvents"     , 0           , "Can also generate a fixed number of events per tag, if unspecified use the CLEO-c integrated luminosity.");
+  size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Random seed to use.");
+  bool   poissonYield = NamedParameter<bool  >("PoissonYield", true        , "Flag to include Poisson fluctuations in expected yields (only if nEvents is not specified)");
+  double crossSection = NamedParameter<double>("CrossSection", 3.26 * 1000 , "Cross section for e⁺e⁻ → Ψ(3770) → DD'");
+  std::string output  = NamedParameter<std::string>("Output" , "ToyMC.root", "File containing output events"); 
   auto pNames = NamedParameter<std::string>("EventType" , ""    
               , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
   auto tags           = NamedParameter<std::string>("TagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();
   
   gRandom = new TRandom3(seed);
   #ifdef _OPENMP
-  omp_set_num_threads( nThreads );
-  INFO("Setting " << nThreads << " fixed threads for OpenMP");
-  omp_set_dynamic(0);  
+    omp_set_num_threads( nThreads );
+    INFO("Setting " << nThreads << " fixed threads for OpenMP");
+    omp_set_dynamic(0);  
   #endif
   MinuitParameterSet MPS; 
   MPS.loadFromStream();
@@ -241,7 +248,7 @@ int main( int argc, char** argv )
     auto tokens       = split(tag, ' ');
     EventType    type = Particle(tokens[1], {}, false).eventType();
     double yield_noQC = yc(luminosity,signalType,type,true);
-    auto generator    = Psi3770<CoherentSum,CoherentSum>(models, signalType, type) ; 
+    auto generator    = Psi3770<CoherentSum,CoherentSum>(models, signalType, type); 
     double rho        = generator.rho();
     double yield = nEvents; 
     if( nEvents == 0 && poissonYield  )  yield = gRandom->Poisson(yield_noQC*rho); 
@@ -352,6 +359,7 @@ std::string DTEventList::particleName(const AmpGen::EventType& type, const size_
   if( count.second == 1 ) return programatic_name(type[j]);
   return programatic_name(type[j])+std::to_string(count.first);
 }
+
 TTree* DTEventList::tree(const std::string& name)
 {
   DTEvent tmp(at(0).signal, at(0).tag);
@@ -361,7 +369,8 @@ TTree* DTEventList::tree(const std::string& name)
     ids_tag(m_tagType.size());
 
   TTree* outputTree = new TTree(name.c_str(),name.c_str());
-  for(size_t i = 0 ; i < m_sigType.size(); ++i ){
+  for(size_t i = 0 ; i < m_sigType.size(); ++i )
+  {
     outputTree->Branch((particleName(m_sigType, i)+"_PX").c_str(), &tmp.signal[4*i+0]); 
     outputTree->Branch((particleName(m_sigType, i)+"_PY").c_str(), &tmp.signal[4*i+1]); 
     outputTree->Branch((particleName(m_sigType, i)+"_PZ").c_str(), &tmp.signal[4*i+2]); 
@@ -369,7 +378,9 @@ TTree* DTEventList::tree(const std::string& name)
     outputTree->Branch((particleName(m_sigType, i)+"_ID").c_str(), &id_sig[i]);
     ids_sig[i] = ParticlePropertiesList::get( m_sigType[i] )->pdgID();
   }
-  for(size_t i = 0 ; i < m_tagType.size(); ++i ){
+  
+  for(size_t i = 0 ; i < m_tagType.size(); ++i )
+  {
     outputTree->Branch(("Tag_"+particleName(m_tagType, i)+"_PX").c_str(), &tmp.tag[4*i+0]); 
     outputTree->Branch(("Tag_"+particleName(m_tagType, i)+"_PY").c_str(), &tmp.tag[4*i+1]); 
     outputTree->Branch(("Tag_"+particleName(m_tagType, i)+"_PZ").c_str(), &tmp.tag[4*i+2]); 
