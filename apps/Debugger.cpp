@@ -48,9 +48,11 @@ void invertParity( Event& event, const size_t& nParticles)
 void invert( MinuitParameter* param, MinuitParameterSet& mps )
 {
   const std::string name = param->name();
-  size_t pos=0;
-  std::string new_name = name; 
-  int sgn=1;
+  size_t pos             = 0;
+  std::string new_name   = name; 
+  int         sgn        = 1;
+  std::string cartOrPolar = NamedParameter<std::string>("CouplingConstant::Coordinates" ,"cartesian");
+
   if( name.find("::") != std::string::npos ){
     pos = name.find("::");
     auto props = AmpGen::ParticlePropertiesList::get( name.substr(0,pos), true );
@@ -62,7 +64,8 @@ void invert( MinuitParameter* param, MinuitParameterSet& mps )
     std::string name   = tokens[0];
     if ( reOrIm == "Re" || reOrIm == "Im" ){
       Particle test = Particle(name).conj();
-      sgn = reOrIm == "Re" ? test.quasiCP() : 1; 
+      if( cartOrPolar == "polar" )     sgn = reOrIm == "Re" ? test.quasiCP() : 1; 
+      if( cartOrPolar == "cartesian" ) sgn = test.quasiCP();
       new_name = test.uniqueString() +"_"+reOrIm;
     }
     else if( tokens.size() == 2 ) {

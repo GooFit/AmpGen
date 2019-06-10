@@ -127,8 +127,8 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
   else
     for ( auto& pdf : m_matrixElements )
       if ( pdf.pdf.name().find( nameMustContain ) != std::string::npos ) pdf.pdf.debug( evt );
-  if( evt.cacheSize() != 0 ) 
-  INFO( "Pdf = " << prob_unnormalised( evt ) );
+  if( evt.cacheSize() != 0 ) INFO( "Pdf = " << prob_unnormalised( evt ) );
+  INFO( "A(x) = " << getVal(evt) );
 }
 
 std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& linProp)

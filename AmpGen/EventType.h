@@ -19,21 +19,21 @@ namespace AmpGen
   class EventType
   {
     public:
-      /// @constructor Default constructor
+      /// Default constructor
       EventType() = default;
 
-      /// @constructor Takes a list of particles, beginning with the head of the decay and 
+      /// Takes a list of particles, beginning with the head of the decay and 
       /// then then final state particles, and a flag as to whether to include time dependence. 
       EventType( const std::vector<std::string>&, const bool& isTD = false );
      
-      /// @function Returns the CP-conjugated event type. Can also require that only the initial/
+      /// Returns the CP-conjugated event type. Can also require that only the initial/
       /// final state is conjugated. By default, conjugates both.   
       EventType conj( const bool& headOnly = 0, const bool& dontConjHead = 0 ) const;
       
-      /// @function Returns the event format, that matches between expressions and the names used in Particle.  
+      /// Returns the event format, that matches between expressions and the names used in Particle.  
       std::map<std::string, size_t> getEventFormat( const bool& outputNames = false ) const;
 
-      /// @function Counts the number of particles in this event type with 
+      /// Counts the number of particles in this event type with 
       /// the same name as the index'th name. 
       std::pair<size_t,size_t>  count(const size_t& index) const;
       std::pair<double, double> minmax( const std::vector<size_t>& indices, bool isGeV = false ) const;
@@ -59,10 +59,10 @@ namespace AmpGen
 
       void extendEventType( const std::string& branch );
 
-      /// @function Functor to randomly symmetrise data of this event type, using the Fisher-Yates shuffle.  
+      /// Functor to randomly symmetrise data of this event type, using the Fisher-Yates shuffle.  
       std::function<void( Event& )> symmetriser() const;
 
-      /// @function Calculates the number of spin indices associated with the initial and final state, i.e. the rank of the relevant transition matrix. 
+      /// Calculates the number of spin indices associated with the initial and final state, i.e. the rank of the relevant transition matrix. 
       std::pair<size_t, size_t> dim() const;
 
     private:
