@@ -29,25 +29,25 @@ namespace AmpGen
       @f]
       where @f$\mathcal{P}(\psi)@f$ is the probability, @f$g_i@f$ is the coupling to an isobar channel, 
       and @f$\mathcal{A}_i(\psi)@f$ is the amplitude of the ith channel. 
-      what's going on ??? 
+      I dont know whats going on?
       */ 
   class IncoherentSum : public CoherentSum
   {
     public:
-      /** @constructor Constructs an incoherentSum from the type of event this is expected to describe, 
+      /** Constructs an incoherentSum from the type of event this is expected to describe, 
          and a set of parameters that are expected to be able to describe it.  
           @param eventType The type of event that this PDF should describe
           @param mps       The parameter set of couplings, masses, etc.
           @param prefix    Prefix required for the ``head'' decays for this event type. */ 
       IncoherentSum(const EventType& eventType, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "Inco");
       
-      /// @function Evaluates the normalised probability for an event.
+      /// Evaluates the normalised probability for an event.
       double prob( const Event& evt ) const;
       
-      /// @function Calculates the unnormalised probability for an event. 
+      /// Calculates the unnormalised probability for an event. 
       double prob_unnormalised( const Event& evt ) const;
 
-      /** @function Returns the normalisation for this PDF, given by
+      /** Returns the normalisation for this PDF, given by
           @f[
             \mathcal{N} = \int d\psi \varepsilon(\psi) \mathcal{P}(\psi) \approx \sum_i \frac{\mathcal{P}(\psi_i)}{\mathcal{P}^\prime(\psi_i)} 
           @f]

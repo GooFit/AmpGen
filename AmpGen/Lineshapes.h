@@ -251,16 +251,16 @@ namespace AmpGen
         @f]
         that is, the 'resonant' and 'nonresonant' phases of the LASS formulation with additional 'proudction' phases @f$ \phi_R @f$ and @f$\phi_F @f$, and production couplings @f$R, F@f$. One of the production couplings can typically be fixed to 1, normally the resonant coupling, @f$R @f$.  
 
-        Parameter              | User name                            | Description 
-        -----------------------|--------------------------------------|------------------------------------------------------------------------
-        @f$m@f$                | <EM>particleName_</EM>mass           | Breit-Wigner mass of the resonant component, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
-        @f$\Gamma_0@f$         | <EM>particleName_</EM>width          | Breit-Wigner width of the resonant component, defined as the width of resonance at the Breit-Wigner mass <br>
-        @f$a@f$                | <EM>particleName</EM>::GLASS::a      | Scattering length of the nonresonant component, defaults to @f$2.07\mathrm{G\kern -0.1em eV}^{-1}@f$
-        @f$r@f$                | <EM>particleName</EM>::GLASS::r      | Effective interaction length of the nonresonant component, defaults to @f$3.32\mathrm{G\kern -0.1em eV}^{-1}@f$
-        @f$\phi_R@f$           | <EM>particleName</EM>::GLASS::phiR   | Additional production phase of the resonant component, defaults to @f$0^{\mathrm{o}}@f$, measured in degrees. 
-        @f$\phi_F@f$           | <EM>particleName</EM>::GLASS::phiF   | Additional production phase of the nonresonant component, defaults to @f$0^{\mathrm{o}}@f$, measured in degrees. 
-        @f$R@f$                | <EM>particleName</EM>::GLASS::R      | Additional production coupling of the resonant component, defaults to @f$1@f$.
-        @f$F@f$                | <EM>particleName</EM>::GLASS::F      | Additional production coupling of the nonresonant component, defaults to @f$1@f$.
+        Parameter              | User name                        | Description 
+        -----------------------|----------------------------------|------------------------------------------------------------------------
+        @f$m@f$                | <EM>particleName_</EM>mass       | Breit-Wigner mass of the resonant component, defined as energy at which the self-energy of the resonance is purely imaginary (defaults to value in PDG)  <br>
+        @f$\Gamma_0@f$         | <EM>particleName_</EM>width      | Breit-Wigner width of the resonant component, defined as the width of resonance at the Breit-Wigner mass <br>
+        @f$a@f$                | <EM>particleName</EM>GLASSa      | Scattering length of the nonresonant component, defaults to @f$2.07\mathrm{G\kern -0.1em eV}^{-1}@f$
+        @f$r@f$                | <EM>particleName</EM>GLASSr      | Effective interaction length of the nonresonant component, defaults to @f$3.32\mathrm{G\kern -0.1em eV}^{-1}@f$
+        @f$\phi_R@f$           | <EM>particleName</EM>GLASSphiR   | Additional production phase of the resonant component, defaults to @f$0^{\mathrm{o}}@f$, measured in degrees. 
+        @f$\phi_F@f$           | <EM>particleName</EM>GLASSphiF   | Additional production phase of the nonresonant component, defaults to @f$0^{\mathrm{o}}@f$, measured in degrees. 
+        @f$R@f$                | <EM>particleName</EM>GLASSR      | Additional production coupling of the resonant component, defaults to @f$1@f$.
+        @f$F@f$                | <EM>particleName</EM>GLASSF      | Additional production coupling of the nonresonant component, defaults to @f$1@f$.
     */  
     DECLARE_LINESHAPE(GLASS);
 
