@@ -126,6 +126,10 @@ void   PolarisedSum::prepare()
   size_t nChanges = 0; 
   ProfileClock tEval; 
   size_t size_of = size() / m_matrixElements.size();
+  
+  if( m_events != nullptr ) m_events->reserveCache( size() );
+  if( m_integrator.isReady() ) m_integrator.events().reserveCache( size() );
+
   for( size_t i = 0; i < m_matrixElements.size(); ++i ){
     ProfileClock tMEval;
     auto& t = m_matrixElements[i];

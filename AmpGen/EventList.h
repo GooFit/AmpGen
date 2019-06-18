@@ -106,7 +106,7 @@ namespace AmpGen
         return size;
       }
     }
-
+    
     template <class FUNCTOR>
     unsigned int extendEvent( const std::string& name, FUNCTOR func )
     {
@@ -126,7 +126,7 @@ namespace AmpGen
         ( *this )[i].setCache(fcn(getEvent(i)), index);
       }
     }
-
+    void reserveCache(const size_t& index);
     TH2D* makeProjection( const Projection2D& projection, const ArgumentPack& args );
     std::vector<TH1D*> makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args );
 

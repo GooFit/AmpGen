@@ -42,7 +42,6 @@ class FixedLibPdf
     size_t size() { return 0; }
     void reset( const bool& flag = false ){};
   private:
-    void* lib;
     AmpGen::DynamicFCN<complex_t( const double*, const int& )> amp;
 };
 

@@ -33,7 +33,7 @@ DOXYFILE_ENCODING      = UTF-8
 # The default value is: My Project.
 
 PROJECT_NAME           = "AmpGen"
-PROJECT_NUMBER         = 1.1
+PROJECT_NUMBER         = 1.2
 PROJECT_BRIEF          =
 PROJECT_LOGO           = "figs/logo_small.png" 
 LAYOUT_FILE            = "DoxygenLayout.xml"

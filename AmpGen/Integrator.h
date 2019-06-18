@@ -85,9 +85,10 @@ namespace AmpGen
       public:
         Integrator( EventList* events = nullptr ) : m_events( events ){}
         
-        double sampleNorm() { return m_events->norm(); } 
-        bool isReady() const { return m_events != nullptr ; }
-        const EventList& events() const { return *m_events ; } 
+        double sampleNorm()             { return m_events->norm(); } 
+        bool isReady()            const { return m_events != nullptr; }
+        EventList& events()             { return *m_events; } 
+        const EventList& events() const { return *m_events; } 
         template <class T1, class T2>
           void addIntegral( const T1& f1, const T2& f2, const TransferFCN& tFunc )
           {
