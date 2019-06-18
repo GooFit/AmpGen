@@ -168,8 +168,6 @@ std::vector<LS> AmpGen::calculate_recoupling_constants(
       f.factor = sqrt( (2.*L + 1. )/( 2.*J + 1. ) );
       f.cg1    = CG(L ,0 ,S ,m1-m2,J,m1-m2);
       f.cg2    = CG(j1,m1,j2,-m2  ,S,m1-m2); 
-     // f.cg1    = CG(L ,0 ,S ,m1-m2,J,M);
-     // f.cg2    = CG(j1,m1,j2,-m2  ,S,M); 
       f.p      = sqrt( (2*L + 1 )/(2*J+1) );
       f.factor *= f.cg1 * f.cg2;
       if( f.factor != 0 ) rt.push_back(f);

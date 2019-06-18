@@ -23,6 +23,7 @@ namespace AmpGen
   class SumPDF
   {
   public:
+    SumPDF() = default; 
     SumPDF( const TYPES&... _pdfs ) : m_pdfs( std::tuple<TYPES...>( _pdfs... ) ) {}
     std::tuple<TYPES...> m_pdfs;
     EventList* m_events;

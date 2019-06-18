@@ -109,7 +109,7 @@ std::complex<double> CouplingConstant::operator()() const
 {
   return isCartesian ?  
     std::accumulate( couplings.begin(), couplings.end(), complex_t(1,0), 
-        [this](auto& prod, auto& coupling){ return prod * complex_t( coupling.first->mean(), coupling.second->mean() ) ; } )
+        [](auto& prod, auto& coupling){ return prod * complex_t( coupling.first->mean(), coupling.second->mean() ) ; } )
    : std::accumulate( couplings.begin(), couplings.end(), complex_t(1,0), 
         [this](auto& prod, auto& coupling){ return prod * coupling.first->mean() * exp( 1i* this->sf * coupling.second->mean() ) ; } );
 }

@@ -246,9 +246,19 @@ double EventList::norm()
   return m_norm;
 }
 
+void EventList::clear() 
+{ 
+  m_data.clear(); 
+}
 
-void EventList::clear() { m_data.clear(); }
-void EventList::erase( const std::vector<Event>::iterator& begin, const std::vector<Event>::iterator& end )
+void EventList::erase(const std::vector<Event>::iterator& begin, 
+                      const std::vector<Event>::iterator& end)
 {
   m_data.erase( begin, end );
+}
+
+void EventList::reserveCache(const size_t& size)
+{ 
+  if ( size >= at(0).cacheSize() )
+    for (auto& evt : *this) evt.resizeCache(evt.cacheSize() + size);
 }

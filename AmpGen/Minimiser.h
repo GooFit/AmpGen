@@ -10,6 +10,7 @@
 
 #include "TMatrixTSym.h"
 
+/** @cond PRIVATE */
 namespace ROOT
 {
   namespace Math
@@ -18,6 +19,7 @@ namespace ROOT
   }
 }
 class TGraph;
+/** @endcode */
 
 namespace AmpGen
 {

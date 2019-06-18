@@ -35,6 +35,7 @@ namespace AmpGen
   class PolarisedSum
   {
     public: 
+      PolarisedSum() = default; 
       PolarisedSum( const EventType& eventType, AmpGen::MinuitParameterSet& mps, const std::string& prefix="" );
       void prepare();
       void setEvents( AmpGen::EventList& events );

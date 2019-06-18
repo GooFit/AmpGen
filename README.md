@@ -69,13 +69,15 @@ is to specifically specify the location of the build tool for AmpGen's JIT:
 -DAMPGEN_CXX=$(which c++)
 ```
 
-##### CentOS7
+##### LXPLUS
 
-In order to build stand-alone on CentOS7, you will need a valid development environment; the following line will work:
+In order to build stand-alone on LXPLUS, you will need a valid development environment; the following line will work:
 
 ```shell
-lb-run ROOT $SHELL
+lb-run -c x86_64-centos7-gcc62-opt ROOT $SHELL
 ```
+Additionally, the ROOT versions installed on cvfms generally require C++17 support when building. 
+
 Several examples of usages of the library are included in the apps directory and are 
 built alongside the library. 
 All standalone programs can accept both options files and command line arguments. 
@@ -105,7 +107,7 @@ The decay products of a particle are enclosed within curly braces, for example
 K*(892)0{K+,pi-}
 ```
 describes an excited vector kaon decaying into a charged kaon and pion. 
-For more details about the API for describing particle decays, see [AmpGen::Particle](https://tevans1260.gitlab.io/AmpGen/de/dd7/class_amp_gen_1_1_particle.html).
+For more details about the API for describing particle decays, see [AmpGen::Particle](https://goofit.github.io/AmpGen/de/dd7/class_amp_gen_1_1_particle.html) 
 The other numbers on the lines that describe the decays parameterise the coupling to this channel, 
 either in terms of real and imaginary parts or an amplitude and a phase.
 Each parameter is specified in terms of three numbers: the _fix_ flag, the initial value, and the step size. 
@@ -131,6 +133,7 @@ Configuration can be split over multiple files by the using _Import_ keyword, fo
 ```
 Import $AMPGENROOT/options/kMatrix.opt
 ```
+
 can be added to options file. Multiple user configuration files can also be specified by including multiple files on the command line. 
 
 ## Applications
@@ -171,6 +174,8 @@ activated by
 ```
 which produces a large number of intermediate steps in the calculation of each amplitude, which are added to the calculation using the 
 ADD_DEBUG and ADD_DEBUG_TENSOR macros in the code generation. For example, in src/Lineshapes/BW.cpp. 
+(n.b), if the model is a PolarisedSum, i.e. handles spin in the initial/final state, the flag PolarisedSum::Debug should be used instead of CoherentSum::Debug, in order 
+to generate all of the intermediate calculations of the amplitude.  
 
 ### ConvertToSourceCode
 
@@ -182,7 +187,6 @@ This can then be a compiled to a shared library using
 ```shell
 g++ -Ofast -shared -rdynamic --std=c++14 -fPIC MyFile.cpp -o MyFile.so
 ```
-
 
 ## Examples
 
