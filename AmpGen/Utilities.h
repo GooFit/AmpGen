@@ -195,7 +195,7 @@ namespace AmpGen {
   bool isDir( const std::string& fname );
   bool fileExists( const std::string& name );
 
-  std::vector<std::string> getListOfFiles( const std::string& directory, std::string patternString = "" );
+  std::vector<std::string> getListOfFiles(const std::string& directory, std::string patternString = "");
 
   void printSplash();
   void printReleaseNotes(const std::string& fname);

@@ -155,7 +155,7 @@ bool                          OptionsParser::printHelp() { return getMe()->m_pri
 void                          OptionsParser::setArgs( int argc, char** argv , const std::string& description){ getMe()->setCommandLineArgs(argc, argv, description); } 
 void                          OptionsParser::setArg( const std::string& arg ){ getMe()->addArg( arg ); }
 OptionsParser::iterator       OptionsParser::find( const std::string& name )  { return m_parsedLines.find( name ); }
-OptionsParser::iterator       OptionsParser::begin() { return m_parsedLines.begin(); }
-OptionsParser::iterator       OptionsParser::end() { return m_parsedLines.end(); }
+OptionsParser::iterator       OptionsParser::begin()       { return m_parsedLines.begin(); }
+OptionsParser::iterator       OptionsParser::end()         { return m_parsedLines.end(); }
 OptionsParser::const_iterator OptionsParser::begin() const { return m_parsedLines.cbegin(); }
-OptionsParser::const_iterator OptionsParser::end() const { return m_parsedLines.cend(); }
+OptionsParser::const_iterator OptionsParser::end()   const { return m_parsedLines.cend(); }

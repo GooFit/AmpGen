@@ -326,7 +326,8 @@ Expression Particle::propagator( DebugSymbols* db ) const
   else if ( m_daughters.size() == 1 && m_lineshape != "BW" && m_lineshape != "FormFactor" )
   { 
     std::vector<Tensor> p_vector;
-    for( auto& d : m_daughters[0]->daughters() ) p_vector.emplace_back( d->P() );
+    auto fs = getFinalStateParticles(true);
+    for( auto& d : fs ) p_vector.emplace_back( d->P() );
     prop = Lineshape::Factory::get(m_lineshape, massSq(), p_vector, m_name, m_orbital, db );
   } 
   total = total * make_cse(prop);
