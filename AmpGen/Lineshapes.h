@@ -390,7 +390,7 @@ namespace AmpGen
 
   Expression pol( const AmpGen::Expression& X, const std::vector<Expression>& p );
 
-  std::vector<Expression> parameterVector( const std::string& name, const unsigned int& nParam );
+  std::vector<Expression> parameterVector(const std::string& name, const size_t& nParam);
 
   Expression width( const Expression& s, const Expression& s1, const Expression& s2, const Expression& mass,
                     const Expression& width, const Expression& radius, unsigned int L,

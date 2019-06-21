@@ -63,11 +63,11 @@ Expression AmpGen::BL( const Expression& s,
   return sqrt( BlattWeisskopf( q2 * radius * radius, L ) / BlattWeisskopf( q20 * radius * radius, L ) );
 }
 
-std::vector<Expression> AmpGen::parameterVector( const std::string& name, const unsigned int& nParam )
+std::vector<Expression> AmpGen::parameterVector( const std::string& name, const size_t& nParam )
 {
   std::vector<Expression> returnVector;
-  for ( unsigned int i = 0; i < nParam; ++i ) 
-    returnVector.push_back( Parameter( name + std::to_string( i ) ) );
+  for (size_t i = 0; i != nParam; ++i ) 
+    returnVector.emplace_back(Parameter(name + std::to_string(i)));
   return returnVector;
 }
 
