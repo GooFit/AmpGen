@@ -318,15 +318,18 @@ Expression Particle::propagator( DebugSymbols* db ) const
   Expression total( 1. );
   DEBUG( "Getting lineshape " << m_lineshape << " for " << m_name );
   Expression s = massSq();
-  if ( m_daughters.size() == 2 ) {
-    auto prop = Lineshape::Factory::get(m_lineshape, s, daughter(0)->massSq(), daughter(1)->massSq(), m_name, m_orbital, db);
-    total = total * make_cse(prop);
-  }
-  else if ( m_daughters.size() == 3 ) {
-    std::string shape = m_lineshape == "BW" ? "SBW" : m_lineshape;
-    auto prop = Lineshape::Factory::get(shape, massSq(), {daughter(0)->P(), daughter(1)->P(), daughter(2)->P()}, m_name, m_orbital, db );
-    total = total * make_cse(prop);  
-  }  
+  Expression prop = 1; 
+  if ( m_daughters.size() == 2 ) 
+    prop = Lineshape::Factory::get(m_lineshape, s, daughter(0)->massSq(), daughter(1)->massSq(), m_name, m_orbital, db);
+  else if ( m_daughters.size() == 3 )
+    prop = Lineshape::Factory::get(m_lineshape == "BW" ? "SBW" : m_lineshape, massSq(), {daughter(0)->P(), daughter(1)->P(), daughter(2)->P()}, m_name, m_orbital, db );
+  else if ( m_daughters.size() == 1 && m_lineshape != "BW" && m_lineshape != "FormFactor" )
+  { 
+    std::vector<Tensor> p_vector;
+    for( auto& d : m_daughters[0]->daughters() ) p_vector.emplace_back( d->P() );
+    prop = Lineshape::Factory::get(m_lineshape, massSq(), p_vector, m_name, m_orbital, db );
+  } 
+  total = total * make_cse(prop);
   for(auto& d : m_daughters) total = total*make_cse(d->propagator(db));
   if(db != nullptr) db->emplace_back("A("+uniqueString()+")", total);
   return total;
