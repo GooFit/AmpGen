@@ -30,7 +30,7 @@ double fact( const double& z )
   return f;
 }
 
-double nCr_( const int& n, const int& r ){
+double binomialCoefficient( const int& n, const int& r ){
   double z=1;
   for( int f=1; f <= r ; ++f ) z *= double(n+1-f)/double(f);
   return z;
@@ -39,7 +39,7 @@ double nCr_( const int& n, const int& r ){
 Expression expandedBinomial( const Expression& x, const unsigned int& n )
 {
   Expression sum;
-  for( unsigned int k = 0 ; k <= n ; ++k ) sum = sum + nCr_(n,k) * fcn::fpow(x,k);
+  for( unsigned int k = 0 ; k <= n ; ++k ) sum = sum + binomialCoefficient(n,k) * fcn::fpow(x,k);
   return sum; 
 }
 
@@ -80,10 +80,8 @@ double AmpGen::CG(
   if( m1+m2!=M ) return 0;
   double f1 = (2*J+1)*fact(J+j1-j2)*fact(J-j1+j2)*fact(j1+j2-J) ;
   double f2 = fact(j1+m1)*fact(j1-m1)*fact(j2+m2)*fact(j2-m2)*fact(J+M)*fact(J-M);
-
   double norm = f1 * f2 / fact(J+j1+j2+1) ;
   double sum  = 0;
-
   for( int nu=0; nu <= j1+j2-J ; ++nu){
     double arg1 = j1+j2-J-double(nu);
     double arg2 = j1  -m1-double(nu);

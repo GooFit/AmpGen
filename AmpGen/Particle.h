@@ -155,7 +155,6 @@ namespace AmpGen
       bool isStable() const;
       bool isQuasiStable() const;
       bool conservesParity( unsigned int L = 0 ) const;
-      bool checkExists() const;
 
       unsigned int orbital() const;
       unsigned int index() const;
@@ -202,6 +201,9 @@ namespace AmpGen
       
       /// Returns in indexth decay product of this particle (as constant)
       std::shared_ptr<Particle> daughter( const size_t& index ) const;
+      
+      /// Returns in indexth decay product of this particle (as constant)
+      std::shared_ptr<Particle> daughter(const std::string& name, const int& maxDepth=-1) const;
      
       /// Vector of decay products of this particle 
       std::vector<std::shared_ptr<Particle>> daughters() const;

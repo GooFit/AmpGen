@@ -389,7 +389,6 @@ DEFINE_VERTEX( S_ff_S ) { return Bar(V2)(a) * V1(a); }
 
 DEFINE_VERTEX( S_ff_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * V1(b); }
 
+DEFINE_VERTEX( V_ff_S ) { return Bar(V2)(a) * Gamma4Vec()(mu,a,b) * V1(b); }
 
-DEFINE_VERTEX( V_ff_P ) { return Bar(V2)(a) * Gamma4Vec()(mu,a,b) * V1(b); }
-
-DEFINE_VERTEX( V_ff_P1 ){ return Bar(V2)(a) * Gamma[4](a,b) * Gamma4Vec()(mu,b,c) * V1(c); }
+DEFINE_VERTEX( V_ff_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * Gamma4Vec()(mu,b,c) * V1(c); }

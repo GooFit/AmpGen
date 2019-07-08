@@ -13,6 +13,7 @@ namespace AmpGen
   extern const std::array<Tensor,5> Gamma;
   extern const std::array<Tensor,3> Sigma;
   extern const std::array<Tensor,3> S03;
+  extern const std::array<Tensor,8> SU3;
 } // namespace AmpGen
 
 #endif

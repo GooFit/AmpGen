@@ -151,8 +151,8 @@ namespace AmpGen
 
     DECLARE_VERTEX( S_ff_S );
     DECLARE_VERTEX( S_ff_S1 );
-    DECLARE_VERTEX( V_ff_P );
-    DECLARE_VERTEX( V_ff_P1 );  
+    DECLARE_VERTEX( V_ff_S );
+    DECLARE_VERTEX( V_ff_S1 );  
     class Factory : public AmpGen::Factory<Vertex::Base>
     {
     public:

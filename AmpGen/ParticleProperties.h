@@ -20,15 +20,15 @@ namespace AmpGen
     double m_width;             ///< width [MeV]
     double m_wErrPlus;          ///< +ve width error [MeV]
     double m_wErrMinus;         ///< -ve width error [MeV]
-    double m_Radius;            ///< hadronic radius
+    double m_radius;            ///< hadronic radius
     int m_Gparity;              ///< G-parity
-    int m_Parity;               ///< Parity
+    int m_parity;               ///< Parity
     int m_Cparity;              ///< Charge 'parity'
     int m_pdgID;                ///< PDG id
     int m_Rexist;               ///< likelihood of existence, baryons only
     int m_charge;               ///< electrical charge
     int m_twoSpin;              ///< twice the spin 
-    std::string m_Isospin;      ///< isospin
+    std::string m_isospin;      ///< isospin
     std::string m_JtotalSpin;   ///< total spin
     std::string m_name;         ///< particle name
     std::string m_quarks;       ///< quark string
@@ -56,12 +56,12 @@ namespace AmpGen
     double radius() const;
 
     int G() const { return m_Gparity; }
-    int P() const { return m_Parity; }
+    int P() const { return m_parity; }
     int C() const { return m_Cparity; }
     int R() const { return m_Rexist; }
     int pdgID()    const { return m_pdgID; }
     int twoSpin()   const { return m_twoSpin ; }
-    std::string I() const { return m_Isospin; }
+    std::string I() const { return m_isospin; }
     std::string J() const { return m_JtotalSpin; }
     int charge() const { return m_charge; }
     std::string label() const { return m_texName; }

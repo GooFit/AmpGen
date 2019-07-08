@@ -12,13 +12,14 @@ using namespace AmpGen::fcn;
 
 DEFINE_GENERIC_SHAPE( EtaDalitz )
 {
-  WARNING("Empirical expression; eta0[EtaDalitz.NonRelBW]{pi+,pi-,pi0} with pi0 in the 3rd order.");
-  Tensor P( Tensor::dim(4) );
-  for ( auto& ip : p ) P = P + ip;
+  auto pp = *p.daughter("pi+");
+  auto pm = *p.daughter("pi-");
+  auto p0 = *p.daughter("pi0");
+  auto  P = p.P();
 
-  Expression T0 = sqrt( dot( p[0], P ) * dot( p[0], P ) / dot( P, P ) ) - sqrt( dot( p[0], p[0] ) );
-  Expression T1 = sqrt( dot( p[1], P ) * dot( p[1], P ) / dot( P, P ) ) - sqrt( dot( p[1], p[1] ) );
-  Expression T2 = sqrt( dot( p[2], P ) * dot( p[2], P ) / dot( P, P ) ) - sqrt( dot( p[2], p[2] ) );
+  Expression T0 = dot(pp.P(), P) - p.mass() * pp.mass();
+  Expression T1 = dot(pm.P(), P) - p.mass() * pm.mass();
+  Expression T2 = dot(p0.P(), P) - p.mass() * p0.mass();
 
   Expression Q   = T0 + T1 + T2;
   Expression y   = 3.0 * T2 / Q - 1.0;
@@ -26,7 +27,7 @@ DEFINE_GENERIC_SHAPE( EtaDalitz )
   Expression amp = Ternary( z > 0.0, sqrt(z), 1 ); 
 
   if ( lineshapeModifier != "" ){
-    amp = amp * Lineshape::Factory::get(lineshapeModifier, s, p, particleName, L, dbexpressions);
+    amp = amp * Lineshape::Factory::get(lineshapeModifier, p, dbexpressions);
   }
   return amp;
 }
