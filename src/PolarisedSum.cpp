@@ -43,23 +43,22 @@ PolarisedSum::PolarisedSum( const EventType& type,
   bool autoCompile     = NamedParameter<bool>(       "PolarisedSum::AutoCompile",true  );
   std::string objCache = NamedParameter<std::string>("PolarisedSum::ObjectCache",""    );
   m_verbosity          = NamedParameter<bool>(       "PolarisedSum::Verbosity"  ,0     );
-  m_rules = AmplitudeRules(mps);
-  auto proto_amplitudes = m_rules.getMatchingRules( type, prefix);
-  auto production_polarisations = polarisations( type.mother() ); 
-  std::vector<std::vector<int>> allStates;
-  for(auto& pol : production_polarisations ) allStates.push_back({pol}); 
-  for(size_t i = 0 ; i < type.size(); ++i ) allStates = polarisationOuterProduct( allStates, polarisations( type[i] ) );
+  m_rules              = AmplitudeRules(mps);
+  auto protoAmps       = m_rules.getMatchingRules( type, prefix);
+  auto prodPols        = polarisations( type.mother() ); 
+  for(auto& pol : prodPols ) m_polStates.push_back({pol}); 
+  for(size_t i = 0 ; i < type.size(); ++i ) m_polStates = polarisationOuterProduct(m_polStates, polarisations( type[i] ) );
   auto set_polarisation_state = []( auto& matrix_element, auto& polState ){
     auto fs = matrix_element.first.getFinalStateParticles();
     matrix_element.first.setPolarisationState(polState[0]);
     for(size_t i = 0 ; i < fs.size(); ++i ) fs[i]->setPolarisationState( polState[i+1] );
   };
-  for( auto& m : proto_amplitudes ) INFO( m.first.uniqueString() );  
-  for( auto& matrix_element : proto_amplitudes ){
-    Tensor thisExpression( std::vector<size_t>({allStates.size()}) );
+  for( auto& m : protoAmps ) INFO( m.first.uniqueString() );  
+  for( auto& matrix_element : protoAmps ){
+    Tensor thisExpression( Tensor::dim(m_polStates.size()) );
     int i = 0 ;
     DebugSymbols syms;  
-    for( auto& polState : allStates ){
+    for( auto& polState : m_polStates ){
       set_polarisation_state( matrix_element, polState );
       thisExpression[i++] = make_cse( matrix_element.first.getExpression(&syms) ); 
     }
@@ -68,21 +67,16 @@ PolarisedSum::PolarisedSum( const EventType& type,
         matrix_element.first.decayDescriptor(),
         type.getEventFormat(), debug ? syms : DebugSymbols() ,&mps ); 
     m_matrixElements.emplace_back(matrix_element.first, matrix_element.second, expression );
-  } 
-  for( auto& polState : allStates){
-    for( auto& matrix_element : proto_amplitudes ){
-      set_polarisation_state( matrix_element, polState );
-    }
   }
-  m_polStates = allStates; 
   if(autoCompile){
     ThreadPool tp(8);
-    for( auto& thing : m_matrixElements ) 
-      tp.enqueue( [&]{ CompilerWrapper().compile( thing.pdf, objCache ) ;}  );
+    for( auto& thing : m_matrixElements ) tp.enqueue([&]{ CompilerWrapper().compile(thing.pdf, objCache);});
   }
-  if( mps.find("Px") == nullptr ) WARNING("Polarisation parameters not defined, defaulting to (0,0,0)");
-  m_pVector = {mps.addOrGet("Px",2,0,0), mps.addOrGet("Py",2,0,0), mps.addOrGet("Pz",2,0,0)};
   auto   d = m_eventType.dim();
+  auto   p = [&mps](const std::string& name){ return mps.addOrGet(name,2,0,0); };
+  if( d.first == 1 )      m_pVector = {};
+  else if( d.first == 2 ) m_pVector = {p("Px"), p("Py"), p("Pz")};
+  else if( d.first == 3 ) m_pVector = {p("Px"), p("Py"), p("Pz"), p("Tyy"), p("Tzz"), p("Txy"), p("Txz"), p("Tyz")};
   size_t normSize = d.second * d.first * d.first;
   for(size_t i=0; i < normSize; ++i){
     m_norms.emplace_back( m_matrixElements.size(), m_matrixElements.size() );
@@ -92,12 +86,15 @@ PolarisedSum::PolarisedSum( const EventType& type,
 std::vector<int> PolarisedSum::polarisations( const std::string& name ) const 
 {
   auto props = *ParticlePropertiesList::get( name );
-  std::vector<int> rt( props.twoSpin() + 1 );
-  if( props.isFermion() ) return {1,-1};    
   if( props.twoSpin() == 0 ) return {0};
-  if( props.twoSpin() == 2 ) 
-    return (name == "gamma0") ? std::vector<int>({-1,1}) : std::vector<int>({-1,0,1}) ;
-  else return {0};
+  if( props.twoSpin() == 1 ) return {1,-1};
+  if( name == "gamma0" && props.twoSpin() == 2 ) return {1,-1};
+  if( name != "gamma0" && props.twoSpin() == 2 ) return {1,0,-1};
+  
+  else { 
+    WARNING("Particle with spin: " << props.twoSpin() << "/2" << " not implemented in initial/final state");
+    return {0};
+  }
 }
 
 std::vector<std::vector<int>> PolarisedSum::polarisationOuterProduct(const std::vector<std::vector<int>>& A, const std::vector<int>& B ) const 
@@ -110,6 +107,35 @@ std::vector<std::vector<int>> PolarisedSum::polarisationOuterProduct(const std::
     }
   }
   return rt;
+}
+
+std::vector<complex_t> densityMatrix(const size_t& dim, const std::vector<MinuitProxy>& pv )
+{
+  double px = pv[0];
+  double py = pv[1];
+  double pz = pv[2];
+  if( dim == 1 ) return {1.};
+  if( dim == 2 ) return {1+pz    ,   px+1i*py,
+                         px-1i*py,   1-pz     };
+  if( dim == 3 ){
+    double Tyy = pv[3];
+    double Tzz = pv[4];
+    double Txy = pv[5];
+    double Txz = pv[6];
+    double Tyz = pv[7];
+    return {1 + 1.5*pz + sqrt(1.5)*Tzz                   , sqrt(0.375)*(px+1i*py) + sqrt(3.)*(Txz+1i*Tyz), -sqrt(1.5)*( Tzz + 2.*Tyy - 2.*1i*Txy), 
+          sqrt(0.375)*(px-1i*py) + sqrt(3)*(Txz-1i*Tyz), 1 - sqrt(6.)*Tzz                              , sqrt(0.375)*(px+1i*py) - sqrt(3.)*(Txz+1i*Tyz) ,
+         -sqrt(1.500)*( Tzz + 2.*Tyy + 2.*1i*Txy)      , sqrt(0.375)*(px-1i*py) - sqrt(3)*(Txz-1i*Tyz) , 1. - 1.5*pz + sqrt(1.5)*Tzz }; 
+  }
+  ERROR("Density matrices not implemented for state with size="<<dim);
+  return {1.};
+}
+
+std::vector<Expression> convertProxies(const std::vector<MinuitProxy>& proxyVector, const std::function<Expression(const MinuitProxy&)>& transform)
+{
+  std::vector<Expression> rt;
+  std::transform(proxyVector.begin(), proxyVector.end(), std::back_inserter(rt), transform );
+  return rt; 
 }
 
 std::vector<TransitionMatrix<std::vector<complex_t>>> PolarisedSum::matrixElements() const
@@ -126,10 +152,8 @@ void   PolarisedSum::prepare()
   size_t nChanges = 0; 
   ProfileClock tEval; 
   size_t size_of = size() / m_matrixElements.size();
-  
   if( m_events != nullptr ) m_events->reserveCache( size() );
   if( m_integrator.isReady() ) m_integrator.events().reserveCache( size() );
-
   for( size_t i = 0; i < m_matrixElements.size(); ++i ){
     ProfileClock tMEval;
     auto& t = m_matrixElements[i];
@@ -147,14 +171,7 @@ void   PolarisedSum::prepare()
   m_weight = m_weightParam == nullptr ? 1 : m_weightParam->mean();
   tEval.stop(); 
   ProfileClock tIntegral;  
-  if( m_eventType.dim().first == 2 ){ 
-    double px = m_pVector[0];
-    double py = m_pVector[1];
-    double pz = m_pVector[2];
-    m_psi = {1+pz    ,   px+1i*py,
-             px-1i*py,   1-pz     };
-  }
-  else m_psi = {1};
+  m_rho = densityMatrix(m_eventType.dim().first, m_pVector);
   if( m_integrator.isReady() )
   {
     if(nChanges != 0) calculateNorms(hasChanged);
@@ -169,9 +186,7 @@ void   PolarisedSum::prepare()
   }
   tIntegral.stop();
   if(m_verbosity && nChanges != 0)
-    INFO("Time to evaluate = " << tEval                  << " ms; "
-      << "norm = "  << tIntegral << " ms; "
-      << "pdfs = "  << nChanges);
+    INFO("Time to evaluate = " << tEval << " ms; " << "norm = "  << tIntegral << " ms; " << "pdfs = "  << nChanges);
   m_nCalls++;
 }
 
@@ -211,9 +226,8 @@ void   PolarisedSum::reset( const bool& flag ){ m_nCalls = 0 ; }
 
 void   PolarisedSum::build_probunnormalised()
 {
-  auto prob = probExpression(transitionMatrix(), {Parameter("Px"), Parameter("Py"), Parameter("Pz")});
-  m_probExpression = CompiledExpression<real_t, const real_t*, const complex_t*>( 
-      prob, "prob_unnormalised", std::map<std::string, size_t>(), {}, m_mps );
+  auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector,[](auto& p){ return Parameter(p->name());} ) );
+  m_probExpression = CompiledExpression<real_t, const real_t*, const complex_t*>(prob, "prob_unnormalised", std::map<std::string, size_t>(), {}, m_mps);
   CompilerWrapper().compile(m_probExpression);
   m_probExpression.prepare();
 } 
@@ -222,7 +236,7 @@ Tensor PolarisedSum::transitionMatrix()
 { 
   auto dim = m_eventType.dim();
   auto size = dim.first * dim.second ; 
-  std::vector<Expression> expressions( size, 0);
+  std::vector<Expression> expressions(size, 0);
   for( auto& me : m_matrixElements ){
     auto coupling   = me.coupling.to_expression() ;
     auto cacheIndex = m_events->getCacheIndex(me.pdf); 
@@ -258,7 +272,7 @@ complex_t PolarisedSum::norm(const size_t& i, const size_t& j, Integrator<18>* i
     auto psiIndex  = (x-f) / s2;
     auto m2        = psiIndex % s1;
     auto m1        = (psiIndex-m2)/s1;
-    total          += m_psi[psiIndex] * m_norms[x].get(i, j, integ, ai+m1*s2+f, aj+m2*s2+f);
+    total          += m_rho[psiIndex] * m_norms[x].get(i, j, integ, ai+m1*s2+f, aj+m2*s2+f);
   }
   return total; 
 }
@@ -311,23 +325,18 @@ void PolarisedSum::generateSourceCode(const std::string& fname, const double& no
   }
   Tensor T_matrix( expressions, {dim.first,dim.second} );
   T_matrix.st();
-  auto amplitude        = probExpression(T_matrix, {Constant(double(m_pVector[0])), 
-                                                    Constant(double(m_pVector[1])), 
-                                                    Constant(double(m_pVector[2]))});
-
-  auto amplitude_extPol = probExpression(T_matrix, {Parameter("x2",0,true), 
-                                                    Parameter("x3",0,true), 
-                                                    Parameter("x4",0,true)}); 
+  auto amp        = probExpression(T_matrix, convertProxies(m_pVector, [](auto& proxy) -> Expression{ return double(proxy);} )); 
+  auto amp_extPol = probExpression(T_matrix, {Parameter("x2",0,true), Parameter("x3",0,true), Parameter("x4",0,true)}); 
   stream << CompiledExpression<double, 
                                const double*, 
-                               const int&>( amplitude / normalisation, "FCN",{},{}, m_mps ) << std::endl ;
+                               const int&>( amp / normalisation, "FCN",{},{}, m_mps ) << std::endl ;
 
   stream << CompiledExpression<double, 
                                const double*, 
                                const int&, 
                                const double&, 
                                const double&, 
-                               const double&>( amplitude_extPol / normalisation, "FCN_extPol",{},{},m_mps ) << std::endl;
+                               const double&>( amp_extPol / normalisation, "FCN_extPol",{},{},m_mps ) << std::endl;
   stream.close();
 }
 
@@ -338,7 +347,7 @@ Expression PolarisedSum::probExpression(const Tensor& T_matrix, const std::vecto
   Tensor TT = T_matrix(a,b) * T_conj(c,b);
   size_t it = T_matrix.dims()[0]; 
   Tensor rho = Identity(it);
-  if(it == 2) rho = rho + Sigma[0] * p[0] + Sigma[1] * p[1] + Sigma[2]*p[2];
+  if(it == 2) rho = rho + Sigma[0] * p[0] + Sigma[1] * p[1] + Sigma[2]*p[2];  
   Expression rt = rho(a,b) * TT(b,a);
   return Real(rt);  
 }

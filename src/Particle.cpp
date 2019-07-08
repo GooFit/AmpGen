@@ -195,7 +195,13 @@ void Particle::pdgLookup()
         << " d1     =  " << m_daughters[1]->name() );
   }
   if ( m_orbital == 0 ) m_orbital = m_minL; // define in ground state unless specified
-  for ( auto& d : m_daughters ) d->setTop( false );
+  int charge = 0; 
+  for ( auto& d : m_daughters ){
+    d->setTop( false );
+    charge += d->props()->charge();
+  }
+  if( m_minL == 999 ) ERROR("Decay: " << m_name << " does not appear to have an allowed spin-orbit configuration");
+  if( m_daughters.size() != 0 && m_props->charge() != charge ) ERROR("Decay: " << m_name << " does not conserve (electric) charge");
 }
 
 Tensor Particle::P() const
@@ -230,6 +236,22 @@ Tensor Particle::Q() const
 
 std::shared_ptr<Particle> Particle::daughter( const size_t& index ) { return ( m_daughters[index] ); }
 std::shared_ptr<Particle> Particle::daughter( const size_t& index ) const { return m_daughters[index]; }
+
+std::shared_ptr<Particle> Particle::daughter( const std::string& name, const int& maxDepth ) const 
+{
+  if( maxDepth == -1 )
+  {
+    auto fs = getFinalStateParticles();
+    for( auto& f : fs ) if( f->name() == name ) return f;
+    ERROR("Particle: " << name << " not found amongst decay products!");
+  }
+  else {
+    for( auto& d : m_daughters ) if( d->name() == name ) return d;
+    ERROR("Particle: " << name << " not found amongst decay products!");
+  }
+  return std::shared_ptr<Particle>();
+}
+
 
 std::string Particle::orbitalString() const
 {
@@ -321,14 +343,11 @@ Expression Particle::propagator( DebugSymbols* db ) const
   Expression prop = 1; 
   if ( m_daughters.size() == 2 ) 
     prop = Lineshape::Factory::get(m_lineshape, s, daughter(0)->massSq(), daughter(1)->massSq(), m_name, m_orbital, db);
-  else if ( m_daughters.size() == 3 )
-    prop = Lineshape::Factory::get(m_lineshape == "BW" ? "SBW" : m_lineshape, massSq(), {daughter(0)->P(), daughter(1)->P(), daughter(2)->P()}, m_name, m_orbital, db );
+  else if ( m_daughters.size() >= 3 )
+    prop = Lineshape::Factory::get(m_lineshape == "BW" ? "SBW" : m_lineshape, *this, db );
   else if ( m_daughters.size() == 1 && m_lineshape != "BW" && m_lineshape != "FormFactor" )
   { 
-    std::vector<Tensor> p_vector;
-    auto fs = getFinalStateParticles(true);
-    for( auto& d : fs ) p_vector.emplace_back( d->P() );
-    prop = Lineshape::Factory::get(m_lineshape, massSq(), p_vector, m_name, m_orbital, db );
+    prop = Lineshape::Factory::get(m_lineshape, *this, db );
   } 
   total = total * make_cse(prop);
   for(auto& d : m_daughters) total = total*make_cse(d->propagator(db));
@@ -531,23 +550,6 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
   std::string js = m_props->isBoson() ? std::to_string(m_props->twoSpin()/2) : std::to_string(m_props->twoSpin()) +"/2";
   WARNING("Spin tensors not implemented for spin J = " << js << "; m = " << m_polState << " " << m_name ); 
   return Tensor( std::vector<double>( {1.} ), Tensor::dim(0) );
-}
-
-bool Particle::checkExists() const
-{
-  bool success = true;
-  if ( m_daughters.size() == 2 ) {
-    success &= Vertex::Factory::isVertex( vertexName() );
-    if ( !success ) {
-      ERROR( uniqueString() );
-      ERROR( "Spin configuration not found J = "
-          << spin() << " L  =  " << m_orbital << " l' = " << m_spinConfigurationNumber
-          << " s1 = " << m_daughters[0]->spin() << " s2 = " << m_daughters[1]->spin() );
-    }
-    success &= daughter(0)->checkExists() & daughter(1)->checkExists();
-  }
-  if ( success == false ) ERROR( uniqueString() << " is not described in IVertex" );
-  return success;
 }
 
 std::pair<size_t, size_t> Particle::orbitalRange( const bool& conserveParity ) const

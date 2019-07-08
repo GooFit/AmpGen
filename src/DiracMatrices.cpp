@@ -35,10 +35,9 @@ extern const std::array<AmpGen::Tensor,5>     AmpGen::Gamma  ( {
 
 extern const std::array<AmpGen::Tensor,3> AmpGen::Sigma ( 
     {
-      Tensor({0,1,1,0},{2,2}),
-      Tensor({Z,-I,
-               I,Z},{2,2}),
-      Tensor({1,0,0,-1},{2,2})
+      Tensor({0,1,1,0} , Tensor::dim(2,2)),
+      Tensor({Z,-I,I,Z}, Tensor::dim(2,2)),
+      Tensor({1,0,0,-1}, Tensor::dim(2,2))
     } );
 
 extern const std::array<AmpGen::Tensor,3>     AmpGen::S03  ( { 
@@ -54,3 +53,15 @@ extern const std::array<AmpGen::Tensor,3>     AmpGen::S03  ( {
               1, 0, 0, 0,  
               0, 0, 0, 0,
               0, 0, 0, 0 } , Tensor::dim(4,4)  ) } );
+
+extern const std::array<AmpGen::Tensor,8>     AmpGen::SU3 ( {
+    Tensor({ 0, 1, 0, 1, 0, 0, 0, 0, 0}, Tensor::dim(3,3)),  /// lambda1 
+    Tensor({ Z,-I, Z, I, Z, Z, Z, Z, Z}, Tensor::dim(3,3)),  /// lambda2
+    Tensor({ 1, 0, 0, 0,-1, 0, 0, 0, 0}, Tensor::dim(3,3)),  /// lambda3   
+    Tensor({ 0, 0, 1, 0, 0, 0, 1, 0, 0}, Tensor::dim(3,3)),  /// lambda4   
+    Tensor({ Z, Z,-I, Z, Z, Z, I, Z, Z}, Tensor::dim(3,3)),  /// lambda5   
+    Tensor({ 0, 0, 0, 0, 0, 1, 0, 1, 0}, Tensor::dim(3,3)),  /// lambda6   
+    Tensor({ Z, Z, Z, Z, Z,-I, Z, I, Z}, Tensor::dim(3,3)),  /// lambda7   
+    Tensor({ 1./sqrt(3), 0., 0., 0.,1./sqrt(3.), 0., 0., 0., -2./sqrt(3.)}, Tensor::dim(3,3))    
+    });
+

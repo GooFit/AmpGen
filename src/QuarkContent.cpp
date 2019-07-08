@@ -15,7 +15,7 @@ std::map<char, int> QuarkState::gPositions;
 
 QuarkState::QuarkState()
 {
-  for ( auto& quark : m_quarks ) quark = 0;
+  std::fill( m_quarks.begin(), m_quarks.end(), 0 );
   initPositions();
 }
 
@@ -38,7 +38,8 @@ bool QuarkState::initPositions()
 
 void QuarkState::antiThis()
 {
-  for ( auto& quark : m_quarks ) quark *= -1;
+  std::transform( m_quarks.begin(), m_quarks.end(), m_quarks.begin(), [](const auto& quark){ return (-1)*quark ; } );
+//  for ( auto& quark : m_quarks ) quark *= -1;
 }
 
 char QuarkState::nameFromPosition( int i ) const

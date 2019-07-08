@@ -6,6 +6,7 @@
 #include "AmpGen/Lineshapes.h"
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/ParticlePropertiesList.h"
+#include "AmpGen/Particle.h"
 
 using namespace AmpGen;
 using namespace AmpGen::fcn; 

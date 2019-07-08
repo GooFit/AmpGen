@@ -56,10 +56,10 @@ ParticleProperties::ParticleProperties( const std::string& pdg_string ) : m_netQ
   m_pdgID        = lexical_cast<int>( s[12], status );
   m_Rexist       = lexical_cast<int>( s[14], status );
   m_Gparity      = chargeFromString( s[7], status );
-  m_Parity       = chargeFromString( s[9], status );
+  m_parity       = chargeFromString( s[9], status );
   m_Cparity      = chargeFromString( s[10], status );
   m_charge       = chargeFromString( s[13], status );
-  m_Isospin      = s[6];
+  m_isospin      = s[6];
   m_JtotalSpin   = s[8];
   m_status       = s[15][0];
   m_name         = s[16];
@@ -88,7 +88,7 @@ void ParticleProperties::setRadius()
                    abs(pdgID()) == 411 || 
                    abs(pdgID()) == 431 || 
                    abs(pdgID()) == 4122 );
-  m_Radius     = isCharm ? defaultCharmRadius : defaultRadius;
+  m_radius     = isCharm ? defaultCharmRadius : defaultRadius;
 }
 
 void ParticleProperties::antiQuarks()
@@ -112,6 +112,7 @@ void ParticleProperties::antiCharge()
 {
   swapChars( m_chargeString, '+', '-');
   m_charge *= -1;
+  if( isFermion() ) m_parity *= -1;
 }
 bool ParticleProperties::hasDistinctAnti() const { return !( m_Aformat == ' ' ); }
 
@@ -141,7 +142,7 @@ std::string ParticleProperties::name() const
   fullName += m_chargeString;
   return fullName;
 }
-double ParticleProperties::radius() const { return m_Radius; }
+double ParticleProperties::radius() const { return m_radius; }
 
 bool ParticleProperties::isNonResonant() const
 {

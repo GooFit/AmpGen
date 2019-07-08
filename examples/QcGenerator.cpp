@@ -431,11 +431,11 @@ TTree* DTEventList::tree(const std::string& name)
   }
   for( auto& evt: *this ){
     bool swap = gRandom->Uniform() > 0.5;
-    tmp.set( evt.signal, evt.tag );
+    tmp.set(evt.signal, evt.tag);
     if( swap ) tmp.invertParity();
-    for(size_t i=0;i< m_sigType.size(); ++i) 
+    for(size_t i=0; i != m_sigType.size(); ++i)
       id_sig[i] = swap ? -ids_sig[i] : ids_sig[i];
-    for(size_t i=0;i< m_tagType.size(); ++i) 
+    for(size_t i=0; i != m_tagType.size(); ++i)
       id_tag[i] = swap ? -ids_tag[i] : ids_tag[i];
     outputTree->Fill();
   }
