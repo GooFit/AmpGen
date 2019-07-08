@@ -111,10 +111,10 @@ std::vector<std::vector<int>> PolarisedSum::polarisationOuterProduct(const std::
 
 std::vector<complex_t> densityMatrix(const size_t& dim, const std::vector<MinuitProxy>& pv )
 {
+  if( dim == 1 ) return {1.};
   double px = pv[0];
   double py = pv[1];
   double pz = pv[2];
-  if( dim == 1 ) return {1.};
   if( dim == 2 ) return {1+pz    ,   px+1i*py,
                          px-1i*py,   1-pz     };
   if( dim == 3 ){
