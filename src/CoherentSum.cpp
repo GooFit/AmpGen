@@ -122,11 +122,11 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
       INFO( std::setw(70) << pdf.decayTree.uniqueString() 
           << " A = [ "  << std::real(A)              << " " << std::imag(A) 
           << " ] g = [ "<< std::real(pdf.coupling()) << " " << std::imag(pdf.coupling()) << " ]" );
-      if( m_dbThis ) pdf.pdf.debug( evt );
+      if( m_dbThis ) pdf.pdf.debug( evt.address() );
     }
   else
     for ( auto& pdf : m_matrixElements )
-      if ( pdf.pdf.name().find( nameMustContain ) != std::string::npos ) pdf.pdf.debug( evt );
+      if ( pdf.pdf.name().find( nameMustContain ) != std::string::npos ) pdf.pdf.debug( evt.address() );
   if( evt.cacheSize() != 0 ) INFO( "Pdf = " << prob_unnormalised( evt ) );
   INFO( "A(x) = " << getVal(evt) );
 }

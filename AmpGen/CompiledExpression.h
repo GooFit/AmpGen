@@ -27,7 +27,7 @@ namespace AmpGen
   {
 
   private:
-    DynamicFCN<RETURN_TYPE( ARGS... )>                                    m_fcn;
+    DynamicFCN<RETURN_TYPE( ARGS... )>                                  m_fcn;
     DynamicFCN<std::vector<std::pair<std::string, complex_t>>(ARGS...)> m_fdb;
     std::vector<real_t>  m_externals             = {};
     bool                 m_hasExternalsChanged   = {false};
@@ -148,8 +148,8 @@ namespace AmpGen
     {
       return m_fcn( args... );
     } 
-
-    void debug( const double* event ) const
+    template < class T> 
+    void debug( const T* event ) const
     {
       if ( !m_fcn.isLinked() ) {
         FATAL( "Function " << name() << " not linked" );

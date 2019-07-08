@@ -279,7 +279,7 @@ void ThreeBodyCalculator::debug( const double& m, const double& theta )
     Event event(12);
     width.integrator.setEvent({m,theta},event);
     event.print();
-    width.totalWidth.debug( event );
+    width.totalWidth.debug( event.address() );
   }
 }
 
