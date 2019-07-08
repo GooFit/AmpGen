@@ -39,7 +39,7 @@ PolarisedSum::PolarisedSum( const EventType& type,
   m_eventType(type),
   m_prefix(prefix)
 {
-  bool debug           = NamedParameter<bool>(       "PolarisedSum::Debug"      ,false );
+  m_debug              = NamedParameter<bool>(       "PolarisedSum::Debug"      ,false );
   bool autoCompile     = NamedParameter<bool>(       "PolarisedSum::AutoCompile",true  );
   std::string objCache = NamedParameter<std::string>("PolarisedSum::ObjectCache",""    );
   m_verbosity          = NamedParameter<bool>(       "PolarisedSum::Verbosity"  ,0     );
@@ -65,7 +65,7 @@ PolarisedSum::PolarisedSum( const EventType& type,
     CompiledExpression< std::vector<complex_t> , const real_t*, const real_t* > expression( 
         TensorExpression( thisExpression), 
         matrix_element.first.decayDescriptor(),
-        type.getEventFormat(), debug ? syms : DebugSymbols() ,&mps ); 
+        type.getEventFormat(), m_debug ? syms : DebugSymbols() ,&mps ); 
     m_matrixElements.emplace_back(matrix_element.first, matrix_element.second, expression );
   }
   if(autoCompile){
@@ -226,8 +226,9 @@ void   PolarisedSum::reset( const bool& flag ){ m_nCalls = 0 ; }
 
 void   PolarisedSum::build_probunnormalised()
 {
-  auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector,[](auto& p){ return Parameter(p->name());} ) );
-  m_probExpression = CompiledExpression<real_t, const real_t*, const complex_t*>(prob, "prob_unnormalised", std::map<std::string, size_t>(), {}, m_mps);
+  DebugSymbols db; 
+  auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector,[](auto& p){ return Parameter(p->name());} ), m_debug ? &db : nullptr);
+  m_probExpression = CompiledExpression<real_t, const real_t*, const complex_t*>(prob, "prob_unnormalised", std::map<std::string, size_t>(), db, m_mps);
   CompilerWrapper().compile(m_probExpression);
   m_probExpression.prepare();
 } 
@@ -295,12 +296,25 @@ double PolarisedSum::prob(const Event& evt) const
 void PolarisedSum::debug(const Event& evt)
 {
   auto dim    = m_eventType.dim(); 
-  size_t size = dim.first * dim.second;   
+  size_t tsize = dim.first * dim.second;   
   for(auto& me : m_matrixElements)
   {
-    std::vector<complex_t> this_cache(0,size);
-    for(size_t i = 0 ; i < size; ++i ) this_cache.emplace_back( evt.getCache(me.addressData+i) );
+    std::vector<complex_t> this_cache(0,tsize);
+    for(size_t i = 0 ; i < tsize; ++i ) this_cache.emplace_back( evt.getCache(me.addressData+i) );
     INFO( me.decayDescriptor() << " " << vectorToString( this_cache, " ") );
+  }
+  INFO("P(x) = " << getValNoCache(evt) );
+  INFO("Prod = [" << vectorToString(m_pVector , ", ") <<"]");
+  if( m_debug )
+  {
+    transferParameters();
+    Event copy(evt);
+    copy.resizeCache( size() );
+    for(auto& me : m_matrixElements){
+      auto values = me(copy);
+      copy.setCache( values , me.addressData );
+    }
+    m_probExpression.debug( copy.getCachePtr() );
   }
 }
 
@@ -340,7 +354,7 @@ void PolarisedSum::generateSourceCode(const std::string& fname, const double& no
   stream.close();
 }
 
-Expression PolarisedSum::probExpression(const Tensor& T_matrix, const std::vector<Expression>& p) const 
+Expression PolarisedSum::probExpression(const Tensor& T_matrix, const std::vector<Expression>& p, DebugSymbols* db) const 
 {
   Tensor T_conj = T_matrix.conjugate();
   Tensor::Index a,b,c; 
@@ -348,6 +362,28 @@ Expression PolarisedSum::probExpression(const Tensor& T_matrix, const std::vecto
   size_t it = T_matrix.dims()[0]; 
   Tensor rho = Identity(it);
   if(it == 2) rho = rho + Sigma[0] * p[0] + Sigma[1] * p[1] + Sigma[2]*p[2];  
+  if(it == 3)
+  { 
+    auto px  = p[0];
+    auto py  = p[1];
+    auto pz  = p[2];
+    auto Tyy = p[3];
+    auto Tzz = p[4];
+    auto Txy = p[5];
+    auto Txz = p[6];
+    auto Tyz = p[7];
+    rho(0,0) = 1 + 1.5 * pz + sqrt(1.5)*Tzz;
+    rho(1,0) = sqrt(0.375)*(px+1i*py) + sqrt(3.)*(Txz+1i*Tyz);
+    rho(2,0) = -sqrt(1.5)*( Tzz + 2.*Tyy - 2.*1i*Txy); 
+    rho(0,1) = sqrt(0.375)*(px-1i*py) + sqrt(3.)*(Txz-1i*Tyz);
+    rho(1,1) = 1 - sqrt(6.)*Tzz;
+    rho(2,1) = sqrt(0.375)*(px+1i*py) - sqrt(3.)*(Txz+1i*Tyz);
+    rho(0,2) = -sqrt(1.5)*( Tzz + 2.*Tyy + 2.*1i*Txy); 
+    rho(1,2) = sqrt(0.375)*(px-1i*py) - sqrt(3)*(Txz-1i*Tyz);
+    rho(2,2) = 1. - 1.5*pz + sqrt(1.5)*Tzz;
+  }
+  ADD_DEBUG_TENSOR(rho, db);
+  ADD_DEBUG_TENSOR(TT , db);
   Expression rt = rho(a,b) * TT(b,a);
   return Real(rt);  
 }

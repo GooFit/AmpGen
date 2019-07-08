@@ -48,7 +48,7 @@ namespace AmpGen
       void calculateNorms(const std::vector<bool>& hasChanged); 
       void generateSourceCode( const std::string& fname, const double& normalisation = 1, bool add_mt = false );
       void build_probunnormalised();
-      Expression probExpression( const Tensor& T_matrix, const std::vector<Expression>& p ) const; 
+      Expression probExpression( const Tensor& T_matrix, const std::vector<Expression>& p, DebugSymbols* = nullptr ) const; 
       size_t size() const ;  
       real_t norm() const;
       complex_t norm(const size_t& i, const size_t& j, Integrator<18>* integ = nullptr ); 
@@ -71,6 +71,7 @@ namespace AmpGen
       double                        m_weight      = {1}; 
       std::vector<MinuitProxy>      m_pVector     = {}; 
       bool                          m_verbosity   = {0};
+      bool                          m_debug       = {0};
       Integrator<18>                m_integrator;
       std::vector<Bilinears>        m_norms;
       std::vector<std::vector<int>> m_polStates; 
