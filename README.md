@@ -51,6 +51,10 @@ cmake ..
 make
 ```
 This will build the shared library, several standalone test applications, and a set of unit tests.
+Several examples of usages of the library are included in the apps directory and are built alongside the library.
+All standalone programs can accept both options files and command line arguments.
+They also support `--help` to print help for key arguments to the program.
+This will also run the program, as arguments can be defined throughout each of the programs rather than all defined at the beginning.
 
 #### Usage with ROOT
 
@@ -74,15 +78,10 @@ is to specifically specify the location of the build tool for AmpGen's JIT:
 In order to build stand-alone on LXPLUS, you will need a valid development environment; the following line will work:
 
 ```shell
-lb-run -c x86_64-centos7-gcc62-opt ROOT $SHELL
+source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_94python3 x86_64-centos7-gcc8-opt
 ```
-Additionally, the ROOT versions installed on cvfms generally require C++17 support when building.
-
-Several examples of usages of the library are included in the apps directory and are
-built alongside the library.
-All standalone programs can accept both options files and command line arguments.
-They also support `--help` to print help for key arguments to the program.
-This will also run the program, as arguments can be defined throughout each of the programs rather than all defined at the beginning.
+The LCG versions and CMTCONFIG may need to be updated over time. 
+The ROOT versions installed on cvmfs generally require C++17 support when building, i.e. when running cmake add the option `-DCMAKE_CXX_STANDARD=17`.
 
 ### Options files and decay descriptors
 

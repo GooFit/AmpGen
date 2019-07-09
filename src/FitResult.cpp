@@ -95,7 +95,6 @@ bool FitResult::readFile( const std::string& fname )
   size_t nParameters = parameterLines.size();
   m_covarianceMatrix.ResizeTo( parameterLines.size(), parameterLines.size() );
   for (size_t i = 0; i < nParameters; ++i ) {
-    INFO("parsing line: "  << parameterLines[i] );
     auto tokens             = split( parameterLines[i], ' ' );
     m_covMapping[tokens[1]] = i;
     m_mps->add( new MinuitParameter( tokens[1], MinuitParameter::Flag(stoi( tokens[2] ) ), stod( tokens[3] ), stod( tokens[4] ), 0, 0 ) );
@@ -135,7 +134,7 @@ void FitResult::writeToFile( const std::string& fname )
     auto param = m_mps->at(i);
     outlog << "Parameter"
       << " " << param->name() << " " << param->iFixInit() << " " << param->mean() << " "
-      << m_mps->at(i)->err() << " ";
+      << ( param->iFixInit() == 0 ? m_mps->at(i)->err() : 0 ) << " ";
     for (size_t j = 0; j < (size_t)m_covarianceMatrix.GetNcols(); ++j ) outlog << m_covarianceMatrix[i][j] << " ";
     outlog << std::endl;
   }
