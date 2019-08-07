@@ -8,7 +8,7 @@
 
 #include "TH1D.h"
 #include "TH2D.h"
-#include "AmpGen/Event.h"
+//#include "AmpGen/Event.h"
 
 class TH1D;
 class TH2D;
@@ -17,6 +17,7 @@ namespace AmpGen
 {
   class Projection2D;
   class Event;
+  class EventList; 
 
   class Projection
   {
@@ -33,6 +34,7 @@ namespace AmpGen
     public:
     const std::string name() const  ; 
     double operator()( const Event& evt ) const ;
+    TH1D* operator()(const EventList& evt) const; 
     template <class FCN>
       Projection( const FCN& fcn, const std::string& name,
           const std::string& xAxisTitle, const size_t& nBins, const double& min, const double& max,

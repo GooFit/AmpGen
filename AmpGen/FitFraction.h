@@ -82,14 +82,14 @@ namespace AmpGen
       }
       return std::real(sum);
     }
-    real_t getVal( const size_t& index ) const {
+    real_t getVal( const size_t& index, const bool& getImaginaryPart = false) const {
       complex_t sum = 0; 
       for ( auto& i : calculators[index].i ) {
         for ( auto& j : calculators[index].j ) {
           sum += (*pdf)[i].coefficient * std::conj( (*pdf)[j].coefficient ) * ( j >= i ? pdf->norm(i, j) : std::conj(pdf->norm(j,i)) );
         }
       }
-      return std::real(sum) / norm();
+      return (getImaginaryPart ? std::imag(sum) : std::real(sum) ) / norm(); 
     }
     std::vector<FitFraction> operator()(const std::string& name, const LinearErrorPropagator& linProp )
     {

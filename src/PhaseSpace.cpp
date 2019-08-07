@@ -21,8 +21,10 @@ PhaseSpace::PhaseSpace( const EventType& type, TRandom* rand ) :
   m_rand(rand), m_type(type) 
 {
   setDecay( type.motherMass(), type.masses() );
-  if ( type.isTimeDependent() )
-    m_decayTime = 6.582119514 / ( ParticlePropertiesList::get( type.mother() )->width() * pow( 10, 13 ) );
+  if ( type.isTimeDependent() ){
+    INFO("Generating with time-dependence");
+    m_decayTime = ParticlePropertiesList::get( type.mother() )->lifetime();
+  }
 }
 
 PhaseSpace::PhaseSpace( const Particle& particle, TRandom* rand ) : 
@@ -38,10 +40,10 @@ Event PhaseSpace::makeEvent(const size_t& cacheSize)
   std::array<double, kMAXP> rno;
   std::array<double, kMAXP> pd;
   std::array<double, kMAXP> invMas; 
-  Event rt( 4 * m_nt, cacheSize);
+  Event rt(4*m_nt + m_type.isTimeDependent(), cacheSize);
 
   rno[0] = 0;
-  unsigned int n;
+  size_t n;
 
   double wt = m_wtMax;
   do {

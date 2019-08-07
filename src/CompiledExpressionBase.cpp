@@ -99,7 +99,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     stream << "  r[i] = " << m_obj.to_string(m_resolver) << ";\n}\n";
   }
 
-  if( NamedParameter<bool>("IncludePythonBindings", false) == true ){
+  if( NamedParameter<bool>("IncludePythonBindings", false) == true && returnTypename().find("complex") != std::string::npos ){
 //    stream << "#pragma clang diagnostic pop\n\n";
     stream << "extern \"C\" void " <<  progName() << "_c" << "(double *real, double *imag, " << fcnSignature() << "){\n";
     stream << "  auto val = " << progName() << "(" << args() << ") ;\n"; 

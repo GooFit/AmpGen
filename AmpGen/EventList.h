@@ -127,7 +127,8 @@ namespace AmpGen
       }
     }
     void reserveCache(const size_t& index);
-    TH2D* makeProjection( const Projection2D& projection, const ArgumentPack& args );
+    TH1D* makeProjection(const Projection& projection  , const ArgumentPack& args) const; 
+    TH2D* makeProjection(const Projection2D& projection, const ArgumentPack& args) const;
     std::vector<TH1D*> makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args );
 
     template <class... ARGS>
@@ -144,12 +145,10 @@ namespace AmpGen
       return makeProjections( projections, ArgumentPack( args... ) );
     }
     template <class... ARGS>
-    TH1D* makeProjection( const Projection& projection, const ARGS&... args )
+    TH1D* makeProjection( const Projection& projection, const ARGS&... args ) const
     {
       return makeProjection( projection, ArgumentPack(args...) );
     }
-    TH1D* makeProjection( const Projection& projection, const ArgumentPack& args );
-    
     template <class... ARGS>
     TH2D* makeProjection( const Projection2D& projection, const ARGS&... args )
     {

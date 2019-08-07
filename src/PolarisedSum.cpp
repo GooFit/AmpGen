@@ -382,6 +382,7 @@ Expression PolarisedSum::probExpression(const Tensor& T_matrix, const std::vecto
     rho(1,2) = sqrt(0.375)*(px-1i*py) - sqrt(3)*(Txz-1i*Tyz);
     rho(2,2) = 1. - 1.5*pz + sqrt(1.5)*Tzz;
   }
+  ADD_DEBUG_TENSOR(T_matrix, db);
   ADD_DEBUG_TENSOR(rho, db);
   ADD_DEBUG_TENSOR(TT , db);
   Expression rt = rho(a,b) * TT(b,a);

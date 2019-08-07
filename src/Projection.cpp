@@ -1,6 +1,7 @@
 #include "AmpGen/Projection.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Event.h"
+#include "AmpGen/EventList.h"
 #include <stdio.h>
 
 #include "TAxis.h"
@@ -9,7 +10,7 @@
 
 using namespace AmpGen;
 
-Projection::Projection(){} 
+Projection::Projection() = default; 
 
 Projection::Projection( const std::function<double(const Event&)>& fcn, 
     const std::string& name, const std::string& xAxisTitle,
@@ -69,3 +70,4 @@ std::pair<double, double> Projection2D::operator()( const Event& evt ) const
   return {xAxis.m_func( evt ), yAxis.m_func( evt )};
 }
 
+TH1D* Projection::operator()( const EventList& events) const { return events.makeProjection(*this); }

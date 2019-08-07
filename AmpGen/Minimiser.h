@@ -50,9 +50,7 @@ namespace AmpGen
     void prepare();
     bool doFit();
     void GradientTest();
-
     TGraph* scan( MinuitParameter* param, const double& min, const double& max, const double& step );
-
     void addExtendedTerm( IExtendLikelihood* term );
     TMatrixTSym<double> covMatrix() const;
     TMatrixTSym<double> covMatrixFull() const;

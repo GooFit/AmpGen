@@ -97,6 +97,7 @@ int main( int argc, char** argv )
   EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
                        NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
 
+  INFO("Generating time-dependence? " << eventType.isTimeDependent() );
   EventList accepted( eventType );
 
   INFO("Generating events with type = " << eventType );
@@ -137,13 +138,11 @@ int main( int argc, char** argv )
     auto proj = eventType.defaultProjections(nBins);
     INFO("Making 2D projections...");
     for( size_t i = 0 ; i < proj.size(); ++i ){
-      for( size_t j = i+1 ; j < proj.size(); ++j ){
-      
+      for( size_t j = i+1 ; j < proj.size(); ++j ){ 
         accepted.makeProjection( Projection2D(proj[i],proj[j] ) )->Write(); 
       }
     }
   } 
-  
   INFO( "Writing output file " );
 
   f->Close();
