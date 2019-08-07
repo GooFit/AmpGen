@@ -383,6 +383,18 @@ namespace AmpGen
       */   
     DECLARE_LINESHAPE( EtaDalitz );
 
+    /** @ingroup Lineshapes class TD
+        @brief (Linear) time dependence
+        
+        ''Lineshape'' that gives a linear time-dependence for use in time-dependent generation / fitting. 
+        @f[
+          \mathcal{A}(t) = \frac{t}{2\tau},
+        @f]
+        where @f$\tau@f$ is the proper decay time. 
+
+      */
+    DECLARE_LINESHAPE( TD );
+
     DECLARE_LINESHAPE( Photon );
   } // namespace Lineshape
   

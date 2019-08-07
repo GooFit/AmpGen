@@ -74,7 +74,7 @@ std::map<std::string, size_t> EventType::getEventFormat( const bool& outputNames
     returnValue[stub + "_Py"] = s * ip + 1;
     returnValue[stub + "_Pz"] = s * ip + 2;
   }
-  if ( m_timeDependent ) returnValue[m_mother + "_ctau"] = 4 * size();
+  if ( m_timeDependent ) returnValue[m_mother + "_decayTime"] = 4 * size();
   for( auto& extend : m_eventTypeExtensions ) returnValue[extend] = returnValue.size();
   return returnValue;
 }
@@ -186,7 +186,6 @@ Projection EventType::projection(const size_t& nBins, const std::vector<size_t>&
 bool EventType::operator==( const EventType& other ) const
 {
   if ( m_mother != other.mother() || size() != other.size() ) return false;
-
   for ( size_t i = 0; i < m_particleNames.size(); ++i ) {
     if ( m_particleNames[i] != other[i] ) return false;
   }

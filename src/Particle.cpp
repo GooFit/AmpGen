@@ -124,7 +124,9 @@ Particle::Particle( const std::string& name, const unsigned int& index ) : Parti
 
 void Particle::parseModifier( const std::string& mod )
 {
-  if( mod.size() == 1 )
+  if ( Lineshape::Factory::isLineshape( mod ) )
+    m_lineshape = mod;
+  else if( mod.size() == 1 )
   {
     DEBUG( "Modifier = " << mod );
     if ( mod == "S" ) m_orbital = 0;
@@ -143,8 +145,6 @@ void Particle::parseModifier( const std::string& mod )
     parseModifier( mod.substr(0,1) );
     parseModifier( mod.substr(1,1) );
   }
-  else if ( Lineshape::Factory::isLineshape( mod ) )
-    m_lineshape = mod;
 }
 
 double Particle::spin() const { return double( m_props->twoSpin() / 2. ) ; }

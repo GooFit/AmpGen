@@ -116,7 +116,11 @@ bool Minimiser::doFit()
     for ( unsigned int j = 0; j < m_nParams; ++j ) {
       m_covMatrix[i + m_nParams * j] = m_minimiser->CovMatrix( i, j );
     }
-  }
+//    double up, down;
+//    double v = *(m_minimiser->X() +i);
+//    m_minimiser->GetMinosError(i, up, down);
+//    INFO( par->name() << " " << v << " " << par->mean() << " " << up << " " << down << " " << error );
+  } 
   m_status = m_minimiser->Status();
   return 1;
 }

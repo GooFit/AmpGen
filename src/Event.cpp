@@ -21,13 +21,17 @@ Event::Event( const real_t* data, const size_t& N, const size_t& cacheSize) :
   }
 
 void Event::print() const {
-  for( unsigned int i = 0 ; i< m_event.size()/4 ; ++i ){
+  size_t nParticles = m_event.size()/4;
+  for( size_t i = 0 ; i < nParticles; ++i ){
     double px = m_event[4*i+0];
     double py = m_event[4*i+1];
     double pz = m_event[4*i+2];
     double pE = m_event[4*i+3];
     double s = pE*pE - px*px -py*py -pz*pz;
     INFO( "P["<<i<<"] = {"<<px<<", " << py << ", " << pz << ", " << pE << "}, m = " << sqrt(fabs(s)) );
+  }
+  for( size_t i = 4*nParticles; i != m_event.size(); ++i ){
+    INFO( m_event[i] );
   }
 }
 real_t Event::s( const size_t& index ) const {

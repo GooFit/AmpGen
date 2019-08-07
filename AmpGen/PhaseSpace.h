@@ -34,7 +34,7 @@ namespace AmpGen
       AmpGen::EventType eventType() const;
 
     private:
-      unsigned int m_nt        = {0}; // number of decay particles
+      size_t       m_nt        = {0}; // number of decay particles
       double       m_mass[18]  = {0}; // masses of particles
       double       m_teCmTm    = {0}; // total energy in the C.M. minus the total mass
       double       m_wtMax     = {0}; // maximum weight 

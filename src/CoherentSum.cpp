@@ -123,6 +123,7 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
           << " A = [ "  << std::real(A)              << " " << std::imag(A) 
           << " ] g = [ "<< std::real(pdf.coupling()) << " " << std::imag(pdf.coupling()) << " ]" );
       if( m_dbThis ) pdf.pdf.debug( evt.address() );
+      pdf.coupling.print();
     }
   else
     for ( auto& pdf : m_matrixElements )

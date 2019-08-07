@@ -124,6 +124,7 @@ TTree* EventList::tree( const std::string& name, const std::vector<std::string>&
   double genPdf = 1;
   double weight = 1;
   auto format = m_eventType.getEventFormat( true );
+  
   for ( auto& f : format ){
     outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
   }
@@ -152,7 +153,7 @@ std::vector<TH1D*> EventList::makeProjections( const std::vector<Projection>& pr
   return plots;
 }
 
-TH1D* EventList::makeProjection( const Projection& projection, const ArgumentPack& args )
+TH1D* EventList::makeProjection( const Projection& projection, const ArgumentPack& args ) const 
 {
   auto selection      = args.getArg<Selection>().val;
   auto weightFunction = args.getArg<WeightFunction>().val;
@@ -169,7 +170,7 @@ TH1D* EventList::makeProjection( const Projection& projection, const ArgumentPac
   return plot;
 }
 
-TH2D* EventList::makeProjection( const Projection2D& projection, const ArgumentPack& args )
+TH2D* EventList::makeProjection( const Projection2D& projection, const ArgumentPack& args ) const
 {
   auto selection      = args.getArg<Selection>().val;
   auto weightFunction = args.getArg<WeightFunction>().val;

@@ -47,30 +47,31 @@ namespace AmpGen
     int chargeFromString( const std::string& ch, bool& status ) const;
 
   public:
-    double mass() const { return m_mass * MeV; }           ///< returns mass of particle in MeV
-    double mErrPlus() const { return m_mErrPlus * MeV; }   ///< returns +ve uncertainty on particle mass in MeV
+    double mass()      const { return m_mass      * MeV; } ///< returns mass of particle in MeV
+    double mErrPlus()  const { return m_mErrPlus  * MeV; } ///< returns +ve uncertainty on particle mass in MeV
     double mErrMinus() const { return m_mErrMinus * MeV; } ///< returns -ve uncertainty on particle mass in MeV
-    double width() const { return m_width * MeV; }         ///< returns width of particle in MeV
-    double wErrPlus() const { return m_wErrPlus * MeV; }   ///< returns +ve uncertainty on particle width in MeV
+    double width()     const { return m_width     * MeV; } ///< returns width of particle in MeV
+    double wErrPlus()  const { return m_wErrPlus  * MeV; } ///< returns +ve uncertainty on particle width in MeV
     double wErrMinus() const { return m_wErrMinus * MeV; } ///< returns -ve uncertainty on particle width in MeV
-    double radius() const;
+    double radius()    const;                              ///< returns the effective interaction radius of the particle, i.e. for the Blatt-Weisskopf factors
+    double lifetime()  const;                              ///< returns the lifetime of the particle in ns
 
-    int G() const { return m_Gparity; }
-    int P() const { return m_parity; }
-    int C() const { return m_Cparity; }
-    int R() const { return m_Rexist; }
-    int pdgID()    const { return m_pdgID; }
-    int twoSpin()   const { return m_twoSpin ; }
-    std::string I() const { return m_isospin; }
-    std::string J() const { return m_JtotalSpin; }
-    int charge() const { return m_charge; }
-    std::string label() const { return m_texName; }
+    int G()            const { return m_Gparity; }         ///< returns the G-parity of the particle
+    int P()            const { return m_parity;  }         ///< returns the parity of the particle
+    int C()            const { return m_Cparity; }         ///< returns the C-parity of the particle
+    int R()            const { return m_Rexist;  }
+    int pdgID()        const { return m_pdgID;   }
+    int twoSpin()      const { return m_twoSpin; }
+    int charge()       const { return m_charge; }
+    char S()           const { return m_status; }
+    std::string I()      const { return m_isospin; }
+    std::string J()      const { return m_JtotalSpin; }
+    std::string label()  const { return m_texName; }
     std::string quarks() const { return m_quarks; }
-    std::string name() const;
+    std::string name()   const;
     std::string chargeString() const { return m_chargeString; }
     std::string spinName() const; 
 
-    char S() const { return m_status; }
     void setLabel( const std::string& label ) { m_texName = label; }
     void setName( const std::string& name ) { m_name = name; }
     const QuarkContent& netQuarkContent() const { return m_netQuarkContent; }

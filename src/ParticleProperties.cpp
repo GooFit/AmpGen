@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <vector>
+#include <cmath>
 
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/MsgService.h"
@@ -91,6 +92,8 @@ void ParticleProperties::setRadius()
   m_radius     = isCharm ? defaultCharmRadius : defaultRadius;
 }
 
+
+
 void ParticleProperties::antiQuarks()
 {
   if ( m_quarks.empty() ) return;
@@ -143,6 +146,12 @@ std::string ParticleProperties::name() const
   return fullName;
 }
 double ParticleProperties::radius() const { return m_radius; }
+
+double ParticleProperties::lifetime() const 
+{ 
+  return 6.582119514 / ( m_width * std::pow( 10, 13 ) );
+}
+
 
 bool ParticleProperties::isNonResonant() const
 {
