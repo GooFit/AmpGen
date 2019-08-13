@@ -55,7 +55,7 @@ FitResult::FitResult( const Minimiser& mini )
   m_status           = mini.status();
   m_nParam           = 0;
   for (size_t i = 0; i < m_mps->size(); ++i ) {
-    if ( m_mps->at(i)->iFixInit() == 0 ) m_nParam++;
+    if ( m_mps->at(i)->isFree() ) m_nParam++;
     m_covMapping[ m_mps->at(i)->name() ] = i;
   }
 }
@@ -69,7 +69,7 @@ FitResult::FitResult( const MinuitParameterSet& mps, const TMatrixD& covMini ) :
   m_covarianceMatrix.ResizeTo( covMini.GetNcols(), covMini.GetNrows() );
   m_covarianceMatrix = covMini;
   for (size_t i = 0; i < m_mps->size(); ++i ) {
-    if ( m_mps->at(i)->iFixInit() == 0 ) m_nParam++;
+    if ( m_mps->at(i)->isFree()) m_nParam++;
   }
 }
 
@@ -97,7 +97,7 @@ bool FitResult::readFile( const std::string& fname )
   for (size_t i = 0; i < nParameters; ++i ) {
     auto tokens             = split( parameterLines[i], ' ' );
     m_covMapping[tokens[1]] = i;
-    m_mps->add( new MinuitParameter( tokens[1], MinuitParameter::Flag(stoi( tokens[2] ) ), stod( tokens[3] ), stod( tokens[4] ), 0, 0 ) );
+    m_mps->add( new MinuitParameter( tokens[1], parse<Flag>(tokens[2]), stod( tokens[3] ), stod( tokens[4] ), 0, 0 ) );
     for (size_t j = 0; j < nParameters; ++j ) m_covarianceMatrix( i, j ) = stod( tokens[5 + j] );
   }
   return true;
@@ -133,8 +133,8 @@ void FitResult::writeToFile( const std::string& fname )
   for (size_t i = 0; i < (size_t)m_covarianceMatrix.GetNrows(); ++i ) {
     auto param = m_mps->at(i);
     outlog << "Parameter"
-      << " " << param->name() << " " << param->iFixInit() << " " << param->mean() << " "
-      << ( param->iFixInit() == 0 ? m_mps->at(i)->err() : 0 ) << " ";
+      << " " << param->name() << " " << param->flag() << " " << param->mean() << " "
+      << ( param->isFree() ? m_mps->at(i)->err() : 0 ) << " ";
     for (size_t j = 0; j < (size_t)m_covarianceMatrix.GetNcols(); ++j ) outlog << m_covarianceMatrix[i][j] << " ";
     outlog << std::endl;
   }
@@ -165,7 +165,7 @@ std::vector<MinuitParameter*> FitResult::floating( const bool& extended ) const
 {
   std::vector<MinuitParameter*> floating;
   for ( auto& param : *m_mps ) {
-    if ( ( param->iFixInit() == 0 || extended ) && param->err() > 1e-6 ) floating.push_back( param );
+    if ( ( param->isFree() || extended ) && param->err() > 1e-6 ) floating.push_back( param );
   }
   return floating;
 }
@@ -175,7 +175,7 @@ TMatrixD FitResult::getReducedCovariance( const bool& extended ) const
   std::vector<unsigned int> floating_indices;
   for (size_t i = 0; i < m_mps->size(); ++i ) {
     auto param = m_mps->at(i);
-    if ( ( param->iFixInit() == 0 || extended ) && param->err() > 1e-6 ) floating_indices.push_back( i );
+    if ( ( param->isFree() || extended ) && param->err() > 1e-6 ) floating_indices.push_back( i );
   }
   TMatrixD reducedCov( floating_indices.size(), floating_indices.size() );
   if ( int( floating_indices.size() ) > m_covarianceMatrix.GetNrows() ) {

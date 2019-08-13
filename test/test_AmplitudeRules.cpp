@@ -13,8 +13,8 @@ using namespace AmpGen;
 
 BOOST_AUTO_TEST_CASE( test_AmplitudeRule ) {
 
-  MinuitParameter re = MinuitParameter("D0{K*(892)bar0{K-,pi+},pi0}_Re",MinuitParameter::Flag::Float,1.,0.);
-  MinuitParameter im = MinuitParameter("D0{K*(892)bar0{K-,pi+},pi0}_Im",MinuitParameter::Flag::Float,0.,0.);
+  MinuitParameter re = MinuitParameter("D0{K*(892)bar0{K-,pi+},pi0}_Re", Flag::Free,1.,0.);
+  MinuitParameter im = MinuitParameter("D0{K*(892)bar0{K-,pi+},pi0}_Im", Flag::Free,0.,0.);
 
   AmplitudeRule test(&re,&im);
 
@@ -25,14 +25,14 @@ BOOST_AUTO_TEST_CASE( test_AmplitudeRule ) {
 }
 AmplitudeRules rule_set( 
     MinuitParameterSet( {
-   new MinuitParameter("D0{K*(892)bar0,pi0}_Re", MinuitParameter::Flag::Fix,1.,0.)
- , new MinuitParameter("D0{K*(892)bar0,pi0}_Im", MinuitParameter::Flag::Fix,1.,0.)
- , new MinuitParameter("D0{rho(770)+,pi-}_Re"  , MinuitParameter::Flag::Fix,1.,0.)
- , new MinuitParameter("D0{rho(770)+,pi-}_Im"  , MinuitParameter::Flag::Fix,2.,0.)
- , new MinuitParameter("K*(892)bar0{K-,pi+}_Re", MinuitParameter::Flag::Float,sqrt(1./3.),0.)
- , new MinuitParameter("K*(892)bar0{K-,pi+}_Im", MinuitParameter::Flag::Float,0,0.)
- , new MinuitParameter("K*(892)bar0{K0,pi0}_Re", MinuitParameter::Flag::Fix,sqrt(2./3.),0.)
- , new MinuitParameter("K*(892)bar0{K0,pi0}_Im", MinuitParameter::Flag::Fix,0,0.) } ) ); 
+   new MinuitParameter("D0{K*(892)bar0,pi0}_Re", Flag::Fix,1.,0.)
+ , new MinuitParameter("D0{K*(892)bar0,pi0}_Im", Flag::Fix,1.,0.)
+ , new MinuitParameter("D0{rho(770)+,pi-}_Re"  , Flag::Fix,1.,0.)
+ , new MinuitParameter("D0{rho(770)+,pi-}_Im"  , Flag::Fix,2.,0.)
+ , new MinuitParameter("K*(892)bar0{K-,pi+}_Re", Flag::Free,sqrt(1./3.),0.)
+ , new MinuitParameter("K*(892)bar0{K-,pi+}_Im", Flag::Free,0,0.)
+ , new MinuitParameter("K*(892)bar0{K0,pi0}_Re", Flag::Fix,sqrt(2./3.),0.)
+ , new MinuitParameter("K*(892)bar0{K0,pi0}_Im", Flag::Fix,0,0.) } ) ); 
 
 BOOST_AUTO_TEST_CASE( test_AmplitudeRules_constructor ){
   BOOST_CHECK( rule_set.rules().size() == 2 ); /// number of head decays

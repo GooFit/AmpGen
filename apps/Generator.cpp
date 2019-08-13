@@ -136,10 +136,9 @@ int main( int argc, char** argv )
   for ( auto& plot : plots ) plot->Write();
   if( NamedParameter<bool>("plots_2d",true) == true ){
     auto proj = eventType.defaultProjections(nBins);
-    INFO("Making 2D projections...");
     for( size_t i = 0 ; i < proj.size(); ++i ){
       for( size_t j = i+1 ; j < proj.size(); ++j ){ 
-        accepted.makeProjection( Projection2D(proj[i],proj[j] ) )->Write(); 
+        accepted.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(); 
       }
     }
   } 

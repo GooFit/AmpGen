@@ -123,7 +123,7 @@ void SplineTransfer::set( const unsigned int& N, MinuitParameter* f )
 }
 void SplineTransfer::set( const unsigned int& N, const double& value )
 {
-  m_parameters[N] = new MinuitParameter("dumb",MinuitParameter::Fix,value,0);
+  m_parameters[N] = new MinuitParameter("dumb", Flag::Fix, value, 0);
 }
 
 void SplineTransfer::transfer( CompiledExpressionBase* destination )

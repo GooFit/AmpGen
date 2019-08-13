@@ -5,25 +5,26 @@
 
 #include <iostream>
 #include <string>
+#include "AmpGen/enum.h"
 
 namespace AmpGen
 {
   class MinuitParameterSet;
+  declare_enum( Flag, Free, Hide, Fix, CompileTimeConstant )
 
   class MinuitParameter
   {
   public: 
-    enum Flag { Float, Hide, Fix, CompileTimeConstant };
-    
+
     MinuitParameter() = default;
-    MinuitParameter(const std::string& name, const Flag& iFixInit, const double& mean, const double& step,
+    MinuitParameter(const std::string& name, const Flag& flag, const double& mean, const double& step,
                      const double& min = 0, const double& max = 0 );
     MinuitParameter(const std::string& name, const double& mean, const double& step,
                      const double& min = 0, const double& max = 0 );
 
-    Flag iFixInit() const;
-    bool hidden() const;
-    bool fixed();
+    Flag flag() const;
+    bool isFixed() const;
+    bool isFree()  const;
     const std::string& name() const;
 
     double meanInit() const;
@@ -44,7 +45,6 @@ namespace AmpGen
     void setLimits( const double& min, const double& max );
     void setResult( double fitMean, double fitErr, double fitErrPos, double fitErrNeg );
     void resetToInit();
-    void print( std::ostream& os = std::cout ) const;
     void setName( const std::string& name );
     virtual double mean() const;
     virtual operator double() const { return m_meanResult; }
@@ -52,7 +52,7 @@ namespace AmpGen
     
     friend class MinuitParameterSet;
   private:
-    Flag m_iFixInit;
+    Flag m_flag;
     std::string m_name;
     double m_meanInit;
     double m_stepInit;
@@ -66,9 +66,6 @@ namespace AmpGen
 
   class MinuitProxy
   {
-    double m_value;
-    MinuitParameter* m_parameter;
-
   public:
     void update() { m_value = m_parameter->mean(); }
     MinuitParameter* ptr() { return m_parameter; }
@@ -77,7 +74,11 @@ namespace AmpGen
     MinuitProxy( MinuitParameter* param = nullptr ) : m_parameter( param ) { if( m_parameter != nullptr ) update(); }
     MinuitParameter* operator->() { return m_parameter; }
     const MinuitParameter* operator->() const { return m_parameter; }
+  private:
+    double m_value;
+    MinuitParameter* m_parameter;
   };
+  std::ostream& operator<<( std::ostream& os, const MinuitParameter& type );
 } // namespace AmpGen
 
 #endif

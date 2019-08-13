@@ -25,6 +25,7 @@ MinuitParameterSet::MinuitParameterSet(const std::vector<MinuitParameter*>& para
 {
   for( auto& param : params ) add(param); 
 }
+
 MinuitParameterSet::MinuitParameterSet( const MinuitParameterSet& other )
   : m_parameters( other.m_parameters ), m_keyAccess( other.m_keyAccess ){}
 
@@ -32,9 +33,8 @@ MinuitParameterSet MinuitParameterSet::getFloating()
 {
   MinuitParameterSet floating;
   for ( auto& param : *this ) {
-    if ( param->iFixInit() == MinuitParameter::Flag::Float && 
-         dynamic_cast<MinuitExpression*>(param) != nullptr 
-       ) floating.add(param);
+    if ( param->isFree() && dynamic_cast<MinuitExpression*>(param) != nullptr ) 
+      floating.add(param);
   }
   return floating;
 }
@@ -54,7 +54,7 @@ bool MinuitParameterSet::addToEnd( MinuitParameter* parPtr )
 MinuitParameter* MinuitParameterSet::add( const std::string& name, const unsigned int& flag, const double& mean,
     const double& sigma, const double& min, const double& max )
 {
-  addToEnd( new MinuitParameter( name, MinuitParameter::Flag(flag), mean, sigma, min, max ) );
+  addToEnd( new MinuitParameter( name, Flag(flag), mean, sigma, min, max ) );
   return m_keyAccess[name];
 }
 
@@ -75,17 +75,15 @@ unsigned int MinuitParameterSet::size() const { return m_parameters.size(); }
 void MinuitParameterSet::print( std::ostream& os ) const
 {
   for (size_t i = 0; i < size(); i++ ) {
-    os << '\n';
-    m_parameters[i]->print(os);
+    os << '\n' << *m_parameters[i];
   }
   os << '\n';
 }
 void MinuitParameterSet::printVariable( std::ostream& os ) const
 {
   for (size_t i = 0; i < size(); i++ ) {
-    if ( m_parameters[i]->iFixInit() == 1 ) continue; /// hide parameter
-    os << '\n';
-    m_parameters[i]->print( os );
+    if ( m_parameters[i]->flag() == Flag::Hide ) continue; /// hide parameter
+    os << '\n' << *m_parameters[i];
   }
 }
 
@@ -128,63 +126,39 @@ MinuitParameter* MinuitParameterSet::at( const size_t& index ) const
 
 void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
 {
+  bool status = true;
   if ( line.size() == 4 || line.size() == 6 ) {
-    bool status = true;
-    int flag    = lexical_cast<int>( line[1], status );
-    if( flag > 3 ) return ; 
+    bool hasLimits = line.size() == 6; 
     double mean = lexical_cast<double>( line[2], status );
     double step = lexical_cast<double>( line[3], status );
-    double min  = line.size() == 6 ? lexical_cast<double>( line[4], status ) : 0;
-    double max  = line.size() == 6 ? lexical_cast<double>( line[5], status ) : 0;
-
-    if ( status ) {
-      if ( OptionsParser::printHelp() )
-        INFO( "MINUIT: Registered " << line[0] << " (flag " << flag << ") = " << mean << ", step=" << step << " ("
-            << min << "," << max << ")" );
-      add( new MinuitParameter( line[0], MinuitParameter::Flag(flag), mean, step, min, max ) );
-    }
-    return;
+    double min  = hasLimits ? lexical_cast<double>( line[4], status ) : 0;
+    double max  = hasLimits ? lexical_cast<double>( line[5], status ) : 0;
+    if( !status ) return; 
+    auto   flag = parse<Flag>( line[1] );
+    if ( OptionsParser::printHelp() )
+      INFO( "MINUIT: Registered " << line[0] << " (flag " << flag << ") = " << mean << ", step=" << step << " ("<< min << "," << max << ")" );
+    add( new MinuitParameter( line[0], flag, mean, step, min, max ) ); 
   }
-  if ( line.size() == 7  ) {
-
-    bool status    = true;
-    int flag_re    = lexical_cast<int>( line[1], status );
+  if ( line.size() == 7 || line.size() == 11 ) {
+    bool hasLimits = line.size() == 11;
     double mean_re = lexical_cast<double>( line[2], status );
     double step_re = lexical_cast<double>( line[3], status );
-    int flag_im    = lexical_cast<int>( line[4], status );
-    double mean_im = lexical_cast<double>( line[5], status );
-    double step_im = lexical_cast<double>( line[6], status );
+    double min_re  = hasLimits ? lexical_cast<double>( line[4], status ) : 0;
+    double max_re  = hasLimits ? lexical_cast<double>( line[5], status ) : 0;
+    double mean_im = lexical_cast<double>( line[5 + 2 *hasLimits], status );
+    double step_im = lexical_cast<double>( line[6 + 2 *hasLimits], status );
+    double min_im  = hasLimits ? lexical_cast<double>( line[9] , status ) : 0;
+    double max_im  = hasLimits ? lexical_cast<double>( line[10], status ) : 0;
 
-    double min_re = 0;
-    double max_re = 0;
-    double min_im = 0;
-    double max_im = 0;
     if ( !status ) return;
+    auto   flag_re = parse<Flag>(line[1]);
+    auto   flag_im = parse<Flag>(line[4 + 2*hasLimits]);
     if ( OptionsParser::printHelp() ) {
-      INFO( "MINUIT: Complex " << line[0] << "_Re (flag " << flag_re << ") = " << mean_re << ", step=" << step_re
-          << " (" << min_re << "," << max_re << ")" );
-      INFO( "MINUIT: Complex " << line[0] << "_Im (flag " << flag_im << ") = " << mean_im << ", step=" << step_im
-          << " (" << min_im << "," << max_im << ")" );
+      INFO( "MINUIT: Complex " << line[0] << "_Re (flag " << flag_re << ") = " << mean_re << ", step=" << step_re << " (" << min_re << "," << max_re << ")" );
+      INFO( "MINUIT: Complex " << line[0] << "_Im (flag " << flag_im << ") = " << mean_im << ", step=" << step_im << " (" << min_im << "," << max_im << ")" );
     }
-    add( new MinuitParameter( line[0] + "_Re", MinuitParameter::Flag(flag_re), mean_re, step_re, min_re, max_re ) );
-    add( new MinuitParameter( line[0] + "_Im", MinuitParameter::Flag(flag_im), mean_im, step_im, min_im, max_im ) );
-  }
-  if ( line.size() == 11  ) {
-
-    bool status    = true;
-    int flag_re    = lexical_cast<int>( line[1], status );
-    double mean_re = lexical_cast<double>( line[2], status );
-    double step_re = lexical_cast<double>( line[3], status );
-    double min_re  = lexical_cast<double>( line[4], status );
-    double max_re  = lexical_cast<double>( line[5], status );
-    int flag_im    = lexical_cast<int>( line[6], status );
-    double mean_im = lexical_cast<double>( line[7], status );
-    double step_im = lexical_cast<double>( line[8], status );
-    double min_im  = lexical_cast<double>( line[9], status );
-    double max_im  = lexical_cast<double>( line[10], status );
-    if ( !status ) return;
-    add( new MinuitParameter( line[0] + "_Re", MinuitParameter::Flag(flag_re), mean_re, step_re, min_re, max_re ) );
-    add( new MinuitParameter( line[0] + "_Im", MinuitParameter::Flag(flag_im), mean_im, step_im, min_im, max_im ) );
+    add( new MinuitParameter( line[0] + "_Re", flag_re, mean_re, step_re, min_re, max_re ) );
+    add( new MinuitParameter( line[0] + "_Im", flag_im, mean_im, step_im, min_im, max_im ) );
   }
 }
 

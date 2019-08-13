@@ -49,7 +49,6 @@ namespace AmpGen
     unsigned int nPars() const;
     void prepare();
     bool doFit();
-    void GradientTest();
     TGraph* scan( MinuitParameter* param, const double& min, const double& max, const double& step );
     void addExtendedTerm( IExtendLikelihood* term );
     TMatrixTSym<double> covMatrix() const;
@@ -61,7 +60,6 @@ namespace AmpGen
     ROOT::Math::Minimizer* minimiserInternal();
   
   private:
-    void print( const double& LL );
     MinuitParameterSet* m_parSet       = {nullptr};
     std::function<double(void)> m_theFunction;
     ROOT::Math::Minimizer* m_minimiser = {nullptr};
