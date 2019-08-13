@@ -7,6 +7,7 @@
 #include "AmpGen/Event.h"
 #include "AmpGen/Projection.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/MetaUtils.h"
 
 #include <chrono>
 #include <functional>
@@ -140,18 +141,20 @@ namespace AmpGen
       return makeProjections( proj , argPack );
     }
 
-    template <class... ARGS> std::vector<TH1D*> makeProjections( const std::vector<Projection>& projections, const ARGS&... args )
+    template <typename... ARGS> std::vector<TH1D*> makeProjections( const std::vector<Projection>& projections, const ARGS&... args )
     {
       return makeProjections( projections, ArgumentPack( args... ) );
     }
     
-    template <class... ARGS, std::enable_if_t<zeroType<ARGS...>::type, ArgumentPack> = 0 > 
+    template <typename... ARGS, 
+              typename = std::enable_if_t< ! std::is_same<zeroType<ARGS...>, ArgumentPack>::value > > 
     TH1D* makeProjection( const Projection& projection, const ARGS&... args ) const
     {
       return makeProjection( projection, ArgumentPack(args...) );
     }
 
-    template <class... ARGS, std::enable_if_t<zeroType<ARGS...>::type, ArgumentPack> = 0 >
+    template <typename... ARGS, 
+              typename = std::enable_if_t< ! std::is_same<zeroType<ARGS...>, ArgumentPack>::value > > 
     TH2D* makeProjection( const Projection2D& projection, const ARGS&... args )
     {
       return makeProjection( projection, ArgumentPack(args...) );

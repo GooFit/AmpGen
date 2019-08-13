@@ -26,14 +26,19 @@ namespace AmpGen
 
   template <class TYPE> std::string typeof( TYPE t ) { return typeof<TYPE>(); }
 
-  template<class T, class... Args> struct zeroType { typedef T type; };
-  
+  namespace detail {
+    template<typename T, typename... args> struct zeroType { typedef T type; };
+  }
+  template<int N, typename... args> using nthType = typename std::tuple_element<N, std::tuple<args...>>::type;
+
+  template<typename... args> using zeroType = typename detail::zeroType<args...>::type; 
+
   template <std::size_t I = 0, typename FuncT, typename... Tp>
-  typename std::enable_if<I == sizeof...( Tp ), void>::type
+  typename std::enable_if_t<I == sizeof...( Tp ), void>
   for_each( std::tuple<Tp...>&, FuncT ){}
 
   template <std::size_t I = 0, typename FuncT, typename... Tp> 
-  inline typename std::enable_if < I<sizeof...( Tp ), void>::type for_each( std::tuple<Tp...>& t, FuncT f )
+  inline typename std::enable_if_t< I<sizeof...( Tp ), void> for_each( std::tuple<Tp...>& t, FuncT f )
   {
     f( std::get<I>( t ) );
     for_each<I + 1, FuncT, Tp...>( t, f );
