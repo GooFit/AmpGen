@@ -114,8 +114,7 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
   else if( m_mps != nullptr ){
     auto it = m_mps->find(parameter.name());
     if( it != nullptr ){
-      if( m_enable_compileTimeConstants && 
-          it->iFixInit() == MinuitParameter::Flag::CompileTimeConstant ){
+      if( m_enable_compileTimeConstants && it->flag() == Flag::CompileTimeConstant ){
         addResolvedParameter( &parameter, "("+std::to_string(it->mean()) +")" );
       }
       else addResolvedParameter( &parameter, addCacheFunction<ParameterTransfer>( parameter.name(), it )  );

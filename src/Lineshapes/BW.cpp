@@ -27,6 +27,7 @@ DEFINE_LINESHAPE( FormFactor )
   
   Expression                              FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, Lp ) );
   if ( lineshapeModifier == "BL" )        FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, Lp ) );
+  if ( lineshapeModifier == "NFF" )       FormFactor = 1; 
   if ( lineshapeModifier == "BELLE2018" ) FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, q20 * radius * radius, Lp ) );
 
   if( L != 0 ){

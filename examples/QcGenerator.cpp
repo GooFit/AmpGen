@@ -335,7 +335,7 @@ void add_CP_conjugate( MinuitParameterSet& mps )
       }
     }
     if( mps.find( new_name ) == nullptr ){
-      tmp.push_back( new MinuitParameter(new_name, MinuitParameter::Flag::Float, sgn * param->mean(), param->err(), 0, 0));
+      tmp.push_back( new MinuitParameter(new_name, Flag::Free, sgn * param->mean(), param->err(), 0, 0));
     }
   }
   for( auto& p : tmp ) mps.add( p );

@@ -23,12 +23,6 @@ using namespace ROOT;
 
 unsigned int Minimiser::nPars() const { return m_nParams; }
 
-void Minimiser::print( const double& LL )
-{
-  INFO( "Iteration # " << m_lastPrint << "  FCN = " << round( LL, 3 ) << "  Edm = " << round( m_minimiser->Edm(), 3 )
-                       << "  NCalls = " << m_minimiser->NCalls() );
-}
-
 double Minimiser::operator()( const double* xx )
 {
   for(size_t i = 0; i < m_mapping.size(); ++i ) {
@@ -39,24 +33,6 @@ double Minimiser::operator()( const double* xx )
     LL -= 2 * extendTerm->getVal();
   }
   return LL - m_ll_zero;
-}
-
-void Minimiser::GradientTest()
-{
-  for (size_t i = 0; i < m_mapping.size(); ++i) {
-    auto parameter = m_parSet->at( m_mapping[i] );
-    double m       = parameter->mean();
-    parameter->setCurrentFitVal( parameter->meanInit() + parameter->stepInit() );
-    double vp = FCN();
-    parameter->setCurrentFitVal( parameter->meanInit() - parameter->stepInit() );
-    double vm = FCN();
-    if ( parameter->stepInit() == 0 ) {
-      WARNING( "Step of free parameter: " << parameter->name() << " = 0" );
-    } else {
-      INFO( " dF/d{" << parameter->name() << "} = " << ( vp - vm ) / ( 2 * parameter->stepInit() ) );
-    }
-    parameter->setCurrentFitVal( m );
-  }
 }
 
 double Minimiser::FCN() const { return m_theFunction(); }
@@ -80,18 +56,12 @@ void Minimiser::prepare()
   for(size_t i = 0 ; i < m_parSet->size(); ++i) 
   {
     auto par = m_parSet->at(i);
-    if ( par->iFixInit() != 0 ) continue;
+    if ( ! par->isFree() ) continue;
     m_minimiser->SetVariable(m_mapping.size(), par->name(), par->mean(), par->stepInit());
     if ( par->minInit() != 0 || par->maxInit() != 0 ) 
       m_minimiser->SetVariableLimits( m_mapping.size(), par->minInit(), par->maxInit() );
     m_mapping.push_back(i);
-    if ( m_printLevel != 0 ) {
-      INFO( "Parameter: " << std::left  << std::setw(60) << par->name() << " = " 
-                          << std::right << std::setw(12) << par->mean() << " ± " 
-                          << std::left  << std::setw(12) << par->stepInit() 
-                          << ( ( par->minInit() != 0 || par->maxInit() != 0 ) ? 
-                          ("["+ std::to_string(par->minInit()) + ", " + std::to_string(par->maxInit() ) ) + "]" : "" ) );
-    }
+    if ( m_printLevel != 0 ) INFO( *par );
   }
   m_nParams = m_mapping.size();
   m_covMatrix.resize( m_nParams * m_nParams, 0 );
@@ -116,10 +86,6 @@ bool Minimiser::doFit()
     for ( unsigned int j = 0; j < m_nParams; ++j ) {
       m_covMatrix[i + m_nParams * j] = m_minimiser->CovMatrix( i, j );
     }
-//    double up, down;
-//    double v = *(m_minimiser->X() +i);
-//    m_minimiser->GetMinosError(i, up, down);
-//    INFO( par->name() << " " << v << " " << par->mean() << " " << up << " " << down << " " << error );
   } 
   m_status = m_minimiser->Status();
   return 1;

@@ -59,8 +59,7 @@ LinearErrorPropagator::LinearErrorPropagator( const TMatrixD& reducedCovarianceM
 LinearErrorPropagator::LinearErrorPropagator( const std::vector<MinuitParameter*>& params )
 {
   for( auto& param : params ){
-    if( param->iFixInit() != MinuitParameter::Float ) continue; 
-    if( param->err() == 0 ) continue;
+    if( !param->isFree() || param->err() == 0 ) continue;
     m_parameters.push_back( param );
   }
   m_cov.ResizeTo( m_parameters.size(), m_parameters.size() );
@@ -71,8 +70,7 @@ LinearErrorPropagator::LinearErrorPropagator( const std::vector<MinuitParameter*
 LinearErrorPropagator::LinearErrorPropagator( const MinuitParameterSet& mps )
 {
   for(auto& param : mps){
-    if( param->iFixInit() != MinuitParameter::Float ) continue; 
-    if( param->err() == 0 ) continue;
+    if( ! param->isFree() || param->err() == 0 ) continue; 
     m_parameters.push_back(param);
   }
   m_cov.ResizeTo( m_parameters.size(), m_parameters.size() );

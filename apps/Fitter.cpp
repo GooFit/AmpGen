@@ -52,13 +52,11 @@ void randomizeStartingPoint( MinuitParameterSet& MPS, TRandom3& rand, bool Splin
 {
   double range = 5;
   for (auto& param : MPS) {
-    if ( param->iFixInit() == 0 ) {
-      if ( SplineOnly && param->name().find( "::Spline::" ) == std::string::npos ) continue;
-      range = param->maxInit() - param->minInit();
-      param->setInit( range * rand.Rndm() + param->meanInit() );
-      param->print();
-      std::cout << std::endl;
-    }
+    if ( ! param->isFree() == 0 ) continue;
+    if ( SplineOnly && param->name().find( "::Spline::" ) == std::string::npos ) continue;
+    range = param->maxInit() - param->minInit();
+    param->setInit( range * rand.Rndm() + param->meanInit() );
+    std::cout << *param << std::endl;
   }
 }
 
@@ -205,7 +203,7 @@ int main( int argc, char* argv[] )
 
   if ( perturb ) {
     for ( auto& param : MPS ) {
-      if ( param->iFixInit() != 0 ) continue;
+      if ( !param->isFree() ) continue;
       param->setCurrentFitVal( rndm.Gaus( param->mean(), param->err() ) );
     }
   }

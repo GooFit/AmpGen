@@ -138,7 +138,7 @@ Expression AmpGen::wigner_D(const Tensor& P,
     db->emplace_back("pt2", pt2 );
     db->emplace_back("p2" , sqrt( P[0]*P[0] + P[1] * P[1] + P[2]*P[2] ) );
     db->emplace_back("ϕ("+name+")", atan2( py, px ) );
-    db->emplace_back("θ("+name+")", pz );
+    db->emplace_back("θ("+name+")", acos(pz) );
     db->emplace_back("d[" + std::to_string(J)  +", " + 
                             std::to_string(lA) +", " + 
                             std::to_string(lB) +"](θ)", little_d );
@@ -230,13 +230,16 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
     if( particle.props()->twoSpin() == 0 ) return Mz==0; // a scalar
     // polarisation spinor / vector etc. in the quantisation of the lab (i.e. along the z-axis or lab particle momentum)
     auto labPol = particle.externalSpinTensor(particle.polState(), db); 
-    ADD_DEBUG_TENSOR(labPol, db);
+    //ADD_DEBUG_TENSOR(labPol, db);
     auto inverseMyTransform = myFrame.inverse();
     if( particle.props()->twoSpin() == 1 ) // so a fermion 
     {
+      if( NamedParameter<bool>("helicityAmplitude::NoSpinAlign", false ) ) return 2*Mz == particle.polState();
       auto basisSpinor_m1         = basisSpinor( 2*Mz, particle.props()->pdgID() );
       auto labSpinor_m1           = inverseMyTransform( basisSpinor_m1, Transform::Representation::Bispinor );
-      ADD_DEBUG_TENSOR(labSpinor_m1, db); 
+      //ADD_DEBUG_TENSOR(labSpinor_m1, db); 
+      // lets just get the diagonal part //
+      ADD_DEBUG(Bar(labSpinor_m1)(a)*labPol(a), db );
       return make_cse( Bar(labSpinor_m1)(a)*labPol(a) );
     }
     if( particle.props()->twoSpin() == 2 ) // so a spin-one boson
@@ -244,7 +247,7 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
       auto frameVector = basisVector(Mz);
       auto labVector   = inverseMyTransform( frameVector, Transform::Representation::Vector );   
       auto rp = dot( labVector.conjugate(), labPol );
-      ADD_DEBUG_TENSOR(labVector, db); 
+      //ADD_DEBUG_TENSOR(labVector, db); 
       ADD_DEBUG(rp, db );
       return rp; 
     }

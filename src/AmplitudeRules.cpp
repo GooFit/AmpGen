@@ -34,7 +34,6 @@ AmplitudeRule::AmplitudeRule(MinuitParameter* re, MinuitParameter* im ) :
   m_particle = Particle(m_name);
 }
 
-
 AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
 {
   for ( auto& it_re : mps ) {
@@ -185,7 +184,7 @@ std::vector<std::pair<Particle, CouplingConstant>> AmplitudeRules::getMatchingRu
 bool CouplingConstant::isFixed() const
 {
   return std::all_of( couplings.begin(), couplings.end(), 
-      [](auto& c){ return c.first->iFixInit() != 0 && c.second->iFixInit() != 0 ; } );
+      [](auto& c){ return c.first->isFixed() && c.second->isFixed() ; } );
 }
 
 bool CouplingConstant::contains( const std::string& label ) const 

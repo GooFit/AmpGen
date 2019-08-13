@@ -30,11 +30,11 @@ BOOST_AUTO_TEST_CASE( parametericExpressions ) {
   double f = 3.13;
   
   MinuitParameterSet mps( {
-    new MinuitParameter("a", MinuitParameter::Flag::Float, a, 0.)
-  , new MinuitParameter("b", MinuitParameter::Flag::Float, b, 0.)
-  , new MinuitParameter("c", MinuitParameter::Flag::Float, c, 0.)
-  , new MinuitParameter("d", MinuitParameter::Flag::Float, d, 0.)
-  , new MinuitParameter("f", MinuitParameter::Flag::Float, f, 0.)
+    new MinuitParameter("a", Flag::Free, a, 0.)
+  , new MinuitParameter("b", Flag::Free, b, 0.)
+  , new MinuitParameter("c", Flag::Free, c, 0.)
+  , new MinuitParameter("d", Flag::Free, d, 0.)
+  , new MinuitParameter("f", Flag::Free, f, 0.)
   });
 
   double pi = M_PI;

@@ -14,10 +14,6 @@ namespace AmpGen
 
   class MinuitExpression : public MinuitParameter
   {
-  private:
-    Expression m_expression;
-    bool m_isGood;
-
   public:
     MinuitExpression( const std::vector<std::string>& tokens, MinuitParameterSet* mps );
     double getVal() const { return std::real( m_expression() ); }
@@ -25,6 +21,10 @@ namespace AmpGen
     operator double() const override { return getVal(); }
     ~MinuitExpression() override = default;
     bool isGood() const { return m_isGood; }
+  
+  private:
+    Expression m_expression;
+    bool m_isGood;
   };
 } // namespace AmpGen
 
