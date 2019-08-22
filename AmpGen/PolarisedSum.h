@@ -15,7 +15,7 @@
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
-#include "AmpGen/Integrator.h"
+#include "AmpGen/Integrator2.h"
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/Expression.h"
 #include "AmpGen/Tensor.h"
@@ -51,8 +51,8 @@ namespace AmpGen
       Expression probExpression( const Tensor& T_matrix, const std::vector<Expression>& p, DebugSymbols* = nullptr ) const; 
       size_t size() const ;  
       real_t norm() const;
-      complex_t norm(const size_t& i, const size_t& j, Integrator<18>* integ = nullptr ); 
-      real_t operator()(const AmpGen::Event& event) const { return prob_unnormalised(event) ;}
+      complex_t norm(const size_t& i, const size_t& j, Integrator2<18>* integ = nullptr ); 
+      inline real_t operator()(const AmpGen::Event& event) const { return m_weight * prob_unnormalised(event) / m_norm; }
       real_t prob_unnormalised( const AmpGen::Event& evt ) const;
       real_t prob(const AmpGen::Event& evt ) const ;
       real_t getValNoCache( const AmpGen::Event& evt ) ;
@@ -72,7 +72,7 @@ namespace AmpGen
       std::vector<MinuitProxy>      m_pVector     = {}; 
       bool                          m_verbosity   = {0};
       bool                          m_debug       = {0};
-      Integrator<18>                m_integrator;
+      Integrator2<18>               m_integrator;
       std::vector<Bilinears>        m_norms;
       std::vector<std::vector<int>> m_polStates; 
       EventType                     m_eventType;

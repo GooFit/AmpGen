@@ -60,7 +60,7 @@ int main(int argc , char* argv[] ){
   }
 
   std::vector<PolarisedSum>           fcs(data.size()); 
-  std::vector<SumPDF<PolarisedSum&>> pdfs; 
+  std::vector<SumPDF<EventList, PolarisedSum&>> pdfs; 
   
   pdfs.reserve(data.size()); 
 
@@ -69,10 +69,10 @@ int main(int argc , char* argv[] ){
   mps.loadFromStream();
   for(size_t i = 0; i < data.size(); ++i){
     fcs[i] = PolarisedSum(eventType, mps);
-    pdfs.emplace_back( make_pdf(fcs[i] ) );
+    pdfs.emplace_back( make_pdf(fcs[i]) );
     pdfs[i].setEvents(data[i]);
     auto& mc = mcs[i];
-    pdfs[i].forEach([&mc](auto& pdf){pdf.setMC(mc);});  
+    for_each( pdfs[i].pdfs(), [&mc](auto& pdf){pdf.setMC(mc);});  
     totalLL.add( pdfs[i] );
   } 
   Minimiser mini( totalLL, &mps );
@@ -85,8 +85,9 @@ int main(int argc , char* argv[] ){
     auto dataPlots = data[i].makeDefaultProjections( Prefix("Data_"+std::to_string(i))); 
     for( auto& p : dataPlots ) p->Write();
     size_t counter = 0;
-    for_each(pdfs[i].m_pdfs, [&]( auto& f ){
-      auto mc_plots = mcs[i].makeDefaultProjections(WeightFunction(f), Prefix("Model_sample_"+std::to_string(i)+"_cat"+std::to_string(counter)));
+    for_each(pdfs[i].pdfs(), [&]( auto& f ){
+      auto mc_plots = mcs[i].makeDefaultProjections(WeightFunction(f), 
+        Prefix("Model_sample_"+std::to_string(i)+"_cat"+std::to_string(counter)));
       for( auto& plot : mc_plots )
       {
         plot->Scale( ( data[i].integral() * f.getWeight() ) / plot->Integral() );

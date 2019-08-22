@@ -43,23 +43,21 @@ void IncoherentSum::prepare()
   if ( m_isConstant && m_prepareCalls != 0 ) return;
   transferParameters();
   for ( auto& mE : m_matrixElements ) {
-    auto& pdf = mE.pdf;
-    pdf.prepare();
-    if ( m_prepareCalls != 0 && !pdf.hasExternalsChanged() ) continue;
+    auto& amp = mE.amp;
+    amp.prepare();
+    if ( m_prepareCalls != 0 && !amp.hasExternalsChanged() ) continue;
     if ( m_prepareCalls == 0 && m_events != nullptr )
-      mE.addressData = m_events->registerExpression( pdf );
-
-    if ( m_events != nullptr ) m_events->updateCache( pdf, mE.addressData ); 
+      mE.addressData = m_events->registerExpression( amp );
+    if ( m_events != nullptr ) m_events->updateCache( amp, mE.addressData ); 
     if ( m_prepareCalls == 0 && m_integrator.isReady() ){
-      m_integrator.prepareExpression( pdf );
+      m_integrator.prepareExpression( amp );
     }
     INFO( mE.addressData << " " << m_events->at(0).getCache(mE.addressData) );
-    pdf.resetExternals();
+    amp.resetExternals();
   }
   if( m_prepareCalls == 0 ){
     for( size_t i = 0 ; i < m_matrixElements.size(); ++i ){
-      auto& mE = m_matrixElements[i];
-      auto index = m_integrator.events().getCacheIndex( mE.pdf );
+      auto index = m_integrator.events().getCacheIndex( m_matrixElements[i].amp );
       m_integrator.queueIntegral( index, index, i, 0, &m_normalisations, false);
     }
     m_integrator.flush();

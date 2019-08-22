@@ -43,6 +43,18 @@ namespace AmpGen
     f( std::get<I>( t ) );
     for_each<I + 1, FuncT, Tp...>( t, f );
   }
+  
+  template <std::size_t I = 0, typename FuncT, typename... Tp>
+  typename std::enable_if_t<I == sizeof...( Tp ), void>
+  for_each( const std::tuple<Tp...>&, FuncT ){}
+
+  template <std::size_t I = 0, typename FuncT, typename... Tp> 
+  inline typename std::enable_if_t< I<sizeof...( Tp ), void> for_each( const std::tuple<Tp...>& t, FuncT f )
+  {
+    f( std::get<I>( t ) );
+    for_each<I + 1, FuncT, Tp...>( t, f );
+  }
+
 
   template <class TYPE> std::shared_ptr<TYPE> makeShared( const TYPE& obj )
   {
@@ -90,7 +102,6 @@ namespace AmpGen
   }
 
   template <typename> struct isTuple: std::false_type {};
-
   template <typename ...T> struct isTuple<std::tuple<T...>>: std::true_type {};
 } // namespace AmpGen
 

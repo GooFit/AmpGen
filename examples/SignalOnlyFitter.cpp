@@ -100,7 +100,7 @@ int main( int argc, char* argv[] )
   /* Generate events to normalise the PDF with. This can also be loaded from a file, 
      which will be the case when efficiency variations are included. Default number of normalisation events 
      is 5 million. */
-  EventList eventsMC = intFile == "" ? Generator<>(evtType, &rndm).generate(5e6) : EventList(intFile, evtType, GetGenPdf(true));
+  EventList eventsMC = intFile == "" ? Generator<>(evtType, &rndm).generate(2e6) : EventList(intFile, evtType, GetGenPdf(true));
   
   sig.setMC( eventsMC );
 
@@ -108,7 +108,7 @@ int main( int argc, char* argv[] )
   
   /* Do the fit and return the fit results, which can be written to the log and contains the 
      covariance matrix, fit parameters, and other observables such as fit fractions */
-  FitResult* fr = doFit(make_pdf(sig), events, eventsMC, MPS );
+  FitResult* fr = doFit(make_likelihood(events, sig), events, eventsMC, MPS );
   /* Calculate the `fit fractions` using the signal model and the error propagator (i.e. 
      fit results + covariance matrix) of the fit result, and write them to a file. 
    */
@@ -127,46 +127,44 @@ int main( int argc, char* argv[] )
   output->Close();
 }
 
-template <typename PDF>
-FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS )
+template <typename likelihoodType>
+FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, MinuitParameterSet& MPS )
 {
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time      = std::clock();
-
-  pdf.setEvents( data );
-
   /* Minimiser is a general interface to Minuit1/Minuit2, 
      that is constructed from an object that defines an operator() that returns a double 
      (i.e. the likielihood, and a set of MinuitParameters. */
-  Minimiser mini( pdf, &MPS );
+  Minimiser mini( likelihood, &MPS );
   mini.doFit();
   FitResult* fr = new FitResult(mini);
-
-  /* Make the plots for the different components in the PDF, i.e. the signal and backgrounds. 
-     The structure assumed the PDF is some SumPDF<T1,T2,...>. */
-  unsigned int counter = 1;
-  for_each(pdf.m_pdfs, [&]( auto& f ){
-    std::function<double(const Event&)> FCN_sig = [&](const Event& evt){ return f.prob_unnormalised(evt) ; };
-    auto mc_plot3 = mc.makeDefaultProjections(WeightFunction(f), Prefix("Model_cat"+std::to_string(counter)));
-    for( auto& plot : mc_plot3 )
-    {
-      plot->Scale( ( data.integral() * f.getWeight() ) / plot->Integral() );
-      plot->Write();
-    }
-    counter++;
-  } );
-
-  /* Estimate the chi2 using an adaptive / decision tree based binning, 
-     down to a minimum bin population of 15, and add it to the output. */
-  Chi2Estimator chi2( data, mc, pdf, 15 );
-  chi2.writeBinningToFile("chi2_binning.txt");
-  fr->addChi2( chi2.chi2(), chi2.nBins() );
   
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double time_cpu = ( std::clock() - time ) / (double)CLOCKS_PER_SEC;
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - time_wall ).count();
   INFO( "Wall time = " << tWall / 1000. );
   INFO( "CPU  time = " << time_cpu );
+
+  /* Make the plots for the different components in the PDF, i.e. the signal and backgrounds. 
+     The structure assumed the PDF is some SumPDF<eventListType, pdfType1, pdfType2,... >. */
+  unsigned int counter = 1;
+  for_each(likelihood.pdfs(), [&](auto& pdf){
+    auto pfx = Prefix("Model_cat"+std::to_string(counter));
+    auto mc_plot3 = mc.makeDefaultProjections(WeightFunction(pdf), pfx);
+    for( auto& plot : mc_plot3 )
+    {
+      plot->Scale( ( data.integral() * pdf.getWeight() ) / plot->Integral() );
+      plot->Write();
+    }
+    counter++;
+  });
+
+  /* Estimate the chi2 using an adaptive / decision tree based binning, 
+     down to a minimum bin population of 15, and add it to the output. */
+  Chi2Estimator chi2( data, mc, likelihood, 15 );
+  chi2.writeBinningToFile("chi2_binning.txt");
+  fr->addChi2( chi2.chi2(), chi2.nBins() );
+  
   fr->print();
   return fr;
 }

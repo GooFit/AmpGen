@@ -145,8 +145,7 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
   /* Make the plots for the different components in the PDF, i.e. the signal and backgrounds. 
      The structure assumed the PDF is some SumPDF<T1,T2,...>. */
   unsigned int counter = 1;
-  for_each(pdf.m_pdfs, [&]( auto& f ){
-//    std::function<double(const Event&)> FCN_sig = [&](const Event& evt){ return f.prob_unnormalised(evt) ; };
+  for_each(pdf.pdfs(), [&]( auto& f ){
     auto mc_plot3 = mc.makeDefaultProjections(WeightFunction(f), Prefix("Model_cat"+std::to_string(counter)));
     for( auto& plot : mc_plot3 )
     {

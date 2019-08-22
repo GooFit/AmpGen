@@ -15,8 +15,10 @@
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/Integrator.h"
+#include "AmpGen/Integrator2.h"
 #include "AmpGen/Types.h"
 #include "AmpGen/Event.h"
+#include "AmpGen/Projection.h"
 
 namespace AmpGen
 {
@@ -52,9 +54,9 @@ namespace AmpGen
     size_t size() const { return m_matrixElements.size(); }
     
     real_t getWeight() const { return m_weight; }
-    real_t operator()( const Event& evt ) const { return prob( evt ); }
-    real_t prob( const Event& evt ) const { return m_weight * std::norm( getVal( evt ) ) / m_norm; }
-    real_t prob_unnormalised( const Event& evt ) const { return std::norm( getVal( evt ) ); }
+    real_t operator()( const Event& evt )        const { return m_weight*std::norm(getVal(evt))/m_norm; }
+    real_t prob( const Event& evt )              const { return m_weight*std::norm(getVal(evt))/m_norm; }
+    real_t prob_unnormalised( const Event& evt ) const { return std::norm(getVal(evt)); }
     real_t norm( const Bilinears& norms ) const;
     real_t norm() const;
     real_t getNorm( const Bilinears& normalisations );
@@ -84,12 +86,13 @@ namespace AmpGen
 
     std::map<std::string, std::vector<unsigned int>> getGroupedAmplitudes();
     Bilinears norms() const { return m_normalisations ; }
-
+  
   protected:
+    typedef Integrator<10> integrator;
     std::vector<TransitionMatrix<complex_t>> m_matrixElements; ///< Vector of (expanded) matrix elements
     Bilinears m_normalisations;                                ///< Normalisation integrals
     AmplitudeRules m_protoAmplitudes;                          ///< Proto amplitudes from user rule-set
-    Integrator<10> m_integrator;                               ///< Integral dispatch tool (with default unroll = 10) 
+    integrator       m_integrator;                               ///< Integral dispatch tool (with default unroll = 10) 
     TransitionMatrix<complex_t> m_total;                       ///< Total Matrix Element 
     EventList*       m_events       = {nullptr};               ///< Data events to evaluate PDF on
     EventType        m_evtType;                                ///< Final state for this amplitude

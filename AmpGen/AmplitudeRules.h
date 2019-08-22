@@ -80,10 +80,10 @@ namespace AmpGen
     TransitionMatrix() = default;
     TransitionMatrix(const Particle& dt, 
                      const CouplingConstant& coupling, 
-                     const CompiledExpression<RT, const real_t*, const real_t*> & pdf) : 
+                     const CompiledExpression<RT, const real_t*, const real_t*> & amp) : 
           decayTree(dt), 
           coupling(coupling), 
-          pdf(pdf) {}
+          amp(amp) {}
 
     TransitionMatrix(Particle& dt, 
                      const CouplingConstant& coupling, 
@@ -95,18 +95,18 @@ namespace AmpGen
     {
       DebugSymbols db; 
       auto expression = dt.getExpression(debugThis ? &db : nullptr);
-      pdf = CompiledExpression<RT,const real_t*, const real_t*>
+      amp = CompiledExpression<RT,const real_t*, const real_t*>
         (expression, dt.decayDescriptor(), evtFormat, debugThis ? db : DebugSymbols(), &mps );
     }
 
-    const RT operator()(const Event& event) const { return pdf(event.address() ); }
-    const RT operator()(const Event& event, const size_t& cacheOffset) const { return pdf(event.address() + cacheOffset); }
+    const RT operator()(const Event& event) const { return amp(event.address() ); }
+    const RT operator()(const Event& event, const size_t& cacheOffset) const { return amp(event.address() + cacheOffset); }
     const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
 
     Particle                                            decayTree;
     CouplingConstant                                    coupling;
     complex_t                                           coefficient;
-    CompiledExpression<RT,const real_t*,const real_t*>  pdf; 
+    CompiledExpression<RT,const real_t*,const real_t*>  amp; 
     size_t                                              addressData = {999};
   };
  

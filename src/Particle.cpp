@@ -730,11 +730,11 @@ void Particle::setDaughter( const Particle& particle, const unsigned int& index 
 std::vector<std::shared_ptr<Particle>> Particle::daughters() const { return m_daughters; }
 bool Particle::operator<( const Particle& other )
 {
-  if ( spin() != other.spin() ) return spin() > other.spin();
-  if ( !isStable() && other.isStable() ) return true;
-  if ( isStable() && !other.isStable() ) return false;
-  if ( mass() != other.mass() ) return mass() > other.mass();
-  if ( std::abs( props()->pdgID() )  == std::abs( other.props()->pdgID() )
+  if ( spin()      !=  other.spin()      ) return spin() > other.spin();
+  if ( !isStable() &&  other.isStable()  ) return true;
+  if ( isStable()  && !other.isStable()  ) return false;
+  if ( mass()      !=  other.mass()      ) return mass() > other.mass();
+  if ( std::abs(props()->pdgID())  == std::abs(other.props()->pdgID() )
       && props()->pdgID() != other.props()->pdgID() ) return props()->pdgID() > other.props()->pdgID();
   if ( props()->charge() != other.props()->charge() ) return props()->charge() > other.props()->charge();
   if ( props()->pdgID() != other.props()->pdgID() ) return props()->pdgID() > other.props()->pdgID();

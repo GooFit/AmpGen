@@ -42,20 +42,21 @@ namespace AmpGen
       IncoherentSum(const EventType& eventType, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "Inco");
       
       /// Evaluates the normalised probability for an event.
-      double prob( const Event& evt ) const;
-      
+      real_t prob( const Event& evt ) const;
+      real_t operator()(const Event& evt) const { return prob(evt) ; }
+
       /// Calculates the unnormalised probability for an event. 
-      double prob_unnormalised( const Event& evt ) const;
+      real_t prob_unnormalised( const Event& evt ) const;
 
       /** Returns the normalisation for this PDF, given by
           @f[
             \mathcal{N} = \int d\psi \varepsilon(\psi) \mathcal{P}(\psi) \approx \sum_i \frac{\mathcal{P}(\psi_i)}{\mathcal{P}^\prime(\psi_i)} 
           @f]
           where the sum is over a simulated sample, generated with PDF @f$\mathcal{P}^\prime(\psi)@f$. */
-      double norm() const;
+      real_t norm() const;
       complex_t norm(const size_t& i, const size_t& j){ return i==j ? m_normalisations.get(i, 0) : 0; }
       complex_t norm(const size_t& i) { return m_normalisations.get(i, 0); }
-      double norm( const Bilinears& norms ) const;
+      real_t norm( const Bilinears& norms ) const;
       std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
       
       void prepare();
