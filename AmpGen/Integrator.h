@@ -3,6 +3,7 @@
 
 #include "AmpGen/Types.h"
 #include "AmpGen/EventList.h"
+#include "AmpGen/CompiledExpressionBase.h"
 #include <array>
 #include <complex>
 
@@ -40,8 +41,7 @@ namespace AmpGen
       void   resize(const size_t& r, const size_t& c = 1 );
   };
 
-  template <class TYPE = complex_t>
-    struct Integral {
+  template <class TYPE = complex_t> struct Integral {
       typedef std::function<void(TYPE)> TransferFCN;
       size_t i = {0};
       size_t j = {0};
@@ -82,6 +82,7 @@ namespace AmpGen
           for ( size_t j = 0; j < m_counter; ++j )
             m_integrals[j].transfer( complex_t( re[j], im[j] ) / nv );
         }
+
       public:
         Integrator( EventList* events = nullptr ) : m_events( events ){}
         
@@ -104,14 +105,13 @@ namespace AmpGen
                            Bilinears* out, 
                            const bool& sim = true )
         {
-          if( out->workToDo(i,j) ){
-            if( sim ) 
-              addIntegralKeyed( c1, c2, [out,i,j]( arg& val ){ 
-                out->set(i,j,val);
-                if( i != j ) out->set(j,i, std::conj(val) ); } );
-            else 
-              addIntegralKeyed( c1, c2, [out,i,j]( arg& val ){ out->set(i,j,val); } );
-          }
+          if( ! out->workToDo(i,j) )return;
+          if( sim ) 
+            addIntegralKeyed( c1, c2, [out,i,j]( arg& val ){ 
+              out->set(i,j,val);
+              if( i != j ) out->set(j,i, std::conj(val) ); } );
+          else 
+            addIntegralKeyed( c1, c2, [out,i,j]( arg& val ){ out->set(i,j,val); } );
         }
         void addIntegralKeyed( const size_t& c1, const size_t& c2, const TransferFCN& tFunc )
         {
@@ -131,6 +131,9 @@ namespace AmpGen
             auto index = m_events->registerExpression( expression , size_of );
             m_events->updateCache( expression, index );
           }
+        size_t getCacheIndex(const CompiledExpressionBase& expression) const {
+          return m_events->getCacheIndex(expression);
+        }
     };
 
   template <size_t NBINS = 100, size_t NROLL = 10>

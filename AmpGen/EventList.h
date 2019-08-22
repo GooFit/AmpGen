@@ -39,6 +39,7 @@ namespace AmpGen
     double                              m_norm              = {0};
     size_t                              m_lastCachePosition = {0}; 
   public:
+    typedef Event value_type;
     EventList() = default;
     EventList( const EventType& type );
     template < class ... ARGS > EventList( const std::string& fname, const EventType& evtType, const ARGS&... args ) : EventList(evtType) 

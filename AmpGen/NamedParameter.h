@@ -20,13 +20,20 @@
 
 namespace AmpGen
 {
+  /** @class NamedParameter
+      @brief A parameter with value specified by the user at runtime, either in an options file or via the command line
+
+      Stores a vector of values for a parameter.
+      @tparam T the type of this named parameter, i.e. strings, or numbers or bools etc. 
+
+    */
   template <class T>
   class NamedParameter 
   {
   protected:
-    std::string    m_name;
-    std::string    m_helpString; 
-    std::vector<T> m_valueArray;
+    std::string    m_name;         /// < Name of this parameter
+    std::string    m_helpString;   /// < The helper string for this parameter, printed if the flag --help is used. 
+    std::vector<T> m_valueArray;   /// < The value (array) of this parameter. 
 
     bool setFromOptionsParser()
     {
@@ -59,29 +66,6 @@ namespace AmpGen
       if ( OptionsParser::printHelp() ) help(def);
       DEBUG( *this );
     }
-    /*
-    template <class... ARGS>
-    NamedParameter( const std::string& name, const T& def, const ARGS&... args ) : 
-      m_name(name)
-    {
-      setVal( def );
-      setFromOptionsParser();   
-      auto arg_pack       = ArgumentPack(args...);
-      auto acceptedValues = arg_pack.getArg<AcceptedValues<T>>().val;
-      m_helpString        = arg_pack.getArg<HelpString>().val;
-
-      if( acceptedValues.size() != 0 ){
-         bool isAcceptedValue = false; 
-         for( auto& v : acceptedValues ) if( m_valueArray[0] == v ) isAcceptedValue = true; 
-         if( !isAcceptedValue ){
-           ERROR( "Argument: " << name << " is not in ["  << italic_on << vectorToString( acceptedValues, ", ") << italic_off <<"]" );
-         }
-      }
-      if ( OptionsParser::printHelp() ) help(def);
-      DEBUG( *this );
-    }
-    */
-
     NamedParameter(const std::string& name, const std::vector<T>& defVec, const std::string& helpString="")
         : m_name(name),
           m_helpString(helpString)

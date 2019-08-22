@@ -109,15 +109,6 @@ std::pair<size_t, size_t> EventType::count(const size_t& index) const
   return rt;
 }
 
-std::vector<std::vector<unsigned int>> EventType::getBosePairs() const
-{
-  std::map<std::string, std::vector<unsigned int>> particleOrdering;
-  for ( unsigned int i = 0; i < m_particleNames.size(); ++i ) particleOrdering[m_particleNames[i]].push_back( i );
-  std::vector<std::vector<unsigned int>> orderings;
-  for ( auto& im : particleOrdering )
-    if ( im.second.size() != 1 ) orderings.push_back( im.second );
-  return orderings;
-}
 std::vector<std::string> EventType::finalStates() const { return m_particleNames; }
 std::vector<double> EventType::masses() const { return m_particleMasses; }
 
@@ -202,7 +193,13 @@ size_t EventType::dof() const { return 3 * size() - 7; }
 
 std::function<void( Event& )> EventType::symmetriser() const
 {
-  auto shuffles = getBosePairs();
+  std::map<std::string, std::vector<size_t>> particleOrdering;
+  for ( size_t i = 0; i < m_particleNames.size(); ++i ) 
+    particleOrdering[m_particleNames[i]].push_back( i );
+  std::vector<std::vector<size_t>> shuffles;
+  for ( auto& im : particleOrdering )
+    if ( im.second.size() != 1 ) shuffles.push_back( im.second );
+  
   int seed      = NamedParameter<unsigned int>( "EventType::SymmetriserSeed", 12 );
   std::mt19937 rng( seed );
   for ( auto& shuffle : shuffles ) {

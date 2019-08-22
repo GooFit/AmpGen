@@ -1,9 +1,9 @@
 #ifndef AMPGEN_MSGSERVICE_H
 #define AMPGEN_MSGSERVICE_H
 
-/*
+/** @defgroup msgService Messaging and logging
    MsgService Header
-   -Defines coloured and organised output macro streams using __PRETTY_FUNCTION__
+   Defines coloured and organised output macro streams using __PRETTY_FUNCTION__
    INFO()    - info level messages, always displayed
    ERROR()   - error level messages, always displayed
    FATAL()   - error message that throws the process, always displayed 
@@ -43,7 +43,8 @@ inline std::string trimmedString( std::string thing, const unsigned int& length 
   if ( thing.size() < length ) return thing;
 }
 
-
+/// @ingroup msgService macro DEBUG
+/// Used for printing verbose debugging messages, only if DEBUGLEVEL is defined.  
 #ifdef DEBUGLEVEL
 #define DEBUG( X )                                                                                                     \
   std::cout << "\033[2;32m" << std::left << std::setw( FCNNAMELENGTH ) << trimmedString( __PRETTY_FUNCTION__ )         \
@@ -53,22 +54,31 @@ inline std::string trimmedString( std::string thing, const unsigned int& length 
 #define DEBUG( X )
 #endif
 
+/// @ingroup msgService macro INFO
+/// Used for printing information messages, and will always be printed. 
 #define INFO( X )                                                                                                      \
   std::cout << "\033[2;34m" << std::left << std::setw( FCNNAMELENGTH ) << trimmedString( __PRETTY_FUNCTION__ )         \
 << "  INFO         "                                                                                       \
 << "\033[0m" << X << std::endl
 
+/// @ingroup msgService macro ERROR
+/// Used for printing errors messages, and will always be printed. 
 #define ERROR( X )                                                                                                     \
   std::cout << "\033[1;31m" << std::left << std::setw( FCNNAMELENGTH ) << trimmedString( __PRETTY_FUNCTION__ )         \
 << "  ERROR        "                                                                                                   \
 << "\033[0m" << X << std::endl
 
+/// @ingroup msgService macro FATAL
+/// Used for printing fatal errors messages, and will always be printed and will terminate the process afterwards.
 #define FATAL( X )                                                                                                     \
   { std::cout << "\033[1;31m" << std::left << std::setw( FCNNAMELENGTH ) << trimmedString( __PRETTY_FUNCTION__ )         \
 << "  FATAL        "                                                                                                   \
 << "\033[0m" << X << std::endl;                                                                                         \
 throw std::runtime_error( trimmedString( __PRETTY_FUNCTION__)+ " FATAL" ) ;}
 
+
+/// @ingroup msgService macro FATAL
+/// Used for printing warning messages, can be switched off using WARNINGLEVEL. These messages are often harmless, but sometimes not!
 #ifdef WARNINGLEVEL
 #define WARNING( X )                                                                                                   \
   std::cout << "\033[1;35m" << std::left << std::setw( FCNNAMELENGTH ) << trimmedString( __PRETTY_FUNCTION__ )         \

@@ -70,7 +70,7 @@ PolarisedSum::PolarisedSum( const EventType& type,
   }
   if(autoCompile){
     ThreadPool tp(8);
-    for( auto& thing : m_matrixElements ) tp.enqueue([&]{ CompilerWrapper().compile(thing.pdf, objCache);});
+    for( auto& me : m_matrixElements ) tp.enqueue([&]{ CompilerWrapper().compile(me.amp, objCache);});
   }
   auto   d = m_eventType.dim();
   auto   p = [&mps](const std::string& name){ return mps.addOrGet(name,2,0,0); };
@@ -157,15 +157,15 @@ void   PolarisedSum::prepare()
   for( size_t i = 0; i < m_matrixElements.size(); ++i ){
     ProfileClock tMEval;
     auto& t = m_matrixElements[i];
-    if( m_nCalls != 0 && !t.pdf.hasExternalsChanged() ) continue; 
-    if( t.addressData == 999 ) t.addressData = m_events->registerExpression( t.pdf , dim.first * dim.second );
-    m_events->updateCache(t.pdf, t.addressData);
-    m_integrator.prepareExpression(t.pdf, size_of);
+    if( m_nCalls != 0 && !t.amp.hasExternalsChanged() ) continue; 
+    if( t.addressData == 999 ) t.addressData = m_events->registerExpression(t.amp, dim.first * dim.second );
+    m_events->updateCache(t.amp, t.addressData);
+    m_integrator.prepareExpression(t.amp, size_of);
     tMEval.stop();
-    t.pdf.resetExternals();
+    t.amp.resetExternals();
     hasChanged[i] = true; 
     nChanges++;
-    if( m_nCalls == 0 && m_integrator.isReady() ) m_integIndex.push_back( m_integrator.events().getCacheIndex( t.pdf ) );
+    if( m_nCalls == 0 && m_integrator.isReady() ) m_integIndex.push_back( m_integrator.events().getCacheIndex( t.amp ) );
   }
   if( !m_probExpression.isLinked() ) build_probunnormalised();
   m_weight = m_weightParam == nullptr ? 1 : m_weightParam->mean();
@@ -213,7 +213,7 @@ void   PolarisedSum::setEvents( EventList& events )
 void   PolarisedSum::setMC( EventList& events )
 {
   m_nCalls = 0;
-  m_integrator = Integrator<18>(&events);
+  m_integrator = Integrator2<18>(&events);
 }
 
 size_t PolarisedSum::size() const 
@@ -240,7 +240,7 @@ Tensor PolarisedSum::transitionMatrix()
   std::vector<Expression> expressions(size, 0);
   for( auto& me : m_matrixElements ){
     auto coupling   = me.coupling.to_expression() ;
-    auto cacheIndex = m_events->getCacheIndex(me.pdf); 
+    auto cacheIndex = m_events->getCacheIndex(me.amp); 
     for( size_t i = 0 ; i < size ; ++i ){
       expressions[i] = expressions[i] + coupling * Parameter( "x1["+std::to_string(cacheIndex+i)+"]",0,true); 
     }
@@ -260,7 +260,7 @@ double PolarisedSum::norm() const
   return m_norm;
 }
 
-complex_t PolarisedSum::norm(const size_t& i, const size_t& j, Integrator<18>* integ)
+complex_t PolarisedSum::norm(const size_t& i, const size_t& j, Integrator2<18>* integ)
 {
   auto   ai = m_integIndex[i];
   auto   aj = m_integIndex[j];
@@ -328,10 +328,10 @@ void PolarisedSum::generateSourceCode(const std::string& fname, const double& no
   Expression event = Parameter("x0",0,true); 
   std::vector<Expression> expressions(size);
   for( auto& p : m_matrixElements ){
-    p.pdf.prepare();
-    p.pdf.to_stream( stream );
-    p.pdf.compileWithParameters( stream );
-    Array z( make_cse( Function( programatic_name( p.pdf.name()) + "_wParams", {event} ) ), size );
+    p.amp.prepare();
+    p.amp.to_stream( stream );
+    p.amp.compileWithParameters( stream );
+    Array z( make_cse( Function( programatic_name( p.amp.name()) + "_wParams", {event} ) ), size );
     INFO( p.decayDescriptor() << " coupling = " << p.coupling() );
     for( unsigned int j = 0 ; j < size; ++j ){
       expressions[j] = expressions[j] + p.coupling() * z[j];
@@ -435,7 +435,7 @@ void PolarisedSum::transferParameters()
   if( m_probExpression.isLinked() ) m_probExpression.prepare();
   for(auto& me : m_matrixElements){
     me.coefficient = me.coupling();
-    me.pdf.prepare();
+    me.amp.prepare();
   }
   for(auto& p  : m_pVector ) p.update();
 }

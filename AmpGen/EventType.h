@@ -37,7 +37,6 @@ namespace AmpGen
       /// the same name as the index'th name. 
       std::pair<size_t,size_t>  count(const size_t& index) const;
       std::pair<double, double> minmax( const std::vector<size_t>& indices, bool isGeV = false ) const;
-      std::vector<std::vector<unsigned int>> getBosePairs() const;
       std::vector<double> masses() const;
       std::string mother() const;
       double mass( const size_t& index ) const;

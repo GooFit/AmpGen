@@ -48,8 +48,8 @@ void create_integration_tests(T& pdf,
   unit_tests << "\n}\n" << std::endl; 
  
   for( auto& mE : pdf.matrixElements() ){
-    auto value = mE.pdf(testEvents[0].address()); 
-    unit_tests << "BOOST_AUTO_TEST_CASE( " << mE.pdf.progName() + "_test){" << std::endl;
+    auto value = mE.amp(testEvents[0].address()); 
+    unit_tests << "BOOST_AUTO_TEST_CASE( " << mE.amp.progName() + "_test){" << std::endl;
     unit_tests << "  EventType type({" << stringify(type.mother()) << ", " << vectorToString( type.finalStates(), ", ", stringify )  << "});" << std::endl; 
     unit_tests << "  Particle p("<<stringify(mE.decayDescriptor()) << ", type.finalStates());" << std::endl; 
     unit_tests << "  setupOptions();" << std::endl; 

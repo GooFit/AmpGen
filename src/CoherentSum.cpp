@@ -51,7 +51,7 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
     tp.enqueue( [i,this,&mps,&amplitudes]{ 
     m_matrixElements[i] = TransitionMatrix<complex_t>( amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), this->m_dbThis);
-    CompilerWrapper().compile( m_matrixElements[i].pdf, this->m_objCache); } );
+    CompilerWrapper().compile( m_matrixElements[i].amp, this->m_objCache); } );
   }
   m_isConstant = false ;
 }
@@ -64,24 +64,24 @@ void CoherentSum::prepare()
   std::vector<unsigned int> changedPdfIndices;
   ProfileClock clockEval; 
   bool printed    = false;
-  for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) {
-    auto& pdf = m_matrixElements[i].pdf;
-    pdf.prepare();
-    if ( m_prepareCalls != 0 && !pdf.hasExternalsChanged() ) continue;
+  for ( size_t i = 0; i < m_matrixElements.size(); ++i ) {
+    auto& amp = m_matrixElements[i].amp;
+    amp.prepare();
+    if ( m_prepareCalls != 0 && !amp.hasExternalsChanged() ) continue;
     ProfileClock clockThisElement;
     if ( m_events != nullptr ) {
       if ( m_matrixElements[i].addressData == 999 ) 
-        m_matrixElements[i].addressData = m_events->registerExpression( pdf );
-      m_events->updateCache( pdf, m_matrixElements[i].addressData );
+        m_matrixElements[i].addressData = m_events->registerExpression( amp );
+      m_events->updateCache( amp, m_matrixElements[i].addressData );
     } 
     else if ( i == 0 && m_verbosity ) WARNING( "No data events specified for " << this );
     clockThisElement.stop();
     if ( m_verbosity && ( m_prepareCalls > m_lastPrint + m_printFreq || m_prepareCalls == 0 ) ) {
-      INFO( pdf.name() << " (t = " << clockThisElement << " ms, nCalls = " << m_prepareCalls << ", events = " << m_events->size() << ")" );
+      INFO( amp.name() << " (t = " << clockThisElement << " ms, nCalls = " << m_prepareCalls << ", events = " << m_events->size() << ")" );
       printed = true;
     }
     changedPdfIndices.push_back(i);
-    pdf.resetExternals();
+    amp.resetExternals();
   }
   clockEval.stop();
   ProfileClock clockIntegral;
@@ -101,10 +101,10 @@ void CoherentSum::prepare()
 
 void CoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIndices )
 {
-  for ( auto& i : changedPdfIndices ) m_integrator.prepareExpression( m_matrixElements[i].pdf );
+  for ( auto& i : changedPdfIndices ) m_integrator.prepareExpression( m_matrixElements[i].amp );
   std::vector<size_t> cacheIndex;
   std::transform( m_matrixElements.begin(), m_matrixElements.end(), std::back_inserter(cacheIndex), 
-    [this](auto& m){ return this->m_integrator.events().getCacheIndex( m.pdf ) ; } );
+    [this](auto& m){ return this->m_integrator.getCacheIndex( m.amp ) ; } );
   for ( auto& i : changedPdfIndices )
     for ( size_t j = 0; j < size(); ++j )
       m_integrator.queueIntegral( cacheIndex[i], cacheIndex[j] ,i, j, &m_normalisations );
@@ -115,19 +115,19 @@ void CoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIndice
 void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
 {
   prepare();
-  for ( auto& pdf : m_matrixElements ) pdf.pdf.resetExternals();
+  for ( auto& me : m_matrixElements ) me.amp.resetExternals();
   if ( nameMustContain == "" )
-    for ( auto& pdf : m_matrixElements ) {
-      auto A = pdf(evt);
-      INFO( std::setw(70) << pdf.decayTree.uniqueString() 
-          << " A = [ "  << std::real(A)              << " " << std::imag(A) 
-          << " ] g = [ "<< std::real(pdf.coupling()) << " " << std::imag(pdf.coupling()) << " ]" );
-      if( m_dbThis ) pdf.pdf.debug( evt.address() );
-      pdf.coupling.print();
+    for ( auto& me : m_matrixElements ) {
+      auto A = me(evt);
+      INFO( std::setw(70) << me.decayTree.uniqueString() 
+          << " A = [ "  << std::real(A)             << " " << std::imag(A) 
+          << " ] g = [ "<< std::real(me.coupling()) << " " << std::imag(me.coupling()) << " ]" );
+      if( m_dbThis ) me.amp.debug( evt.address() );
+      me.coupling.print();
     }
   else
-    for ( auto& pdf : m_matrixElements )
-      if ( pdf.pdf.name().find( nameMustContain ) != std::string::npos ) pdf.pdf.debug( evt.address() );
+    for ( auto& me : m_matrixElements )
+      if ( me.amp.name().find( nameMustContain ) != std::string::npos ) me.amp.debug( evt.address() );
   if( evt.cacheSize() != 0 ) INFO( "Pdf = " << prob_unnormalised( evt ) );
   INFO( "A(x) = " << getVal(evt) );
 }
@@ -179,16 +179,16 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
   bool includePythonBindings = NamedParameter<bool>("CoherentSum::IncludePythonBindings",false);
 
   for ( auto& p : m_matrixElements ){
-    stream << p.pdf << std::endl;
-    p.pdf.compileWithParameters( stream );
-    if( includePythonBindings ) p.pdf.compileDetails( stream );
+    stream << p.amp << std::endl;
+    p.amp.compileWithParameters( stream );
+    if( includePythonBindings ) p.amp.compileDetails( stream );
   }
   Expression event = Parameter("x0",0,true);
   Expression pa    = Parameter("double(x1)",0,true);
   Expression amplitude;
   for( unsigned int i = 0 ; i < size(); ++i ){
     auto& p = m_matrixElements[i];
-    Expression this_amplitude = p.coupling() * Function( programatic_name( p.pdf.name() ) + "_wParams", {event} ); 
+    Expression this_amplitude = p.coupling() * Function( programatic_name( p.amp.name() ) + "_wParams", {event} ); 
     amplitude = amplitude + ( p.decayTree.finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
   }
   stream << CompiledExpression< std::complex<double>, const double*, const int&>( amplitude  , "AMP" ) << std::endl; 
@@ -199,7 +199,7 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
 
     stream << "extern \"C\" const char* matrix_elements(int n) {\n";
     for ( size_t i = 0; i < m_matrixElements.size(); i++ ) {
-      stream << "  if(n ==" << i << ") return \"" << m_matrixElements.at(i).pdf.progName() << "\" ;\n";
+      stream << "  if(n ==" << i << ") return \"" << m_matrixElements.at(i).amp.progName() << "\" ;\n";
     }
     stream << "  return 0;\n}\n";
     stream << "extern \"C\" void FCN_all(double* out, double* events, unsigned int size, int parity, double* amps){\n";
@@ -221,7 +221,7 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
       int parity = p.decayTree.finalStateParity();
       if ( parity == -1 ) stream << "double(parity) * ";
       stream << "std::complex<double>(amps[" << i * 2 << "],amps[" << i * 2 + 1 << "]) * ";
-      stream << programatic_name( p.pdf.name() )<< "_wParams( E )";
+      stream << programatic_name( p.amp.name() )<< "_wParams( E )";
       stream << ( i == size() - 1 ? ";" : " +" ) << "\n";
     }
     stream << "  out[i] =  std::norm(amplitude) / " << normalisation << ";\n  }\n}\n";
@@ -278,7 +278,7 @@ void CoherentSum::reset( bool resetEvents )
   for ( auto& mE : m_matrixElements ) mE.addressData = 999;
   if ( resetEvents ){ 
     m_events = nullptr;
-    m_integrator = Integrator<10>();
+    m_integrator = integrator();
   }
 }
 
@@ -293,7 +293,7 @@ void CoherentSum::setMC( EventList& sim )
 {
   if ( m_verbosity ) INFO( "Setting MC = " << &sim << " for " << this );
   reset();
-  m_integrator = Integrator<10>(&sim);
+  m_integrator = integrator(&sim);
 }
 
 real_t CoherentSum::norm() const
@@ -343,7 +343,7 @@ std::vector<unsigned int> CoherentSum::cacheAddresses( const EventList& evts ) c
 {
   std::vector<unsigned int> addresses;
   std::transform( m_matrixElements.begin(), m_matrixElements.end(), std::back_inserter(addresses),
-      [&evts](auto& it ){ return evts.getCacheIndex( it.pdf ) ; } );
+      [&evts](auto& it ){ return evts.getCacheIndex( it.amp ) ; } );
   return addresses;
 }
 

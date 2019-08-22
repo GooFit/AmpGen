@@ -43,12 +43,14 @@ DEFINE_LINESHAPE( GounarisSakurai )
   Expression t3 = (s0-s)/q(s0);
   
   Expression M2 = s0 + width0 * (t1 + t2 + t3 )/M_PI; 
-
-  Expression  D = M2 - 1i*mass*width(s,s1,s2,mass,width0,0,L);
+  bool useRadius    = lineshapeModifier.find("IncludeRadiusInWidth") != std::string::npos;
+  bool normalisedFF = lineshapeModifier.find("BL")                   != std::string::npos;
+  Expression  D = M2 - 1i*mass*width(s, s1, s2, mass, width0, useRadius ? radius : 0, L);
   const Expression q2  = abs( Q2( s, s1, s2 ) );
   Expression FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
-  if ( lineshapeModifier == "BL" ) FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
+  if ( normalisedFF ) FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
   ADD_DEBUG( FormFactor   , dbexpressions);
   ADD_DEBUG( M2 , dbexpressions);
+  ADD_DEBUG( D, dbexpressions);
   return kFactor( mass, width0, dbexpressions ) * FormFactor / (D-s);
 }

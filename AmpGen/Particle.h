@@ -126,56 +126,74 @@ namespace AmpGen
 
       /// Set the flag to say this 
       void setTop( bool state = true );
+
+      /// Set the index of this particle, i.e. where it is positioned in the event data structure. 
       void setIndex( const unsigned int& index, const bool& setOri = false );
+
+      /// Remove all of the decay products of this particle
       void clearDecayProducts();
 
+      /// Add some modifier to the particle, such as a lineshape or a different spin state
       void addModifier( const std::string& mod );
+
+      /// Parse some set of modifiers, delimited with semicolons.
       void parseModifier( const std::string& mod );
+
+      /// Set some particle ordering of the decay products of this particle, mostly used internally by the symmetrisation
       void setOrdering( const std::vector<size_t>& ordering );
+
+      /// Set the particle name 
       void setName(const std::string& name);
+
+      /// Add a decay product
       void addDaughter( const std::shared_ptr<Particle>& particle );
+
+      /// Set the polarisation state of this particle, which is twice the projection of the spin along the quantisation axis.
       void setPolarisationState( const int& state );
 
       /// Returns the range of orbital angular momentum between the decay products
       std::pair<size_t,size_t> orbitalRange( const bool& converseParity = true ) const;
+
+      /// Returns the set of possible spin-orbit couplings allowed by conservation of angular momentum, and if specified parity
       std::vector<std::pair<double,double>> spinOrbitCouplings( const bool& conserveParity = true ) const;
+
+      /// Return the additional optional attribute keyed by variable key 
       stdx::optional<std::string> attribute(const std::string& key) const; 
+
+      /// Return the particleProperties object for this particle
       const ParticleProperties* props() const;
-      QuarkContent quarks() const;
-      QuarkContent daughterQuarks() const;
-      int parity() const;
-      int finalStateParity() const;
-      int polState() const;
-      double mass() const;
-      double spin() const;    
-      double S() const; 
-      bool isHead() const;
-      bool isWeakDecay() const;
-      bool isStateGood() const;
-      bool isStable() const;
-      bool isQuasiStable() const;
-      bool conservesParity( unsigned int L = 0 ) const;
-
-      unsigned int orbital() const;
-      unsigned int index() const;
-      unsigned int originalIndex() const;
-
-      /// Name of the decaying particle.
-      std::string name() const;                   
-            
-      /// Name of the propagator to use for the decay of this particle.
-      std::string lineshape() const;
-
-      /// Name of the (spin)vertex to use for the decay of this particle 
-      std::string vertexName() const;
-
-      /// The unique string (i.e. decay descriptor) that identifies this decay / 
-      /// can be parsed to generate the decay tree.
-      std::string uniqueString() const;
       
-      /// The descriptor that describes this decay / 
-      /// that can be parsed to generate the decay tree and uniquely identify it. 
-      std::string decayDescriptor() const;
+      QuarkContent quarks() const;          ///< Return the quarks of this particle
+
+      QuarkContent daughterQuarks() const; ///< Returns the quark content of the sum of the decay products of this particle
+
+      int parity() const;            ///< Returns the parity of this particle
+      int finalStateParity() const;  ///< Returns the parity of the final state of this particle 
+
+      int polState() const;          ///< Returns the polarisation state, i.e. twice the projection of the spin along the quantisation axis, of this particle. 
+      int quasiCP() const;           ///< Returns the ``quasi'' CP Quantum number for this decay, see the Particle       
+      int C() const;                 ///< Returns the C quantum number for this decay
+
+      double mass() const;           ///< Returns the (PDG) mass of the particle
+      double spin() const;           ///< Returns the spin of the particle
+      double S() const; 
+
+      bool isHead() const;           ///< Returns whether if this particle is the head of the decay, i.e. has no parent
+      bool isWeakDecay() const;      ///< Returns whether is this particle decays weakly or not
+      bool isStateGood() const;      ///< Returns whether this particle, and its decays have been configured correctly 
+      bool isStable() const;         ///< Check whether this particle is stable, has any decay products. 
+      bool isQuasiStable() const;    ///< Check whether the particle is quasi-stable, i.e. may have some appreciable flight distance
+      bool conservesParity( unsigned int L = 0 ) const; ///< Check whether the decay of this particle with angular momentum L conserves parity or not
+
+      unsigned int orbital() const;       ///< Returns the orbital angular 
+      unsigned int index() const;         ///< Returns the current index of the particle in event data structure. Can differ from the original index due to symmetrisation
+      unsigned int originalIndex() const; ///< Returns the original index of the particle
+      std::string name() const;           ///< Name of the decaying particle.
+      std::string lineshape() const;      ///< Name of the propagator to use for the decay of this particle.
+      std::string vertexName() const;     ///< Name of the (spin)vertex to use for the decay of this particle 
+
+      std::string uniqueString() const;   ///< Returns the unique string (i.e. decay descriptor) that identifies this decay, which can be parsed to generate the decay tree.
+      std::string decayDescriptor() const;///< Returns the unique string (i.e. decay descriptor) that identifies this decay, which can be parsed to generate the decay tree.
       
       /// The string that describes the spin/orbital topology of this decay, 
       /// i.e. replacing specific particle names with their spins.
@@ -187,12 +205,6 @@ namespace AmpGen
       /// Decay descriptor formatted as LaTeX for this decay. 
       std::string texLabel( const bool& printHead = false, const bool& recurse=true ) const;
       
-      /// Returns the ``quasi'' CP Quantum number for this decay, see the Particle       
-      int quasiCP() const; 
-
-      /// Returns the C quantum number for this decay
-      int C() const; 
-
       /// Return the eventType for this decay (i.e. the initial and final state particles) 
       EventType eventType() const;
 

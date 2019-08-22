@@ -87,7 +87,7 @@ template <class MatrixElements> void print( const Event& event, const MatrixElem
       for ( auto& term : terms ) {
         INFO( "--> " << term.first->name() << " = (" << term.first->mean() * cos( term.second->mean() ) << " + i " << term.first->mean() * sin( term.second->mean() ) << ")" );
       }
-      mE.pdf.debug( event.address() );
+      mE.amp.debug( event.address() );
     }
   }
 }

@@ -43,10 +43,10 @@ void AmpGen::perAmplitudePlot( const EventList& evts,
   for ( unsigned int i = 0; i < pdf.size(); ++i ) {
 
     for ( unsigned int j = i; j < pdf.size(); ++j ) {
-      auto pdf_i             = pdf[i].pdf;
-      auto pdf_j             = pdf[j].pdf;
-      unsigned int index_i   = evts.getCacheIndex( pdf[i].pdf );
-      unsigned int index_j   = evts.getCacheIndex( pdf[j].pdf );
+      auto pdf_i             = pdf[i].amp;
+      auto pdf_j             = pdf[j].amp;
+      unsigned int index_i   = evts.getCacheIndex(pdf_i);
+      unsigned int index_j   = evts.getCacheIndex(pdf_j);
       const std::string name = pdf_i.name() + "_" + pdf_j.name();
       tmpPlots[s].hist       = projection.plot(name);
       tmpPlots[s].i          = index_i;
