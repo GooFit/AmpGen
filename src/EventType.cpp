@@ -25,7 +25,7 @@ using namespace AmpGen;
 std::string convertTeXtoROOT(std::string input);
 
 EventType::EventType( const std::vector<std::string>& particleNames, const bool& isTD ) : m_timeDependent( isTD )
-{  
+{
   if ( particleNames.size() < 3 ) { // Mother plus two daughters minimum required
     ERROR( "Not enough particles in event type: " << particleNames[0] << " size =  " << particleNames.size() );
     throw std::runtime_error( "Not enough particles listed in particle names! Was it defined?" );
@@ -47,7 +47,7 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
       ERROR( "Particle not found: " << particle );
       return;
     }
-    m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "~" ), "-", "#" ) );
+    m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "p" ), "-", "m" ) );
   }
   DEBUG( m_mother << " = " << m_motherMass << " -> " );
   for ( unsigned int i = 0; i < m_particleNames.size(); ++i ) {
@@ -65,10 +65,12 @@ std::map<std::string, size_t> EventType::getEventFormat( const bool& outputNames
 {
   std::map<std::string, size_t> returnValue;
   bool include_energy = NamedParameter<bool>("EventType::IncludeEnergy", true );
-  size_t s = include_energy ? 4 : 3; 
+  size_t s = include_energy ? 4 : 3;
   for ( unsigned int ip = 0; ip < size(); ++ip ) {
+    const auto parsed_name = std::count(m_particleNamesPickled.begin(),m_particleNamesPickled.end(),m_particleNamesPickled[ip]) == 1 ?
+      m_particleNamesPickled[ip] : m_particleNamesPickled[ip] + std::to_string( ip + 1 );
     std::string stub =
-      outputNames ? "_" + std::to_string( ip + 1 ) + "_" + m_particleNamesPickled[ip] : std::to_string( ip );
+      outputNames ? parsed_name : std::to_string( ip );
     if( include_energy ) returnValue[stub + "_E"]  = s * ip + 3;
     returnValue[stub + "_Px"] = s * ip + 0;
     returnValue[stub + "_Py"] = s * ip + 1;
@@ -78,7 +80,7 @@ std::map<std::string, size_t> EventType::getEventFormat( const bool& outputNames
   for( auto& extend : m_eventTypeExtensions ) returnValue[extend] = returnValue.size();
   return returnValue;
 }
-void EventType::extendEventType( const std::string& branch ) 
+void EventType::extendEventType( const std::string& branch )
 {
   m_eventTypeExtensions.push_back(branch);
 }
@@ -93,14 +95,14 @@ std::pair<double, double> EventType::minmax( const std::vector<size_t>& indices,
     if ( std::find( indices.begin(), indices.end(), x ) == indices.end() ) max -= mass( x );
   return std::pair<double, double>( min * min / GeV, max * max / GeV );
 }
-std::pair<size_t, size_t> EventType::count(const size_t& index) const 
+std::pair<size_t, size_t> EventType::count(const size_t& index) const
 {
   if( index >= size() ){
     ERROR("Looking for matching particles to index = " << index << " > size of eventType");
     return std::pair<size_t, size_t>(0, 0);
   }
   std::pair<size_t,size_t> rt(0,0);
-  for( size_t j = 0 ; j < size(); ++j ){ 
+  for( size_t j = 0 ; j < size(); ++j ){
     if( EventType::operator[](j) == EventType::operator[](index) ){
       rt.second++;
       if( j < index ) rt.first++;
@@ -137,7 +139,7 @@ EventType EventType::conj( const bool& headOnly, const bool& dontConjHead ) cons
 {
   std::vector<std::string> type;
   type.push_back( dontConjHead ? m_mother : ParticlePropertiesList::get( m_mother )->anti().name() );
-  std::transform( m_particleNames.begin(), m_particleNames.end(), std::back_inserter(type), 
+  std::transform( m_particleNames.begin(), m_particleNames.end(), std::back_inserter(type),
       [&](auto& x){ return headOnly ? x : ParticlePropertiesList::get(x)->anti().name() ; } );
   return EventType( type );
 }
@@ -148,13 +150,13 @@ std::vector<Projection> EventType::defaultProjections(const size_t& nBins) const
   std::vector<Projection> projections;
   for ( size_t r = 2; r < size(); ++r ) { /// loop over sizes ///
     std::vector<std::vector<size_t>>  combR = nCr( size(), r );
-    std::transform( combR.begin(), combR.end(), std::back_inserter(projections), 
+    std::transform( combR.begin(), combR.end(), std::back_inserter(projections),
       [&](auto& index){ return this->projection(nBins, index, defaultObservable ); } );
   }
   return projections;
 }
 
-Projection EventType::projection(const size_t& nBins, const std::vector<size_t>& indices, const std::string& observable) const 
+Projection EventType::projection(const size_t& nBins, const std::vector<size_t>& indices, const std::string& observable) const
 {
   bool useRootLabelling = NamedParameter<bool>("EventType::UseRootTEX", false );
   auto mm               = minmax(indices, true);
