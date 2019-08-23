@@ -101,22 +101,12 @@ namespace AmpGen
           WARNING("Cache index " << size << " exceeds cache size = " 
                                  << at(0).cacheSize() << " resizing to " 
                                  << size + expression_size );
-    
-          for (auto& evt : *this) evt.resizeCache( size + expression_size );
+          resizeCache( size + expression_size );
         }
         m_pdfIndex[key] = m_lastCachePosition;
         m_lastCachePosition += expression_size; 
         return size;
       }
-    }
-    
-    template <class FUNCTOR>
-    unsigned int extendEvent( const std::string& name, FUNCTOR func )
-    {
-      unsigned int index = this->begin()->size();
-      for ( auto& evt : *this ) evt.extendEvent(func(evt));
-      m_extensions[name] = index;
-      return index;
     }
 
     template <class FCN>
@@ -130,6 +120,7 @@ namespace AmpGen
       }
     }
     void reserveCache(const size_t& index);
+    void resizeCache(const size_t& newCacheSize );
     TH1D* makeProjection(const Projection& projection  , const ArgumentPack& args = ArgumentPack()) const; 
     TH2D* makeProjection(const Projection2D& projection, const ArgumentPack& args = ArgumentPack()) const;
     std::vector<TH1D*> makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args );

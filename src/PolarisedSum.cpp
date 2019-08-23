@@ -213,7 +213,7 @@ void   PolarisedSum::setEvents( EventList& events )
 void   PolarisedSum::setMC( EventList& events )
 {
   m_nCalls = 0;
-  m_integrator = Integrator2<18>(&events);
+  m_integrator = integrator(&events);
 }
 
 size_t PolarisedSum::size() const 
@@ -260,7 +260,7 @@ double PolarisedSum::norm() const
   return m_norm;
 }
 
-complex_t PolarisedSum::norm(const size_t& i, const size_t& j, Integrator2<18>* integ)
+complex_t PolarisedSum::norm(const size_t& i, const size_t& j, AmpGen::PolarisedSum::integrator* integ)
 {
   auto   ai = m_integIndex[i];
   auto   aj = m_integIndex[j];

@@ -61,16 +61,16 @@ namespace AmpGen
     real_t norm() const;
     real_t getNorm( const Bilinears& normalisations );
 
-    complex_t norm( const unsigned int& x, const unsigned int& y ) const;
+    complex_t norm( const size_t& x, const size_t& y ) const;
     complex_t getVal( const Event& evt ) const;
-    complex_t getVal( const Event& evt, const std::vector<unsigned int>& cacheAddresses ) const;
+    complex_t getVal( const Event& evt, const std::vector<size_t>& cacheAddresses ) const;
     complex_t getValNoCache( const Event& evt ) const;
     complex_t getValNoCache( const Event& evt, const size_t& offset ) const;
     
     void transferParameters();
     void prepare();
     void printVal( const Event& evt );
-    void updateNorms( const std::vector<unsigned int>& changedPdfIndices );
+    void updateNorms( const std::vector<size_t>& changedPdfIndices );
     void setWeight( const double& weight ) { m_weight = weight; }
     void setWeight( MinuitParameter* param ) { m_weightParam = param; }
     void makeTotalExpression();
@@ -80,7 +80,7 @@ namespace AmpGen
     void debug( const Event& evt, const std::string& nameMustContain="");
     void generateSourceCode( const std::string& fname, const double& normalisation = 1, bool add_mt = false );
 
-    std::vector<unsigned int> cacheAddresses( const EventList& evts ) const; 
+    std::vector<size_t> cacheAddresses( const EventList& evts ) const; 
     std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
     std::vector<TransitionMatrix<complex_t>> matrixElements() const { return m_matrixElements; }
 
@@ -90,9 +90,9 @@ namespace AmpGen
   protected:
     typedef Integrator<10> integrator;
     std::vector<TransitionMatrix<complex_t>> m_matrixElements; ///< Vector of (expanded) matrix elements
-    Bilinears m_normalisations;                                ///< Normalisation integrals
-    AmplitudeRules m_protoAmplitudes;                          ///< Proto amplitudes from user rule-set
-    integrator       m_integrator;                               ///< Integral dispatch tool (with default unroll = 10) 
+    Bilinears        m_normalisations;                         ///< Normalisation integrals
+    AmplitudeRules   m_protoAmplitudes;                        ///< Proto amplitudes from user rule-set
+    integrator       m_integrator;                             ///< Integral dispatch tool (with default unroll = 10) 
     TransitionMatrix<complex_t> m_total;                       ///< Total Matrix Element 
     EventList*       m_events       = {nullptr};               ///< Data events to evaluate PDF on
     EventType        m_evtType;                                ///< Final state for this amplitude
@@ -105,8 +105,8 @@ namespace AmpGen
     bool             m_isConstant   = {false};                 ///< Flag for a constant PDF
     bool             m_dbThis       = {false};                 ///< Flag to generate amplitude level debugging
     bool             m_verbosity    = {false};                 ///< Flag for verbose printing
-    std::string m_objCache          = {""};                    ///< Directory that contains (cached) amplitude objects
-    std::string m_prefix            = {""};                    ///< Prefix for matrix elements
+    std::string      m_objCache     = {""};                    ///< Directory that contains (cached) amplitude objects
+    std::string      m_prefix       = {""};                    ///< Prefix for matrix elements
     void addMatrixElement( std::pair<Particle, CouplingConstant>& particleWithCoupling, const MinuitParameterSet& mps );
   };
 } // namespace AmpGen

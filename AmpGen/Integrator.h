@@ -41,21 +41,22 @@ namespace AmpGen
       void   resize(const size_t& r, const size_t& c = 1 );
   };
 
-  template <class TYPE = complex_t> struct Integral {
-      typedef std::function<void(TYPE)> TransferFCN;
-      size_t i = {0};
-      size_t j = {0};
-      TransferFCN transfer;
-      Integral() = default; 
-      Integral(const size_t& i, const size_t& j, TransferFCN t) : i(i), j(j), transfer(t) {}
-    };
+  template <class TYPE = complex_t> struct Integral 
+  {
+    typedef std::function<void(TYPE)> TransferFCN;
+    size_t i = {0};
+    size_t j = {0};
+    TransferFCN transfer;
+    Integral() = default; 
+    Integral(const size_t& i, const size_t& j, TransferFCN t) 
+      : i(i), j(j), transfer(t) {}
+  };
 
   template <size_t NROLL = 10>
     class Integrator
     {
       private:
         typedef const complex_t& arg;
-        typedef std::function<void(arg)> TransferFCN;
         size_t                           m_counter = {0};
         std::array<Integral<arg>, NROLL> m_integrals;
         EventList*                       m_events  = {nullptr};
@@ -91,10 +92,10 @@ namespace AmpGen
         EventList& events()             { return *m_events; } 
         const EventList& events() const { return *m_events; } 
         template <class T1, class T2>
-          void addIntegral( const T1& f1, const T2& f2, const TransferFCN& tFunc )
-          {
-            addIntegralKeyed( m_events->getCacheIndex(f1), m_events->getCacheIndex(f2), tFunc );
-          }
+        void addIntegral( const T1& f1, const T2& f2, const Integral<arg>::TransferFCN& tf )
+        {
+          addIntegralKeyed( m_events->getCacheIndex(f1), m_events->getCacheIndex(f2), tf );
+        }
         void queueIntegral(const size_t& i, const size_t& j, complex_t* result){
           addIntegralKeyed(i, j, [result](arg& val){ *result = val ; } ); 
         }
@@ -113,9 +114,9 @@ namespace AmpGen
           else 
             addIntegralKeyed( c1, c2, [out,i,j]( arg& val ){ out->set(i,j,val); } );
         }
-        void addIntegralKeyed( const size_t& c1, const size_t& c2, const TransferFCN& tFunc )
+        void addIntegralKeyed(const size_t& c1, const size_t& c2, const Integral<arg>::TransferFCN& tf )
         {
-          m_integrals[m_counter++] = Integral<arg>(c1,c2,tFunc);
+          m_integrals[m_counter++] = Integral<arg>(c1, c2, tf);
           if ( m_counter == NROLL ) calculate();
         }
 

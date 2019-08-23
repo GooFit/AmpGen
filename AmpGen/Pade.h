@@ -3,6 +3,7 @@
 
 #include <array>
 #include <functional>
+#include <vector>
 
 namespace AmpGen { 
   enum Strategy { linear, quadratic, cubic, quartic };
@@ -13,7 +14,7 @@ namespace AmpGen {
         const Strategy& strat = Strategy::linear);
   }
 
-  template <int N, class T = double> class Pade 
+  template <unsigned N, class T = double> class Pade 
   {
     public:
       Pade(const std::function<double(const double&)>& fcn, 
@@ -23,8 +24,8 @@ namespace AmpGen {
         m_function(fcn), min(min),max(max)
     {
       auto r = detail::solve_pade(fcn, min, max, N, strat );
-      for(size_t i = 0; i <= N; ++i ) co_f[i] = r[i];
-      for(size_t i = 0; i <  N; ++i ) co_g[i] = r[i+(N+1)];
+      for(unsigned i = 0; i <= N; ++i ) co_f[i] = r[i];
+      for(unsigned i = 0; i <  N; ++i ) co_g[i] = r[i+(N+1)];
       range = 1./(max-min);
     }
       T operator()(const T& s)
@@ -33,7 +34,7 @@ namespace AmpGen {
         T f = 0;
         T g = 1;
         T acc = 1;
-        for(size_t i = 0; i < N; ++i){
+        for(unsigned i = 0; i < N; ++i){
           f += co_f[i] * acc;
           acc *= x;
           g += co_g[i] * acc;
