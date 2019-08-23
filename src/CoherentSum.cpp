@@ -61,7 +61,7 @@ void CoherentSum::prepare()
   if ( m_weightParam != nullptr ) m_weight = m_weightParam->mean();
   if ( m_isConstant && m_prepareCalls != 0 ) return;
   transferParameters(); 
-  std::vector<unsigned int> changedPdfIndices;
+  std::vector<size_t> changedPdfIndices;
   ProfileClock clockEval; 
   bool printed    = false;
   for ( size_t i = 0; i < m_matrixElements.size(); ++i ) {
@@ -70,11 +70,15 @@ void CoherentSum::prepare()
     if ( m_prepareCalls != 0 && !amp.hasExternalsChanged() ) continue;
     ProfileClock clockThisElement;
     if ( m_events != nullptr ) {
-      if ( m_matrixElements[i].addressData == 999 ) 
+      if ( m_matrixElements[i].addressData == 999 ){ 
+        if( m_events->at(0).cacheSize() <= m_matrixElements.size())
+          m_events->resizeCache( m_matrixElements.size() );
         m_matrixElements[i].addressData = m_events->registerExpression( amp );
+      }
       m_events->updateCache( amp, m_matrixElements[i].addressData );
     } 
     else if ( i == 0 && m_verbosity ) WARNING( "No data events specified for " << this );
+    m_integrator.prepareExpression( m_matrixElements[i].amp );
     clockThisElement.stop();
     if ( m_verbosity && ( m_prepareCalls > m_lastPrint + m_printFreq || m_prepareCalls == 0 ) ) {
       INFO( amp.name() << " (t = " << clockThisElement << " ms, nCalls = " << m_prepareCalls << ", events = " << m_events->size() << ")" );
@@ -99,9 +103,9 @@ void CoherentSum::prepare()
   m_prepareCalls++;
 }
 
-void CoherentSum::updateNorms( const std::vector<unsigned int>& changedPdfIndices )
+void CoherentSum::updateNorms( const std::vector<size_t>& changedPdfIndices )
 {
-  for ( auto& i : changedPdfIndices ) m_integrator.prepareExpression( m_matrixElements[i].amp );
+  //for ( auto& i : changedPdfIndices ) m_integrator.prepareExpression( m_matrixElements[i].amp );
   std::vector<size_t> cacheIndex;
   std::transform( m_matrixElements.begin(), m_matrixElements.end(), std::back_inserter(cacheIndex), 
     [this](auto& m){ return this->m_integrator.getCacheIndex( m.amp ) ; } );
@@ -315,7 +319,7 @@ real_t CoherentSum::norm(const Bilinears& norms) const
   return acc.real();
 }
 
-complex_t CoherentSum::norm(const unsigned int& x, const unsigned int& y) const
+complex_t CoherentSum::norm(const size_t& x, const size_t& y) const
 {
   return m_normalisations.get(x, y);
 }
@@ -339,9 +343,9 @@ void CoherentSum::printVal(const Event& evt)
   }
 }
 
-std::vector<unsigned int> CoherentSum::cacheAddresses( const EventList& evts ) const
+std::vector<size_t> CoherentSum::cacheAddresses( const EventList& evts ) const
 {
-  std::vector<unsigned int> addresses;
+  std::vector<size_t> addresses;
   std::transform( m_matrixElements.begin(), m_matrixElements.end(), std::back_inserter(addresses),
       [&evts](auto& it ){ return evts.getCacheIndex( it.amp ) ; } );
   return addresses;
@@ -356,10 +360,10 @@ complex_t CoherentSum::getVal( const Event& evt ) const
   return value;
 }
 
-complex_t CoherentSum::getVal( const Event& evt, const std::vector<unsigned int>& cacheAddresses ) const
+complex_t CoherentSum::getVal( const Event& evt, const std::vector<size_t>& cacheAddresses ) const
 {
   complex_t value( 0., 0. );
-  for ( unsigned int i = 0; i < m_matrixElements.size(); ++i )
+  for ( size_t i = 0; i < m_matrixElements.size(); ++i )
     value += m_matrixElements[i].coefficient * evt.getCache( cacheAddresses[i] );
   return value;
 }

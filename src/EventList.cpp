@@ -263,3 +263,9 @@ void EventList::reserveCache(const size_t& size)
   if ( size >= at(0).cacheSize() )
     for (auto& evt : *this) evt.resizeCache(evt.cacheSize() + size);
 }
+
+void EventList::resizeCache(const size_t& newCacheSize )
+{
+  for (auto& evt : *this) evt.resizeCache( newCacheSize );
+}
+
