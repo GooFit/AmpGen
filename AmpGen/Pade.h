@@ -11,6 +11,7 @@ namespace AmpGen {
     std::vector<double> solve_pade(const std::function<double(const double&)>& fcn,
         const double& min,
         const double& max,
+        const unsigned& N,
         const Strategy& strat = Strategy::linear);
   }
 
