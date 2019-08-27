@@ -3,11 +3,12 @@
 #define BOOST_TEST_MODULE "ExpressionParser"
 
 #include <boost/test/included/unit_test.hpp>
-namespace utf = boost::unit_test;
 
 #include "AmpGen/ExpressionParser.h"
 #include "AmpGen/MinuitParameterSet.h"
 
+namespace utf = boost::unit_test;
+namespace tt = boost::test_tools;
 using namespace AmpGen; 
   
 BOOST_AUTO_TEST_CASE( simple_numericalExpressions ){
@@ -59,16 +60,16 @@ BOOST_AUTO_TEST_CASE( parametericExpressions ) {
   }
   return std::real( ExpressionParser::parse(newLine, &mps)() ); }; 
 
-  BOOST_CHECK( test("a+(cos(b-sin(2/a*pi))-sin(a-cos(2*b/pi)))-b") == a+(cos(b-sin(2/a*pi))-sin(a-cos(2*b/pi)))-b );
-  BOOST_CHECK( test("sin(a)+sin(b)")                               == sin(a)+sin(b) );                                  
-  BOOST_CHECK( test("abs(sin(sqrt(a^2+b^2))*255)")                 == abs(sin(sqrt(a*a+b*b))*255) );
-  BOOST_CHECK( test("sqrt(a)<sin(8)")                              == (sqrt(a)<sin(8)) );
-  BOOST_CHECK( test("(10+sqrt(a))<(sin(8)^2)")                     == ((10+sqrt(a))<pow(sin(8),2)) );
-  BOOST_CHECK( test("(b+a/b) * (a-b/a)")                           == (b+a/b) * (a-b/a) );
-  BOOST_CHECK( test("(0.1*a+1)*a+1.1-sin(a)-log(a)/a*3/4")         == (0.1*a+1)*a+1.1-sin(a)-log(a)/a*3/4 );
-  BOOST_CHECK( test("sin(2 * a) + cos(pi / b)")                    == sin(2 * a) + cos(pi / b) );
-  BOOST_CHECK( test("a - ( b + c ) "                        )      ==  a - ( b + c ) );
-  BOOST_CHECK( test("a - b + c - d / b + f - a "            )      ==  a - b + c - d / b + f -a  );
+  BOOST_TEST( test("a+(cos(b-sin(2/a*pi))-sin(a-cos(2*b/pi)))-b") == a+(cos(b-sin(2/a*pi))-sin(a-cos(2*b/pi)))-b );
+  BOOST_TEST( test("sin(a)+sin(b)")                               == sin(a)+sin(b) );                                  
+  BOOST_TEST( test("abs(sin(sqrt(a^2+b^2))*255)")                 == abs(sin(sqrt(a*a+b*b))*255) );
+  BOOST_TEST( test("sqrt(a)<sin(8)")                              == (sqrt(a)<sin(8)) );
+  BOOST_TEST( test("(10+sqrt(a))<(sin(8)^2)")                     == ((10+sqrt(a))<pow(sin(8),2)) );
+  BOOST_TEST( test("(b+a/b) * (a-b/a)")                           == (b+a/b) * (a-b/a) );
+  BOOST_TEST( test("(0.1*a+1)*a+1.1-sin(a)-log(a)/a*3/4"   )      == (0.1*a+1)*a+1.1-sin(a)-log(a)/a*3/4 );
+  BOOST_TEST( test("sin(2 * a) + cos(pi / b)"              )      == sin(2 * a) + cos(pi / b)    , tt::tolerance(1e-10));
+  BOOST_TEST( test("a - ( b + c ) "                        )      ==  a - ( b + c )              , tt::tolerance(1e-10));
+  BOOST_TEST( test("a - b + c - d / b + f - a "            )      ==  a - b + c - (d / b) + f - a, tt::tolerance(1e-10));
 }
 
 

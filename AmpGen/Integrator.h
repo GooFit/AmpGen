@@ -248,7 +248,7 @@ namespace AmpGen
             std::vector<size_t> toUpdate;
             std::vector<size_t> integralHasChanged( size * size );
             for ( size_t x = 0; x < size; ++x ) {
-              auto& pdf = mE[x].pdf;
+              auto& pdf = mE[x].amp;
               pdf.prepare();
               if ( !pdf.hasExternalsChanged() ) continue;
               m_events->updateCache( pdf, m_events->getCacheIndex( pdf ) );
@@ -261,7 +261,7 @@ namespace AmpGen
                 integralHasChanged[i * size + j] = true;
                 integralHasChanged[j * size + i] = true;
 
-                addIntegral( mE[i].pdf, mE[j].pdf,
+                addIntegral( mE[i].amp, mE[j].amp,
                     [i, j, &normalisations]( const auto& val ) {
                     for ( unsigned int bin = 0; bin < NBINS; ++bin ) {
                     normalisations[bin].set( i, j, val[bin] );
