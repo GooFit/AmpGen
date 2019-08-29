@@ -16,7 +16,7 @@
 * A1. read table into any spreadsheet or database program that accepts a comma-separated format
 * A2. For example, in EXCEL, open a blank workbook and import this file as external data,
 *     comma-delimited, starting the import at row 100, which contains column header names.
-* B1. In a FORTRAN program, ignore documentation lines that begin with "*" and process data lines using
+* B1. In a FORTRAN program, ignore documentation lines that begin with '*' and process data lines using
 *     FORMAT (BN, E14.0, 1X, 2(E7.0, 1X), E12.0, 1X, 2(E7.0, 1X), A3, 1X, A1, 1X, A4, 1X, 3(A1, 1X), A7, 1X, A4, 1X, 2(A1, 1X), A17, 1X, A)
 * B2. WARNING. MINUS VALUE OF ERROR means its absence!
 * B3. columns     contents                       Fortran I/O 
