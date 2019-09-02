@@ -16,7 +16,7 @@
 * A1. read table into any spreadsheet or database program that accepts a comma-separated format
 * A2. For example, in EXCEL, open a blank workbook and import this file as external data,
 *     comma-delimited, starting the import at row 100, which contains column header names.
-* B1. In a FORTRAN program, ignore documentation lines that begin with "*" and process data lines using
+* B1. In a FORTRAN program, ignore documentation lines that begin with '*' and process data lines using
 *     FORMAT (BN, E14.0, 1X, 2(E7.0, 1X), E12.0, 1X, 2(E7.0, 1X), A3, 1X, A1, 1X, A4, 1X, 3(A1, 1X), A7, 1X, A4, 1X, 2(A1, 1X), A17, 1X, A)
 * B2. WARNING. MINUS VALUE OF ERROR means its absence!
 * B3. columns     contents                       Fortran I/O 
@@ -51,7 +51,7 @@
 *                            with ascii name formed by concatenation of the name shown below with charge 
 *                            ( e- <--> e+, pi+ <--> pi-, K+ <--> K-, W+ <--> W- ).
 *                A = F     - particle that has anti-particle partner different from particle 
-*                            with ascii name formed by concatenation of the name shown below with string "bar" and charge     
+*                            with ascii name formed by concatenation of the name shown below with string 'bar' and charge     
 *                            by the rule (nu(e) <--> nubar(e), p <--> pbar, Delta++ <--> Deltabar--)
 *                A = blank - particle that coincide with its antiparticle (gamma, pi0, eta).
 *           85   comma                          (1X) 
@@ -59,7 +59,7 @@
 *                The number used in the PDG Monte Carlo numbering scheme (see RPP).
 *                Only particles are shown in this table and they are given positive ID numbers.
 *                For antiparticles, change the ID to negative. Thus pi- has code -211.
-*                The ID has up to 7 digits. See RPP "Monte Carlo particle numbering scheme"
+*                The ID has up to 7 digits. See RPP 'Monte Carlo particle numbering scheme'
 *                for details.
 *           94   comma                          (1X)
 *      95 - 99   charge                         (A4)
@@ -81,7 +81,7 @@
 *                    space even though they are well established.
 *                S - The particle is omitted from the particle properties Summary Tables
 *                    because it is not well established.
-*                F - Special case: "Further mesons", see RPP , these states are in the RPP
+*                F - Special case: 'Further mesons', see RPP , these states are in the RPP
 *                    database but are poorly established or observed by a single group and thus
 *                    need confirmation. If used, these should be referred to the original publication.
 * 		     For these states we list a single line without charge and with C-parity, if known,
@@ -91,10 +91,10 @@
 *      105 -122  particle name                  (A17)
 *           123  comma                          (1X)
 *      124 -139  Quark contents                 (A)
-*                Note: capital letters represents anti-quarks, "qQ" stands for light quark, light 
+*                Note: capital letters represents anti-quarks, 'qQ' stands for light quark, light 
 *                anti-quark pair with unknown wave functions.
 *                x, y - wave function coefficients, see RPP  'Quark Model' Review
-*                p, q - CP violation parameters, See. RPP "CP violation in KL Decays" review.
+*                p, q - CP violation parameters, See. RPP 'CP violation in KL Decays' review.
 *  
 *
 *MASS(MeV)    ,Err+   ,Err-   ,WIDTH(MeV)  ,Err+   ,Err-   ,I  ,G,J   ,P,C,A,PDG-MC ,Chrg,R,S,Name             ,Quarks         
