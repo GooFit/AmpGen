@@ -19,6 +19,7 @@
 #include "AmpGen/Types.h"
 #include "AmpGen/Event.h"
 #include "AmpGen/Projection.h"
+//#include "AmpGen/functional/pdf.h"
 
 namespace AmpGen
 {
@@ -39,7 +40,7 @@ namespace AmpGen
       where @f$\mathcal{P}(\psi)@f$ is the probability, @f$g_i@f$ is the coupling to an isobar channel, 
       and @f$\mathcal{A}_i(\psi)@f$ is the amplitude of the ith channel.
   */
-  class CoherentSum
+  class CoherentSum // : public functional::pdf_base<CoherentSum>
   {
   public:
     CoherentSum();

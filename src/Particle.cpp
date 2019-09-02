@@ -436,7 +436,8 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
       }
     }
     if ( includeSpin && spinFormalism == "Canonical" ){
-      spinFactor = helicityAmplitude(*this, TransformSequence(), m_props->isBoson() ? polState() : double(polState())/2.0, db);
+      TransformSequence t = TransformSequence();
+      spinFactor = helicityAmplitude(*this, t, m_props->isBoson() ? polState() : double(polState())/2.0, db);
     }
     if( db != nullptr ){
       std::string finalStateString="";

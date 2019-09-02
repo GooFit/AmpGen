@@ -13,9 +13,9 @@
 /** @cond PRIVATE */
 namespace ROOT
 {
-  namespace Math
+  namespace Minuit2
   {
-    class Minimizer;
+    class Minuit2Minimizer;
   }
 }
 class TGraph;
@@ -30,14 +30,37 @@ namespace AmpGen
 
   class Minimiser
   {
+  private:
+  template <typename T>
+  struct Has
+  {
+    typedef char YesType[1];
+    typedef char NoType[2]; 
+    template <typename C> static YesType& test( decltype(&C::getVal) ) ;
+    template <typename C> static NoType& test(...);
+    enum { value = sizeof(test<T>(0)) == sizeof(YesType) };
+  };
+  
+
+
   public:
-    template <typename TYPE>
+    template <typename TYPE> typename std::enable_if_t<Has<TYPE>::value, void> setFunction( TYPE& fcn )
+    {
+      m_theFunction = [&fcn]() { return fcn.getVal(); };
+    }
+    template <typename TYPE> typename std::enable_if_t<!Has<TYPE>::value, void> setFunction(TYPE& fcn)
+    {
+      m_theFunction = [&fcn](){ return fcn() ; } ;
+    }
+
+    template <typename TYPE> 
     Minimiser(TYPE& fitFunction, MinuitParameterSet* mps) : 
       m_parSet(mps)
     {
-      m_theFunction = [&fitFunction]() { return fitFunction.getVal(); };
+      setFunction(fitFunction);
       prepare();
     }
+    
     Minimiser(std::function<double(void)>& fitFunction, MinuitParameterSet* mps) : 
       m_parSet(mps),
       m_theFunction(fitFunction)
@@ -48,6 +71,7 @@ namespace AmpGen
     
     unsigned int nPars() const;
     void prepare();
+    void gradientTest();
     bool doFit();
     TGraph* scan( MinuitParameter* param, const double& min, const double& max, const double& step );
     void addExtendedTerm( IExtendLikelihood* term );
@@ -57,21 +81,21 @@ namespace AmpGen
     double FCN() const;
     MinuitParameterSet* parSet() const;
     int status() const;
-    ROOT::Math::Minimizer* minimiserInternal();
+    ROOT::Minuit2::Minuit2Minimizer* minimiserInternal();
   
   private:
-    MinuitParameterSet* m_parSet       = {nullptr};
+    MinuitParameterSet*         m_parSet       = {nullptr};
     std::function<double(void)> m_theFunction;
-    ROOT::Math::Minimizer* m_minimiser = {nullptr};
-    std::vector<double>    m_covMatrix = {0};
-    std::vector<unsigned int>       m_mapping;
-    std::vector<IExtendLikelihood*> m_extendedTerms;
+    ROOT::Minuit2::Minuit2Minimizer*  m_minimiser    = {nullptr};
+    std::vector<double>         m_covMatrix    = {0};
+    std::vector<unsigned int>   m_mapping      = {};
     int          m_status     = {0};
     unsigned int m_nParams    = {0};
     unsigned int m_lastPrint  = {0};
     unsigned int m_printLevel = {0};
     double       m_ll_zero    = {0};
     bool         m_normalise  = {false};
+    std::vector<IExtendLikelihood*> m_extendedTerms;
   };
 } // namespace AmpGen
 #endif

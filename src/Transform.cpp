@@ -97,7 +97,7 @@ Tensor Transform::operator()(const Representation& repr) const
   return Tensor();
 }
 
-TransformSequence TransformSequence::inverse() const 
+TransformSequence TransformSequence::inverse() const
 {
   TransformSequence rt; 
   for( auto i = m_transforms.rbegin(); i != m_transforms.rend(); ++i )
@@ -105,8 +105,12 @@ TransformSequence TransformSequence::inverse() const
   return rt;
 }
 
-Tensor TransformSequence::operator()( const Transform::Representation& repr ) const 
+Tensor TransformSequence::operator()( const Transform::Representation& repr )
 {
+  if( m_cache[repr].nElements() != 1 )
+  {
+    return m_cache[repr];
+  }
   if( m_transforms.size() == 0 ){
     if( repr == Transform::Representation::Spinor ) return Identity(2);
     else return Identity(4);
@@ -117,14 +121,15 @@ Tensor TransformSequence::operator()( const Transform::Representation& repr ) co
   for( size_t i = 1 ; i < m_transforms.size(); ++i )
   {
     Tensor rti = m_transforms[i](repr);
-    rti.st();
+    rti.st(true);
     rt = rti(a,b) * rt(b,c);
   }
+  m_cache[repr] = rt;
   return rt;
 }
 
 Tensor TransformSequence::operator()( const Tensor& tensor, 
-    const Transform::Representation& repr ) const 
+    const Transform::Representation& repr )
 {
   Tensor::Index a,b,c;
   auto seq = this->operator()(repr);
@@ -132,7 +137,7 @@ Tensor TransformSequence::operator()( const Tensor& tensor,
 }
 
 Tensor Transform::operator()( const Tensor& tensor, 
-    const Transform::Representation& repr ) const 
+    const Transform::Representation& repr ) const
 {
   Tensor::Index a,b;
   auto seq = this->operator()(repr);

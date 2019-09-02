@@ -11,7 +11,7 @@
 #include "AmpGen/ThreadPool.h"
 #include "AmpGen/CompilerWrapper.h"
 #include "AmpGen/ASTResolver.h"
-
+#include "AmpGen/ProfileClock.h"
 using namespace AmpGen;
 
 std::string AmpGen::programatic_name( std::string s )
@@ -28,6 +28,7 @@ std::string AmpGen::programatic_name( std::string s )
 
 void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
 {
+  ProfileClock pc; 
   if( m_resolver != nullptr ) delete m_resolver ; 
   m_resolver = new ASTResolver( m_evtMap, mps );
   m_dependentSubexpressions = m_resolver->getOrderedSubExpressions( m_obj ); 
@@ -45,6 +46,8 @@ void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
   for( auto& expression : m_resolver->cacheFunctions() ) 
     m_cacheTransfers.emplace_back( expression.second ); 
   resizeExternalCache( m_resolver->nParams() ); 
+  pc.stop();
+  //INFO("Took: " << pc << " ms to resolve tree");
   prepare(); 
 }
 

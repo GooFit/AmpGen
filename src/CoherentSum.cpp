@@ -56,6 +56,16 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   m_isConstant = false ;
 }
 
+void updateCache(EventList* events, TransitionMatrix<complex_t>& me, const size_t& sizeMax)
+{
+  if ( me.addressData == 999 )
+  { 
+    if( events->at(0).cacheSize() <= sizeMax) events->resizeCache(sizeMax);
+    me.addressData = events->registerExpression( me.amp );
+  }
+  events->updateCache(me.amp, me.addressData);
+}
+
 void CoherentSum::prepare()
 {
   if ( m_weightParam != nullptr ) m_weight = m_weightParam->mean();
@@ -63,36 +73,22 @@ void CoherentSum::prepare()
   transferParameters(); 
   std::vector<size_t> changedPdfIndices;
   ProfileClock clockEval; 
-  bool printed    = false;
+  bool print    = false;
   for ( size_t i = 0; i < m_matrixElements.size(); ++i ) {
-    auto& amp = m_matrixElements[i].amp;
-    amp.prepare();
-    if ( m_prepareCalls != 0 && !amp.hasExternalsChanged() ) continue;
-    ProfileClock clockThisElement;
-    if ( m_events != nullptr ) {
-      if ( m_matrixElements[i].addressData == 999 ){ 
-        if( m_events->at(0).cacheSize() <= m_matrixElements.size())
-          m_events->resizeCache( m_matrixElements.size() );
-        m_matrixElements[i].addressData = m_events->registerExpression( amp );
-      }
-      m_events->updateCache( amp, m_matrixElements[i].addressData );
-    } 
-    else if ( i == 0 && m_verbosity ) WARNING( "No data events specified for " << this );
+    m_matrixElements[i].amp.prepare();
+    if ( m_prepareCalls != 0 && !m_matrixElements[i].amp.hasExternalsChanged() ) continue;
+    if ( m_events != nullptr ) updateCache( m_events, m_matrixElements[i], m_matrixElements.size() ); 
     m_integrator.prepareExpression( m_matrixElements[i].amp );
-    clockThisElement.stop();
-    if ( m_verbosity && ( m_prepareCalls > m_lastPrint + m_printFreq || m_prepareCalls == 0 ) ) {
-      INFO( amp.name() << " (t = " << clockThisElement << " ms, nCalls = " << m_prepareCalls << ", events = " << m_events->size() << ")" );
-      printed = true;
-    }
     changedPdfIndices.push_back(i);
-    amp.resetExternals();
+    m_matrixElements[i].amp.resetExternals();
+    print = true; 
   }
   clockEval.stop();
   ProfileClock clockIntegral;
   if ( m_integrator.isReady())  updateNorms( changedPdfIndices );
   else if ( m_verbosity ) WARNING( "No simulated sample specified for " << this );
   m_norm = norm();
-  if ( m_verbosity && printed ) {
+  if ( m_verbosity && print ) {
     clockIntegral.stop();
     INFO( "Time Performance: "
         << "Eval = "       << clockEval     << " ms"
@@ -138,6 +134,7 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
 
 std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& linProp)
 {
+  prepare();
   bool recomputeIntegrals    = NamedParameter<bool>("CoherentSum::RecomputeIntegrals", false );
   std::vector<FitFraction> outputFractions;
   for(auto& rule : m_protoAmplitudes.rules()) 
@@ -288,14 +285,14 @@ void CoherentSum::reset( bool resetEvents )
 
 void CoherentSum::setEvents( EventList& list )
 {
-  if ( m_verbosity ) INFO( "Setting events to size = " << list.size() << " for " << this );
+  if ( m_verbosity ) INFO( "Setting event list with:" << list.size() << " events for " << this );
   reset();
   m_events = &list;
 }
 
 void CoherentSum::setMC( EventList& sim )
 {
-  if ( m_verbosity ) INFO( "Setting MC = " << &sim << " for " << this );
+  if ( m_verbosity ) INFO( "Setting norm. event list with:" << sim.size() << " events for " << this );
   reset();
   m_integrator = integrator(&sim);
 }

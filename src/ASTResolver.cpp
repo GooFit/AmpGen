@@ -22,37 +22,26 @@ ASTResolver::ASTResolver(const std::map<std::string, size_t>& evtMap,
   m_enable_compileTimeConstants = NamedParameter<bool>("ASTResolver::CompileTimeConstants", false);
 }
 
-bool ASTResolver::hasSubExpressions() const 
-{ 
-  return m_subTrees.size() != 0; 
-}
-
-void ASTResolver::reduceSubTrees()
-{
-  m_subTrees.clear();
-  for( auto& t : m_tempTrees ){
-    auto expr = t.first->m_expression;
-    uint64_t key = t.first->key(); 
-    if( m_subTrees.count( key ) == 0 ){
-      m_subTrees[ key ] = t.first->m_expression ;
-    }
-  }
-  m_tempTrees.clear();
-}
-
 std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpressions( const Expression& expression )
 {
   std::vector<std::pair<uint64_t, Expression>> subexpressions; 
   expression.resolve( *this );
-  std::map<uint64_t, size_t> used_functions;
+  std::map<uint64_t, size_t> used_functions; 
+  std::map<uint64_t, Expression> subTrees;
   do { 
-    reduceSubTrees();
-    bool verbose = false;
-    for( auto& st : m_subTrees ) {
+    subTrees.clear();
+    for( auto& t : m_tempTrees )
+    {
+      auto expr = t.first->m_expression;
+      uint64_t key = t.first->key(); 
+      if( subTrees.count( key ) == 0 ) subTrees[ key ] = t.first->m_expression ;
+    }
+    INFO("Reducing subtrees: " << m_tempTrees.size() << " " << subTrees.size() );
+    m_tempTrees.clear(); 
+    for( auto& st : subTrees ){
       st.second.resolve( *this );
       auto stack_pos = used_functions.find( st.first );
       if ( stack_pos == used_functions.end() ) {
-        if( verbose ) INFO("Function: " << st.first << " is at the end of stack");
         subexpressions.emplace_back( st.first , st.second );
         used_functions[st.first] = subexpressions.size() - 1;
         continue;
@@ -66,7 +55,7 @@ std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpression
       }
       used_functions[st.first] = subexpressions.size() - 1;
     }
-  } while ( hasSubExpressions() );
+  } while ( subTrees.size() !=0 );
   std::reverse( subexpressions.begin(), subexpressions.end() );
   return subexpressions;
 }
@@ -162,4 +151,3 @@ std::string ASTResolver::resolvedParameter( const IExpression* param ) const
     return "";
   }
 }
-
