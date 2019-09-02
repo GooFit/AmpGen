@@ -40,7 +40,6 @@ PolarisedSum::PolarisedSum( const EventType& type,
   m_prefix(prefix)
 {
   m_debug              = NamedParameter<bool>(       "PolarisedSum::Debug"      ,false );
-  bool autoCompile     = NamedParameter<bool>(       "PolarisedSum::AutoCompile",true  );
   std::string objCache = NamedParameter<std::string>("PolarisedSum::ObjectCache",""    );
   m_verbosity          = NamedParameter<bool>(       "PolarisedSum::Verbosity"  ,0     );
   m_rules              = AmplitudeRules(mps);
@@ -54,24 +53,29 @@ PolarisedSum::PolarisedSum( const EventType& type,
     for(size_t i = 0 ; i < fs.size(); ++i ) fs[i]->setPolarisationState( polState[i+1] );
   };
   for( auto& m : protoAmps ) INFO( m.first.uniqueString() );  
-  for( auto& matrix_element : protoAmps ){
-    Tensor thisExpression( Tensor::dim(m_polStates.size()) );
-    int i = 0 ;
+  m_matrixElements.resize( protoAmps.size() );
+
+  ThreadPool tp(8);
+  for(unsigned i = 0; i < m_matrixElements.size(); ++i)
+  {
+    tp.enqueue( [i,this,&mps,&protoAmps, &set_polarisation_state]{
+    Tensor thisExpression( Tensor::dim(this->m_polStates.size()) );
     DebugSymbols syms;  
-    for( auto& polState : m_polStates ){
-      set_polarisation_state( matrix_element, polState );
-      thisExpression[i++] = make_cse( matrix_element.first.getExpression(&syms) ); 
+    for( unsigned j=0;j<m_polStates.size();++j ){
+      set_polarisation_state( protoAmps[i], m_polStates[j] );
+      thisExpression[j] = make_cse( protoAmps[i].first.getExpression(&syms) ); 
     }
-    CompiledExpression< std::vector<complex_t> , const real_t*, const real_t* > expression( 
-        TensorExpression( thisExpression), 
-        matrix_element.first.decayDescriptor(),
-        type.getEventFormat(), m_debug ? syms : DebugSymbols() ,&mps ); 
-    m_matrixElements.emplace_back(matrix_element.first, matrix_element.second, expression );
-  }
-  if(autoCompile){
-    ThreadPool tp(8);
-    for( auto& me : m_matrixElements ) tp.enqueue([&]{ CompilerWrapper().compile(me.amp, objCache);});
-  }
+    m_matrixElements[i] = TransitionMatrix<std::vector<complex_t>>( 
+        protoAmps[i].first,
+        protoAmps[i].second, 
+        CompiledExpression< std::vector<complex_t>,const real_t*, const real_t*>(
+        TensorExpression(thisExpression), 
+        protoAmps[i].first.decayDescriptor(),
+        this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ,&mps ) ); 
+      CompilerWrapper().compile( m_matrixElements[i].amp );
+    });
+  } 
+  
   auto   d = m_eventType.dim();
   auto   p = [&mps](const std::string& name){ return mps.addOrGet(name,2,0,0); };
   if( d.first == 1 )      m_pVector = {};

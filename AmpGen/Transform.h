@@ -43,9 +43,9 @@ namespace AmpGen {
     public:
       TransformSequence() = default; 
       TransformSequence inverse() const;
-      Tensor operator()( const Transform::Representation& repr ) const;
+      Tensor operator()( const Transform::Representation& repr );
       Tensor operator()( const Tensor& tensor, 
-          const Transform::Representation& repr=Transform::Representation::Vector ) const;
+          const Transform::Representation& repr=Transform::Representation::Vector );
       void add( const Transform& transform );
       void add( const TransformSequence& transform );
       void stepThrough( const Tensor& tensor, 
@@ -60,7 +60,9 @@ namespace AmpGen {
       std::vector<Transform>::iterator         end()          { return m_transforms.end(); }
     private:
       std::vector<Transform> m_transforms;
+      std::array<Tensor,3>   m_cache; 
   };
+
 }
 
 #endif

@@ -37,6 +37,24 @@ double Minimiser::operator()( const double* xx )
 
 double Minimiser::FCN() const { return m_theFunction(); }
 
+void Minimiser::gradientTest()
+{
+  for (size_t i = 0; i < m_mapping.size(); ++i) {
+    auto parameter = m_parSet->at( m_mapping[i] );
+    double m       = parameter->mean();
+    parameter->setCurrentFitVal( parameter->meanInit() + parameter->stepInit() );
+    double vp = FCN();
+    parameter->setCurrentFitVal( parameter->meanInit() - parameter->stepInit() );
+    double vm = FCN();
+    if ( parameter->stepInit() == 0 ) {
+      WARNING( "Step of free parameter: " << parameter->name() << " = 0" );
+    } else {
+      INFO( " dF/d{" << parameter->name() << "} = " << ( vp - vm ) / ( 2 * parameter->stepInit() ) );
+    }
+    parameter->setCurrentFitVal( m );
+  }
+}
+
 void Minimiser::prepare()
 {
   std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse");
@@ -136,4 +154,4 @@ void Minimiser::addExtendedTerm( IExtendLikelihood* m_term )
   m_extendedTerms.push_back( m_term ); 
 }
 
-ROOT::Math::Minimizer* Minimiser::minimiserInternal() { return m_minimiser; }
+ROOT::Minuit2::Minuit2Minimizer* Minimiser::minimiserInternal() { return m_minimiser; }

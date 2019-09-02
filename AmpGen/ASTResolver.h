@@ -29,8 +29,6 @@ namespace AmpGen {
   { 
     public: 
       ASTResolver(const std::map<std::string, size_t>& evtMap = {} , const MinuitParameterSet* mps = nullptr );
-      bool hasSubExpressions() const;
-      void reduceSubTrees(); 
       void cleanup();
       std::vector<std::pair<uint64_t,Expression>> getOrderedSubExpressions( const Expression& expression);
 
@@ -59,7 +57,6 @@ namespace AmpGen {
       std::map<std::string, std::string>                    m_parameterMapping;            /// Mapping of parameters to compile parameters
       const MinuitParameterSet*                             m_mps;                         /// Set of MinuitParameters 
       std::map<const SubTree*, uint64_t>                    m_tempTrees;                   /// temporary store of sub-trees for performing cse reduction 
-      std::map<uint64_t, Expression>                        m_subTrees;                    /// Unordered sub-trees 
       unsigned int                                          m_nParameters;                 /// Number of parameters
       bool                                                  m_enable_cuda;                 /// flag to generate CUDA code <<experimental>>
       bool                                                  m_enable_compileTimeConstants; /// flag to enable compile time constants <<experimental>>
