@@ -11,7 +11,6 @@ using namespace AmpGen;
 GaussErrorPropagator::GaussErrorPropagator( const TMatrixD& reducedCovariance, const std::vector<MinuitParameter*>& params, TRandom3* rnd )
   : m_parameters( params ), m_rand( rnd ), m_decomposedCholesky( params.size(), params.size() )
 {
-
   for ( size_t x = 0; x < params.size(); ++x ) {
     auto p = params[x];
     INFO( p->name() << "  " << p->mean() << " +/- " << sqrt( reducedCovariance( x, x ) ) );
@@ -20,7 +19,12 @@ GaussErrorPropagator::GaussErrorPropagator( const TMatrixD& reducedCovariance, c
   TDecompChol decomposed( reducedCovariance );
   decomposed.Decompose();
   m_decomposedCholesky = decomposed.GetU();
-  transpose();
+  /// transpose the cholesky matrix
+  for ( int i = 0; i < m_decomposedCholesky.GetNrows(); ++i ) {
+    for ( int j = i + 1; j < m_decomposedCholesky.GetNrows(); ++j ){
+      std::swap( m_decomposedCholesky(i, j), m_decomposedCholesky(j, i)  );
+    }
+  }
 }
 
 void GaussErrorPropagator::perturb()
@@ -40,16 +44,6 @@ void GaussErrorPropagator::reset()
   for ( unsigned int j = 0; j < m_parameters.size(); ++j ) m_parameters[j]->setCurrentFitVal( m_startingValues[j] );
 }
 
-void GaussErrorPropagator::transpose()
-{
-  for ( int i = 0; i < m_decomposedCholesky.GetNrows(); ++i ) {
-    for ( int j = i + 1; j < m_decomposedCholesky.GetNrows(); ++j ) {
-      double tmp = m_decomposedCholesky( j, i );
-      m_decomposedCholesky( j, i ) = m_decomposedCholesky( i, j );
-      m_decomposedCholesky( i, j ) = tmp;
-    }
-  }
-}
 LinearErrorPropagator::LinearErrorPropagator( const TMatrixD& reducedCovarianceMatrix,
     const std::vector<MinuitParameter*>& params )
   : m_cov( reducedCovarianceMatrix ), m_parameters( params )

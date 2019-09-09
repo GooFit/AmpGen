@@ -36,7 +36,6 @@ std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpression
       uint64_t key = t.first->key(); 
       if( subTrees.count( key ) == 0 ) subTrees[ key ] = t.first->m_expression ;
     }
-    INFO("Reducing subtrees: " << m_tempTrees.size() << " " << subTrees.size() );
     m_tempTrees.clear(); 
     for( auto& st : subTrees ){
       st.second.resolve( *this );

@@ -322,6 +322,11 @@ namespace AmpGen
     /** @ingroup Lineshapes class Poly
      *  @brief Polynominal shape \f$ \mathcal{A}(s) = \sum^n_i c_i s^{i} \f$ where the sum is to lineshapeModifier::Degree, and the free parameters of the shape are lineshapeModifier_ci 
      */
+    DECLARE_LINESHAPE( PolyNR );
+    
+    /** @ingroup Lineshapes class PolyNR
+     *  @brief Polynominal shape \f$ \mathcal{A}(s) = \sqrt{ \sum_{ij} c_{ij} s^{i} (s^\prime)^{j} } \f$ where the sum is to lineshapeModifier::Degree, and the free parameters of the shape are lineshapeModifier_cij 
+     */
     DECLARE_LINESHAPE( Poly );
 
     /** @ingroup Lineshapes class FOCUS
