@@ -39,6 +39,7 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
     ERROR( "Particle not found: " << m_mother );
     return;
   }
+  m_alt_part_names = NamedParameter<bool>("EventType::AlternativeParicleNames", false );
   for ( auto& particle : m_particleNames ) {
     auto prop = ParticlePropertiesList::get( particle );
     if ( prop != nullptr )
@@ -47,7 +48,10 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
       ERROR( "Particle not found: " << particle );
       return;
     }
-    m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "p" ), "-", "m" ) );
+    if(m_alt_part_names)
+      m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "p" ), "-", "m" ) );
+    else
+      m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "~" ), "-", "#" ) );
   }
   DEBUG( m_mother << " = " << m_motherMass << " -> " );
   for ( unsigned int i = 0; i < m_particleNames.size(); ++i ) {
@@ -67,10 +71,18 @@ std::map<std::string, size_t> EventType::getEventFormat( const bool& outputNames
   bool include_energy = NamedParameter<bool>("EventType::IncludeEnergy", true );
   size_t s = include_energy ? 4 : 3;
   for ( unsigned int ip = 0; ip < size(); ++ip ) {
-    const auto parsed_name = std::count(m_particleNamesPickled.begin(),m_particleNamesPickled.end(),m_particleNamesPickled[ip]) == 1 ?
-      m_particleNamesPickled[ip] : m_particleNamesPickled[ip] + std::to_string( ip + 1 );
-    std::string stub =
-      outputNames ? parsed_name : std::to_string( ip );
+    std::string parsed_name;
+    if(m_alt_part_names)
+      //check if there are multiple identical particles
+      if(std::count(m_particleNamesPickled.begin(),m_particleNamesPickled.end(),m_particleNamesPickled[ip]) > 1)
+        //if yes, append an index
+        parsed_name = m_particleNamesPickled[ip] +
+                      std::to_string(std::count(m_particleNamesPickled.begin(),m_particleNamesPickled.begin()+ip, m_particleNamesPickled[ip]));
+      else // just take the already chosen name
+        parsed_name = m_particleNamesPickled[ip];
+    else
+      parsed_name = "_" + std::to_string( ip + 1 ) + "_" + m_particleNamesPickled[ip];
+    std::string stub = outputNames ? parsed_name : std::to_string( ip );
     if( include_energy ) returnValue[stub + "_E"]  = s * ip + 3;
     returnValue[stub + "_Px"] = s * ip + 0;
     returnValue[stub + "_Py"] = s * ip + 1;
@@ -196,12 +208,12 @@ size_t EventType::dof() const { return 3 * size() - 7; }
 std::function<void( Event& )> EventType::symmetriser() const
 {
   std::map<std::string, std::vector<size_t>> particleOrdering;
-  for ( size_t i = 0; i < m_particleNames.size(); ++i ) 
+  for ( size_t i = 0; i < m_particleNames.size(); ++i )
     particleOrdering[m_particleNames[i]].push_back( i );
   std::vector<std::vector<size_t>> shuffles;
   for ( auto& im : particleOrdering )
     if ( im.second.size() != 1 ) shuffles.push_back( im.second );
-  
+
   int seed      = NamedParameter<unsigned int>( "EventType::SymmetriserSeed", 12 );
   std::mt19937 rng( seed );
   for ( auto& shuffle : shuffles ) {
