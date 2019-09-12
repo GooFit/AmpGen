@@ -51,7 +51,7 @@ bool MinuitParameterSet::addToEnd( MinuitParameter* parPtr )
   return success;
 }
 
-MinuitParameter* MinuitParameterSet::add( const std::string& name, const unsigned int& flag, const double& mean,
+MinuitParameter* MinuitParameterSet::add( const std::string& name, const Flag& flag, const double& mean,
     const double& sigma, const double& min, const double& max )
 {
   addToEnd( new MinuitParameter( name, Flag(flag), mean, sigma, min, max ) );
@@ -225,7 +225,7 @@ void MinuitParameterSet::rename(const std::string& name, const std::string& new_
   m_keyAccess.emplace(new_name, it);
 }
 
-MinuitParameter* MinuitParameterSet::addOrGet( const std::string& name, const unsigned int& flag, const double& mean,
+MinuitParameter* MinuitParameterSet::addOrGet( const std::string& name, const Flag& flag, const double& mean,
     const double& sigma, const double& min, const double& max )
 {
   if ( m_keyAccess.count( name ) != 0 ) return m_keyAccess[name];

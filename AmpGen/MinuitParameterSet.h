@@ -28,9 +28,9 @@ namespace AmpGen
     MinuitParameterSet getFloating();
 
     bool add( MinuitParameter* parPtr );
-    MinuitParameter* add(const std::string& name, const unsigned int& flag, const double& mean, const double& sigma, const double& min = 0, const double& max = 0 );
+    MinuitParameter* add(const std::string& name, const Flag& flag, const double& mean, const double& sigma, const double& min = 0, const double& max = 0 );
     bool unregister( MinuitParameter* patPtr );
-    MinuitParameter* addOrGet(const std::string& name, const unsigned int& flag, const double& mean,
+    MinuitParameter* addOrGet(const std::string& name, const Flag& flag, const double& mean,
                               const double& sigma, const double& min = 0, const double& max = 0 );
     void loadFromStream();
     void loadFromFile( const std::string& name );
