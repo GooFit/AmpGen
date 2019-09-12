@@ -9,7 +9,9 @@
 
 using namespace AmpGen;
 
-complete_enum( Flag, Free, Hide, Fix, CompileTimeConstant )
+namespace AmpGen {
+  complete_enum( Flag, Free, Hide, Fix, CompileTimeConstant )
+}
 
 MinuitParameter::MinuitParameter( const std::string& name, const Flag& fix, const double& mean, const double& step,
     const double& mi, const double& ma )

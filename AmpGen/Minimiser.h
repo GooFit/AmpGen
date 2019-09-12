@@ -89,7 +89,6 @@ namespace AmpGen
     std::vector<unsigned int>   m_mapping      = {};
     int          m_status     = {0};
     unsigned int m_nParams    = {0};
-    unsigned int m_lastPrint  = {0};
     unsigned int m_printLevel = {0};
     double       m_ll_zero    = {0};
     bool         m_normalise  = {false};

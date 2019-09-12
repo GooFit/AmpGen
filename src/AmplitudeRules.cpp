@@ -87,10 +87,11 @@ EventType AmplitudeRule::eventType() const
   return EventType( particleNames );
 }
 
-declare_enum(coordinateType, cartesian, polar)
-declare_enum(angType, deg, rad)
-complete_enum(coordinateType, cartesian, polar)
-complete_enum(angType, deg, rad)
+namespace AmpGen 
+{
+  make_enum(coordinateType, cartesian, polar)
+  make_enum(angType, deg, rad)
+}
 
 CouplingConstant::CouplingConstant(const AmplitudeRule& pA)
 {
