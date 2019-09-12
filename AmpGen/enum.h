@@ -12,7 +12,7 @@ std::ostream& operator<<( std::ostream& os, const name& np);
 template <> name parse(const std::string& word){ constexpr auto args = #__VA_ARGS__; return AmpGen::detail::parse<name>(word, args); } \
 template <> std::string to_string( const name& enumItem ){ constexpr auto args = #__VA_ARGS__; return AmpGen::detail::to_string<name>(enumItem, args) ; } \
 template <> name lexical_cast(const std::string& word, bool& /*status*/){ return parse<name>(word); } \
-std::ostream& AmpGen::operator<<(std::ostream& os, const name& np){ return os << to_string<name>(np);}
+std::ostream& operator<<(std::ostream& os, const name& np){ return os << to_string<name>(np);}
 
 #define make_enum(name, ...)                                                                                                                   \
 enum class name {__VA_ARGS__};                                                                                                                 \
