@@ -342,7 +342,7 @@ bool AmpGen::isDir( const std::string& pathname )
   return stat( pathname.c_str(), &sb ) == 0 && S_ISDIR( sb.st_mode );
 }
 
-std::vector<std::string> AmpGen::getListOfFiles( const std::string& directory, std::string patternString )
+std::vector<std::string> AmpGen::getListOfFiles( const std::string& directory, const std::string& patternString )
 {
   std::string expanded_path = expandGlobals( directory );
   std::vector<std::string> files;

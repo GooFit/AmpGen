@@ -94,18 +94,18 @@ namespace AmpGen
       if ( pdfIndex != m_pdfIndex.end() ) {
         return pdfIndex->second;
       } else {
-        size_t size            = m_lastCachePosition;
+        size_t lcp            = m_lastCachePosition;
         size_t expression_size = size_of == 0 ? 
           expression.returnTypeSize() / sizeof(complex_t) : size_of; 
-        if ( size >= at( 0 ).cacheSize() ) { 
-          WARNING("Cache index " << size << " exceeds cache size = " 
+        if (lcp >= at( 0 ).cacheSize() ) { 
+          WARNING("Cache index " << lcp << " exceeds cache size = " 
                                  << at(0).cacheSize() << " resizing to " 
-                                 << size + expression_size );
-          resizeCache( size + expression_size );
+                                 << lcp + expression_size );
+          resizeCache( lcp + expression_size );
         }
         m_pdfIndex[key] = m_lastCachePosition;
         m_lastCachePosition += expression_size; 
-        return size;
+        return lcp;
       }
     }
 

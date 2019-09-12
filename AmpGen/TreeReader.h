@@ -59,12 +59,12 @@ namespace AmpGen
           bool operator!=( const Iterator& rhs ) const { return m_position != rhs.m_position; }
           size_t operator*() const { return m_position; }
         };
-        TTree* tree;
-        bool ready;
-        std::vector<IReadBranch*> branches;
+        TTree* tree                        = {nullptr};
+        bool ready                         = {false};
+        std::vector<IReadBranch*> branches = {};
 
       public: 
-        TreeReader( TTree* tree ) : tree( tree ) {}
+        explicit TreeReader( TTree* tree ) : tree( tree ) {}
         void setBranch( const std::string& name, OutputType* ptr )
         {
           IReadBranch* new_branch                    = nullptr;

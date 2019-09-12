@@ -39,7 +39,6 @@ bool QuarkState::initPositions()
 void QuarkState::antiThis()
 {
   std::transform( m_quarks.begin(), m_quarks.end(), m_quarks.begin(), [](const auto& quark){ return (-1)*quark ; } );
-//  for ( auto& quark : m_quarks ) quark *= -1;
 }
 
 char QuarkState::nameFromPosition( int i ) const
@@ -83,16 +82,9 @@ QuarkState QuarkState::operator-( const QuarkState& rhs ) const
   returnVal -= rhs;
   return returnVal;
 }
-std::ostream& operator<<( std::ostream& st, const QuarkState& qc )
-{
-  qc.print( st );
-  return st;
-}
 bool QuarkState::isVacuum() const
 {
-  for ( auto& quark : m_quarks )
-    if ( quark != 0 ) return false;
-  return true;
+  return std::all_of( m_quarks.begin(), m_quarks.end(), [](const auto& quark){ return quark == 0 ; } );
 }
 
 bool QuarkState::operator==( const QuarkState& rhs ) const
@@ -184,23 +176,14 @@ QuarkContent QuarkContent::operator-( const QuarkContent& rhs ) const
   returnVal -= rhs;
   return returnVal;
 }
-std::ostream& AmpGen::operator<<( std::ostream& st, const QuarkContent& qc )
-{
-  qc.print( st );
-  return st;
-}
 
 bool QuarkContent::operator==( const QuarkContent& rhs ) const
 {
-//  return std::any_of( m_quarks.begin(), m_quarks.end(), [rhs](auto& ql){ 
-//    return std::any_of( rhs.quarks().begin(), rhs.quarks().end(),  
-//      [ql](auto& qr){ return ql == qr; } )  ;} ); 
-  for ( auto& l : m_quarks ) {
-    for ( auto& r : rhs.quarks() ) {
-      if ( l == r ) return true;
-    }
-  }
-  return false;
+   for ( auto& qsl : m_quarks ) {
+     bool isSame = std::any_of( rhs.quarks().begin(), rhs.quarks().end(), [&qsl](auto& qsr){ return qsl == qsr; } );
+     if( isSame ) return true; 
+   }
+  return false; 
 }
 
 bool QuarkContent::operator!=( const QuarkContent& rhs ) const 
@@ -215,8 +198,21 @@ QuarkState QuarkContent::operator[]( const size_t& index ) const
 
 size_t QuarkContent::size() const { return m_quarks.size(); }
 
-std::vector<QuarkState> QuarkContent::quarks() const 
+const std::vector<QuarkState>& QuarkContent::quarks() const 
 {
   return m_quarks; 
+}
+
+
+std::ostream& AmpGen::operator<<( std::ostream& st, const QuarkContent& qc )
+{
+  qc.print( st );
+  return st;
+}
+
+std::ostream& AmpGen::operator<<( std::ostream& st, const QuarkState& qc )
+{
+  qc.print( st );
+  return st;
 }
 

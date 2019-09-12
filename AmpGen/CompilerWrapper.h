@@ -22,7 +22,7 @@ namespace AmpGen
     void setVerbose() { m_verbose = true ; } 
     void preamble(std::ostream& os ) const ; 
   private:
-    std::vector<std::string> m_includes; 
+    std::vector<std::string> m_includes = {"array","complex","math.h","vector"}; 
     bool                     m_verbose;
     std::string              m_cxx;
     std::string generateFilename();

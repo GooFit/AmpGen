@@ -46,7 +46,7 @@ ParticleProperties::ParticleProperties( const std::string& pdg_string ) : m_netQ
     DEBUG( "Invalid line : " << pdg_string );
     return;
   }
-  for ( auto& st : s ) st = trim( st );
+  std::transform(s.begin(), s.end(), s.begin(), trim);
   bool status    = 1;
   m_mass         = lexical_cast<double>( s[0], status );
   m_mErrPlus     = lexical_cast<double>( s[1], status );

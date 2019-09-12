@@ -52,7 +52,7 @@ namespace AmpGen
       bool          operator==( const QuarkContent& rhs ) const;
       bool          operator!=( const QuarkContent& rhs ) const;
       QuarkState    operator[]( const size_t& index) const; 
-      std::vector<QuarkState> quarks() const; 
+      const std::vector<QuarkState>& quarks() const; 
   };
   std::ostream& operator<<( std::ostream& st, const QuarkState& qc );
   std::ostream& operator<<( std::ostream& st, const QuarkContent& qc );

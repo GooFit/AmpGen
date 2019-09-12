@@ -55,7 +55,7 @@ namespace AmpGen
     virtual std::string fcnSignature()   const = 0;
     virtual std::string args()           const = 0;
     virtual void print() const                 = 0;
-    virtual ~CompiledExpressionBase()          = default;
+    virtual ~CompiledExpressionBase();
     virtual size_t returnTypeSize() const      = 0;    
   protected:
     Expression                                      m_obj;
