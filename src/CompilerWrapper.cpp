@@ -54,6 +54,7 @@ std::string CompilerWrapper::generateFilename()
   if ( status == -1 ) {
     ERROR( "Failed to generate temporary filename " << status );
   }
+  std::remove( buffer );
   return buffer;
 }
 

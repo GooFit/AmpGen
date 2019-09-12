@@ -133,7 +133,7 @@ void FitResult::writeToFile( const std::string& fname )
   for (size_t i = 0; i < (size_t)m_covarianceMatrix.GetNrows(); ++i ) {
     auto param = m_mps->at(i);
     outlog << "Parameter"
-      << " " << param->name() << " " << param->flag() << " " << param->mean() << " "
+      << " " << param->name() << " " << to_string<Flag>(param->flag()) << " " << param->mean() << " "
       << ( param->isFree() ? m_mps->at(i)->err() : 0 ) << " ";
     for (size_t j = 0; j < (size_t)m_covarianceMatrix.GetNcols(); ++j ) outlog << m_covarianceMatrix[i][j] << " ";
     outlog << std::endl;

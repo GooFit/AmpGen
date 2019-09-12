@@ -87,19 +87,22 @@ EventType AmplitudeRule::eventType() const
   return EventType( particleNames );
 }
 
+declare_enum(coordinateType, cartesian, polar)
+declare_enum(angType, deg, rad)
+complete_enum(coordinateType, cartesian, polar)
+complete_enum(angType, deg, rad)
+
 CouplingConstant::CouplingConstant(const AmplitudeRule& pA)
 {
   couplings.emplace_back(pA.m_re,pA.m_im);  
-  std::string cartOrPolar = NamedParameter<std::string>("CouplingConstant::Coordinates" ,"cartesian");
-  std::string degOrRad    = NamedParameter<std::string>("CouplingConstant::AngularUnits","rad");
-  if( cartOrPolar == "polar" ){
-    isCartesian = false; 
-  }
-  else if ( cartOrPolar != "cartesian" ){
+  coordinateType coord = NamedParameter<coordinateType>("CouplingConstant::Coordinates", coordinateType::cartesian);
+  angType degOrRad     = NamedParameter<angType>("CouplingConstant::AngularUnits", angType::rad);
+  if( coord == coordinateType::polar ) isCartesian = false; 
+  else if ( coord != coordinateType::cartesian){
     FATAL("Coordinates for coupling constants must be either cartesian or polar");
   } 
-  if ( degOrRad == "deg") sf = M_PI / 180; 
-  else if ( degOrRad != "rad"){
+  if ( degOrRad == angType::deg) sf = M_PI / 180; 
+  else if ( degOrRad != angType::rad){
     FATAL("CouplingConstant::AngularUnits must be either rad or deg");
   } 
 }
