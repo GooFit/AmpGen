@@ -38,7 +38,6 @@ namespace AmpGen {
   template <class T>
     std::string vectorToString( const std::vector<T>& obj, const std::string& delim = "" )
     {
-      std::string returnValue;
       std::stringstream ss;
       if( obj.size() == 0 ) return "";
       for ( unsigned int i = 0 ; i < obj.size()-1; ++i ) 
@@ -50,7 +49,6 @@ namespace AmpGen {
   template <class T, class F>
     std::string vectorToString( const std::vector<T>& obj, const std::string& delim="", const F& functor =[](const T& f){ return f ; }  )
     {
-      std::string returnValue;
       std::stringstream ss;
       if( obj.size() == 0 ) return "";
       for ( unsigned int i = 0 ; i < obj.size()-1; ++i ) 
@@ -195,7 +193,7 @@ namespace AmpGen {
   bool isDir( const std::string& fname );
   bool fileExists( const std::string& name );
 
-  std::vector<std::string> getListOfFiles(const std::string& directory, std::string patternString = "");
+  std::vector<std::string> getListOfFiles(const std::string& directory, const std::string& patternString = "");
 
   void printSplash();
   void printReleaseNotes(const std::string& fname);

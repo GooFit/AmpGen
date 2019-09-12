@@ -31,23 +31,20 @@ using namespace AmpGen;
 using namespace std::complex_literals; 
 
 Particle::Particle()
-{
-  m_defaultModifier = NamedParameter<std::string>("Particle::DefaultModifier","", "Default modifier to use for lineshapes, for example to use normalised vs unnormalised Blatt-Weisskopf factors.");
-  m_spinFormalism   = NamedParameter<std::string>("Particle::SpinFormalism"  ,"Covariant", "Spin formalism to use, can choose between Covariant and Canonical formalisms");
-  m_spinBasis       = NamedParameter<std::string>("Particle::SpinBasis"      ,"Dirac", 
+  : m_spinFormalism   { NamedParameter<std::string>("Particle::SpinFormalism"  ,"Covariant", "Spin formalism to use, can choose between Covariant and Canonical formalisms") }
+  , m_spinBasis       { NamedParameter<std::string>("Particle::SpinBasis"      ,"Dirac", 
                       optionalHelpString("Basis to use for calculating external polarisation tensors / spinors.", {
                       {"Dirac", "Quantises along the z-axis"}
-                    , {"Weyl" , "Quantises along the direction of motion"}} ) ); 
-  
-}
+                    , {"Weyl" , "Quantises along the direction of motion"}} ) )}
+  , m_defaultModifier { NamedParameter<std::string>("Particle::DefaultModifier","", "Default modifier to use for lineshapes, for example to use normalised vs unnormalised Blatt-Weisskopf factors.") }
+  {}
 
 Particle::Particle( const std::string& name, const Particle& p1, const Particle& p2 ) 
   : Particle() 
 {
   m_props = ParticlePropertiesList::get( name );
   m_name  = name;
-  m_daughters.push_back(std::make_shared<Particle>(p1));
-  m_daughters.push_back(std::make_shared<Particle>(p2));
+  m_daughters = { std::make_shared<Particle>(p1), std::make_shared<Particle>(p2) };
   pdgLookup();
   sortDaughters();
   for ( auto& d : m_daughters ) d->setTop( false );
@@ -58,8 +55,7 @@ Particle::Particle( const int& pdgID, const Particle& p1, const Particle& p2 )
   : Particle()
 {
   m_props = ParticlePropertiesList::get( pdgID );
-  m_daughters.push_back( std::make_shared<Particle>( p1 ) );
-  m_daughters.push_back( std::make_shared<Particle>( p2 ) );
+  m_daughters = {std::make_shared<Particle>( p1 ) , std::make_shared<Particle>( p2 ) };
   if ( m_props != nullptr ) m_name = m_props->name();
   pdgLookup();
   sortDaughters();
@@ -102,13 +98,7 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
     ERROR( "Amplitude " << decayString << " not configured correctly" );
   }
   if ( finalStates.size() == fs.size() ) {
-    std::string finalStateString = vectorToString( finalStates, " ");
-    for ( auto used : hasUsedFinalState ) {
-      m_isStateGood &= used;
-    }
-    if ( !isStateGood() ) {
-      DEBUG( "Amplitude " << decayString << " does not match requested event type " << finalStateString );
-    }
+    m_isStateGood = std::all_of( hasUsedFinalState.begin(), hasUsedFinalState.end(),[](const auto& b){return b;} );
   }
   m_uniqueString = makeUniqueString();
 }
@@ -411,7 +401,8 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   bool sumAmplitudes    = !hasModifier("Inco");
   bool includeSpin      = !hasModifier("BgSpin0");
   std::vector<int> exchangeParities;
-  for( auto& p : finalStateParticles ) exchangeParities.push_back( p->props()->isFermion() ? -1 : 1 ); 
+  std::transform( finalStateParticles.begin(), finalStateParticles.end(), std::back_inserter(exchangeParities), 
+      [](const auto& p){ return p->props()->isFermion() ? -1 : 1; } );
   for(auto& ordering : orderings){
     auto exchangeParity = minSwaps( ordering, exchangeParities );   
     setOrdering( ordering );
@@ -751,7 +742,7 @@ EventType Particle::eventType() const
 {
   std::vector<std::string> names = {m_name};
   auto fs                        = getFinalStateParticles( false );
-  for ( auto& p : fs ) names.push_back( p->name() );
+  std::transform(fs.begin(), fs.end(), std::back_inserter(names), [](const auto& p){ return p->name(); } );
   return EventType( names );
 }
 

@@ -22,11 +22,10 @@
 
 using namespace AmpGen;
 
-CompilerWrapper::CompilerWrapper( const bool& verbose ) : 
-  m_includes( {"array", "complex", "math.h", "vector"} ),
-  m_verbose(verbose)
+CompilerWrapper::CompilerWrapper( const bool& verbose ) :
+  m_verbose(verbose),
+  m_cxx(getenv("CXX") != nullptr ? std::string( getenv( "CXX" ) ) : "")
 {
-  m_cxx = getenv("CXX") != nullptr ? std::string( getenv( "CXX" ) ) : "";
   if ( m_cxx == "" ) {
 #ifdef AMPGEN_CXX
     if( m_verbose ) 

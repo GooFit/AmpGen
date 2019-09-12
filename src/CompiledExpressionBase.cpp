@@ -14,6 +14,26 @@
 #include "AmpGen/ProfileClock.h"
 using namespace AmpGen;
 
+CompiledExpressionBase::CompiledExpressionBase( const Expression& expression, 
+    const std::string& name, 
+    const DebugSymbols& db,
+    const std::map<std::string, size_t>& evtMapping )
+  : m_obj( expression ), 
+  m_name( name ),
+  m_progName( programatic_name(name) ),
+  m_db(db),
+  m_evtMap(evtMapping) {}
+
+CompiledExpressionBase::CompiledExpressionBase( const std::string& name ) 
+  : m_name( name ),
+    m_progName( programatic_name(name) ) {}
+
+
+CompiledExpressionBase::~CompiledExpressionBase() 
+{
+  if( m_resolver != nullptr ) delete m_resolver; 
+}
+
 std::string AmpGen::programatic_name( std::string s )
 {
   std::replace( s.begin(), s.end(), '-', 'm' );
@@ -28,42 +48,22 @@ std::string AmpGen::programatic_name( std::string s )
 
 void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
 {
-  ProfileClock pc; 
   if( m_resolver != nullptr ) delete m_resolver ; 
   m_resolver = new ASTResolver( m_evtMap, mps );
   m_dependentSubexpressions = m_resolver->getOrderedSubExpressions( m_obj ); 
   for ( auto& sym : m_db ){
     auto expressions_for_this = m_resolver->getOrderedSubExpressions( sym.second); 
     for( auto& it : expressions_for_this ){
-      bool isAlreadyInStack = false;
-      for( auto& jt : m_debugSubexpressions ){
-        if( it.first == jt.first ){ isAlreadyInStack = true; break ; }
-      }
-      if( !isAlreadyInStack ) m_debugSubexpressions.push_back( it );
+      auto is_same = [&it](const auto& jt){ return it.first == jt.first ; };
+      if( !std::any_of( m_debugSubexpressions.begin(), m_debugSubexpressions.end(), is_same)  ) m_debugSubexpressions.push_back( it );
     }
   }
   m_cacheTransfers.clear();
   for( auto& expression : m_resolver->cacheFunctions() ) 
     m_cacheTransfers.emplace_back( expression.second ); 
   resizeExternalCache( m_resolver->nParams() ); 
-  pc.stop();
-  //INFO("Took: " << pc << " ms to resolve tree");
   prepare(); 
 }
-
-CompiledExpressionBase::CompiledExpressionBase( const Expression& expression, 
-    const std::string& name, 
-    const DebugSymbols& db,
-    const std::map<std::string, size_t>& evtMapping )
-  : m_obj( expression ), 
-  m_name( name ),
-  m_progName( programatic_name(name) ),
-  m_db(db),
-  m_evtMap(evtMapping) {}
-
-CompiledExpressionBase::CompiledExpressionBase( const std::string& name ) 
-  : m_name( name ),
-    m_progName( programatic_name(name) ) {}
 
 std::string CompiledExpressionBase::name() const { return m_name; }
 std::string CompiledExpressionBase::progName() const { return m_progName; }

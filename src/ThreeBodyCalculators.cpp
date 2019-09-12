@@ -164,6 +164,7 @@ Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(
 ThreeBodyCalculator::ThreeBodyCalculator( const std::string& head, MinuitParameterSet& mps, const size_t& nKnots, const double& min, const double& max)
   : m_min(min),
     m_max(max),
+    m_norm(1),
     m_nKnots(nKnots),
     m_name(head),
     m_mps(&mps)
@@ -225,10 +226,10 @@ TGraph* ThreeBodyCalculator::widthGraph( const double& mNorm )
   return g;
 }
 
-ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitParameterSet& mps ) :
-    fcs( evt, mps, "" )
-    , integrator(1, evt.mass(0)*evt.mass(0), evt.mass(1)*evt.mass(1) , evt.mass(2)*evt.mass(2) )
-    , type(evt)
+ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitParameterSet& mps )
+  : fcs( evt, mps, "" )
+  , integrator(1, evt.mass(0)*evt.mass(0), evt.mass(1)*evt.mass(1) , evt.mass(2)*evt.mass(2) )
+  , type(evt)
 {
   DebugSymbols msym;
   Expression matrixElementTotal = spinAverageMatrixElement( fcs.matrixElements(), &msym );

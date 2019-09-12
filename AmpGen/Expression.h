@@ -62,7 +62,7 @@
 #define DECLARE_UNARY_OPERATOR( X )                         \
   class X : public IUnaryExpression {                       \
     public:                                                 \
-    X( const Expression& other );                           \
+    explicit X( const Expression& other );                  \
     virtual std::string to_string(const ASTResolver* resolver=nullptr) const override;         \
     virtual Expression d() const override;                  \
     operator Expression() const;                            \

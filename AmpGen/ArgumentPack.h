@@ -12,7 +12,7 @@ namespace AmpGen
   #define DECLARE_ARGUMENT(X, Y)                          \
   struct X : public AmpGen::Argument<Y> {                 \
     template<class Z>                                     \
-    X(Z val) : AmpGen::Argument<Y>(val){}                 \
+    explicit X(Z val) : AmpGen::Argument<Y>(val){}        \
     X() : AmpGen::Argument<Y>(){}                         \
   }
   /** @class IArgument 

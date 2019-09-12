@@ -34,9 +34,8 @@ FitResult::FitResult( const FitResult& other )
   , m_status( other.status() )
   , m_observables( other.observables() )
   , m_fitFractions( other.fitFractions() )
+  , m_covarianceMatrix(other.cov())
 {
-  m_covarianceMatrix.ResizeTo( other.cov().GetNrows(), other.cov().GetNcols() );
-  m_covarianceMatrix = other.cov();
 }
 
 FitResult::FitResult( const std::string& filename ) :
@@ -46,14 +45,11 @@ FitResult::FitResult( const std::string& filename ) :
 }
 
 FitResult::FitResult( const Minimiser& mini )
-{
-  m_mps  = std::make_shared<MinuitParameterSet>( *mini.parSet() );
-  m_LL   = mini.FCN();
-  auto M = mini.covMatrixFull();
-  m_covarianceMatrix.ResizeTo( M.GetNcols(), M.GetNrows() );
-  m_covarianceMatrix = M;
-  m_status           = mini.status();
-  m_nParam           = 0;
+  : m_mps  ( std::make_shared<MinuitParameterSet>( *mini.parSet() ) )
+  , m_LL   ( mini.FCN() )
+  , m_nParam( 0 )
+  , m_status( mini.status() )
+  , m_covarianceMatrix( mini.covMatrixFull() ) {
   for (size_t i = 0; i < m_mps->size(); ++i ) {
     if ( m_mps->at(i)->isFree() ) m_nParam++;
     m_covMapping[ m_mps->at(i)->name() ] = i;
