@@ -30,7 +30,7 @@
 
 using namespace AmpGen;
 
-make_enum(generatorType, CoherentSum, PolarisedSum, FixedLib, RGenerator)
+namespace AmpGen { make_enum(generatorType, CoherentSum, PolarisedSum, FixedLib, RGenerator) }
 
 struct FixedLibPDF {
   void* lib;

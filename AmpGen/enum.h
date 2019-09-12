@@ -4,19 +4,22 @@
 
 #define declare_enum(name, ...)  \
 enum class name {__VA_ARGS__};                                     \
-template <> name AmpGen::parse(const std::string& word);           \
-template <> std::string AmpGen::to_string( const name& enumItem ); \
+template <> name parse(const std::string& word);                   \
+template <> std::string to_string( const name& enumItem );         \
 std::ostream& operator<<( std::ostream& os, const name& np); 
 
 #define complete_enum(name, ...)                 \
-template <> name AmpGen::parse(const std::string& word){ constexpr auto args = #__VA_ARGS__; return AmpGen::detail::parse<name>(word, args); } \
-template <> std::string AmpGen::to_string( const name& enumItem ){ constexpr auto args = #__VA_ARGS__; return AmpGen::detail::to_string<name>(enumItem, args) ; } \
-template <> name AmpGen::lexical_cast(const std::string& word, bool& /*status*/){ return parse<name>(word); } \
-std::ostream& operator<<(std::ostream& os, const name& np){ return os << to_string<name>(np);}
+template <> name parse(const std::string& word){ constexpr auto args = #__VA_ARGS__; return AmpGen::detail::parse<name>(word, args); } \
+template <> std::string to_string( const name& enumItem ){ constexpr auto args = #__VA_ARGS__; return AmpGen::detail::to_string<name>(enumItem, args) ; } \
+template <> name lexical_cast(const std::string& word, bool& /*status*/){ return parse<name>(word); } \
+std::ostream& AmpGen::operator<<(std::ostream& os, const name& np){ return os << to_string<name>(np);}
 
-#define make_enum(name, ...) \
-declare_enum(name, __VA_ARGS__) \
-complete_enum(name, __VA_ARGS__) \
+#define make_enum(name, ...)                                                                                                                   \
+enum class name {__VA_ARGS__};                                                                                                                 \
+template <> name parse(const std::string& word){ constexpr auto args = #__VA_ARGS__; return AmpGen::detail::parse<name>(word, args); } \
+template <> std::string to_string( const name& enumItem ){ constexpr auto args = #__VA_ARGS__; return AmpGen::detail::to_string<name>(enumItem, args) ; } \
+template <> name lexical_cast(const std::string& word, bool& /*status*/){ return parse<name>(word); } \
+std::ostream& operator<<(std::ostream& os, const name& np){ return os << to_string<name>(np);}
 
 namespace AmpGen {
   template <class T> T parse( const std::string& word ){ return T(); }
