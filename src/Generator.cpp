@@ -14,3 +14,4 @@ extern "C" void AmpGen::PyGenerate(const char* eventType, double* out, const uns
       out[events[i].size() * i + j] = events[i][j]; 
   }
 }
+

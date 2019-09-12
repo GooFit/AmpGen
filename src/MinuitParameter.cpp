@@ -1,12 +1,15 @@
 // author: Jonas Rademacker (Jonas.Rademacker@bristol.ac.uk)
 // status:  Mon 9 Feb 2009 19:17:55 GMT
 #include "AmpGen/MinuitParameter.h"
+#include "AmpGen/Utilities.h"
 
 #include <iomanip>
 
 #include "AmpGen/MsgService.h"
 
 using namespace AmpGen;
+
+complete_enum( Flag, Free, Hide, Fix, CompileTimeConstant )
 
 MinuitParameter::MinuitParameter( const std::string& name, const Flag& fix, const double& mean, const double& step,
     const double& mi, const double& ma )

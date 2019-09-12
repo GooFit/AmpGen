@@ -147,12 +147,10 @@ namespace AmpGen
       return return_container;
     }
   };
-  template <class T> 
-  std::ostream& operator<<( std::ostream& os, const NamedParameter<T>& np );
+  template <class T> std::ostream& operator<<( std::ostream& os, const NamedParameter<T>& np );
   
   std::string optionalHelpString(const std::string& header, const std::vector<std::pair<std::string, std::string>>& args);
 }
-
 
 template <typename T>
 std::ostream& AmpGen::operator<<( std::ostream& os, const AmpGen::NamedParameter<T>& np )
@@ -160,11 +158,10 @@ std::ostream& AmpGen::operator<<( std::ostream& os, const AmpGen::NamedParameter
   os  << np.name() ;
   for ( size_t i = 0; i < np.size(); i++ ) {
     if( i == 0 ) os << " = ";
-    os << np.getVal( i );
+    os << np.getVal(i);
     if ( i != np.size() ) os << " ";
   }
   return os;
 }
 
 #endif
-//
