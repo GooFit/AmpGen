@@ -77,7 +77,7 @@ PolarisedSum::PolarisedSum( const EventType& type,
   } 
   
   auto   d = m_eventType.dim();
-  auto   p = [&mps](const std::string& name){ return mps.addOrGet(name,2,0,0); };
+  auto   p = [&mps](const std::string& name){ return mps.addOrGet(name, Flag::Fix, 0, 0); };
   if( d.first == 1 )      m_pVector = {};
   else if( d.first == 2 ) m_pVector = {p("Px"), p("Py"), p("Pz")};
   else if( d.first == 3 ) m_pVector = {p("Px"), p("Py"), p("Pz"), p("Tyy"), p("Tzz"), p("Txy"), p("Txz"), p("Tyz")};
