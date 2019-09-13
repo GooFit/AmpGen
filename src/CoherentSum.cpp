@@ -53,7 +53,7 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
     m_matrixElements[i] = TransitionMatrix<complex_t>( amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), this->m_dbThis);
     CompilerWrapper().compile( m_matrixElements[i].amp, this->m_objCache); } );
   }
-  m_isConstant = false ;
+  m_isConstant = false;
 }
 
 void updateCache(EventList* events, TransitionMatrix<complex_t>& me, const size_t& sizeMax)

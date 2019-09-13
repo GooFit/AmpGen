@@ -24,6 +24,7 @@ namespace AmpGen
       complex_t operator()() const override ;
       operator Expression() const ;
       std::string name() const;
+      const MinuitParameter& param() const;
     private: 
       MinuitParameter* m_parameter;
   };

@@ -6,7 +6,6 @@
 #include <memory>
 
 // hack to include optional from https://codereview.stackexchange.com/questions/136350/seamlessly-migrating-experimental-optional-to-optional
-#define __cplusplus 201703L
 #if __cplusplus >= 201703L
 #include <optional>
 namespace stdx {

@@ -18,10 +18,9 @@ namespace AmpGen
   class CacheTransfer;
 
   std::string programatic_name( std::string s );
-  
+  class ASTResolver;  
   class MinuitParameter;
   class MinuitParameterSet;
-  class ASTResolver; 
 
   /** @class CompiledExpressionBase
    *  Base class for compiled expressions, i.e. expressions that are (almost) ready to be evaluated.
@@ -37,7 +36,7 @@ namespace AmpGen
                             const DebugSymbols& db=DebugSymbols(), 
                             const std::map<std::string,size_t>& evtMapping = {} );
     CompiledExpressionBase( const std::string& name );
-    CompiledExpressionBase() = default; 
+    CompiledExpressionBase();
 
     void resolve(const MinuitParameterSet* mps = nullptr);
     void prepare();
@@ -66,7 +65,7 @@ namespace AmpGen
     std::vector<std::pair<uint64_t, Expression>>    m_dependentSubexpressions;
     std::vector<std::pair<uint64_t, Expression>>    m_debugSubexpressions; 
     std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;
-    ASTResolver*                                    m_resolver  = {nullptr};
+    std::shared_ptr<ASTResolver>                    m_resolver;
     
   private:
     void addDebug( std::ostream& stream ) const;

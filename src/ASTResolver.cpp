@@ -146,7 +146,16 @@ std::string ASTResolver::resolvedParameter( const IExpression* param ) const
   auto it = m_resolvedParameters.find(param);
   if( it != m_resolvedParameters.end() ) return it->second; 
   else {
-    ERROR( "Parameter cannot be resolved" << param );
+    ERROR( "Parameter cannot be resolved: [" << this << "]" << param );
     return "";
   }
+}
+
+void ASTResolver::clear() 
+{
+  m_resolvedParameters.clear();
+  m_cacheFunctions.clear();
+  m_parameterMapping.clear();
+  m_tempTrees.clear(); 
+  m_nParameters = 0;
 }
