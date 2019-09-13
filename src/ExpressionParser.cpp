@@ -172,6 +172,10 @@ complex_t MinuitParameterLink::operator()() const
   return m_parameter->mean(); 
 }
 
+const MinuitParameter& MinuitParameterLink::param() const {
+  return *m_parameter ; 
+}
+
 ExpressionPack::ExpressionPack( const Expression& A, const Expression& B )
 {
   auto c1 = dynamic_cast<ExpressionPack*>( A.get() );

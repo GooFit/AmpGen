@@ -29,7 +29,6 @@ namespace AmpGen {
   { 
     public: 
       ASTResolver(const std::map<std::string, size_t>& evtMap = {} , const MinuitParameterSet* mps = nullptr );
-      void cleanup();
       std::vector<std::pair<uint64_t,Expression>> getOrderedSubExpressions( const Expression& expression);
 
       template <class TYPE> void resolve( const TYPE& obj ){}
@@ -49,7 +48,7 @@ namespace AmpGen {
       void addResolvedParameter(const IExpression* param, const std::string& thing);
       void addResolvedParameter(const IExpression* param, const size_t& address, const size_t& arg=0);
       std::string resolvedParameter( const IExpression* param ) const; 
-
+      void clear();
     private: 
       std::map<const IExpression*, std::string>             m_resolvedParameters;          /// Map of parameters that have been resolved
       std::map<std::string, std::shared_ptr<CacheTransfer>> m_cacheFunctions;              /// Container of functions for calculating function cache
@@ -59,8 +58,7 @@ namespace AmpGen {
       std::map<const SubTree*, uint64_t>                    m_tempTrees;                   /// temporary store of sub-trees for performing cse reduction 
       unsigned int                                          m_nParameters;                 /// Number of parameters
       bool                                                  m_enable_cuda;                 /// flag to generate CUDA code <<experimental>>
-      bool                                                  m_enable_compileTimeConstants; /// flag to enable compile time constants <<experimental>>
-    
+      bool                                                  m_enable_compileTimeConstants; /// flag to enable compile time constants <<experimental>> 
   };
   
   template <> void ASTResolver::resolve<Parameter>( const Parameter& obj );

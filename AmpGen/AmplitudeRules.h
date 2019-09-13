@@ -91,13 +91,8 @@ namespace AmpGen
                      const std::map<std::string,size_t>& evtFormat, 
                      const bool& debugThis=false) :
       decayTree(dt),
-      coupling(coupling)
-    {
-      DebugSymbols db; 
-      auto expression = dt.getExpression(debugThis ? &db : nullptr);
-      amp = CompiledExpression<RT,const real_t*, const real_t*>
-        (expression, dt.decayDescriptor(), evtFormat, debugThis ? db : DebugSymbols(), &mps );
-    }
+      coupling(coupling),
+      amp(decayTree.getExpression(debugThis ? &db : nullptr ), decayTree.decayDescriptor(), evtFormat, db, &mps ) {}
 
     const RT operator()(const Event& event) const { return amp(event.address() ); }
     const RT operator()(const Event& event, const size_t& cacheOffset) const { return amp(event.address() + cacheOffset); }
@@ -106,6 +101,7 @@ namespace AmpGen
     Particle                                            decayTree;
     CouplingConstant                                    coupling;
     complex_t                                           coefficient;
+    DebugSymbols                                        db; 
     CompiledExpression<RT,const real_t*,const real_t*>  amp; 
     size_t                                              addressData = {999};
   };
