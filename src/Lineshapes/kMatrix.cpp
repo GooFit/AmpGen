@@ -40,7 +40,7 @@ Expression AmpGen::phsp_FOCUS( const Expression& s, const double& m0, const doub
 std::vector<Parameter> AmpGen::paramVector( const std::string& name, const unsigned int& nParam )
 {
   std::vector<Parameter> returnVector;
-  for(size_t i = 0; i < nParam; ++i ) returnVector.emplace_back( name + std::to_string(i) );
+  for(unsigned i = 0; i < nParam; ++i ) returnVector.emplace_back( name + std::to_string(i) );
   return returnVector;
 }
 
@@ -53,8 +53,8 @@ Tensor AmpGen::getPropagator(const Tensor& kMatrix, const std::vector<Expression
 {
   unsigned int nChannels = kMatrix.dims()[0];
   Tensor T( Tensor::dim(nChannels, nChannels) );
-  for (size_t i = 0; i < nChannels; ++i ) {
-    for (size_t j = 0; j < nChannels; ++j ) {
+  for (unsigned i = 0; i < nChannels; ++i ) {
+    for (unsigned j = 0; j < nChannels; ++j ) {
       T[{i, j}] = SubTree( ( i == j ? 1 : 0 ) - 1i * kMatrix[{i, j}] * phaseSpace[j] );
     }
   }
@@ -62,11 +62,11 @@ Tensor AmpGen::getPropagator(const Tensor& kMatrix, const std::vector<Expression
   return T.Invert();
 }
 
-Tensor AmpGen::constructKMatrix(const Expression& this_s, const size_t& nChannels, const std::vector<poleConfig>& poleConfigs)
+Tensor AmpGen::constructKMatrix(const Expression& this_s, const unsigned& nChannels, const std::vector<poleConfig>& poleConfigs)
 {
   Tensor kMatrix( Tensor::dim(nChannels, nChannels));
-  for ( size_t i = 0; i < nChannels; ++i ) {
-    for ( size_t j = 0; j < nChannels; ++j ) {
+  for ( unsigned i = 0; i < nChannels; ++i ) {
+    for ( unsigned j = 0; j < nChannels; ++j ) {
       Expression sumOverPoles = 0;
       for ( auto& pole : poleConfigs ) {
         Expression term = ( pole.couplings[i] * pole.couplings[j] ) / ( pole.s - this_s );
@@ -119,7 +119,7 @@ DEFINE_LINESHAPE( kMatrix )
   
   auto kMatrix = constructKMatrix( sInGeV, 5, poleConfigs);
   Tensor scattPart( Tensor::dim(5,5) );
-  for(size_t i = 0; i < 5;++i){
+  for(unsigned i = 0; i < 5;++i){
     scattPart(i,0) = fScatt[i]*( 1 - s0_scatt )/( s - s0_scatt );
     scattPart(0,i) = fScatt[i]*( 1 - s0_scatt )/( s - s0_scatt );
   }

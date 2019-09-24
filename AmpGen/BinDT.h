@@ -102,11 +102,10 @@ namespace AmpGen
         INFO( "Making nodes" );
         m_top = makeNodes( addresses );
       }
-      BinDT( const ArgumentPack& args );
+      explicit BinDT( const ArgumentPack& args );
       BinDT() = default;
 
       std::shared_ptr<INode> top() { return m_top; }
-      double nnUniformity( std::vector<double*> evts, const unsigned int& index ) const;
       unsigned int getBinNumber( const Event& evt ) const;
       unsigned int getBinNumber( const double* evt ) const;
       unsigned int getBin( const Event& evt ) const;
@@ -115,32 +114,28 @@ namespace AmpGen
       void readFromStream( std::istream& stream );
       void serialize( std::ofstream& output );
       void serialize( const std::string& filename );
-      void setQueueOrdering( const std::vector<size_t>& queueOrdering ){ m_queueOrdering = queueOrdering ; }
+      void setQueueOrdering( const std::vector<unsigned>& queueOrdering ){ m_queueOrdering = queueOrdering ; }
       std::vector<std::shared_ptr<EndNode>>& nodes() { return m_endNodes; }
       const std::vector<std::shared_ptr<EndNode>>& const_nodes() const { return m_endNodes; }
       std::vector<std::shared_ptr<EndNode>>::iterator begin() { return m_endNodes.begin(); }
       std::vector<std::shared_ptr<EndNode>>::iterator end() { return m_endNodes.end(); }
 
       std::function<std::vector<double>( const Event& )> makeDefaultFunctors();
-      void refreshQueue( const std::vector<double*>& evts, std::queue<unsigned int>& indexQueue,
-          const unsigned int& depth );
-      std::shared_ptr<INode> makeNodes( std::vector<double*> evts, std::queue<unsigned int> indexQueue,
-          const unsigned int& depth );
-      std::shared_ptr<INode> makeNodes( std::vector<double*> evts );
-      std::shared_ptr<INode> makeNodes( std::vector<double*> source, std::vector<double*> target );
-
-      std::shared_ptr<INode> makeNodes( std::vector<double*> source, std::vector<double*> target,
-          std::queue<unsigned int> indexQueue, const unsigned int& depth );
-      void setFunctor( const std::function<std::vector<double>( const Event& )>& functors ) { m_functors = functors; }
+      void refreshQueue(const std::vector<double*>&, std::queue<unsigned>&, const unsigned&);
+      std::shared_ptr<INode> makeNodes(const std::vector<double*>&, std::queue<unsigned>, const unsigned&);
+      std::shared_ptr<INode> makeNodes(const std::vector<double*>&);
+      std::shared_ptr<INode> makeNodes(const std::vector<double*>&, const std::vector<double*>&);
+      std::shared_ptr<INode> makeNodes(std::vector<double*>, std::vector<double*>, std::queue<unsigned>, const unsigned&);
+      void setFunctor(const std::function<std::vector<double>( const Event& )>& functors) { m_functors = functors; }
     
     private:
-      std::shared_ptr<INode> m_top;
-      unsigned int m_dim;
-      std::vector<std::shared_ptr<EndNode>> m_endNodes;
-      std::function<std::vector<double>( const Event& )> m_functors;
-      unsigned int m_minEvents;
-      unsigned int m_maxDepth;
-      std::vector<size_t> m_queueOrdering; 
+      std::shared_ptr<INode> m_top                     = {nullptr};
+      unsigned m_dim                                   = {0};
+      unsigned m_minEvents                             = {0};
+      unsigned m_maxDepth                              = {0};
+      std::vector<unsigned> m_queueOrdering            = {}; 
+      std::vector<std::shared_ptr<EndNode>> m_endNodes = {};
+      std::function<std::vector<double>(const Event&)> m_functors = {};
       double getBestPost(const std::vector<double*>& source, const std::vector<double*>& target, int index, bool verbose = false );
   };
 

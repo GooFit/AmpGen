@@ -323,9 +323,9 @@ void add_CP_conjugate( MinuitParameterSet& mps )
     else { 
       auto tokens=split(name,'_');
       std::string reOrIm = *tokens.rbegin();
-      std::string name   = tokens[0];
+      std::string pname   = tokens[0];
       if ( reOrIm == "Re" || reOrIm == "Im" ){
-        auto p = Particle( name ).conj();
+        auto p = Particle( pname ).conj();
         sgn = reOrIm == "Re" ? p.quasiCP() : 1; 
         new_name = p.uniqueString() +"_"+reOrIm;
       }

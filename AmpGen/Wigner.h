@@ -34,12 +34,12 @@ namespace AmpGen {
   Tensor basisVector(const int& polState);
 
   struct LS {
-    double factor;
-    double cg1;
-    double cg2;
-    double p; 
-    double m1;
-    double m2;
+    double factor = {1};
+    double cg1    = {0};
+    double cg2    = {0};
+    double p      = {0}; 
+    double m1     = {0};
+    double m2     = {0};
   };
 
   std::vector<LS> calculate_recoupling_constants( 

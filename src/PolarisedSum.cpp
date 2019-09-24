@@ -232,7 +232,7 @@ void   PolarisedSum::build_probunnormalised()
 {
   DebugSymbols db; 
   auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector,[](auto& p){ return Parameter(p->name());} ), m_debug ? &db : nullptr);
-  m_probExpression = CompiledExpression<real_t, const real_t*, const complex_t*>(prob, "prob_unnormalised", std::map<std::string, size_t>(), db, m_mps);
+  m_probExpression = CompiledExpression<real_t, const real_t*, const complex_t*>(prob, "prob_unnormalised", {}, db, m_mps);
   CompilerWrapper().compile(m_probExpression);
   m_probExpression.prepare();
 } 
@@ -400,13 +400,11 @@ std::vector<FitFraction> PolarisedSum::fitFractions(const LinearErrorPropagator&
   for(auto& rule : m_rules.rules()) 
   {
     FitFractionCalculator<PolarisedSum> pCalc(this, findIndices(m_matrixElements, rule.first), recomputeIntegrals);
-    INFO("Denom = [" << vectorToString( findIndices(m_matrixElements, rule.first ) , ", " ) << "]");
     for(auto& process : rule.second) 
     {
       if(process.head() == m_eventType.mother() && process.prefix() != m_prefix) continue;
       auto numeratorIndices   = processIndex(m_matrixElements, process.name());
       if(numeratorIndices.size() == 0 || numeratorIndices == pCalc.normSet ) continue; 
-      INFO("Adding calculation: " << process.name() << " [" << vectorToString(numeratorIndices, ", ") << "]");    
       pCalc.emplace_back(process.name(), numeratorIndices);
     }
     if( pCalc.calculators.size() == 0 ) continue;  

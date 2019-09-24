@@ -15,7 +15,7 @@
 
 using namespace AmpGen;
 
-double nearestNeighbourVariance(std::vector<double*> evts, const size_t& index)
+double nearestNeighbourVariance( std::vector<double*> evts, const size_t& index)
 {
   auto dist  = [&index](const double* x, const double* y){ return fabs( *(x+index) -*(y+index)) ;};
   auto dist2 = [&index](const double* x, const double* y){ return ( *(x+index) -*(y+index))*( *(x+index) - *(y+index) ) ;};
@@ -80,7 +80,7 @@ std::function<std::vector<double>( const Event& )> BinDT::makeDefaultFunctors()
     DEBUG( "Problem has 2 d.o.f.s -> using Dalitz coordinates" );
     return []( const Event& evt ) -> std::vector<double> { return {evt.s( 0, 1 ), evt.s( 1, 2 )}; };
   }
-  DEBUG( "No functors found for dim = " << m_dim );
+  ERROR( "No functors found for dim = " << m_dim );
   return nullptr;
 }
 
@@ -149,7 +149,7 @@ void BinDT::serialize( const std::string& filename )
   output.close();
 }
 
-std::shared_ptr<BinDT::INode> BinDT::makeNodes( std::vector<double*> evts )
+std::shared_ptr<BinDT::INode> BinDT::makeNodes( const std::vector<double*>& evts )
 {
   INFO( "Making nodes" );
   std::queue<unsigned int> iq;
@@ -162,8 +162,7 @@ std::shared_ptr<BinDT::INode> BinDT::makeNodes( std::vector<double*> evts )
   return node;
 }
 
-std::shared_ptr<BinDT::INode> BinDT::makeNodes( std::vector<double*> evts, std::queue<unsigned int> indexQueue,
-    const unsigned int& depth )
+std::shared_ptr<BinDT::INode> BinDT::makeNodes( const std::vector<double*>& evts, std::queue<unsigned> indexQueue, const unsigned& depth )
 {
   unsigned int index = indexQueue.front();
   DEBUG( "Depth = " << depth << " nodes = " << m_endNodes.size() << " maxDepth = " << m_maxDepth
@@ -184,7 +183,7 @@ std::shared_ptr<BinDT::INode> BinDT::makeNodes( std::vector<double*> evts, std::
   return node;
 }
 
-std::shared_ptr<BinDT::INode> BinDT::makeNodes( std::vector<double*> source, std::vector<double*> target )
+std::shared_ptr<BinDT::INode> BinDT::makeNodes( const std::vector<double*>& source, const std::vector<double*>& target )
 {
   std::queue<unsigned int> iq;
   refreshQueue( source, iq, 0 );

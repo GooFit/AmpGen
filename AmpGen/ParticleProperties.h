@@ -26,7 +26,7 @@ namespace AmpGen
   class ParticleProperties
   {
     public:
-      ParticleProperties( const std::string& pdg_string = "" ); ///< Constructor from a string formatted by the PDG convention.  
+      explicit ParticleProperties( const std::string& pdg_string = "" ); ///< Constructor from a string formatted by the PDG convention.  
       double mass()      const { return m_mass      * MeV; } ///< Returns mass of particle in MeV
       double mErrPlus()  const { return m_mErrPlus  * MeV; } ///< Returns +ve uncertainty on particle mass in MeV
       double mErrMinus() const { return m_mErrMinus * MeV; } ///< Returns -ve uncertainty on particle mass in MeV

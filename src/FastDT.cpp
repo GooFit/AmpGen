@@ -4,6 +4,10 @@
 
 using namespace AmpGen;
 
+FastDT::FastDT( const std::string& fname ){
+  //std::ifstream s(fname);
+}
+
 int FastDT::findNode( const double* event )
 {
   int address = m_nodes.size()-1;
@@ -16,9 +20,6 @@ int FastDT::findNode( const double* event )
   return m_nodes[address].left; 
 }
 
-FastDT::FastDT( const std::string& fname ){
-  //std::ifstream s(fname);
-}
 
 double nnVariance(std::vector<double*>& evts, const size_t& index)
 {

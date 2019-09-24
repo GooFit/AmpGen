@@ -55,7 +55,7 @@ namespace AmpGen
   struct Argument : public IArgument 
   {
     template <typename T>
-    Argument( T x ) : val(x) {}
+    explicit Argument( T x ) : val(x) {}
     Argument() = default;
     operator TYPE() const { return val; }
     TYPE val = { TYPE() };
@@ -71,10 +71,10 @@ namespace AmpGen
   {
     public:
       template <typename... ARGS>
-        ArgumentPack( const ARGS&... args )
+        explicit ArgumentPack( const ARGS&... args )
         {
           std::tuple<ARGS...> argTuple( args... );
-          for_each( argTuple, [this]( auto& f ) { m_parameters.emplace_back( makeShared( f ) ); } );
+          for_each(argTuple, [this](const auto& f){ this->addArgument(f) ; } );
         }
       template <typename ARG, typename DEFAULT_TYPE=ARG> 
         ARG getArg( const DEFAULT_TYPE& default_argument = DEFAULT_TYPE() ) const
@@ -87,6 +87,7 @@ namespace AmpGen
       }
     private:
       std::vector<std::shared_ptr<IArgument>> m_parameters;
+      template <typename T> void addArgument( const T& f ){ m_parameters.emplace_back( std::make_shared<T>(f) ) ; } 
   };
 } // namespace AmpGen
 

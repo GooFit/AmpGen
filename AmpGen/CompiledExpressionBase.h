@@ -31,12 +31,12 @@ namespace AmpGen
   class CompiledExpressionBase
   {
   public:
+    CompiledExpressionBase();
+    CompiledExpressionBase( const std::string& name );
     CompiledExpressionBase( const Expression& expression, 
                             const std::string& name,
                             const DebugSymbols& db=DebugSymbols(), 
-                            const std::map<std::string,size_t>& evtMapping = {} );
-    CompiledExpressionBase( const std::string& name );
-    CompiledExpressionBase();
+                            const std::map<std::string, unsigned>& evtMapping = {} );
 
     void resolve(const MinuitParameterSet* mps = nullptr);
     void prepare();
@@ -61,7 +61,7 @@ namespace AmpGen
     std::string                                     m_name;
     std::string                                     m_progName; 
     DebugSymbols                                    m_db;
-    std::map<std::string, size_t>                   m_evtMap;
+    std::map<std::string, unsigned>                 m_evtMap;
     std::vector<std::pair<uint64_t, Expression>>    m_dependentSubexpressions;
     std::vector<std::pair<uint64_t, Expression>>    m_debugSubexpressions; 
     std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;

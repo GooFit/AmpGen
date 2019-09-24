@@ -176,7 +176,8 @@ namespace AmpGen
 
       double mass() const;           ///< Returns the (PDG) mass of the particle
       double spin() const;           ///< Returns the spin of the particle
-      double S() const; 
+      double S() const;              ///< Returns the spin configuration of the decay products of the particle
+      unsigned L() const;            ///< Returns the orbital angular 
 
       bool isHead() const;           ///< Returns whether if this particle is the head of the decay, i.e. has no parent
       bool isWeakDecay() const;      ///< Returns whether is this particle decays weakly or not
@@ -185,9 +186,8 @@ namespace AmpGen
       bool isQuasiStable() const;    ///< Check whether the particle is quasi-stable, i.e. may have some appreciable flight distance
       bool conservesParity( unsigned int L = 0 ) const; ///< Check whether the decay of this particle with angular momentum L conserves parity or not
 
-      unsigned int orbital() const;       ///< Returns the orbital angular 
-      unsigned int index() const;         ///< Returns the current index of the particle in event data structure. Can differ from the original index due to symmetrisation
-      unsigned int originalIndex() const; ///< Returns the original index of the particle
+      unsigned index() const;             ///< Returns the current index of the particle in event data structure. Can differ from the original index due to symmetrisation
+      unsigned originalIndex() const;     ///< Returns the original index of the particle
       std::string name() const;           ///< Name of the decaying particle.
       std::string lineshape() const;      ///< Name of the propagator to use for the decay of this particle.
       std::string vertexName() const;     ///< Name of the (spin)vertex to use for the decay of this particle 
@@ -268,17 +268,17 @@ namespace AmpGen
       unsigned int matches( const Particle& other ) const; 
     
     private:
-      const ParticleProperties* m_props;                     ///< Particle Properties from the PDG
+      const ParticleProperties* m_props      = {nullptr};    ///< Particle Properties from the PDG
       std::string m_name                     = {""};         ///< Name of the particle
       std::string m_lineshape                = {"BW"};       ///< Propagator to use
       std::string m_uniqueString             = {""};         ///< Unique string of particle tree
       int m_parity                           = {0};          ///< Intrinsic parity of particle
-      int m_polState                         = {0};          ///< polarisation state 
-      unsigned int m_index                   = {999};        ///< Index, for constructing four-momenta
-      unsigned int m_originalIndex           = {999};        ///< Starting index, used in Bose-symmetrisation
-      unsigned int m_orbital                 = {0};          ///< Orbital angular momentum between daughters
-      unsigned int m_spinConfigurationNumber = {0};          ///< Spin configuration quantum number 'S'
-      unsigned int m_minL                    = {0};          ///< Minimum orbital angular momentum
+      int m_polState                         = {0};          ///< Projection of the spin along the quantisation axis, i.e. 'z'
+      unsigned m_index                       = {999};        ///< Index, for constructing four-momenta
+      unsigned m_originalIndex               = {999};        ///< Starting index, used in Bose-symmetrisation
+      unsigned m_orbital                     = {0};          ///< Orbital angular momentum between daughters
+      unsigned m_spinConfigurationNumber     = {0};          ///< Spin configuration quantum number 'S'
+      unsigned m_minL                        = {0};          ///< Minimum orbital angular momentum
       bool m_isHead                          = {true};       ///< Flag that particle is head of decay chain
       bool m_usesDefaultLineshape            = {false};      ///< Flag to check if default shape is used
       bool m_isStateGood                     = {true};       ///< Flag to check the decay is well-formed

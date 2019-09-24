@@ -65,11 +65,11 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
   for( auto& p : m_particleNames ) m_dim.second *= dimOfParticle(p);
 }
 
-std::map<std::string, size_t> EventType::getEventFormat( const bool& outputNames ) const
+std::map<std::string, unsigned> EventType::getEventFormat( const bool& outputNames ) const
 {
-  std::map<std::string, size_t> returnValue;
+  std::map<std::string, unsigned> returnValue;
   bool include_energy = NamedParameter<bool>("EventType::IncludeEnergy", true );
-  size_t s = include_energy ? 4 : 3;
+  unsigned s = include_energy ? 4 : 3;
   for ( unsigned int ip = 0; ip < size(); ++ip ) {
     std::string parsed_name;
     if(m_alt_part_names)
@@ -96,25 +96,25 @@ void EventType::extendEventType( const std::string& branch )
 {
   m_eventTypeExtensions.push_back(branch);
 }
-std::pair<double, double> EventType::minmax( const std::vector<size_t>& indices, bool isGeV ) const
+std::pair<double, double> EventType::minmax( const std::vector<unsigned>& indices, bool isGeV ) const
 {
-  std::vector<size_t> ivec( size() );
+  std::vector<unsigned> ivec( size() );
   std::iota( ivec.begin(), ivec.end(), 0 );
-  double min( 0 );
-  double max( motherMass() );
-  for ( auto& x : indices ) min += mass( x );
+  double min = 0 ; 
+  for( auto& i : indices ) min += mass(i);
+  double max = motherMass();
   for ( auto& x : ivec )
     if ( std::find( indices.begin(), indices.end(), x ) == indices.end() ) max -= mass( x );
-  return std::pair<double, double>( min * min / GeV, max * max / GeV );
+  return std::pair<double, double>(min*min, max*max);
 }
-std::pair<size_t, size_t> EventType::count(const size_t& index) const
+std::pair<unsigned, unsigned> EventType::count(const unsigned& index) const
 {
   if( index >= size() ){
     ERROR("Looking for matching particles to index = " << index << " > size of eventType");
-    return std::pair<size_t, size_t>(0, 0);
+    return std::pair<unsigned, unsigned>(0, 0);
   }
-  std::pair<size_t,size_t> rt(0,0);
-  for( size_t j = 0 ; j < size(); ++j ){
+  std::pair<unsigned,unsigned> rt(0,0);
+  for( unsigned j = 0 ; j < size(); ++j ){
     if( EventType::operator[](j) == EventType::operator[](index) ){
       rt.second++;
       if( j < index ) rt.first++;
@@ -126,19 +126,19 @@ std::pair<size_t, size_t> EventType::count(const size_t& index) const
 std::vector<std::string> EventType::finalStates() const { return m_particleNames; }
 std::vector<double> EventType::masses() const { return m_particleMasses; }
 
-size_t EventType::size() const { return m_particleNames.size(); }
-double EventType::mass( const size_t& index ) const { return m_particleMasses[index]; }
+unsigned EventType::size() const { return m_particleNames.size(); }
+double EventType::mass( const unsigned& index ) const { return m_particleMasses[index]; }
 double EventType::motherMass() const { return m_motherMass; }
 
 std::string EventType::mother() const { return m_mother; }
-std::string EventType::operator[]( const size_t& index ) const { return m_particleNames[index]; }
-std::string EventType::label( const size_t& index, bool isRoot ) const
+std::string EventType::operator[]( const unsigned& index ) const { return m_particleNames[index]; }
+std::string EventType::label( const unsigned& index, bool isRoot ) const
 {
   const std::string label = ParticlePropertiesList::get( m_particleNames[index] )->label();
   return isRoot ? convertTeXtoROOT( label ) : label;
 }
 
-std::string EventType::label( const std::vector<size_t>& index, bool isRoot ) const
+std::string EventType::label( const std::vector<unsigned>& index, bool isRoot ) const
 {
   std::string thing = "";
   for ( auto& x : index ) {
@@ -156,19 +156,19 @@ EventType EventType::conj( const bool& headOnly, const bool& dontConjHead ) cons
   return EventType( type );
 }
 
-std::vector<Projection> EventType::defaultProjections(const size_t& nBins) const
+std::vector<Projection> EventType::defaultProjections(const unsigned& nBins) const
 {
   std::string defaultObservable  = NamedParameter<std::string>( "EventType::Observable", "mass2");
   std::vector<Projection> projections;
-  for ( size_t r = 2; r < size(); ++r ) { /// loop over sizes ///
-    std::vector<std::vector<size_t>>  combR = nCr( size(), r );
+  for ( unsigned r = 2; r < size(); ++r ) { /// loop over sizes ///
+    std::vector<std::vector<unsigned>>  combR = nCr( size(), r );
     std::transform( combR.begin(), combR.end(), std::back_inserter(projections),
       [&](auto& index){ return this->projection(nBins, index, defaultObservable ); } );
   }
   return projections;
 }
 
-Projection EventType::projection(const size_t& nBins, const std::vector<size_t>& indices, const std::string& observable) const
+Projection EventType::projection(const unsigned& nBins, const std::vector<unsigned>& indices, const std::string& observable) const
 {
   bool useRootLabelling = NamedParameter<bool>("EventType::UseRootTEX", false );
   auto mm               = minmax(indices, true);
@@ -191,7 +191,7 @@ Projection EventType::projection(const size_t& nBins, const std::vector<size_t>&
 bool EventType::operator==( const EventType& other ) const
 {
   if ( m_mother != other.mother() || size() != other.size() ) return false;
-  for ( size_t i = 0; i < m_particleNames.size(); ++i ) {
+  for ( unsigned i = 0; i < m_particleNames.size(); ++i ) {
     if ( m_particleNames[i] != other[i] ) return false;
   }
   return true;
@@ -203,14 +203,14 @@ std::ostream& AmpGen::operator<<( std::ostream& os, const EventType& type )
   return os;
 }
 
-size_t EventType::dof() const { return 3 * size() - 7; }
+unsigned EventType::dof() const { return 3 * size() - 7; }
 
 std::function<void( Event& )> EventType::symmetriser() const
 {
-  std::map<std::string, std::vector<size_t>> particleOrdering;
-  for ( size_t i = 0; i < m_particleNames.size(); ++i )
+  std::map<std::string, std::vector<unsigned>> particleOrdering;
+  for ( unsigned i = 0; i < m_particleNames.size(); ++i )
     particleOrdering[m_particleNames[i]].push_back( i );
-  std::vector<std::vector<size_t>> shuffles;
+  std::vector<std::vector<unsigned>> shuffles;
   for ( auto& im : particleOrdering )
     if ( im.second.size() != 1 ) shuffles.push_back( im.second );
 
@@ -241,9 +241,9 @@ bool EventType::has( const std::string& name ) const
 
 bool EventType::isTimeDependent() const { return m_timeDependent; }
 
-size_t EventType::eventSize() const { return 4 * size() + m_timeDependent; }
+unsigned EventType::eventSize() const { return 4 * size() + m_timeDependent; }
 
-std::pair<size_t, size_t> EventType::dim() const { return m_dim; }
+std::pair<unsigned, unsigned> EventType::dim() const { return m_dim; }
 
 std::string convertTeXtoROOT( std::string input )
 {

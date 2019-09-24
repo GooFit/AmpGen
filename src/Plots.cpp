@@ -35,8 +35,6 @@ void AmpGen::perAmplitudePlot( const EventList& evts,
   } 
   dir->cd();
 
-  std::vector<std::pair<const Event*, double>> eventData;
-
   std::vector<PlotIJ> tmpPlots( pdf.size() * ( pdf.size() + 1 ) / 2 );
 
   unsigned int s = 0;

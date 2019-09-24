@@ -14,21 +14,21 @@
 #include "AmpGen/ProfileClock.h"
 using namespace AmpGen;
 
+CompiledExpressionBase::CompiledExpressionBase() = default; 
+
+CompiledExpressionBase::CompiledExpressionBase( const std::string& name ) : 
+  m_name( name ),
+  m_progName( programatic_name(name) ) {}
+
 CompiledExpressionBase::CompiledExpressionBase( const Expression& expression, 
     const std::string& name, 
     const DebugSymbols& db,
-    const std::map<std::string, size_t>& evtMapping )
-  : m_obj( expression ), 
+    const std::map<std::string, unsigned>& evtMapping ) : 
+  m_obj( expression ), 
   m_name( name ),
   m_progName( programatic_name(name) ),
   m_db(db),
-  m_evtMap(evtMapping){}
-
-CompiledExpressionBase::CompiledExpressionBase( const std::string& name ) 
-  : m_name( name ),
-    m_progName( programatic_name(name) ) {}
-
-CompiledExpressionBase::CompiledExpressionBase() = default; 
+  m_evtMap(evtMapping) {}
 
 CompiledExpressionBase::~CompiledExpressionBase() {}
 

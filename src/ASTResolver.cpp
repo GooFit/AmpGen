@@ -12,7 +12,7 @@
 
 using namespace AmpGen;
 
-ASTResolver::ASTResolver(const std::map<std::string, size_t>& evtMap, 
+ASTResolver::ASTResolver(const std::map<std::string, unsigned>& evtMap, 
     const MinuitParameterSet* mps ) : 
   m_evtMap(evtMap),
   m_mps(mps), 

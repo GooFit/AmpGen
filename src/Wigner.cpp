@@ -251,7 +251,7 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
     }
   }
   auto particle_couplings = particle.spinOrbitCouplings(false);
-  auto L = particle.orbital();
+  auto L = particle.L();
   const auto& d1 = *particle.daughter(0);
   const auto& d2 = *particle.daughter(1);
   double S = 999;

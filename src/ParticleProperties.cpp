@@ -67,7 +67,7 @@ ParticleProperties::ParticleProperties( const std::string& pdg_string ) : m_netQ
   m_quarks       = s[17];
   m_Aformat      = s[11][0];
   m_chargeString = s[13];
-  m_netQuarkContent.initFromString( m_quarks );
+  m_netQuarkContent = QuarkContent( m_quarks );
   bool spin_status = 1;
   if( m_JtotalSpin == "?" ) m_twoSpin = 0;
   else if( m_JtotalSpin.find("/") != std::string::npos ){

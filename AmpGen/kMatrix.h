@@ -37,11 +37,11 @@ namespace AmpGen
       couplings.push_back( coupling );
       bl_factors.push_back( bl_factor );
     }
-    const Expression coupling(const size_t& i) const { return couplings[i] * bl_factors[i]; }
-    const Expression g(const size_t& i) const { return couplings[i]; }
+    const Expression coupling(const unsigned& i) const { return couplings[i] * bl_factors[i]; }
+    const Expression g(const unsigned& i) const { return couplings[i]; }
   };
 
-  Tensor constructKMatrix(const Expression& s, const size_t& nChannels,
+  Tensor constructKMatrix(const Expression& s, const unsigned& nChannels,
                           const std::vector<poleConfig>& poleConfigs);
   
   Expression phsp_twoBody( const Expression& s, const double& m0, const double& m1 );

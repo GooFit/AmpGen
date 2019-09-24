@@ -298,7 +298,7 @@ std::string AmpGen::rtrim( std::string s )
 }
 
 // trim from both ends
-std::string AmpGen::trim( std::string s ) { return ltrim( rtrim( s ) ); }
+std::string AmpGen::trim( const std::string& s ) { return ltrim( rtrim( s ) ); }
 
 std::string AmpGen::ltrim( std::string s )
 {

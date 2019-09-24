@@ -98,7 +98,7 @@ bool ParticlePropertiesList::readFile( const std::string& name )
     DEBUG( "File not found: " << name );
     return false;
   }
-  INFO( "Reading file: " << name );
+  DEBUG( "Reading file: " << name );
   processFile( name, [this]( auto& line ) {
     if ( line[0] == '*' ) return;
     ParticleProperties P( line );

@@ -24,7 +24,7 @@ namespace AmpGen
     std::map<int, ParticleProperties*> m_byID;
     double m_quasiStableThreshold;
 
-    ParticlePropertiesList( const std::string& fname_in = "mass_width.csv" );
+    explicit ParticlePropertiesList( const std::string& fname_in = "mass_width.csv" );
 
   protected:
     const std::vector<std::string> dirList() const;
