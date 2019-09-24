@@ -23,15 +23,15 @@ namespace AmpGen
     */
   class HelicityCosine {
     public:
-      HelicityCosine(const std::vector<size_t>& p1, const std::vector<size_t>& p2,
-          const std::vector<size_t>& pR);
+      HelicityCosine(const std::vector<unsigned>& p1, const std::vector<unsigned>& p2,
+          const std::vector<unsigned>& pR);
 
-      HelicityCosine(const size_t& i, const size_t& j, const std::vector<size_t>& pR);
+      HelicityCosine(const unsigned& i, const unsigned& j, const std::vector<unsigned>& pR);
 
       double operator()( std::vector<Event>::iterator evt ) const;
       double operator()( const Event& evt ) const;
     private:
-      std::vector<size_t> _i, _j, _pR;
+      std::vector<unsigned> _i, _j, _pR;
   };
 
   /** @ingroup Kin class MomentumTransfer
@@ -39,13 +39,13 @@ namespace AmpGen
    */ 
   class MomentumTransfer {
     public:
-      MomentumTransfer( const std::vector<size_t>& _p1, const std::vector<size_t>& _p2 );
+      MomentumTransfer( const std::vector<unsigned>& _p1, const std::vector<unsigned>& _p2 );
       double operator()( const Event& evt ) const;
     private: 
       double Q2( const double& s, const double& s1, const double& s2 ) const;
-      std::vector<size_t> p1;
-      std::vector<size_t> p2;
-      std::vector<size_t> s;
+      std::vector<unsigned> p1;
+      std::vector<unsigned> p2;
+      std::vector<unsigned> s;
   };
 
   /** @ingroup Kin function acoplanarity
@@ -79,12 +79,12 @@ namespace AmpGen
   /** @ingroup Kin function pFromEvent
       @brief Helper function to extract a TLorentzVector of the ith decay product from an AmpGen::Event.
     */
-  TLorentzVector pFromEvent( const Event& evt, const size_t& ref );
+  TLorentzVector pFromEvent( const Event& evt, const unsigned& ref );
 
   /** @ingroup Kin function pFromEvent
       @brief Helper function to extract a TLorentzVector of the sum of {2} decay product from an AmpGen::Event.
     */
-  TLorentzVector pFromEvent( const Event& evt, const std::vector<size_t>& ref );
+  TLorentzVector pFromEvent( const Event& evt, const std::vector<unsigned>& ref );
   
 } // namespace AmpGen
 #endif

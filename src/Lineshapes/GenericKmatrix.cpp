@@ -27,34 +27,34 @@ DEFINE_LINESHAPE(GenericKmatrix)
   INFO( "kMatrix modifier " << lineshapeModifier << " particle = " << particleName );
   auto tokens = split(lineshapeModifier, '.' );
   DEBUG("kMatrix modifier = " << lineshapeModifier << " nTokens = " << tokens.size() );
-  size_t nPoles    = NamedParameter<size_t>(     lineshapeModifier + "::kMatrix::nPoles");
+  unsigned nPoles    = NamedParameter<unsigned>(     lineshapeModifier + "::kMatrix::nPoles");
   auto channels    = NamedParameter<std::string>(lineshapeModifier + "::kMatrix::channels").getVector();
-  size_t nChannels = channels.size();
+  unsigned nChannels = channels.size();
   std::vector<Expression> phsps;
   std::vector<Expression> bw_phase_space;
   auto s0 = mass*mass;
   ADD_DEBUG(s, dbexpressions );
   ADD_DEBUG(s0, dbexpressions );
   INFO("Initialising K-matrix with : " << nChannels); 
-  for( size_t i = 0 ; i < channels.size(); i+=1 ){
+  for( unsigned i = 0 ; i < channels.size(); i+=1 ){
     Particle p( channels[i] ); 
     INFO( p.decayDescriptor() );
     Expression sf = Parameter( lineshapeModifier + "::phsp::sf::"+std::to_string(i+1), 1);
-    phsps.emplace_back( sf * phaseSpace(s, p, p.orbital() ) );
-    bw_phase_space.emplace_back( sf * phaseSpace(s0, p, p.orbital() ) );
+    phsps.emplace_back( sf * phaseSpace(s, p, p.L() ) );
+    bw_phase_space.emplace_back( sf * phaseSpace(s0, p, p.L() ) );
     ADD_DEBUG( *phsps.rbegin(), dbexpressions);
-    ADD_DEBUG( phaseSpace(s0,p,p.orbital()), dbexpressions );  
+    ADD_DEBUG( phaseSpace(s0,p,p.L()), dbexpressions );  
   }
   Tensor non_resonant( Tensor::dim(nChannels, nChannels) );
   std::vector<poleConfig> poleConfigs;
-  for (size_t pole = 1; pole <= nPoles; ++pole ){
+  for (unsigned pole = 1; pole <= nPoles; ++pole ){
     std::string stub = lineshapeModifier + "::pole::" + std::to_string(pole);
     Expression mass  = Parameter(stub + "::mass");
     poleConfig thisPole(mass*mass);
     if( dbexpressions != nullptr ) dbexpressions->emplace_back(stub+"::mass", mass);
     Expression bw_width  = 0;
     Expression bw_width0 = 0;
-    for (size_t channel = 1; channel <= nChannels; ++channel ) 
+    for (unsigned channel = 1; channel <= nChannels; ++channel ) 
     {
       Expression g = Parameter(stub+"::g::"+std::to_string(channel));
       thisPole.add(g, 1);
@@ -64,7 +64,7 @@ DEFINE_LINESHAPE(GenericKmatrix)
       bw_width  = bw_width  + g*g*phsps[channel-1] / mass;
       bw_width0 = bw_width0 + g*g*bw_phase_space[channel-1] / mass;
     }
-    for( size_t channel = 1 ; channel <= nChannels; ++channel ){
+    for( unsigned channel = 1 ; channel <= nChannels; ++channel ){
       Expression g = Parameter(stub+"::g::"+std::to_string(channel));
       Expression BR = g*g*bw_phase_space[channel-1] / ( mass * bw_width0 );
       ADD_DEBUG( BR, dbexpressions );
@@ -73,8 +73,8 @@ DEFINE_LINESHAPE(GenericKmatrix)
      ADD_DEBUG(bw_width0, dbexpressions);
     poleConfigs.push_back(thisPole);
   }
-  for(size_t ch1 = 1; ch1 <= nChannels; ++ch1){
-    for( size_t ch2 = 1; ch2 <= nChannels; ++ch2 ){
+  for(unsigned ch1 = 1; ch1 <= nChannels; ++ch1){
+    for( unsigned ch2 = 1; ch2 <= nChannels; ++ch2 ){
       auto c1 = std::to_string(ch1);
       auto c2 = std::to_string(ch2); 
       if( ch1 > ch2 ) std::swap(c1,c2);
@@ -97,6 +97,6 @@ DEFINE_LINESHAPE(GenericKmatrix)
   Tensor propagator = getPropagator(kMatrix, phsps);
   ADD_DEBUG_TENSOR(non_resonant, dbexpressions);
   Expression M;
-  for(size_t i = 0 ; i < nChannels; ++i) M = M + kMatrix[{i,0}] * propagator[{0,i}];
+  for(unsigned i = 0 ; i < nChannels; ++i) M = M + kMatrix[{i,0}] * propagator[{0,i}];
   return M ; // * phsps[0];
 }

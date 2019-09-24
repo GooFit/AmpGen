@@ -19,6 +19,21 @@ QuarkState::QuarkState()
   initPositions();
 }
 
+QuarkContent::QuarkContent( const std::string& str )
+{ 
+  if ( str.find( "non-qQ" ) < str.size() ) {
+    m_quarks.resize( 1 );
+    return;
+  }
+  auto tokens = split( replaceAll( str, "sqrt", "" ), {'(', ')', '+', '-'} );
+  m_quarks.clear();
+  for ( auto& token : tokens ) {
+    QuarkState qc( token );
+    if ( !qc.isVacuum() ) m_quarks.emplace_back( qc );
+  }
+  if ( m_quarks.size() == 0 ) m_quarks.resize( 1 );
+}
+
 QuarkState::QuarkState( const std::string& str ) : QuarkState() {
   for ( auto& c : str ) {
     auto lc = std::tolower(c);
@@ -106,21 +121,6 @@ QuarkContent::QuarkContent() : m_quarks(1) {}
 void QuarkContent::antiThis()
 {
   for ( auto& qc : m_quarks ) qc.antiThis();
-}
-
-void QuarkContent::initFromString( const std::string& str )
-{
-  if ( str.find( "non-qQ" ) < str.size() ) {
-    m_quarks.resize( 1 );
-    return;
-  }
-  auto tokens = split( replaceAll( str, "sqrt", "" ), {'(', ')', '+', '-'} );
-  m_quarks.clear();
-  for ( auto& token : tokens ) {
-    QuarkState qc( token );
-    if ( !qc.isVacuum() ) m_quarks.emplace_back( qc );
-  }
-  if ( m_quarks.size() == 0 ) m_quarks.resize( 1 );
 }
 
 void QuarkContent::print( std::ostream& os ) const

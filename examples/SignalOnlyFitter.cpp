@@ -84,12 +84,15 @@ int main( int argc, char* argv[] )
   /* An EventType specifies the initial and final state particles as a vector that will be described by the fit. 
      It is typically loaded from the interface parameter EventType. */
   EventType evtType(pNames);
-  
   /* A CoherentSum is the typical amplitude to be used, that is some sum over quasi two-body contributions 
      weighted by an appropriate complex amplitude. The CoherentSum is generated from the couplings described 
      by a set of parameters (in a MinuitParameterSet), and an EventType, which matches these parameters 
      to a given final state and a set of data. A common set of rules can be matched to multiple final states, 
-     i.e. to facilitate the analysis of coupled channels. */
+     i.e. to facilitate the analysis of coupled channels. 
+     The CoherentSum is only appropriate for decays involving only (pseudo)scalars in the inital / final state, 
+     otherwise the sum must also be over initial / final spin states. In this case, as PolarisedSum should be used. 
+     See FitterWithPolarisation for an example of this use case.    
+  */
   CoherentSum sig(evtType, MPS);
   
   /* Events are read in from ROOT files. If only the filename and the event type are specified, 

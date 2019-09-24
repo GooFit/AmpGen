@@ -486,7 +486,7 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
 {
   DEBUG("Getting final state spin tensor for: " << name() << " " << spin() );
   if ( spin() == 0 )
-    return Tensor( std::vector<double>( {1.} ), std::vector<size_t>( {1} ) );
+    return Tensor( std::vector<double>( {1.} ), std::vector<unsigned>( {1} ) );
   Tensor p        = P();
   Expression pX   = p.get(0);
   Expression pY   = p.get(1);
@@ -703,7 +703,7 @@ bool Particle::isQuasiStable() const
 {
   return props()->width() < ParticlePropertiesList::getMe()->quasiStableThreshold() && name() != "gamma0";
 }
-unsigned int Particle::orbital()  const { return m_orbital; }
+unsigned Particle::L()  const { return m_orbital; }
 int Particle::polState() const { return m_polState; }
 std::string Particle::name() const { return m_name; }
 std::string Particle::uniqueString() const { return m_uniqueString; }
@@ -775,7 +775,7 @@ unsigned int Particle::matches( const Particle& other ) const
     if( daughter_match == 0 ) return MatchState::None;
     rt |= daughter_match;
   }
-  if( m_orbital  != other.orbital() )  rt |= MatchState::DifferentOrbital;
+  if( m_orbital  != other.L() )        rt |= MatchState::DifferentOrbital;
   if( m_polState != other.polState() ) rt |= MatchState::DifferentPolarisation;
   if( rt == 0 ) rt = MatchState::Exact;
   if( rt & MatchState::Exact && rt != MatchState::Exact ) 

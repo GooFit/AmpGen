@@ -9,7 +9,7 @@
 
 namespace AmpGen
 {
-  /** Utility classes for (library) compile-level metaprogramming, such as identifying the types of 
+  /** Utility classes for compile-time metaprogramming, such as identifying the types of 
       arguments for generating source code, compile-time unrolling of tuples and loops, 
       and identifying if a class can be constructed in different ways. 
     */
@@ -55,12 +55,6 @@ namespace AmpGen
     for_each<I + 1, FuncT, Tp...>( t, f );
   }
 
-
-  template <class TYPE> std::shared_ptr<TYPE> makeShared( const TYPE& obj )
-  {
-    return std::make_shared<TYPE>( obj );
-  }
-
   template <typename R, 
             typename RT, 
             typename ARGS, 
@@ -96,7 +90,7 @@ namespace AmpGen
     if( typeof<arg>() != "void" ) {
       rt.emplace_back( typeof<arg>() );
       auto rtp = typelist<args...>(); 
-      for( auto& r : rtp ) rt.emplace_back( r );
+      std::copy( rtp.begin(), rtp.end(), std::back_inserter(rt) );
     }
     return rt;
   }

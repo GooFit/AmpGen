@@ -36,8 +36,8 @@ namespace AmpGen
 
     CompiledExpression( const Expression& expression, 
                         const std::string& name,
-                        const std::map<std::string, size_t>& evtMapping = 
-                              std::map<std::string, size_t>(),
+                        const std::map<std::string, unsigned>& evtMapping = 
+                              std::map<std::string, unsigned>(),
                         const DebugSymbols& db = {},
                         const MinuitParameterSet* mps = nullptr )
       : CompiledExpressionBase( expression, name, db, evtMapping ) 
@@ -224,7 +224,7 @@ namespace AmpGen
     CompiledExpression<RT, const double*, const double*> 
       make_expression( const Expression& expression, 
                        const std::string& name,
-                       const std::map<std::string, size_t> & evtMap,
+                       const std::map<std::string, unsigned> & evtMap,
                        const MinuitParameterSet& mps )
       {
         CompiledExpression<RT,const double*, const double*> rt(expression,name,evtMap,{},&mps);

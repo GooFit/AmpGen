@@ -83,6 +83,7 @@ SplineTransfer::SplineTransfer( const SplineTransfer& other )
   : CacheTransfer(other.m_address, other.m_value, other.m_size)
   , m_transferMatrix( other.m_transferMatrix )
   , m_parameters( other.m_parameters )
+  , m_nKnots( other.m_nKnots )
   , m_min( other.m_min )
   , m_max( other.m_max )
 {

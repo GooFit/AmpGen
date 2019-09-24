@@ -17,9 +17,8 @@ namespace AmpGen
       std::array<int, 6> m_quarks;
     public:
       QuarkState();
-      QuarkState( const std::string& str );
+      explicit QuarkState( const std::string& str );
       void antiThis();
-      void initFromString( const std::string& str );
       char nameFromPosition( int i ) const;
       int positionFromName( char c ) const;
       bool isVacuum()                const;
@@ -39,9 +38,8 @@ namespace AmpGen
       std::vector<QuarkState> m_quarks;
     public:
       QuarkContent();
-      QuarkContent( const std::string& str ){ initFromString(str); }
+      explicit QuarkContent( const std::string& str );
       void antiThis();
-      void initFromString( const std::string& str );
       void print( std::ostream& os = std::cout ) const;
       size_t size() const; 
       bool compatible( const QuarkContent& other ) const;

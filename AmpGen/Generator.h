@@ -21,7 +21,7 @@ namespace AmpGen
 
       public:
         template <class... ARGS>
-          Generator( const ARGS&... args )
+          explicit Generator( const ARGS&... args )
           : m_gps(args...)
           {
             m_eventType = m_gps.eventType();
@@ -139,7 +139,7 @@ namespace AmpGen
       void prepare(){};
       void setEvents( AmpGen::EventList& /*evts*/ ){};
       double prob_unnormalised( const AmpGen::Event& evt ) const { return m_fcn(evt); }
-      PDFWrapper( const FCN& fcn ) : m_fcn(fcn) {}
+      explicit PDFWrapper( const FCN& fcn ) : m_fcn(fcn) {}
       size_t size() const { return 0; }
       void reset( const bool& /*flag*/ = false ){};
 

@@ -33,7 +33,7 @@ using namespace AmpGen;
 namespace AmpGen { make_enum(generatorType, CoherentSum, PolarisedSum, FixedLib, RGenerator) }
 
 struct FixedLibPDF {
-  void* lib;
+  void* lib = {nullptr};
   AmpGen::DynamicFCN<double( const double*, int )> PDF;
 
   void prepare(){};
@@ -73,10 +73,10 @@ int main( int argc, char** argv )
   int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
   std::string outfile = NamedParameter<std::string>("Output"   , "Generate_Output.root" , "Name of output file" ); 
   auto genType        = NamedParameter<generatorType>( "Type", generatorType::CoherentSum, optionalHelpString("Generator configuration to use:", 
-    { {"CoherentSum", "Full phase-space generator with (pseudo)scalar amplitude"}
+    { {"CoherentSum" , "Full phase-space generator with (pseudo)scalar amplitude"}
     , {"PolarisedSum", "Full phase-space generator with particles carrying spin in the initial/final states"}
-    , {"FixedLib", "Full phase-space generator with an amplitude from a precompiled library"}
-    , {"RGenerator", "Recursive phase-space generator for intermediate (quasi)stable states such as the D-mesons"} } ) );
+    , {"FixedLib"    , "Full phase-space generator with an amplitude from a precompiled library"}
+    , {"RGenerator"  , "Recursive phase-space generator for intermediate (quasi)stable states such as the D-mesons"} } ) );
   
   std::string lib     = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
   size_t nBins        = NamedParameter<size_t>     ("nBins"     ,100, "Number of bins for monitoring plots." );

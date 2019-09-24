@@ -28,7 +28,7 @@ namespace AmpGen {
   class ASTResolver 
   { 
     public: 
-      ASTResolver(const std::map<std::string, size_t>& evtMap = {} , const MinuitParameterSet* mps = nullptr );
+      ASTResolver(const std::map<std::string, unsigned>& evtMap = {} , const MinuitParameterSet* mps = nullptr );
       std::vector<std::pair<uint64_t,Expression>> getOrderedSubExpressions( const Expression& expression);
 
       template <class TYPE> void resolve( const TYPE& obj ){}
@@ -52,7 +52,7 @@ namespace AmpGen {
     private: 
       std::map<const IExpression*, std::string>             m_resolvedParameters;          /// Map of parameters that have been resolved
       std::map<std::string, std::shared_ptr<CacheTransfer>> m_cacheFunctions;              /// Container of functions for calculating function cache
-      std::map<std::string, size_t>                         m_evtMap;                      /// Event specification 
+      std::map<std::string, unsigned>                       m_evtMap;                      /// Event specification 
       std::map<std::string, std::string>                    m_parameterMapping;            /// Mapping of parameters to compile parameters
       const MinuitParameterSet*                             m_mps;                         /// Set of MinuitParameters 
       std::map<const SubTree*, uint64_t>                    m_tempTrees;                   /// temporary store of sub-trees for performing cse reduction 

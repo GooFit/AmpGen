@@ -16,9 +16,9 @@ namespace AmpGen
   {
   public:
     FitResult(); 
-    FitResult( const FitResult& other );
-    FitResult( const std::string& filename );
-    FitResult( const Minimiser& mini );
+    explicit FitResult( const FitResult& other );
+    explicit FitResult( const std::string& filename );
+    explicit FitResult( const Minimiser& mini );
     FitResult( const MinuitParameterSet& mps, const TMatrixD& covMini );
 
     void addObservable( const std::string& name, const double& F );

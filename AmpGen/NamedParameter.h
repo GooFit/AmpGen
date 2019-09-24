@@ -76,7 +76,6 @@ namespace AmpGen
     }
     
     void help(const T& def){
-      std::map< std::string, std::string > aliases;  
       std::string type = typeof<T>();
       if( type == "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >" ) type = "string";
       std::cout << " " << bold_on << std::left << std::setw(27) << m_name << bold_off 

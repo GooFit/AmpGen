@@ -88,7 +88,7 @@ namespace AmpGen
     TransitionMatrix(Particle& dt, 
                      const CouplingConstant& coupling, 
                      const MinuitParameterSet& mps,
-                     const std::map<std::string,size_t>& evtFormat, 
+                     const std::map<std::string, unsigned>& evtFormat, 
                      const bool& debugThis=false) :
       decayTree(dt),
       coupling(coupling),

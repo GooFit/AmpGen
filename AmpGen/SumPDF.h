@@ -39,7 +39,7 @@ namespace AmpGen
   private:
     typedef typename eventListType::value_type eventValueType; ///< The value type stored in the eventListType
     std::tuple<pdfTypes...> m_pdfs;                            ///< The tuple of probability density functions
-    eventListType*          m_events;                          ///< The event list to evaluate likelihoods on
+    eventListType*          m_events = {nullptr};              ///< The event list to evaluate likelihoods on
 
   public:
     /// Default Constructor

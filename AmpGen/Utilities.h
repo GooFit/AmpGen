@@ -20,22 +20,6 @@
 #include "AmpGen/MetaUtils.h"
 namespace AmpGen {
   template <class T>
-    bool isIn( const std::vector<T>& container, const T& obj )
-    {
-      for ( auto& it : container )
-        if ( obj == it ) return true;
-      return false;
-    }
-
-  template <class T, class B, class F>
-    bool isIn( const std::vector<T>& container, const B& obj, F f )
-    {
-      for ( auto& it : container )
-        if ( f( it, obj ) ) return true;
-      return false;
-    }
-
-  template <class T>
     std::string vectorToString( const std::vector<T>& obj, const std::string& delim = "" )
     {
       std::stringstream ss;
@@ -200,7 +184,7 @@ namespace AmpGen {
 
   std::string ltrim( std::string s );
   std::string rtrim( std::string s );
-  std::string trim( std::string s );
+  std::string trim( const std::string& s );
   std::string expandGlobals( std::string path );
 
   std::ostream& bold_on( std::ostream& );

@@ -98,7 +98,7 @@ Tensor AmpGen::Gamma4Vec()
 
 Tensor AmpGen::slash( const Tensor& P )
 {
-  if ( P.dims() != std::vector<size_t>({4}) ) {
+  if ( P.dims() != std::vector<unsigned>({4}) ) {
     ERROR( "Can only compute slash operator against vector currents" );
     return Tensor();
   }

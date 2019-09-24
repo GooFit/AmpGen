@@ -3,7 +3,8 @@
 
 /* @class ThreadPool ThreadPool.h AmpGen/ThreadPool.h
  * Thread pool implementation taken from https://github.com/progschj/ThreadPool
- * Modified to allow explicit clearing of queues.
+ * Modified to allow explicit clearing of queues, and to make
+ * the constructor explicit
  *
  * Copyright (c) 2012 Jakob Progsch, Václav Zeman
  *
@@ -47,7 +48,7 @@ namespace AmpGen
   class ThreadPool
   {
     public:
-      ThreadPool(const size_t& nt);
+      explicit ThreadPool(const size_t& nt);
       ~ThreadPool();
       template<class F, class... Args> auto enqueue(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type>;
       void waitForStoppedThreads(); 

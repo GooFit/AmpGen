@@ -18,7 +18,7 @@ namespace AmpGen
 
   class MinuitParameterLink : public IExpression {
     public:
-      MinuitParameterLink( MinuitParameter* param ) ;
+      explicit MinuitParameterLink( MinuitParameter* param ) ;
       std::string to_string(const ASTResolver* resolver=nullptr) const override ;
       void resolve( ASTResolver& resolver ) const override ;
       complex_t operator()() const override ;
@@ -31,7 +31,7 @@ namespace AmpGen
 
   class ExpressionPack : public IExpression {
     public:
-      ExpressionPack( const std::vector<Expression>& expressions ){ m_expressions = expressions ; }
+      explicit ExpressionPack( const std::vector<Expression>& expressions ): m_expressions(expressions) {}
       ExpressionPack( const Expression& A, const Expression& B );
       std::string to_string(const ASTResolver* resolver=nullptr) const override;
       void resolve( ASTResolver& resolver ) const override;

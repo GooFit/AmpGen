@@ -24,14 +24,14 @@ namespace AmpGen {
   {
     public:
       struct Node {
-        unsigned int index; 
-        int left; 
-        int right; 
-        double       cutValue; 
+        unsigned index; 
+        unsigned left; 
+        unsigned right; 
+        double   cutValue; 
         Node(){};
-        Node(const unsigned int& index,
-            const int& left, 
-            const int& right,
+        Node(const unsigned& index,
+            const unsigned& left, 
+            const unsigned& right,
             const double& cutValue) : index(index), left(left), right(right), cutValue(cutValue) {};
       };
       FastDT() = default; 
@@ -41,8 +41,8 @@ namespace AmpGen {
       std::vector<Node> m_nodes;
       std::function<std::vector<double>(const Event&)> m_functors;
       std::queue<size_t> m_queueOrdering; 
-      size_t       m_dim;
-      size_t       m_minEvents;
+      size_t       m_dim            = {0};
+      size_t       m_minEvents      = {0};
       size_t       m_maxDepth       = {0};
       int          m_endNodeCounter = {0};       
       int makeNodes(std::vector<double*>& evts, std::queue<size_t> indexQueue, const size_t& depth);

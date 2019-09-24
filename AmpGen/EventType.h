@@ -31,27 +31,27 @@ namespace AmpGen
       EventType conj( const bool& headOnly = 0, const bool& dontConjHead = 0 ) const;
 
       /// Returns the event format, that matches between expressions and the names used in Particle.
-      std::map<std::string, size_t> getEventFormat( const bool& outputNames = false ) const;
+      std::map<std::string, unsigned> getEventFormat( const bool& outputNames = false ) const;
 
       /// Counts the number of particles in this event type with
       /// the same name as the index'th name.
-      std::pair<size_t,size_t>  count(const size_t& index) const;
-      std::pair<double, double> minmax( const std::vector<size_t>& indices, bool isGeV = false ) const;
+      std::pair<unsigned,unsigned>  count(const unsigned& index) const;
+      std::pair<double, double> minmax( const std::vector<unsigned>& indices, bool isGeV = false ) const;
       std::vector<double> masses() const;
       std::string mother() const;
-      double mass( const size_t& index ) const;
+      double mass( const unsigned& index ) const;
       double motherMass() const;
       std::vector<std::string> finalStates() const;
       bool isTimeDependent() const;
-      size_t eventSize() const;
-      size_t size()      const;
-      size_t dof()       const;
-      std::string operator[]( const size_t& index ) const;
+      unsigned eventSize() const;
+      unsigned size()      const;
+      unsigned dof()       const;
+      std::string operator[]( const unsigned& index ) const;
       std::string decayDescriptor() const;
-      std::string label( const size_t& index, bool isRoot = true ) const;
-      std::string label( const std::vector<size_t>& index, bool isRoot = true ) const;
-      std::vector<Projection> defaultProjections(const size_t& nBins) const;
-      Projection projection(const size_t& nBins, const std::vector<size_t>& indices, const std::string& observable = "mass2") const;
+      std::string label( const unsigned& index, bool isRoot = true ) const;
+      std::string label( const std::vector<unsigned>& index, bool isRoot = true ) const;
+      std::vector<Projection> defaultProjections(const unsigned& nBins) const;
+      Projection projection(const unsigned& nBins, const std::vector<unsigned>& indices, const std::string& observable = "mass2") const;
 
       bool operator==( const EventType& other ) const;
       bool has( const std::string& name ) const;
@@ -62,7 +62,7 @@ namespace AmpGen
       std::function<void( Event& )> symmetriser() const;
 
       /// Calculates the number of spin indices associated with the initial and final state, i.e. the rank of the relevant transition matrix.
-      std::pair<size_t, size_t> dim() const;
+      std::pair<unsigned, unsigned> dim() const;
 
     private:
       std::string               m_mother;               ///< name of decaying particle
@@ -72,7 +72,7 @@ namespace AmpGen
       std::vector<double>       m_particleMasses;       ///< masses of decay products
       bool                      m_timeDependent;        ///< Flag to include a decay time as the last element in the event vector
       std::vector<std::string>  m_eventTypeExtensions;  ///< extended event data
-      std::pair<size_t, size_t> m_dim;                  ///< Rank of the relevant transition matrix
+      std::pair<unsigned, unsigned> m_dim;                  ///< Rank of the relevant transition matrix
       bool                      m_alt_part_names;       ///< alternative naming in ouput tree (e.g. Xi- pi+ pi+ becomes Xim pip0 pip1 rather than _1_Xi# _2_pi~ _3_pi~)
   };
   std::ostream& operator<<( std::ostream& os, const EventType& type );

@@ -40,7 +40,6 @@ inline std::string trimmedString( std::string thing, const unsigned int& length 
     return pos < length ? thing.substr( 0, pos ) : thing.substr( 0, length );
   }
   return thing.size() < length ? thing : thing.substr( 0, length ) + "...";
-  if ( thing.size() < length ) return thing;
 }
 
 /// @ingroup msgService macro DEBUG

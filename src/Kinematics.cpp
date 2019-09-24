@@ -11,7 +11,7 @@
 
 using namespace AmpGen;
 
-MomentumTransfer::MomentumTransfer( const std::vector<size_t>& _p1, const std::vector<size_t>& _p2 )
+MomentumTransfer::MomentumTransfer( const std::vector<unsigned>& _p1, const std::vector<unsigned>& _p2 )
     : p1( _p1 ), p2( _p2 )
 {
   for ( auto& p : p1 ) s.push_back( p );
@@ -30,13 +30,13 @@ double MomentumTransfer::Q2( const double& s, const double& s1, const double& s2
   return s / 4. - ( s1 + s2 ) / 2. + ( s1 - s2 ) * ( s1 - s2 ) / ( 4 * s );
 }
 
-HelicityCosine::HelicityCosine( const std::vector<size_t>& p1, const std::vector<size_t>& p2,
-                                const std::vector<size_t>& pR )
+HelicityCosine::HelicityCosine( const std::vector<unsigned>& p1, const std::vector<unsigned>& p2,
+                                const std::vector<unsigned>& pR )
     : _i( p1 ), _j( p2 ), _pR( pR )
 {
 }
 
-HelicityCosine::HelicityCosine( const size_t& i, const size_t& j, const std::vector<size_t>& pR )
+HelicityCosine::HelicityCosine( const unsigned& i, const unsigned& j, const std::vector<unsigned>& pR )
     : _i( 1, i ), _j( 1, j ), _pR( pR )
 {
 }
@@ -50,12 +50,12 @@ double HelicityCosine::operator()( const Event& evt ) const
   return dotProduct(pi, pj, PR) / sqrt( dotProduct( pi, pi, PR ) * dotProduct( pj, pj, PR ) );
 }
 
-TLorentzVector AmpGen::pFromEvent( const Event& evt, const size_t& ref )
+TLorentzVector AmpGen::pFromEvent( const Event& evt, const unsigned& ref )
 {
   return TLorentzVector( evt.address( 4 * ref ) );
 }
 
-TLorentzVector AmpGen::pFromEvent( const Event& evt, const std::vector<size_t>& ref )
+TLorentzVector AmpGen::pFromEvent( const Event& evt, const std::vector<unsigned>& ref )
 {
   double px( 0 ), py( 0 ), pz( 0 ), pE( 0 );
   for ( auto& r : ref ) {
@@ -144,7 +144,7 @@ void AmpGen::boost( Event& evt, const std::tuple<double, double, double>& n, con
   double nz   = std::get<2>( n );
   double norm = sqrt( nx * nx + ny * ny + nz * nz );
 
-  for ( size_t i = 0; i < evt.size() / 4; ++i ) {
+  for ( unsigned i = 0; i < evt.size() / 4; ++i ) {
     double nv = evt[4 * i] * nx + evt[4 * i + 1] * ny + evt[4 * i + 2] * nz;
     evt[4*i+0] += ( (gamma-1) * nv / norm + gamma * evt[4*i+3] * v ) * nx / norm;
     evt[4*i+1] += ( (gamma-1) * nv / norm + gamma * evt[4*i+3] * v ) * ny / norm;
@@ -161,7 +161,7 @@ void AmpGen::rotate( Event& evt, const std::tuple<double,double,double>& n, cons
   double cv   = cos(v);
   double sv   = sin(v);
   double norm = sqrt( nx * nx + ny * ny + nz * nz );
-  for( size_t i = 0 ; i < evt.size()/4;++i){
+  for( unsigned i = 0 ; i < evt.size()/4;++i){
     double ix = evt[ 4*i+0];
     double iy = evt[ 4*i+1];
     double iz = evt[ 4*i+2];
@@ -174,7 +174,7 @@ void AmpGen::rotate( Event& evt, const std::tuple<double,double,double>& n, cons
 
 void AmpGen::rotateBasis( Event& evt, const TVector3& p1, const TVector3& p2, const TVector3& p3 )
 {
-  for(size_t i = 0 ; i < evt.size()/4;++i)
+  for(unsigned i = 0 ; i < evt.size()/4;++i)
   { 
     double ex = evt[4*i+0];
     double ey = evt[4*i+1];

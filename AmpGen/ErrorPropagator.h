@@ -38,9 +38,9 @@ namespace AmpGen
   {
     public:
       ///< Constructor for LinearErrorPropagator taking a vector of free parameters, assumes a diagonal covariance matrix taking the parameter uncertainties.
-      LinearErrorPropagator( const std::vector<MinuitParameter*>& params );
+      explicit LinearErrorPropagator( const std::vector<MinuitParameter*>& params );
       ///< Constructor for LinearErrorPropagator, taking a MinuitParameterSet as argument, assumes a diagonal coviarance matrix using the uncertainties on parameters.
-      LinearErrorPropagator( const MinuitParameterSet& params );
+      explicit LinearErrorPropagator( const MinuitParameterSet& params );
       ///< Constructor for LinearErrorPropagator, taking a covariance matrix and a vector parameters
       LinearErrorPropagator( const TMatrixD& reducedCovarianceMatrix, const std::vector<MinuitParameter*>& params );
       
