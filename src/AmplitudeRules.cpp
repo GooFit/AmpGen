@@ -138,7 +138,7 @@ void CouplingConstant::print() const
   else
     for ( auto& coupling : couplings ) 
       INFO( coupling.first->name() << " x exp(i" <<  coupling.second->name() << ") = " << 
-          coupling.first->mean() * exp( 1i * coupling.second->mean() * M_PI / 180. )   );
+          coupling.first->mean() * exp( 1i * coupling.second->mean() * sf )   );
 }
 
 std::vector<std::pair<Particle, CouplingConstant>> AmplitudeRules::getMatchingRules(const EventType& type, const std::string& prefix )

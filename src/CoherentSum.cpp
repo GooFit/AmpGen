@@ -43,6 +43,9 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   , m_prefix( prefix )
 {
   auto amplitudes      = m_protoAmplitudes.getMatchingRules( m_evtType, prefix);
+  if( amplitudes.size() == 0 ){
+    WARNING("The defined amplitudes don't seem to be able to be able to generate eventType: " << type);
+  }
   for( auto& amp : amplitudes ) INFO( amp.first.decayDescriptor() );
   m_matrixElements.resize( amplitudes.size() );
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() ); 
