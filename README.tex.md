@@ -222,7 +222,7 @@ This section contains miscellaneous details on more advanced functionality, incl
 * [Particle Properties and Lineshape parameters](#particle-properties-and-lineshape-parameters)
 * [Fit parameters and expressions](#fit-parameters-and-expressions)
 * [Spin Formalisms](#spin-formalisms)
-* [Quasi-Particles](#quasi-particles)
+* [Quasiparticles](#quasiparticles)
 
 ### Python Bindings
 Models built into a shared library can be used in python using the following flags into ConvertToSourceCode:
@@ -308,9 +308,26 @@ t2 {
 ```
 That is specified as sets of three numbers, firstly the coupling, and then the two particle helicities. So in this example, the longitudinal amplitude is the $00$ helicity state, while the two transverse amplitudes and the sum and difference of the two other helicity amplitudes.
 
-### Quasi-Particles
+### Quasiparticles
 
-
+Quasiparticles are (semi)fictional decaying particles that can be implemented in the decay chain for a variety of different purposes. The original use case was to group some amplitudes with the same quantum numbers with couplings that want to be factorised. 
+For example, for the @f$I=0@f$ @f$S@f$-wave, the K matrix description may be used. The coupling from the initial state may be written as 
+```
+D0{K0S0,NonResS0} ...
+```
+The quasiparticle _NonResS0_ can then be decayed to the final state via the K matrix lineshape(s) 
+```
+NonResS0[kMatrix.pole.0]{pi+,pi-} ...
+NonResS0[kMatrix.pole.1]{pi+,pi-} ...
+...
+``` 
+where each of the .X is one of the terms of the (pole) production vector. 
+In this example, an equivalent formulation would be 
+```
+D0{K0S0,NonResS0[kMatrix.pole.0]{pi+,pi-}} ...
+D0{K0S0,NonResS0[kMatrix.pole.1]{pi+,pi-}} ...
+...
+```
 
 ## Acknowledgements
 The development of this software has been  supported by the National Science Foundation under grant PHY-1414736 and through a subcontract under Cooperative Agreement OAC-1836650.   Any opinions, findings, and conclusions or recommendations expressed in this material are those of the developers and do not necessarily reflect the views of the National Science Foundation.
