@@ -108,9 +108,11 @@ int main( int argc, char* argv[] )
 
     Minimiser mini( csLL, &MPS );
     mini.doFit();
+    FitResult * fr = new FitResult(mini);
+    fr->writeToFile(logFile);
    
     INFO( "norm[1] = " << cs.norm() );
-    TFile* f = TFile::Open("output.root","RECREATE");
+    TFile* f = TFile::Open(plotFile.c_str(),"RECREATE");
 
     auto projections = signalType.defaultProjections(100);
     for( auto& projection : projections ){

@@ -1,5 +1,5 @@
 
-#include "AmpGen/Psi3770.h"
+//#include "AmpGen/Psi3770.h"
 
 
 
@@ -266,13 +266,13 @@ int main( int argc, char** argv )
   auto pNames = NamedParameter<std::string>("EventType" , ""    
       , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
   auto tags           = NamedParameter<std::string>("TagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();
-<<<<<<< HEAD
+
   bool debug          = NamedParameter<bool>("Debug", false, "Flag to print out debug information");
   std::string valFolder      = NamedParameter<std::string>("valFolder", "values", "Folder to put the .csv files for the amplitude values");
 
   //if (valFolder == "") FATAL("Refusing to make a folder in the root directory");
-=======
->>>>>>> 9a2707190216d7ac1466669175dcdbb8dea029f1
+
+
 
   gRandom = new TRandom3(seed);
 #ifdef _OPENMP
@@ -285,17 +285,17 @@ int main( int argc, char** argv )
   add_CP_conjugate( MPS );
   EventType signalType( pNames );
   TFile* f = TFile::Open( output.c_str() ,"RECREATE");
-<<<<<<< HEAD
+
   f->cd();
-=======
->>>>>>> 9a2707190216d7ac1466669175dcdbb8dea029f1
+
+
   auto yc = DTYieldCalculator(crossSection);
   if( nEvents == 0 ) 
     INFO("Generating events using PDG/efficiencies with luminosity = " << luminosity << " pb⁻¹; σ = " << crossSection << " pb" );
   else INFO("Generating " << nEvents << " per sample");
   ModelStore models(&MPS, yc); 
   for( auto& tag : tags ){
-<<<<<<< HEAD
+
 
     auto tokens       = split(tag, ' ');
     INFO("tag = "<<tokens[0]);
@@ -327,141 +327,13 @@ int main( int argc, char** argv )
     int n_evtList = evtlist.size();
     //TFile * fsigVal = TFile::Open("sigVal.root", "RECREATE");
     
+
    
-  
-
-    std::ostringstream magAstream(outFolder);
-    magAstream<<outFolder<<"/magA.csv";
-   
-    
-    std::ostringstream magBstream(outFolder);
-    magBstream<<outFolder<<"/magB.csv";
-    
-    std::ostringstream magCstream(outFolder);
-    magCstream<<outFolder<<"/magC.csv";
- 
-    std::ostringstream magDstream(outFolder);
-    magDstream<<outFolder<<"/magD.csv";
-   
-
-    std::ostringstream argAstream(outFolder);
-    argAstream<<outFolder<<"/argA.csv";
-   
-    std::ostringstream argBstream(outFolder);
-    argBstream<<outFolder<<"/argB.csv";
-
-    std::ostringstream argCstream(outFolder);
-    argCstream<<outFolder<<"/argC.csv";
-
-    std::ostringstream argDstream(outFolder);
-    argDstream<<outFolder<<"/argD.csv";
-
-
-    std::ostringstream rACstream(outFolder);
-    rACstream<<outFolder<<"/rAC.csv";
-
-
-    std::ostringstream dACstream(outFolder);
-    dACstream<<outFolder<<"/dAC.csv";
-
-
-    auto magAstr = magAstream.str();
-    auto magBstr = magBstream.str();
-    auto magCstr = magCstream.str();
-    auto magDstr = magDstream.str();
-    auto argAstr = argAstream.str();
-    auto argBstr = argBstream.str();
-    auto argCstr = argCstream.str();
-    auto argDstr = argDstream.str();
-    auto rACstr = rACstream.str();
-    auto dACstr = dACstream.str();
-    std::ofstream magAf(magAstr);
-    std::ofstream magBf(magBstr);
-    std::ofstream magCf(magCstr);
-    std::ofstream magDf(magDstr);
-    std::ofstream argAf(argAstr);
-    std::ofstream argBf(argBstr);
-    std::ofstream argCf(argCstr);
-    std::ofstream argDf(argDstr);
-    std::ofstream rACf(rACstr);
-    std::ofstream dACf(dACstr);
-
-
-    for (int i =0; i < n_evtList; i++){
-
-      std::complex<double> sigVal = generator.fSig(evtlist[i]);
-      std::complex<double> sigCCVal = generator.fSigCC(evtlist[i]);
-      std::complex<double> tagVal = generator.fTag(evtlist[i]);
-      std::complex<double> tagCCVal = generator.fTagCC(evtlist[i]);
-      std::vector<unsigned> xind = {0,1};
-      std::vector<unsigned> yind = {0,2};
-      double sigx = generator.sigS(evtlist[i], xind);
-      double sigy = generator.sigS(evtlist[i], yind);
-      double sigMag = std::abs(sigVal);
-      double sigPh = std::arg(sigVal); 
-      double sigCCMag = std::abs(sigCCVal);
-      double sigCCPh = std::arg(sigCCVal);
-      double sigDelta = sigPh - sigCCPh;
-      double tagMag = std::abs(tagVal);
-      double tagPh = std::arg(tagVal); 
-      double tagCCMag = std::abs(tagCCVal);
-      double tagCCPh = std::arg(tagCCVal);
-      double tagDelta = tagPh - tagCCPh;
-      /*
-      gSigMag->SetPoint(i, sigx, sigy, sigMag);
-      gSigPh->SetPoint(i, sigx, sigy, sigPh);
-      gSigCCMag->SetPoint(i, sigx, sigy, sigCCMag);
-      gSigCCPh->SetPoint(i, sigx, sigy, sigCCPh);
-      gSigDelta->SetPoint(i, sigx, sigy, sigDelta);
-      */
-      magAf<<sigx<<"\t"<<sigy<<"\t"<<sigMag<<"\n";
-      magCf<<sigx<<"\t"<<sigy<<"\t"<<sigCCMag<<"\n";
-      rACf<<sigx<<"\t"<<sigy<<"\t"<<sigCCMag/sigMag<<"\n";
-      argAf<<sigx<<"\t"<<sigy<<"\t"<<sigPh<<"\n";
-      argCf<<sigx<<"\t"<<sigy<<"\t"<<sigCCPh<<"\n";
-      dACf<<sigx<<"\t"<<sigy<<"\t"<<sigCCPh - sigPh<<"\n";
-
-
-      if (i % (int)n_evtList/100  && debug){
-        INFO("Event "<<i<<"out of "<<n_evtList);
-        INFO("Dalitz Coordinates = ("<<sigx<<","<<sigy<<")");
-        INFO("Signal |A| = "<<sigMag);
-        INFO("SignalCC |A| = "<<sigCCMag);
-        INFO("Signal ẟ = "<<sigPh);
-        INFO("SignalCC ẟ = "<<sigCCPh);
-        INFO("Signal Δẟ ="<<sigDelta);
-        INFO("Tag |A| = "<<tagMag);
-        INFO("TagCC |A| = "<<tagCCMag);
-        INFO("Tag ẟ = "<<tagPh);
-        INFO("TagCC ẟ = "<<tagCCPh);
-        INFO("Tag Δẟ ="<<tagDelta);
-//        INFO("Value of event "<<i<<" = "<<generator.fSig(evtlist[i])<<"\n";
-      }
-    }
-    /*
-    gSigMag->Write("mag");
-    gSigPh->Write("phase");
-    gSigDelta->Write("deltaPhase");
-    gSigCCMag->Write("magCC");
-    gSigCCPh->Write("phaseCC");
-
-    delete gSigMag;
-    delete gSigPh;
-    delete gSigDelta;
-    delete gSigCCMag;
-    delete gSigCCPh;
-   */
-
-
-
-   // fsigVal->Close();
   
  generator.generate(yield).tree(tokens[0])->Write();
-=======
-    auto tokens       = split(tag, ' ');
-    auto tagParticle  = Particle(tokens[1], {}, false);
-    EventType    type = tagParticle.eventType();
-    double yield_noQC = yc(luminosity,signalType,type,true);
+
+   
+
     std::string flib         = NamedParameter<std::string>( type.decayDescriptor() +"::lib", "");
     if( flib == "" ){
       auto generator    = Psi3770<CoherentSum,CoherentSum>(models, signalType, type); 
@@ -481,7 +353,7 @@ int main( int argc, char** argv )
       INFO( "Tag = " << type << " Expected Yield [incoherent] = " << yield_noQC << " rho = " << rho << " requested = " << yield );
       generator.generate(yield).tree(tokens[0])->Write();
     }
->>>>>>> 9a2707190216d7ac1466669175dcdbb8dea029f1
+
   }
   f->Close(); 
   auto twall_end  = std::chrono::high_resolution_clock::now();
@@ -525,8 +397,8 @@ void add_CP_conjugate( MinuitParameterSet& mps )
   for( auto& p : tmp ) mps.add( p );
 }
 
-<<<<<<< HEAD
-=======
+
+
 std::map<std::string, double> DTYieldCalculator::getKeyed(const std::string& name)
 {
   std::vector<std::string> things = AmpGen::NamedParameter<std::string>(name).getVector();
@@ -628,7 +500,7 @@ TTree* DTEventList::tree(const std::string& name)
   return outputTree;
 }    
 
->>>>>>> 9a2707190216d7ac1466669175dcdbb8dea029f1
+
 template <> normalised_pdf<CoherentSum>& ModelStore::find(const EventType& type){ return get<CoherentSum>(type, genericModels); }
 template <> normalised_pdf<FixedLibPdf>& ModelStore::find(const EventType& type){ return get<FixedLibPdf>(type, flibModels); }
 
