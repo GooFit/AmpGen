@@ -168,8 +168,14 @@ int main( int argc, char* argv[] )
   const std::string logFile  = NamedParameter<std::string>("LogFile"   , "Fitter.log", "Name of the output log file");
   const std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
 
-//  [[maybe_unused]]
+
+
+
+
+
   const size_t      nThreads = NamedParameter<size_t>     ("nCores"    , 8           , "Number of threads to use" );
+
+
   const size_t      NBins    = NamedParameter<size_t>     ("nBins"     , 100         , "Number of bins used for plotting.");
   const bool        perturb  = NamedParameter<bool>       ("Perturb"   , 0           , "Flag to randomise starting parameters.");
   const size_t      seed     = NamedParameter<size_t>     ("Seed"      , 0           , "Random seed used" );

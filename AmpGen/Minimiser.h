@@ -80,7 +80,10 @@ namespace AmpGen
     MinuitParameterSet* parSet() const;
     int status() const;
     ROOT::Minuit2::Minuit2Minimizer* minimiserInternal();
+
     void GradientTest();
+
+
 
   
   private:
@@ -94,7 +97,10 @@ namespace AmpGen
     unsigned int m_printLevel = {0};
     double       m_ll_zero    = {0};
     bool         m_normalise  = {false};
+
     bool         m_debug      = {false};
+
+
     std::vector<IExtendLikelihood*> m_extendedTerms;
   };
 } // namespace AmpGen

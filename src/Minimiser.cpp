@@ -1,4 +1,8 @@
+<<<<<<< HEAD
   #include "AmpGen/Minimiser.h"
+=======
+#include "AmpGen/Minimiser.h"
+>>>>>>> 9a2707190216d7ac1466669175dcdbb8dea029f1
 
 #include <TMatrixTBase.h>
 #include <TMatrixTSym.h>
@@ -62,7 +66,10 @@ void Minimiser::prepare()
   double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 1);
   m_printLevel          = NamedParameter<size_t>( "Minimiser::PrintLevel", 4);
   m_normalise           = NamedParameter<bool>(   "Minimiser::Normalise",false);
+<<<<<<< HEAD
   m_debug           = NamedParameter<bool>(   "Minimiser::debug",false);
+=======
+>>>>>>> 9a2707190216d7ac1466669175dcdbb8dea029f1
   if ( m_minimiser != nullptr ) delete m_minimiser;
   m_minimiser = new Minuit2::Minuit2Minimizer(algorithm.c_str() );
   DEBUG( "Error definition = " << m_minimiser->ErrorDef() );
@@ -156,6 +163,7 @@ void Minimiser::addExtendedTerm( IExtendLikelihood* m_term )
 }
 
 ROOT::Minuit2::Minuit2Minimizer* Minimiser::minimiserInternal() { return m_minimiser; }
+<<<<<<< HEAD
 
 void Minimiser::GradientTest()
 {
@@ -174,3 +182,5 @@ void Minimiser::GradientTest()
     parameter->setCurrentFitVal( m );
   }
 }
+=======
+>>>>>>> 9a2707190216d7ac1466669175dcdbb8dea029f1

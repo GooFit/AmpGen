@@ -1,0 +1,45 @@
+sudo: false
+dist: xenial 
+
+cache:
+  ccache: true
+  apt: true
+  directories:
+  - "${TRAVIS_BUILD_DIR}/deps/root"
+  - "${TRAVIS_BUILD_DIR}/deps/doxygen"
+
+# Blacklist
+branches:
+  except:
+    - gh-pages
+
+# Environment variables
+env:
+  global:
+    - GH_REPO_NAME: AmpGen
+    - DOXYFILE: $TRAVIS_BUILD_DIR/doc/doxyfile
+    - GH_REPO_REF: github.com/GooFit/AmpGen.git
+    - DEPS_DIR: "${TRAVIS_BUILD_DIR}/deps"
+
+# Install dependencies
+addons:
+  apt:
+    packages:
+      - doxygen
+      - doxygen-doc
+      - doxygen-gui
+      - graphviz
+      - libtbb-dev
+      
+before_install:
+- source .ci/build_root.sh
+
+# Build your code e.g. by calling make
+script:
+  - chmod +x .ci/travis.sh
+  - source .ci/travis.sh
+
+# Generate and deploy documentation
+after_success:
+  - chmod +x .ci/build_docs.sh
+  - source .ci/build_docs.sh

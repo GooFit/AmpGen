@@ -2,8 +2,10 @@
 
 
 
+
 EventType D0 K- pi+ pi+ pi-
 Import $AMPGENROOT/options/kMatrix.opt
+
 
 
 a(1)(1260)-::Spline      40         0.18412         1.9

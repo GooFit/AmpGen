@@ -1,7 +1,7 @@
 #include "AmpGen/Integrator.h"
-#include <iostream>
 using namespace AmpGen;
-using namespace std;
+
+
 Bilinears::Bilinears(const size_t& r, const size_t& c) : 
   rows(r), 
   cols(c), 
@@ -19,11 +19,9 @@ void Bilinears::resetCalculateFlags()
 } 
 complex_t& Bilinears::operator()( const size_t& x, const size_t& y ){ return norms[x*cols+y];}
 bool   Bilinears::isZero( const size_t& x, const size_t& y ){ return markAsZero[ x*cols+y] ; } 
-bool Bilinears::workToDo( const size_t& x, const size_t& y ) const { 
-  DEBUG("x = "<<x<<"\ny = "<<y<<"\ncols = "<<cols<<"\ncalculate size = "<<calculate.size());
-  DEBUG("Calculate entry = "<<calculate[x * cols + y]);
-  return calculate[x*cols+y] ; 
-  } // && ! markAsZero[x*cols+y] ; }
+
+bool Bilinears::workToDo( const size_t& x, const size_t& y ) const { return calculate[x*cols+y] ; } // && ! markAsZero[x*cols+y] ; }
+
 void   Bilinears::resize( const size_t& r, const size_t& c)
 {
   rows = r;

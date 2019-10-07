@@ -58,9 +58,16 @@ int main( int argc, char* argv[] )
               , "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
   
 
+
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , 8           , "Number of threads to use" );
   size_t      seed     = NamedParameter<size_t>     ("Seed"      , 0           , "Random seed used" );
   size_t      nEvents  = NamedParameter<size_t>     ("nEvents"   , 10000       , "Number of events to fill in") ;
+
+
+
+
+   
+
   if( dataFile == "" ) FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off );
   if( pNames.size() == 0 ) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
 
@@ -140,14 +147,15 @@ FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, M
      (i.e. the likielihood, and a set of MinuitParameters. */
   Minimiser mini( likelihood, &MPS );
 
-  mini.doFit();
- 
   auto covar = mini.covMatrix();
   INFO("Printing Covariant matrix");
   covar.Print();
   auto covarFull = mini.covMatrixFull();
   INFO("Printing full Covariant matrix");
   covarFull.Print();
+
+  mini.doFit();
+
   FitResult* fr = new FitResult(mini);
   
   auto twall_end  = std::chrono::high_resolution_clock::now();
