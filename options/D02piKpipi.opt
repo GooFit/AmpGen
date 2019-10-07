@@ -1,0 +1,29 @@
+EventType D0 K+ pi- pi- pi+
+# Description of DCS amplitude D0 -> K+,pi-,pi-,pi+
+
+
+#Import Dbar02piKpipi.opt #necessary for K1 couplings / shape parameters 
+
+Import $AMPGENROOT/options/Dbar02piKpipi.opt #necessary for K1 couplings / shape parameters 
+
+
+CouplingConstant::Coordinates  polar
+CouplingConstant::AngularUnits deg
+CoherentSum::Verbosity         0 
+
+D0_radius                                                                    2             3.7559         0       
+D0{K*(892)0{K+,pi-},rho(770)0{pi+,pi-}}                                      2             0.205          0.019          2                -8.5         4.7  
+D0[P]{K*(892)0{K+,pi-},rho(770)0{pi+,pi-}}                                   2             0.390          0.002          2               -91.4         0.4 
+D0[D]{K*(892)0{K+,pi-},rho(770)0{pi+,pi-}}                                   2             1.000          0.000          2                 0.0         0.0 
+D0{rho(1450)0{pi+,pi-},K*(892)0{K+,pi-}}                                     2             0.541          0.042          2               -21.8         6.5      
+
+# There is an additional relative phase of 180 degrees here w.r.t
+# what is written in the paper, due to a slightly different convention 
+# in how the K(1) couplings have been defined. 
+D0{K(1)(1270)+,pi-}                                                          2             0.653          0.040          2                69.3         5.1     
+D0{K(1)(1400)+{K*(892)0{K+,pi-},pi+},pi-}                                    2             0.560          0.037          2                29.8         4.2
+D0{KPi40,PiPi40}                                                             2             1.000          0.000          2                 0.0         0.0  
+KPi40[FOCUS.Kpi]{K+,pi-}                                                     2             1.000          0.000          2                 0.0         0.0              
+KPi40[FOCUS.I32]{K+,pi-}                                                     2             0.686          0.010          2              -149.4         4.3
+PiPi40[kMatrix.pole.1]{pi+,pi-}                                              2             0.438          0.009          2              -132.4         6.5  
+PiPi40[kMatrix.prod.0]{pi+,pi-}                                              2             0.050          0.001          2                74.8         7.5 

@@ -1,0 +1,30 @@
+# Example usage of the K-matrix with P-vector parameters from https://arxiv.org/pdf/0804.2089.pdf 
+# Note that as amplitude conventions are likely to be very different, so shouldn't reproduce the results. 
+# The P-vector conventions on the other hand should be the same. 
+
+EventType D0 K0S0 pi+ pi- 
+
+# Flag to interpret complex numbers are (amp,phase) rather than real/imaginary, and angles in deg rather than rad.
+CouplingConstant::Coordinates  polar
+CouplingConstant::AngularUnits deg 
+
+# Import K-matrix parameters 
+Import $AMPGENROOT/options/kMatrix.opt
+
+D0{K0S0,rho(770)0{pi+,pi-}}       2  1.00 0.00  2    0.0 0.0 
+
+# Coupling from D0 to K0S0,pipi S-wave, can be arbitrarily fixed.
+D0{K0S0,PiPi00}                   2  0.02 0.00  2    0.0 0.0 
+
+# P-vector couplings of the pipi S-wave to the K-matrix. 
+PiPi00[kMatrix.pole.0]{pi+,pi-}   0  9.30 0.40  0  -78.7 1.6
+PiPi00[kMatrix.pole.1]{pi+,pi-}   0 10.89 0.26  0 -159.1 2.6
+PiPi00[kMatrix.pole.2]{pi+,pi-}   0 24.20 2.00  0  168.0 4.0
+PiPi00[kMatrix.pole.3]{pi+,pi-}   0  9.16 0.24  0   90.5 2.6
+
+PiPi00[kMatrix.prod.0]{pi+,pi-}   0  7.94 0.40  0   73.9 1.1
+PiPi00[kMatrix.prod.1]{pi+,pi-}   0  2.00 0.30  0  -18.0 9.0
+PiPi00[kMatrix.prod.2]{pi+,pi-}   0  5.10 0.30  0   33.0 3.0
+PiPi00[kMatrix.prod.3]{pi+,pi-}   0  3.23 0.18  0    4.8 2.5
+
+PiPi00_s0_prod 0 -0.07 0.03

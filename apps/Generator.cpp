@@ -7,7 +7,7 @@
 #include "TFile.h"
 #include "TRandom3.h"
 #include "TTree.h"
-
+#include "TGraph2D.h"
 #ifdef _OPENMP
 #include <omp.h>
 #include <thread>
@@ -95,14 +95,31 @@ int main( int argc, char** argv )
   MinuitParameterSet MPS;
   MPS.loadFromStream();
   
+  Particle p;
+  bool debug=false;
+  
   EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
                        NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
 
+
+//  EventType eventType2( NamedParameter<std::string>( "EventType2" , "", "EventType to generate second lot of events, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
+//                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+
+
   INFO("Generating time-dependence? " << eventType.isTimeDependent() );
+
+
+
+//  EventType eventType2( NamedParameter<std::string>( "EventType2" , "", "EventType to generate second lot of events, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
+//                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+
+
+
+
+
   EventList accepted( eventType );
 
   INFO("Generating events with type = " << eventType );
-
   if ( genType == generatorType::CoherentSum ) {
     CoherentSum sig( eventType, MPS );
     PhaseSpace phsp(eventType,&rand);
@@ -143,6 +160,7 @@ int main( int argc, char** argv )
       }
     }
   } 
+
   INFO( "Writing output file " );
 
   f->Close();

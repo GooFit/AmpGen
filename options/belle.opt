@@ -1,0 +1,94 @@
+# Example usage of the K-matrix with P-vector parameters from https://arxiv.org/pdf/0804.2089.pdf 
+# Note that as amplitude conventions are likely to be very different, so shouldn't reproduce the results. 
+# The P-vector conventions on the other hand should be the same. 
+
+
+
+# Flag to interpret complex numbers are (amp,phase) rather than real/imaginary, and angles in deg rather than rad.
+
+# Import K-matrix parameters 
+Import $AMPGENROOT/options/kMatrix.opt
+
+Particle::DefaultModifier BL
+Particle::SpinFormalism   Canonical
+
+D0{K(0)*(1430)+[GLASS]{K0S0,pi+},pi-}                                           0              0.0095653      0.000827718    0              0.00601207     0.000843968    
+D0{K(0)*(1430)bar-[GLASS]{K0S0,pi-},pi+}                                        0              0.0255993      0.00122597     0              -0.194327      0.00105316     
+D0{K(2)*(1430)+{K0S0,pi+},pi-}                                                  0              0.0133101      0.00135651     0              0.0170886      0.00123279     
+D0{K(2)*(1430)bar-{K0S0,pi-},pi+}                                               0              -0.107163      0.00146194     0              0.104979       0.00164431     
+D0{K*(1410)+{K0S0,pi+},pi-}                                                     0              0.00296544     0.00225542     0              0.014186       0.00247679     
+D0{K*(1410)bar-{K0S0,pi-},pi+}                                                  0              -0.0339155     0.00309512     0              0.0613357      0.0037167      
+D0{K*(1680)bar-{K0S0,pi-},pi+}                                                  0              -0.0535469     0.00651378     0              0.0272353      0.0073212      
+D0{K*(892)+{K0S0,pi+},pi-}                                                      0              0.126313       0.00245399     0              -0.140858      0.00235595     
+D0{K*(892)bar-{K0S0,pi-},pi+}                                                   0              -1.37962       0.00769138     0              1.49371        0.00800201     
+D0{K0S0,PiPi00}                                                                 2              1              0              2              0              0              
+D0{K0S0,f(2)(1270)0{pi+,pi-}}                                                   0              -0.125526      0.00221442     0              0.0943573      0.00286431     
+D0{K0S0,omega(782)0{pi+,pi-}}                                                   0              -0.0640864     0.00196373     0              0.12832        0.00170606     
+D0{K0S0,rho(1450)0{pi+,pi-}}                                                    0              0.160532       0.00460311     0              0.0886014      0.00646564     
+D0{K0S0,rho(770)0{pi+,pi-}}                                                     2              1              0              2              0              0              
+PiPi00[kMatrix.pole.0]{pi+,pi-}                                                 0              -0.696212      0.0249041      0              -0.564193      0.0150433      
+PiPi00[kMatrix.pole.1]{pi+,pi-}                                                 0              -1.1781        0.0163188      0              -0.387498      0.0128765      
+PiPi00[kMatrix.pole.2]{pi+,pi-}                                                 0              -3.56439       0.100848       0              -0.302991      0.0769034      
+PiPi00[kMatrix.pole.3]{pi+,pi-}                                                 0              -0.654174      0.0322988      0              0.779454       0.0257366      
+PiPi00[kMatrix.prod.0]{pi+,pi-}                                                 0              0.722348       0.0181052      0              0.555636       0.011945       
+PiPi00[kMatrix.prod.1]{pi+,pi-}                                                 0              3.23771        0.0874993      0              0.614543       0.0497138      
+PiPi00[kMatrix.prod.2]{pi+,pi-}                                                 0              1.67044        0.0909612      0              2.7479         0.0945962      
+PiPi00[kMatrix.prod.3]{pi+,pi-}                                                 0              2.36804        0.0672284      0              1.81536        0.0420283      
+
+Dbar0{K(0)*(1430)bar-[GLASS]{K0S0,pi-},pi+}                                     0              0.0095653      0.000827718    0              0.00601207     0.000843968    
+Dbar0{K(0)*(1430)+[GLASS]{K0S0,pi+},pi-}                                        0              0.0255993      0.00122597     0              -0.194327      0.00105316     
+Dbar0{K(2)*(1430)bar-{K0S0,pi-},pi+}                                            0              0.0133101      0.00135651     0              0.0170886      0.00123279     
+Dbar0{K(2)*(1430)+{K0S0,pi+},pi-}                                               0              -0.107163      0.00146194     0              0.104979       0.00164431     
+Dbar0{K*(1410)bar-{K0S0,pi-},pi+}                                               0              0.00296544     0.00225542     0              0.014186       0.00247679     
+Dbar0{K*(1410)+{K0S0,pi+},pi-}                                                  0              -0.0339155     0.00309512     0              0.0613357      0.0037167      
+Dbar0{K*(1680)+{K0S0,pi+},pi-}                                                  0              -0.0535469     0.00651378     0              0.0272353      0.0073212      
+Dbar0{K*(892)bar-{K0S0,pi-},pi+}                                                0              0.126313       0.00245399     0              -0.140858      0.00235595     
+Dbar0{K*(892)+{K0S0,pi+},pi-}                                                   0              -1.37962       0.00769138     0              1.49371        0.00800201     
+Dbar0{K0S0,PiPi00}                                                              2              1              0              2              0              0              
+Dbar0{K0S0,f(2)(1270)0{pi+,pi-}}                                                0              -0.125526      0.00221442     0              0.0943573      0.00286431     
+Dbar0{K0S0,omega(782)0{pi+,pi-}}                                                0              -0.0640864     0.00196373     0              0.12832        0.00170606     
+Dbar0{K0S0,rho(1450)0{pi+,pi-}}                                                 0              0.160532       0.00460311     0              0.0886014      0.00646564     
+Dbar0{K0S0,rho(770)0{pi+,pi-}}                                                  2              1              0              2              0              0              
+
+
+D0_radius                                         2              5              0.01      
+Dbar0_radius                                      2              5              0.01      
+K(0)*(1430)bar-::GLASS::F                         2              0.95532        0.01              
+K(0)*(1430)bar-::GLASS::R                         3              1              0              
+K(0)*(1430)bar-::GLASS::a                         2              0.11267        0.01              
+K(0)*(1430)bar-::GLASS::phiF                      2              0.00173        0.01             
+K(0)*(1430)bar-::GLASS::phiR                      2              -1.9145        0.01              
+K(0)*(1430)bar-::GLASS::r                         2              -33.799        0.01              
+K(0)*(1430)bar-_mass                              2              1.44055        0.002          
+K(0)*(1430)bar-_width                             2              0.19261        0.005          
+K(2)*(1430)0_mass                                 2              1.4256         0              
+K(2)*(1430)0_width                                2              0.0985         0              
+K*(1410)bar-_mass                                 2              1.414          0              
+K*(1410)bar-_width                                2              0.232          0              
+K*(1680)bar-_mass                                 2              1.717          0              
+K*(1680)bar-_width                                2              0.322          0              
+K*(892)bar-_mass                                  2              0.89371        5e-05          
+K*(892)bar-_width                                 2              0.04719        0.00011        
+PiPi00_s0_prod                                    3              -0.07          0.03           
+f(2)(1270)_mass                                   2              1.2751         0              
+f(2)(1270)_width                                  2              0.1842         0              
+omega(782)0_mass                                  2              0.78265        0              
+omega(782)0_width                                 2              0.00849        0              
+rho(1450)0_mass                                   2              1.465          0              
+rho(1450)0_width                                  2              0.4            0              
+rho(770)0_mass                                    2              0.769374       0.000335341    
+rho(770)0_width                                   2              0.141979       0.000700587    
+
+K(0)*(1430)+_mass                     = K(0)*(1430)bar-_mass   
+K(0)*(1430)+_width                    = K(0)*(1430)bar-_width
+K*(892)+_mass                         = K*(892)bar-_mass
+K*(892)+_width                        = K*(892)bar-_width
+K*(1410)+_mass                        = K*(1410)bar-_mass
+K*(1410)+_width                       = K*(1410)bar-_width
+
+K(0)*(1430)+::GLASS::a                = K(0)*(1430)bar-::GLASS::a 
+K(0)*(1430)+::GLASS::r                = K(0)*(1430)bar-::GLASS::r 
+K(0)*(1430)+::GLASS::F                = K(0)*(1430)bar-::GLASS::F 
+K(0)*(1430)+::GLASS::phiF             = K(0)*(1430)bar-::GLASS::phiF 
+K(0)*(1430)+::GLASS::R                = K(0)*(1430)bar-::GLASS::R 
+K(0)*(1430)+::GLASS::phiR             = K(0)*(1430)bar-::GLASS::phiR 

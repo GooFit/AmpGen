@@ -134,6 +134,11 @@ int main( int argc, char** argv )
   if( input_units == "MeV" && infile != "") accepted.transform([](auto& event){ for( int i = 0;i<16;++i) event[i]/=1000; } );
   if( infile == "" ){
     Event evt = PhaseSpace( eventType, rndm ).makeEvent();
+  //  evt.set(0, {0.211313, 0.222977, 0.0577659, 0.587647}); 
+  //  evt.set(2, {0.359893, -0.242572, 0.338521, 0.567839});
+  //  evt.set(1, {-0.571207, 0.019595, -0.396287, 0.709355}); 
+    
+    
     accepted.push_back(evt);
   }
   accepted[0].print();

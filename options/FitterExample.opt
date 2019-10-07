@@ -1,0 +1,109 @@
+EventType D0 K- pi+ pi+ pi- 
+####################
+
+#SgIntegratorFname     "/afs/cern.ch/work/t/tevans/public/RS_K3pi_IntegrationEvents.root" #integration MC events 
+#SigFileName           "/afs/cern.ch/work/t/tevans/public/RS_K3pi_DataEvents.root" #data events
+#SgIntegratorFname "$DATADIR/RS_MC.root"
+#SigFileName       "$DATADIR/RS_PARITY.root"
+DataSample "Generate_Output.root"
+
+debug 1 # include verbose debugging samples 
+#Prescale 0.5 #prescale integration MC for doing resampling error estimation 
+makeExtendedPlots 1 #make extended plots, such as helicity cosines
+fPDF     0.996 #fraction of signal events 
+fComb    0.004 #fraction of combinatoric events
+nCores 10 #number of cores to use
+
+D0[D]{K*(892)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Re                                  2     1       0.1
+D0[D]{K*(892)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Im                                  2     0       0.1
+D0[P]{K*(1410)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Re                                0      0.0163197       0.1
+D0[P]{K*(1410)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Im                                0      -0.12921        0.1
+D0[P]{K*(892)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Re                                  0     0.010993        0.1
+D0[P]{K*(892)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Im                                  0     -0.100078       0.1
+D0{K(1)(1270)bar-{K(0)*(1430)bar0[LASS]{K-,pi+},pi-},pi+}_Re                  0 -0.00805631     0.1
+D0{K(1)(1270)bar-{K(0)*(1430)bar0[LASS]{K-,pi+},pi-},pi+}_Im                  0 0.00522785      0.1
+D0{K(1)(1270)bar-{K*(892)bar0{K-,pi+},pi-},pi+}_Re                              0       0.0118672       0.1
+D0{K(1)(1270)bar-{K*(892)bar0{K-,pi+},pi-},pi+}_Im                              0       -0.0185359      0.1
+D0{K(1)(1270)bar-{rho(770)0{pi+,pi-},K-},pi+}_Re                                  0     0.0223807       0.1
+D0{K(1)(1270)bar-{rho(770)0{pi+,pi-},K-},pi+}_Im                                  0     0.0807067       0.1
+D0{K(1)(1400)bar-{K*(892)bar0{K-,pi+},pi-},pi+}_Re                              0       -0.0220801      0.1
+D0{K(1)(1400)bar-{K*(892)bar0{K-,pi+},pi-},pi+}_Im                              0       0.00920308      0.1
+D0{K(1460)bar-{K*(892)bar0{K-,pi+},pi-},pi+}_Re                            0    -0.00708158     0.1
+D0{K(1460)bar-{K*(892)bar0{K-,pi+},pi-},pi+}_Im                            0    0.0259355       0.1
+D0{K(1460)bar-{f(0)(1370)0{pi+,pi-},K-},pi+}_Re                            0    -0.00430303     0.1
+D0{K(1460)bar-{f(0)(1370)0{pi+,pi-},K-},pi+}_Im                            0    0.038902        0.1
+D0{K(2)*(1430)bar-{K*(892)bar0{K-,pi+},pi-},pi+}_Re                            0        0.348478        0.1
+D0{K(2)*(1430)bar-{K*(892)bar0{K-,pi+},pi-},pi+}_Im                            0        -0.717826       0.1
+D0{K*(1410)bar-{K*(892)bar0{K-,pi+},pi-},pi+}_Re                                  0     0.0171246       0.1
+D0{K*(1410)bar-{K*(892)bar0{K-,pi+},pi-},pi+}_Im                                  0     0.0161132       0.1
+D0{K*(1410)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Re                              0   0.0406127       0.1
+D0{K*(1410)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Im                              0   -0.00156018     0.1
+D0{K*(892)bar0{K-,pi+},f(0)(600)0[Bugg]{pi+,pi-}}_Re                          0 -0.0512398      0.1
+D0{K*(892)bar0{K-,pi+},f(0)(600)0[Bugg]{pi+,pi-}}_Im                          0 -0.0232379      0.1
+D0{K*(892)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Re                                0  0.0249322       0.1
+D0{K*(892)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Im                                0  -0.0177434      0.1
+#D0{K-,pi+,pi+,pi-}_Re                                                        0  -0.00731429     0.1
+#D0{K-,pi+,pi+,pi-}_Im                                                        0  0.00765727      0.1
+D0{NonResA0[D]{K*(892)bar0{K-,pi+},pi-},pi+}_Re                            0    -0.54331        0.1
+D0{NonResA0[D]{K*(892)bar0{K-,pi+},pi-},pi+}_Im                            0    0.0715009       0.1
+D0{a(1)(1260)+[D;WidthSpline]{rho(770)0{pi+,pi-},pi+},K-}_Re                  0 0.248792        0.1
+D0{a(1)(1260)+[D;WidthSpline]{rho(770)0{pi+,pi-},pi+},K-}_Im                  0 1.33732 0.1
+D0{a(1)(1260)+[WidthSpline]{f(0)(600)0[Bugg]{pi+,pi-},pi+},K-}_Re                0      0.0840109       0.1
+D0{a(1)(1260)+[WidthSpline]{f(0)(600)0[Bugg]{pi+,pi-},pi+},K-}_Im                0      0.184495        0.1
+D0{a(1)(1260)+[WidthSpline]{rho(770)0{pi+,pi-},pi+},K-}_Re                      0       -0.151299       0.1
+D0{a(1)(1260)+[WidthSpline]{rho(770)0{pi+,pi-},pi+},K-}_Im                      0       -0.143222       0.1
+D0{rho(1450)0{pi+,pi-},K(0)*(1430)bar0[LASS]{K-,pi+}}_Re                          0     0.050625        0.1
+D0{rho(1450)0{pi+,pi-},K(0)*(1430)bar0[LASS]{K-,pi+}}_Im                          0     0.0486205       0.1
+
+#D0{f(0)(600)0[Bugg]{pi+,pi-},K(0)*(1430)bar0[LASS]{K-,pi+}}_Re                          0     0.050625        0.1
+#D0{f(0)(600)0[Bugg]{pi+,pi-},K(0)*(1430)bar0[LASS]{K-,pi+}}_Im                          0     0.0486205       0.1
+
+
+Inco_D0{K-,pi+,pi+,pi-}_Re                                                  2 1.0 0.0
+Inco_D0{K-,pi+,pi+,pi-}_Im                                                  2 0.0 0.1
+
+
+K(1460)bar-_mass  2 1400 1 1000 2000
+K(1460)bar-_width 2  250 1 100  500
+
+a(1)(1260)+_mass   2   1237 1 1200 1800
+a(1)(1260)+_width  2    526 1  300  800
+a(1)(1260)+_radius 2 0.0057 0.0001 0.0001 0.01
+
+a(1)(1260)+::Spline::Min 0.18412
+a(1)(1260)+::Spline::Max 1.86869
+a(1)(1260)+::Spline::N 34
+a(1)(1260)+::Spline::Gamma::0 2 0.0 0
+a(1)(1260)+::Spline::Gamma::1 2 0.000133698 0
+a(1)(1260)+::Spline::Gamma::2 2 0.000784943 0
+a(1)(1260)+::Spline::Gamma::3 2 0.00229373 0
+a(1)(1260)+::Spline::Gamma::4 2 0.004969 0
+a(1)(1260)+::Spline::Gamma::5 2 0.0091406 0
+a(1)(1260)+::Spline::Gamma::6 2 0.0152202 0
+a(1)(1260)+::Spline::Gamma::7 2 0.023786 0
+a(1)(1260)+::Spline::Gamma::8 2 0.035722 0
+a(1)(1260)+::Spline::Gamma::9 2 0.0524682 0
+a(1)(1260)+::Spline::Gamma::10 2 0.0763843 0
+a(1)(1260)+::Spline::Gamma::11 2 0.111118 0
+a(1)(1260)+::Spline::Gamma::12 2 0.161012 0
+a(1)(1260)+::Spline::Gamma::13 2 0.227427 0
+a(1)(1260)+::Spline::Gamma::14 2 0.304659 0
+a(1)(1260)+::Spline::Gamma::15 2 0.384169 0
+a(1)(1260)+::Spline::Gamma::16 2 0.460766 0
+a(1)(1260)+::Spline::Gamma::17 2 0.532733 0
+a(1)(1260)+::Spline::Gamma::18 2 0.599947 0
+a(1)(1260)+::Spline::Gamma::19 2 0.662785 0
+a(1)(1260)+::Spline::Gamma::20 2 0.721764 0
+a(1)(1260)+::Spline::Gamma::21 2 0.777369 0
+a(1)(1260)+::Spline::Gamma::22 2 0.830027 0
+a(1)(1260)+::Spline::Gamma::23 2 0.880105 0
+a(1)(1260)+::Spline::Gamma::24 2 0.927892 0
+a(1)(1260)+::Spline::Gamma::25 2 0.973645 0
+a(1)(1260)+::Spline::Gamma::26 2 1.01761 0
+a(1)(1260)+::Spline::Gamma::27 2 1.05995 0
+a(1)(1260)+::Spline::Gamma::28 2 1.10086 0
+a(1)(1260)+::Spline::Gamma::29 2 1.14042 0
+a(1)(1260)+::Spline::Gamma::30 2 1.17885 0
+a(1)(1260)+::Spline::Gamma::31 2 1.21615 0
+a(1)(1260)+::Spline::Gamma::32 2 1.25246 0
+a(1)(1260)+::Spline::Gamma::33 2 1.28789 0

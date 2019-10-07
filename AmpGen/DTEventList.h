@@ -1,16 +1,18 @@
 #include "AmpGen/DTEvent.h"
-using namespace std;
-using namespace AmpGen;
 #ifndef DTEVENTLIST
 #define DTEVENTLIST
-struct DTEventList : public std::vector<DTEvent> 
-{
-  AmpGen::EventType m_sigType; 
-  AmpGen::EventType m_tagType;
-  DTEventList( const AmpGen::EventType& signal, const AmpGen::EventType& tag ) : m_sigType(signal), m_tagType(tag) {}
-  std::string particleName(const AmpGen::EventType& type, const size_t& j);
-  TTree* tree(const std::string& name);
-};
+
+namespace AmpGen { 
+  struct DTEventList : public std::vector<DTEvent> 
+  {
+    AmpGen::EventType m_sigType; 
+    AmpGen::EventType m_tagType;
+    DTEventList( const AmpGen::EventType& signal, const AmpGen::EventType& tag ) : m_sigType(signal), m_tagType(tag) {}
+    std::string particleName(const AmpGen::EventType& type, const size_t& j);
+    TTree* tree(const std::string& name);
+  };
+}
+
 #endif
 std::string DTEventList::particleName(const AmpGen::EventType& type, const size_t& j)
 {
@@ -47,7 +49,7 @@ TTree* DTEventList::tree(const std::string& name)
     ids_tag[i] = ParticlePropertiesList::get( m_tagType[i] )->pdgID();
   }
   for( auto& evt: *this ){
-    bool swap = gRandom->Uniform() > 0.5;
+    bool swap = 0 ; // gRandom->Uniform() > 0.5;
     tmp.set(evt.signal, evt.tag);
     if( swap ) tmp.invertParity();
     for(size_t i=0; i != m_sigType.size(); ++i)

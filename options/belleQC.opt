@@ -1,0 +1,47 @@
+EventType D0 K0S0 pi- pi+
+nCores 4
+nEvents 100000
+
+TagTypes { "KK       D0{K+,K-}"
+           "KPi      D0{K-,pi+}"
+           "KsPi0    D0{K0S0,pi0}" 
+           "PiK      D0{K+,pi-}"
+	   "KsPiPi   D0{K0S0,pi-,pi+}"
+         }
+
+Efficiencies {
+  "D0{K+,K-}             0.57"
+  "D0{K0S0,pi0}          0.31" 
+  "D0{pi+,pi-}           0.71"
+  "D0{K-,pi+}            0.60"
+  "D0{K+,pi-}            0.60"
+  "D0{K0S0,pi+,pi-}	 0.60"
+}
+
+BranchingRatios {
+  "D0{K+,K-}             0.003970"
+  "D0{K0S0,pi0}          0.011900"
+  "D0{pi+,pi-}           0.001407"
+
+
+  "D0{K-,pi+}            0.0389"
+  "D0{K+,pi-}            0.0001366"
+  "D0{K0S0,pi+,pi-}	 0.0280"
+}
+
+
+Import $AMPGENROOT/options/belle.opt
+D0{K+,K-}       2 1 0 2 0   0 
+Dbar0{K+,K-}    2 1 0 2 0   0 
+
+D0{pi+,pi-}     2 1 0 2 0   0 
+Dbar0{pi+,pi-}  2 1 0 2 0   0 
+
+D0{K0S0,pi0}    2 1 0 2 0   0 
+Dbar0{K0S0,pi0} 2 1 0 2 180 0 
+
+D0{K-,pi+}      2 1 0 2     0.0   0
+Dbar0{K-,pi+}   2 1 0 2  -191.8   0
+
+
+

@@ -1,0 +1,319 @@
+EventType D0 K+ K- pi+ pi-
+####################
+
+CouplingConstant::Coordinates polar
+
+a(1)(1260)+::Spline      40 0.1764 3.0
+a(1)(1260)-::Spline      40 0.1764 3.0
+K(1)(1270)bar-::Spline   40 0.6000 1.9
+K(1)(1270)+::Spline   40 0.6000 1.9
+
+K(1)(1270)bar-_mass  = K(1)(1270)+_mass
+K(1)(1270)bar-_width = K(1)(1270)+_width
+a(1)(1260)-_mass     = a(1)(1260)+_mass
+a(1)(1260)-_radius   = a(1)(1260)+_radius
+a(1)(1260)-_width    = a(1)(1260)+_width
+K*(892)bar0_radius   = K*(892)0_radius
+K*(1680)bar0_radius  = K*(1680)0_radius
+
+D0_radius	        2	1.21	  0.010
+K*(892)0_radius         2	1.13	  0.030
+K*(1680)0_radius        2	1.93	  0.020
+K(1)(1270)+_mass	0	1.2966	  0.001
+K(1)(1270)+_width	0	0.150336  0.004
+a(1)(1260)+_mass	2	1.19505	  0.001
+a(1)(1260)+_radius	2	1.7	  0
+a(1)(1260)+_width	2	0.42201	  0.002
+
+
+D0[D]{K*(1680)0{K+,pi-},K*(892)bar0{K-,pi+}}	                0	1.20197	        0.0898679   0	-2.44153	0.0844467
+D0[D]{K*(892)0{K+,pi-},K*(892)bar0{K-,pi+}}                     0	0.693083	0.0192555   0	 2.85743	0.0272405
+D0{a(0)(980)0[Flatte.kFactor]{K+,K-},f(2)(1270)0{pi+,pi-}}	0	1.52149	        0.0572387   0	0.237177	0.0375607
+D0[D]{phi(1020)0{K+,K-},rhoOmega20}	                        0	1.31178	        0.0306219   0	0.537744	0.0231892
+D0[P]{K*(1680)0{K+,pi-},K*(892)bar0{K-,pi+}}         	        0	0.73917	        0.021465    0	0.12957	        0.0307949
+D0{K*(1680)0{K+,pi-},KPi40}	                                0	2.24677	        0.0343917   0	0.455791	0.016189
+D0[P]{K*(1680)bar0{K-,pi+},K*(892)0{K+,pi-}}	                0	1.00726	        0.0218157   0	-2.75553	0.0216215
+D0[P]{K*(1680)bar0{K-,pi+},KPi50}	                        0	1.30902	        0.0275294   0	1.06926	        0.0238997
+D0{K*(892)0{K+,pi-},K(2)*(1430)bar0{K-,pi+}}	                0	1.52212	        0.0885003   0	2.00628	        0.0695932
+D0[P]{K*(892)0{K+,pi-},K*(892)bar0{K-,pi+}}	                0	0.268118	0.0049507   0	1.21212	        0.0207332
+D0{KK10,rhoOmega30}	                                        0	0.196327	0.0150064   0	3.00125	        0.0837671
+
+D0{phi(1020)0{K+,K-},PiPi20}	                                0	0.0485269	0.00150032  0	-1.70654	0.0402576
+D0{phi(1020)0{K+,K-},f(2)(1270)0{pi+,pi-}}	                0	1.40109	        0.0948856   0	1.71591	        0.0601408
+D0[P]{phi(1020)0{K+,K-},rho(1450)0{pi+,pi-}}	                0	0.761075	0.0353222   0	1.17371	        0.0377471
+D0[P]{phi(1020)0{K+,K-},rhoOmega10}	                        0	0.160089	0.0114845   0	0.276455	0.0707528
+D0{K*(1680)0{K+,pi-},K*(892)bar0{K-,pi+}}	                0	0.822123	0.0232624   0	2.99148	        0.0292659
+D0{K*(892)0{K+,pi-},K*(892)bar0{K-,pi+}}	                0	0.278754	0.0041226   0	-0.27426	0.0155225
+D0{KK00,PiPi00}	                                                0	0.119862	0.003337    0	-2.5037	        0.0297164
+D0{phi(1020)0{K+,K-},rhoOmega00}	                        2	1	        0.          2	0	        0.
+D0{K(1)(1270)+,K-}	                                        0	0.462382	0.00926671  0	2.01786	        0.022438
+D0{K(1)(1270)bar-,K+}	                                        0	0.224016	0.00572103  0	2.10093	        0.026484
+D0{K(1)(1400)+{K*(892)0{K+,pi-},pi+},K-}	                0	0.626884	0.00991611  0	1.03306	        0.0194397
+D0{K(1)(1400)bar-{K*(892)bar0{K-,pi+},pi-},K+}	                0	0.245828	0.00858637  0	0.0388105	0.0403576
+D0{KPi00,KPi10}	                                                0	0.283137	0.00374656  0	-0.600423	0.0149777
+D0{a(1)(1260)+,pi-}	                                        0	0.189782	0.0110908   0	-2.82353	0.0666285
+D0{a(1)(1260)-,pi+}	                                        0	0.189772	0.0137393   0	0.176024	0.0591671
+
+K(1)(1270)+[GSpline.EFF]{rhoOmega40,K+}	                        2	1	        0.          2	 0	        0.
+K(1)(1270)+[GSpline.EFF]{rho(1450)0{pi+,pi-},K+}	        0	0.446747	0.0636325   0	-2.33699	0.104108
+K(1)(1270)+[GSpline.EFF]{K*(892)0{K+,pi-},pi+}	                0	0.613062	0.0151482   0	0.591293	0.0261295
+K(1)(1270)+[D;GSpline.EFF]{K*(892)0{K+,pi-},pi+}	        0	0.907216	0.0447655   0	-2.55647	0.0406526
+K(1)(1270)+[GSpline.EFF]{KPi60,pi+}	                        0	0.599771	0.0261391   0	-1.92591	0.0412796
+
+a(1)(1260)+[GSpline.EFF]{phi(1020)0{K+,K-},pi+}	                2	1	        0.1         2	0	        0.
+
+#Fix the CP-conjugated states (no strong CP violation)
+K(1)(1270)bar-[GSpline.EFF]{rhoOmega40,K-}_Re             = K(1)(1270)+[GSpline.EFF]{rhoOmega40,K+}_Re      
+K(1)(1270)bar-[GSpline.EFF]{rhoOmega40,K-}_Im             = K(1)(1270)+[GSpline.EFF]{rhoOmega40,K+}_Im - PI
+K(1)(1270)bar-[GSpline.EFF]{K*(892)bar0{K-,pi+},pi-}_Re   = K(1)(1270)+[GSpline.EFF]{K*(892)0{K+,pi-},pi+}_Re
+K(1)(1270)bar-[GSpline.EFF]{K*(892)bar0{K-,pi+},pi-}_Im   = K(1)(1270)+[GSpline.EFF]{K*(892)0{K+,pi-},pi+}_Im
+K(1)(1270)bar-[GSpline.EFF]{rho(1450)0{pi+,pi-},K-}_Re    = K(1)(1270)+[GSpline.EFF]{rho(1450)0{pi+,pi-},K+}_Re      
+K(1)(1270)bar-[GSpline.EFF]{rho(1450)0{pi+,pi-},K-}_Im    = K(1)(1270)+[GSpline.EFF]{rho(1450)0{pi+,pi-},K+}_Im - PI 
+a(1)(1260)-[GSpline.EFF]{phi(1020)0{K+,K-},pi-}_Im        = a(1)(1260)+[GSpline.EFF]{phi(1020)0{K+,K-},pi+}_Im - PI
+a(1)(1260)-[GSpline.EFF]{phi(1020)0{K+,K-},pi-}_Re        = a(1)(1260)+[GSpline.EFF]{phi(1020)0{K+,K-},pi+}_Re
+K(1)(1270)bar-[D;GSpline.EFF]{K*(892)bar0{K-,pi+},pi-}_Re = K(1)(1270)+[D;GSpline.EFF]{K*(892)0{K+,pi-},pi+}_Re      
+K(1)(1270)bar-[D;GSpline.EFF]{K*(892)bar0{K-,pi+},pi-}_Im = K(1)(1270)+[D;GSpline.EFF]{K*(892)0{K+,pi-},pi+}_Im 
+K(1)(1270)bar-[GSpline.EFF]{KPi70,pi-}_Re                 = K(1)(1270)+[GSpline.EFF]{KPi60,pi+}_Re
+K(1)(1270)bar-[GSpline.EFF]{KPi70,pi-}_Im                 = K(1)(1270)+[GSpline.EFF]{KPi60,pi+}_Im  
+KPi70[FOCUS.I32]{K-,pi+}_Im                               = KPi60[FOCUS.I32]{K+,pi-}_Im
+KPi70[FOCUS.I32]{K-,pi+}_Re                               = KPi60[FOCUS.I32]{K+,pi-}_Re
+KPi70[FOCUS.Kpi]{K-,pi+}_Im                               = KPi60[FOCUS.Kpi]{K+,pi-}_Im
+KPi70[FOCUS.Kpi]{K-,pi+}_Re                               = KPi60[FOCUS.Kpi]{K+,pi-}_Re
+
+KK00[kMatrix.poleKK.0]{K+,K-}	                                2	0.302729	0.0252574   2	 0.430332	0.0889706
+KK00[kMatrix.poleKK.1]{K+,K-}	                                2	1.08037	        0.0390758   2	 1.38463	0.0326171
+KK00[kMatrix.prodKK.1]{K+,K-}	                                2	1	        0           2	 0	        0
+KK10[kMatrix.poleKK.0]{K+,K-}	                                2	0.124935	0.083589    2	 2.58644	0.819252
+KK10[kMatrix.prodKK.1]{K+,K-}	                                2	1	        0           2	 0	        0
+
+KPi00[FOCUS.I32]{K-,pi+}	                                2	0.357018	0.0165348   2	-2.95103	0.0489437
+KPi00[FOCUS.Kpi]{K-,pi+}	                                2	1	        0           2	0	        0
+KPi10[FOCUS.I32]{K+,pi-}	                                2	0.31393	        0.0247146   2	2.50792	        0.0832125
+KPi10[FOCUS.Kpi]{K+,pi-}	                                2	1	        0           2	0	        0
+KPi40[FOCUS.I32]{K-,pi+}	                                2	0.285704	0.0223622   2	-2.95836	0.0759651
+KPi40[FOCUS.Kpi]{K-,pi+}	                                2	1	        0           2	0	        0
+KPi50[FOCUS.I32]{K+,pi-}	                                2	0.2714	        0.0423453   2	-2.08704	0.143917
+KPi50[FOCUS.Kpi]{K+,pi-}	                                2	1	        0           2	0	        0
+KPi60[FOCUS.I32]{K+,pi-}	                                2	0.443434	0.0370005   2	-2.79117	0.0843809
+KPi60[FOCUS.Kpi]{K+,pi-}	                                2	1	        0           2	0	        0 
+PiPi00[kMatrix.pole.0]{pi+,pi-}	                                2	0.602685	0.0811322   2	-2.53234	0.119368
+PiPi00[kMatrix.prod.0]{pi+,pi-}	                                2	1	        0           2	0	        0
+PiPi20[kMatrix.pole.0]{pi+,pi-}	                                2	2.53936	        0.507562    2	1.11903	        0.177649
+PiPi20[kMatrix.prod.0]{pi+,pi-}	                                2	1	        0           2	0	        0
+
+rhoOmega00{omega(782)0{pi+,pi-}}	                        0	0.113767	0.0044422   0	1.29843	        0.0422058
+rhoOmega00{rho(770)0[GounarisSakurai]{pi+,pi-}}	                2	1	        0           2	0	        0
+rhoOmega10{omega(782)0{pi+,pi-}}	                        0	0.253139	0.05144560  0   1.32102	        0.19367
+rhoOmega10{rho(770)0[GounarisSakurai]{pi+,pi-}}	                2	1	        0           2	0	        0
+rhoOmega20{omega(782)0{pi+,pi-}}	                        0	0.16057	        0.0317164   0	1.49678	        0.169311
+rhoOmega20{rho(770)0[GounarisSakurai]{pi+,pi-}}	                2	1	        0           2	0	        0
+rhoOmega30{omega(782)0{pi+,pi-}}	                        0	0.497826	0.0960505   0	-1.01597	0.181924
+rhoOmega30{rho(770)0[GounarisSakurai]{pi+,pi-}}	                2	1	        0           2	0	        0
+rhoOmega40{omega(782)0{pi+,pi-}}	                        0	0.159016	0.0119209   0	1.36964	        0.0718371
+rhoOmega40{rho(770)0[GounarisSakurai]{pi+,pi-}}	                2	1	        0           2	0	        0
+
+
+KK00_s0_prod	2	-0.165753	0
+KK10_s0_prod	2	-0.165753	0
+PiPi00_s0_prod	2	-0.165753	0
+PiPi20_s0_prod	2	-0.165753	0
+
+IS_p1_4pi	2	0	0
+IS_p1_EtaEta	2	-0.39899	0
+IS_p1_EtapEta	2	-0.34639	0
+IS_p1_KK	2	-0.55377	0
+IS_p1_mass	2	0.651	0
+IS_p1_pipi	2	0.22889	0
+IS_p2_4pi	2	0	0
+IS_p2_EtaEta	2	0.39065	0
+IS_p2_EtapEta	2	0.31503	0
+IS_p2_KK	2	0.55095	0
+IS_p2_mass	2	1.2036	0
+IS_p2_pipi	2	0.94128	0
+IS_p3_4pi	2	0.55639	0
+IS_p3_EtaEta	2	0.1834	0
+IS_p3_EtapEta	2	0.18681	0
+IS_p3_KK	2	0.23888	0
+IS_p3_mass	2	1.55817	0
+IS_p3_pipi	2	0.36856	0
+IS_p4_4pi	2	0.85679	0
+IS_p4_EtaEta	2	0.19906	0
+IS_p4_EtapEta	2	-0.00984	0
+IS_p4_KK	2	0.40907	0
+IS_p4_mass	2	1.21	0
+IS_p4_pipi	2	0.3365	0
+IS_p5_4pi	2	-0.79658	0
+IS_p5_EtaEta	2	-0.00355	0
+IS_p5_EtapEta	2	0.22358	0
+IS_p5_KK	2	-0.17558	0
+IS_p5_mass	2	1.82206	0
+IS_p5_pipi	2	0.18171	0
+K(1)(1270)+::Spline::Gamma::0	2	4.03E-09	0
+K(1)(1270)+::Spline::Gamma::1	2	9.07E-06	0
+K(1)(1270)+::Spline::Gamma::10	2	0.0117952	0
+K(1)(1270)+::Spline::Gamma::11	2	0.0177199	0
+K(1)(1270)+::Spline::Gamma::12	2	0.0269659	0
+K(1)(1270)+::Spline::Gamma::13	2	0.0423896	0
+K(1)(1270)+::Spline::Gamma::14	2	0.0682026	0
+K(1)(1270)+::Spline::Gamma::15	2	0.10225	0
+K(1)(1270)+::Spline::Gamma::16	2	0.13597	0
+K(1)(1270)+::Spline::Gamma::17	2	0.166529	0
+K(1)(1270)+::Spline::Gamma::18	2	0.194473	0
+K(1)(1270)+::Spline::Gamma::19	2	0.220804	0
+K(1)(1270)+::Spline::Gamma::2	2	6.60E-05	0
+K(1)(1270)+::Spline::Gamma::20	2	0.246491	0
+K(1)(1270)+::Spline::Gamma::21	2	0.272483	0
+K(1)(1270)+::Spline::Gamma::22	2	0.299798	0
+K(1)(1270)+::Spline::Gamma::23	2	0.329617	0
+K(1)(1270)+::Spline::Gamma::24	2	0.363368	0
+K(1)(1270)+::Spline::Gamma::25	2	0.4028	0
+K(1)(1270)+::Spline::Gamma::26	2	0.450004	0
+K(1)(1270)+::Spline::Gamma::27	2	0.507306	0
+K(1)(1270)+::Spline::Gamma::28	2	0.576974	0
+K(1)(1270)+::Spline::Gamma::29	2	0.660895	0
+K(1)(1270)+::Spline::Gamma::3	2	0.000220112	0
+K(1)(1270)+::Spline::Gamma::30	2	0.761311	0
+K(1)(1270)+::Spline::Gamma::31	2	0.886349	0
+K(1)(1270)+::Spline::Gamma::32	2	1.00038	0
+K(1)(1270)+::Spline::Gamma::33	2	1.10445	0
+K(1)(1270)+::Spline::Gamma::34	2	1.20463	0
+K(1)(1270)+::Spline::Gamma::35	2	1.30071	0
+K(1)(1270)+::Spline::Gamma::36	2	1.39222	0
+K(1)(1270)+::Spline::Gamma::37	2	1.47892	0
+K(1)(1270)+::Spline::Gamma::38	2	1.56083	0
+K(1)(1270)+::Spline::Gamma::39	2	1.63808	0
+K(1)(1270)+::Spline::Gamma::4	2	0.000529502	0
+K(1)(1270)+::Spline::Gamma::5	2	0.00106469	0
+K(1)(1270)+::Spline::Gamma::6	2	0.00191519	0
+K(1)(1270)+::Spline::Gamma::7	2	0.00319977	0
+K(1)(1270)+::Spline::Gamma::8	2	0.00508461	0
+K(1)(1270)+::Spline::Gamma::9	2	0.00781719	0
+K(1)(1270)bar-::Spline::Gamma::0	2	4.03E-09	0
+K(1)(1270)bar-::Spline::Gamma::1	2	9.07E-06	0
+K(1)(1270)bar-::Spline::Gamma::10	2	0.0117952	0
+K(1)(1270)bar-::Spline::Gamma::11	2	0.0177199	0
+K(1)(1270)bar-::Spline::Gamma::12	2	0.0269659	0
+K(1)(1270)bar-::Spline::Gamma::13	2	0.0423896	0
+K(1)(1270)bar-::Spline::Gamma::14	2	0.0682026	0
+K(1)(1270)bar-::Spline::Gamma::15	2	0.10225	0
+K(1)(1270)bar-::Spline::Gamma::16	2	0.13597	0
+K(1)(1270)bar-::Spline::Gamma::17	2	0.166529	0
+K(1)(1270)bar-::Spline::Gamma::18	2	0.194473	0
+K(1)(1270)bar-::Spline::Gamma::19	2	0.220804	0
+K(1)(1270)bar-::Spline::Gamma::2	2	6.60E-05	0
+K(1)(1270)bar-::Spline::Gamma::20	2	0.246491	0
+K(1)(1270)bar-::Spline::Gamma::21	2	0.272483	0
+K(1)(1270)bar-::Spline::Gamma::22	2	0.299798	0
+K(1)(1270)bar-::Spline::Gamma::23	2	0.329617	0
+K(1)(1270)bar-::Spline::Gamma::24	2	0.363367	0
+K(1)(1270)bar-::Spline::Gamma::25	2	0.402799	0
+K(1)(1270)bar-::Spline::Gamma::26	2	0.450004	0
+K(1)(1270)bar-::Spline::Gamma::27	2	0.507306	0
+K(1)(1270)bar-::Spline::Gamma::28	2	0.576974	0
+K(1)(1270)bar-::Spline::Gamma::29	2	0.660895	0
+K(1)(1270)bar-::Spline::Gamma::3	2	0.000220112	0
+K(1)(1270)bar-::Spline::Gamma::30	2	0.761311	0
+K(1)(1270)bar-::Spline::Gamma::31	2	0.886349	0
+K(1)(1270)bar-::Spline::Gamma::32	2	1.00038	0
+K(1)(1270)bar-::Spline::Gamma::33	2	1.10445	0
+K(1)(1270)bar-::Spline::Gamma::34	2	1.20463	0
+K(1)(1270)bar-::Spline::Gamma::35	2	1.30071	0
+K(1)(1270)bar-::Spline::Gamma::36	2	1.39222	0
+K(1)(1270)bar-::Spline::Gamma::37	2	1.47892	0
+K(1)(1270)bar-::Spline::Gamma::38	2	1.56083	0
+K(1)(1270)bar-::Spline::Gamma::39	2	1.63808	0
+K(1)(1270)bar-::Spline::Gamma::4	2	0.000529502	0
+K(1)(1270)bar-::Spline::Gamma::5	2	0.00106469	0
+K(1)(1270)bar-::Spline::Gamma::6	2	0.00191519	0
+K(1)(1270)bar-::Spline::Gamma::7	2	0.00319976	0
+K(1)(1270)bar-::Spline::Gamma::8	2	0.00508461	0
+K(1)(1270)bar-::Spline::Gamma::9	2	0.00781719	0
+a(1)(1260)+::Spline::Gamma::0	2	3.76E-09	0
+a(1)(1260)+::Spline::Gamma::1	2	0.000824951	0
+a(1)(1260)+::Spline::Gamma::10	2	0.529995	0
+a(1)(1260)+::Spline::Gamma::11	2	0.656265	0
+a(1)(1260)+::Spline::Gamma::12	2	0.753391	0
+a(1)(1260)+::Spline::Gamma::13	2	0.827104	0
+a(1)(1260)+::Spline::Gamma::14	2	0.883463	0
+a(1)(1260)+::Spline::Gamma::15	2	0.927233	0
+a(1)(1260)+::Spline::Gamma::16	2	0.962467	0
+a(1)(1260)+::Spline::Gamma::17	2	0.992157	0
+a(1)(1260)+::Spline::Gamma::18	2	1.01822	0
+a(1)(1260)+::Spline::Gamma::19	2	1.04205	0
+a(1)(1260)+::Spline::Gamma::2	2	0.00499825	0
+a(1)(1260)+::Spline::Gamma::20	2	1.06465	0
+a(1)(1260)+::Spline::Gamma::21	2	1.08673	0
+a(1)(1260)+::Spline::Gamma::22	2	1.1088	0
+a(1)(1260)+::Spline::Gamma::23	2	1.13125	0
+a(1)(1260)+::Spline::Gamma::24	2	1.15436	0
+a(1)(1260)+::Spline::Gamma::25	2	1.17834	0
+a(1)(1260)+::Spline::Gamma::26	2	1.2	0
+a(1)(1260)+::Spline::Gamma::27	2	1.22934	0
+a(1)(1260)+::Spline::Gamma::28	2	1.2564	0
+a(1)(1260)+::Spline::Gamma::29	2	1.28441	0
+a(1)(1260)+::Spline::Gamma::3	2	0.0139448	0
+a(1)(1260)+::Spline::Gamma::30	2	1.31321	0
+a(1)(1260)+::Spline::Gamma::31	2	1.34267	0
+a(1)(1260)+::Spline::Gamma::32	2	1.37261	0
+a(1)(1260)+::Spline::Gamma::33	2	1.40291	0
+a(1)(1260)+::Spline::Gamma::34	2	1.43347	0
+a(1)(1260)+::Spline::Gamma::35	2	1.46428	0
+a(1)(1260)+::Spline::Gamma::36	2	1.49525	0
+a(1)(1260)+::Spline::Gamma::37	2	1.52622	0
+a(1)(1260)+::Spline::Gamma::38	2	1.55704	0
+a(1)(1260)+::Spline::Gamma::39	2	1.58741	0
+a(1)(1260)+::Spline::Gamma::4	2	0.0291105	0
+a(1)(1260)+::Spline::Gamma::5	2	0.052956	0
+a(1)(1260)+::Spline::Gamma::6	2	0.0900691	0
+a(1)(1260)+::Spline::Gamma::7	2	0.149033	0
+a(1)(1260)+::Spline::Gamma::8	2	0.243663	0
+a(1)(1260)+::Spline::Gamma::9	2	0.380601	0
+a(1)(1260)-::Spline::Gamma::0	2	3.76E-09	0
+a(1)(1260)-::Spline::Gamma::1	2	0.000824951	0
+a(1)(1260)-::Spline::Gamma::10	2	0.529995	0
+a(1)(1260)-::Spline::Gamma::11	2	0.656265	0
+a(1)(1260)-::Spline::Gamma::12	2	0.753391	0
+a(1)(1260)-::Spline::Gamma::13	2	0.827104	0
+a(1)(1260)-::Spline::Gamma::14	2	0.883463	0
+a(1)(1260)-::Spline::Gamma::15	2	0.927233	0
+a(1)(1260)-::Spline::Gamma::16	2	0.962467	0
+a(1)(1260)-::Spline::Gamma::17	2	0.992157	0
+a(1)(1260)-::Spline::Gamma::18	2	1.01822	0
+a(1)(1260)-::Spline::Gamma::19	2	1.04205	0
+a(1)(1260)-::Spline::Gamma::2	2	0.00499825	0
+a(1)(1260)-::Spline::Gamma::20	2	1.06465	0
+a(1)(1260)-::Spline::Gamma::21	2	1.08673	0
+a(1)(1260)-::Spline::Gamma::22	2	1.1088	0
+a(1)(1260)-::Spline::Gamma::23	2	1.13125	0
+a(1)(1260)-::Spline::Gamma::24	2	1.15436	0
+a(1)(1260)-::Spline::Gamma::25	2	1.17834	0
+a(1)(1260)-::Spline::Gamma::26	2	1.20331	0
+a(1)(1260)-::Spline::Gamma::27	2	1.22934	0
+a(1)(1260)-::Spline::Gamma::28	2	1.2564	0
+a(1)(1260)-::Spline::Gamma::29	2	1.28441	0
+a(1)(1260)-::Spline::Gamma::3	2	0.0139448	0
+a(1)(1260)-::Spline::Gamma::30	2	1.31321	0
+a(1)(1260)-::Spline::Gamma::31	2	1.34267	0
+a(1)(1260)-::Spline::Gamma::32	2	1.37261	0
+a(1)(1260)-::Spline::Gamma::33	2	1.40291	0
+a(1)(1260)-::Spline::Gamma::34	2	1.43347	0
+a(1)(1260)-::Spline::Gamma::35	2	1.46428	0
+a(1)(1260)-::Spline::Gamma::36	2	1.49525	0
+a(1)(1260)-::Spline::Gamma::37	2	1.52622	0
+a(1)(1260)-::Spline::Gamma::38	2	1.55704	0
+a(1)(1260)-::Spline::Gamma::39	2	1.58741	0
+a(1)(1260)-::Spline::Gamma::4	2	0.0291105	0
+a(1)(1260)-::Spline::Gamma::5	2	0.052956	0
+a(1)(1260)-::Spline::Gamma::6	2	0.0900691	0
+a(1)(1260)-::Spline::Gamma::7	2	0.149033	0
+a(1)(1260)-::Spline::Gamma::8	2	0.243663	0
+a(1)(1260)-::Spline::Gamma::9	2	0.380601	0
+f_scatt0	2	0.23399	0
+f_scatt1	2	0.15044	0
+f_scatt2	2	-0.20545	0
+f_scatt3	2	0.32825	0
+f_scatt4	2	0.35412	0
+s0_prod	2	-1	0
+s0_scatt	2	-3.92637	0
+sA	2	1	0
+sA0	2	-0.15	0

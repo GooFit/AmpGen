@@ -26,7 +26,7 @@ using namespace AmpGen;
 std::vector<std::string> makeBranches(EventType Type, std::string prefix){
   auto n = Type.finalStates().size();
   std::vector<std::string> branches;
-  std::vector<std::string> varNames = {"E", "PX", "PY", "PZ"};
+  std::vector<std::string> varNames = {"PX", "PY", "PZ", "E"};
   for (long unsigned int i=0; i<n; i++){
     auto part = replaceAll(Type.finalStates()[i], "+", "p");
     part = replaceAll(part, "-", "m");
@@ -54,6 +54,9 @@ int main(int argc, char** argv ){
     std::string intFile  = NamedParameter<std::string>("IntegrationSample",""    , "Name of file containing events to use for MC integration.");
     bool doCorrFit  = NamedParameter<bool>("doCorrFit", true, "Fit the correlated pdf");
     std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
+    std::string dataProj = NamedParameter<std::string>("dataProj", "data.csv", "name of csv file for data projection");
+    std::string mcProj = NamedParameter<std::string>("mcProj", "mc.csv", "name of csv file for mc projection");
+    std::string sigOnlyProj = NamedParameter<std::string>("sigOnlyProj", "sigOnly.csv", "name of csv file for sigOnly projection");
     std::string logFile  = NamedParameter<std::string>("LogFile"   , "QCFitter.log", "Name of the output log file");
     int nBins = NamedParameter<int> ("nBins", 100, "number of bins for the projection");
 
@@ -61,19 +64,21 @@ int main(int argc, char** argv ){
     MinuitParameterSet mps;    
     mps.loadFromStream();
     //add_CP_conjugate(mps);
-    TFile * data = TFile::Open(dataFile.c_str());
-    TFile * mc = TFile::Open(intFile.c_str());
-    TRandom3 rndm;
-    int seed=0;
-    rndm.SetSeed( seed );
-    gRandom = &rndm;
-    EventType signalType(pNames);
-    EventList sigEvents(signalType);
-    EventList sigMCEvents(signalType);
-
 
     for (auto tag : tags){
         INFO("Tag = "<<tag );
+        TFile * data = TFile::Open(dataFile.c_str());
+        TFile * mc = TFile::Open(intFile.c_str());
+        TRandom3 rndm;
+        int seed=0;
+        rndm.SetSeed( seed );
+        gRandom = &rndm;
+        EventType signalType(pNames);
+        EventList sigEvents(signalType);
+        EventList sigMCEvents(signalType);
+        EventList sigonlyEvents = Generator<>(signalType, &rndm).generate(2e5) ;
+
+
         auto tokens       = split(tag, ' ');
         auto tagParticle  = Particle(tokens[1], {}, false);
         EventType tagType = tagParticle.eventType();
@@ -89,7 +94,7 @@ int main(int argc, char** argv ){
         auto argPackSig = ArgumentPack(Branches(sigBranches));
         auto argPackTag = ArgumentPack(Branches(tagBranches));
 
-           
+
         INFO("Loading Tag Events from DataSample");
         tagEvents.loadFromTree(dataTree, argPackTag);
         INFO("Loading Tag Events from IntegrationSample");
@@ -102,15 +107,84 @@ int main(int argc, char** argv ){
         sigMCEvents.loadFromTree(mcTree, argPackSig);
 
         INFO("Making Projections");
+        
         TFile* output = TFile::Open( plotFile.c_str(), "RECREATE" ); output->cd();
-        auto plots = sigEvents.makeDefaultProjection(Prefix("Data"), Bins(100))->Write();
-        auto plotsMC = sigMCEvents.makeDefaultProjection(Prefix("MC"), Bins(100))->Write();
+        dataTree->Write("DataTree");
+        sigEvents.tree("Data")->Write();
+        auto proj1 = signalType.defaultProjections(nBins);
+        
+        auto plots = sigEvents.makeProjections( proj1, LineColor(kBlack) ); 
+        auto plotsSO = sigonlyEvents.makeProjections( proj1, LineColor(kBlack) ); 
+       
+        
+        /*
+        ofstream outfile;
+        stringstream stream;
+        stream<<dataProj;
+
+
+
+        auto string = stream.str();
+        outfile.open(string.c_str());
+
+        for (auto& evt : sigEvents){
+            outfile<<evt.s(1,0)<<"\t"<<evt.s(2,0)<<"\t"<<evt.s(2,1)<<"\t"<<evt.s(0,0)<<"\t"<<evt.s(1,1)<<"\t"<<evt.s(2,2)<<"\t"<<evt.weight()/evt.genPdf()<<"\n";
+        }
+        outfile.close();
+
+
+        ofstream outfileMC;
+        stringstream streamMC;
+        streamMC<<mcProj;
+
+        auto stringMC = streamMC.str();
+        outfileMC.open(stringMC.c_str());
+
+        for (auto& evt : sigMCEvents){
+            evt.print();
+            outfileMC<<evt.s(1,0)<<"\t"<<evt.s(2,0)<<"\t"<<evt.s(2,1)<<"\t"<<evt.s(0,0)<<"\t"<<evt.s(1,1)<<"\t"<<evt.s(2,2)<<"\t"<<evt.weight()/evt.genPdf()<<"\n";
+
+            
+        }
+        outfileMC.close();
+
+        ofstream outfilesigOnly;
+        stringstream streamsigOnly;
+        streamsigOnly<<sigOnlyProj;
+
+        auto stringsigOnly = streamsigOnly.str();
+        outfilesigOnly.open(stringsigOnly.c_str());
+
+        for (auto& evt : sigonlyEvents){
+
+            outfilesigOnly<<evt.s(1,0)<<"\t"<<evt.s(2,0)<<"\t"<<evt.s(2,1)<<"\t"<<evt.s(0,0)<<"\t"<<evt.s(1,1)<<"\t"<<evt.s(2,2)<<"\t"<<evt.weight()/evt.genPdf()<<"\n";
+
+            
+        }
+        outfilesigOnly.close();
+    
+      */
+       
+        
+        mcTree->Write("MCTree");
+        sigMCEvents.tree("MC")->Write();
+        auto sigplots = sigEvents.makeDefaultProjections(Prefix("sig_data"), Bins(100));
+        auto sigplotsMC = sigMCEvents.makeDefaultProjections(Prefix("sig_mc"), Bins(100));
+        auto tagplots = tagEvents.makeDefaultProjections(Prefix("tag_data"), Bins(100));
+        auto tagplotsMC = tagMCEvents.makeDefaultProjections(Prefix("tag_mc"), Bins(100));
+
            
-//        for ( auto& plot : plots ) plot->Write();
- //       for ( auto& plot : plotsMC ) plot->Write();
+        for ( auto& plot : sigplots ) plot->Write();
+        for ( auto& plot : sigplotsMC ) plot->Write();
+        for ( auto& plot : tagplots ) plot->Write();
+        for ( auto& plot : tagplotsMC ) plot->Write();
+
+
 
         output->Close();
-
+        data->Close();
+        mc->Close();
+           
 
     }
     return 0;

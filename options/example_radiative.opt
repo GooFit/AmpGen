@@ -1,0 +1,16 @@
+EventType D- K- pi+ pi- gamma0 
+
+Type PolarisedSum
+CouplingConstant::Coordinates  polar
+CouplingConstant::AngularUnits   deg
+
+K(1)(1270)bar-{rho(770)0{pi+,pi-},K-}                              2              1.000          0.000          2                 0.0         0.0              
+K(1)(1270)bar-{rho(1450)0{pi+,pi-},K-}                             0              2.016          0.026          0              -119.5         0.9      
+K(1)(1270)bar-{K*(892)bar0{K-,pi+},pi-}                            0              0.388          0.007          0              -172.6         1.1
+K(1)(1270)bar-{KPi2bar0[FOCUS.Kpi]{K-,pi+},pi-}                    0              0.554          0.010          0                53.2         1.1
+K(1)(1270)bar-[D]{K*(892)bar0{K-,pi+},pi-}                          0              0.769          0.021          0               -19.3         1.6      
+K(1)(1270)bar-{omega(782)0{pi+,pi-},K-}                            0              0.146          0.005          0                 9.0         2.1
+
+
+D-{K(1)(1270)bar-,gamma0} 2 1 0.1 2 0 0.1
+D-{K(1)(1400)bar-{K*(892)bar0{K-,pi+},pi-},gamma0} 0 1 0.1 0 0 0.1

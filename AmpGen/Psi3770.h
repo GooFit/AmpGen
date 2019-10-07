@@ -64,8 +64,8 @@ template <class T1, class T2> class Psi3770 {
     std::complex<double> fSigCC(const DTEvent& event)             const {return m_signalBar(event.signal);}
     std::complex<double> fTag(const DTEvent& event)             const {return m_tag(event.tag);}
     std::complex<double> fTagCC(const DTEvent& event)             const {return m_tagBar(event.tag);}
-    double sigS (const DTEvent& event, std::vector<long unsigned int> ind)  const {return event.signal.s(ind);}
-    double tagS (const DTEvent& event, std::vector<long unsigned int> ind)  const {return event.tag.s(ind);}
+    double sigS (const DTEvent& event, const std::vector<unsigned>& ind)  const {return event.signal.s(ind);}
+    double tagS (const DTEvent& event, const std::vector<unsigned>& ind)  const {return event.tag.s(ind);}
 
     DTEvent generatePhaseSpace()                                      { return DTEvent( m_signalPhsp.makeEvent(), m_tagPhsp.makeEvent() ); }
     DTEventList generate( const size_t& N )
@@ -107,7 +107,7 @@ template <class T1, class T2> class Psi3770 {
     DTEventList generatePHSP(const size_t& N, const bool& eval=true){
       DTEventList output( m_signalType, m_tagType );
       for(size_t x = 0 ; x < m_blockSize; ++x) output.emplace_back( generatePhaseSpace() ); 
-#pragma omp parallel for
+      #pragma omp parallel for
       for(size_t i = 0 ; i < m_blockSize; ++i ) output[i].prob = P(output[i]);
       return output;
     }
@@ -116,7 +116,7 @@ template <class T1, class T2> class Psi3770 {
       double withQC=0;
       double withoutQC =0;
       DTEventList evts = generatePHSP(m_blockSize, false); 
-#pragma omp parallel for reduction(+:withQC,withoutQC)
+      #pragma omp parallel for reduction(+:withQC,withoutQC)
       for( size_t x = 0; x<m_blockSize; ++x ){
         auto event   = evts[x]; 
         withQC    += P(event);
