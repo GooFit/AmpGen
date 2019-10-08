@@ -67,7 +67,7 @@ namespace AmpGen
         if (m_debug) INFO("Events 2  = "<<&m_events2); 
         if (m_debug) INFO("Events 2 size  = "<<m_events2->size());
 
-        std::get<0>(m_pdfs).debug( m_events1->at(0), m_events2->at(0) );
+        if (m_debug) std::get<0>(m_pdfs).debug( m_events1->at(0), m_events2->at(0) );
         #pragma omp parallel for reduction( +: LL )
         for ( unsigned int i = 0; i < m_events1->size(); ++i ) {
             auto prob = ((*this))( (*m_events1)[i], (*m_events2)[i]);

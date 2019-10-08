@@ -269,7 +269,7 @@ int main( int argc, char** argv )
 
   bool debug          = NamedParameter<bool>("Debug", false, "Flag to print out debug information");
   std::string valFolder      = NamedParameter<std::string>("valFolder", "values", "Folder to put the .csv files for the amplitude values");
-
+  bool makeCPConj = NamedParameter<bool>("makeCPConj", false, "Makes CP conjugates");
   //if (valFolder == "") FATAL("Refusing to make a folder in the root directory");
 
 
@@ -282,7 +282,7 @@ int main( int argc, char** argv )
 #endif
   MinuitParameterSet MPS; 
   MPS.loadFromStream();
-  add_CP_conjugate( MPS );
+  if (makeCPConj) add_CP_conjugate( MPS );
   EventType signalType( pNames );
   TFile* f = TFile::Open( output.c_str() ,"RECREATE");
 

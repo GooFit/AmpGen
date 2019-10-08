@@ -47,6 +47,7 @@ int main( int argc, char* argv[] )
   auto tags           = NamedParameter<std::string>("TagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();
   bool m_debug        = NamedParameter<bool>("Debug", false, "Debug QcFitter output");
     bool doDebugNorm  = NamedParameter<bool>("doDebugNorm", false, "Debug the normalisation of the pdf");
+    int nBins = NamedParameter<int>("nBins", 100, "number of bins for projection");
 
 
   /* Parameters that have been parsed can be accessed anywhere in the program 
@@ -114,7 +115,7 @@ int main( int argc, char* argv[] )
     INFO( "norm[1] = " << cs.norm() );
     TFile* f = TFile::Open(plotFile.c_str(),"RECREATE");
 
-    auto projections = signalType.defaultProjections(100);
+    auto projections = signalType.defaultProjections(nBins);
     for( auto& projection : projections ){
       auto data_plot = projection(sigEvents);
       auto hist = projection.plot();
@@ -127,7 +128,7 @@ int main( int argc, char* argv[] )
       hist->Write();
       data_plot->Write();
     }
-    auto p2 = signalType.defaultProjections(50);
+    auto p2 = signalType.defaultProjections(nBins);
     for( unsigned i = 0 ; i != p2.size() -1; ++i )
     {
       for( unsigned j=i+1; j < p2.size(); ++j )
