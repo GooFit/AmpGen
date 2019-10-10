@@ -21,6 +21,27 @@ void split5(const std::string& str, Container& cont,
     boost::split(cont, str, boost::is_any_of(delims));
 }
 */
+struct Moment {
+  double x;
+  double xx;
+  double N;
+  std::vector<double> values;
+  Moment() : x( 0 ), xx( 0 ), N( 0 ) {}
+  void add( const double& value )
+  {
+    x += value;
+    xx += value * value;
+    N++;
+    values.push_back( value );
+  }
+  void rescale( const double& val )
+  {
+    x *= val;
+    xx *= ( val * val );
+  }
+  double val() { return x; }
+  double var() { return N == 0 ? 0 : xx; }
+};
 
 
 
@@ -110,8 +131,56 @@ int main( int argc, char* argv[] )
     Minimiser mini( csLL, &MPS );
     mini.doFit();
     FitResult * fr = new FitResult(mini);
-    fr->writeToFile(logFile);
-   
+ auto dataEvents = sigEvents;
+ auto mcEvents = sigMCEvents;
+ int minEvents=15;
+auto binning = BinDT( dataEvents, MinEvents( minEvents ), Dim( dataEvents.eventType().dof() ) );
+//void   Chi2Estimator::doChi2( const EventList& dataEvents, const EventList& mcEvents,
+//    const std::function<double( const Event& )>& fcn )
+//{
+  std::vector<Moment> data( binning.size() );
+  std::vector<Moment> mc( binning.size() );
+
+  INFO( "Splitting: " << dataEvents.size() << " data " << mcEvents.size() << " amongst " << binning.size()
+      << " bins" );
+  unsigned int j           = 0;
+  double total_data_weight = 0;
+  double total_int_weight  = 0;
+  for ( auto& d : dataEvents ) {
+    if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " data events" );
+    double w = d.weight();
+    data[binning.getBinNumber( d )].add( d.weight() );
+    total_data_weight += w;
+    j++;
+  }
+  j = 0;
+  for ( int i=0; i < mcEvents.size(); i++ ) {
+    auto evt1 = mcEvents[i];
+    auto evt2 = tagMCEvents[i];
+    if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " sim. events" );
+    double w = cs.prob( evt1, evt2 ) * (evt1.weight() / evt1.genPdf()) * (evt2.weight() / evt2.genPdf());
+    mc[binning.getBinNumber( evt1 )].add( w );
+    total_int_weight += w;
+    j++;
+  }
+  double chi2 = 0;
+
+  for ( unsigned int i = 0; i < binning.size(); ++i ) {
+    mc[i].rescale( total_data_weight / total_int_weight );
+    double delta = data[i].val() - mc[i].val();
+    double tChi2 = delta * delta / ( data[i].val() + mc[i].var() );
+    chi2 += tChi2;
+  }
+  
+  auto Bins = binning.size();
+
+  //chi2.writeBinningToFile("chi2_binning.txt");
+  fr->addChi2( chi2, Bins );
+  fr->print();
+   fr->writeToFile(logFile);
+
+
+
     INFO( "norm[1] = " << cs.norm() );
     TFile* f = TFile::Open(plotFile.c_str(),"RECREATE");
 

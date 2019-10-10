@@ -34,7 +34,7 @@
 using namespace AmpGen;
 
 template <typename PDF>
-FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS );
+FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS, int nBins );
 
 int main( int argc, char* argv[] )
 {
@@ -62,6 +62,7 @@ int main( int argc, char* argv[] )
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , 8           , "Number of threads to use" );
   size_t      seed     = NamedParameter<size_t>     ("Seed"      , 0           , "Random seed used" );
   size_t      nEvents  = NamedParameter<size_t>     ("nEvents"   , 10000       , "Number of events to fill in") ;
+  int nBins = NamedParameter<int> ("nBins", 100, "number of bins for projection");
 
 
 
@@ -118,7 +119,7 @@ int main( int argc, char* argv[] )
   
   /* Do the fit and return the fit results, which can be written to the log and contains the 
      covariance matrix, fit parameters, and other observables such as fit fractions */
-  FitResult* fr = doFit(make_likelihood(events, sig), events, eventsMC, MPS );
+  FitResult* fr = doFit(make_likelihood(events, sig), events, eventsMC, MPS , nBins);
   /* Calculate the `fit fractions` using the signal model and the error propagator (i.e. 
      fit results + covariance matrix) of the fit result, and write them to a file. 
    */
@@ -131,14 +132,14 @@ int main( int argc, char* argv[] )
   /* Write out the data plots. This also shows the first example of the named arguments 
      to functions, emulating python's behaviour in this area */
 
-  auto plots = events.makeDefaultProjections(Prefix("Data"), Bins(100));
+  auto plots = events.makeDefaultProjections(Prefix("Data"), Bins(nBins));
   for ( auto& plot : plots ) plot->Write();
 
   output->Close();
 }
 
 template <typename likelihoodType>
-FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, MinuitParameterSet& MPS )
+FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, MinuitParameterSet& MPS, int nBins )
 {
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time      = std::clock();
@@ -169,7 +170,7 @@ FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, M
   unsigned int counter = 1;
   for_each(likelihood.pdfs(), [&](auto& pdf){
     auto pfx = Prefix("Model_cat"+std::to_string(counter));
-    auto mc_plot3 = mc.makeDefaultProjections(WeightFunction(pdf), pfx);
+    auto mc_plot3 = mc.makeDefaultProjections(WeightFunction(pdf), Bins(nBins), pfx);
     for( auto& plot : mc_plot3 )
     {
       plot->Scale( ( data.integral() * pdf.getWeight() ) / plot->Integral() );

@@ -322,15 +322,17 @@ int main( int argc, char** argv )
     double yield = nEvents; 
     if( nEvents == 0 && poissonYield  )  yield = gRandom->Poisson(yield_noQC*rho); 
     if( nEvents == 0 && !poissonYield ) yield = yield_noQC*rho;  
-    INFO( "Tag = " << type << " Expected Yield [incoherent] = " << yield_noQC << " rho = " << rho << " requested = " << yield );
-    DTEventList evtlist = generator.generate(yield);
-    int n_evtList = evtlist.size();
+    //INFO( "Tag = " << type << " Expected Yield [incoherent] = " << yield_noQC << " rho = " << rho << " requested = " << yield );
+   // DTEventList evtlist = generator.generate(yield);
+   // evtlist.tree(tokens[0])->Write();
+   // int n_evtList = evtlist.size();
     //TFile * fsigVal = TFile::Open("sigVal.root", "RECREATE");
     
 
    
   
- generator.generate(yield).tree(tokens[0])->Write();
+// generator.generate(yield).tree(tokens[0])->Write();
+
 
    
 
