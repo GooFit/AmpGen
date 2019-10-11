@@ -49,7 +49,7 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
       return;
     }
     if(m_alt_part_names)
-      m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "p" ), "-", "m" ) );
+      m_particleNamesPickled.push_back( replaceAll( replaceAll( replaceAll( replaceAll( particle, "+", "p" ), "-", "m" ), "(", "" ) , ")", "" ) );
     else
       m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "~" ), "-", "#" ) );
   }
@@ -100,7 +100,7 @@ std::pair<double, double> EventType::minmax( const std::vector<unsigned>& indice
 {
   std::vector<unsigned> ivec( size() );
   std::iota( ivec.begin(), ivec.end(), 0 );
-  double min = 0 ; 
+  double min = 0 ;
   for( auto& i : indices ) min += mass(i);
   double max = motherMass();
   for ( auto& x : ivec )
