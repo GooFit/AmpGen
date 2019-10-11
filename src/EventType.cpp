@@ -39,7 +39,7 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
     ERROR( "Particle not found: " << m_mother );
     return;
   }
-  m_alt_part_names = NamedParameter<bool>("EventType::AlternativeParicleNames", false );
+  m_alt_part_names = NamedParameter<bool>("EventType::AlternativeParticleNames", false );
   for ( auto& particle : m_particleNames ) {
     auto prop = ParticlePropertiesList::get( particle );
     if ( prop != nullptr )
