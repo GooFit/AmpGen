@@ -69,6 +69,7 @@ int main( int argc, char* argv[] )
   bool m_debug        = NamedParameter<bool>("Debug", false, "Debug QcFitter output");
     bool doDebugNorm  = NamedParameter<bool>("doDebugNorm", false, "Debug the normalisation of the pdf");
     int nBins = NamedParameter<int>("nBins", 100, "number of bins for projection");
+    int nFits = NamedParameter<int>("nFits", 1, "number of repeats of mini.doFits() for debug purposes!");
 
 
   /* Parameters that have been parsed can be accessed anywhere in the program 
@@ -129,7 +130,8 @@ int main( int argc, char* argv[] )
     INFO( "norm[0] = " << cs.norm() );
 
     Minimiser mini( csLL, &MPS );
-    mini.doFit();
+    
+    for (int i=0 ; i < nFits; i++) mini.doFit();
     FitResult * fr = new FitResult(mini);
  auto dataEvents = sigEvents;
  auto mcEvents = sigMCEvents;
