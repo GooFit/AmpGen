@@ -98,7 +98,7 @@ int main( int argc, char* argv[] )
 #endif
 
   std::vector<std::string> varNames = {"E", "PX", "PY", "PZ"};
-  auto yc = DTYieldCalculator(crossSection);
+  //auto yc = DTYieldCalculator(crossSection);
   MinuitParameterSet MPS;
   MPS.loadFromStream();
   if (makeCPConj){

@@ -15,10 +15,12 @@ CorrelatedSum::CorrelatedSum(const EventType& type1, const EventType& type2, con
 {
   m_normalisationsAC.resize( m_A.matrixElements().size(), m_C.matrixElements().size() ); 
   m_normalisationsBD.resize( m_B.matrixElements().size(), m_D.matrixElements().size() ); 
+ /*
   m_normalisationsAA.resize( m_A.matrixElements().size(), m_A.matrixElements().size() ); 
   m_normalisationsBB.resize( m_B.matrixElements().size(), m_B.matrixElements().size() ); 
   m_normalisationsCC.resize( m_C.matrixElements().size(), m_C.matrixElements().size() ); 
   m_normalisationsDD.resize( m_D.matrixElements().size(), m_D.matrixElements().size() ); 
+  */
 }
 void CorrelatedSum::prepare(){
   m_A.prepare();
@@ -171,11 +173,13 @@ void CorrelatedSum::updateNorms(const std::vector<unsigned int>& iA, const std::
   for (auto& i : iC ) m_integratorAC.prepareExpression(m_C.matrixElements()[i].amp);
   for (auto& i : iD ) m_integratorBD.prepareExpression(m_D.matrixElements()[i].amp);
 
+
+/*
   for (auto& i : iA ) m_integratorAA.prepareExpression(m_A.matrixElements()[i].amp);
   for (auto& i : iB ) m_integratorBB.prepareExpression(m_B.matrixElements()[i].amp);
   for (auto& i : iC ) m_integratorCC.prepareExpression(m_C.matrixElements()[i].amp);
   for (auto& i : iD ) m_integratorDD.prepareExpression(m_D.matrixElements()[i].amp);
-
+*/
   std::vector<size_t> cacheIndexA;
   std::vector<size_t> cacheIndexB;
   std::vector<size_t> cacheIndexC;
@@ -218,6 +222,8 @@ void CorrelatedSum::updateNorms(const std::vector<unsigned int>& iA, const std::
   m_integratorBD.flush();
   m_normalisationsBD.resetCalculateFlags();
 
+
+/*
   if (m_debug) INFO("Queuing the integral for nAA"); 
   for (auto i : iA ){
     for (auto j : iA){
@@ -257,6 +263,7 @@ void CorrelatedSum::updateNorms(const std::vector<unsigned int>& iA, const std::
   if (m_debug) INFO("Finishing integral for nDD");
   m_integratorDD.flush();
   m_normalisationsDD.resetCalculateFlags();
+  */
 }
 
 real_t CorrelatedSum::norm() const {
@@ -273,19 +280,24 @@ real_t CorrelatedSum::norm() const {
     }
     return v; 
   };
-
+/*
   complex_t nAA = sum_amps( m_normalisationsAA, m_A.matrixElements(), m_A.matrixElements() );
   complex_t nBB = sum_amps( m_normalisationsBB, m_B.matrixElements(), m_B.matrixElements() );
   complex_t nCC = sum_amps( m_normalisationsCC, m_C.matrixElements(), m_C.matrixElements() );
   complex_t nDD = sum_amps( m_normalisationsDD, m_D.matrixElements(), m_D.matrixElements() );
+  */
   complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
   complex_t nBD = sum_amps( m_normalisationsBD, m_B.matrixElements(), m_D.matrixElements() );
-
+/*
   real_t nA = nAA.real(); 
   real_t nB = nBB.real();
   real_t nC = nCC.real();
   real_t nD = nDD.real();
-
+*/
+  real_t nA = m_A.norm();
+  real_t nB = m_B.norm();
+  real_t nC = m_C.norm();
+  real_t nD = m_D.norm();
   real_t intTerm = -2 * (nAC * nBD).real();
   if (m_debug) INFO("interference = "<<intTerm);
   real_t N = nA * nB + nC * nD + intTerm;
