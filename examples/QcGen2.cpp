@@ -1,86 +1,177 @@
-#include "AmpGen/CoherentSum.h"
-#include "AmpGen/CorrelatedSum.h"
-#include "AmpGen/Generator.h"
-#include "AmpGen/EventType.h"
-#include "AmpGen/NamedParameter.h"
-#include "AmpGen/Kinematics.h"
-#include "AmpGen/OptionsParser.h"
-#include "AmpGen/ProfileClock.h"
-#include "AmpGen/ParticlePropertiesList.h"
-#include "AmpGen/MinuitParameterSet.h"
+#include <Rtypes.h>
+#include <TH1.h>
+#include <dlfcn.h>
+#include <memory>
+#include <string>
 
-#include <TFile.h>
-#include <TRandom3.h>
-#include <TRandom.h>
+#include "TFile.h"
+#include "TRandom3.h"
+#include "TTree.h"
+
+#include "TGraph2D.h"
+
+
+
 #ifdef _OPENMP
 #include <omp.h>
 #include <thread>
 #endif
 
+#include "AmpGen/DynamicFCN.h"
+#include "AmpGen/EventList.h"
+#include "AmpGen/MsgService.h"
+#include "AmpGen/Particle.h"
+#include "AmpGen/RecursivePhaseSpace.h"
+#include "AmpGen/Utilities.h"
+#include "AmpGen/EventType.h"
+#include "AmpGen/CoherentSum.h"
+#include "AmpGen/Generator.h"
+#include "AmpGen/QcGenerator.h"
+#include "AmpGen/MinuitParameterSet.h"
+#include "AmpGen/NamedParameter.h"
+#include "AmpGen/PolarisedSum.h"
+#include "AmpGen/OptionsParser.h"
+#include "AmpGen/enum.h"
+
 using namespace AmpGen;
-using namespace std::complex_literals;
-int main( int argc, char* argv[]){
 
- OptionsParser::setArgs( argc, argv );
-  //OptionsParser::setArgs( argc, argv, "Toy simulation for Quantum Correlated Ψ(3770) decays");
-  /* */
-  //auto time_wall = std::chrono::high_resolution_clock::now();
-  //auto time      = std::clock();
-  size_t hwt = std::thread::hardware_concurrency();
-  size_t nThreads     = NamedParameter<size_t>("nCores"      , hwt         , "Number of threads to use");
-  //double luminosity   = NamedParameter<double>("Luminosity"  , 818.3       , "Luminosity to generate. Defaults to CLEO-c integrated luminosity.");
-  size_t nEvents      = NamedParameter<size_t>("nEvents"     , 0           , "Can also generate a fixed number of events per tag, if unspecified use the CLEO-c integrated luminosity.");
-  size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Random seed to use.");
-  //bool   poissonYield = NamedParameter<bool  >("PoissonYield", true        , "Flag to include Poisson fluctuations in expected yields (only if nEvents is not specified)");
-  //bool   noQCFit      = NamedParameter<bool  >("noQCFit"     , false       , "Treat Signal and Tag as uncorrelated and fit the data individually");
-  double crossSection = NamedParameter<double>("CrossSection", 3.26 * 1000 , "Cross section for e⁺e⁻ → Ψ(3770) → DD'");
-  std::string output  = NamedParameter<std::string>("Output" , "ToyMC.root", "File containing output events"); 
-  auto pNames = NamedParameter<std::string>("EventType" , ""    
-      , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
-  auto tags           = NamedParameter<std::string>("TagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();
-  bool m_debug        = NamedParameter<bool>("Debug", false, "Debug QcFitter output");
-    bool doDebugNorm  = NamedParameter<bool>("doDebugNorm", false, "Debug the normalisation of the pdf");
-    int nBins = NamedParameter<int>("nBins", 100, "number of bins for projection");
-    int nFits = NamedParameter<int>("nFits", 1, "number of repeats of mini.doFits() for debug purposes!");
+namespace AmpGen { make_enum(generatorType, CoherentSum, PolarisedSum, FixedLib, RGenerator) }
+
+struct FixedLibPDF {
+  void* lib = {nullptr};
+  AmpGen::DynamicFCN<double( const double*, int )> PDF;
+
+  void prepare(){};
+  void setEvents( AmpGen::EventList& evts ){};
+  double prob_unnormalised( const AmpGen::Event& evt ) const { return PDF( evt, 1 ); }
+  FixedLibPDF( const std::string& lib )
+  {
+    void* handle = dlopen( lib.c_str(), RTLD_NOW );
+    if ( handle == nullptr ) ERROR( dlerror() );
+    PDF = AmpGen::DynamicFCN<double( const double*, int )>( handle, "FCN" );
+  }
+  size_t size() { return 0; }
+  void reset( const bool& flag = false ){};
+};
+
+template <class PDF_TYPE, class PRIOR_TYPE> 
+  void GenerateEvents( EventList& eventsSig
+                       , EventList& eventsTag
+                       , PDF_TYPE& pdf 
+                       , PRIOR_TYPE& priorSig
+                       , PRIOR_TYPE& priorTag
+                       , const size_t& nEvents
+                       , const size_t& blockSize
+                       , TRandom* rndm )
+{
+  QcGenerator<PRIOR_TYPE> signalGenerator( priorSig, priorTag );
+  signalGenerator.setRandom( rndm);
+  signalGenerator.setBlockSize( blockSize );
+  signalGenerator.fillEventList( pdf, eventsSig, eventsTag, nEvents );
+}
 
 
-  /* Parameters that have been parsed can be accessed anywhere in the program 
-     using the NamedParameter<T> class. The name of the parameter is the first option,
-     then the default value, and then the help string that will be printed if --h is specified 
-     as an option. */
-  std::string dataFile = NamedParameter<std::string>("DataSample", ""          , "Name of file containing data sample to fit." );
-  std::string intFile  = NamedParameter<std::string>("IntegrationSample",""    , "Name of file containing events to use for MC integration.");
-  std::string logFile  = NamedParameter<std::string>("LogFile"   , "QcFitter.log", "Name of the output log file");
-  std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
-  bool makeCPConj      = NamedParameter<bool>("makeCPConj", false, "Make CP Conjugates");
+int main( int argc, char** argv )
+{
+  OptionsParser::setArgs( argc, argv );
 
-for( auto& tag : tags )
- {
-
-       MinuitParameterSet MPS;
-  MPS.loadFromStream();
-    EventType signalType( pNames );
-    auto tokens       = split(tag, ' ');
-    auto tagParticle  = Particle(tokens[1], {}, false);
-    EventType    tagType = tagParticle.eventType(); 
+  size_t nEvents      = NamedParameter<size_t>     ("nEvents"  , 1, "Total number of events to generate" );
+  size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
+  int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
+  std::string outfile = NamedParameter<std::string>("Output"   , "Generate_Output.root" , "Name of output file" ); 
+  auto genType        = NamedParameter<generatorType>( "Type", generatorType::CoherentSum, optionalHelpString("Generator configuration to use:", 
+    { {"CoherentSum" , "Full phase-space generator with (pseudo)scalar amplitude"}
+    , {"PolarisedSum", "Full phase-space generator with particles carrying spin in the initial/final states"}
+    , {"FixedLib"    , "Full phase-space generator with an amplitude from a precompiled library"}
+    , {"RGenerator"  , "Recursive phase-space generator for intermediate (quasi)stable states such as the D-mesons"} } ) );
   
-    EventList eventsSig = Generator<>(signalType, &rndm).generate(2e6); 
-    EventList eventsTag = Generator<>(tagType, &rndm).generate(2e6); 
+  std::string lib     = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
+  size_t nBins        = NamedParameter<size_t>     ("nBins"     ,100, "Number of bins for monitoring plots." );
+
+  #ifdef _OPENMP
+    unsigned int concurentThreadsSupported = std::thread::hardware_concurrency();
+    unsigned int nCores                    = NamedParameter<unsigned int>( "nCores", concurentThreadsSupported, "Number of cores to use (OpenMP only)" );
+    INFO("Using: " << nCores  << " / " << concurentThreadsSupported  << " threads" );
+    omp_set_num_threads( nCores );
+    omp_set_dynamic( 0 );
+  #endif
+ for( auto& tag : tags ){
 
 
-    
-    CorrelatedSum cs(signalType, tagType, MPS);
-    cs.SetEvents(eventsSig, eventsTag);
-    PhaseSpace sigphsp = PhaseSpace(signalType);
-    PhaseSpace tagphsp = PhaseSpace(tagType);
+    auto tokens       = split(tag, ' ');
+    INFO("tag = "<<tokens[0]);
+ 
+  TRandom3 rand;
+  rand.SetSeed( seed + 934534 );
 
-    for (int i=0; i < nEvents; i++){
-        auto sigEvent = sigphsp.makeEvent();
-        auto tagEvent = tagphsp.makeEvent();
-        //INFO("cs = "<<cs(sigEvent, tagEvent));
-    }
-    //auto events = generatePHSP(10);
+  MinuitParameterSet MPS;
+  MPS.loadFromStream();
+  
+
+  Particle p;
+  bool debug=false;
+  
+
+//  EventType eventType2( NamedParameter<std::string>( "EventType2" , "", "EventType to generate second lot of events, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
+//                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+
+
+
+
+
+
+//  EventType eventType2( NamedParameter<std::string>( "EventType2" , "", "EventType to generate second lot of events, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
+//                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+
+
+
+  EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
+                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+
+  INFO("Generating time-dependence? " << eventType.isTimeDependent() );
+  EventList acceptedSig( sigType );
+  EventList acceptedTag( tagType );
+
+  INFO("Generating events with type = " << sigType << " and "<<tagType);
+
+
+ // if ( genType == generatorType::CoherentSum ) {
+    CorrelatedSum cs( sigType, tagType, MPS );
+    PhaseSpace phspSig(sigType,&rand);
+    PhaseSpace phspTag(tagType,&rand);
+    GenerateEvents( acceptedSig, acceptedTag, cs, phspSig, phspTag , nEvents, blockSize, &rand );
+    if( acceptedSig.size() == 0 ) return -1;
+    TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
+    INFO( "Writing output file " );
+    acceptedSig.tree(tokens[0])->Write();
+    acceptedTag.tree(tokens[0])->Write();
+
+
+    f->Close();
+
+  //} 
+ // else {
+ //   FATAL("Did not recognise configuration: " << genType );
+ // }
+ 
+
  }
+  /*
+  TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
+  acceptedSig.tree( "DalitzEventList" )->Write();
+  auto plots = acceptedSig.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
+  for ( auto& plot : plots ) plot->Write();
+  if( NamedParameter<bool>("plots_2d",true) == true ){
+    auto proj = eventType.defaultProjections(nBins);
+    for( size_t i = 0 ; i < proj.size(); ++i ){
+      for( size_t j = i+1 ; j < proj.size(); ++j ){ 
+        acceptedSig.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(); 
+      }
+    }
+  } 
+  */
 
-    return 0;
+
+
+
 }
