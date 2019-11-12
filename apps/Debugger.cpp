@@ -73,6 +73,7 @@ void invert( MinuitParameter* param, MinuitParameterSet& mps )
       if( props != 0  ) new_name = props->anti().name() + "_" + tokens[1]; 
     }
   }
+  //INFO( param->name() << " " << sgn );
   mps.rename( param->name(), new_name );
   if( sgn == -1 ) param->setCurrentFitVal( -1 * param->mean() );
 }
@@ -82,10 +83,9 @@ template <class MatrixElements> void print( const Event& event, const MatrixElem
 {
   for ( auto& mE : matrixElements ) {
     INFO( mE.decayDescriptor() << " " << mE.coupling() );
-    auto terms = mE.coupling.couplings;
     if ( verbose ) {
-      for ( auto& term : terms ) {
-        INFO( "--> " << term.first->name() << " = (" << term.first->mean() * cos( term.second->mean() ) << " + i " << term.first->mean() * sin( term.second->mean() ) << ")" );
+      for ( auto& term : mE.coupling ) {
+        INFO( "--> " << term.particle().decayDescriptor()  << " = "  << term()  );
       }
       mE.amp.debug( event.address() );
     }
@@ -121,6 +121,7 @@ int main( int argc, char** argv )
   INFO("Using verbose mode: " << verbose );
   AmpGen::MinuitParameterSet MPS;
   MPS.loadFromStream();
+
   if ( NamedParameter<bool>( "conj", false ) == true ) {
     eventType = eventType.conj(false);
     for ( auto& param : MPS ) invert( param, MPS );

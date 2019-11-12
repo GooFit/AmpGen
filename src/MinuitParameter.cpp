@@ -28,18 +28,18 @@ MinuitParameter::MinuitParameter( const std::string& name, const double& mean, c
   resetToInit();
 }
 
-Flag   MinuitParameter::flag()                    const { return m_flag; }
-double MinuitParameter::meanInit()                const { return m_meanInit; }
-double MinuitParameter::stepInit()                const { return m_stepInit; }
-double MinuitParameter::minInit()                 const { return m_minInit; }
-double MinuitParameter::maxInit()                 const { return m_maxInit; }
-double MinuitParameter::mean()                    const { return m_meanResult; }
-double MinuitParameter::errPos()                  const { return m_errPosResult; }
-double MinuitParameter::errNeg()                  const { return m_errNegResult; }
-double MinuitParameter::err()                     const { return m_errResult; }
-bool   MinuitParameter::isFixed()                 const { return m_flag == Flag::Fix || m_flag == Flag::CompileTimeConstant; }
-bool   MinuitParameter::isFree()                  const { return m_flag == Flag::Free; }
-const std::string& MinuitParameter::name()        const { return m_name; }
+Flag   MinuitParameter::flag()             const { return m_flag; }
+double MinuitParameter::meanInit()         const { return m_meanInit; }
+double MinuitParameter::stepInit()         const { return m_stepInit; }
+double MinuitParameter::minInit()          const { return m_minInit; }
+double MinuitParameter::maxInit()          const { return m_maxInit; }
+double MinuitParameter::mean()             const { return m_meanResult; }
+double MinuitParameter::errPos()           const { return m_errPosResult; }
+double MinuitParameter::errNeg()           const { return m_errNegResult; }
+double MinuitParameter::err()              const { return m_errResult; }
+bool   MinuitParameter::isFixed()          const { return m_flag == Flag::Fix || m_flag == Flag::CompileTimeConstant; }
+bool   MinuitParameter::isFree()           const { return m_flag == Flag::Free; }
+const std::string& MinuitParameter::name() const { return m_name; }
 
 void MinuitParameter::fix() { m_flag = Flag::Fix; }
 void MinuitParameter::scaleStep( const double& sf )
@@ -83,7 +83,8 @@ void MinuitParameter::setLimits( const double& min, const double& max )
   m_maxInit = max;
 }
 
-std::ostream& AmpGen::operator<<( std::ostream& os, const MinuitParameter& par ){
+std::ostream& AmpGen::operator<<( std::ostream& os, const MinuitParameter& par )
+{
   return os << std::left  << std::setw(60) << par.name() << " = " 
     << std::right << std::setw(12) << par.mean() << " ± " 
     << std::left  << std::setw(12) << par.stepInit() 

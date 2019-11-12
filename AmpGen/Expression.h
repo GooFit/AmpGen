@@ -135,10 +135,10 @@ namespace AmpGen
     std::string to_string(const ASTResolver* resolver=nullptr) const;
     IExpression* get() const;
     void resolve( ASTResolver& resolver ) const;
-    Expression operator+=( const Expression& other ) const;
-    Expression operator*=( const Expression& other ) const;
-    Expression operator-=( const Expression& other ) const;
-    Expression operator/=( const Expression& other ) const;
+    Expression operator+=( const Expression& other );
+    Expression operator*=( const Expression& other );
+    Expression operator-=( const Expression& other );
+    Expression operator/=( const Expression& other );
     Expression operator-() const;
     complex_t operator()() const; 
 

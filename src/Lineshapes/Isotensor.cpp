@@ -1,11 +1,13 @@
 #include <cmath>
 #include <memory>
+#include <complex>
 
 #include "AmpGen/Expression.h"
 #include "AmpGen/Factory.h"
 #include "AmpGen/Lineshapes.h"
 
 using namespace AmpGen;
+using namespace std::complex_literals; 
 
 DEFINE_LINESHAPE( Isotensor )
 {
@@ -23,8 +25,5 @@ DEFINE_LINESHAPE( Isotensor )
   ADD_DEBUG( phaseShift, dbexpressions );
   ADD_DEBUG( fcn::sqrt( s / 4 - mpi * mpi ), dbexpressions );
   ADD_DEBUG( polyTerm, dbexpressions );
-  Expression cos_shift = Cos( phaseShift );
-  Expression sin_shift = Sin( phaseShift );
-  Expression J =  Constant(0,1);
-  return ( cos_shift + J*sin_shift - 1 ) * (-0.5 * J );
+  return ( fcn::exp( 1i * phaseShift)  - 1 ) / 2i;
 }
