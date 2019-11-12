@@ -26,11 +26,12 @@
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/PolarisedSum.h"
 #include "AmpGen/OptionsParser.h"
+#include "AmpGen/TreePhaseSpace.h"
 #include "AmpGen/enum.h"
 
 using namespace AmpGen;
 
-namespace AmpGen { make_enum(generatorType, CoherentSum, PolarisedSum, FixedLib, RGenerator) }
+namespace AmpGen { make_enum(generatorType, CoherentSum, PolarisedSum, FixedLib, RGenerator, TreePhaseSpace) }
 
 struct FixedLibPDF {
   void* lib = {nullptr};
@@ -73,10 +74,11 @@ int main( int argc, char** argv )
   int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
   std::string outfile = NamedParameter<std::string>("Output"   , "Generate_Output.root" , "Name of output file" ); 
   auto genType        = NamedParameter<generatorType>( "Type", generatorType::CoherentSum, optionalHelpString("Generator configuration to use:", 
-    { {"CoherentSum" , "Full phase-space generator with (pseudo)scalar amplitude"}
-    , {"PolarisedSum", "Full phase-space generator with particles carrying spin in the initial/final states"}
-    , {"FixedLib"    , "Full phase-space generator with an amplitude from a precompiled library"}
-    , {"RGenerator"  , "Recursive phase-space generator for intermediate (quasi)stable states such as the D-mesons"} } ) );
+    { {"CoherentSum"     , "Full phase-space generator with (pseudo)scalar amplitude"}
+    , {"PolarisedSum"    , "Full phase-space generator with particles carrying spin in the initial/final states"}
+    , {"FixedLib"        , "Full phase-space generator with an amplitude from a precompiled library"}
+    , {"RGenerator"      , "Recursive phase-space generator for intermediate (quasi)stable states such as the D-mesons"}
+    , {"TreePhaseSpace"  , "Recursive phase-space generator with generic handling of intermediate states."} } ) );
   
   std::string lib     = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
   size_t nBins        = NamedParameter<size_t>     ("nBins"     ,100, "Number of bins for monitoring plots." );
@@ -119,12 +121,20 @@ int main( int argc, char** argv )
     signalGenerator.setRandom( &rand );
     signalGenerator.fillEventList( sig, accepted, nEvents );
   }
+  else if ( genType == generatorType::TreePhaseSpace ) {
+    CoherentSum sig( eventType, MPS, "" );
+    std::vector<Particle> channels; 
+    for( auto& chain : sig.matrixElements() ) channels.push_back( chain.decayTree );
+    Generator<TreePhaseSpace> signalGenerator(channels, eventType, &rand);
+    signalGenerator.setRandom( &rand );
+    signalGenerator.fillEventList( sig, accepted, nEvents );
+  }
   else if ( genType == generatorType::FixedLib ) {
     Generator<> signalGenerator( eventType );
     signalGenerator.setRandom( &rand );
     signalGenerator.setBlockSize( blockSize );
     signalGenerator.setNormFlag( false );
-    FixedLibPDF pdf( lib  );
+    FixedLibPDF pdf( lib );
     signalGenerator.fillEventList( pdf, accepted, nEvents );
   } 
   else {

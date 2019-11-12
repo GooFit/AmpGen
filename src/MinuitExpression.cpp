@@ -13,6 +13,11 @@ MinuitExpression::MinuitExpression( const std::vector<std::string>& tokens, Minu
 {
   setName( tokens[0] );
   m_expression = ExpressionParser::parse(tokens.begin() + 2 , tokens.end() , mps );
-  m_isGood     = true;
   fix(); 
 }
+
+double MinuitExpression::mean() const { return std::real(getVal()); }
+complex_t MinuitExpression::getVal() const { return m_expression(); } 
+MinuitExpression::operator double() const { return std::real(getVal()); }
+MinuitExpression::~MinuitExpression() = default;
+

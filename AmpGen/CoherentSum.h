@@ -108,7 +108,7 @@ namespace AmpGen
     bool             m_verbosity    = {false};                 ///< Flag for verbose printing
     std::string      m_objCache     = {""};                    ///< Directory that contains (cached) amplitude objects
     std::string      m_prefix       = {""};                    ///< Prefix for matrix elements
-    void addMatrixElement( std::pair<Particle, CouplingConstant>& particleWithCoupling, const MinuitParameterSet& mps );
+    void addMatrixElement( std::pair<Particle, TotalCoupling>& particleWithCoupling, const MinuitParameterSet& mps );
   };
 } // namespace AmpGen
 

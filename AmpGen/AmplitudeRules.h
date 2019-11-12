@@ -16,28 +16,53 @@
 
 namespace AmpGen
 {
-  class AmplitudeRules;
   class MinuitParameter;
+  class MinuitExpression;
   class MinuitParameterSet;
-  class CouplingConstant;
 
-  class AmplitudeRule
+  class Coupling
   {
     public:
-      AmplitudeRule(MinuitParameter* re, MinuitParameter* im);
+      Coupling(MinuitParameter* re, MinuitParameter* im);
+      Coupling(MinuitExpression* expression);
       std::string name() const { return m_name; }
       std::string head() const { return m_particle.name(); }
       std::string prefix() const { return m_prefix; }
       EventType eventType() const;
-      friend class CouplingConstant;
-      friend class AmplitudeRules;
-
+      MinuitParameter* x() const { return m_re; }
+      MinuitParameter* y() const { return m_im; }
+      complex_t operator()() const; 
+      Expression to_expression() const; 
+      const Particle& particle() const { return m_particle ; }
+      bool isCartesian() const { return m_isCartesian; }
     private:
-      std::string      m_prefix = {""};
-      std::string      m_name   = {""};
-      MinuitParameter* m_re     = {nullptr};
-      MinuitParameter* m_im     = {nullptr};
-      Particle         m_particle;
+      std::string       m_prefix = {""};
+      std::string       m_name   = {""};
+      MinuitParameter*  m_re     = {nullptr};
+      MinuitParameter*  m_im     = {nullptr};
+      MinuitExpression* m_expr   = {nullptr};
+      Particle          m_particle;
+      bool              m_isCartesian = {true};
+      double            m_sf          = {1};
+  };
+  
+  class TotalCoupling
+  {
+    public:
+      TotalCoupling() = default; 
+      TotalCoupling( const TotalCoupling& other, const Coupling& pA);
+      TotalCoupling( const Coupling& pA);
+      std::complex<double> operator()() const;
+      Expression to_expression() const;
+      void print() const;
+      Coupling operator[]( const size_t& index ) { return couplings[index]; }
+      bool isFixed() const; 
+      bool contains( const std::string& name ) const;
+      size_t size() const { return couplings.size(); }
+      std::vector<Coupling>::const_iterator begin() const { return couplings.begin() ; }
+      std::vector<Coupling>::const_iterator   end() const { return couplings.end() ; }
+    private:
+      std::vector<Coupling> couplings;
   };
   
   class AmplitudeRules
@@ -45,48 +70,29 @@ namespace AmpGen
     public:
       AmplitudeRules() = default; 
       AmplitudeRules( const MinuitParameterSet& mps );
-      std::vector<AmplitudeRule> rulesForDecay(const std::string& head, const std::string& prefix="");
+      std::vector<Coupling> rulesForDecay(const std::string& head, const std::string& prefix="");
       bool hasDecay( const std::string& head );
-      std::map<std::string, std::vector<AmplitudeRule>> rules();
-      std::vector<std::pair<Particle, CouplingConstant>> getMatchingRules( 
+      std::map<std::string, std::vector<Coupling>> rules();
+      std::vector<std::pair<Particle, TotalCoupling>> getMatchingRules( 
           const EventType& type, const std::string& prefix="" );
-      std::vector<AmplitudeRule> processesThatProduce(const Particle& particle) const; 
+      std::vector<Coupling> processesThatProduce(const Particle& particle) const; 
 
     private:
-      std::map<std::string, std::vector<AmplitudeRule>> m_rules;
-  };
-
-  class CouplingConstant 
-  {
-    public:
-      CouplingConstant() = default; 
-      CouplingConstant( const CouplingConstant& other, const AmplitudeRule& pA);
-      CouplingConstant( const AmplitudeRule& pA);
-      std::complex<double> operator()() const;
-      Expression to_expression() const;
-      void print() const;
-      std::pair<MinuitParameter*, MinuitParameter*> operator[]( const size_t& index ) { return couplings[index]; }
-      bool isFixed() const; 
-      bool contains( const std::string& name ) const;
-      std::vector<std::pair<MinuitParameter*, MinuitParameter*>> couplings;
-
-    private:
-      bool isCartesian = {true};
-      double sf        = {1};
+      std::map<std::string, std::vector<Coupling>> m_rules;
   };
 
   template <class RT> struct TransitionMatrix 
   {
     TransitionMatrix() = default;
     TransitionMatrix(const Particle& dt, 
-                     const CouplingConstant& coupling, 
+                     const TotalCoupling& coupling, 
                      const CompiledExpression<RT, const real_t*, const real_t*> & amp) : 
           decayTree(dt), 
           coupling(coupling), 
           amp(amp) {}
 
     TransitionMatrix(Particle& dt, 
-                     const CouplingConstant& coupling, 
+                     const TotalCoupling& coupling, 
                      const MinuitParameterSet& mps,
                      const std::map<std::string, unsigned>& evtFormat, 
                      const bool& debugThis=false) :
@@ -99,7 +105,7 @@ namespace AmpGen
     const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
 
     Particle                                            decayTree;
-    CouplingConstant                                    coupling;
+    TotalCoupling                                       coupling;
     complex_t                                           coefficient;
     DebugSymbols                                        db; 
     CompiledExpression<RT,const real_t*,const real_t*>  amp; 

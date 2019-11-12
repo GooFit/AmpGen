@@ -115,6 +115,7 @@ namespace AmpGen
       /// (Quasi) Constructor that returns the (quasi)CP conjugated amplitude. The full behaviour of the amplitude is made more complicated by the ordering convention. 
       Particle conj(bool invertHead = true, bool reorder = true);
 
+      static bool isValidDecayDescriptor( const std::string& decayDescriptor ); 
       /// Set the orbital quantum number 'L' for this decay.       
       void setOrbital( const unsigned int& orbital );
 
@@ -266,7 +267,6 @@ namespace AmpGen
       };
       /// matches Check the matching between two decay chains, according to the MatchState enum. 
       unsigned int matches( const Particle& other ) const; 
-    
     private:
       const ParticleProperties* m_props      = {nullptr};    ///< Particle Properties from the PDG
       std::string m_name                     = {""};         ///< Name of the particle
