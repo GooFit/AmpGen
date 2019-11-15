@@ -166,13 +166,7 @@ void MinuitParameterSet::tryAlias( const std::vector<std::string>& line )
 {
   if ( line.size() < 3 ) return;
   if ( line[1] == "=" ) {
-    MinuitExpression* expr = new MinuitExpression(line, this );
-    if ( expr->isGood() ) {
-      addToEnd( expr );
-    } else {
-      ERROR( "Expression is ill-formed: " << line[0] );
-      delete expr;
-    }
+    addToEnd( new MinuitExpression(line, this) );
   }
 }
 
@@ -210,14 +204,14 @@ void MinuitParameterSet::resetToInit()
 
 void MinuitParameterSet::rename(const std::string& name, const std::string& new_name)
 {
-  auto it = at(name);
+  auto it = find(name);
   if( it == nullptr ){
     ERROR("Parameter: " << name << " not found");
     return;
   }
   if( name == new_name ) return;
-  if( at(new_name) != nullptr ){
-    ERROR("New key for " << name << " =  " << new_name << " already exists");
+  if( find(new_name) != nullptr ){
+    // ERROR("New key for " << name << " =  " << new_name << " already exists");
     return;
   } 
   it->setName(new_name);

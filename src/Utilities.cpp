@@ -183,8 +183,13 @@ unsigned int AmpGen::editDistance( const std::string& s1, const std::string& s2 
 std::string AmpGen::round( const double& number, const unsigned int& nsf )
 {
   double value = std::round(number * pow(10, nsf)) / pow(10, nsf);
-  auto r = mysprintf( ( "%." + std::to_string(nsf) + "f" ).c_str(), value );
-  return r.substr(0,r.size()-1);
+  if( nsf != 0 ){ 
+    auto r = mysprintf( ( "%." + std::to_string(nsf) + "f" ).c_str(), value );
+    return r.substr(0,r.size()-1);
+  }
+  else {
+    return std::to_string( (int)value);
+  }
 }
 
 std::string AmpGen::numberWithError( const double& number, const double& error, const unsigned int& nDigits )

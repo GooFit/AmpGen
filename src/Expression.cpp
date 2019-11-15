@@ -178,10 +178,10 @@ Expression AmpGen::operator>( const Expression& A, const Expression& B ) { retur
 
 Expression Expression::operator-() const { return Constant( -1. ) * m_expression; }
 
-Expression Expression::operator+=( const Expression& other ) const { return *this + other ; }
-Expression Expression::operator-=( const Expression& other ) const { return *this - other ; }
-Expression Expression::operator*=( const Expression& other ) const { return *this * other ; }
-Expression Expression::operator/=( const Expression& other ) const { return *this /  other; }
+Expression Expression::operator+=(const Expression& other) { *this = *this + other; return *this; }
+Expression Expression::operator-=(const Expression& other) { *this = *this - other; return *this; }
+Expression Expression::operator*=(const Expression& other) { *this = *this * other; return *this; }
+Expression Expression::operator/=(const Expression& other) { *this = *this / other; return *this; }
 
 std::ostream& AmpGen::operator<<( std::ostream& os, const Expression& expression ) {  return os << expression.to_string() ; } 
 Expression::Expression( const double& value ) : m_expression( std::make_shared<Constant>( value ) ) {}

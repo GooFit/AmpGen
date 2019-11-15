@@ -124,9 +124,10 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
       auto A = me(evt);
       INFO( std::setw(70) << me.decayTree.uniqueString() 
           << " A = [ "  << std::real(A)             << " " << std::imag(A) 
-          << " ] g = [ "<< std::real(me.coupling()) << " " << std::imag(me.coupling()) << " ]" );
+          << " ] g = [ "<< std::real(me.coupling()) << " " << std::imag(me.coupling()) << " ] "
+          << me.decayTree.quasiCP() );
       if( m_dbThis ) me.amp.debug( evt.address() );
-      me.coupling.print();
+      //me.coupling.print();
     }
   else
     for ( auto& me : m_matrixElements )
@@ -339,7 +340,7 @@ void CoherentSum::printVal(const Event& evt)
     unsigned int address = mE.addressData;
     std::cout << mE.decayTree.decayDescriptor() << " = " << mE.coefficient << " x " << evt.getCache( address )
       << " address = " << address << " " << mE( evt ) << std::endl;
-    if( mE.coupling.couplings.size() != 1 ){
+    if( mE.coupling.size() != 1 ){
       std::cout << "CouplingConstants: " << std::endl;
       mE.coupling.print();
       std::cout << "================================" << std::endl;

@@ -112,6 +112,18 @@ Particle::Particle( const std::string& name, const unsigned int& index ) : Parti
   m_uniqueString = makeUniqueString();
 }
 
+bool Particle::isValidDecayDescriptor( const std::string& decayDescriptor )
+{
+  size_t firstOpen = decayDescriptor.find("{");
+  size_t open  = std::count(decayDescriptor.begin(), decayDescriptor.end(), '{'); 
+  size_t close = std::count(decayDescriptor.begin(), decayDescriptor.end(), '}'); 
+  if( open == 0 || open != close || firstOpen == std::string::npos) return false; 
+  std::string firstState = decayDescriptor.substr(0, firstOpen);
+  auto firstSquare = firstState.find("[");
+  if( firstSquare == std::string::npos ) return ParticleProperties::get( firstState, true ) != nullptr;
+  return ParticleProperties::get( firstState.substr(0, firstSquare), true ) != nullptr; 
+}
+
 void Particle::parseModifier( const std::string& mod )
 {
   if ( Lineshape::Factory::isLineshape( mod ) )
@@ -787,7 +799,10 @@ std::string Particle::decayDescriptor() const { return m_uniqueString ; }
 
 int Particle::quasiCP() const 
 {
-  int prod = m_props->C() == 0 ? 1 : m_props->C();
+  if( m_daughters.size() == 1 ) return m_daughters[0]->quasiCP();
+  int prod = m_props->C() == 0 ? 1 : m_props->C() ;
+  if( m_daughters.size() == 0 && m_props->C() != 0 ) 
+    prod *= std::pow( -1, 0.5 * double(m_props->twoSpin()) );
   prod *= ( m_orbital % 2 == 0 ? 1 : -1 );
   for( auto& d : m_daughters ) prod *= d->quasiCP() ;
   return prod; 

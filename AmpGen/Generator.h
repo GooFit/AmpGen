@@ -81,7 +81,7 @@ namespace AmpGen
               if ( normalisationConstant == 0 ) {
                 double max = 0;
                 for ( auto& evt : mc ) {
-                  double value           = pdf.prob_unnormalised( evt );
+                  double value           = pdf.prob_unnormalised( evt ) / evt.genPdf();
                   if ( value > max ) max = value;
                 }
                 normalisationConstant = max * 1.5;
@@ -89,10 +89,10 @@ namespace AmpGen
               }
               auto previousSize = list.size();
               t_acceptReject.start();
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-              for ( size_t i=0;i< mc.size(); ++i ) mc[i].setGenPdf(pdf.prob_unnormalised(mc[i]));
+              #ifdef _OPENMP
+              #pragma omp parallel for
+              #endif
+              for ( size_t i=0;i< mc.size(); ++i ) mc[i].setGenPdf(pdf.prob_unnormalised(mc[i]) / mc[i].genPdf());
 
               for( auto& evt : mc ){
                 if ( evt.genPdf() > normalisationConstant ) {
@@ -105,7 +105,7 @@ namespace AmpGen
               t_acceptReject.stop();
               double time = std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tStartTotal ).count();
               double efficiency = 100. * ( list.size() - previousSize ) / (double)m_generatorBlock;
-              pb.print( double(list.size()) / double(N), " ε[gen] = " + mysprintf("%.2f",efficiency) + "% , " + std::to_string(int(time/1000.))  + " seconds" );
+              pb.print( double(list.size()) / double(N), " ε[gen] = " + mysprintf("%.4f",efficiency) + "% , " + std::to_string(int(time/1000.))  + " seconds" );
               if ( list.size() == previousSize ) {
                 ERROR( "No events generated, PDF: " << typeof<PDF>() << " is likely to be malformed" );
                 break;
