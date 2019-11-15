@@ -188,9 +188,21 @@ int main( int argc, char** argv )
 
  TTree * tagTree = acceptedTag.tree(tokens[0]);
  tagTree->Write("Tag");
-    f->Close();
+
    // acceptedSig.tree(tokens[0])->Write("Signal");
  //  acceptedTag.tree(tokens[0])->Write("Tag");
+  
+  
+  
+  auto plots = acceptedSig.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
+  for ( auto& plot : plots ) plot->Write();
+    auto proj = eventType.defaultProjections(nBins);
+    for( size_t i = 0 ; i < proj.size(); ++i ){
+      for( size_t j = i+1 ; j < proj.size(); ++j ){ 
+        acceptedSig.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(); 
+      }
+    } 
+    f->Close();
  }
  return 0;
 }
