@@ -1,4 +1,6 @@
 #include "AmpGen/CoherentSum.h"
+#include "AmpGen/FitFraction.h"
+
 #ifndef CORRELATEDSUM
 #define CORRELATEDSUM
 
@@ -55,6 +57,8 @@ namespace AmpGen {
       complex_t getVal(const Event& event1, const Event& event2) const;
       complex_t getValNoCache(const Event& event1, const Event& event2) const;
       complex_t getValNoCache(const Event& event1, const Event& event2, const size_t& offset) const;
+      real_t size()const { return m_A.size() + m_B.size() + m_C.size() + m_D.size();}
+      std::vector<std::vector<FitFraction> > fitFractions(const LinearErrorPropagator& linProp);
       real_t norm()  const;
       //real_t norm(const Bilinears& norms) const; 
       double m_inter = 0;
@@ -78,6 +82,11 @@ namespace AmpGen {
       Integrator<10> m_integratorBD;
 
 
+
+  std::vector<FitFraction> outputFractionsA;
+    std::vector<FitFraction> outputFractionsB; 
+    std::vector<FitFraction> outputFractionsC;
+    std::vector<FitFraction> outputFractionsD;
       Integrator<10> m_integratorAA;
       Integrator<10> m_integratorBB;
       Integrator<10> m_integratorCC;

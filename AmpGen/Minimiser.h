@@ -71,6 +71,7 @@ namespace AmpGen
     void prepare();
     void gradientTest();
     bool doFit();
+    void setTolerance(double tolerance);
     TGraph* scan( MinuitParameter* param, const double& min, const double& max, const double& step );
     void addExtendedTerm( IExtendLikelihood* term );
     TMatrixTSym<double> covMatrix() const;

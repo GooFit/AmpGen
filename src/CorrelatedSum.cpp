@@ -397,3 +397,16 @@ void CorrelatedSum::debug(const Event& evt1, const Event& evt2) const
 {
   INFO( "A[x, y] = " << getVal(evt1, evt2) << " " << getValNoCache(evt1, evt2) << " " << m_norm << " " << prob(evt1,evt2) << " " << prob_unnormalised(evt1, evt2) );
 }
+
+std::vector<std::vector<FitFraction> > CorrelatedSum::fitFractions(const LinearErrorPropagator& linProp){
+    outputFractionsA = m_A.fitFractions(linProp);
+    outputFractionsB = m_B.fitFractions(linProp);
+    outputFractionsC = m_C.fitFractions(linProp);
+    outputFractionsD = m_D.fitFractions(linProp);
+    std::vector<std::vector<FitFraction> > outputFractions;   
+    outputFractions.push_back(outputFractionsA);
+    outputFractions.push_back(outputFractionsB);
+    outputFractions.push_back(outputFractionsC);
+    outputFractions.push_back(outputFractionsD);
+    return outputFractions;
+}

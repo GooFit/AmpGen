@@ -30,18 +30,21 @@ namespace AmpGen
 
       public:
         template <class... ARGS>
-          explicit QcGenerator( const ARGS&... args )
-          : m_gpsSig(args...), m_gpsTag(args...)
+          explicit QcGenerator( PHASESPACE sigPH , PHASESPACE tagPH)
           {
+            m_gpsSig = sigPH;
+            m_gpsTag = tagPH;
             m_sigType = m_gpsSig.eventType();
             m_tagType = m_gpsTag.eventType();
             setRandom( m_rnd );
           }
         PHASESPACE phspSig() { return m_gpsSig; }
+        PHASESPACE phspTag() { return m_gpsTag; }
         void setRandom( TRandom* rand )
         {
           m_rnd = rand;
           m_gpsSig.setRandom( m_rnd );
+          m_gpsTag.setRandom( m_rnd );
         }
         void fillEventListPhaseSpace( EventList& listSig, EventList& listTag, const size_t& N, const size_t& cacheSize = 0 )
         {
@@ -78,26 +81,40 @@ namespace AmpGen
               ERROR( "Random generator not set!" );
               return;
             }
+            INFO("Starting to Generate events");
             double normalisationConstant = m_normalise ? 0 : 1;
             auto size0                 = listSig.size();
             auto tStartTotal             = std::chrono::high_resolution_clock::now();
             pdf.reset( true );
             ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__) );
             ProfileClock t_phsp, t_eval, t_acceptReject;
+      //      INFO("size0 = "<<size0);
+    //        INFO("N = "<<N);
+  //          INFO("listSig.size() = "<<listSig.size());
             while ( listSig.size() - size0 < N ) {
               EventList mcSig( m_sigType );
-              EventList mcTag( m_sigType );
+              EventList mcTag( m_tagType );
+              EventList mcSig100( m_sigType );
+              EventList mcTag100( m_tagType );
               t_phsp.start();
+//              INFO("Filling Phase Space");
               fillEventListPhaseSpace( mcSig, mcTag, m_generatorBlock, pdf.size(), cut );
+              //fillEventListPhaseSpace( mcSig100, mcTag100, 100 * m_generatorBlock, pdf.size(), cut );
               t_phsp.stop();
               t_eval.start();
+              //INFO("Preparing CorrelatedSum");
               pdf.setEvents( mcSig, mcTag );
+              pdf.setMC( mcSig, mcTag );
               pdf.prepare();
+
+//              INFO("Prepared CorrelatedSum");
               t_eval.stop();
               if ( normalisationConstant == 0 ) {
                 double max = 0;
                 for ( size_t i=0; i < mcSig.size(); i++ ) {
+  //                INFO("Getting value of CS");
                   double value           = pdf.prob_unnormalised( mcSig[i], mcTag[i] );
+    //              INFO("Value = "<<value);
                   if ( value > max ) max = value;
                 }
                 normalisationConstant = max * 1.5;
@@ -143,6 +160,7 @@ namespace AmpGen
           {
             EventList evtsSig( m_sigType );
             EventList evtsTag( m_tagType );
+            INFO("Generating event list");
             fillEventList( pdf, evtsSig, evtsTag, nEvents );
             auto cL = corrEventList(evtsSig, evtsTag);
             return cL;

@@ -154,7 +154,7 @@ FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, M
   auto covarFull = mini.covMatrixFull();
   //INFO("Printing full Covariant matrix");
   //covarFull.Print();
-
+  mini.GradientTest();
   mini.doFit();
 
   FitResult* fr = new FitResult(mini);

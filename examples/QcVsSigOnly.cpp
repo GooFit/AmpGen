@@ -11,13 +11,6 @@ std::vector<std::string> makeBranches(EventType Type, std::string prefix);
 template <typename PDF>
 FitResult* doFit( PDF&& pdf, EventList& data1, EventList& data2, EventList& mc1, EventList& mc2, MinuitParameterSet& MPS );
 
-MinuitParameterSet *  copyMPS(MinuitParameterSet& mps);
-
-std::map<std::string, double>  getPulls(std::map<std::string, std::vector<double> > fit, std::map<std::string, std::vector<double> > init);
-
-void writePulls(std::string fileName, std::map<std::string, double>);
-std::map<std::string, std::vector<double> > getParams(MinuitParameterSet & mps);
-
 void add_CP_conjugate( MinuitParameterSet& mps );
 template <typename pdftype>
 void doPlots(pdftype&& pdf, EventList& data, EventList& mc, std::string plotFile);
@@ -83,10 +76,15 @@ int main( int argc, char* argv[] )
      using the NamedParameter<T> class. The name of the parameter is the first option,
      then the default value, and then the help string that will be printed if --h is specified 
      as an option. */
-  std::string dataFile = NamedParameter<std::string>("DataSample", ""          , "Name of file containing data sample to fit." );
+  std::string dataFile = NamedParameter<std::string>("DataSample", ""          , "Name of file containing data sample to fit." ); 
   std::string intFile  = NamedParameter<std::string>("IntegrationSample",""    , "Name of file containing events to use for MC integration.");
   std::string logFile  = NamedParameter<std::string>("LogFile"   , "QcFitter.log", "Name of the output log file");
   std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
+  std::string UdataFile = NamedParameter<std::string>("UDataSample", ""          , "Name of file containing data sample to fit." ); 
+  std::string UintFile  = NamedParameter<std::string>("UIntegrationSample",""    , "Name of file containing events to use for MC integration.");
+  std::string UlogFile  = NamedParameter<std::string>("ULogFile"   , "QcFitter.log", "Name of the output log file");
+  std::string UplotFile = NamedParameter<std::string>("UPlots"     , "plots.root", "Name of the output plot file");
+
   bool makeCPConj      = NamedParameter<bool>("makeCPConj", false, "Make CP Conjugates");
   bool QcGen2 = NamedParameter<bool>("QcGen2", false, "internal boolean - for new QcGenerator");
   if( dataFile == "" ) FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off );
@@ -113,8 +111,6 @@ int main( int argc, char* argv[] )
     INFO("Making CP conjugate states");
     add_CP_conjugate(MPS);
   }
-  std::map<std::string, std::vector<double> > inits = getParams(MPS);
-
  for( auto& tag : tags )
  {
     EventType signalType( pNames );
@@ -157,12 +153,10 @@ int main( int argc, char* argv[] )
     Minimiser mini( csLL, &MPS );
     
     mini.GradientTest();
-   // for (int i=0 ; i < nFits; i++){
-   //    mini.setTolerance(std::pow(10, 2 - i));
-   mini.doFit();
-
-       
-//    }
+    for (int i=0 ; i < nFits; i++){
+       mini.setTolerance(std::pow(10, 2 - i));
+       mini.doFit();
+    }
     FitResult * fr = new FitResult(mini);
  auto dataEvents = sigEvents;
  auto mcEvents = sigMCEvents;
@@ -218,12 +212,6 @@ auto binning = BinDT( dataEvents, MinEvents( minEvents ), Dim( dataEvents.eventT
   fr->addChi2( chi2, Bins );
   fr->print();
    fr->writeToFile(logFile);
-       std::map<std::string, std::vector<double> > fits = getParams(MPS);
-    std::map<std::string, double> pulls = getPulls(fits, inits);
-      for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
-         INFO("Pull = "<<it->first<<" "<<it->second);
-       }
-    writePulls(logFile, pulls);
 
 
 
@@ -296,179 +284,3 @@ std::vector<std::string> makeBranches(EventType Type, std::string prefix){
   return branches;
 }
 
-template <typename PDF>
-FitResult* doFit( PDF&& ll, EventList& data1, EventList& mc1, EventList& data2, EventList& mc2, MinuitParameterSet& MPS )
-{
-  auto time_wall = std::chrono::high_resolution_clock::now();
-  auto time      = std::clock();
-
-  ll.setEvents( data1, data2 );
- 
-//  pdf.setMC(mc1, mc2);
-  /* Minimiser is a general interface to Minuit1/Minuit2, 
-     that is constructed from an object that defines an operator() that returns a double 
-     (i.e. the likielihood, and a set of MinuitParameters. */
-  Minimiser mini( ll, &MPS );
-   
-  mini.prepare();
-  mini.GradientTest();
-  
-  mini.doFit();
-  FitResult* fr = new FitResult(mini);
-
-  // Make the plots for the different components in the PDF, i.e. the signal and backgrounds. 
-  //   The structure assumed the PDF is some SumPDF<T1,T2,...>. 
- 
-
-  corrEventList cEL_data(data1, data2);
-  corrEventList cEL_mc(mc1, mc2);
-  unsigned int counter= 1;
-  for_each(ll.pdfs(), [&](auto& pdf){
-   INFO("Printing all the pdfs in my likelihood");
-    auto pfx1 = Prefix("Model_cat"+std::to_string(counter));
-    //
-    //For our QcFitter we can't just ask for projections like in SignalOnlyFitter, 
-    //we need to have two sets of projections for each event.
-    //
-    ////std::vector<std::vector<TH1D*> > hists_data =  cEL_data.makeDefaultProjections();
-    std::vector<std::vector<TH1D*> > hists_mc =  cEL_mc.makeDefaultProjections();
-    //auto mc1_plot3 = mc1.makeDefaultProjections(WeightFunction(pdf), pfx1);
-    counter++;
-    
-  });
-
-/* 
-  for_each(pdf.m_amps, [&]( auto& f ){
-    std::function<double(const Event&, const Event&)> FCN_sig = [&](const Event& event1, const Event& event2){ return f.prob_unnormalised(event1, event2) ; };
-    auto mc_plot3 = mc1.makeDefaultProjections(WeightFunction(f), Prefix("Model_cat"+std::to_string(counter)));
-    for( auto& plot : mc_plot3 )
-    {
-      plot->Scale( ( data1.integral()) / plot->Integral() );
-      plot->Write();
-    }
-    counter++;
-  } );
-  */
-  /* Estimate the chi2 using an adaptive / decision tree based binning, 
-     down to a minimum bin population of 15, and add it to the output. */
- /* 
-  Chi2Estimator chi2( data1, mc1, pdf, 15 );
-  chi2.writeBinningToFile("chi2_binning.txt");
-  fr->addChi2( chi2.chi2(), chi2.nBins() );
-  */
-  auto twall_end  = std::chrono::high_resolution_clock::now();
-  double time_cpu = ( std::clock() - time ) / (double)CLOCKS_PER_SEC;
-  double tWall    = std::chrono::duration<double, std::milli>( twall_end - time_wall ).count();
-  INFO( "Wall time = " << tWall / 1000. );
-  INFO( "CPU  time = " << time_cpu );
-
-  fr->print();
-  return fr;
-}
-
-void add_CP_conjugate( MinuitParameterSet& mps )
-{
-  std::vector<MinuitParameter*> tmp;
-  for( auto& param : mps ){
-    const std::string name = param->name();
-    size_t pos=0;
-    std::string new_name = name; 
-    int sgn=1;
-    Flag flag = param->flag();
-    if( name.find("::") != std::string::npos ){
-      pos = name.find("::");
-      auto props = AmpGen::ParticlePropertiesList::get( name.substr(0,pos), true );
-      if( props != 0 ) new_name = props->anti().name() + name.substr(pos); 
-    }
-    else { 
-      auto tokens=split(name,'_');
-      std::string reOrIm = *tokens.rbegin();
-      std::string name   = tokens[0];
-      if ( reOrIm == "Re" || reOrIm == "Im" ){
-        auto p = Particle( name ).conj();
-        sgn = reOrIm == "Re" ? p.quasiCP() : 1; 
-        new_name = p.uniqueString() +"_"+reOrIm;
-      }
-      else if( tokens.size() == 2 ) {
-        auto props = AmpGen::ParticlePropertiesList::get( name );
-        if( props != 0  ) new_name = props->anti().name() + "_" + tokens[1]; 
-      }
-    }
-    if( mps.find( new_name ) == nullptr ){
-      tmp.push_back( new MinuitParameter(new_name, flag, sgn * param->mean(), param->err(), 0, 0));
-    }
-  }
-  for( auto& p : tmp ) mps.add( p );
-}
-
-std::map<std::string, std::vector<double> > getParams(MinuitParameterSet & mps){
-  std::map<std::string, std::vector<double> > out;
-  for (auto& param : mps){
-    std::vector<double> vect = {param->mean(), param->err()};
-    out[param->name()] = vect;
-  }
-  return out;
-}
-
-
-MinuitParameterSet * copyMPS(MinuitParameterSet& mps){
-  MinuitParameterSet * newMPS = new MinuitParameterSet; 
-  for (auto& param : mps){
-    newMPS->add(param);
-  }
-  return newMPS;
-}
-
-std::map<std::string, double > getPulls(std::map<std::string, std::vector<double> > fits, std::map<std::string, std::vector<double> > inits)  {
-  std::string output = "";
- std::map<std::string, double> out;
- for(map<std::string, std::vector<double> >::iterator init = inits.begin(); init != inits.end(); ++init) {
-  for(map<std::string, std::vector<double> >::iterator fit = fits.begin(); fit != fits.end(); ++fit) {
-    std::string initName = init->first;
-    std::vector<double> initParams = init->second;
-    std::string fitName = fit->first;
-    std::vector<double> fitParams = fit->second;
-    if (initName == fitName){
-        double pull = fitParams[0] - initParams[0];
-        if (fitParams[1] != 0){
-          pull /= fitParams[1];
-        }
-        out[fitName] = pull;
-    }
-  }
- }
-  return out;
-
-}
-
-void writePulls(std::string fileName, std::map<std::string, double> pulls){
-  std::ofstream outfile;
-  outfile.open(fileName, std::ios_base::app);
-      for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
-        outfile<<"Pull "<<it->first<<" "<<it->second<<"\n";
-       }
-
-}
-
-
-
-template <typename pdftype>
-void doPlots(pdftype&& pdf, EventList& data, EventList& mc, std::string plotFile){
-  TFile * output = TFile::Open(plotFile.c_str(), "RECREATE");
-  output->cd();
-
-   /*
-  for (auto pdf : ll.pdfs()){
-    auto pfx = Prefix("Model_cat"+std::to_string(counter));
-    auto mc_plot3 = mc.makeDefaultProjections(WeightFunction(pdf), pfx);
-    for (auto& plot : mc_plot3){
-      plot->Scale( (data.integral())/plot->Integral() );
-      plot->Write();
-    }
-    counter++;
-
-  }
-  */
-  output->Close();
-
-}

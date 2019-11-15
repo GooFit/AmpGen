@@ -87,6 +87,10 @@ void Minimiser::prepare()
   m_covMatrix.resize( m_nParams * m_nParams, 0 );
 }
 
+void Minimiser::setTolerance(double tolerance){
+  m_minimiser->SetTolerance(tolerance);
+}
+
 bool Minimiser::doFit()
 {
   if( m_normalise ) m_ll_zero = m_theFunction();
