@@ -284,3 +284,37 @@ std::vector<std::string> makeBranches(EventType Type, std::string prefix){
   return branches;
 }
 
+void add_CP_conjugate( MinuitParameterSet& mps )
+{
+  std::vector<MinuitParameter*> tmp;
+  for( auto& param : mps ){
+    const std::string name = param->name();
+    size_t pos=0;
+    std::string new_name = name; 
+    int sgn=1;
+    Flag flag = param->flag();
+    if( name.find("::") != std::string::npos ){
+      pos = name.find("::");
+      auto props = AmpGen::ParticlePropertiesList::get( name.substr(0,pos), true );
+      if( props != 0 ) new_name = props->anti().name() + name.substr(pos); 
+    }
+    else { 
+      auto tokens=split(name,'_');
+      std::string reOrIm = *tokens.rbegin();
+      std::string name   = tokens[0];
+      if ( reOrIm == "Re" || reOrIm == "Im" ){
+        auto p = Particle( name ).conj();
+        sgn = reOrIm == "Re" ? p.quasiCP() : 1; 
+        new_name = p.uniqueString() +"_"+reOrIm;
+      }
+      else if( tokens.size() == 2 ) {
+        auto props = AmpGen::ParticlePropertiesList::get( name );
+        if( props != 0  ) new_name = props->anti().name() + "_" + tokens[1]; 
+      }
+    }
+    if( mps.find( new_name ) == nullptr ){
+      tmp.push_back( new MinuitParameter(new_name, flag, sgn * param->mean(), param->err(), 0, 0));
+    }
+  }
+  for( auto& p : tmp ) mps.add( p );
+}

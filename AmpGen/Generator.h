@@ -4,6 +4,7 @@
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/PhaseSpace.h"
+#include "AmpGen/TreePhaseSpace.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/ProgressBar.h"
