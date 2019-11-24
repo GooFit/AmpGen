@@ -115,6 +115,10 @@ namespace AmpGen
       /// (Quasi) Constructor that returns the (quasi)CP conjugated amplitude. The full behaviour of the amplitude is made more complicated by the ordering convention. 
       Particle conj(bool invertHead = true, bool reorder = true);
 
+      /// CP conjugate this particle //
+
+      void conjThis();
+
       static bool isValidDecayDescriptor( const std::string& decayDescriptor ); 
       /// Set the orbital quantum number 'L' for this decay.       
       void setOrbital( const unsigned int& orbital );
@@ -172,9 +176,8 @@ namespace AmpGen
       int finalStateParity() const;  ///< Returns the parity of the final state of this particle 
 
       int polState() const;          ///< Returns the polarisation state, i.e. twice the projection of the spin along the quantisation axis, of this particle. 
-      int quasiCP() const;           ///< Returns the ``quasi'' CP Quantum number for this decay, see the Particle       
+      int CP() const;                ///< Returns the CP of this decay. 
       int C() const;                 ///< Returns the C quantum number for this decay
-
       double mass() const;           ///< Returns the (PDG) mass of the particle
       double spin() const;           ///< Returns the spin of the particle
       double S() const;              ///< Returns the spin configuration of the decay products of the particle
@@ -191,7 +194,6 @@ namespace AmpGen
       unsigned originalIndex() const;     ///< Returns the original index of the particle
       std::string name() const;           ///< Name of the decaying particle.
       std::string lineshape() const;      ///< Name of the propagator to use for the decay of this particle.
-      std::string vertexName() const;     ///< Name of the (spin)vertex to use for the decay of this particle 
 
       std::string uniqueString() const;   ///< Returns the unique string (i.e. decay descriptor) that identifies this decay, which can be parsed to generate the decay tree.
       std::string decayDescriptor() const;///< Returns the unique string (i.e. decay descriptor) that identifies this decay, which can be parsed to generate the decay tree.
@@ -267,6 +269,7 @@ namespace AmpGen
       };
       /// matches Check the matching between two decay chains, according to the MatchState enum. 
       unsigned int matches( const Particle& other ) const; 
+      std::string makeUniqueString();                        ///< Generate the decay descriptor for this decay. 
     private:
       const ParticleProperties* m_props      = {nullptr};    ///< Particle Properties from the PDG
       std::string m_name                     = {""};         ///< Name of the particle
@@ -287,11 +290,11 @@ namespace AmpGen
       std::string m_spinFormalism            = {""};         ///< Spin formalism to use for this particle (global)
       std::string m_spinBasis                = {""};         ///< Basis to use for external polarisations (global)
       std::string m_defaultModifier          = {""};         ///< Default Modifier to use (global)
- 
+      bool        m_cpOrderConvention        = {false};      ///< Use modified particle ordering convention that should be more robust with respect to CP conjugation 
+
       void pdgLookup();                                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
       bool hasModifier( const std::string& modifier ) const; ///< Check if this particle has a given modifier
       std::string modifierString() const;                    ///< Re-generate modifier string used to create particle
-      std::string makeUniqueString();                        ///< Generate the decay descriptor for this decay. 
       void sortDaughters();                                  ///< Recursively order the particle's decay products. 
   };
   std::ostream& operator<<( std::ostream& os, const Particle& particle );

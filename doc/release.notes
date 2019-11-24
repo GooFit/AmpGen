@@ -5,6 +5,8 @@
 !-----------------------------------------------------------------------------
 !=================== AmpGen v1r2 2019-11-12 ==================
  - New phase space Generator TreePhaseSpace for producing narrow resonances. 
+ - Improved handling of CP conjugated amplitudes.
+ - Add vertices f_fS_S{L,R} f_Vf_S{L,R} for couplings with well-defined chirality. 
 !=================== AmpGen v1r2 2019-08-13 ==================
  - Tagged to match results in Gauss/LbAmpGen v49r14+ 
  - Improved thread support for CoherentSum

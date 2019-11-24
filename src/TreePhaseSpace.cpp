@@ -43,21 +43,43 @@ TreePhaseSpace::TreePhaseSpace(const std::vector<Particle>& decayChains, const E
     }
     setRandom(rndm);
   }
+  for( auto& w : m_weights ) w /= double(m_weights.size());
   m_dice = std::discrete_distribution<>(m_weights.begin(), m_weights.end()); 
 }
 
 Event TreePhaseSpace::makeEvent( const unsigned& cacheSize )
 {
-  double w = 0; 
-  unsigned j = 0 ;
-  do { 
-    j = m_dice(m_gen); 
-    m_top[j].generate();
-    w = m_top[j].weight();
-  } while( w < m_rand->Rndm() );
+  unsigned j = m_dice(m_gen); 
+  m_top[j].generate();
   auto event = m_top[j].event(m_type.size(), cacheSize);
-  event.setGenPdf(genPdf(event));
+  event.setGenPdf(genPdf(event) / m_top[j].weight());
+  m_generatorRecord.push_back(j);
   return event; 
+}
+
+void TreePhaseSpace::provideEfficiencyReport(const std::vector<bool>& report)
+{
+  if( report.size() != m_generatorRecord.size() )
+  {
+    WARNING("Report does not match size of generator record...");
+    return; 
+  }
+  std::vector<unsigned> counters( m_top.size() ); 
+  std::vector<unsigned> totals  ( m_top.size() );
+  unsigned counter = 0; 
+  for( unsigned i = 0 ; i != report.size(); ++i )
+  {
+    counters[m_generatorRecord[i]] += report[i];
+    totals[m_generatorRecord[i]]   ++;  
+    counter += report[i];
+  }
+  for( unsigned i = 0 ; i != m_top.size(); ++i )
+  {
+    INFO( m_top[i].particle.decayDescriptor() << " " << counters[i] << " / " << totals[i] );
+    m_weights[i] = double( counters[i] ) / double( counter );
+  }
+  m_dice = std::discrete_distribution<>(m_weights.begin(), m_weights.end()); 
+  m_generatorRecord.clear();
 }
 
 double rho( const double& s, const double& s1, const double& s2)
@@ -95,7 +117,6 @@ TreePhaseSpace::Vertex::Vertex(const Particle& particle, const double& min, cons
   if( index != 999 ) indices = {index};
   phiMin = atan((min*min - bwMass*bwMass)/(bwMass*bwWidth));
   phiMax = atan((max*max - bwMass*bwMass)/(bwMass*bwWidth));
-//  if( isBW ) INFO( min << " ΔΦ= " << phiMax - phiMin << " " << bwMass << " " << bwWidth << " E= [" << max*max <<", " << min*min  << "]" );
 }
 
 double TreePhaseSpace::Vertex::p() const 
@@ -121,7 +142,7 @@ double TreePhaseSpace::Vertex::weight() const
   if( left == nullptr || right == nullptr ) return 1.0;
   double w = sqrt(s) - sqrt(left->s) - sqrt(right->s) > 0; 
   if( w == 0 ) return 0;
-  w *= rho(s, left->s, right->s) / rhoMax;
+  w *= rho(s, left->s, right->s);
   w *= left  -> weight();
   w *= right -> weight();
   return w;
@@ -154,8 +175,10 @@ void TreePhaseSpace::Vertex::generate()
 void TreePhaseSpace::Vertex::print(const unsigned& offset) const 
 {
   double rhoc = ( left != nullptr && right != nullptr ? rho(s,left->s,right->s) : rhoMax );
-  if( isStable ) INFO( std::string(offset,' ') << particle.name() << " [" << vectorToString(indices, ", ") << "] → [" << min << "], ϱ' = "    << rhoMax << ", s = " << s << ", ϱ = " << rhoc << " w = " << weight() );
-  else INFO( std::string(offset,' ') << particle.name() << " [" << vectorToString(indices, ", ") << "] → [" << min << ", " << max << "] ϱ' =" << rhoMax << ", s = " << s << ", ϱ = " << rhoc << " w = " << weight() );
+  if( isStable ) 
+    INFO( std::string(offset,' ') << particle.name() << " [" << vectorToString(indices, ", ") << "] → [" << min << "], ϱ' = "    << rhoMax << ", s = " << s << ", ϱ = " << rhoc << " w = " << maxWeight() );
+  else 
+    INFO( std::string(offset,' ') << particle.name() << " [" << vectorToString(indices, ", ") << "] → [" << min << ", " << max << "] ϱ' =" << rhoMax << ", s = " << s << ", ϱ = " << rhoc << " w = " << maxWeight() );
   if( left  != nullptr ) left  -> print( offset + 4 );
   if( right != nullptr ) right -> print( offset + 4 );
 }
@@ -175,27 +198,28 @@ void TreePhaseSpace::Vertex::place(Event& event)
 Event TreePhaseSpace::Vertex::event(const unsigned& eventSize, const unsigned& cacheSize)
 {
   Event output(4 * eventSize, cacheSize);
-  generate_full_event_description( TLorentzVector(0,0,0,sqrt(s)) );
+  mom.SetXYZT(0,0,0,sqrt(s)); 
+  generateFullEvent();
   place(output); 
   return output;
 }
 
-void TreePhaseSpace::Vertex::generate_full_event_description(const TLorentzVector& parentVector)
+void TreePhaseSpace::Vertex::generateFullEvent()
 { 
-  mom = parentVector;  
+  if( left == nullptr || right == nullptr ) return;
   double cosTheta = 2 * rand->Rndm() - 1;
   double sinTheta = sqrt( 1 - cosTheta * cosTheta );
   double angY     = 2 * M_PI * rand->Rndm();
   double cosPhi   = cos(angY);
   double sinPhi   = sin(angY);
-  if( left == nullptr || right == nullptr ) return;
   double pf = p();
-  TLorentzVector lvThisFrame(  pf*sinTheta*cosPhi,  pf*sinTheta*sinPhi,  pf*cosTheta, sqrt(left->s + pf*pf) );
-  TLorentzVector rvThisFrame( -pf*sinTheta*cosPhi, -pf*sinTheta*sinPhi, -pf*cosTheta, sqrt(right->s + pf*pf) );
-  lvThisFrame.Boost( parentVector.BoostVector() );
-  rvThisFrame.Boost( parentVector.BoostVector() );
-  left  -> generate_full_event_description(lvThisFrame);
-  right -> generate_full_event_description(rvThisFrame);
+  left  -> mom.SetXYZT(  pf*sinTheta*cosPhi,  pf*sinTheta*sinPhi,  pf*cosTheta, sqrt(left->s + pf*pf) );
+  left  -> mom.Boost( mom.BoostVector() );
+  left  -> generateFullEvent();
+  
+  right -> mom.SetXYZT( -pf*sinTheta*cosPhi, -pf*sinTheta*sinPhi, -pf*cosTheta, sqrt(right->s + pf*pf) );
+  right -> mom.Boost( mom.BoostVector() );
+  right -> generateFullEvent();
 } 
 
 void TreePhaseSpace::Vertex::setRhoMax()
@@ -256,7 +280,8 @@ EventType TreePhaseSpace::eventType() const
 double TreePhaseSpace::genPdf(const Event& event) const 
 {
   double genPdf = 0; 
-  for( auto& channel : m_top ) genPdf += channel.genPdf(event) / channel.weightMax; //  / channel->w;
+  for( unsigned i = 0; i != m_top.size(); ++i ) 
+    genPdf += m_weights[i] * m_top[i].genPdf(event); // / channel.weightMax; //  / channel->w;
   return genPdf;
 }
 

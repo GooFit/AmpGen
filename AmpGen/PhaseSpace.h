@@ -32,6 +32,7 @@ namespace AmpGen
       Event makeEvent( const size_t& cacheSize = 0 );    ///< Make an event in this phase space. 
       EventType eventType() const;                       ///< Returns the EventType that this phase space is generating
 
+      void provideEfficiencyReport(const std::vector<bool>& report){}
     private:
       size_t       m_nt        = {0};                    ///< Number of particles in the final state
       double       m_mass[18]  = {0};                    ///< Masses of particles in the final state

@@ -38,7 +38,7 @@ namespace AmpGen
     void print( std::ostream& os = std::cout ) const;
     void printVariable( std::ostream& os = std::cout ) const;
     void set( const MinuitParameterSet& mps );
-    void rename(const std::string& name, const std::string& new_name); 
+    bool rename(const std::string& name, const std::string& new_name); 
     unsigned int size() const;
 
     const_iterator cbegin() const;

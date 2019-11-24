@@ -52,7 +52,7 @@ namespace AmpGen
         void print(const unsigned& offset = 0) const;
         void place(Event& event);
         Event event(const unsigned& eventSize, const unsigned& cacheSize=0);
-        void generate_full_event_description(const TLorentzVector& parentVector);
+        void generateFullEvent();
         void setRhoMax(); 
         void setRandom(TRandom3* rnd);
         static Vertex make(const Particle& particle, Vertex* parent = nullptr); 
@@ -88,13 +88,15 @@ namespace AmpGen
       double genPdf( const Event& event) const ; 
       const Vertex& operator[](const unsigned i) const { return m_top[i]; }      
 
+      void provideEfficiencyReport(const std::vector<bool>& report);
     private:
-      std::vector<Vertex>  m_top;
-      TRandom3*            m_rand      = {nullptr}; 
-      EventType            m_type;         ///< EventType to generate
-      std::discrete_distribution<> m_dice; ///< 
-      std::vector<double>  m_weights; 
-      std::mt19937         m_gen;
+      std::vector<Vertex>   m_top;
+      TRandom3*             m_rand      = {nullptr}; 
+      EventType             m_type;         ///< EventType to generate
+      std::discrete_distribution<> m_dice;  ///< 
+      std::vector<double>   m_weights; 
+      std::vector<unsigned> m_generatorRecord;  
+      std::mt19937          m_gen;
   };
 } // namespace AmpGen
 

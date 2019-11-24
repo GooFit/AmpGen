@@ -138,6 +138,12 @@ namespace AmpGen
     DECLARE_VERTEX( f_Vf_P2 );
     DECLARE_VERTEX( f_Vf_P3 );
     
+    DECLARE_VERTEX( f_fS_SL );
+    DECLARE_VERTEX( f_fS_SR );
+
+    DECLARE_VERTEX( f_Vf_SL );
+    DECLARE_VERTEX( f_Vf_SR );
+
     DECLARE_VERTEX( f_Vf_D );
     DECLARE_VERTEX( f_Vf_D1 );
     
