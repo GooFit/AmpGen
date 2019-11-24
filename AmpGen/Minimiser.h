@@ -80,7 +80,6 @@ namespace AmpGen
     MinuitParameterSet* parSet() const;
     int status() const;
     ROOT::Minuit2::Minuit2Minimizer* minimiserInternal();
-  
   private:
     MinuitParameterSet*         m_parSet       = {nullptr};
     std::function<double(void)> m_theFunction;

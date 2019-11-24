@@ -65,7 +65,7 @@ ParticleProperties::ParticleProperties( const std::string& pdg_string ) : m_netQ
   m_status       = s[15][0];
   m_name         = s[16];
   m_quarks       = s[17];
-  m_Aformat      = s[11][0];
+  m_Aformat      = s[11].size() == 1 ? s[11][0] : ' ';
   m_chargeString = s[13];
   m_netQuarkContent = QuarkContent( m_quarks );
   bool spin_status = 1;

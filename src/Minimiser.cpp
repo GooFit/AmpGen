@@ -106,6 +106,19 @@ bool Minimiser::doFit()
     }
   } 
   m_status = m_minimiser->Status();
+  for( unsigned i = 0 ; i != m_nParams; ++i ){
+    double low  = 0;
+    double high = 0; 
+    int status  = 0; 
+    m_minimiser->GetMinosError(i, low, high, status); 
+    auto param = m_parSet->at( m_mapping[i] ); 
+    param->setResult( *param, param->err(), low, high  );
+  }
+  for( unsigned i = 0 ; i != m_nParams; ++i )
+  {
+    auto param = m_parSet->at( m_mapping[i] ); 
+    INFO( param->name() << " " << param->mean() << " " << param->errPos() << " " << param->errNeg() );
+  }
   return 1;
 }
 
@@ -155,3 +168,4 @@ void Minimiser::addExtendedTerm( IExtendLikelihood* m_term )
 }
 
 ROOT::Minuit2::Minuit2Minimizer* Minimiser::minimiserInternal() { return m_minimiser; }
+

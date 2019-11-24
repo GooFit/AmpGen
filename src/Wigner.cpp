@@ -238,7 +238,6 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
       if( NamedParameter<bool>("helicityAmplitude::NoSpinAlign", false ) ) return 2*Mz == particle.polState();
       auto mzSpinor = basisSpinor( 2*Mz, particle.props()->pdgID() );
       auto mzSpinorInLab   = inverseMyTransform( mzSpinor, Transform::Representation::Bispinor );
-      // lets just get the diagonal part //
       mzSpinorInLab.st();
       ADD_DEBUG(Bar(mzSpinorInLab)(a)*labPol(a), db );
       return make_cse( Bar(mzSpinorInLab)(a)*labPol(a) );

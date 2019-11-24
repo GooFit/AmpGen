@@ -15,8 +15,8 @@
 #include "AmpGen/Types.h"
 
 #define ADD_DEBUG_TENSOR( X, Y )  \
-  if ( Y != nullptr ) for( unsigned i = 0 ; i < X.size(); ++i ) \
-    Y->emplace_back( std::string(#X) + Tensor::coordinates_to_string( X.coords(i) ) , X[i] );
+  if ( Y != nullptr ) for( unsigned i = 0 ; i < Tensor(X).size(); ++i ) \
+    Y->emplace_back( std::string(#X) + Tensor::coordinates_to_string( Tensor(X).coords(i) ) , Tensor(X)[i] );
 
 #define ADD_DEBUG_TENSOR_NAMED( X, Y, Z )  \
   if ( Y != nullptr ) for( unsigned i = 0 ; i < X.size(); ++i ) \

@@ -66,6 +66,7 @@ namespace AmpGen {
   size_t find_next_of( const std::string& input, const std::vector<std::string>& patterns, const size_t& begin = 0 );
 
   std::string replaceAll( const std::string& input, const std::string& toReplace, const std::string& replaceWith );
+  std::string replaceAll( const std::string& input, const std::vector<std::pair<std::string, std::string>>& rules );
 
   unsigned int FNV1a_hash( const std::string& toHash );
 

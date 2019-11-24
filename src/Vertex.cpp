@@ -169,7 +169,7 @@ DEFINE_VERTEX( V_VS_P )
 }
 
 
-DEFINE_VERTEX( V_VS_S ){ return Spin1Projector(P)(mu,nu) * V1(-nu) * V2[0]; }
+DEFINE_VERTEX( V_VS_S ){ auto S = Spin1Projector(P)(mu,nu) * V1(-nu) * V2[0]; ADD_DEBUG_TENSOR(S,db); return S; }
 
 DEFINE_VERTEX( V_VS_D )
 {
@@ -293,6 +293,30 @@ DEFINE_VERTEX( f_Vf_S1 )
   return proj( a, b ) * vSlash(b,c) * V2(c);
 }
 
+DEFINE_VERTEX( f_Vf_SL )
+{ 
+  Tensor proj = Spin1hProjector(P);
+  return proj(a, b) * Gamma4Vec()(mu,b,c) * ( Identity(4) - Gamma[4] )(c,d)* V2(d) * V1(-mu);
+}
+
+DEFINE_VERTEX( f_Vf_SR )
+{ 
+  Tensor proj = Spin1hProjector(P);
+  return proj(a, b) * Gamma4Vec()(mu,b,c) * ( Identity(4) + Gamma[4] )(c,d)* V2(d) * V1(-mu);
+}
+
+DEFINE_VERTEX( f_fS_SR )
+{ 
+  Tensor proj = Spin1hProjector(P);
+  return proj(a, b) * ( Identity(4) - Gamma[4] )(b,c)* V2(c);
+}
+
+
+DEFINE_VERTEX( f_fS_SR )
+{ 
+  Tensor proj = Spin1hProjector(P);
+  return proj(a, b) * ( Identity(4) + Gamma[4] )(b,c)* V2(c);
+}
 
 DEFINE_VERTEX( f_fS_S1 ){ return Spin1hProjector(P)(a,b) * Gamma[4](b,c) * V1(c) * V2[0];}
 

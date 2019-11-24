@@ -28,10 +28,43 @@
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/TreePhaseSpace.h"
 #include "AmpGen/enum.h"
+#include "AmpGen/ParticlePropertiesList.h"
 
 using namespace AmpGen;
 
 namespace AmpGen { make_enum(generatorType, CoherentSum, PolarisedSum, FixedLib, RGenerator, TreePhaseSpace) }
+
+void invert( MinuitParameter* param, MinuitParameterSet& mps )
+{
+  const std::string name = param->name();
+  size_t pos             = 0;
+  std::string new_name   = name; 
+  int         sgn        = 1;
+  std::string cartOrPolar = NamedParameter<std::string>("CouplingConstant::Coordinates" ,"cartesian");
+
+  if( name.find("::") != std::string::npos ){
+    pos = name.find("::");
+    auto props = ParticlePropertiesList::get( name.substr(0,pos), true );
+    if( props != 0 ) new_name = props->anti().name() + name.substr(pos); 
+  }
+  else { 
+    auto tokens=split(name,'_');
+    std::string reOrIm = *tokens.rbegin();
+    std::string name   = tokens[0];
+    if ( reOrIm == "Re" || reOrIm == "Im" ){
+      Particle test = Particle(name).conj();
+      if( cartOrPolar == "polar" )     sgn = reOrIm == "Re" ? test.CP() : 1; 
+      if( cartOrPolar == "cartesian" ) sgn = test.CP();
+      new_name = test.uniqueString() +"_"+reOrIm;
+    }
+    else if( tokens.size() == 2 ) {
+      auto props = ParticlePropertiesList::get( name );
+      if( props != 0  ) new_name = props->anti().name() + "_" + tokens[1]; 
+    }
+  }
+  if( mps.rename( param->name(), new_name ) && sgn == -1 )
+    param->setCurrentFitVal( -1 * param->mean() );
+}
 
 struct FixedLibPDF {
   void* lib = {nullptr};
@@ -97,8 +130,24 @@ int main( int argc, char** argv )
   MinuitParameterSet MPS;
   MPS.loadFromStream();
   
-  EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
-                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+  EventType eventType; 
+  std::string decay   = NamedParameter<std::string>("Decay","","Single decay written on the command line"); 
+  if( decay != "" )
+  {
+    Particle p(decay);
+    eventType = p.eventType();
+    MPS.add(p.decayDescriptor()+"_Re", Flag::Fix, 1., 0);
+    MPS.add(p.decayDescriptor()+"_Im", Flag::Fix, 0., 0);
+  } 
+  else eventType = EventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
+                  NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+  
+  if ( NamedParameter<bool>( "conj", false ) == true ) {
+    eventType = eventType.conj();
+    INFO( eventType );
+    for ( auto& param : MPS ) invert( param, MPS );
+  }
+
 
   INFO("Generating time-dependence? " << eventType.isTimeDependent() );
   EventList accepted( eventType );
@@ -122,7 +171,7 @@ int main( int argc, char** argv )
     signalGenerator.fillEventList( sig, accepted, nEvents );
   }
   else if ( genType == generatorType::TreePhaseSpace ) {
-    CoherentSum sig( eventType, MPS, "" );
+    PolarisedSum sig( eventType, MPS, "" );
     std::vector<Particle> channels; 
     for( auto& chain : sig.matrixElements() ) channels.push_back( chain.decayTree );
     Generator<TreePhaseSpace> signalGenerator(channels, eventType, &rand);

@@ -202,21 +202,23 @@ void MinuitParameterSet::resetToInit()
   for ( auto& param : *this ) param->resetToInit();
 }
 
-void MinuitParameterSet::rename(const std::string& name, const std::string& new_name)
+
+bool MinuitParameterSet::rename(const std::string& name, const std::string& new_name)
 {
   auto it = find(name);
   if( it == nullptr ){
-    ERROR("Parameter: " << name << " not found");
-    return;
+    DEBUG("Parameter: " << name << " not found");
+    return false;
   }
-  if( name == new_name ) return;
+  if( name == new_name ) return false;
   if( find(new_name) != nullptr ){
-    // ERROR("New key for " << name << " =  " << new_name << " already exists");
-    return;
+    DEBUG("New key for " << name << " =  " << new_name << " already exists");
+    return false;
   } 
   it->setName(new_name);
   m_keyAccess.erase(name);
   m_keyAccess.emplace(new_name, it);
+  return true; 
 }
 
 MinuitParameter* MinuitParameterSet::addOrGet( const std::string& name, const Flag& flag, const double& mean,

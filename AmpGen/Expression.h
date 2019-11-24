@@ -178,7 +178,7 @@ namespace AmpGen
               const bool&        resolved = false);
     std::string to_string(const ASTResolver* resolver = nullptr) const override;
     void resolve( ASTResolver& resolver ) const override;
-    operator Expression() const;
+    virtual operator Expression() const;
     complex_t operator()() const override { return complex_t( m_defaultValue, 0 ); }
     std::string name() const { return m_name; }
     const double& defaultValue() const { return m_defaultValue ; }

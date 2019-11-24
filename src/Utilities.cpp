@@ -108,6 +108,13 @@ std::string AmpGen::replaceAll( const std::string& input, const std::string& toR
   return output;
 }
 
+std::string AmpGen::replaceAll( const std::string& input, const std::vector<std::pair<std::string,std::string>>& rules )
+{
+  std::string output = input; 
+  for( auto& rule : rules ) output = replaceAll(output, rule.first, rule.second);
+  return output;
+}
+
 // extracts tree structures of the form X{Y,Z,A}
 // where Y and Z and A are also tree elements, by finding
 // the matching delimiter and the Z, A elements.

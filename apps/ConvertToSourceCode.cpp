@@ -87,8 +87,8 @@ void invert( MinuitParameter* param, MinuitParameterSet& mps )
     std::string name   = tokens[0];
     if ( reOrIm == "Re" || reOrIm == "Im" ){
       Particle test = Particle(name).conj();
-      if( cartOrPolar == "polar" )     sgn = reOrIm == "Re" ? test.quasiCP() : 1; 
-      if( cartOrPolar == "cartesian" ) sgn = test.quasiCP();
+      if( cartOrPolar == "polar" )     sgn = reOrIm == "Re" ? test.CP() : 1; 
+      if( cartOrPolar == "cartesian" ) sgn = test.CP();
       new_name = test.uniqueString() +"_"+reOrIm;
     }
     else if( tokens.size() == 2 ) {
