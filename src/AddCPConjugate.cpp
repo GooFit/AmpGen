@@ -36,15 +36,12 @@ void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
         new_name = test.uniqueString() +"_"+reOrIm;
       }
       else if( tokens.size() == 2 ) {
-        auto props = AmpGen::ParticlePropertiesList::get( name );
+        auto props = AmpGen::ParticlePropertiesList::get(name, true);
         if( props != 0  ) new_name = props->anti().name() + "_" + tokens[1]; 
       }
     }
     if( mps.find( new_name ) == nullptr )
       tmp.push_back( new MinuitExpression(new_name, sgn * MinuitParameterLink(param) )) ;  
   }
-  for( auto& p : tmp ){
-    INFO("Adding parameter: " << p->name() );
-    mps.add( p );
-  }
+  for( auto& p : tmp ) mps.add( p );
 }

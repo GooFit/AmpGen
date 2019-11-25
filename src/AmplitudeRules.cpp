@@ -73,7 +73,7 @@ AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
       bool isCoupling = Particle::isValidDecayDescriptor( it_re->name() );
       if( isCoupling ){
         MinuitExpression* expression = dynamic_cast<MinuitExpression*>( it_re );
-        INFO("Constructing: " << expression << " " << it_re->name() );
+        DEBUG("Constructing: " << expression << " " << it_re->name() );
         if( expression != nullptr ){
           Coupling p(expression);
           m_rules[p.head()].emplace_back(p);
