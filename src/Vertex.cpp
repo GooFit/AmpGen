@@ -305,7 +305,7 @@ DEFINE_VERTEX( f_Vf_SR )
   return proj(a, b) * Gamma4Vec()(mu,b,c) * ( Identity(4) + Gamma[4] )(c,d)* V2(d) * V1(-mu);
 }
 
-DEFINE_VERTEX( f_fS_SR )
+DEFINE_VERTEX( f_fS_SL )
 { 
   Tensor proj = Spin1hProjector(P);
   return proj(a, b) * ( Identity(4) - Gamma[4] )(b,c)* V2(c);
