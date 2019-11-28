@@ -240,7 +240,8 @@ TreePhaseSpace::Vertex TreePhaseSpace::Vertex::make(const Particle& particle, Tr
   if( decayProducts.size() == 1 ) return TreePhaseSpace::Vertex::make(*decayProducts[0], parent);
   if( decayProducts.size() == 2 )
   {
-    TreePhaseSpace::Vertex vtx = (parent == nullptr) ? TreePhaseSpace::Vertex(particle, particle.mass(), particle.mass(), true) : TreePhaseSpace::Vertex(); 
+    double G = particle.isQuasiStable() ? 0 : particle.props()->width() * 10;
+    TreePhaseSpace::Vertex vtx = (parent == nullptr) ? TreePhaseSpace::Vertex(particle, particle.mass() - G , particle.mass() + G, particle.isQuasiStable() ) : TreePhaseSpace::Vertex(); 
     parent = ( parent == nullptr ) ? &vtx : parent; 
 
     auto min_mass_1 = threshold(*decayProducts[0]); 

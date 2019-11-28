@@ -92,6 +92,7 @@ std::vector<int> PolarisedSum::polarisations( const std::string& name ) const
   auto props = *ParticlePropertiesList::get( name );
   if( props.twoSpin() == 0 ) return {0};
   if( props.twoSpin() == 1 ) return {1,-1};
+  if( props.twoSpin() == 4 ) return {-2,1,0,1,2};
   if( name == "gamma0" && props.twoSpin() == 2 ) return {1,-1};
   if( name != "gamma0" && props.twoSpin() == 2 ) return {1,0,-1};
   
@@ -115,6 +116,14 @@ std::vector<std::vector<int>> PolarisedSum::polarisationOuterProduct(const std::
 
 std::vector<complex_t> densityMatrix(const size_t& dim, const std::vector<MinuitProxy>& pv )
 {
+  INFO( "Dim = " << dim << ", " << pv.size() );
+  if( dim != 2 || dim != 3 )
+  {
+    std::vector<complex_t> rt(dim*dim);
+    for( unsigned i = 0 ; i != dim; ++i ) rt[ dim*i +i ] = 1;
+    return rt;
+  }
+  
   if( dim == 1 ) return {1.};
   double px = pv[0];
   double py = pv[1];
@@ -264,7 +273,7 @@ double PolarisedSum::norm() const
   return m_norm;
 }
 
-complex_t PolarisedSum::norm(const size_t& i, const size_t& j, AmpGen::PolarisedSum::integrator* integ)
+complex_t PolarisedSum::norm(const size_t& i, const size_t& j, PolarisedSum::integrator* integ)
 {
   auto   ai = m_integIndex[i];
   auto   aj = m_integIndex[j];
