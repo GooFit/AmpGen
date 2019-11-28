@@ -57,7 +57,9 @@ namespace AmpGen
       const QuarkContent& netQuarkContent() const { return m_netQuarkContent; } ///< Returns the particle's quark content
 
       void setLabel( const std::string& label ) { m_texName = label; }          ///< Set the LaTeX label of the particle
-      void setName( const std::string& name ) { m_name = name; }                ///< Set the name of the particle
+      void setName( const std::string& name ) { 
+        m_customName = true; 
+        m_name = name; }                ///< Set the name of the particle
 
       void print( std::ostream& out = std::cout ) const;
 
@@ -97,7 +99,7 @@ namespace AmpGen
       char m_status;                     ///< status (estalished or not etc)
       QuarkContent m_netQuarkContent;    ///< The quark content of the state (uD, uud etc.)
       bool m_isValid;                    ///< Flag to check whether the ParticleProperties have configured correctly 
-
+      bool m_customName = {false};       ///< Flag to make custom name 
       void antiQuarks();
       void antiCharge();
       int chargeFromString( const std::string& ch, bool& status ) const;

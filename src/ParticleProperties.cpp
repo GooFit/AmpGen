@@ -120,6 +120,7 @@ ParticleProperties ParticleProperties::anti() const
 
 std::string ParticleProperties::name() const
 {
+  if( m_customName ) return m_name; 
   std::string fullName = m_name;
   if ( m_pdgID < 0 && m_Aformat == 'F' ) fullName += "bar";
   fullName += m_chargeString;

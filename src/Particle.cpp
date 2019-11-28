@@ -68,7 +68,6 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
     const bool& orderDaughters )
   : Particle()
 {
-  DEBUG( "Building particle from decay string = " << decayString );
   auto items = getItems( decayString );
   if ( items.size() == 0 ) {
     ERROR( "Failed to parse string" << decayString );
@@ -83,6 +82,7 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
   m_props = ParticlePropertiesList::get( m_name );
   pdgLookup();
   auto fs = getFinalStateParticles( false );
+  DEBUG( "Building particle from decay string = " << decayString << " name = " << m_name << " "<< m_props->name() );
   std::vector<bool> hasUsedFinalState( finalStates.size(), 0 );
   for ( auto d : fs ) {
     for ( unsigned int i = 0; i < finalStates.size(); ++i ) {
@@ -697,9 +697,8 @@ int Particle::finalStateParity() const
     for( auto& d : m_daughters ) lpart *= d->finalStateParity();
     return lpart;
   }
-  WARNING("> 2 body vertices may require special considerations when conjugating, returning 1");
-  return 1;
-  
+  WARNING("> 2 body vertices may require special considerations when conjugating, returning (-1)^J");
+  return pow(-1, spin() ); 
 }
 
 bool Particle::conservesParity( unsigned int L ) const
