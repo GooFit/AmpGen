@@ -122,6 +122,8 @@ int main( int argc, char** argv )
 
 
 
+  bool outputVals = NamedParameter<bool>("outputVals", false, "Whether to print out values for amplitude in a csv file");
+  std::string ampFile = NamedParameter<std::string>("ampFile", "corr.csv", "Output file for correlated amplitude");
 
 
 
@@ -138,6 +140,24 @@ int main( int argc, char** argv )
     CoherentSum sig( eventType, MPS );
     PhaseSpace phsp(eventType,&rand);
     GenerateEvents( accepted, sig, phsp , nEvents, blockSize, &rand );
+  if (outputVals){
+    std::ofstream out;
+    out.open(ampFile.c_str());
+    for (size_t i=0; i < accepted.size(); i++){
+      auto eventSig = accepted[i];
+     
+      auto A = sig.getVal(eventSig);
+//      out<<ABCD<<"\n";
+      auto sig01 = eventSig.s(0,1);
+      auto sig02 = eventSig.s(0,2);
+      auto sig12 = eventSig.s(1,2);
+
+      out<<sig01<<"\t"<<sig02<<"\t"<<sig12<<"\t"
+         <<A.real()<<"\t"<<A.imag()<<"\n";
+    }
+    out.close();
+  }
+ 
   } 
   else if ( genType == generatorType::PolarisedSum ){
     PolarisedSum sig( eventType, MPS ); 
@@ -182,6 +202,7 @@ int main( int argc, char** argv )
       }
     }
   } 
+
 
 
 

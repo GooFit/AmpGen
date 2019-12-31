@@ -25,8 +25,8 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/CoherentSum.h"
-#include "AmpGen/CorrelatedSum.h"
 #include "AmpGen/pCorrelatedSum.h"
+#include "AmpGen/CorrelatedSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/QcGenerator.h"
 #include "AmpGen/MinuitParameterSet.h"
@@ -42,6 +42,7 @@
 #include "AmpGen/corrEventList.h"
 
 #include "AmpGen/Kinematics.h"
+#include "AmpGen/CorrelatedLL.h"
 
 
 using namespace AmpGen;
@@ -116,141 +117,140 @@ int main( int argc, char** argv )
   std::string ampFile = NamedParameter<std::string>("ampFile", "corr.csv", "Output file for correlated amplitude");
 
 
+  std::string intFile  = NamedParameter<std::string>("IntegrationSample",""    , "Name of file containing events to use for MC integration.");
+  std::string dataFile  = NamedParameter<std::string>("DataSample",""    , "Name of file containing events to use for MC integration.");
+  std::string logFile  = NamedParameter<std::string>("LogFile"   , "QcFitter.log", "Name of the output log file");
+  std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
+
+  bool QcGen2 = NamedParameter<bool>("QcGen2", false, "internal boolean - for new QcGenerator");
+  bool doFit = NamedParameter<bool>("doFit", true, "Do the fit");
+  bool dopCorr = NamedParameter<bool>("dopCorr", false, "Do the fit");
+  if( pNames.size() == 0 ) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
+
+
  for( auto& tag : tags ){
-
-
     auto tokens       = split(tag, ' ');
     INFO("tag = "<<tokens[0]);
- 
     auto tagParticle  = Particle(tokens[1], {}, false);
     EventType    tagType = tagParticle.eventType();
-  TRandom3 rand;
-  rand.SetSeed( seed + 934534 );
-  //auto x = MinuitParameter("QcGen::X", Flag::Fix, 4, 0);
-  //INFO("X = "<<x.mean());
-  MinuitParameterSet MPS;
-  MPS.loadFromStream();
-  for (auto param : MPS){
-    INFO(param->name()<<" = "<<param->mean());
-  }
-  INFO("makeCPConj = "<<makeCPConj);
-  if (makeCPConj){
-    INFO("Making CP conjugate states");
-    add_CP_conjugate(MPS);
-  }
+    TRandom3 rand;
+    rand.SetSeed( seed + 934534 );
+    MinuitParameterSet MPS;
+    MPS.loadFromStream();
+    for (auto param : MPS){
+        INFO(param->name()<<" = "<<param->mean());
+    }
+    INFO("makeCPConj = "<<makeCPConj);
+    if (makeCPConj){
+        INFO("Making CP conjugate states");
+        add_CP_conjugate(MPS);
+    }
 
-  Particle p;
-  bool debug=false;
-  
-
-//  EventType eventType2( NamedParameter<std::string>( "EventType2" , "", "EventType to generate second lot of events, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
-//                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+    Particle p;
+    bool debug=false;
 
 
-
-
-
-
-//  EventType eventType2( NamedParameter<std::string>( "EventType2" , "", "EventType to generate second lot of events, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
-//                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+    EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
+                        NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+    bool doBoost  = NamedParameter<bool>("doBoost", true, "Boost to psi(3770) frame");
+    INFO("Generating time-dependence? " << eventType.isTimeDependent() );
+    EventList acceptedSig( sigType );
+    EventList acceptedTag( tagType );
 
 
 
-  EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
-                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
-  bool doBoost  = NamedParameter<bool>("doBoost", true, "Boost to psi(3770) frame");
-
-  INFO("Generating time-dependence? " << eventType.isTimeDependent() );
-  EventList acceptedSig( sigType );
-  EventList acceptedTag( tagType );
-
-  INFO("Generating events with type = " << sigType << " and "<<tagType);
 
 
- // if ( genType == generatorType::CoherentSum ) 
-  INFO("Making CorrelatedSum");
-    CorrelatedSum cs( sigType, tagType, MPS );
 
     PhaseSpace phspSig(sigType,&rand);
     PhaseSpace phspTag(tagType,&rand);
-    INFO("Generating Events now!");
-    GenerateEvents( acceptedSig, acceptedTag, cs, phspSig, phspTag , nEvents, blockSize, &rand );
+
+    auto headPhsp = EventType({"psi(3770)0","D0","Dbar0"});
+    auto psi_q = PhaseSpace(headPhsp); 
+    auto beta  = [](const Event& event, const size_t&j){ return sqrt( event[4*j+0]*event[4*j+0] + event[4*j+1]*event[4*j+1] + event[4*j+2]*event[4*j+2] )/event[4*j+3] ; };
+    auto p4     = [](const Event& event, const size_t&j){ return std::make_tuple(event[4*j+0], event[4*j+1], event[4*j+2]); };
+
+    EventList EventsSig = EventList(dataFile + ":Signal" , sigType);
+    EventList EventsTag = EventList(dataFile + ":Tag" , tagType);
+    EventList EventsSigMC = EventList(intFile + ":Signal" , sigType);
+    EventList EventsTagMC = EventList(intFile + ":Tag" , tagType);
 
 
+    pCorrelatedSum cs( sigType, tagType, MPS );
+    cs.setEvents(EventsSig, EventsTag);
+    cs.setMC(EventsSigMC, EventsTagMC);
+  
+     cs.prepare();  
+         auto csLL = make_likelihood(EventsSig, EventsTag, cs);
+    csLL.setEvents(EventsSig, EventsTag);
+     cs.debugNorm();   
 
-      auto headPhsp = EventType({"psi(3770)0","D0","Dbar0"});
-      auto psi_q = PhaseSpace(headPhsp); 
-      auto beta  = [](const Event& event, const size_t&j){ return sqrt( event[4*j+0]*event[4*j+0] + event[4*j+1]*event[4*j+1] + event[4*j+2]*event[4*j+2] )/event[4*j+3] ; };
-      auto p4     = [](const Event& event, const size_t&j){ return std::make_tuple(event[4*j+0], event[4*j+1], event[4*j+2]); };
-      if (doBoost){
-    for (size_t i=0 ; i < acceptedSig.size(); i++){
-        auto psi_event = psi_q.makeEvent();
-        boost( acceptedSig[i], p4(psi_event,0), beta(psi_event,0));
-        boost( acceptedTag[i]   , p4(psi_event,1), beta(psi_event,1));
-      }
-      }
+    INFO( "norm[0] = " << cs.norm() );
 
-    if( acceptedSig.size() == 0 ) return -1;
+    INFO("LL = "<<csLL.getVal());
+ Minimiser mini( csLL, &MPS );
+    mini.GradientTest();
+
+   // for (int i=0;  i<nFits; i++){
+   
+/*
+
     TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
     INFO( "Writing output file " );
-    TTree * sig = acceptedSig.tree(tokens[0]);
+    TTree * sig = EventsSig.tree(tokens[0]);
    
     sig->Write("Signal");
 
- TTree * tagTree = acceptedTag.tree(tokens[0]);
- tagTree->Write("Tag");
+    INFO( "Writing output file " );
+    TTree * tagTree = EventsTag.tree(tokens[0]);
+    tagTree->Write("Tag");
 
-   // acceptedSig.tree(tokens[0])->Write("Signal");
- //  acceptedTag.tree(tokens[0])->Write("Tag");
-  
-  
-  
-  auto plots = acceptedSig.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
-  for ( auto& plot : plots ) plot->Write();
+    INFO("Making Porjections");
+    auto plots = EventsSig.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
+    for ( auto& plot : plots ) plot->Write();
     auto proj = eventType.defaultProjections(nBins);
     for( size_t i = 0 ; i < proj.size(); ++i ){
-      for( size_t j = i+1 ; j < proj.size(); ++j ){ 
-        acceptedSig.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(); 
-      }
+        for( size_t j = i+1 ; j < proj.size(); ++j ){ 
+            EventsSig.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(); 
+        }
     } 
     f->Close();
-  if (outputVals){
-    std::ofstream out;
-    out.open(ampFile.c_str());
-    for (size_t i=0; i < acceptedSig.size(); i++){
-      auto eventSig = acceptedSig[i];
-      auto eventTag = acceptedTag[i];
-      auto val = cs.getVals(eventSig, eventTag);
-//      out<<ABCD<<"\n";
-      auto sig01 = eventSig.s(0,1);
-      auto sig02 = eventSig.s(0,2);
-      auto sig12 = eventSig.s(1,2);
-      auto tag01 = eventTag.s(0,1);
-      auto tag02 = eventTag.s(0,2);
-      auto tag12 = eventTag.s(1,2);
-      auto A = val[0];
-      auto B = val[1];
-      auto C = val[2];
-      auto D = val[3];
-      auto ABCD = val[4];
-      auto corr = val[5];
-      out<<sig01<<"\t"<<sig02<<"\t"<<sig12<<"\t"
-         <<A.real()<<"\t"<<A.imag()<<"\t"
-         <<C.real()<<"\t"<<C.imag()<<"\t"
-         <<tag01<<"\t"<<tag02<<"\t"<<tag12<<"\t"
-         <<B.real()<<"\t"<<B.imag()<<"\t"
-         <<D.real()<<"\t"<<D.imag()<<"\t"
-         <<ABCD.real()<<"\t"<<ABCD.imag()<<"\t"
-         <<corr.real()<<"\t"<<corr.imag()<<"\n";
+*/  
+    if (outputVals){
+        INFO("Printing Amplitude Values for N="<<EventsSigMC.size());
+        std::ofstream out;
+        out.open(ampFile.c_str());
+        for (size_t i=0; i < EventsSigMC.size(); i++){
+            auto eventSig = EventsSigMC[i];
+            auto eventTag = EventsTagMC[i];
+            //INFO("At event "<<i);
+            auto val = cs.getVals(eventSig, eventTag);
+            auto sig01 = eventSig.s(0,1);
+            auto sig02 = eventSig.s(0,2);
+            auto sig12 = eventSig.s(1,2);
+            auto tag01 = eventTag.s(0,1);
+            auto tag02 = eventTag.s(0,2);
+            auto tag12 = eventTag.s(1,2);
+            auto A = val[0];
+            auto B = val[1];
+            auto C = val[2];
+            auto D = val[3];
+            auto ABCD = val[4];
+            auto corr = val[5];
+            out<<sig01<<"\t"<<sig02<<"\t"<<sig12<<"\t"
+                <<A.real()<<"\t"<<A.imag()<<"\t"
+                <<C.real()<<"\t"<<C.imag()<<"\t"
+                <<tag01<<"\t"<<tag02<<"\t"<<tag12<<"\t"
+                <<B.real()<<"\t"<<B.imag()<<"\t"
+                <<D.real()<<"\t"<<D.imag()<<"\t"
+                <<ABCD.real()<<"\t"<<ABCD.imag()<<"\t"
+                <<corr.real()<<"\t"<<corr.imag()<<"\n";
          
-    }
+            }
     out.close();
-  }
- }
-
-  
-
- return 0;
+        }
+    }
+return 0;
 }
 
 /*

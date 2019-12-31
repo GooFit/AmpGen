@@ -1,4 +1,5 @@
 #include "AmpGen/Psi3770.h"
+#include "AmpGen/pCorrelatedSum.h"
 #include "AmpGen/CorrelatedSum.h"
 #include "AmpGen/CorrelatedLL.h"
 #include "AmpGen/MetaUtils.h"
@@ -77,6 +78,8 @@ int main( int argc, char* argv[] )
     bool doDebugNorm  = NamedParameter<bool>("doDebugNorm", false, "Debug the normalisation of the pdf");
     int nBins = NamedParameter<int>("nBins", 100, "number of bins for projection");
     int nFits = NamedParameter<int>("nFits", 4, "number of repeats of mini.doFits() for debug purposes!");
+    bool doProjections = NamedParameter<bool>("doProjections", true);
+    bool doPCorrSum = NamedParameter<bool>("doPCorrSum", false);
 
 
   /* Parameters that have been parsed can be accessed anywhere in the program 
@@ -89,6 +92,7 @@ int main( int argc, char* argv[] )
   std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
   bool makeCPConj      = NamedParameter<bool>("makeCPConj", false, "Make CP Conjugates");
   bool QcGen2 = NamedParameter<bool>("QcGen2", false, "internal boolean - for new QcGenerator");
+  bool doFit = NamedParameter<bool>("doFit", true, "Do the fit");
   if( dataFile == "" ) FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off );
   if( pNames.size() == 0 ) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
   if (intFile == ""){
@@ -130,6 +134,7 @@ int main( int argc, char* argv[] )
     EventList tagMCEvents;
 
     if (QcGen2){
+        INFO("Generated Events used QcGen2");
       sigEvents = EventList(dataFile + ":Signal" , signalType);
       tagEvents = EventList(dataFile + ":Tag" , tagType);
       sigMCEvents = EventList(intFile + ":Signal" , signalType);
@@ -137,6 +142,8 @@ int main( int argc, char* argv[] )
 
     }
     else{
+
+        INFO("Generated Events used QcGenerator");
     sigEvents = EventList(dataFile +":"+ tokens[0], signalType, Branches(sigBranches));
     sigMCEvents = EventList(intFile +":"+ tokens[0], signalType, Branches(sigBranches));
     tagEvents = EventList(dataFile +":"+ tokens[0], tagType, Branches(tagBranches));
@@ -144,24 +151,53 @@ int main( int argc, char* argv[] )
     }
     for( auto& event : sigEvents ) event.setGenPdf(1) ;
     for( auto& event : tagEvents ) event.setGenPdf(1) ;
-    
-    CorrelatedSum cs(signalType, tagType, MPS);
+     CorrelatedSum cs(signalType, tagType, MPS);
     cs.setEvents(sigEvents, tagEvents);
     cs.setMC(sigMCEvents, tagMCEvents);
+     cs.prepare();  
     auto csLL = make_likelihood(sigEvents, tagEvents, cs);
     csLL.setEvents(sigEvents, tagEvents);
     
-    cs.prepare(); 
-    INFO( "norm[0] = " << cs.norm() );
 
-    Minimiser mini( csLL, &MPS );
+    INFO( "norm[0] = " << cs.norm() );
+    cs.debugNorm();
+ Minimiser mini( csLL, &MPS );
+   // for (int i=0;  i<nFits; i++){
+   
     
     mini.GradientTest();
    // for (int i=0 ; i < nFits; i++){
-   //    mini.setTolerance(std::pow(10, 2 - i));
-   mini.doFit();
+    //   mini.setTolerance(std::pow(10, 2 - i));
+   if (doFit) mini.doFit();
+   // }
+   // 
 
-       
+   
+    if (doPCorrSum){
+    
+    pCorrelatedSum cs(signalType, tagType, MPS);
+    cs.setEvents(sigEvents, tagEvents);
+    cs.setMC(sigMCEvents, tagMCEvents);
+     cs.prepare();  
+    auto csLL = make_likelihood(sigEvents, tagEvents, cs);
+    csLL.setEvents(sigEvents, tagEvents);
+    
+
+    INFO( "norm[0] = " << cs.norm() );
+    cs.debugNorm();
+ Minimiser mini( csLL, &MPS );
+   // for (int i=0;  i<nFits; i++){
+   
+    
+    mini.GradientTest();
+   // for (int i=0 ; i < nFits; i++){
+    //   mini.setTolerance(std::pow(10, 2 - i));
+   if (doFit) mini.doFit();
+   // }
+   // 
+      
+    } 
+
 //    }
     FitResult * fr = new FitResult(mini);
  auto dataEvents = sigEvents;
@@ -226,7 +262,7 @@ auto binning = BinDT( dataEvents, MinEvents( minEvents ), Dim( dataEvents.eventT
     writePulls(logFile, pulls);
 
 
-
+    if (doProjections){
     INFO( "norm[1] = " << cs.norm() );
     TFile* f = TFile::Open(plotFile.c_str(),"RECREATE");
 
@@ -274,6 +310,7 @@ auto binning = BinDT( dataEvents, MinEvents( minEvents ), Dim( dataEvents.eventT
     }
 
     f->Close();
+    }
   }
   
   return 0;
@@ -375,6 +412,7 @@ void add_CP_conjugate( MinuitParameterSet& mps )
     std::string new_name = name; 
     int sgn=1;
     Flag flag = param->flag();
+    //Flag flag = Flag::Fix;
     if( name.find("::") != std::string::npos ){
       pos = name.find("::");
       auto props = AmpGen::ParticlePropertiesList::get( name.substr(0,pos), true );
@@ -431,7 +469,7 @@ std::map<std::string, double > getPulls(std::map<std::string, std::vector<double
     if (initName == fitName){
         double pull = fitParams[0] - initParams[0];
         if (fitParams[1] != 0){
-          pull /= fitParams[1];
+          pull /= pow(pow(fitParams[1], 2) + pow(initParams[1],2),0.5);
         }
         out[fitName] = pull;
     }

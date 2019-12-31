@@ -124,6 +124,8 @@ int main( int argc, char* argv[] )
     EventList tagEvents;
     EventList sigMCEvents;
     EventList tagMCEvents;
+    EventList UsigEvents;
+    EventList UsigMCEvents;
 
     if (QcGen2){
       sigEvents = EventList(dataFile + ":Signal" , signalType);
@@ -138,14 +140,17 @@ int main( int argc, char* argv[] )
     tagEvents = EventList(dataFile +":"+ tokens[0], tagType, Branches(tagBranches));
     tagMCEvents = EventList(intFile +":"+ tokens[0], tagType, Branches(tagBranches));
     }
+
+    UsigEvents = EventList(UdataFile, signalType);
+    UsigMCEvents = EventList(UintFile, signalType);
     for( auto& event : sigEvents ) event.setGenPdf(1) ;
     for( auto& event : tagEvents ) event.setGenPdf(1) ;
     
     CorrelatedSum cs(signalType, tagType, MPS);
-    cs.setEvents(sigEvents, tagEvents);
+    cs.setEvents(UsigEvents, tagEvents);
     cs.setMC(sigMCEvents, tagMCEvents);
-    auto csLL = make_likelihood(sigEvents, tagEvents, cs);
-    csLL.setEvents(sigEvents, tagEvents);
+    auto csLL = make_likelihood(UsigEvents, tagEvents, cs);
+    csLL.setEvents(UsigEvents, tagEvents);
     
     cs.prepare(); 
     INFO( "norm[0] = " << cs.norm() );
@@ -153,10 +158,10 @@ int main( int argc, char* argv[] )
     Minimiser mini( csLL, &MPS );
     
     mini.GradientTest();
-    for (int i=0 ; i < nFits; i++){
-       mini.setTolerance(std::pow(10, 2 - i));
+
+
        mini.doFit();
-    }
+
     FitResult * fr = new FitResult(mini);
  auto dataEvents = sigEvents;
  auto mcEvents = sigMCEvents;
@@ -230,8 +235,17 @@ auto binning = BinDT( dataEvents, MinEvents( minEvents ), Dim( dataEvents.eventT
       hist->SetName( (std::string("MC_")+hist->GetName()).c_str() );
       hist->Write();
       data_plot->Write();
-      auto pull = (TH1D*) hist->Clone();
-      pull->Add(data_plot, -1);
+      TH1D * pull = new TH1D((std::string("Pull") + data_plot->GetName()).c_str(), 
+                              (std::string("Pull") + data_plot->GetName()).c_str(), 
+                              data_plot->GetNbinsX(), data_plot->GetXaxis()->GetXmin(), 
+                              data_plot->GetXaxis()->GetXmax());
+      for (int i=0; i<data_plot->GetNbinsX(); i++){
+          double p = (hist->GetBinContent(i) - data_plot->GetBinContent(i))/hist->GetBinError(i);
+          pull->Fill(p);
+      }
+      //pull->Add(data_plot, -1);
+      //add->Add(data_plot, +1);
+
       pull->SetName( (std::string("Pull_") + data_plot->GetName()).c_str() );
       pull->Write();
     }

@@ -41,7 +41,24 @@ namespace AmpGen {
       CorrelatedSum(const EventType& type1, const EventType& type2, const MinuitParameterSet& mps);
       virtual ~CorrelatedSum()=default;
       real_t operator()( const Event& event1, const Event& event2) const { return prob(event1, event2); }
-      real_t prob(const Event& event1, const Event& event2) const {return std::norm(getVal(event1, event2))/m_norm;}
+      real_t prob(const Event& event1, const Event& event2) const {
+            double P = std::norm(getVal(event1, event2))/m_norm;  
+            double A2 = m_A.prob(event1);
+            double B2 = m_B.prob(event2);
+            double C2 = m_C.prob(event1);
+            double D2 = m_D.prob(event2);
+            if (m_debug){
+              INFO("|AB-CD|^2 = "<<P);
+              INFO("|A|^2 = "<<A2);
+              INFO("|B|^2 = "<<B2);
+              INFO("|C|^2 = "<<C2);
+              INFO("|D|^2 = "<<D2);
+            }
+
+        
+        //return std::norm(getVal(event1, event2))/m_norm;
+        return P;
+        }
       real_t prob_unnormalised(const Event& event1, const Event& event2) const {return std::norm(getVal(event1, event2));}
       void prepare();
       void reset(bool resetEvents);
@@ -49,8 +66,8 @@ namespace AmpGen {
       void setEvents(EventList& list1, EventList& list2);
       void setMC(EventList& list1, EventList& list2);
 
-      void updateNorms(const std::vector<unsigned int>& iA, const std::vector<unsigned int>& iB,
-          const std::vector<unsigned int>& iC, const std::vector<unsigned int>& iD);
+      void updateNorms(const std::vector<size_t>& iA, const std::vector<size_t>& iB,
+          const std::vector<size_t>& iC, const std::vector<size_t>& iD);
 
       void debugNorm();
       void debug(const Event& event1, const Event& event2) const; 
@@ -60,6 +77,19 @@ namespace AmpGen {
       real_t size()const { return m_A.size() + m_B.size() + m_C.size() + m_D.size();}
       std::vector<std::vector<FitFraction> > fitFractions(const LinearErrorPropagator& linProp);
       real_t norm()  const;
+      double probA(const Event& event){
+        double prob = m_A.prob(event);
+        return prob;
+      }
+      std::vector<complex_t> getVals(const Event& event1, const Event& event2) const {
+        complex_t A = m_A.getVal(event1);
+        complex_t B = m_B.getVal(event2);
+        complex_t C = m_C.getVal(event1);
+        complex_t D = m_D.getVal(event2);
+        complex_t ABCD = getVal(event1, event2);
+        std::vector<complex_t> vals = {A,B,C,D,ABCD};
+        return vals;
+      }
       //real_t norm(const Bilinears& norms) const; 
       double m_inter = 0;
     protected:
@@ -92,9 +122,13 @@ namespace AmpGen {
       Integrator<10> m_integratorCC;
       Integrator<10> m_integratorDD;
 
-      bool m_useCoherent = false;
+      bool m_coherentIntegral;
+      bool m_coherentIntegralA;
+      bool m_coherentIntegralB;
+      bool m_coherentIntegralC;
+      bool m_coherentIntegralD;
 
-      bool m_debug = false;
+      bool m_debug;
       size_t m_prepareCalls = 0;
   };
 }

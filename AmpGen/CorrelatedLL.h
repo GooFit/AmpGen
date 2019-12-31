@@ -61,7 +61,12 @@ namespace AmpGen
           f.prepare(); 
           //f.debugNorm();
           });
-
+          
+        /*for (auto f : m_pdfs){
+          f.prepare();
+          if (m_debug) f.debugNorm();
+        }
+        */
         if (m_debug) INFO("Events 1  = "<<&m_events1); 
         if (m_debug) INFO("Events 1 size  = "<<m_events1->size());
         if (m_debug) INFO("Events 2  = "<<&m_events2); 
@@ -74,9 +79,24 @@ namespace AmpGen
             //if (m_debug) INFO("Prob (from LL) = "<<prob);
             LL += log(prob);
         }
-        LL *= -2;
+        
         if (m_debug) INFO("LL = "<<LL);
-        return LL;
+        
+          double LLu =0;
+        #pragma omp parallel for reduction( +: LL )
+        for ( unsigned int i = 0; i < m_events1->size(); ++i ) {
+            auto prob = uncorrProb( (*m_events1)[i]);
+            //if (m_debug) INFO("Prob (from LL) = "<<prob);
+            LLu += log(prob);
+        }
+        if (m_debug){
+        INFO("Correlated LL = "<<LL);
+
+        INFO("Uncorrelated LL = "<<LLu);
+ 
+
+        }
+        return -2*LL;
     }
 
     double operator() (const Event& event1, const Event& event2){
@@ -87,7 +107,11 @@ namespace AmpGen
         //if (m_debug) INFO("prob_norm = "<<prob_norm);
         return prob;
     }
-
+    double uncorrProb(const Event& event){
+        double prob = 0;
+        for_each( this->m_pdfs, [&prob, &event]( auto& f ) { prob += f.probA( event ); } );
+        return prob;
+    }
     void setEvents(eventListType& events1, eventListType& events2){
         m_events1 = &events1;
         m_events2 = &events2;

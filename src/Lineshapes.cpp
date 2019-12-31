@@ -137,6 +137,8 @@ Expression Lineshape::Factory::get(const std::string& lineshape, const AmpGen::P
   }
 }
 
+//1 Dimensional polynomial 
+//pol(x,p) = F0 + L0 (p_i x^i) = p_i x^i
 Expression AmpGen::pol( const Expression& X, const std::vector<Expression>& p )
 {
   Expression F = 0;

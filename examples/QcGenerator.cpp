@@ -282,7 +282,10 @@ int main( int argc, char** argv )
 #endif
   MinuitParameterSet MPS; 
   MPS.loadFromStream();
-  if (makeCPConj) add_CP_conjugate( MPS );
+  if (makeCPConj){
+      INFO("Making CP conjugates");
+      add_CP_conjugate( MPS );
+  }
   EventType signalType( pNames );
   TFile* f = TFile::Open( output.c_str() ,"RECREATE");
 
@@ -393,7 +396,7 @@ void add_CP_conjugate( MinuitParameterSet& mps )
       }
     }
     if( mps.find( new_name ) == nullptr ){
-      tmp.push_back( new MinuitParameter(new_name, Flag::Free, sgn * param->mean(), param->err(), 0, 0));
+      tmp.push_back( new MinuitParameter(new_name, Flag::Fix, sgn * param->mean(), param->err(), 0, 0));
     }
   }
   for( auto& p : tmp ) mps.add( p );

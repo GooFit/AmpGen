@@ -23,11 +23,11 @@ DEFINE_GENERIC_SHAPE( MagPoly )
     std::vector<std::vector<Expression> > param;
     unsigned int i=0;
     while (i!= degree+1){
-        auto param_i = parameterVector(lineshapeModifier + "_c" + std::to_string(i), degree + 1 - i);
+        auto param_i = parameterVector(lineshapeModifier + "::C" + std::to_string(i), degree + 1 - i);
         i++;
         param.push_back(param_i);
     }
-    bool debug = false;
+    bool debug = true;
     //4D momentum tensor for 
 
     //Tensor P (Tensor::dim(4));
@@ -71,10 +71,10 @@ DEFINE_GENERIC_SHAPE( MagPoly )
         for (unsigned int j=0; j<param[i].size(); j++){
             sum_i = sum_i +  param[i][j] * pow(x, i) * pow(y, j);
             if (debug){
-            std::cout<<"x = "<<x<<"\n";
-            std::cout<<"y = "<<y<<"\n";
-            std::cout<<"param[i][j] = "<<param[i][j]<<"\n";
-            std::cout<<"sum_i = "<<sum_i<<"\n";
+            INFO("x = "<<x);
+            INFO("y = "<<y);
+            INFO("param[i][j] = "<<param[i][j]);
+            INFO("sum_i = "<<sum_i);
             }
         }
         i++;

@@ -117,7 +117,7 @@ namespace AmpGen
     //              INFO("Value = "<<value);
                   if ( value > max ) max = value;
                 }
-                normalisationConstant = max * 1.5;
+                normalisationConstant = max * 15;
                 INFO( "Setting normalisation constant = " << normalisationConstant );
               }
               auto previousSize = listSig.size();
