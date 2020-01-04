@@ -193,16 +193,16 @@ class pCorrelatedSum {
                     INFO("C"<<i<<j<<" = "<<Cij) ;
                 }
                 if (m_polyType=="simple"){
-                    sum_i = sum_i +  Cij * pow(x, i) * pow(y, j);
+                    sum_i = sum_i +  Cij * pow(X(), i) * pow(Y(), j);
                 }
                 else if (m_polyType=="chebychev"){
-                sum_i = sum_i + Cij * chebychev(x, i) * chebychev(y, j); 
+                sum_i = sum_i + Cij * chebychev(X(), i) * chebychev(Y(), j); 
                 }
                 else if (m_polyType=="legendre"){
-                    sum_i = sum_i + Cij * legendre(x, i) * legendre(y, j);
+                    sum_i = sum_i + Cij * legendre(X(), i) * legendre(Y(), j);
                 }
                 else if (m_polyType=="laguerre"){
-                    sum_i = sum_i + Cij * laguerre(x, i) * laguerre(y, j);
+                    sum_i = sum_i + Cij * laguerre(X(), i) * laguerre(Y(), j);
                 }
                 if (m_pdebug){
                     INFO("sum_"<<i<<" = "<<sum_i());
