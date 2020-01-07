@@ -57,6 +57,11 @@ void EventList::loadFromFile( const std::string& fname, const ArgumentPack& args
 void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
 {
   ProfileClock read_time; 
+  if( m_eventType.size() == 0 ){
+    auto tokens = split( tree->GetTitle(), ' ');
+    if( tokens.size() != 1 ) m_eventType = EventType( tokens ); 
+    INFO("Attempted automatic deduction of eventType: " << m_eventType );
+  } 
   auto pdfSize      = args.getArg<CacheSize>(0).val;
   auto filter       = args.getArg<Filter>(std::string("")).val;
   auto getGenPdf    = args.getArg<GetGenPdf>(false).val;
@@ -115,7 +120,9 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
 
 TTree* EventList::tree( const std::string& name, const std::vector<std::string>& extraBranches )
 {
-  TTree* outputTree = new TTree( name.c_str(), name.c_str() );
+  std::string title = m_eventType.mother();
+  for( unsigned i = 0 ; i != m_eventType.size(); ++i ) title += " " + m_eventType[i]; 
+  TTree* outputTree = new TTree( name.c_str(), title.c_str() );
   if ( size() == 0 ) {
     ERROR( "Trying to output empty tree" );
     return nullptr;

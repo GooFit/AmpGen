@@ -59,27 +59,27 @@ Event TreePhaseSpace::makeEvent( const unsigned& cacheSize )
 
 void TreePhaseSpace::provideEfficiencyReport(const std::vector<bool>& report)
 {
-  if( report.size() != m_generatorRecord.size() )
-  {
-    WARNING("Report does not match size of generator record...");
-    return; 
-  }
-  std::vector<unsigned> counters( m_top.size() ); 
-  std::vector<unsigned> totals  ( m_top.size() );
-  unsigned counter = 0; 
-  for( unsigned i = 0 ; i != report.size(); ++i )
-  {
-    counters[m_generatorRecord[i]] += report[i];
-    totals[m_generatorRecord[i]]   ++;  
-    counter += report[i];
-  }
-  for( unsigned i = 0 ; i != m_top.size(); ++i )
-  {
-    INFO( m_top[i].particle.decayDescriptor() << " " << counters[i] << " / " << totals[i] );
-    m_weights[i] = double( counters[i] ) / double( counter );
-  }
-  m_dice = std::discrete_distribution<>(m_weights.begin(), m_weights.end()); 
-  m_generatorRecord.clear();
+//  if( report.size() != m_generatorRecord.size() )
+//  {
+//    WARNING("Report does not match size of generator record...");
+//    return; 
+//  }
+//  std::vector<unsigned> counters( m_top.size() ); 
+//  std::vector<unsigned> totals  ( m_top.size() );
+//  unsigned counter = 0; 
+//  for( unsigned i = 0 ; i != report.size(); ++i )
+//  {
+//    counters[m_generatorRecord[i]] += report[i];
+//    totals[m_generatorRecord[i]]   ++;  
+//    counter += report[i];
+//  }
+//  for( unsigned i = 0 ; i != m_top.size(); ++i )
+//  {
+//    INFO( m_top[i].particle.decayDescriptor() << " " << counters[i] << " / " << totals[i] );
+//    m_weights[i] = double( counters[i] ) / double( counter );
+//  }
+//  m_dice = std::discrete_distribution<>(m_weights.begin(), m_weights.end()); 
+//  m_generatorRecord.clear();
 }
 
 double rho( const double& s, const double& s1, const double& s2)

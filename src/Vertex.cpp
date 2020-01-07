@@ -422,3 +422,15 @@ DEFINE_VERTEX( S_ff_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * V1(b); }
 DEFINE_VERTEX( V_ff_S ) { return Bar(V2)(a) * Gamma4Vec()(mu,a,b) * V1(b); }
 
 DEFINE_VERTEX( V_ff_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * Gamma4Vec()(mu,b,c) * V1(c); }
+
+DEFINE_VERTEX( V_ff_PL )
+{ 
+  Tensor proj = Spin1Projector(P);
+  return proj(mu, nu) * Bar(V1)(a) * Gamma4Vec()(-nu,a,b) * ( Identity(4) - Gamma[4] )(b,c)* V2(c); 
+}
+
+DEFINE_VERTEX( V_ff_PR )
+{ 
+  Tensor proj = Spin1Projector(P);
+  return proj(mu, nu) * Bar(V1)(a) * Gamma4Vec()(-nu,a,b) * ( Identity(4) + Gamma[4] )(b,c)* V2(c); 
+}

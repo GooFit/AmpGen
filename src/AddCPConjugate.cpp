@@ -41,7 +41,9 @@ void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
       }
     }
     if( mps.find( new_name ) == nullptr )
+    {
       tmp.push_back( new MinuitExpression(new_name, sgn * MinuitParameterLink(param) )) ;  
+    }
   }
   for( auto& p : tmp ) mps.add( p );
 }

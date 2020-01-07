@@ -106,6 +106,7 @@ bool Minimiser::doFit()
     }
   } 
   m_status = m_minimiser->Status();
+  /*
   for( unsigned i = 0 ; i != m_nParams; ++i ){
     double low  = 0;
     double high = 0; 
@@ -119,6 +120,7 @@ bool Minimiser::doFit()
     auto param = m_parSet->at( m_mapping[i] ); 
     INFO( param->name() << " " << param->mean() << " " << param->errPos() << " " << param->errNeg() );
   }
+  */
   return 1;
 }
 

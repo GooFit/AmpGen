@@ -143,6 +143,16 @@ bool ParticleProperties::isFermion() const {
   return m_twoSpin % 2 == 1;
 }
 
+bool ParticleProperties::isPhoton() const 
+{
+  return m_name == "gamma0";
+}
+
+bool ParticleProperties::isNeutrino() const 
+{
+  return abs(m_pdgID) == 12 || abs(m_pdgID) == 14 || abs(m_pdgID) == 16;
+}
+
 bool ParticleProperties::isBoson() const {
   return ! isFermion();
 }

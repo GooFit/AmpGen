@@ -106,6 +106,8 @@ namespace AmpGen
 
     operator T() const { return getVal(); }
     operator T()       { return getVal(); }
+    template <class G> bool operator==(const G& other) const { return getVal() == other; }
+    template <class G> bool operator!=(const G& other) const { return getVal() != other; }
     const std::vector<T>& getVector() const { return m_valueArray; }
 
     void setVal( const T& val, int i = 0 )

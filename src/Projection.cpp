@@ -70,4 +70,7 @@ std::pair<double, double> Projection2D::operator()( const Event& evt ) const
   return {xAxis.m_func( evt ), yAxis.m_func( evt )};
 }
 
-TH1D* Projection::operator()( const EventList& events) const { return events.makeProjection(*this); }
+TH1D* Projection::projInternal( const EventList& events, const ArgumentPack& args) const 
+{ 
+  return events.makeProjection(*this, args); 
+}

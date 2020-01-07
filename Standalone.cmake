@@ -124,9 +124,7 @@ target_compile_options(AmpGen
   PUBLIC
   -Wall -Wextra -Wpedantic -g3
   -Wno-unused-parameter
-  -Wno-unknown-pragmas
-  -Wnon-virtual-dtor
-  -Wno-overloaded-virtual
+  -Wdeprecated-copy
   -march=native
   $<$<CONFIG:Release>:-Ofast>)
 

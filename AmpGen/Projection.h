@@ -8,7 +8,7 @@
 
 #include "TH1D.h"
 #include "TH2D.h"
-//#include "AmpGen/Event.h"
+#include "AmpGen/ArgumentPack.h"
 
 class TH1D;
 class TH2D;
@@ -30,9 +30,11 @@ namespace AmpGen
       Projection( const std::function<double( const Event& )>& fcn, const std::string& name,
           const std::string& xAxisTitle, const size_t& nBins, const double& min, const double& max,
           const std::string& units = "" );
-      const std::string name() const  ; 
-      double operator()( const Event& evt ) const ;
-      TH1D* operator()(const EventList& evt) const; 
+      const std::string name() const; 
+      template <class... ARGS> TH1D* operator()(const EventList& evt, const ARGS... args) const { return projInternal(evt, ArgumentPack(args...) ); } 
+      
+      double operator()( const Event& evt ) const;
+      
       TH1D* plot(const std::string& prefix="") const;
 
       std::function<size_t( const Event& evt )> binFunctor() const;
@@ -40,6 +42,7 @@ namespace AmpGen
 
       friend class Projection2D;
     private:
+      TH1D* projInternal(const EventList&, const ArgumentPack&) const; 
       std::function<double( const Event& )> m_func;
       std::string m_name       = {""};
       std::string m_xAxisTitle = {""};

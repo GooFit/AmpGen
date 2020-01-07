@@ -19,6 +19,7 @@
 #include "AmpGen/Types.h"
 #include "AmpGen/Event.h"
 #include "AmpGen/Projection.h"
+
 //#include "AmpGen/functional/pdf.h"
 
 namespace AmpGen
@@ -47,7 +48,7 @@ namespace AmpGen
     CoherentSum( const EventType& type, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "" );
     virtual ~CoherentSum() = default; 
 
-    AmplitudeRules protoAmplitudes() { return m_protoAmplitudes; }
+    AmplitudeRules protoAmplitudes() { return m_rules; }
     std::string prefix() const { return m_prefix; }
     
     TransitionMatrix<complex_t> operator[]( const size_t& index ) { return m_matrixElements[index]; }
@@ -92,7 +93,7 @@ namespace AmpGen
     typedef Integrator<10> integrator;
     std::vector<TransitionMatrix<complex_t>> m_matrixElements; ///< Vector of (expanded) matrix elements
     Bilinears        m_normalisations;                         ///< Normalisation integrals
-    AmplitudeRules   m_protoAmplitudes;                        ///< Proto amplitudes from user rule-set
+    AmplitudeRules   m_rules;                                  ///< Ruleset for the selected transition.
     integrator       m_integrator;                             ///< Integral dispatch tool (with default unroll = 10) 
     TransitionMatrix<complex_t> m_total;                       ///< Total Matrix Element 
     EventList*       m_events       = {nullptr};               ///< Data events to evaluate PDF on
