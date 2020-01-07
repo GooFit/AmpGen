@@ -46,6 +46,10 @@ namespace AmpGen
     {
       loadFromFile( fname, ArgumentPack(args...) );
     }
+    template < class ... ARGS > EventList( const std::string& fname, const ARGS&... args ) : EventList() 
+    {
+      loadFromFile( fname, ArgumentPack(args...) );
+    }
     template < class ... ARGS > EventList( const std::vector<std::string>& fname, const EventType& evtType, const ARGS&... args ) : EventList(evtType) 
     {
       for( auto& f : fname ) loadFromFile( f, ArgumentPack(args...) );

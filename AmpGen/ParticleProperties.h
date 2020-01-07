@@ -54,6 +54,10 @@ namespace AmpGen
       bool isNonResonant()   const;                          ///< Check is this is a nonresonant `quasi-particle'
       bool isFermion()       const;                          ///< Check if the particle is a fermion, i.e. if the spin 1/2, 3/2, ...
       bool isBoson()         const;                          ///< Check if the particle is a boson, i.e. if the spin 0, 1, 2...
+      bool isNeutrino()      const;                          ///< Check if the particle is a neutrino
+
+      bool isPhoton()        const;                          ///< Check if the particle is a photon 
+
       const QuarkContent& netQuarkContent() const { return m_netQuarkContent; } ///< Returns the particle's quark content
 
       void setLabel( const std::string& label ) { m_texName = label; }          ///< Set the LaTeX label of the particle

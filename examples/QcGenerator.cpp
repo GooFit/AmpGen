@@ -427,8 +427,9 @@ TTree* DTEventList::tree(const std::string& name)
     outputTree->Branch(("Tag_"+particleName(m_tagType, i)+"_ID").c_str(), &id_tag[i]);
     ids_tag[i] = ParticlePropertiesList::get( m_tagType[i] )->pdgID();
   }
+  bool sym = NamedParameter<bool>("symmetrise",true);
   for( auto& evt: *this ){
-    bool swap = gRandom->Uniform() > 0.5;
+    bool swap = sym && ( gRandom->Uniform() > 0.5 );
     tmp.set(evt.signal, evt.tag);
     if( swap ) tmp.invertParity();
     for(size_t i=0; i != m_sigType.size(); ++i)
@@ -437,6 +438,7 @@ TTree* DTEventList::tree(const std::string& name)
       id_tag[i] = swap ? -ids_tag[i] : ids_tag[i];
     outputTree->Fill();
   }
+
   return outputTree;
 }    
 

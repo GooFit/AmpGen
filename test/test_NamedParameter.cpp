@@ -7,7 +7,7 @@
 
 BOOST_AUTO_TEST_CASE ( constructors_right )
 {
-  AmpGen::NamedParameter<size_t> param("test_param", 4);
-  BOOST_CHECK( param == 4 );
+  AmpGen::NamedParameter<unsigned> param("test_param", 4);
+  BOOST_CHECK( param == unsigned(4) );
 }
 

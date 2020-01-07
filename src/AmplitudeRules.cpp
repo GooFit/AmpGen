@@ -201,6 +201,6 @@ bool TotalCoupling::isFixed() const
 
 bool TotalCoupling::contains( const std::string& label ) const 
 {
-  return std::any_of(begin(), end(), [&label](auto& c){ return c.x()->name().find(label) != std::string::npos ; } );
+  return std::any_of(begin(), end(), [&label](auto& c){ return c.name().find(label) != std::string::npos ; } );
 }
 
