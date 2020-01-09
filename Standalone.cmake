@@ -124,7 +124,6 @@ target_compile_options(AmpGen
   PUBLIC
   -Wall -Wextra -Wpedantic -g3
   -Wno-unused-parameter
-  -Wdeprecated-copy
   -march=native
   $<$<CONFIG:Release>:-Ofast>)
 
