@@ -65,7 +65,9 @@ PolarisedSum::PolarisedSum( const EventType& type,
     {
       tp.enqueue( [i, &protoAmps, &polStates, this]{
       Tensor thisExpression( Tensor::dim(polStates.size()) );
-      auto& [p,coupling] = protoAmps.at(i);
+      auto& p = protoAmps[i].first;
+      auto& coupling = protoAmps[i].second; 
+      //auto& [p,coupling] = protoAmps.at(i);
       DebugSymbols syms;  
       for(unsigned j = 0; j != polStates.size(); ++j){
         p.setPolarisationState( polStates[j] );

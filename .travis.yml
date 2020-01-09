@@ -25,7 +25,6 @@ env:
 addons:
   apt:
     packages:
-      - gcc-8
       - doxygen
       - doxygen-doc
       - doxygen-gui
