@@ -23,7 +23,7 @@ namespace AmpGen
     MinuitParameterSet();
     explicit MinuitParameterSet(const std::vector<MinuitParameter*>& params );
     MinuitParameterSet( const MinuitParameterSet& other );
-    ~MinuitParameterSet() = default;
+    ~MinuitParameterSet(); // = default;
 
     MinuitParameterSet getFloating();
 

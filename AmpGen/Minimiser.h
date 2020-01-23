@@ -85,12 +85,12 @@ namespace AmpGen
     std::function<double(void)> m_theFunction;
     ROOT::Minuit2::Minuit2Minimizer*  m_minimiser    = {nullptr};
     std::vector<double>         m_covMatrix    = {0};
-    std::vector<unsigned int>   m_mapping      = {};
-    int          m_status     = {0};
-    unsigned int m_nParams    = {0};
-    unsigned int m_printLevel = {0};
-    double       m_ll_zero    = {0};
-    bool         m_normalise  = {false};
+    std::vector<unsigned>       m_mapping      = {};
+    int      m_status     = {0};
+    unsigned m_nParams    = {0};
+    unsigned m_printLevel = {0};
+    double   m_ll_zero    = {0};
+    bool     m_normalise  = {false};
     std::vector<IExtendLikelihood*> m_extendedTerms;
   };
 } // namespace AmpGen
