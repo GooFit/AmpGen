@@ -37,14 +37,14 @@ namespace AmpGen {
   make_enum(spaceType, spin, flavour)
 }
 
-PolarisedSum::PolarisedSum( const EventType& type, 
-                            MinuitParameterSet& mps, 
-                            const std::string& prefix ) 
+PolarisedSum::PolarisedSum(const EventType& type, 
+                           MinuitParameterSet& mps, 
+                           const std::vector<MinuitProxy>& pVector) 
   : m_mps       (&mps)
+  , m_pVector   (pVector)
   , m_verbosity (NamedParameter<bool>("PolarisedSum::Verbosity", 0     ))
   , m_debug     (NamedParameter<bool>("PolarisedSum::Debug"    , false ))
   , m_eventType (type)
-  , m_prefix    (prefix)
   , m_rules     (mps)
   , m_dim       (m_eventType.dim())
 {
@@ -57,7 +57,7 @@ PolarisedSum::PolarisedSum( const EventType& type,
     for(const auto& pol : prodPols ) polStates.push_back({pol}); 
     for(unsigned i = 0 ; i != type.size(); ++i ) polStates = indexProduct(polStates, polarisations( type[i] ) );
     
-    auto protoAmps       = m_rules.getMatchingRules(m_eventType, m_prefix);
+    auto protoAmps       = m_rules.getMatchingRules(m_eventType);
     for(const auto& m : protoAmps ) INFO( m.first.uniqueString() ); 
     m_matrixElements.resize( protoAmps.size() );
     ThreadPool tp(8);
@@ -110,10 +110,13 @@ PolarisedSum::PolarisedSum( const EventType& type,
       });
     }
   }
-  auto p = [this](const std::string& name){ return this->m_mps->addOrGet(name, Flag::Fix, 0, 0); };
-  if( m_dim.first == 1 )      m_pVector = {};
-  else if( m_dim.first == 2 ) m_pVector = {p("Px"), p("Py"), p("Pz")};
-  else if( m_dim.first == 3 ) m_pVector = {p("Px"), p("Py"), p("Pz"), p("Tyy"), p("Tzz"), p("Txy"), p("Txz"), p("Tyz")};
+  if( m_pVector.size() == 0 )
+  {
+    auto p = [this](const std::string& name){ return this->m_mps->addOrGet(name, Flag::Fix, 0, 0); };
+    if( m_dim.first == 1 )      m_pVector = {};
+    else if( m_dim.first == 2 ) m_pVector = {p("Px"), p("Py"), p("Pz")};
+    else if( m_dim.first == 3 ) m_pVector = {p("Px"), p("Py"), p("Pz"), p("Tyy"), p("Tzz"), p("Txy"), p("Txz"), p("Tyz")};
+  }
   for(size_t i=0; i < m_dim.second * m_dim.first * m_dim.first; ++i) m_norms.emplace_back( m_matrixElements.size(), m_matrixElements.size() ); 
 }
 
@@ -207,7 +210,6 @@ void   PolarisedSum::prepare()
     if( m_nCalls == 0 && m_integrator.isReady() ) m_integIndex.push_back( m_integrator.events().getCacheIndex( t.amp ) );
   }
   if( !m_probExpression.isLinked() ) build_probunnormalised();
-  m_weight = m_weightParam == nullptr ? 1 : m_weightParam->mean();
   tEval.stop(); 
   ProfileClock tIntegral;  
   m_rho = densityMatrix(m_dim.first, m_pVector);
@@ -470,6 +472,7 @@ void PolarisedSum::transferParameters()
     me.amp.prepare();
   }
   for(auto& p  : m_pVector ) p.update();
+  m_weight.update();
 }
 
 real_t PolarisedSum::getValNoCache( const Event& evt )
@@ -484,5 +487,5 @@ real_t PolarisedSum::getValNoCache( const Event& evt )
   return m_probExpression( copy.getCachePtr() );
 }
 
-void   PolarisedSum::setWeight( MinuitParameter* param ){ m_weightParam = param ; } 
-double PolarisedSum::getWeight() const { return m_weightParam == nullptr ? 1.0 : m_weightParam->mean() ; }
+void   PolarisedSum::setWeight( MinuitParameter* param ){ m_weight = MinuitProxy(param); } 
+double PolarisedSum::getWeight() const { return m_weight ; }

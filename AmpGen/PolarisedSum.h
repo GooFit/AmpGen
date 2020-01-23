@@ -19,13 +19,13 @@
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/Expression.h"
 #include "AmpGen/Tensor.h"
+#include "AmpGen/MinuitParameter.h"
 
 #include "TMatrixD.h"
 
 namespace AmpGen
 {
   class LinearErrorPropagator;
-  class MinuitParameter;
   class MinuitParameterSet;
   class FitFraction;
   class Event;
@@ -38,7 +38,7 @@ namespace AmpGen
       typedef Integrator<10>        integrator;
 
       PolarisedSum() = default; 
-      PolarisedSum(const EventType&, AmpGen::MinuitParameterSet&, const std::string& = "");
+      PolarisedSum(const EventType&, AmpGen::MinuitParameterSet&, const std::vector<MinuitProxy>& = {});
       void prepare();
       void setEvents(AmpGen::EventList&);
       void setMC(AmpGen::EventList&);
@@ -68,9 +68,8 @@ namespace AmpGen
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};
       EventList*                    m_events      = {nullptr};
-      MinuitParameter*              m_weightParam = {nullptr}; 
       MinuitParameterSet*           m_mps         = {nullptr};
-      double                        m_weight      = {1}; 
+      MinuitProxy                   m_weight      = {nullptr,1}; 
       std::vector<MinuitProxy>      m_pVector     = {}; 
       bool                          m_verbosity   = {0};
       bool                          m_debug       = {0};

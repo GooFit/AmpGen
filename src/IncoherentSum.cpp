@@ -39,7 +39,6 @@ double IncoherentSum::norm( const Bilinears& norms ) const
 
 void IncoherentSum::prepare()
 {
-  if ( m_weightParam != nullptr ) m_weight = m_weightParam->mean();
   if ( m_isConstant && m_prepareCalls != 0 ) return;
   transferParameters();
   for ( auto& mE : m_matrixElements ) {
