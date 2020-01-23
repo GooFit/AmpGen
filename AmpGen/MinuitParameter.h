@@ -67,16 +67,15 @@ namespace AmpGen
   class MinuitProxy
   {
   public:
-    void update() { m_value = m_parameter->mean(); }
+    void update() { if(m_parameter != nullptr ) m_value = m_parameter->mean(); }
     MinuitParameter* ptr() { return m_parameter; }
-    operator double() const { return m_parameter->mean(); }
-    double getFast() const { return m_value ; }
-    MinuitProxy( MinuitParameter* param = nullptr ) : m_parameter( param ) { if( m_parameter != nullptr ) update(); }
+    operator double() const { return m_value; }
+    MinuitProxy(MinuitParameter* param = nullptr, const double& value=0) : m_parameter(param), m_value(value) { update(); }
     MinuitParameter* operator->() { return m_parameter; }
     const MinuitParameter* operator->() const { return m_parameter; }
   private:
+    MinuitParameter* m_parameter{nullptr};
     double m_value;
-    MinuitParameter* m_parameter;
   };
   std::ostream& operator<<( std::ostream& os, const MinuitParameter& type );
 } // namespace AmpGen

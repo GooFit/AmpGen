@@ -29,11 +29,10 @@ Tensor Transform::sigma_dot_p(const Tensor& p) const
 Tensor Transform::J_dot_p( const Tensor& p ) const 
 {
   Expression z(0);
-  return Tensor(
-      {     z, -p[2],  p[1] ,z 
-      , p[2],     z, -p[0] ,z 
-      ,-p[1],  p[0],     z ,z 
-      ,    z,     z,     z ,z  }, Tensor::dim(4,4) );
+  return Tensor( {     z, -p[2],  p[1] ,z 
+                  , p[2],     z, -p[0] ,z 
+                  ,-p[1],  p[0],     z ,z 
+                  ,    z,     z,     z ,z  }, Tensor::dim(4,4) );
 }
 
 Tensor Transform::K_dot_p( const Tensor& p ) const 

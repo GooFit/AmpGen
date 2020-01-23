@@ -22,9 +22,9 @@ namespace AmpGen
   class PhaseSpace
   {
     public:
-      PhaseSpace()  = default;                                    ///< Empty constructor 
-      PhaseSpace(const EventType& type, TRandom* rand = gRandom); ///< Construct a phase space generator from an EventType 
-      PhaseSpace(const Particle&  type, TRandom* rand = gRandom); ///< Construct a phase space generator from a Particle 
+      PhaseSpace() = default;                                              ///< Empty constructor 
+      explicit PhaseSpace(const EventType& type, TRandom* rand = gRandom); ///< Construct a phase space generator from an EventType 
+      explicit PhaseSpace(const Particle&  type, TRandom* rand = gRandom); ///< Construct a phase space generator from a Particle 
       
       bool setDecay( const double& m0, const std::vector<double>& mass ); ///< Set the parameters of this phase space generator
       void setRandom( TRandom* rand ) { m_rand = rand; } ///< Set the random number used by this phase space generator 

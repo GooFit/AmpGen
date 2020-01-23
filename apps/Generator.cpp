@@ -139,7 +139,7 @@ int main( int argc, char** argv )
     signalGenerator.fillEventList( sig, accepted, nEvents );
   }
   else if ( genType == generatorType::TreePhaseSpace ) {
-    PolarisedSum sig( eventType, MPS, "" );
+    PolarisedSum sig( eventType, MPS);
     std::vector<Particle> channels; 
     for( auto& chain : sig.matrixElements() ) channels.push_back( chain.decayTree );
     Generator<TreePhaseSpace> signalGenerator(channels, eventType, &rand);

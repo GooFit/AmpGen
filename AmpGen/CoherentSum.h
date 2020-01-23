@@ -19,13 +19,12 @@
 #include "AmpGen/Types.h"
 #include "AmpGen/Event.h"
 #include "AmpGen/Projection.h"
-
+#include "AmpGen/MinuitParameter.h"
 //#include "AmpGen/functional/pdf.h"
 
 namespace AmpGen
 {
   class LinearErrorPropagator;
-  class MinuitParameter;
   class MinuitParameterSet;
   class FitFraction;
   class Particle;
@@ -73,8 +72,7 @@ namespace AmpGen
     void prepare();
     void printVal( const Event& evt );
     void updateNorms( const std::vector<size_t>& changedPdfIndices );
-    void setWeight( const double& weight ) { m_weight = weight; }
-    void setWeight( MinuitParameter* param ) { m_weightParam = param; }
+    void setWeight( MinuitParameter* param ) { m_weight = param; }
     void makeTotalExpression();
     void reset( bool resetEvents = false );
     void setEvents( EventList& list );
@@ -98,11 +96,10 @@ namespace AmpGen
     TransitionMatrix<complex_t> m_total;                       ///< Total Matrix Element 
     EventList*       m_events       = {nullptr};               ///< Data events to evaluate PDF on
     EventType        m_evtType;                                ///< Final state for this amplitude
-    MinuitParameter* m_weightParam  = {nullptr};               ///< Weight parameter (i.e. the normalised yield)
     size_t           m_prepareCalls = {0};                     ///< Number of times prepare has been called
     size_t           m_lastPrint    = {0};                     ///< Last time verbose PDF info was printed
     size_t           m_printFreq    = {0};                     ///< Frequency to print verbose PDF info
-    double           m_weight       = {1};                     ///< Weight number (i.e. the normalised yield)
+    MinuitProxy      m_weight       = {nullptr, 1};            ///< Weight (i.e. the normalised yield)
     double           m_norm         = {0};                     ///< Normalisation integral
     bool             m_isConstant   = {false};                 ///< Flag for a constant PDF
     bool             m_dbThis       = {false};                 ///< Flag to generate amplitude level debugging

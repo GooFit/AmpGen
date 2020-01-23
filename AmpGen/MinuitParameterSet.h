@@ -21,7 +21,7 @@ namespace AmpGen
     typedef std::vector<MinuitParameter*>::const_iterator const_iterator; 
     
     MinuitParameterSet();
-    MinuitParameterSet(const std::vector<MinuitParameter*>& params );
+    explicit MinuitParameterSet(const std::vector<MinuitParameter*>& params );
     MinuitParameterSet( const MinuitParameterSet& other );
     ~MinuitParameterSet() = default;
 

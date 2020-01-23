@@ -71,7 +71,6 @@ void updateCache(EventList* events, TransitionMatrix<complex_t>& me, const size_
 
 void CoherentSum::prepare()
 {
-  if ( m_weightParam != nullptr ) m_weight = m_weightParam->mean();
   if ( m_isConstant && m_prepareCalls != 0 ) return;
   transferParameters(); 
   std::vector<size_t> changedPdfIndices;
@@ -328,6 +327,7 @@ complex_t CoherentSum::norm(const size_t& x, const size_t& y) const
 void CoherentSum::transferParameters()
 {
   for ( auto& mE : m_matrixElements ) mE.coefficient = mE.coupling();
+  m_weight.update();
 }
 
 void CoherentSum::printVal(const Event& evt)
