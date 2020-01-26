@@ -117,10 +117,10 @@ if(AMPGEN_XROOTD)
   target_link_libraries(AmpGen PUBLIC ${XROOTD_LIB})
 endif()
 
-target_compile_definitions(AmpGen
-  INTERFACE
+target_compile_definitions(AmpGen PRIVATE
   "AMPGENROOT_CMAKE=\"${CMAKE_BINARY_DIR}/bin\""
   "AMPGEN_CXX=\"${AMPGEN_CXX}\""
+  "USE_OPENMP=\"${USE_OPENMP}\""
   $<$<BOOL:${AMPGEN_DEBUG}>:DEBUGLEVEL=1>
   $<$<BOOL:${AMPGEN_TRACE}>:TRACELEVEL=1>)
 
