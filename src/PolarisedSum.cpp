@@ -487,5 +487,5 @@ real_t PolarisedSum::getValNoCache( const Event& evt )
   return m_probExpression( copy.getCachePtr() );
 }
 
-void   PolarisedSum::setWeight( MinuitParameter* param ){ m_weight = MinuitProxy(param); } 
+void   PolarisedSum::setWeight( MinuitProxy param ){ m_weight = param; } 
 double PolarisedSum::getWeight() const { return m_weight ; }

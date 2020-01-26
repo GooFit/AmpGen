@@ -1,34 +1,39 @@
-set(AMPGEN_CXX ${CMAKE_CXX_COMPILER}  CACHE FILEPATH "This should be the path to compiler (use which c++ for macOS)" )
+set(AMPGEN_CXX ${CMAKE_CXX_COMPILER} CACHE FILEPATH "This should be the path to compiler (use which c++ for macOS)" )
+
+file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
+if(EXISTS "${LOC_PATH}")
+    message(FATAL_ERROR "You cannot build in a source directory (or any directory with a CMakeLists.txt file). Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
+endif()
 
 file(GLOB_RECURSE AMPGEN_SRC src/*)
 file(GLOB_RECURSE AMPGEN_HDR AmpGen/*)
 
 if( NOT "${CMAKE_CXX_STANDARD}" ) 
-  set(CMAKE_CXX_STANDARD 14) 
+  set(CMAKE_CXX_STANDARD 17) 
 endif() 
 
 SET(USE_OPENMP TRUE CACHE BOOL "USE_OPENMP")
 
-message(STATUS "USE_OPENMP = ${USE_OPENMP}")
-
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY         "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY         "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY         "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_TEST_OUTPUT_DIRECTORY    "${CMAKE_BINARY_DIR}/bin/test")
+set(CMAKE_TEST_OUTPUT_DIRECTORY            "${CMAKE_BINARY_DIR}/bin/test")
 
 include(CMakeDependentOption)
 include(CMakePrintHelpers)
+include(GNUInstallDirs)
 
 option(AMPGEN_DEBUG "AmpGen Debug printout")
 option(AMPGEN_TRACE "AmpGen Trace printout")
 
 configure_file ("${PROJECT_SOURCE_DIR}/AmpGen/Version.h.in" "${CMAKE_BINARY_DIR}/AmpGenVersion.h")
 
-add_library(AmpGen SHARED ${AMPGEN_SRC} ${AMPGEN_HDR})
+add_library(${PROJECT_NAME} SHARED ${AMPGEN_SRC} ${AMPGEN_HDR})
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 if(DEFINED ENV{ROOTSYS})
   list(APPEND CMAKE_MODULE_PATH "$ENV{ROOTSYS}/etc/cmake/")
@@ -53,10 +58,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-message( STATUS "ROOT_INCLUDE_DIRS = ${ROOT_INCLUDE_DIRS}")
+target_include_directories(AmpGen PUBLIC $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}>
+                                         $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}> )
 
-target_include_directories(AmpGen PUBLIC "${CMAKE_SOURCE_DIR}")
-target_include_directories(AmpGen PUBLIC "${CMAKE_BINARY_DIR}")
 target_include_directories(AmpGen SYSTEM PUBLIC "${ROOT_INCLUDE_DIRS}")
 
 target_link_libraries(AmpGen PUBLIC ${ROOT_LIBRARIES} ${CMAKE_DL_LIBS})
@@ -114,14 +118,14 @@ if(AMPGEN_XROOTD)
 endif()
 
 target_compile_definitions(AmpGen
-  PUBLIC
+  INTERFACE
   "AMPGENROOT_CMAKE=\"${CMAKE_BINARY_DIR}/bin\""
   "AMPGEN_CXX=\"${AMPGEN_CXX}\""
   $<$<BOOL:${AMPGEN_DEBUG}>:DEBUGLEVEL=1>
   $<$<BOOL:${AMPGEN_TRACE}>:TRACELEVEL=1>)
 
 target_compile_options(AmpGen
-  PUBLIC
+  INTERFACE
   -Wall -Wextra -Wpedantic -g3
   -Wno-unused-parameter
   -Wno-unknown-pragmas
@@ -139,7 +143,7 @@ file(GLOB_RECURSE examples examples/*.cpp )
 
 foreach( file ${applications} )
   get_filename_component( Executable ${file} NAME_WE )
-  cmake_print_variables(Executable)
+  #   cmake_print_variables(Executable)
   add_executable(${Executable} ${file})
   target_compile_options(${Executable} PUBLIC -g3 -Ofast)
   target_link_libraries(${Executable} PUBLIC AmpGen)
@@ -147,7 +151,7 @@ endforeach()
 
 foreach( file ${examples} )
   get_filename_component( Executable ${file} NAME_WE )
-  cmake_print_variables(Executable)
+  # cmake_print_variables(Executable)
   add_executable(${Executable} ${file})
   target_link_libraries(${Executable} PUBLIC AmpGen)
 endforeach()
@@ -156,31 +160,16 @@ file(GLOB_RECURSE options_files options/*.*)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/bin")
 foreach(file ${options_files})
   get_filename_component(OptionFile "${file}" NAME)
-  cmake_print_variables(OptionFile)
+  # cmake_print_variables(OptionFile)
   execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${file}" "${CMAKE_BINARY_DIR}/bin/${OptionFile}")
 endforeach()
 
-enable_testing()
-set(Boost_NO_BOOST_CMAKE ON)
+add_subdirectory(test)
 
-find_package(Boost 1.67.0 COMPONENTS unit_test_framework)
-if ( Boost_FOUND )
-  include_directories (${Boost_INCLUDE_DIRS})
-  file(GLOB TEST_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cpp)
-  foreach(testSrc ${TEST_SRCS})
-    get_filename_component(testName ${testSrc} NAME_WE)
-    add_executable(${testName} ${testSrc})
-    set_target_properties(${testName} 
-      PROPERTIES 
-      RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_TEST_OUTPUT_DIRECTORY}" 
-      RUNTIME_OUTPUT_DIRECTORY_DEBUG   "${CMAKE_TEST_OUTPUT_DIRECTORY}" 
-      RUNTIME_OUTPUT_DIRECTORY         "${CMAKE_TEST_OUTPUT_DIRECTORY}" 
-      EXECUTABLE_OUTPUT_DIRECTORY      "${CMAKE_TEST_OUTPUT_DIRECTORY}" 
-    )
-    target_link_libraries(${testName} PUBLIC ${Boost_LIBRARIES} AmpGen)
-    add_test(NAME ${testName} WORKING_DIRECTORY ${CMAKE_TEST_OUTPUT_DIRECTORY} COMMAND ${CMAKE_TEST_OUTPUT_DIRECTORY}/${testName} ) 
-  endforeach(testSrc)
-else()
-  message( WARNING "Warning: Boost (version >= 1.67.0) required to build unit tests\n")
-endif()
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(AmpGenVersion.cmake VERSION ${PACKAGE_VERSION} COMPATIBILITY AnyNewerVersion)
+configure_file(AmpGenConfig.cmake.in AmpGenConfig.cmake) #  @ONLY)
 
+export( TARGETS AmpGen NAMESPACE AmpGen:: FILE AmpGenTargets.cmake )
+set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
+export(PACKAGE AmpGen)

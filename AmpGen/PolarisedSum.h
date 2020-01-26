@@ -45,7 +45,7 @@ namespace AmpGen
       void reset(const bool& = false);
       void debug(const AmpGen::Event&);
       void debug_norm(); 
-      void setWeight(MinuitParameter*);
+      void setWeight(MinuitProxy);
       double getWeight() const;
       void calculateNorms(const std::vector<bool>&); 
       void generateSourceCode(const std::string&, const double& = 1, bool = false);

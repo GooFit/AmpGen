@@ -72,7 +72,7 @@ namespace AmpGen
     void prepare();
     void printVal( const Event& evt );
     void updateNorms( const std::vector<size_t>& changedPdfIndices );
-    void setWeight( MinuitParameter* param ) { m_weight = param; }
+    void setWeight( MinuitProxy param ) { m_weight = param; }
     void makeTotalExpression();
     void reset( bool resetEvents = false );
     void setEvents( EventList& list );
