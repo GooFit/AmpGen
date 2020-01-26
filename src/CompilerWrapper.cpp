@@ -21,6 +21,11 @@
 #include "AmpGenVersion.h"
 
 using namespace AmpGen;
+#ifdef AMPGEN_CXX
+#pragma message "Using c++ compiler: " AMPGEN_CXX " for JIT"
+#else
+#pragma warning "No AMPGEN_CXX for JIT set"
+#endif 
 
 CompilerWrapper::CompilerWrapper( const bool& verbose ) :
   m_verbose(verbose),
