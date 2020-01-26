@@ -171,7 +171,7 @@ namespace AmpGen
 
     template <typename functor> unsigned count( functor&& fcn ) const 
     {
-      unsigned total; 
+      unsigned total = 0; 
       for( const auto& event : *this ) total += fcn(event);
       return total;
     }

@@ -4,7 +4,7 @@
 #include "AmpGen/Integrator.h"
 
 namespace AmpGen {
-
+  /// test /// 
   class Integrator2
   {
       typedef const complex_t& arg;
