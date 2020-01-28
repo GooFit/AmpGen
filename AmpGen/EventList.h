@@ -171,9 +171,7 @@ namespace AmpGen
 
     template <typename functor> unsigned count( functor&& fcn ) const 
     {
-      unsigned total = 0; 
-      for( const auto& event : *this ) total += fcn(event);
-      return total;
+      return std::count_if( std::begin(*this), std::end(*this), fcn );
     }
   };
   DECLARE_ARGUMENT(LineColor, int);
