@@ -11,6 +11,7 @@
 
 using namespace AmpGen;
 using namespace AmpGen::fcn; 
+using namespace std::complex_literals; 
 
 Expression H(const Expression& x, 
              const Expression& y, 
@@ -76,9 +77,22 @@ Expression AmpGen::phaseSpace(const Expression& s, const Particle& p, const size
     }
     if( phsp_parameterisation == std::string("arXiv.0707.3596") ){
       INFO("Got AS parametrisation");
-      Expression E = 1;
- //     return 2*fpow(k2,l)*complex_sqrt(k2) * E * 2 / ((1.5+k2p) * sqrt(s) ); 
       return 2 * complex_sqrt(k2/s);
+    }
+    if( phsp_parameterisation == std::string("CM") )
+    {
+      if( l != 0 ){
+        WARNING("Chew-Mandelstam only implemented for l=0");
+      }
+      auto m1 = p.daughter(0)->mass();
+      auto m2 = p.daughter(1)->mass();
+      Expression s1 = m1*m1;
+      Expression s2 = m2*m2;
+      Expression sT = (m1+m2)*(m1+m2);
+      Expression q2 = (s*s + s1*s1 + s2*s2 - 2*s*s1 - 2*s*s2 - 2*s1*s2)/(4*s);
+      auto q   = fcn::complex_sqrt(q2);
+      auto arg = (s1 + s2 - s + 2*fcn::sqrt(s) * q )/ (2*m1*m2);
+      return (2.*q * fcn::log(arg) / fcn::sqrt(s) - (s1-s2)*( 1./s - 1./sT ) * fcn::log(m1/m2) ) / ( 16.i * M_PI * M_PI ); 
     }
   }
   if( fs.size() == 3 && ! p.daughter(0)->isStable() ) return rho_threeBody( s, *p.daughter(0), *p.daughter(1) );
