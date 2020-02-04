@@ -1,5 +1,6 @@
 echo -en 'travis_fold:start:script.build\\r'
 echo "Building..."
+echo "Building under OS: $TRAVIS_OS_NAME"
 set -evx
 
 mkdir -p build

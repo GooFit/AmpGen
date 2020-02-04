@@ -73,7 +73,6 @@ PolarisedSum::PolarisedSum(const EventType& type,
         p.setPolarisationState( polStates[j] );
         thisExpression[j] = make_cse( p.getExpression(&syms) ); 
       }
-      INFO("Got: " << syms.size() << " debugging symbols");
       m_matrixElements[i] = TransitionMatrix<std::vector<complex_t>>( 
           p,
           coupling, 
