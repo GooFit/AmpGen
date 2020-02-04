@@ -3,7 +3,11 @@ os:
   - linux
   - osx
 
-dist: xenial 
+# dist: xenial 
+compiler:
+  - gcc 
+  - clang
+
 
 cache:
   ccache: true
@@ -36,6 +40,8 @@ addons:
       - libtbb-dev
       
 before_install:
+- if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update          ; fi
+- if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install graphviz; fi
 - source .ci/build_root.sh
 
 # Build your code e.g. by calling make
