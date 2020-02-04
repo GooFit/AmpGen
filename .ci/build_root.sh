@@ -1,3 +1,6 @@
+
+if [["$TRAVIS_OS_NAME" = "osx" ]] ; then return; fi
+
 set -evx
 
 old_pwd=$PWD
