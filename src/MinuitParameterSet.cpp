@@ -227,6 +227,7 @@ MinuitParameter* MinuitParameterSet::addOrGet( const std::string& name, const Fl
   if ( m_keyAccess.count( name ) != 0 ) return m_keyAccess[name];
   return add( name, flag, mean, sigma, min, max );
 }
+
 MinuitParameterSet::const_iterator  MinuitParameterSet::cbegin() const { return m_parameters.cbegin(); }
 MinuitParameterSet::const_iterator  MinuitParameterSet::cend()   const { return m_parameters.cend(); }
 MinuitParameterSet::iterator        MinuitParameterSet::begin()        { return m_parameters.begin(); }
