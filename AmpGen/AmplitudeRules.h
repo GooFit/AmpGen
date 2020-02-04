@@ -13,6 +13,7 @@
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/Event.h"
 #include "AmpGen/Particle.h"
+#include "AmpGen/ExpressionParser.h"
 
 namespace AmpGen
 {
