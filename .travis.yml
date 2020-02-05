@@ -49,6 +49,7 @@ env:
     - DEPS_DIR: "${TRAVIS_BUILD_DIR}/deps"
 
 before_install:
+  - eval "${MATRIX_EVAL}"
   - chmod +x .ci/build_root_${TRAVIS_OS_NAME}.sh
   - source .ci/build_root_${TRAVIS_OS_NAME}.sh 
 
