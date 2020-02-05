@@ -133,8 +133,12 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     "-rdynamic", 
     "-fPIC"};
   std::transform( compile_flags.begin(), compile_flags.end(), std::back_inserter(argp), [](const auto& flag ){return flag.c_str() ; } );
-  if( m_cxx.find("clang") != std::string::npos ) 
+  if( m_cxx.find("clang") != std::string::npos ){ 
     argp.push_back( "-Wno-return-type-c-linkage");
+    #if __APPLE__
+    argp.push_back("-lstdc++");
+    #endif
+  }
 
   argp.push_back( fname.c_str() );
   argp.push_back( "-o");
