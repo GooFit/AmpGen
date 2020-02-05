@@ -151,6 +151,7 @@ int main( int argc, char* argv[] )
     }
     for( auto& event : sigEvents ) event.setGenPdf(1) ;
     for( auto& event : tagEvents ) event.setGenPdf(1) ;
+    /*
      CorrelatedSum cs(signalType, tagType, MPS);
     cs.setEvents(sigEvents, tagEvents);
     cs.setMC(sigMCEvents, tagMCEvents);
@@ -160,7 +161,7 @@ int main( int argc, char* argv[] )
     
 
     INFO( "norm[0] = " << cs.norm() );
-    /*
+   
     cs.debugNorm();
  Minimiser mini( csLL, &MPS );
    // for (int i=0;  i<nFits; i++){
@@ -174,7 +175,7 @@ int main( int argc, char* argv[] )
    // 
 */
    
-    if (doPCorrSum){
+    
     
     pCorrelatedSum cs(signalType, tagType, MPS);
     cs.setEvents(sigEvents, tagEvents);
@@ -197,7 +198,7 @@ int main( int argc, char* argv[] )
    // }
    // 
       
-    } 
+     
 
 //    }
     FitResult * fr = new FitResult(mini);
