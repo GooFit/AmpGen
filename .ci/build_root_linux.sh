@@ -19,8 +19,7 @@ bash miniconda.sh -b -p $HOME/miniconda
 export PATH="$HOME/miniconda/bin:$PATH"
 hash -r
 conda config --add channels conda-forge
-conda install -c conda-forge/label/gcc8 root 
-
+conda install --quiet --yes -c conda-forge/label/gcc8 root 
 
 source "${DEPS_DIR}/root/bin/thisroot.sh"
 popd
