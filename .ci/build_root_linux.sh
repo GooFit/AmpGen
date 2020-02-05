@@ -6,7 +6,8 @@ set -evx
 pushd $DEPS_DIR 
 
 # root_v6.12.06.Linux-ubuntu16-x86_64-gcc5.4.tar.gz
-ROOT_URL="https://root.cern.ch/download/root_v6.12.06.Linux-ubuntu16-x86_64-gcc5.4.tar.gz"
+# ROOT_URL="https://root.cern.ch/download/root_v6.12.06.Linux-ubuntu16-x86_64-gcc5.4.tar.gz"
+ROOT_URL="https://root.cern.ch/download/root_v6.13.08.Linux-fedora28-x86_64-gcc8.0.tar.gz"
 
 if [[ ! -f "${DEPS_DIR}/root/bin/root-config" ]] ; then
   echo "Downloading Root"
