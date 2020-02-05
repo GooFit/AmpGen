@@ -21,7 +21,7 @@ hash -r
 conda config --add channels conda-forge
 conda install --quiet --yes -c conda-forge/label/gcc8 root 
 
-source "${DEPS_DIR}/root/bin/thisroot.sh"
+source "$HOME/miniconda/bin/thisroot.sh"
 popd
 
 set +evx
