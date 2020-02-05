@@ -40,12 +40,13 @@ addons:
       - libtbb-dev
       
 before_install:
+  - chmod +x .ci/build_root_${TRAVIS_OS_NAME}.sh
   - source .ci/build_root_${TRAVIS_OS_NAME}.sh 
 
 # Build your code e.g. by calling make
 script:
-  - chmod +x .ci/travis.sh
-  - source .ci/travis.sh
+  - chmod +x .ci/travis_${TRAVIS_OS_NAME}.sh
+  - source .ci/travis_${TRAVIS_OS_NAME}.sh
 
 # Generate and deploy documentation
 after_success:
