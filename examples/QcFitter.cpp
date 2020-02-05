@@ -160,6 +160,7 @@ int main( int argc, char* argv[] )
     
 
     INFO( "norm[0] = " << cs.norm() );
+    /*
     cs.debugNorm();
  Minimiser mini( csLL, &MPS );
    // for (int i=0;  i<nFits; i++){
@@ -171,7 +172,7 @@ int main( int argc, char* argv[] )
    if (doFit) mini.doFit();
    // }
    // 
-
+*/
    
     if (doPCorrSum){
     
