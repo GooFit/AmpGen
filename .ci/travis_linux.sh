@@ -5,7 +5,7 @@ set -evx
 
 mkdir -p build
 cd build
-cmake .. -DUSE_OPENMP=0
+cmake .. 
 cmake --build . -- -j2
 
 set +evx
