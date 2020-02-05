@@ -1,11 +1,11 @@
 echo -en 'travis_fold:start:script.build\\r'
 echo "Building..."
-echo "Building under OS: $TRAVIS_OS_NAME"
+echo "Building under OS: $TRAVIS_OS_NAME, CXX =$CXX"
 set -evx
 
 mkdir -p build
 cd build
-cmake .. 
+cmake .. -DCMAKE_CXX_COMPILER=$CXX
 cmake --build . -- -j2
 
 set +evx
