@@ -1,11 +1,4 @@
 sudo: false
-# os:
-#   - linux
-#   - osx
-# 
-# compiler:
-#   - gcc 
-#   - clang
 matrix: 
   include:
     - os: osx 
