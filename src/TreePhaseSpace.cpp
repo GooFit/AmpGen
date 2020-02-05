@@ -257,6 +257,10 @@ TreePhaseSpace::Vertex TreePhaseSpace::Vertex::make(const Particle& particle, Tr
     parent->setRhoMax();
     return *parent; 
   }
+  if( decayProducts.size() > 2 )
+  {
+    ERROR("Decomposition only implemented for quasi two-body decays, vertex: " << particle << " does not result in valid phase space");
+  }
   return TreePhaseSpace::Vertex();
 }
 
