@@ -65,6 +65,7 @@ target_include_directories(AmpGen SYSTEM PUBLIC "${ROOT_INCLUDE_DIRS}")
 
 target_link_libraries(AmpGen PUBLIC ${ROOT_LIBRARIES} ${CMAKE_DL_LIBS})
 
+
 if( ( NOT TARGET ROOT::Minuit2 AND NOT TARGET Minuit2 ) OR "${extern_minuit2}" )
   message( STATUS "Use external Minuit2")
   add_subdirectory("extern/Minuit2")
@@ -132,7 +133,10 @@ target_compile_options(AmpGen
   -march=native
   $<$<CONFIG:Release>:-Ofast>)
 
-if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "AppleClang" )
+  target_link_libraries(AmpGen PUBLIC stdc++)
+  set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm -lstdc++")
+elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm -lstdc++")
 else()
   target_compile_options(AmpGen PUBLIC -Wno-suggest-override)

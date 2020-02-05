@@ -350,8 +350,10 @@ void PolarisedSum::debug(const Event& evt)
     for(auto& me : m_matrixElements){
       auto values = me(copy);
       copy.setCache( values , me.addressData );
+      me.amp.debug( copy.address() );
     }
     m_probExpression.debug( copy.getCachePtr() );
+    
   }
 }
 

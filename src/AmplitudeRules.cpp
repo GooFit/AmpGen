@@ -18,12 +18,6 @@
 using namespace AmpGen;
 using namespace std::complex_literals; 
 
-namespace AmpGen 
-{
-  make_enum(coordinateType, cartesian, polar)
-  make_enum(angType, deg, rad)
-}
-
 Coupling::Coupling(MinuitParameter* re, MinuitParameter* im) :
   m_re(re),
   m_im(im)
