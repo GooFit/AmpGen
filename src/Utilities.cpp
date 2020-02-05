@@ -17,13 +17,7 @@
 std::vector<std::string> AmpGen::vectorFromFile( const std::string& filename, const char ignoreLinesThatBeginWith )
 {
   std::vector<std::string> output;
-  std::string tmp;
-  std::ifstream inFile( filename.c_str() );
-  while ( inFile.good() ) {
-    std::getline( inFile, tmp );
-    if ( tmp.size() == 0 || tmp[0] == ignoreLinesThatBeginWith ) continue;
-    output.push_back( tmp );
-  }
+  processFile( filename, [output](const std::string& line) mutable -> void {output.push_back(line);} ); 
   return output;
 }
 

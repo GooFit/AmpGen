@@ -9,12 +9,20 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/ASTResolver.h"
+#include "AmpGen/enum.h"
+#include "AmpGen/NamedParameter.h"
 
 using namespace AmpGen;
 using namespace std::complex_literals; 
 
 DEFINE_CAST( MinuitParameterLink )
 DEFINE_CAST( ExpressionPack )
+
+namespace AmpGen 
+{
+  complete_enum(coordinateType, cartesian, polar)
+  complete_enum(angType, deg, rad)
+}
 
 void ExpressionParser::processBinaryOperators( std::vector<std::string>& opCodes, std::vector<Expression>& expressions )
 {
@@ -109,8 +117,21 @@ ExpressionParser::ExpressionParser()
   add_binary( "+" , [](auto& A, auto& B ) { return A + B; } );
   add_binary( ">" , [](auto& A, auto& B ) { return A > B; } );
   add_binary( "<" , [](auto& A, auto& B ) { return A < B; } );
-  add_binary( "&&", []( auto& A, auto& B ) { return A && B; } );
-  add_binary( "," , []( auto& A, auto& B ) { return ExpressionPack( A, B ); } );
+  add_binary( "&&", [](auto& A, auto& B ) { return A && B; } );
+  add_binary( "," , [](auto& A, auto& B ) { return ExpressionPack( A, B ); } );
+ 
+  coordinateType coord = NamedParameter<coordinateType>("CouplingConstant::Coordinates", coordinateType::cartesian);
+  angType degOrRad     = NamedParameter<angType>("CouplingConstant::AngularUnits", angType::rad);
+  m_isCartesian = true; 
+  if( coord == coordinateType::polar ) m_isCartesian = false; 
+  else if ( coord != coordinateType::cartesian){
+    FATAL("Coordinates for coupling constants must be either cartesian or polar");
+  } 
+  if ( degOrRad == angType::deg) m_sf = M_PI / 180; 
+  else if ( degOrRad != angType::rad){
+    FATAL("CouplingConstant::AngularUnits must be either rad or deg");
+  } 
+
 }
 
 Expression ExpressionParser::parse( 
@@ -142,7 +163,8 @@ Expression ExpressionParser::processEndPoint( const std::string& name, const Min
     auto it = mps->find(name);
     if ( it != nullptr ) return MinuitParameterLink( it );
     else if ( mps->find(name+"_Re") != nullptr && mps->find(name+"_Im") != nullptr ) {
-      return MinuitParameterLink( mps->find(name+"_Re") ) + 1i * MinuitParameterLink( mps->find(name+"_Im") );
+      if( m_isCartesian ) return MinuitParameterLink( mps->find(name+"_Re") ) + 1i * MinuitParameterLink( mps->find(name+"_Im") );
+      else return MinuitParameterLink( mps->find(name+"_Re") ) * fcn::exp( m_sf * 1i *MinuitParameterLink( mps->find(name+"_Im") ) ); 
     }
     else { 
       WARNING( "Token not understood: " << name << " [map size = " << mps->size() << "]" );

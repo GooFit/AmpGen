@@ -116,6 +116,7 @@ namespace AmpGen {
       std::ifstream inFile( filename.c_str() );
       while ( inFile.good() ) {
         std::getline( inFile, tmp );
+        tmp.erase( std::remove_if( tmp.begin(), tmp.end(), [](const char c){ return c == '\r'; }), tmp.end() );
         if ( tmp.size() == 0 || tmp[0] == ignoreLinesThatBeginWith ) continue;
         toDo( tmp );
       }
