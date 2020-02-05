@@ -1,5 +1,5 @@
 
-if [["$TRAVIS_OS_NAME" = "osx" ]] ; then return; fi
+# if [["$TRAVIS_OS_NAME" = "osx" ]] ; then return; fi
 
 set -evx
 

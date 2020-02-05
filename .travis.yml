@@ -40,7 +40,7 @@ addons:
       - libtbb-dev
       
 before_install:
-- source .ci/build_root.sh
+  - source .ci/build_root_${TRAVIS_OS_NAME}.sh 
 
 # Build your code e.g. by calling make
 script:
