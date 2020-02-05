@@ -12,11 +12,17 @@ matrix:
       osx_image: xcode10.1
       compiler: clang
     - os: linux
-      apt:
-        sources:
-          - ubuntu-toolchain-r-test
-        packages:
-          - g++-8
+      addons:
+       apt:
+         sources:
+           - ubuntu-toolchain-r-test
+         packages:
+           - g++-8
+           - doxygen
+           - doxygen-doc
+           - doxygen-gui
+           - graphviz
+           - libtbb-dev
       env:
         - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
   
@@ -42,16 +48,6 @@ env:
     - GH_REPO_REF: github.com/GooFit/AmpGen.git
     - DEPS_DIR: "${TRAVIS_BUILD_DIR}/deps"
 
-# Install dependencies
-addons:
-  apt:
-    packages:
-      - doxygen
-      - doxygen-doc
-      - doxygen-gui
-      - graphviz
-      - libtbb-dev
-      
 before_install:
   - chmod +x .ci/build_root_${TRAVIS_OS_NAME}.sh
   - source .ci/build_root_${TRAVIS_OS_NAME}.sh 
