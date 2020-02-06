@@ -7,7 +7,8 @@ matrix:
       addons:
         homebrew:
           packages:
-            - clang-omp
+            - libomp
+            - llvm 
     - os: linux
       addons:
        apt:
