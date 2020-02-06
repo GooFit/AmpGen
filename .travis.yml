@@ -6,7 +6,8 @@ matrix:
       compiler: clang
       addons:
         homebrew:
-          casks: clang-omp
+          packages:
+            - clang-omp
     - os: linux
       addons:
        apt:
