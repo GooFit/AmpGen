@@ -4,6 +4,9 @@ matrix:
     - os: osx 
       osx_image: xcode10.1
       compiler: clang
+      addons:
+        homebrew:
+          casks: clang-omp
     - os: linux
       addons:
        apt:
