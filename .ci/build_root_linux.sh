@@ -1,8 +1,3 @@
-
-# if [["$TRAVIS_OS_NAME" = "osx" ]] ; then return; fi
-
-set -evx
-
 pushd $DEPS_DIR 
 
 wget -nv http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
@@ -15,5 +10,3 @@ conda install --quiet --yes -c conda-forge/label/gcc8 root
 source "$DEPS_DIR/miniconda/bin/thisroot.sh"
 export CXX="$DEPS_DIR/miniconda/bin/g++"
 popd
-
-set +evx
