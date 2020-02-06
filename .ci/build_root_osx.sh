@@ -5,7 +5,7 @@ bash ~/miniconda.sh -b -p $DEPS_DIR/miniconda
 export PATH="$DEPS_DIR/miniconda/bin:$PATH"
 hash -r
 conda config --add channels conda-forge
-conda install --quiet --yes -c openmp root 
+conda install --quiet --yes -c conda-forge root openmp
 
 source "$DEPS_DIR/miniconda/bin/thisroot.sh"
 popd
