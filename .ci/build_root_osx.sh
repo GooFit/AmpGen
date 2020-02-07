@@ -6,6 +6,12 @@ export PATH="$DEPS_DIR/miniconda/bin:$PATH"
 hash -r
 conda config --add channels conda-forge
 conda install --quiet --yes -c conda-forge root
-source "$DEPS_DIR/miniconda/bin/thisroot.sh"
+. $DEPS_DIR/miniconda/etc/profile.d/conda.sh
+conda activate root
+#         . "/home/tim/miniconda/etc/profile.d/conda.sh"
+#     else
+#         export PATH="/home/tim/miniconda/bin:$PATH"
+
+# source "$DEPS_DIR/miniconda/bin/thisroot.sh"
 popd
 
