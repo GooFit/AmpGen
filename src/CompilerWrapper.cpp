@@ -29,16 +29,16 @@ using namespace AmpGen;
 
 CompilerWrapper::CompilerWrapper( const bool& verbose ) :
   m_verbose(verbose),
-  m_cxx(getenv("CXX") != nullptr ? std::string( getenv( "CXX" ) ) : "")
+  m_cxx(getenv("AMPGEN_CXX") != nullptr ? std::string( getenv( "AMPGEN_CXX" ) ) : "")
 {
   if ( m_cxx == "" ) {
 #ifdef AMPGEN_CXX
     if( m_verbose ) 
-      INFO( "Global variable CXX is undefined, using compiler variable AMPGEN_CXX: " << AMPGEN_CXX );
+      INFO( "Global variable AMPGEN_CXX is undefined, using compiler variable AMPGEN_CXX: " << AMPGEN_CXX );
     m_cxx = AMPGEN_CXX;
 #else
     m_cxx = getenv("AMPGEN_CXX") != nullptr ? std::string( getenv( "AMPGEN_CXX" ) ) : "";
-    if( m_cxx == "" ) ERROR( "No configured compiler; set global variable CXX" );
+    if( m_cxx == "" ) ERROR( "No configured compiler; set global variable AMPGEN_CXX" );
 #endif
   }
   else {
