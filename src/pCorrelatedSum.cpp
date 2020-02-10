@@ -339,30 +339,43 @@ double pCorrelatedSum::slowNorm(){
 /*
     */
  // complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
-  std::complex<long double> nBD = sum_amps( m_normalisationsBD, m_B.matrixElements(), m_D.matrixElements() );
+  std::complex<double> nBD = sum_amps( m_normalisationsBD, m_B.matrixElements(), m_D.matrixElements() );
 
 
-   std::complex<long double> rAC = 0; 
+   std::complex<double> rAC = 0; 
    auto eventsAC = m_integratorAC.events();
-
-    for( int i=0 ; i < eventsAC.size(); i++ ) {
-      std::complex<long double> ab = m_A.getVal(eventsAC[i]) * std::conj(m_C.getVal(eventsAC[i])) * correction(eventsAC[i])/(double)eventsAC.size();
-
-    rAC = rAC + ab;
     
-    }
+    for( int i=0 ; i < eventsAC.size(); i++ ) {
+      auto ab = m_A.getVal(eventsAC[i]) * std::conj(m_C.getVal(eventsAC[i])) * correction(eventsAC[i])/(double)eventsAC.size();
+  //    if (std::abs(ab) > 1e3){
+ 
+      auto abA = abs(m_A.getVal(eventsAC[i]));
+      auto abC = abs(m_C.getVal(eventsAC[i]));
+    
+      if (abA>1e10 || abC>1e10){
+  //      INFO("A or C too large?");
+      }
+      else{
+   if (m_debug)   INFO("ab = "<<abs(ab));
+    if (m_debug)    INFO("correction = "<<correction(eventsAC[i]));
+      if (m_debug)    INFO("rAC = "<<abs(rAC));
 
+        rAC = rAC + ab;
+    }
+    }
 
   
 
-
+    
   double n_fast = m_norm;
 
 
-  double norm = m_A.norm() * m_B.norm() + m_C.norm() * m_D.norm();
+//  double norm = m_A.norm() * m_B.norm() + m_C.norm() * m_D.norm();
   auto inter = nBD * rAC;
-  norm = norm - 2 * std::real(inter);
-return norm;
+  auto Norm = m_A.norm() * m_B.norm() + m_C.norm() * m_D.norm() - 2 * std::real(inter); 
+//  INFO("Norm = "<<Norm);
+//  INFO("Interference = "<<-2*std::real(inter));
+return Norm;
 }
 
 void pCorrelatedSum::reset(bool resetEvents){
@@ -427,47 +440,72 @@ complex_t pCorrelatedSum::getValNoCache(const Event& evt1, const Event& evt2) co
 
 void pCorrelatedSum::debugNorm()
 {
-  double n_slow = 0.0;
-  unsigned int nEvents = m_integratorAC.events().size();
+  auto n_slow = 0.0;
+  auto nEvents = m_integratorAC.events().size();
   INFO("nEvents = "<<nEvents);
   for(unsigned int j = 0; j < m_integratorAC.events().size(); ++j ) {
     auto val = getVal(m_integratorAC.events()[j],  m_integratorBD.events()[j]);
-    double val2 = val.real() * val.real() + val.imag() * val.imag();
+    auto val2 = val.real() * val.real() + val.imag() * val.imag();
     auto val3 = m_A.getVal(m_integratorAC.events()[j]) * std::conj(m_C.getVal(m_integratorAC.events()[j]));
+    auto rval3 = m_A.getVal(m_integratorAC.events()[j]) * std::conj(m_C.getVal(m_integratorAC.events()[j]))/(std::abs(m_A.getVal(m_integratorAC.events()[j])) * std::abs(m_C.getVal(m_integratorAC.events()[j])));
+    auto rpval3 = m_A.getVal(m_integratorAC.events()[j]) * std::conj(m_C.getVal(m_integratorAC.events()[j])) * correction(m_integratorAC.events()[j])/(std::abs(m_A.getVal(m_integratorAC.events()[j])) * std::abs(m_C.getVal(m_integratorAC.events()[j])));
+    auto pval3 = m_A.getVal(m_integratorAC.events()[j]) * std::conj(m_C.getVal(m_integratorAC.events()[j])) * correction(m_integratorAC.events()[j]);
     auto val4 = m_B.getVal(m_integratorBD.events()[j]) * std::conj(m_D.getVal(m_integratorBD.events()[j]));
     auto val5 = correction(m_integratorAC.events()[j]);
+    auto cdd = std::real(rval3);
+    auto dd = std::imag(log(val3/std::abs(val3)));
+    auto cddp = std::real(rpval3);
+    auto ddp = std::imag(log(pval3/std::abs(pval3)));
+    auto diffdd = ddp - dd;
     n_slow += (double)val2/(double)nEvents;
-    double frac = 100*(double)j/(double)nEvents;
-    if (j% m_debugFreq == 0 && m_debug){
+    auto frac = 100*(double)j/(double)nEvents;
+    if (m_debug){
       INFO("At "<<j <<" of "<<nEvents<<" events");
       INFO("ABC*D* = "<<val);
       INFO("|AB-CD|^2 = "<<val2);
       INFO("AC* = "<<val3);
+      INFO("AC*e^(if) = "<<pval3);
+      INFO("cos(dd) = "<<cdd); 
+      INFO("dd = "<<dd); 
+      INFO("cos(dd + f) = "<<cddp);
+      INFO("dd + f = "<<ddp);
+      INFO("dd + f - dd = "<<diffdd);
+      INFO("n_slow = "<<n_slow);
       INFO("BD* = "<<val4);
       INFO("exp(i f(s+,s-)="<<val5);
     }
   }
   auto integrate = []( const EventList& events, const CoherentSum& A, const CoherentSum& B, bool debug=false) -> double
   {
-   double r = 0.0; 
-   int N = events.size()/1; 
+   auto r = 0.0; 
+   auto N = events.size(); 
     for( int i=0 ; i < N; i++ ) {
-      std::complex<long double> ab = A.getVal(events[i]) * std::conj(B.getVal(events[i]));
-     double rab = std::real(ab)/N;
+     auto ab = A.getVal(events[i]) * std::conj(B.getVal(events[i]));
+
+
+     auto rab = std::real(ab)/N;
+
+     
       
       
       
 //    r += A.getVal(event) * std::conj( B.getVal(event) )/(double) events.size();
 //    if (i % 100000 == 0){
-  if (debug){
+/*  if (debug){
     INFO("r="<<r);
 
+   
 
     INFO("A = "<<A.getVal(events[i]));
     INFO("B = "<<B.getVal(events[i]));
     INFO("AB* = "<<std::real(A.getVal(events[i]) * std::conj(B.getVal(events[i])))/events.size());
+ //   INFO("ABcos(dd + f)) = "<<std::real(A.getVal(events[i]) * std::conj(B.getVal(events[i])) * correction(events[i]) )/events.size());
+    INFO("cosdd = "<< std::real(A.getVal(events[i]) * std::conj(B.getVal(events[i]))/(std::abs(A.getVal(events[i])) *std::abs(B.getVal(events[i])) )));
+//    INFO("cos(dd + f) = "<< (std::real(A.getVal(events[i]) * std::conj(B.getVal(events[i])) * correction(events[i]))/(std::abs(A.getVal(events[i])) *std::abs(B.getVal(events[i])) )));
+
     INFO(i<<"/"<<events.size());
   }
+  */
   //  }
   long double L=events.size();
     
@@ -498,9 +536,11 @@ void pCorrelatedSum::debugNorm()
   INFO("ABC*D* = "<<-2*nAC * nBD);
   double I = ( nAA * nBB + nCC * nDD - 2*std::real(nAC*nBD) );
   double n_fast = m_norm;
+  auto n_slow2 = slowNorm();
   double difference = std::abs(n_fast - I)/n_fast * 100.;
   INFO("My value for n_fast = "<<n_fast);
-  INFO("My value for n_slow = "<<I);
+  INFO("My value for I = "<<I);
+  INFO("My value for n_slow = "<<n_slow2);
   INFO("The difference = "<<difference<<"%");
 }
 
