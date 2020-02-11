@@ -109,16 +109,30 @@ class pCorrelatedSum {
         real_t operator()( const Event& event1, const Event& event2) const { return prob(event1, event2); }
         real_t prob(const Event& event1, const Event& event2) const {
         double P = std::norm(getVal(event1, event2))/m_norm;  
-        double A2 = m_A.prob(event1);
-        double B2 = m_B.prob(event2);
-        double C2 = m_C.prob(event1);
-        double D2 = m_D.prob(event2);
+        double A2 = std::norm(m_A.getVal(event1))/m_norm;
+        double B2 = std::norm(m_B.getVal(event2));
+        double C2 = std::norm(m_C.getVal(event1))/m_norm;
+        double D2 = std::norm(m_D.getVal(event2));
+        complex_t AC = m_A.getVal(event1) * std::conj(m_C.getVal(event1))/m_norm;
+        complex_t BD = m_B.getVal(event2) * std::conj(m_D.getVal(event2));
+        auto i = Constant(0,1);
+        complex_t eif = exp(i() * correction(event1));
+        double inter = -2*std::real(AC * BD);
+        double corrected_inter = -2*std::real(AC * BD * eif);
         if (m_debug){
             INFO("|AB-CD|^2 = "<<P);
+            INFO("A^2 B^2 + C^2 D^2 - 2Re(AC*BD) = "<<A2 *B2+C2*D2+inter);
+            INFO("A^3 B^2 + C^2 D^2 - 2Re(AC*BD*eif) = "<<A2 *B2+C2*D2+corrected_inter);
             INFO("|A|^2 = "<<A2);
             INFO("|B|^2 = "<<B2);
             INFO("|C|^2 = "<<C2);
             INFO("|D|^2 = "<<D2);
+            INFO("-2ReAC*BD*eif = "<<inter);
+            INFO("Strong phase (AC) = "<<std::imag(std::log(AC/std::abs(AC))));
+            INFO("Correction = "<<std::imag(std::log(eif)));
+            INFO("Corrected Strong phase (AC) = "<<std::imag(std::log(AC*eif/std::abs(AC))));
+            INFO("Norm = "<<m_norm);
+
         }
         return P;
         }
@@ -126,7 +140,7 @@ class pCorrelatedSum {
     double getC(int i, int j)const {
         std::string key = "pCorrelatedSum::C"+std::to_string(i)+std::to_string(j);
         double val=0;
-        if (m_debug) INFO(m_mps[key]->name()<<" = "<<m_mps[key]->mean());
+        //if (m_debug) INFO(m_mps[key]->name()<<" = "<<m_mps[key]->mean());
         val = m_mps[key]->mean(); 
         return val;
     }
@@ -211,10 +225,10 @@ class pCorrelatedSum {
             }
             corr += sum_i;
         }
-        corr = Constant(0,1) * corr;
-        complex_t val = exp(corr());
-        if (m_pdebug) INFO("correction = "<<val);
-        return val;
+        //corr = Constant(0,1) * corr;
+        //complex_t val = exp(corr());
+        if (m_pdebug) INFO("correction = "<<corr());
+        return corr();
       }
       //real_t norm(const Bilinears& norms) const; 
       double m_inter = 0;
@@ -271,6 +285,10 @@ class pCorrelatedSum {
         int m_order;
         std::string m_polyType;
         size_t m_prepareCalls = 0;
+        double m_Anorm;
+        double m_Bnorm;
+        double m_Cnorm;
+        double m_Dnorm;
   };
 }
 #endif

@@ -150,13 +150,17 @@ void pCorrelatedSum::prepare(){
     amp.resetExternals();
   }
   if (m_debug) INFO("Get Normalisation");
+
+  
+
   updateNorms(changedPdfIndicesA, changedPdfIndicesB, changedPdfIndicesC, changedPdfIndicesD);
-  if (m_pNorm){
+  m_Anorm = m_A.norm();
+  m_Bnorm = m_B.norm();
+  m_Cnorm = m_C.norm();
+  m_Dnorm = m_D.norm();
   m_norm = slowNorm();
-  }
-  else {
-    m_norm = norm();
-  }
+
+
   m_prepareCalls++;
 }
 
@@ -356,9 +360,9 @@ double pCorrelatedSum::slowNorm(){
   //      INFO("A or C too large?");
       }
       else{
-   if (m_debug)   INFO("ab = "<<abs(ab));
-    if (m_debug)    INFO("correction = "<<correction(eventsAC[i]));
-      if (m_debug)    INFO("rAC = "<<abs(rAC));
+//   if (m_debug)   INFO("ab = "<<abs(ab));
+//    if (m_debug)    INFO("correction = "<<correction(eventsAC[i]));
+//      if (m_debug)    INFO("rAC = "<<abs(rAC));
 
         rAC = rAC + ab;
     }
@@ -372,7 +376,7 @@ double pCorrelatedSum::slowNorm(){
 
 //  double norm = m_A.norm() * m_B.norm() + m_C.norm() * m_D.norm();
   auto inter = nBD * rAC;
-  auto Norm = m_A.norm() * m_B.norm() + m_C.norm() * m_D.norm() - 2 * std::real(inter); 
+  auto Norm = m_Anorm * m_Bnorm + m_Cnorm * m_Dnorm - 2 * std::real(inter); 
 //  INFO("Norm = "<<Norm);
 //  INFO("Interference = "<<-2*std::real(inter));
 return Norm;
@@ -423,8 +427,18 @@ complex_t pCorrelatedSum::getVal(const Event& evt1, const Event& evt2) const {
   complex_t C = m_C.getVal(evt1);
   complex_t D = m_D.getVal(evt2);
   complex_t f = correction(evt1);
-  complex_t val = A  *f * B - C * D;
+  auto i = Constant(0,1);
+  complex_t val = A  *exp(i()*f) * B - C * D;
   //INFO("Correction  = "<<f);
+  if (m_debug) INFO("A2 = "<<std::norm(A));
+  if (m_debug) INFO("B2 = "<<std::norm(B));
+  if (m_debug) INFO("C2 = "<<std::norm(C));
+  if (m_debug) INFO("D2 = "<<std::norm(D));
+  if (m_debug) INFO("ReAC*BD* = "<<std::real(A*std::conj(C)*B*std::conj(D)*exp(i()*f)));
+  if (m_debug) INFO("val2 = "<<std::norm(val));
+  if (m_debug) INFO("A2B2+C2D2-2ReAC*BD* = "<<std::norm(A)*std::norm(B) + std::norm(C)*std::norm(D) - 2 *std::real(A*std::conj(C)*B*std::conj(D)*exp(i()*f)));
+
+
   return val;
 }
 complex_t pCorrelatedSum::getValNoCache(const Event& evt1, const Event& evt2) const {
@@ -433,7 +447,8 @@ complex_t pCorrelatedSum::getValNoCache(const Event& evt1, const Event& evt2) co
   complex_t C = m_C.getValNoCache(evt1);
   complex_t D = m_D.getValNoCache(evt2);
   complex_t f = correction(evt1);
-  complex_t val = A *f* B - C * D;
+  auto i = Constant(0,1);
+  complex_t val = A *exp(i()*f)* B - C * D;
   return val;
 }
 
