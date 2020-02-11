@@ -202,8 +202,8 @@ int main( int argc, char* argv[] )
         std::ofstream scanfile;
         scanfile.open("C00.txt", std::ios_base::app);
 
-        double minimum=-3 * 0.005;
-        double maximum=3 * 0.005;
+        double minimum=-3 * 0.01;
+        double maximum=3 * 0.01;
         double val = minimum;
         double stepSize = 0.001;
         while (val < maximum){
