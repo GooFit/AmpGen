@@ -169,7 +169,7 @@ int main( int argc, char** argv )
 
  // if ( genType == generatorType::CoherentSum ) 
   INFO("Making CorrelatedSum");
-    CorrelatedSum cs( sigType, tagType, MPS );
+    pCorrelatedSum cs( sigType, tagType, MPS );
 
     PhaseSpace phspSig(sigType,&rand);
     PhaseSpace phspTag(tagType,&rand);
