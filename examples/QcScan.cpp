@@ -205,7 +205,7 @@ int main( int argc, char* argv[] )
         double minimum=-3 * 0.005;
         double maximum=3 * 0.005;
         double val = minimum;
-        double stepSize = 0.0025;
+        double stepSize = 0.001;
         while (val < maximum){
         auto N = cs.slowNorm();
      MPS["pCorrelatedSum::C00"]->setCurrentFitVal(val);    
