@@ -135,10 +135,19 @@ int main( int argc, char* argv[] )
 
     if (QcGen2){
         INFO("Generated Events used QcGen2");
-      sigEvents = EventList(dataFile + ":Signal" , signalType);
-      tagEvents = EventList(dataFile + ":Tag" , tagType);
-      sigMCEvents = EventList(intFile + ":Signal" , signalType);
-      tagMCEvents = EventList(intFile + ":Tag" , tagType);
+
+       std::stringstream signame;
+    signame<<":Signal_";
+    signame<<tokens[0];
+    std::stringstream tagname;
+    tagname<<":Tag_";
+    tagname<<tokens[0];
+      sigEvents = EventList(dataFile + signame.str() , signalType);
+      tagEvents = EventList(dataFile + tagname.str() , tagType);
+      sigMCEvents = EventList(intFile + signame.str() , signalType);
+      tagMCEvents = EventList(intFile + tagname.str() , tagType);
+
+
 
     }
     else{
