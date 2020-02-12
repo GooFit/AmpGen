@@ -80,7 +80,7 @@ int main( int argc, char* argv[] )
     int nFits = NamedParameter<int>("nFits", 4, "number of repeats of mini.doFits() for debug purposes!");
     bool doProjections = NamedParameter<bool>("doProjections", true);
     bool doPCorrSum = NamedParameter<bool>("doPCorrSum", false);
-
+    auto scanName = NamedParameter<std::string>("scanName", "pCorrelatedSum::C00");
 
   /* Parameters that have been parsed can be accessed anywhere in the program 
      using the NamedParameter<T> class. The name of the parameter is the first option,
@@ -210,11 +210,11 @@ int main( int argc, char* argv[] )
    // 
         std::ofstream scanfile;
         scanfile.open("C00.txt", std::ios_base::app);
-
-        double minimum=-3 * 0.01;
-        double maximum=3 * 0.01;
+        auto param = MPS[scanName];
+        double minimum=param->minInit();
+        double maximum=param->maxInit();
         double val = minimum;
-        double stepSize = 0.001;
+        double stepSize = param->stepInit();
         while (val < maximum){
         auto N = cs.slowNorm();
      MPS["pCorrelatedSum::C00"]->setCurrentFitVal(val);    
