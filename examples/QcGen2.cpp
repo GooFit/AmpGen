@@ -115,7 +115,7 @@ int main( int argc, char** argv )
   bool outputVals = NamedParameter<bool>("outputVals", false, "Whether to print out values for amplitude in a csv file");
   std::string ampFile = NamedParameter<std::string>("ampFile", "corr.csv", "Output file for correlated amplitude");
 
-
+TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
  for( auto& tag : tags ){
 
 
@@ -191,29 +191,43 @@ int main( int argc, char** argv )
       }
 
     if( acceptedSig.size() == 0 ) return -1;
-    TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
-    INFO( "Writing output file " );
-    TTree * sig = acceptedSig.tree(tokens[0]);
-   
-    sig->Write("Signal");
 
- TTree * tagTree = acceptedTag.tree(tokens[0]);
- tagTree->Write("Tag");
+    INFO( "Writing output file " );
+    std::stringstream signame;
+    signame<<"Signal_";
+    signame<<tokens[0];
+    std::stringstream tagname;
+    tagname<<"Tag_";
+    tagname<<tokens[0];
+    TTree * sig = acceptedSig.tree(signame.str().c_str());
+    sig->Write(signame.str().c_str());
+
+ TTree * tagTree = acceptedTag.tree(tagname.str().c_str());
+ tagTree->Write(tagname.str().c_str());
 
    // acceptedSig.tree(tokens[0])->Write("Signal");
  //  acceptedTag.tree(tokens[0])->Write("Tag");
   
   
-  
+ std::vector<std::string> dalitzNames = {"01", "02", "12"}; 
   auto plots = acceptedSig.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
-  for ( auto& plot : plots ) plot->Write();
-    auto proj = eventType.defaultProjections(nBins);
+  int i=0;
+  for ( auto& plot : plots ) {
+         std::stringstream projName;
+         projName<<"Signal_vs_"<<tokens[0]<<"_s"<<dalitzNames[i];
+
+         plot->Write(projName.str().c_str());
+         i++;
+    }
+          auto proj = eventType.defaultProjections(nBins);      
     for( size_t i = 0 ; i < proj.size(); ++i ){
       for( size_t j = i+1 ; j < proj.size(); ++j ){ 
-        acceptedSig.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(); 
+          std::stringstream projName;
+          projName<<"Signal_vs_"<<tokens[0]<<"_s"<<dalitzNames[i]<<"_vs_"<<dalitzNames[j];
+        acceptedSig.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(projName.str().c_str()); 
       }
     } 
-    f->Close();
+
   if (outputVals){
     std::ofstream out;
     out.open(ampFile.c_str());
@@ -247,6 +261,7 @@ int main( int argc, char** argv )
     out.close();
   }
  }
+    f->Close();
 
   
 

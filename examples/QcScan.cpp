@@ -185,8 +185,8 @@ int main( int argc, char* argv[] )
     csLL.setEvents(sigEvents, tagEvents);
     
 
-    INFO( "norm = " << cs.norm() );
-    INFO( "slowNorm = " << cs.slowNorm() );
+    INFO( "uncorrected norm = " << cs.norm() );
+    INFO( "corrected norm = " << cs.slowNorm() );
 //    cs.debugNorm();
  Minimiser mini( csLL, &MPS );
    // for (int i=0;  i<nFits; i++){
