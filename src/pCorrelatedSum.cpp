@@ -376,9 +376,10 @@ double pCorrelatedSum::slowNorm(){
 
 //  double norm = m_A.norm() * m_B.norm() + m_C.norm() * m_D.norm();
   auto inter = nBD * rAC;
-  auto Norm = m_Anorm * m_Bnorm + m_Cnorm * m_Dnorm - 2 * std::real(inter); 
+  auto Norm = m_Anorm * m_Bnorm + m_Cnorm * m_Dnorm;
 //  INFO("Norm = "<<Norm);
 //  INFO("Interference = "<<-2*std::real(inter));
+    Norm -= 2 * std::real(inter);  
 return Norm;
 }
 
