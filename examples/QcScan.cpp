@@ -213,15 +213,15 @@ int main( int argc, char* argv[] )
         auto param = MPS[scanName];
         double minimum=param->minInit();
         double maximum=param->maxInit();
-        double val = minimum;
+        double val = maximum;
         double stepSize = param->stepInit();
-        while (val < maximum){
+        while (val > minimum){
         auto N = cs.slowNorm();
      MPS["pCorrelatedSum::C00"]->setCurrentFitVal(val);    
     
     INFO("C00 = "<<val<<", Function = "<<mini.FCN() << "norm = "<<N );
         scanfile<<val<<"\t"<<mini.FCN()<<"\t"<<N<<"\n";      
-        val += stepSize;
+        val -= stepSize;
         
         }
        

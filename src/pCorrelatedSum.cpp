@@ -350,7 +350,7 @@ double pCorrelatedSum::slowNorm(){
    auto eventsAC = m_integratorAC.events();
     
     for( int i=0 ; i < eventsAC.size(); i++ ) {
-      auto ab = m_A.getVal(eventsAC[i]) * std::conj(m_C.getVal(eventsAC[i])) * correction(eventsAC[i])/(double)eventsAC.size();
+      auto ab = m_A.getVal(eventsAC[i]) * std::conj(m_C.getVal(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
   //    if (std::abs(ab) > 1e3){
  
       auto abA = abs(m_A.getVal(eventsAC[i]));
