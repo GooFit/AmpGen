@@ -182,7 +182,6 @@ int main( int argc, char* argv[] )
 */
    
     
-    
     pCorrelatedSum cs(signalType, tagType, MPS);
     cs.setEvents(sigEvents, tagEvents);
     cs.setMC(sigMCEvents, tagMCEvents);

@@ -117,6 +117,9 @@ class pCorrelatedSum {
         complex_t BD = m_B.getVal(event2) * std::conj(m_D.getVal(event2));
         auto i = Constant(0,1);
         complex_t eif = exp(i() * correction(event1));
+        if (m_sameTag){
+            eif *= exp(-i() * correction(event2));
+        }
         double inter = -2*std::real(AC * BD);
         double corrected_inter = -2*std::real(AC * BD * eif);
         if (m_debug){
@@ -289,6 +292,7 @@ class pCorrelatedSum {
         double m_Bnorm;
         double m_Cnorm;
         double m_Dnorm;
+        bool m_sameTag;
   };
 }
 #endif
