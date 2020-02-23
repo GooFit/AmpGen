@@ -73,7 +73,8 @@ template <class PDF_TYPE, class PRIOR_TYPE>
                        , PRIOR_TYPE& priorTag
                        , const size_t& nEvents
                        , const size_t& blockSize
-                       , TRandom* rndm )
+                       , TRandom* rndm 
+		       )
 {
   QcGenerator<PRIOR_TYPE> signalGenerator( priorSig, priorTag );
   signalGenerator.setRandom( rndm);
@@ -140,7 +141,7 @@ TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
   }
 
   Particle p;
-  bool debug=false;
+  bool debug=true;
   
 
 //  EventType eventType2( NamedParameter<std::string>( "EventType2" , "", "EventType to generate second lot of events, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
@@ -176,6 +177,11 @@ TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
     INFO("Generating Events now!");
     GenerateEvents( acceptedSig, acceptedTag, cs, phspSig, phspTag , nEvents, blockSize, &rand );
 
+    if (debug){
+	    for (int i=0; i<acceptedSig.size(); i++){
+		    INFO("Value = "<<cs.getVal(acceptedSig[i], acceptedTag[i]));
+	    }
+    }
 
 
       auto headPhsp = EventType({"psi(3770)0","D0","Dbar0"});
