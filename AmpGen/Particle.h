@@ -266,7 +266,15 @@ namespace AmpGen
         DifferentPolarisation = ( 1<<4 )
       };
       /// matches Check the matching between two decay chains, according to the MatchState enum. 
+
       unsigned int matches( const Particle& other ) const; 
+
+      Expression Zemach(Expression m2ab, Expression m2ac, Expression m2bc, Expression m2d, Expression m2a, Expression m2b, Expression m2c, double spin);
+      Expression ZemachLaura( const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>&   h, double spin, bool parent);
+      Expression pq( const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>&   h, bool parent);
+      Expression cosHel( const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>&   h );
+      Expression LegendreZemach(Expression x, double n);
+      int Factorial(int n);      
     private:
       const ParticleProperties* m_props      = {nullptr};    ///< Particle Properties from the PDG
       std::string m_name                     = {""};         ///< Name of the particle

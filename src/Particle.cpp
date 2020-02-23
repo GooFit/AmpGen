@@ -394,6 +394,140 @@ Tensor Particle::transitionMatrix( DebugSymbols* db  )
   return spinTensor();
 }
 
+
+//Factorial function - helper for Zemach
+int Particle::Factorial(int n){
+	if (n==0){
+		return 1;
+	}
+	else{
+		return n * Factorial(n-1);
+	}
+}
+
+Expression Particle::LegendreZemach(Expression x, double n){
+
+	Expression L = 0;
+	if (n==0){
+		L = 1;
+	}
+	else if (n==1){
+		L = x;
+	}
+	else{
+		L = (2 * n -1) * LegendreZemach(x, n-1) - (n-1)*LegendreZemach(x, n-2);
+		L = L/n;
+	}
+	return  L;
+
+}
+
+Expression Particle::cosHel(const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& h){
+
+	auto pR = R->P();
+	auto ph = h->P();
+	auto R1 = R->daughters()[0];
+	auto R2 = R->daughters()[1];
+	auto pR1 = R1->P();
+	auto pR2 = R2->P();
+
+	auto pD = pR + ph;
+
+	auto m2D = dot(pD, pD);
+	auto m2R = dot(pR, pR);
+	auto m2R1 = dot(pR1, pR1);
+	auto m2R2 = dot(pR2, pR2);
+	auto m2h = dot(ph, ph);
+	auto m2R1h = dot(pR1 + ph, pR1 + ph);
+
+	auto EhR = (m2D - m2R - m2h)/(2 * fcn::sqrt(m2R));
+	auto ER1R = (m2R + m2R1 - m2R2)/(2 * fcn::sqrt(m2R));
+
+	auto PR1R = fcn::sqrt(ER1R * ER1R - m2R1);
+	auto PhR = fcn::sqrt(EhR * EhR - m2h);
+
+	auto cosH = (m2R1h - m2R1 - m2h - 2 * ER1R * EhR)/(2 * PR1R * PhR);
+	return cosH;
+
+}
+
+Expression Particle::pq( const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& h, bool parent){
+	auto pR = R->P();
+	auto ph = h->P();
+	auto R1 = R->daughters()[0];
+	auto R2 = R->daughters()[1];
+	auto pR1 = R1->P();
+	auto pR2 = R2->P();
+
+	auto pD = pR + ph;
+
+	auto m2D = dot(pD, pD);
+	auto m2R = dot(pR, pR);
+	auto m2R1 = dot(pR1, pR1);
+	auto m2R2 = dot(pR2, pR2);
+	auto m2h = dot(ph, ph);
+	auto m2R1h = dot(pR1 + ph, pR1 + ph);
+
+	auto EhR = (m2D - m2R - m2h)/(2 * fcn::sqrt(m2R));
+	auto ER1R = (m2R + m2R1 - m2R2)/(2 * fcn::sqrt(m2R));
+
+	auto PR1R = fcn::sqrt(ER1R * ER1R - m2R1);
+	auto PhR = fcn::sqrt(EhR * EhR - m2h);
+
+	auto p = PhR;
+	auto q = PR1R;
+
+	auto EhD = (m2D + m2h - m2R)/(2 * fcn::sqrt(m2D));
+	auto PhD = fcn::sqrt(EhD * EhD - m2h);
+	auto pstar = PhD;
+	if (parent){
+		return pstar*q;
+	}
+	else {
+		return p*q;
+	}
+
+
+}
+
+    //Zemach Tensor stolen from A. Poluektov's TFA package - see ZemachTensor in TensorFlowAnalysis/Kinematics.py
+    //D -> ABC at the moment
+Expression Particle::Zemach(Expression m2ab, Expression m2ac, Expression m2bc, Expression m2d, Expression m2a, Expression m2b, Expression m2c, double spin){
+	Expression Z = 1;
+	if (spin==0){
+		Z = 1;
+	}
+	else if(spin==1){
+		Z = m2ac-m2bc+(m2d-m2c)*(m2b-m2a)/m2ab;
+	}
+	else if (spin ==2){
+		Z = (m2bc-m2ac+(m2d-m2c)*((m2a-m2b)/m2ab) * ((m2a-m2b)/m2ab) -1./3.*(m2ab-2.*(m2d+m2c) + (m2d-m2c) * (m2d-m2c)/m2ab)*(m2ab-2.*(m2a+m2b)+(m2a-m2b)*(m2a - m2b)/m2ab));
+	}
+	return Z;
+	
+}
+
+Expression Particle::ZemachLaura(const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& h, double spin, bool parent){
+	auto pq_ = pq(R, h, parent);
+	auto cosH = cosHel(R, h);
+
+	Expression Z=1;
+	if (spin == 0){
+		Z = 1;
+	}
+	else {
+		auto c = pow(-2, spin) * Factorial(spin)/Factorial(Factorial(2 * spin - 1));
+		Z *= c;
+		for (int i=0; i < spin; i++){
+			Z *= pq_;
+		}
+		Z*=LegendreZemach(cosH, spin);
+
+
+	}
+	return Z;
+}
+
 Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index )
 {
   if( db != nullptr && !isStable() ) 
@@ -401,9 +535,9 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   auto spinFormalism  = m_spinFormalism; 
   auto localFormalism = attribute("SpinFormalism"); 
   if( localFormalism != stdx::nullopt ) localFormalism = localFormalism.value();
-  if( spinFormalism != "Covariant" && spinFormalism != "Canonical")
+  if( spinFormalism != "Covariant" && spinFormalism != "Canonical" && spinFormalism != "Zemach3BodyTFA" && spinFormalism != "Zemach3BodyLaura" && spinFormalism != "ZemachP3BodyLaura")
   {
-    FATAL("Invalid value for SpinFormalism: " << spinFormalism << ", possible values are: " << italic_on << " Covariant, Canonical." << italic_off  );
+    FATAL("Invalid value for SpinFormalism: " << spinFormalism << ", possible values are: " << italic_on << " Covariant, Canonical, Zemach3BodyTFA, Zemach3BodyLaura, ZemachP3BodyLaura" << italic_off  );
   }
   Expression total = 0;
   Tensor::Index a;
@@ -419,9 +553,83 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
     auto exchangeParity = minSwaps( ordering, exchangeParities );   
     setOrdering( ordering );
     Expression spinFactor = 1; 
+    
+    //Zemach factor - only works for D-> ABC where AB, AC or BC is a 2 body resonance.
+    //We calculate Z = Z1 * Z2. In most cases Z1 or Z2 = 1 and the resonance (which actually has a spin) will contribute.
+    //The reason for this is to attempt to reproduce D to Kspipi models at Belle/BaBar which use the Zemach formalism for some reason.
+    if( includeSpin && spinFormalism == "Zemach3BodyTFA" ){
+	    auto mySpin = spin();
+	    auto Pd = P(); 
+
+	    if (finalStateParticles.size()==3){
+		    auto Pa = finalStateParticles[0]->P();
+		    auto Pb = finalStateParticles[1]->P();
+		    auto Pc = finalStateParticles[2]->P();
+			
+		    auto Pab = Pa + Pb;
+		    auto Pac = Pa + Pc;
+		    auto Pbc = Pb + Pc;
+
+		    auto m2ab = dot(Pab, Pab);
+		    auto m2ac = dot(Pac, Pac);
+		    auto m2bc = dot(Pbc, Pbc);
+
+
+		    auto m2d = dot(Pd, Pd);
+		    auto m2a = dot(Pa, Pa);
+		    auto m2b = dot(Pb, Pb);
+		    auto m2c = dot(Pc, Pc);
+		    
+
+		    auto twoBodyDaughters = daughters();
+		    if (twoBodyDaughters.size()==2){
+			    auto spin1 = twoBodyDaughters[0]->spin();
+			    INFO("spin1 = "<<spin1);
+			    auto spin2 = twoBodyDaughters[1]->spin();
+			    INFO("spin2 = "<<spin2);
+			    auto Z1 = Zemach(m2ab, m2ac, m2bc, m2d, m2a, m2b, m2c, spin1);
+			    auto Z2 = Zemach(m2ab, m2ac, m2bc, m2d, m2a, m2b, m2c, spin2);
+			    auto Z = Z1 * Z2;
+			    INFO("Z = "<<Z);
+			    spinFactor = Z;
+
+
+		    }
+	    }
+	    else {
+		    INFO("Have finalStateParticles of size = "<<finalStateParticles.size());
+	    }
+
+
+
+    }
+
+    if( includeSpin && spinFormalism =="Zemach3BodyLaura" ){
+
+	    if (finalStateParticles.size()==3){
+		    auto twoBodyDaughters = daughters();
+		    auto d0 = twoBodyDaughters[0];
+		    auto d1 = twoBodyDaughters[1];
+		    Expression Z=0;
+		    if (d0->daughters().size() == 2){
+			    auto R = d0;
+			    auto h = d1;
+			    Z = ZemachLaura(R, h, R->spin(), false);
+		    } 
+		    else if (d1->daughters().size() == 2){
+			    auto h = d0;
+			    auto R = d1;
+			    Z = ZemachLaura(R, h, R->spin(), false);
+		    }
+		    spinFactor = Z;
+
+	    }
+
+    }
     if( includeSpin && spinFormalism == "Covariant" ){
       Tensor st = spinTensor(db);
       if( m_props->twoSpin() == 0 ) spinFactor = st[0];
+
       if( m_props->twoSpin() == 1 ){
         Tensor is = Bar( externalSpinTensor(m_polState) );
         ADD_DEBUG_TENSOR( externalSpinTensor(m_polState), db );
@@ -437,10 +645,13 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
         ADD_DEBUG_TENSOR(is, db );
         spinFactor = dot(is,st);
       }
+      INFO(name()<<" spinFactor = "<< spinFactor);
     }
     if ( includeSpin && spinFormalism == "Canonical" ){
       TransformSequence t = TransformSequence();
       spinFactor = helicityAmplitude(*this, t, m_props->isBoson() ? polState() : double(polState())/2.0, db);
+
+      //INFO(name()<<" spinFactor = "<< spinFactor());
     }
     if( db != nullptr ){
       std::string finalStateString="";
@@ -454,6 +665,7 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
     }
     DEBUG( "Got spin matrix element -> calculating lineshape product" );
     Expression ls = make_cse(propagator(db)) * spinFactor; 
+    //INFO(name()<<" LS = "<<ls());
     if(sumAmplitudes) total = total + exchangeParity.second * ls;
     else              total = total + fcn::conj(ls) * ls;
     if(!doSymmetrisation) break;

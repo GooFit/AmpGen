@@ -18,6 +18,21 @@ Import $AMPGENROOT/options/kMatrix.opt
 D0{K0S0,rho(770)0{pi+,pi-}}           2  1.000  0.00  2     0.0 0.0 
 D0{K*(892)bar-{K0S0,pi-},pi+}         0  1.740  0.01  0   139.0 0.3
 D0{K(0)*(1430)bar-,pi+}               0  8.200  0.70  0   153.0 8.0
+D0{K0S0,omega(782)0{pi+,pi-}}	      Free 0.0388   0.0005   Free   120.7   0.7
+D0{K0S0,f(2)(1270)0{pi+,pi-}}         Free   1.43   0.03   Free   -36.3   1.1
+D0{K0S0,rho(1450)0{pi+,pi-}}	      Free   2.85   0.10   Free   102.1   1.9
+D0{K(2)*(1430)bar-{K0S0,pi-},pi+}        Free  1.27  0.02  Free   -44.1 0.8
+D0{K*(1680)bar-{K0S0,pi-},pi+}        Free  3.31  0.20  Free   -118.2 3.1
+D0{K*(1410)bar-{K0S0,pi-},pi+}        Free  0.29  0.03  Free   99.4 5.5
+D0{K*(892)+{K0S0,pi+},pi-}         Free  0.164  0.003  Free   -42.2 0.9
+D0{K(2)*(1430)+{K0S0,pi+},pi-}         Free  0.10  0.01  Free   -89.6 7.6
+D0{K*(1410)+{K0S0,pi+},pi-}         Free  0.21  0.02  Free   150.2 5.3
+
+#D0{K(0)*(1430)bar-[GLASS]{K0S0,pi-},pi+}   Free   2.36   0.06   Free   99.4   1.7
+
+
+#D0{K0S0,pi-,pi+} Fix 1 0 Fix 0 0
+
 # Coupling from D0 to K0S0,pipi S-wave, can be arbitrarily fixed.
 D0{K0S0,PiPi00}                       2  0.020  0.00  2     0.0 0.0 
 # 
@@ -34,8 +49,8 @@ PiPi00[kMatrix.prod.3]{pi+,pi-}       0  3.23   0.18  0     4.8 2.5
 
 PiPi00_s0_prod 3 -0.07 0.03
 
-K(0)*(1430)bar-[LASS.BW]{K0S0,pi-}      2  0.01   0.00  2     0.0 0.0
-K(0)*(1430)bar-[LASS.NR]{K0S0,pi-}      0  0.01   0.00  0    20.0 0.0
+#K(0)*(1430)bar-[LASS.BW]{K0S0,pi-}      2  0.01   0.00  2     0.0 0.0
+#K(0)*(1430)bar-[LASS.NR]{K0S0,pi-}      0  0.01   0.00  0    20.0 0.0
 
 K(0)*(1430)bar-_mass                  2  1.463  0.002
 K(0)*(1430)bar-_width                 2  0.233  0.005
@@ -43,4 +58,9 @@ K(0)*(1430)bar-_width                 2  0.233  0.005
 # enforce CP symmetry in mass and width of K(0)
 K(0)*(1430)+_mass                     = K(0)*(1430)bar-_mass   
 K(0)*(1430)+_width                    = K(0)*(1430)bar-_width
-
+K(0)*(1430)bar-::GLASS::F                         0              0.95532        0.01              
+K(0)*(1430)bar-::GLASS::R                         3              1              0              
+K(0)*(1430)bar-::GLASS::a                         0              0.11267        0.01              
+K(0)*(1430)bar-::GLASS::phiF                      0              0.00173        0.01             
+K(0)*(1430)bar-::GLASS::phiR                      0              -1.9145        0.01              
+K(0)*(1430)bar-::GLASS::r                         0              -33.799        0.01      

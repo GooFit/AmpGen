@@ -8,10 +8,10 @@
 
 # Import K-matrix parameters 
 Import $AMPGENROOT/options/kMatrix.opt
-
+outputVals false
 Particle::DefaultModifier BL
-Particle::SpinFormalism   Canonical
-
+#Particle::SpinFormalism   Zemach3Body
+nEvents 100000
 D0{K(0)*(1430)+[GLASS]{K0S0,pi+},pi-}                                           0              0.0095653      0.000827718    0              0.00601207     0.000843968    
 D0{K(0)*(1430)bar-[GLASS]{K0S0,pi-},pi+}                                        0              0.0255993      0.00122597     0              -0.194327      0.00105316     
 D0{K(2)*(1430)+{K0S0,pi+},pi-}                                                  0              0.0133101      0.00135651     0              0.0170886      0.00123279     

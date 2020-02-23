@@ -144,9 +144,9 @@ int main( int argc, char** argv )
     std::ofstream out;
     out.open(ampFile.c_str());
     for (size_t i=0; i < accepted.size(); i++){
-      auto eventSig = accepted[i];
-     
+      auto eventSig = accepted[i]; 
       auto A = sig.getVal(eventSig);
+      INFO("Output = "<<A);
 //      out<<ABCD<<"\n";
       auto sig01 = eventSig.s(0,1);
       auto sig02 = eventSig.s(0,2);
