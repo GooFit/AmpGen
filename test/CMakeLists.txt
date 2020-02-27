@@ -1,11 +1,8 @@
-
-enable_testing()
-set(Boost_NO_BOOST_CMAKE ON)
-
 find_package(Boost 1.67.0 COMPONENTS unit_test_framework)
+
 if ( Boost_FOUND )
   include_directories (${Boost_INCLUDE_DIRS})
-  file(GLOB TEST_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cpp)
+  file(GLOB TEST_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
   foreach(testSrc ${TEST_SRCS})
     get_filename_component(testName ${testSrc} NAME_WE)
     add_executable(${testName} ${testSrc})

@@ -12,6 +12,7 @@
 #include "AmpGen/CompilerWrapper.h"
 #include "AmpGen/ASTResolver.h"
 #include "AmpGen/ProfileClock.h"
+#include "AmpGen/Tensor.h"
 using namespace AmpGen;
 
 CompiledExpressionBase::CompiledExpressionBase() = default; 
@@ -86,7 +87,22 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   stream << "extern \"C\" const char* " << progName() << "_name() {  return \"" << m_name << "\"; } \n";
   bool enable_cuda = NamedParameter<bool>("UseCUDA",false);
   size_t sizeOfStream = 0;
-  if( !enable_cuda ){
+  if( m_rto )
+  {
+    stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
+    addDependentExpressions( stream , sizeOfStream );
+    if( is<TensorExpression>(m_obj) == false ){
+      stream << "*r = " << m_obj.to_string(m_resolver.get()) << ";\n";
+     stream << "}\n";
+    }
+    else {
+      auto as_tensor = cast<TensorExpression>(m_obj).tensor();
+      for(unsigned j=0; j != as_tensor.size(); ++j )
+        stream << "r["<<j<<"] = " << as_tensor[j].to_string(m_resolver.get()) << ";\n";
+      stream << "}\n";  
+    }
+  }
+  else if( !enable_cuda ){
 //    stream << "#pragma clang diagnostic push\n#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );
@@ -139,4 +155,12 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
       stream << expression.to_string(m_resolver.get()) << "}" << comma;
     else stream << "-999}" << comma ;
   }
+}
+
+std::string CompiledExpressionBase::fcnSignature(const std::vector<std::string>& argList, bool rto=false)
+{
+  unsigned counter=0;
+  auto fcn = [counter](const auto& str) mutable {return str + " x"+std::to_string(counter++); }; 
+  if( rto ) return argList[0] + " r, " + vectorToString( argList.begin()+1, argList.end(), ", ", fcn );
+  return vectorToString( argList.begin(), argList.end(), ", ", fcn);
 }

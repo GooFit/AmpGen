@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE( parametericExpressions ) {
 
   double pi = M_PI;
 
-  auto test = [mps](const std::string& expr) -> double { 
+  auto test = [&mps](const std::string& expr) -> double { 
     std::string newLine=""; 
     for( auto& ch : expr ){
     if( ch == '(' ||

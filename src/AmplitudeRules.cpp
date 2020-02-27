@@ -94,7 +94,7 @@ std::vector<Coupling> AmplitudeRules::rulesForDecay(const std::string& head, con
   if(!hasDecay(head)) return std::vector<Coupling>();
   if( prefix == "" )return m_rules[head];
   std::vector<Coupling> rt = m_rules[head];
-  rt.erase( std::remove_if( std::begin(rt), std::end(rt), [&prefix](auto& p){ return p.prefix() != prefix; } ) );
+  rt.erase( std::remove_if( std::begin(rt), std::end(rt), [&prefix](auto& p){ return p.prefix() != prefix; } ), rt.end() );
   return rt;
 }
 

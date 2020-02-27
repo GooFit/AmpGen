@@ -172,7 +172,7 @@ namespace AmpGen
       void resolve( ASTResolver& resolver ) const override; 
       complex_t operator()() const override;
       operator Expression() const;
-    
+      Tensor tensor() const { return m_tensor;}
     private:
       Tensor m_tensor; 
   };
