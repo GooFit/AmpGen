@@ -221,8 +221,10 @@ int main( int argc, char* argv[] )
         auto Nf = cs.slowNorm();
         while (val < maximum){
     
+        
         auto Ni = cs.slowNorm();
      MPS["pCorrelatedSum::C00"]->setCurrentFitVal(val);    
+cs.prepare();
         auto Nf = cs.slowNorm();
         
        

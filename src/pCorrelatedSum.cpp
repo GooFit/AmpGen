@@ -19,6 +19,7 @@ pCorrelatedSum::pCorrelatedSum(const EventType& type1, const EventType& type2, c
   m_order(NamedParameter<unsigned int>( "pCorrelatedSum::Order" )),
   m_polyType(NamedParameter<std::string>("pCorrelatedSum::PolyType", "simple")),
   m_mps(mps),
+  m_flat(NamedParameter<bool>("pCorrelatedSum::flat", false, "Force Amplitude=1")),
   m_coherentIntegral(NamedParameter<bool>("pCorrelatedSum::coherentIntegral", false, "Do the super slow method to calculate normalisation")),
   m_coherentIntegralA(NamedParameter<bool>("pCorrelatedSum::coherentIntegralA", false, "Do the super slow method to calculate normalisation")),
   m_coherentIntegralB(NamedParameter<bool>("pCorrelatedSum::coherentIntegralB", false, "Do the super slow method to calculate normalisation")),
@@ -47,9 +48,21 @@ pCorrelatedSum::pCorrelatedSum(const EventType& type1, const EventType& type2, c
       m_normalisationsCC.resize( m_C.matrixElements().size(), m_C.matrixElements().size() ); 
   }
   if (m_coherentIntegralD) {
+
       INFO("Using Slow option for amplitude D");
       m_normalisationsDD.resize( m_D.matrixElements().size(), m_D.matrixElements().size() ); 
   }  
+  INFO("Type 1 "<<type1);
+  INFO("Type 2 "<<type2);
+  if (type1==type2){
+    m_sameTag = true;
+  }
+  else{
+    m_sameTag = false;
+  }
+  if (m_sameTag){
+    INFO("Using same tag for AC and BD");
+  }
 }
 void pCorrelatedSum::prepare(){
   if (m_debug) INFO("Preparing A");
@@ -60,6 +73,7 @@ void pCorrelatedSum::prepare(){
   m_C.prepare();
   if (m_debug) INFO("Preparing D");
   m_D.prepare();
+
 
 
   if (m_debug) INFO("Preparing pCorrelatedSum");
@@ -346,7 +360,9 @@ double pCorrelatedSum::slowNorm(){
   std::complex<double> nBD = sum_amps( m_normalisationsBD, m_B.matrixElements(), m_D.matrixElements() );
 
 
+
    std::complex<double> rAC = 0; 
+
    auto eventsAC = m_integratorAC.events();
     
     for( int i=0 ; i < eventsAC.size(); i++ ) {
@@ -368,8 +384,30 @@ double pCorrelatedSum::slowNorm(){
     }
     }
 
-  
 
+   auto eventsBD = m_integratorBD.events();
+   if (m_sameTag) {
+   std::complex<double> rBD = 0; 
+    for( int i=0 ; i < eventsBD.size(); i++ ) {
+      auto ab = m_B.getVal(eventsBD[i]) * std::conj(m_D.getVal(eventsBD[i])) * exp(-Constant(0,1)() * correction(eventsBD[i]))/(double)eventsBD.size();
+  //    if (std::abs(ab) > 1e3){
+ 
+      auto abB = abs(m_B.getVal(eventsBD[i]));
+      auto abD = abs(m_D.getVal(eventsBD[i]));
+    
+      if (abB>1e10 || abD>1e10){
+  //      INFO("B or D too large?");
+      }
+      else{
+//   if (m_debug)   INFO("ab = "<<abs(ab));
+//    if (m_debug)    INFO("correction = "<<correction(eventsBD[i]));
+//      if (m_debug)    INFO("rBD = "<<abs(rBD));
+
+        rBD = rBD + ab;
+    }
+    }
+    nBD = rBD;
+    }
     
   double n_fast = m_norm;
 
@@ -428,6 +466,9 @@ complex_t pCorrelatedSum::getVal(const Event& evt1, const Event& evt2) const {
   complex_t C = m_C.getVal(evt1);
   complex_t D = m_D.getVal(evt2);
   complex_t f = correction(evt1);
+  if (m_sameTag){
+    f -= correction(evt2);
+  }
   auto i = Constant(0,1);
   complex_t val = A  *exp(i()*f) * B - C * D;
   //INFO("Correction  = "<<f);
@@ -439,6 +480,10 @@ complex_t pCorrelatedSum::getVal(const Event& evt1, const Event& evt2) const {
   if (m_debug) INFO("val2 = "<<std::norm(val));
   if (m_debug) INFO("A2B2+C2D2-2ReAC*BD* = "<<std::norm(A)*std::norm(B) + std::norm(C)*std::norm(D) - 2 *std::real(A*std::conj(C)*B*std::conj(D)*exp(i()*f)));
 
+  if (m_flat){
+    val = 1;
+  }
+
 
   return val;
 }
@@ -448,14 +493,21 @@ complex_t pCorrelatedSum::getValNoCache(const Event& evt1, const Event& evt2) co
   complex_t C = m_C.getValNoCache(evt1);
   complex_t D = m_D.getValNoCache(evt2);
   complex_t f = correction(evt1);
+  if (m_sameTag){
+    f -= correction(evt2);
+  }
   auto i = Constant(0,1);
   complex_t val = A *exp(i()*f)* B - C * D;
+  if (m_flat){
+    val = 1;
+  }
   return val;
 }
 
 
 void pCorrelatedSum::debugNorm()
 {
+auto i = Constant(0,1);
   auto n_slow = 0.0;
   auto nEvents = m_integratorAC.events().size();
   INFO("nEvents = "<<nEvents);
@@ -464,8 +516,8 @@ void pCorrelatedSum::debugNorm()
     auto val2 = val.real() * val.real() + val.imag() * val.imag();
     auto val3 = m_A.getVal(m_integratorAC.events()[j]) * std::conj(m_C.getVal(m_integratorAC.events()[j]));
     auto rval3 = m_A.getVal(m_integratorAC.events()[j]) * std::conj(m_C.getVal(m_integratorAC.events()[j]))/(std::abs(m_A.getVal(m_integratorAC.events()[j])) * std::abs(m_C.getVal(m_integratorAC.events()[j])));
-    auto rpval3 = m_A.getVal(m_integratorAC.events()[j]) * std::conj(m_C.getVal(m_integratorAC.events()[j])) * correction(m_integratorAC.events()[j])/(std::abs(m_A.getVal(m_integratorAC.events()[j])) * std::abs(m_C.getVal(m_integratorAC.events()[j])));
-    auto pval3 = m_A.getVal(m_integratorAC.events()[j]) * std::conj(m_C.getVal(m_integratorAC.events()[j])) * correction(m_integratorAC.events()[j]);
+    auto rpval3 = m_A.getVal(m_integratorAC.events()[j]) * std::conj(m_C.getVal(m_integratorAC.events()[j])) * exp(i() * correction(m_integratorAC.events()[j]))/(std::abs(m_A.getVal(m_integratorAC.events()[j])) * std::abs(m_C.getVal(m_integratorAC.events()[j])));
+    auto pval3 = m_A.getVal(m_integratorAC.events()[j]) * std::conj(m_C.getVal(m_integratorAC.events()[j])) * exp(i() * correction(m_integratorAC.events()[j]));
     auto val4 = m_B.getVal(m_integratorBD.events()[j]) * std::conj(m_D.getVal(m_integratorBD.events()[j]));
     auto val5 = correction(m_integratorAC.events()[j]);
     auto cdd = std::real(rval3);
