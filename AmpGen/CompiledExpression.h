@@ -21,6 +21,10 @@ namespace AmpGen
      usually this is a std::complex<double>,
      but in principal support also exists for computing coupled channel propagators
      (i.e. returning array types) */
+  namespace detail {
+    template <typename T> struct size_of {       unsigned operator()(){ return sizeof(T); } };
+    template <>           struct size_of<void> { unsigned operator()(){ return 0; } };
+  }
 
   template <class RETURN_TYPE, class... ARGS>
   class CompiledExpression : public CompiledExpressionBase
@@ -50,14 +54,7 @@ namespace AmpGen
     std::string returnTypename() const override { return typeof<RETURN_TYPE>(); }
     std::string fcnSignature() const override
     {
-      std::string signature;
-      auto argTypes = typelist<ARGS...>();
-      for( unsigned int i = 0 ; i < argTypes.size(); ++i )
-      {
-        signature += argTypes[i] + " x"+std::to_string(i) ;
-        if( i != argTypes.size() - 1 ) signature += ", ";
-      }
-      return signature;
+      return CompiledExpressionBase::fcnSignature(typelist<ARGS...>(), m_rto);
     }
     std::string args() const override 
     {
@@ -119,25 +116,16 @@ namespace AmpGen
     void compileWithParameters( std::ostream& stream ) const
     {
       DEBUG( "Compiling " << name() << " = " << hash() );
-      // Avoid a warning about std::complex not being C compatible (it is)
-      // stream << "#pragma clang diagnostic push\n"
-      //        << "#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
       stream << "extern \"C\" " << returnTypename() << " " << progName() << "_wParams"
              << "( const double*__restrict__ E ){" << std::endl;
-      stream << "  double externalParameters [] = {";
-      if ( m_externals.size() != 0 ) {
-        for ( unsigned int i = 0; i < m_externals.size() - 1; ++i ) {
-          stream << m_externals[i] << ", " ; 
-        }
-        stream << m_externals[m_externals.size() - 1] << " }; " << std::endl;
-      } else stream << "0};" << std::endl;
+      stream << "  double externalParameters [] = {" << (m_externals.size() == 0 ? "0" : vectorToString(m_externals,", ") ) <<"};\n" ;
       stream << "  return " << progName() << "( externalParameters, E ); // E is P \n}\n";
-      // stream << "#pragma clang diagnostic pop\n\n" << std::endl;
     }
 
     bool isReady()          const override { return m_fcn.isLinked(); }
     bool isLinked()         const { return m_fcn.isLinked() ; } 
-    size_t returnTypeSize() const override { return sizeof( RETURN_TYPE ); }
+    
+    unsigned returnTypeSize() const override { return detail::size_of<RETURN_TYPE>()(); }
    
     template < class T > 
     RETURN_TYPE operator()( const T* event ) const
@@ -199,6 +187,16 @@ namespace AmpGen
       return true;
     }
   };
+  template <class RT> 
+    CompiledExpression<void, RT*, const double*, const double*> 
+      make_rto_expression( const Expression& expression, const std::string& name , const bool& verbose=false)
+      {
+        CompiledExpression<void, RT*, const double*, const double*> rt(expression,name);
+        rt.use_rto();
+        rt.compile();
+        rt.prepare();
+        return rt;
+      }
 
   template <class RT> 
     CompiledExpression<RT, const double*, const double*> 

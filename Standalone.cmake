@@ -103,6 +103,23 @@ if( USE_OPENMP )
   endif()
 endif()
 
+set(RAPIDSIM_DATA "")
+
+if( "${USE_RAPIDSIM}" ) 
+  include(${CMAKE_ROOT}/Modules/FetchContent.cmake) 
+  FetchContent_Declare( RapidSim GIT_REPOSITORY https://github.com/gcowan/RapidSim/ )
+  if(NOT RapidSim_POPULATED)
+    message("Fetching RapidSim from: https://github.com/gcowan/RapidSim/")
+    FetchContent_Populate(RapidSim)
+  endif()
+  FetchContent_GetProperties(RapidSim)
+  set(RAPIDSIM_DATA "${CMAKE_BINARY_DIR}/_deps/rapidsim-src/rootfiles/" )
+endif()
+
+if( RAPIDSIM_DATA )
+  message("Set RAPIDSIM_DATA = ${RAPIDSIM_DATA}")
+endif()
+
 # Default to XROOTD only if on CMT system. Can be overridden with -DAMPGEN_XROOTD=ON
 if(DEFINED ENV{CMTCONFIG})
   set(AMPGEN_XROOTD_DEFAULT ON)
@@ -169,6 +186,8 @@ foreach(file ${options_files})
   execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${file}" "${CMAKE_BINARY_DIR}/bin/${OptionFile}")
 endforeach()
 
+enable_testing()
+set(Boost_NO_BOOST_CMAKE ON)
 add_subdirectory(test)
 
 include(CMakePackageConfigHelpers)

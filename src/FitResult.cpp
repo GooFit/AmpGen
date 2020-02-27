@@ -26,7 +26,7 @@ using namespace AmpGen;
 FitResult::FitResult() = default; 
 
 FitResult::FitResult( const FitResult& other )
-  : m_mps( std::make_shared<MinuitParameterSet>( *other.mps() ) )
+  : m_mps( other.mps()  )
   , m_chi2( other.chi2() )
   , m_LL( other.LL() )
   , m_nBins( other.nBins() )
@@ -39,13 +39,13 @@ FitResult::FitResult( const FitResult& other )
 }
 
 FitResult::FitResult( const std::string& filename ) :
-  m_mps( std::make_shared<MinuitParameterSet>() ) 
+  m_mps( new MinuitParameterSet() ) 
 {
   m_fitted = readFile( filename );
 }
 
 FitResult::FitResult( const Minimiser& mini )
-  : m_mps  ( std::make_shared<MinuitParameterSet>( *mini.parSet() ) )
+  : m_mps  ( mini.parSet() )
   , m_LL   ( mini.FCN() )
   , m_nParam( 0 )
   , m_status( mini.status() )
@@ -56,8 +56,7 @@ FitResult::FitResult( const Minimiser& mini )
   }
 }
 
-FitResult::FitResult( const MinuitParameterSet& mps, const TMatrixD& covMini ) :
-  m_mps( std::make_shared<MinuitParameterSet>( mps ) )
+FitResult::FitResult( MinuitParameterSet& mps, const TMatrixD& covMini ) : m_mps(&mps)
 {
   if ( int( mps.size() ) != covMini.GetNcols() ) {
     ERROR( "Minuit parameter set size does not match covariance matrix size!" );
@@ -210,7 +209,7 @@ int FitResult::nParam() const { return m_nParam; }
 int FitResult::nBins() const { return m_nBins; }
 
 std::map<std::string, double> FitResult::observables() const { return m_observables; }
-std::shared_ptr<MinuitParameterSet> FitResult::mps() const { return m_mps; }
+MinuitParameterSet* FitResult::mps() const { return m_mps; }
 
 double FitResult::dof() const { return m_nBins - m_nParam - 1; }
 std::vector<FitFraction> FitResult::fitFractions() const { return m_fitFractions; }

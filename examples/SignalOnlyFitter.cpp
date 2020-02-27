@@ -103,7 +103,7 @@ int main( int argc, char* argv[] )
   /* Generate events to normalise the PDF with. This can also be loaded from a file, 
      which will be the case when efficiency variations are included. Default number of normalisation events 
      is 5 million. */
-  EventList eventsMC = intFile == "" ? Generator<>(evtType, &rndm).generate(2e6) : EventList(intFile, evtType, GetGenPdf(true));
+  EventList eventsMC = intFile == "" ? Generator<>(evtType, &rndm).generate(1e7) : EventList(intFile, evtType, GetGenPdf(true));
   
   sig.setMC( eventsMC );
 

@@ -23,18 +23,19 @@ BOOST_AUTO_TEST_CASE( test_AmplitudeRule ) {
   BOOST_CHECK( test.prefix() == "" );
   BOOST_CHECK( test.eventType() == EventType({"D0","K-","pi+","pi0"}) );
 }
-AmplitudeRules rule_set( 
-    MinuitParameterSet( {
-   new MinuitParameter("D0{K*(892)bar0,pi0}_Re", Flag::Fix,1.,0.)
- , new MinuitParameter("D0{K*(892)bar0,pi0}_Im", Flag::Fix,1.,0.)
- , new MinuitParameter("D0{rho(770)+,pi-}_Re"  , Flag::Fix,1.,0.)
- , new MinuitParameter("D0{rho(770)+,pi-}_Im"  , Flag::Fix,2.,0.)
- , new MinuitParameter("K*(892)bar0{K-,pi+}_Re", Flag::Free,sqrt(1./3.),0.)
- , new MinuitParameter("K*(892)bar0{K-,pi+}_Im", Flag::Free,0,0.)
- , new MinuitParameter("K*(892)bar0{K0,pi0}_Re", Flag::Fix,sqrt(2./3.),0.)
- , new MinuitParameter("K*(892)bar0{K0,pi0}_Im", Flag::Fix,0,0.) } ) ); 
 
 BOOST_AUTO_TEST_CASE( test_AmplitudeRules_constructor ){
+  auto mps = MinuitParameterSet( {
+        new MinuitParameter("D0{K*(892)bar0,pi0}_Re", Flag::Fix,1.,0.)
+        , new MinuitParameter("D0{K*(892)bar0,pi0}_Im", Flag::Fix,1.,0.)
+        , new MinuitParameter("D0{rho(770)+,pi-}_Re"  , Flag::Fix,1.,0.)
+        , new MinuitParameter("D0{rho(770)+,pi-}_Im"  , Flag::Fix,2.,0.)
+        , new MinuitParameter("K*(892)bar0{K-,pi+}_Re", Flag::Free,sqrt(1./3.),0.)
+        , new MinuitParameter("K*(892)bar0{K-,pi+}_Im", Flag::Free,0,0.)
+        , new MinuitParameter("K*(892)bar0{K0,pi0}_Re", Flag::Fix,sqrt(2./3.),0.)
+        , new MinuitParameter("K*(892)bar0{K0,pi0}_Im", Flag::Fix,0,0.) } ); 
+  AmplitudeRules rule_set(mps);
+
   BOOST_CHECK( rule_set.rules().size() == 2 ); /// number of head decays
   BOOST_CHECK( rule_set.hasDecay("D0") == true ); /// has decays for D0 
   BOOST_CHECK( rule_set.hasDecay("a(1)(1260)+") == false ); /// has decays for D0 
@@ -42,9 +43,19 @@ BOOST_AUTO_TEST_CASE( test_AmplitudeRules_constructor ){
 
 BOOST_AUTO_TEST_CASE( test_couplingConstant )
 {
+  auto mps = MinuitParameterSet( {
+        new MinuitParameter("D0{K*(892)bar0,pi0}_Re", Flag::Fix,1.,0.)
+        , new MinuitParameter("D0{K*(892)bar0,pi0}_Im", Flag::Fix,1.,0.)
+        , new MinuitParameter("D0{rho(770)+,pi-}_Re"  , Flag::Fix,1.,0.)
+        , new MinuitParameter("D0{rho(770)+,pi-}_Im"  , Flag::Fix,2.,0.)
+        , new MinuitParameter("K*(892)bar0{K-,pi+}_Re", Flag::Free,sqrt(1./3.),0.)
+        , new MinuitParameter("K*(892)bar0{K-,pi+}_Im", Flag::Free,0,0.)
+        , new MinuitParameter("K*(892)bar0{K0,pi0}_Re", Flag::Fix,sqrt(2./3.),0.)
+        , new MinuitParameter("K*(892)bar0{K0,pi0}_Im", Flag::Fix,0,0.) } ); 
+  AmplitudeRules rule_set(mps); 
   auto matches = rule_set.getMatchingRules( EventType({"D0","K-","pi+","pi0"}) );  
   auto matches2 = rule_set.getMatchingRules( EventType({"D0","K0","pi0","pi0"}) ); 
-  
+
   BOOST_TEST( std::real(matches[0].second()) == 1./sqrt(3.), boost::test_tools::tolerance(1e-10) );  
   BOOST_TEST( std::imag(matches[0].second()) == 1./sqrt(3.), boost::test_tools::tolerance(1e-10) );  
   BOOST_TEST( matches[0].second.isFixed() == false );

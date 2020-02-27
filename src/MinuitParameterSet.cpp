@@ -26,18 +26,15 @@ MinuitParameterSet::MinuitParameterSet(const std::vector<MinuitParameter*>& para
   for( auto& param : params ) add(param); 
 }
 
-MinuitParameterSet::MinuitParameterSet( const MinuitParameterSet& other )
-  : m_parameters( other.m_parameters ), m_keyAccess( other.m_keyAccess ){}
-
-MinuitParameterSet MinuitParameterSet::getFloating()
-{
-  MinuitParameterSet floating;
-  for ( auto& param : *this ) {
-    if ( param->isFree() && dynamic_cast<MinuitExpression*>(param) != nullptr ) 
-      floating.add(param);
-  }
-  return floating;
-}
+// MinuitParameterSet MinuitParameterSet::getFloating()
+// {
+//   MinuitParameterSet floating;
+//   for ( auto& param : *this ) {
+//     if ( param->isFree() && dynamic_cast<MinuitExpression*>(param) != nullptr ) 
+//       floating.add(param);
+//   }
+//   return floating;
+// }
 
 bool MinuitParameterSet::addToEnd( MinuitParameter* parPtr )
 {
@@ -251,6 +248,5 @@ double MinuitParameterSet::operator()( const std::string& name )
 
 MinuitParameterSet::~MinuitParameterSet()
 {
-  for( auto& param : m_parameters ) delete param; 
-
+  for( auto& param : m_parameters ) if( param != nullptr ) delete param; 
 }

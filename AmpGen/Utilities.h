@@ -18,27 +18,26 @@
 
 #include "AmpGen/MsgService.h"
 #include "AmpGen/MetaUtils.h"
+
+
 namespace AmpGen {
-  template <class T>
-    std::string vectorToString( const std::vector<T>& obj, const std::string& delim = "" )
+  template <class it_type, class F>
+    std::string vectorToString( it_type begin,
+                                it_type end,
+                                const std::string& delim,
+                                F fcn )
     {
       std::stringstream ss;
-      if( obj.size() == 0 ) return "";
-      for ( unsigned int i = 0 ; i < obj.size()-1; ++i ) 
-        ss << obj[i] << delim;
-      ss << obj[obj.size()-1];
+      if( begin == end ) return "";
+      for ( auto it = begin; it != end-1; ++it) 
+        ss << fcn(*it) << delim;
+      ss << fcn(*(end-1));
       return ss.str();
     }
-
-  template <class T, class F>
-    std::string vectorToString( const std::vector<T>& obj, const std::string& delim="", const F& functor =[](const T& f){ return f ; }  )
+  template <class T, class F = std::function<T(const T&)> >
+    std::string vectorToString( const std::vector<T>& obj, const std::string& delim = "", F f = [](const T& arg){ return arg; })
     {
-      std::stringstream ss;
-      if( obj.size() == 0 ) return "";
-      for ( unsigned int i = 0 ; i < obj.size()-1; ++i ) 
-        ss << functor(obj[i]) << delim;
-      ss << functor(obj[obj.size()-1]);
-      return ss.str();
+      return vectorToString( std::begin(obj), std::end(obj), delim, f); 
     }
 
   template <class T> std::vector<std::vector<T>> nCr( const T& n, const T& r )

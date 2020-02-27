@@ -22,10 +22,11 @@ namespace AmpGen
     
     MinuitParameterSet();
     explicit MinuitParameterSet(const std::vector<MinuitParameter*>& params );
-    MinuitParameterSet( const MinuitParameterSet& other );
+
+    MinuitParameterSet( const MinuitParameterSet& other ) = delete;
     ~MinuitParameterSet(); // = default;
 
-    MinuitParameterSet getFloating();
+    // MinuitParameterSet getFloating();
 
     bool add( MinuitParameter* parPtr );
     MinuitParameter* add(const std::string& name, const Flag& flag, const double& mean, const double& sigma, const double& min = 0, const double& max = 0 );
