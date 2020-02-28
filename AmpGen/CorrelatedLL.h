@@ -43,14 +43,16 @@ namespace AmpGen
     eventListType*          m_events1;                          ///< The event list to evaluate likelihoods on
     eventListType*          m_events2;                          ///< The event list to evaluate likelihoods on
     bool                    m_debug = false;
+    bool                    m_ext = false;
 
   public:
     /// Default Constructor
     CorrelatedLL() = default; 
 
     /// Constructor from a set of PDF functions
-    CorrelatedLL( const pdfTypes&... pdfs ) : 
+    CorrelatedLL(bool ext, const pdfTypes&... pdfs ) : 
       m_pdfs( std::tuple<pdfTypes...>( pdfs... ) ),
+      m_ext(ext),
       m_debug(NamedParameter<bool>("CorrelatedLL::Debug", false, "Print debug messages for CorrelatedLL")) {}
 
     /// Returns negative twice the log-likelihood for this PDF and the given dataset.     
@@ -96,8 +98,15 @@ namespace AmpGen
  
 
         }
+        if (m_ext){
+        return LL;
+        }
+        else {
         return -2*LL;
+        }
     }
+
+
 
     double operator() (const Event& event1, const Event& event2){
         double prob=0;
@@ -107,6 +116,8 @@ namespace AmpGen
         //if (m_debug) INFO("prob_norm = "<<prob_norm);
         return prob;
     }
+    
+
     double uncorrProb(const Event& event){
         double prob = 0;
         for_each( this->m_pdfs, [&prob, &event]( auto& f ) { prob += f.probA( event ); } );
@@ -119,6 +130,7 @@ namespace AmpGen
 
     }
     std::tuple<pdfTypes...> pdfs() const { return m_pdfs; }
+    
 
   };
 
@@ -176,11 +188,13 @@ namespace AmpGen
   }
   
   template <class eventListType = EventList, class... pdfTypes> 
-  auto make_likelihood( eventListType& events1, eventListType& events2, pdfTypes&&... pdfs )
+  auto make_likelihood( eventListType& events1, eventListType& events2, bool ext ,pdfTypes&&... pdfs)
   {
-    auto rt = CorrelatedLL<eventListType, pdfTypes...>( std::forward<pdfTypes>( pdfs )... );
+    auto rt = CorrelatedLL<eventListType, pdfTypes...>(ext, std::forward<pdfTypes>( pdfs )...);
     rt.setEvents(events1, events2);
     return rt; 
   }
+
+
 } // namespace AmpGen
 #endif

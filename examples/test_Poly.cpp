@@ -181,7 +181,7 @@ int main( int argc, char** argv )
     cs.setMC(EventsSigMC, EventsTagMC);
   
      cs.prepare();  
-         auto csLL = make_likelihood(EventsSig, EventsTag, cs);
+         auto csLL = make_likelihood(EventsSig, EventsTag,false, cs);
     csLL.setEvents(EventsSig, EventsTag);
      cs.debugNorm();   
 

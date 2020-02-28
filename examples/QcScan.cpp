@@ -190,7 +190,7 @@ int main( int argc, char* argv[] )
     cs.setEvents(sigEvents, tagEvents);
     cs.setMC(sigMCEvents, tagMCEvents);
      cs.prepare();  
-    auto csLL = make_likelihood(sigEvents, tagEvents, cs);
+    auto csLL = make_likelihood(sigEvents, tagEvents, false, cs);
     csLL.setEvents(sigEvents, tagEvents);
     
 

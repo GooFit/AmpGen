@@ -84,7 +84,10 @@ namespace AmpGen
 
     void GradientTest();
 
-
+    std::function<double(void)>& fitFunction(){
+        return m_theFunction;
+    }
+    
 
   
   private:
