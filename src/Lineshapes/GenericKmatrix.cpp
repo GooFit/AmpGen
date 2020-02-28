@@ -104,19 +104,18 @@ DEFINE_LINESHAPE(GenericKmatrix)
   //we have all ingredients to build the production amplitude now
   //follow http://pdg.lbl.gov/2019/reviews/rpp2019-rev-resonances.pdf eqns (48.34), (48.25)
   if(pa_type==PA_TYPE::PVec){
-    Expression A_0;//the object we'll return later: the amplitude in the 0th channel
-    for(unsigned channel = 0 ; channel < nChannels; ++channel) {
-      Expression P_c = 0;
-      for (unsigned pole = 1; pole <= nPoles; ++pole ){
-        auto const stub = particleName+"::pole::" + std::to_string(pole);
+    std::vector<Expression> P(nChannels,0);//the P-vector
+    Expression A_0 = 0;//the object we'll return later: the amplitude in the 0th channel
+    for(unsigned c = 0 ; c < nChannels; ++c){
+      for(unsigned R = 0; R < nPoles; ++R){
         //couplings of production amplitude to Kmatrix
-        Expression alpha = Parameter(stub+"::alpha::"+std::to_string(channel+1));
+        Expression alpha = Parameter(particleName+"::pole::"+std::to_string(R+1)+"::alpha::"+std::to_string(c+1));
         //sum P-vector over all poles (sum_R in (48.34))
-        P_c = P_c + (alpha * poleConfigs[pole-1].couplings[channel])/(poleConfigs[pole-1].s - s);
+        P[c] += (alpha * (poleConfigs[R].couplings[c]))/(poleConfigs[R].s - s);
       }
       //background for production amplitude (real number, different from the one in the Kmatrix)
-      P_c = P_c + Parameter(particleName+"::B::"+std::to_string(channel+1));
-      A_0 = A_0 + (propagator[{0,channel}] * P_c);
+      P[c] += Parameter(particleName+"::B::"+std::to_string(c+1));
+      A_0 += propagator[{c,0}] * P[c];
     }
     //TODO: implement n_0 (defined just below (48.19))
     return A_0;
