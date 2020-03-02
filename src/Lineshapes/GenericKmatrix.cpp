@@ -102,7 +102,7 @@ DEFINE_LINESHAPE(GenericKmatrix)
   ADD_DEBUG_TENSOR(non_resonant, dbexpressions);
 
   //we have all ingredients to build the production amplitude now
-  //follow http://pdg.lbl.gov/2019/reviews/rpp2019-rev-resonances.pdf eqns (48.34), (48.25)
+  //follow https://doi.org/10.1007/s1010502a0002 eqns (9)-(13) modulo the Adler zero term (which is argued away in a fuzzy manner by citing a private communication)
   if(pa_type==PA_TYPE::PVec){
     std::vector<Expression> P(nChannels,0), a(nChannels,0), phi(nChannels,0);//the P-vector, a and phi coefficients
     Expression s_0 = Parameter(particleName+"::s0");
@@ -115,13 +115,13 @@ DEFINE_LINESHAPE(GenericKmatrix)
         Expression beta = 0;
         for(unsigned q = 0 ; q < nChannels; ++q){
           beta += a[q] * poleConfigs[alpha].couplings[q];
-          phi[k] += a[q] * non_resonant[{q,k}];
+          phi[k] += a[q] * non_resonant[{k,q}];
         }
-        P[k] += (beta * poleConfigs[alpha].couplings[k])/(poleConfigs[alpha].s - s) + phi[k] * (1+s_0)/(s-s_0);
+        P[k] += (beta * poleConfigs[alpha].couplings[k])/(poleConfigs[alpha].s - s) + phi[k] * (1.+s_0)/(s-s_0);
       }
-      F_0 += propagator[{k,0}] * P[k];
+      F_0 += propagator[{0,k}] * P[k];
     }
-    //TODO: implement n_a (defined just below (48.19))
+    //TODO: implement higher orbital angular momentum
     return F_0;
   }
   else if(pa_type==PA_TYPE::QVec){
