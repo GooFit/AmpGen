@@ -104,21 +104,25 @@ DEFINE_LINESHAPE(GenericKmatrix)
   //we have all ingredients to build the production amplitude now
   //follow http://pdg.lbl.gov/2019/reviews/rpp2019-rev-resonances.pdf eqns (48.34), (48.25)
   if(pa_type==PA_TYPE::PVec){
-    std::vector<Expression> P(nChannels,0);//the P-vector
-    Expression A_0 = 0;//the object we'll return later: the amplitude in the 0th channel
-    for(unsigned c = 0 ; c < nChannels; ++c){
-      for(unsigned R = 0; R < nPoles; ++R){
-        //couplings of production amplitude to Kmatrix
-        Expression alpha = Parameter(particleName+"::pole::"+std::to_string(R+1)+"::alpha::"+std::to_string(c+1));
-        //sum P-vector over all poles (sum_R in (48.34))
-        P[c] += (alpha * (poleConfigs[R].couplings[c]))/(poleConfigs[R].s - s);
+    std::vector<Expression> P(nChannels,0), a(nChannels,0), phi(nChannels,0);//the P-vector, a and phi coefficients
+    Expression s_0 = Parameter(particleName+"::s0");
+    Expression F_0 = 0;//the object we'll return later: the production amplitude in the 0th channel
+    //get the coefficients first
+    for(unsigned k = 0 ; k < nChannels; ++k) a[k] = Parameter(particleName+"::a::"+std::to_string(k+1));
+    //now start loop to calculate the production amplitude
+    for(unsigned k = 0 ; k < nChannels; ++k){
+      for(unsigned alpha = 0; alpha < nPoles; ++alpha){
+        Expression beta = 0;
+        for(unsigned q = 0 ; q < nChannels; ++q){
+          beta += a[q] * poleConfigs[alpha].couplings[q];
+          phi[k] += a[q] * non_resonant[{q,k}];
+        }
+        P[k] += (beta * poleConfigs[alpha].couplings[k])/(poleConfigs[alpha].s - s) + phi[k] * (1+s_0)/(s-s_0);
       }
-      //background for production amplitude (real number, different from the one in the Kmatrix)
-      P[c] += Parameter(particleName+"::B::"+std::to_string(c+1));
-      A_0 += propagator[{c,0}] * P[c];
+      F_0 += propagator[{k,0}] * P[k];
     }
-    //TODO: implement n_0 (defined just below (48.19))
-    return A_0;
+    //TODO: implement n_a (defined just below (48.19))
+    return F_0;
   }
   else if(pa_type==PA_TYPE::QVec){
     Expression M;
