@@ -35,12 +35,12 @@ namespace AmpGen
   struct HasGetVal
   {
     typedef char YesType[1];
-    typedef char NoType[2]; 
+    typedef char NoType[2];
     template <typename C> static YesType& test( decltype(&C::getVal) ) ;
     template <typename C> static NoType& test(...);
     enum { value = sizeof(test<T>(0)) == sizeof(YesType) };
   };
-  
+
   public:
     template <typename TYPE> typename std::enable_if_t<HasGetVal<TYPE>::value, void> setFunction( TYPE& fcn )
     {
@@ -51,22 +51,22 @@ namespace AmpGen
       m_theFunction = [&fcn](){ return fcn() ; } ;
     }
 
-    template <typename TYPE> 
-    Minimiser(TYPE& fitFunction, MinuitParameterSet* mps) : 
+    template <typename TYPE>
+    Minimiser(TYPE& fitFunction, MinuitParameterSet* mps) :
       m_parSet(mps)
     {
       setFunction(fitFunction);
       prepare();
     }
-    
-    Minimiser(std::function<double(void)>& fitFunction, MinuitParameterSet* mps) : 
+
+    Minimiser(std::function<double(void)>& fitFunction, MinuitParameterSet* mps) :
       m_parSet(mps),
       m_theFunction(fitFunction)
     {
       prepare();
     }
     ~Minimiser() = default;
-    
+
     unsigned int nPars() const;
     void prepare();
     void gradientTest();
@@ -91,7 +91,9 @@ namespace AmpGen
     unsigned m_printLevel = {0};
     double   m_ll_zero    = {0};
     bool     m_normalise  = {false};
+    std::vector<int> m_minosParams;
     std::vector<IExtendLikelihood*> m_extendedTerms;
+    void print_parameters_and_covariance() const;
   };
 } // namespace AmpGen
 #endif
