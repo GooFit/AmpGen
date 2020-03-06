@@ -81,6 +81,7 @@ Expression bessel(Expression x, unsigned int order){
     }
     else{
         output = (2 * order - 1) * x * bessel(x, order - 1) + bessel(x, order - 2);
+        
     }
     return output;
 }
@@ -221,6 +222,10 @@ class pCorrelatedSum {
                 else if (m_polyType=="laguerre"){
                     sum_i = sum_i + Cij * laguerre(X(), i) * laguerre(Y(), j);
                 }
+                else if (m_polyType=="bessel"){
+                    sum_i = sum_i + Cij * bessel(X(), i) * bessel(Y(), j);
+                }
+
                 if (m_pdebug){
                     INFO("sum_"<<i<<" = "<<sum_i());
                 }
