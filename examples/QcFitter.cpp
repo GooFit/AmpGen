@@ -15,7 +15,7 @@ std::vector<std::string> makeBranches(EventType Type, std::string prefix);
 //template <typename PDF>
 //FitResult* Fit( PDF&& pdf, pCorrelatedSum& cs, std::map<std::string, EventList> events, MinuitParameterSet& MPS , std::string logFile);
 template <typename PDF>
-FitResult* Fit( PDF&& ll, pCorrelatedSum& cs, EventList data1, EventList data2, EventList mc1, EventList mc2, MinuitParameterSet& MPS , std::string logFile);
+FitResult* Fit( PDF&& ll, pCorrelatedSum& cs, EventList data1, EventList data2, EventList mc1, EventList mc2, MinuitParameterSet& MPS , std::string logFile,   std::map<std::string, std::vector<double> > inits );
 
 
 MinuitParameterSet *  copyMPS(MinuitParameterSet& mps);
@@ -134,69 +134,70 @@ int main( int argc, char* argv[] )
 //auto fs = std::vector<std::function<double(void)> > {};
   std::vector< CorrelatedLL<EventList, pCorrelatedSum&> > csLLs = {};
 
-auto sigevents_KK = getEvents("signal", pNames, tags[2], dataFile, intFile);
-auto sigMCevents_KK = getEvents("sigMC", pNames, tags[2], dataFile, intFile);
-auto tagevents_KK = getEvents("tag", pNames, tags[2], dataFile, intFile);
-auto tagMCevents_KK = getEvents("tagMC", pNames, tags[2], dataFile, intFile);
+//auto sigevents_KK = getEvents("signal", pNames, tags[2], dataFile, intFile);
+//auto sigMCevents_KK = getEvents("sigMC", pNames, tags[2], dataFile, intFile);
+//auto tagevents_KK = getEvents("tag", pNames, tags[2], dataFile, intFile);
+//auto tagMCevents_KK = getEvents("tagMC", pNames, tags[2], dataFile, intFile);
 
 
 
 //auto events_Kppim = getEvents(pNames, tags[1], dataFile, intFile);
 //auto events_Kspipi = getEvents(pNames, tags[2], dataFile, intFile);
-auto types_KK = makeEventTypes(pNames, tags[0]);
-auto types_Kppim = makeEventTypes(pNames, tags[1]);
-auto types_Kspipi = makeEventTypes(pNames, tags[2]);
+//auto types_KK = makeEventTypes(pNames, tags[0]);
+//auto types_Kppim = makeEventTypes(pNames, tags[1]);
+//auto types_Kspipi = makeEventTypes(pNames, tags[2]);
 //auto LL_KK =  tagLL(events_KK, MPS);
 //auto LL_Kppim =  tagLL(events_Kppim, MPS);
 //auto LL_Kspipi =  tagLL(events_Kspipi, MPS);
 
-std::stringstream KK_log;
-KK_log<<tags[2]<<"_fit.log";
-std::stringstream KK_fit;
-KK_fit<<tags[2]<<"_plots.root";
-auto KK_logName = KK_log.str();
-//auto cs_KK = makeCs(events_KK, MPS);
-auto cs_KK = pCorrelatedSum(sigevents_KK.eventType(), tagevents_KK.eventType(), MPS);
-cs_KK.setEvents(sigevents_KK, tagevents_KK);
-cs_KK.setMC(sigMCevents_KK, tagMCevents_KK);
-cs_KK.prepare();
-//auto LL_KK2 = make_likelihood( events_KK["signal"], events_KK["tag"], false, cs_KK);
-auto LL_KK2 = make_likelihood( sigevents_KK, tagevents_KK, false, cs_KK);
-auto mini_KK = Minimiser(LL_KK2, &MPS);
-mini_KK.prepare();
-mini_KK.doFit();
-FitResult * fr_KK = new FitResult(mini_KK);
+//std::stringstream KK_log;
+//KK_log<<tags[2]<<"_fit.log";
+//std::stringstream KK_fit;
+//KK_fit<<tags[2]<<"_plots.root";
+//auto KK_logName = KK_log.str();
+////auto cs_KK = makeCs(events_KK, MPS);
+//auto cs_KK = pCorrelatedSum(sigevents_KK.eventType(), tagevents_KK.eventType(), MPS);
+//cs_KK.setEvents(sigevents_KK, tagevents_KK);
+//cs_KK.setMC(sigMCevents_KK, tagMCevents_KK);
+//cs_KK.prepare();
+////auto LL_KK2 = make_likelihood( events_KK["signal"], events_KK["tag"], false, cs_KK);
+//auto LL_KK2 = make_likelihood( sigevents_KK, tagevents_KK, false, cs_KK);
+//auto mini_KK = Minimiser(LL_KK2, &MPS);
+//mini_KK.prepare();
+//mini_KK.doFit();
+//FitResult * fr_KK = new FitResult(mini_KK);
 //FitResult * fr_KK = Fit(LL_KK2, cs_KK, sigevents_KK, tagevents_KK, sigMCevents_KK, tagMCevents_KK, MPS, KK_logName);
 //csLLs.push_back(LL_KK2);
 INFO("Doing loop of Fits");
 for (int i=0; i < tags.size(); i++){
-std::stringstream Kppim_log;
-Kppim_log<<tags[i]<<"_fit.log";
-std::stringstream Kppim_fit;
-Kppim_fit<<tags[i]<<"_plots.root";
-auto Kppim_logName = Kppim_log.str();
+    std::stringstream tag_log;
+    auto tagName = split(tags[i],' ')[0];
+    tag_log<<tagName<<"_fit.log";
+    std::stringstream tag_fit;
+    tag_fit<<tagName<<"_plots.root";
+    auto tag_logName = tag_log.str();
 
-auto sigevents_Kppim = getEvents("signal", pNames, tags[i], dataFile, intFile);
-auto sigMCevents_Kppim = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
-auto tagevents_Kppim = getEvents("tag", pNames, tags[i], dataFile, intFile);
-auto tagMCevents_Kppim = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
+    auto sigevents_tag = getEvents("signal", pNames, tags[i], dataFile, intFile);
+    auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
+    auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
+    auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
 
+    
+    auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), MPS);
+    cs_tag.setEvents(sigevents_tag, tagevents_tag);
+    cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
+    cs_tag.prepare();
+    //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
+    auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag, false, cs_tag);
+    auto mini_tag = Minimiser(LL_tag2, &MPS);
+    //mini_tag.prepare();
+    //INFO("Fitting "<<i<<" out of "<<tags.size()  );
+    //mini_tag.doFit();
 
-auto cs_Kppim = pCorrelatedSum(sigevents_Kppim.eventType(), tagevents_Kppim.eventType(), MPS);
-cs_Kppim.setEvents(sigevents_Kppim, tagevents_Kppim);
-cs_Kppim.setMC(sigMCevents_Kppim, tagMCevents_Kppim);
-cs_Kppim.prepare();
-//auto LL_Kppim2 = make_likelihood( events_Kppim["signal"], events_Kppim["tag"], false, cs_Kppim);
-auto LL_Kppim2 = make_likelihood( sigevents_Kppim, tagevents_Kppim, false, cs_Kppim);
-auto mini_Kppim = Minimiser(LL_Kppim2, &MPS);
-//mini_Kppim.prepare();
-//INFO("Fitting "<<i<<" out of "<<tags.size()  );
-//mini_Kppim.doFit();
+    
+    FitResult * fr_tag = Fit(LL_tag2, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, MPS, tag_logName, inits);
+    csLLs.push_back(LL_tag2);
 
-FitResult * fr_Kppim = Fit(LL_Kppim2, cs_Kppim, sigevents_Kppim, tagevents_Kppim, sigMCevents_Kppim, tagMCevents_Kppim, MPS, Kppim_logName);
-csLLs.push_back(LL_Kppim2);
-//FitResult * fr_KK = new FitResult(mini_KK);
-//FitResult * fr_Kppim = new FitResult(mini_Kppim);
 }
 
 
@@ -209,7 +210,7 @@ INFO("Trying to do combined fit");
  auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >(csLLs);
  auto combMini = Minimiser(combLL, &MPS);
  INFO("Minimising now");
- combMini.doFit();
+// combMini.doFit();
 //FitResult * fr_KK = new FitResult(mini_KK);
 
 //FitResult * fr_comb = new FitResult(combMini);
@@ -475,11 +476,11 @@ std::vector<std::string> makeBranches(EventType Type, std::string prefix){
 }
 
 template <typename PDF>
-FitResult* Fit( PDF&& ll, pCorrelatedSum& cs, EventList data1, EventList data2, EventList mc1, EventList mc2, MinuitParameterSet& MPS , std::string logFile)
+FitResult* Fit( PDF&& ll, pCorrelatedSum& cs, EventList data1, EventList data2, EventList mc1, EventList mc2, MinuitParameterSet& MPS , std::string logFile,   std::map<std::string, std::vector<double> > inits )
 {
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time      = std::clock();
-  
+  MPS.loadFromStream();
 
   ll.setEvents( data1, data2 );
  
@@ -495,7 +496,7 @@ FitResult* Fit( PDF&& ll, pCorrelatedSum& cs, EventList data1, EventList data2, 
   mini.doFit();
   FitResult* fr = new FitResult(mini);
 
-  std::map<std::string, std::vector<double> > inits = getParams(MPS);
+//  std::map<std::string, std::vector<double> > inits = getParams(MPS);
   // Make the plots for the different components in the PDF, i.e. the signal and backgrounds. 
   //   The structure assumed the PDF is some SumPDF<T1,T2,...>. 
  
