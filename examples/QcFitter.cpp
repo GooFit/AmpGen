@@ -182,8 +182,12 @@ for (int i=0; i < tags.size(); i++){
     auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
     auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
 
- MinuitParameterSet MPS_tag;
- MPS_tag.set(MPS);
+  MinuitParameterSet MPS_tag;
+  MPS_tag.loadFromStream();
+  if (makeCPConj){
+    INFO("Making CP conjugate states");
+    add_CP_conjugate(MPS_tag);
+  }
    auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), MPS_tag);
     cs_tag.setEvents(sigevents_tag, tagevents_tag);
     cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
