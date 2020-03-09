@@ -183,18 +183,14 @@ for (int i=0; i < tags.size(); i++){
     auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
 
  MinuitParameterSet MPS_tag;
-  MPS_tag.loadFromStream();
-  if (makeCPConj){
-    INFO("Making CP conjugate states");
-    add_CP_conjugate(MPS_tag);
-  }   
-    auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), MPS);
+ MPS_tag.set(MPS);
+   auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), MPS_tag);
     cs_tag.setEvents(sigevents_tag, tagevents_tag);
     cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
     cs_tag.prepare();
     //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
     auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag, false, cs_tag);
-    auto mini_tag = Minimiser(LL_tag2, &MPS);
+    auto mini_tag = Minimiser(LL_tag2, &MPS_tag);
     //mini_tag.prepare();
     //INFO("Fitting "<<i<<" out of "<<tags.size()  );
     //mini_tag.doFit();
