@@ -194,6 +194,70 @@ for (int i=0; i < tags.size(); i++){
     //INFO("Fitting "<<i<<" out of "<<tags.size()  );
     mini_tag.doFit();
 	FitResult * fr = new FitResult(mini_tag);	
+
+
+ int minEvents=15;
+auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.eventType().dof() ) );
+//void   Chi2Estimator::doChi2( const EventList& sigevents_tag, const EventList& sigMCevents_tag,
+//    const std::function<double( const Event& )>& fcn )
+//{
+  std::vector<Moment> data( binning.size() );
+  std::vector<Moment> mc( binning.size() );
+
+  INFO( "Splitting: " << sigevents_tag.size() << " data " << sigMCevents_tag.size() << " amongst " << binning.size()
+      << " bins" );
+  unsigned int j           = 0;
+  double total_data_weight = 0;
+  double total_int_weight  = 0;
+  for ( auto& d : sigevents_tag ) {
+    if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " data events" );
+    double w = d.weight();
+    data[binning.getBinNumber( d )].add( d.weight() );
+    total_data_weight += w;
+    j++;
+  }
+  j = 0;
+  for ( int i=0; i < sigMCevents_tag.size(); i++ ) {
+    auto evt1 = sigMCevents_tag[i];
+    auto evt2 = tagMCevents_tag[i];
+    if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " sim. events" );
+    double w = cs_tag.prob( evt1, evt2 ) * (evt1.weight() / evt1.genPdf()) * (evt2.weight() / evt2.genPdf());
+    mc[binning.getBinNumber( evt1 )].add( w );
+    total_int_weight += w;
+    j++;
+  }
+  double chi2 = 0;
+
+  for ( unsigned int i = 0; i < binning.size(); ++i ) {
+    mc[i].rescale( total_data_weight / total_int_weight );
+    double delta = data[i].val() - mc[i].val();
+    double tChi2 = delta * delta / ( data[i].val() + mc[i].var() );
+    chi2 += tChi2;
+  }
+
+  auto Bins = binning.size();
+  auto fitFractionss = cs_tag.fitFractions( fr->getErrorPropagator() ); 
+  std::vector<FitFraction> ffs;
+  for (auto fitFractions : fitFractionss){
+    for (auto fitFraction : fitFractions){
+      ffs.push_back(fitFraction);
+    }
+  }
+  fr->addFractions( ffs );
+  //chi2.writeBinningToFile("chi2_binning.txt");
+  fr->addChi2( chi2, Bins );
+  fr->print();
+   fr->writeToFile(logFile);
+       std::map<std::string, std::vector<double> > fits = getParams(MPS);
+    std::map<std::string, double> pulls = getPulls(fits, inits);
+      for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
+         INFO("Pull = "<<it->first<<" "<<it->second);
+       }
+    writePulls(tag_logName, pulls);
+
+
+
+
    fr->writeToFile(tag_logName);
     
     //FitResult * fr_tag = Fit(LL_tag2, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, MPS, tag_logName, inits);
