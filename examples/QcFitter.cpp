@@ -194,8 +194,6 @@ for (int i=0; i < tags.size(); i++){
     //INFO("Fitting "<<i<<" out of "<<tags.size()  );
     mini_tag.doFit();
 	FitResult * fr = new FitResult(mini_tag);	
-
-
  int minEvents=15;
 auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.eventType().dof() ) );
 //void   Chi2Estimator::doChi2( const EventList& sigevents_tag, const EventList& sigMCevents_tag,
@@ -247,7 +245,7 @@ auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.
   //chi2.writeBinningToFile("chi2_binning.txt");
   fr->addChi2( chi2, Bins );
   fr->print();
-   fr->writeToFile(logFile);
+  
        std::map<std::string, std::vector<double> > fits = getParams(MPS);
     std::map<std::string, double> pulls = getPulls(fits, inits);
       for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
@@ -261,7 +259,7 @@ auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.
    fr->writeToFile(tag_logName);
     
     //FitResult * fr_tag = Fit(LL_tag2, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, MPS, tag_logName, inits);
-//    csLLs.push_back(LL_tag2);
+    csLLs.push_back(LL_tag2);
 
 }
 
@@ -271,16 +269,88 @@ auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.
 //doPlots(KK_fit.str(), cs_KK, events_KK, 100);
 
 //auto LLs = {LL_KK2, LL_Kppim2};
-INFO("Trying to do combined fit");
- //auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >(csLLs);
- //auto combMini = Minimiser(combLL, &MPS);
- INFO("Minimising now");
+//INFO("Trying to do combined fit");
+// auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >({csLLs[0], csLLs[1]});
+// auto combMini = Minimiser(combLL, &MPS);
+// INFO("Minimising now");
 // combMini.doFit();
 //FitResult * fr_KK = new FitResult(mini_KK);
 
 //FitResult * fr_comb = new FitResult(combMini);
+INFO("Making events 0");
+	auto sigevents_0 = getEvents("signal", pNames, tags[0], dataFile, intFile);
+    auto sigMCevents_0 = getEvents("sigMC", pNames, tags[0], dataFile, intFile);
+    auto tagevents_0 = getEvents("tag", pNames, tags[0], dataFile, intFile);
+    auto tagMCevents_0 = getEvents("tagMC", pNames, tags[0], dataFile, intFile);
 
 
+INFO("Making events 1");
+
+    auto sigevents_1 = getEvents("signal", pNames, tags[1], dataFile, intFile);
+    auto sigMCevents_1 = getEvents("sigMC", pNames, tags[1], dataFile, intFile);
+    auto tagevents_1 = getEvents("tag", pNames, tags[1], dataFile, intFile);
+    auto tagMCevents_1 = getEvents("tagMC", pNames, tags[1], dataFile, intFile);
+
+INFO("Making events 2");
+    auto sigevents_2 = getEvents("signal", pNames, tags[2], dataFile, intFile);
+     auto sigMCevents_2 = getEvents("sigMC", pNames, tags[2], dataFile, intFile);
+     auto tagevents_2 = getEvents("tag", pNames, tags[2], dataFile, intFile);
+     auto tagMCevents_2 = getEvents("tagMC", pNames, tags[2], dataFile, intFile);
+
+INFO("Making pCorrelatedSum 0");
+auto cs_0 = pCorrelatedSum(sigevents_0.eventType(), tagevents_0.eventType(), MPS);
+    cs_0.setEvents(sigevents_0, tagevents_0);
+    cs_0.setMC(sigMCevents_0, tagMCevents_0);
+    cs_0.prepare();
+  
+
+INFO("Making pCorrelatedSum 1");
+        auto cs_1 = pCorrelatedSum(sigevents_1.eventType(), tagevents_1.eventType(), MPS);
+    cs_1.setEvents(sigevents_1, tagevents_1);
+    cs_1.setMC(sigMCevents_1, tagMCevents_1);
+    cs_1.prepare();
+    
+INFO("Making pCorrelatedSum 2");
+auto cs_2 = pCorrelatedSum(sigevents_2.eventType(), tagevents_2.eventType(), MPS);
+    cs_2.setEvents(sigevents_2, tagevents_2);
+    cs_2.setMC(sigMCevents_2, tagMCevents_2);
+    cs_2.prepare();
+  
+INFO("Making LL 0");
+    //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
+    auto LL_0 = make_likelihood( sigevents_0, tagevents_0, false, cs_0);
+    auto mini_0 = Minimiser(LL_0, &MPS);
+ 
+INFO("Making LL 1");
+    auto LL_1 = make_likelihood( sigevents_1, tagevents_1, false, cs_1);
+    auto mini_1 = Minimiser(LL_1, &MPS);
+    
+INFO("Making LL 2");
+    auto LL_2 = make_likelihood( sigevents_2, tagevents_2, false, cs_2);
+    auto mini_2 = Minimiser(LL_2, &MPS);
+    
+
+  INFO("Making combLL"); 
+    auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >({LL_0, LL_1, LL_2});
+    auto combMini = Minimiser(combLL, &MPS);
+    INFO("Minimising now");
+    combMini.doFit();
+
+	FitResult * fr = new FitResult(combMini);	
+  fr->print();
+   fr->writeToFile(logFile);
+       std::map<std::string, std::vector<double> > fits = getParams(MPS);
+    std::map<std::string, double> pulls = getPulls(fits, inits);
+      for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
+         INFO("Pull = "<<it->first<<" "<<it->second);
+       }
+    writePulls(logFile, pulls);
+
+
+
+
+   fr->writeToFile(logFile);
+ 
 
 /*
  for( auto& tag : tags )
@@ -851,8 +921,11 @@ EventList getEvents(std::string type, std::vector<std::string> sigName, std::str
     EventType    tagType = tagParticle.eventType(); 
     */
 
+    INFO("Getting Tag name split "<<tagName);
     auto tokens       = split(tagName, ' ');
+    INFO("Building Tag particle"<<tokens[1]);
     auto types = makeEventTypes(sigName, tagName);
+    INFO("Build EventType");
     auto signalType = types["signal"];
     auto tagType = types["tag"];
     auto sigBranches = makeBranches(signalType, "");
