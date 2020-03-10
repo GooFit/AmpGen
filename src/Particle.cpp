@@ -528,6 +528,114 @@ Expression Particle::ZemachLaura(const std::shared_ptr<Particle>& R, const std::
 	return Z;
 }
 
+Expression Particle::ZemachGooFit(const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& C, double spin){
+	if (spin==0){
+		return 1;
+	}
+	auto A = R->daughters()[0];
+	auto B = R->daughters()[1];
+
+	auto pA = A->P();
+	auto pB = B->P();
+	auto pC = C->P();
+	auto pD = pA + pB + pC;
+
+	Expression mAA = dot(pA + pA, pA + pA);
+	Expression mBB = dot(pB + pB, pB + pB);
+	Expression mCC = dot(pC + pC, pC + pC);
+	Expression mDD = dot(pD + pD, pD + pD);
+
+	Expression mAB = dot(pA + pB, pA + pB);
+	Expression mBC = dot(pB + pC, pB + pC);
+	Expression mAC = dot(pA + pC, pA + pC);
+
+	//Mass Factor
+	Expression MF = 1/mAB;
+	
+	//Spin=1 - also need for spin 2
+	
+	Expression spinFactor1 = -1;
+	spinFactor1 = ((mBC - mAC) + MF * (mDD - mCC) * (mAA - mBB)) * spinFactor1;
+
+	if (spin==1){
+
+		return spinFactor1;
+	}
+
+	auto spinFactor2 = spinFactor1 * spinFactor1;
+
+	auto extraTerm = mAB - 2 * mDD - 2*mCC + MF * (mDD - mCC) * (mDD - mCC);
+	extraTerm = (mAB - 2*mAA - 2*mBB + MF * (mAA - mBB) * (mAA - mBB)) * extraTerm/3.;
+
+	spinFactor2 = spinFactor2 - extraTerm;
+
+	if (spin==2){
+		return spinFactor2;
+	}
+
+	return 1;
+
+
+	
+
+}
+
+
+Expression Particle::GooFitCMom(Expression m2res, Expression m1, Expression m2){
+	Expression k1 = 1 - fcn::pow(m1 + m2, 2)/m2res;
+	Expression k2 = 1 - fcn::pow(m1 - m2, 2)/m2res;
+	Expression cMom = 1/2 * fcn::sqrt(m2res * k1 * k2);
+	return cMom;
+}
+
+Expression Particle::GooFitDamping(const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& C, double spin){
+	auto A = R->daughters()[0];
+	auto B = R->daughters()[1];
+
+	auto pA = A->P();
+	auto pB = B->P();
+	auto pC = C->P();
+	auto pD = pA + pB + pC;
+
+	Expression mAA = dot(pA + pA, pA + pA);
+	Expression mBB = dot(pB + pB, pB + pB);
+	Expression mCC = dot(pC + pC, pC + pC);
+	Expression mDD = dot(pD + pD, pD + pD);
+
+	Expression mAB = dot(pA + pB, pA + pB);
+	Expression mBC = dot(pB + pC, pB + pC);
+	Expression mAC = dot(pA + pC, pA + pC);
+
+	Expression mA = fcn::sqrt(mAA);
+	Expression mB = fcn::sqrt(mBB);
+	Expression mC = fcn::sqrt(mCC);
+	Expression mD = fcn::sqrt(mDD);
+
+	Expression rR = 5 / GeV;
+
+	Expression Cmom1 = GooFitCMom(R->massSq(), mA, mB);
+	Expression Cmom2 = GooFitCMom(mAB, mA, mB);
+
+	Expression sq1 = fcn::pow(rR*Cmom1, 2);
+	Expression sq2 = fcn::pow(rR*Cmom2, 2);
+
+	Expression df1 = 1 + sq1;
+	Expression df2 = 1 + sq2;
+
+	if (spin == 2){
+		df1 = df1 + 8 + 2 * sq1 * sq1;
+		df2 = df2 + 8 + 2 * sq2 * sq2;
+	}
+	return df2/df1;
+
+
+	
+
+}
+
+
+
+
 Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index )
 {
   if( db != nullptr && !isStable() ) 
@@ -535,7 +643,7 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   auto spinFormalism  = m_spinFormalism; 
   auto localFormalism = attribute("SpinFormalism"); 
   if( localFormalism != stdx::nullopt ) localFormalism = localFormalism.value();
-  if( spinFormalism != "Covariant" && spinFormalism != "Canonical" && spinFormalism != "Zemach3BodyTFA" && spinFormalism != "Zemach3BodyLaura" && spinFormalism != "ZemachP3BodyLaura")
+  if( spinFormalism != "Covariant" && spinFormalism != "Canonical" && spinFormalism != "Zemach3BodyTFA" && spinFormalism != "Zemach3BodyLaura" && spinFormalism != "ZemachP3BodyLaura" && spinFormalism != "Zemach3BodyGooFit" )
   {
     FATAL("Invalid value for SpinFormalism: " << spinFormalism << ", possible values are: " << italic_on << " Covariant, Canonical, Zemach3BodyTFA, Zemach3BodyLaura, ZemachP3BodyLaura" << italic_off  );
   }
@@ -620,6 +728,40 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
 			    auto h = d0;
 			    auto R = d1;
 			    Z = ZemachLaura(R, h, R->spin(), false);
+		    }
+		    spinFactor = Z;
+
+	    }
+
+    }
+    if( includeSpin && spinFormalism =="Zemach3BodyGooFit" ){
+
+	    if (finalStateParticles.size()==3){
+		    auto twoBodyDaughters = daughters();
+		    auto d0 = twoBodyDaughters[0];
+		    auto d1 = twoBodyDaughters[1];
+		    Expression Z=0;
+		    if (d0->daughters().size() == 2){
+			    auto R = d0;
+			    auto h = d1;
+			    Z = ZemachGooFit(R, h, R->spin());
+			    auto Damping = GooFitDamping(R, h, R->spin());
+			    //Z = Z * fcn::sqrt(Damping);
+			    //Z = ZemachGooFit(R, h, R->spin())/dot(R->P(), R->P());
+			    //Z = ZemachGooFit(R, h, R->spin())/fcn::sqrt(dot(R->P(), R->P()));
+			    INFO("Resonance "<<R->name() << " spin = "<<R->spin());
+			    //INFO("Spin Factor = "<<Z);
+		    } 
+		    else if (d1->daughters().size() == 2){
+			    auto h = d0;
+			    auto R = d1;
+			    Z = ZemachGooFit(R, h, R->spin());
+			    auto Damping = GooFitDamping(R, h, R->spin());
+			    //Z = Z * fcn::sqrt(Damping);
+			    //Z = ZemachGooFit(R, h, R->spin())/dot(R->P(), R->P());
+			    //Z = ZemachGooFit(R, h, R->spin())/fcn::sqrt(dot(R->P(), R->P()));
+			    INFO("Resonance "<<R->name() << " spin = "<<R->spin());
+			    //INFO("Spin Factor = "<<Z);
 		    }
 		    spinFactor = Z;
 

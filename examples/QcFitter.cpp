@@ -182,7 +182,7 @@ for (int i=0; i < tags.size(); i++){
     auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
     auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
 
-    
+     
     auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), MPS);
     cs_tag.setEvents(sigevents_tag, tagevents_tag);
     cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
@@ -190,13 +190,14 @@ for (int i=0; i < tags.size(); i++){
     //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
     auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag, false, cs_tag);
     auto mini_tag = Minimiser(LL_tag2, &MPS);
-    //mini_tag.prepare();
+    mini_tag.prepare();
     //INFO("Fitting "<<i<<" out of "<<tags.size()  );
-    //mini_tag.doFit();
-
+    mini_tag.doFit();
+	FitResult * fr = new FitResult(mini_tag);	
+   fr->writeToFile(tag_logName);
     
-    FitResult * fr_tag = Fit(LL_tag2, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, MPS, tag_logName, inits);
-    csLLs.push_back(LL_tag2);
+    //FitResult * fr_tag = Fit(LL_tag2, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, MPS, tag_logName, inits);
+//    csLLs.push_back(LL_tag2);
 
 }
 
@@ -207,8 +208,8 @@ for (int i=0; i < tags.size(); i++){
 
 //auto LLs = {LL_KK2, LL_Kppim2};
 INFO("Trying to do combined fit");
- auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >(csLLs);
- auto combMini = Minimiser(combLL, &MPS);
+ //auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >(csLLs);
+ //auto combMini = Minimiser(combLL, &MPS);
  INFO("Minimising now");
 // combMini.doFit();
 //FitResult * fr_KK = new FitResult(mini_KK);
@@ -492,8 +493,9 @@ FitResult* Fit( PDF&& ll, pCorrelatedSum& cs, EventList data1, EventList data2, 
    
   mini.prepare();
   mini.GradientTest();
-  
+ INFO("Fitting now"); 
   mini.doFit();
+  INFO("Making Fit Result");
   FitResult* fr = new FitResult(mini);
 
 //  std::map<std::string, std::vector<double> > inits = getParams(MPS);
