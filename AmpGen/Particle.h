@@ -271,6 +271,10 @@ namespace AmpGen
 
       Expression Zemach(Expression m2ab, Expression m2ac, Expression m2bc, Expression m2d, Expression m2a, Expression m2b, Expression m2c, double spin);
       Expression ZemachLaura( const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>&   h, double spin, bool parent);
+      Expression ZemachGooFit(const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& C, double spin);
+      Expression GooFitDamping(const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& C, double spin);
+      Expression GooFitCMom(Expression m2res, Expression m1, Expression m2);
+
       Expression pq( const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>&   h, bool parent);
       Expression cosHel( const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>&   h );
       Expression LegendreZemach(Expression x, double n);
