@@ -84,6 +84,9 @@ template <class PDF_TYPE, class PRIOR_TYPE>
 
 void add_CP_conjugate( MinuitParameterSet& mps );
 
+EventList getEvents(std::string type, std::vector<std::string> sigName, std::string tagName, std::string intFile);
+std::map<std::string, EventType> makeEventTypes(std::vector<std::string> sigName, std::string tagName);
+std::vector<std::string> makeBranches(EventType Type, std::string prefix);
 int main( int argc, char** argv )
 {
   OptionsParser::setArgs( argc, argv );
@@ -92,6 +95,9 @@ int main( int argc, char** argv )
   size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
   int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
   std::string outfile = NamedParameter<std::string>("Output"   , "Generate_Output.root" , "Name of output file" ); 
+  std::string intfile = NamedParameter<std::string>("IntFile"   , "flat.root" , "Name of flat file" ); 
+  std::string rwfile = NamedParameter<std::string>("RWFile"   , "RW.root" , "Name of reweighted file" ); 
+  bool qcWeight	      = NamedParameter<bool>("qcWeight", false, "Do QC weighting");
   auto genType        = NamedParameter<generatorType>( "Type", generatorType::CoherentSum, optionalHelpString("Generator configuration to use:", 
     { {"CoherentSum" , "Full phase-space generator with (pseudo)scalar amplitude"}
     , {"PolarisedSum", "Full phase-space generator with particles carrying spin in the initial/final states"}
@@ -115,8 +121,100 @@ int main( int argc, char** argv )
 
   bool outputVals = NamedParameter<bool>("outputVals", false, "Whether to print out values for amplitude in a csv file");
   std::string ampFile = NamedParameter<std::string>("ampFile", "corr.csv", "Output file for correlated amplitude");
+  EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
+                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+  bool doBoost  = NamedParameter<bool>("doBoost", true, "Boost to psi(3770) frame");
 
+
+ if(qcWeight){
+
+TFile* fRW = TFile::Open( rwfile.c_str(), "RECREATE" );
+
+ for( auto& tag : tags ){
+    auto tokens       = split(tag, ' ');
+    INFO("tag = "<<tokens[0]);
+ 
+    auto tagParticle  = Particle(tokens[1], {}, false);
+    EventType    tagType = tagParticle.eventType();
+  INFO("Generating time-dependence? " << eventType.isTimeDependent() );
+  EventList acceptedSig( sigType );
+  EventList acceptedTag( tagType );
+
+  INFO("Generating events with type = " << sigType << " and "<<tagType);
+
+  MinuitParameterSet MPS;
+  MPS.loadFromStream();
+  INFO("makeCPConj = "<<makeCPConj);
+  if (makeCPConj){
+    INFO("Making CP conjugate states");
+    add_CP_conjugate(MPS);
+  }
+
+
+    pCorrelatedSum cs2( sigType, tagType, MPS );
+    auto sigMCevents = getEvents("sigMC", pNames, tag, intfile);
+
+    auto tagMCevents = getEvents("tagMC", pNames, tag, intfile);
+
+     
+//    auto cs = pCorrelatedSum(sigevents.eventType(), tagevents.eventType(), MPS);
+    
+    cs2.setEvents(sigMCevents, tagMCevents);
+    cs2.setMC(sigMCevents, tagMCevents);
+    cs2.prepare();
+    for (int i=0; i<sigMCevents.size(); i++){
+	    auto old_weightS = sigMCevents[i].weight();
+	    auto old_weightT = sigMCevents[i].weight();
+//	    INFO("Sig Weight is = "<<old_weightS);
+//	    INFO("Tag Weight is = "<<old_weightT);
+	    auto weight = cs2.prob(sigMCevents[i], tagMCevents[i]);
+
+	    sigMCevents[i].setWeight(weight);
+	    tagMCevents[i].setWeight(weight);
+//	    INFO("Sig Weight is = "<<sigMCevents[i].weight());
+//	    INFO("Tag Weight is = "<<tagMCevents[i].weight());
+    }
+//    INFO( "Writing output file " );
+    std::stringstream signame;
+    signame<<"Signal_";
+    signame<<tokens[0];
+    std::stringstream tagname;
+    tagname<<"Tag_";
+    tagname<<tokens[0];
+	fRW->cd();
+    TTree * sig = sigMCevents.tree(signame.str().c_str());
+    sig->Write(signame.str().c_str());
+
+ TTree * tagTree = tagMCevents.tree(tagname.str().c_str());
+ tagTree->Write(tagname.str().c_str());
+ 
+ std::vector<std::string> dalitzNames = {"01", "02", "12"}; 
+  auto plots = sigMCevents.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
+  int i=0;
+  for ( auto& plot : plots ) {
+         std::stringstream projName;
+         projName<<"Signal_vs_"<<tokens[0]<<"_s"<<dalitzNames[i];
+
+         plot->Write(projName.str().c_str());
+         i++;
+    }
+          auto proj = eventType.defaultProjections(nBins);      
+    for( size_t i = 0 ; i < proj.size(); ++i ){
+      for( size_t j = i+1 ; j < proj.size(); ++j ){ 
+          std::stringstream projName;
+          projName<<"Signal_vs_"<<tokens[0]<<"_s"<<dalitzNames[i]<<"_vs_"<<dalitzNames[j];
+        sigMCevents.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(projName.str().c_str()); 
+      }
+    } 
+
+
+
+     }
+fRW->Close();
+ }
+ else{
 TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
+
  for( auto& tag : tags ){
 
 
@@ -156,10 +254,6 @@ TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
 //                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
 
 
-
-  EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
-                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
-  bool doBoost  = NamedParameter<bool>("doBoost", true, "Boost to psi(3770) frame");
 
   INFO("Generating time-dependence? " << eventType.isTimeDependent() );
   EventList acceptedSig( sigType );
@@ -269,7 +363,7 @@ TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
  }
     f->Close();
 
-  
+ }
 
  return 0;
 }
@@ -373,3 +467,88 @@ void add_CP_conjugate( MinuitParameterSet& mps )
 
 
 
+EventList getEvents(std::string type, std::vector<std::string> sigName, std::string tagName, std::string intFile){
+   
+    /*
+    EventType signalType( sigName );
+    INFO("Getting Tag name split "<<tagName);
+    auto tokens       = split(tagName, ' ');
+    INFO("Building Tag particle"<<tokens[1]);
+    auto tagParticle  = Particle(tokens[1], {}, false);
+    INFO("Build EventType");
+    EventType    tagType = tagParticle.eventType(); 
+    */
+
+    INFO("Getting Tag name split "<<tagName);
+    auto tokens       = split(tagName, ' ');
+    INFO("Building Tag particle"<<tokens[1]);
+    auto types = makeEventTypes(sigName, tagName);
+    INFO("Build EventType");
+    auto signalType = types["signal"];
+    auto tagType = types["tag"];
+    auto sigBranches = makeBranches(signalType, "");
+    auto tagBranches = makeBranches(tagType, "Tag_");
+
+
+    EventList sigMCEvents;
+    EventList tagMCEvents;
+    EventList null;
+
+
+    INFO("Generated Events used QcGen2");
+    std::stringstream signame;
+    signame<<":Signal_";
+    signame<<tokens[0];
+    std::stringstream tagname;
+    tagname<<":Tag_";
+    tagname<<tokens[0];
+
+    sigMCEvents = EventList(intFile + signame.str() , signalType);
+    tagMCEvents = EventList(intFile + tagname.str() , tagType);
+   
+    if (type=="sigMC"){
+        return sigMCEvents;
+    }
+    else if (type=="tagMC") {
+        return tagMCEvents;
+    }
+    else {
+        return null;
+    }
+    
+
+} 
+std::map<std::string, EventType> makeEventTypes(std::vector<std::string> sigName, std::string tagName){
+  EventType signalType( sigName );
+  INFO("Getting Tag name split "<<tagName);
+  auto tokens       = split(tagName, ' ');
+  INFO("Building Tag particle"<<tokens[1]);
+  auto tagParticle  = Particle(tokens[1], {}, false);
+  INFO("Build EventType");
+  EventType    tagType = tagParticle.eventType(); 
+  auto sigBranches = makeBranches(signalType, "");
+  auto tagBranches = makeBranches(tagType, "Tag_");
+
+  std::map<std::string, EventType> types = {};
+
+  types["signal"] = signalType;
+  types["tag"] = tagType;
+  return types;
+
+}
+
+std::vector<std::string> makeBranches(EventType Type, std::string prefix){
+  auto n = Type.finalStates().size();
+  std::vector<std::string> branches;
+  std::vector<std::string> varNames = {"PX", "PY", "PZ", "E"};
+  for (long unsigned int i=0; i<n; i++){
+    auto part = replaceAll(Type.finalStates()[i], "+", "p");
+    part = replaceAll(part, "-", "m");
+    for (auto varName : varNames){
+      std::ostringstream stringStream;
+      stringStream<<prefix<<part<<"_"<<varName;
+      branches.push_back(stringStream.str());
+    }
+  }
+  return branches;
+}
