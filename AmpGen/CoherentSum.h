@@ -86,13 +86,15 @@ namespace AmpGen
 
     std::map<std::string, std::vector<unsigned int>> getGroupedAmplitudes();
     Bilinears norms() const { return m_normalisations ; }
-  
+      
+    std::function<real_t(const Event&)> evaluator(const EventList* = nullptr) const; 
+    KeyedView<double, EventList> componentEvaluator(const EventList* = nullptr) const; 
+
   protected:
-    typedef Integrator<10> integrator;
     std::vector<TransitionMatrix<complex_t>> m_matrixElements; ///< Vector of (expanded) matrix elements
     Bilinears        m_normalisations;                         ///< Normalisation integrals
     AmplitudeRules   m_rules;                                  ///< Ruleset for the selected transition.
-    integrator       m_integrator;                             ///< Integral dispatch tool (with default unroll = 10) 
+    Integrator2      m_integrator;                             ///< Integral dispatch tool (with default unroll = 10) 
     TransitionMatrix<complex_t> m_total;                       ///< Total Matrix Element 
     EventList*       m_events       = {nullptr};               ///< Data events to evaluate PDF on
     EventType        m_evtType;                                ///< Final state for this amplitude

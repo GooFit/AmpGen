@@ -7,6 +7,7 @@
 #include <algorithm>
 #include "AmpGen/Types.h"
 #include "AmpGen/ErrorPropagator.h"
+#include "AmpGen/AmplitudeRules.h"
 
 namespace AmpGen
 {
@@ -24,7 +25,6 @@ namespace AmpGen
       double val() const;
       double err() const;
       std::string name() const;
-      std::shared_ptr<Particle> particle() const;
 
     private:
       std::string m_name;
@@ -60,7 +60,8 @@ namespace AmpGen
       pdf(pdf),
       normSet(normSet),
       recalculateIntegrals(recalculateIntegrals) {}
-    std::vector<double> operator()(){
+    std::vector<double> operator()()
+    {
       if ( recalculateIntegrals ) pdf->prepare();
       else pdf->transferParameters();
       std::vector<double> rv;

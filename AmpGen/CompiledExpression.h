@@ -23,7 +23,9 @@ namespace AmpGen
      (i.e. returning array types) */
   namespace detail {
     template <typename T> struct size_of {       unsigned operator()(){ return sizeof(T); } };
-    template <>           struct size_of<void> { unsigned operator()(){ return 0; } };
+    template <>           struct size_of<void> { unsigned operator()(){ 
+      WARNING("Asking for the size_of the return buffer of an RTO expression");
+      return 0; } };
   }
 
   template <class RETURN_TYPE, class... ARGS>
@@ -37,6 +39,7 @@ namespace AmpGen
     bool                 m_hasExternalsChanged   = {false};
    
   public:
+    typedef RETURN_TYPE return_type;
 
     CompiledExpression( const Expression& expression, 
                         const std::string& name,
@@ -54,7 +57,10 @@ namespace AmpGen
     std::string returnTypename() const override { return typeof<RETURN_TYPE>(); }
     std::string fcnSignature() const override
     {
-      return CompiledExpressionBase::fcnSignature(typelist<ARGS...>(), m_rto);
+      return CompiledExpressionBase::fcnSignature(typelist<ARGS...>(), use_rto());
+    }
+    bool use_rto() const override {
+      return std::is_same<RETURN_TYPE, void>::value;   
     }
     std::string args() const override 
     {
@@ -145,7 +151,9 @@ namespace AmpGen
       if ( !m_fdb.isLinked() ) {
         FATAL( "Function" << name() << " debugging symbols not linked" );
       }
-      auto debug_results = m_fdb( &( m_externals[0] ), event );
+      std::vector<std::pair<std::string, complex_t>> debug_results;
+      if constexpr(std::is_same<void, RETURN_TYPE>::value) debug_results = m_fdb( nullptr, &( m_externals[0] ), event );
+      else debug_results = m_fdb( &(m_externals[0]), event);
       for( auto& debug_result : debug_results ){ 
         auto val = debug_result.second;  
         auto label = debug_result.first; 
@@ -192,7 +200,6 @@ namespace AmpGen
       make_rto_expression( const Expression& expression, const std::string& name , const bool& verbose=false)
       {
         CompiledExpression<void, RT*, const double*, const double*> rt(expression,name);
-        rt.use_rto();
         rt.compile();
         rt.prepare();
         return rt;

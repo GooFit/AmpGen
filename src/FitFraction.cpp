@@ -19,8 +19,6 @@ FitFraction::FitFraction( const std::string& line )
   m_error     = stod( tokens[3] );
 }
 
-std::shared_ptr<Particle> FitFraction::particle() const { return std::make_shared<Particle>( m_name ); }
-
 FitFraction::FitFraction( const std::string& name, const double& frac, const double& err )
   : m_name( name ), m_value( frac ), m_error( err )
 {

@@ -51,6 +51,7 @@ namespace AmpGen {
 
       const complex_t& getCache(const unsigned& pos)      const { return m_cache[pos]; }
       const complex_t* getCachePtr(const unsigned& pos=0) const { return &(m_cache[0]) + pos; }
+            complex_t* getCachePtr(const unsigned& pos=0)       { return &(m_cache[0]) + pos; }
 
       void setWeight( const real_t& weight ){ m_weight = weight ; } 
       void setGenPdf( const real_t& genPdf ){ m_genPdf = genPdf ; } 

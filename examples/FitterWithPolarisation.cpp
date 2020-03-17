@@ -112,15 +112,17 @@ int main( int argc, char* argv[] )
      fit results + covariance matrix) of the fit result, and write them to a file. 
    */
   auto fitFractions = sig.fitFractions( fr->getErrorPropagator() ); 
-  
+ 
+  INFO("Adding fraction to file..."); 
   fr->addFractions( fitFractions );
+  INFO("Writing file ... ");
   fr->writeToFile( logFile );
   output->cd();
   
   /* Write out the data plots. This also shows the first example of the named arguments 
      to functions, emulating python's behaviour in this area */
 
-  auto plots = events.makeDefaultProjections(Prefix("Data"), Bins(100));
+  auto plots = events.makeDefaultProjections(PlotOptions::Prefix("Data"), PlotOptions::Bins(100));
   for ( auto& plot : plots ) plot->Write();
 
   output->Close();
@@ -143,21 +145,21 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
 
   /* Make the plots for the different components in the PDF, i.e. the signal and backgrounds. 
      The structure assumed the PDF is some SumPDF<T1,T2,...>. */
-  unsigned int counter = 1;
-  for_each(pdf.pdfs(), [&]( auto& f ){
-    auto mc_plot3 = mc.makeDefaultProjections(WeightFunction(f), Prefix("Model_cat"+std::to_string(counter)));
-    for( auto& plot : mc_plot3 )
-    {
-      plot->Scale( ( data.integral() * f.getWeight() ) / plot->Integral() );
-      plot->Write();
-    }
-    counter++;
-  } );
+//  unsigned int counter = 1;
+//  for_each(pdf.pdfs(), [&]( const auto& f ){
+//    auto mc_plot3 = mc.makeDefaultProjections(WeightFunction(f.evaluator()), Prefix("Model_cat"+std::to_string(counter)));
+//    for( auto& plot : mc_plot3 )
+//    {
+//      plot->Scale( ( data.integral() * f.getWeight() ) / plot->Integral() );
+//      plot->Write();
+//    }
+//    counter++;
+//  } );
   /* Estimate the chi2 using an adaptive / decision tree based binning, 
      down to a minimum bin population of 15, and add it to the output. */
-  Chi2Estimator chi2( data, mc, pdf, 15 );
-  chi2.writeBinningToFile("chi2_binning.txt");
-  fr->addChi2( chi2.chi2(), chi2.nBins() );
+  // Chi2Estimator chi2( data, mc, pdf, 15 );
+  // chi2.writeBinningToFile("chi2_binning.txt");
+  // fr->addChi2( chi2.chi2(), chi2.nBins() );
   
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double time_cpu = ( std::clock() - time ) / (double)CLOCKS_PER_SEC;

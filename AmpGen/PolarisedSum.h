@@ -35,35 +35,36 @@ namespace AmpGen
   class PolarisedSum
   {
     public: 
-      typedef Integrator<10>        integrator;
+      typedef Integrator2        integrator;
 
       PolarisedSum() = default; 
-      PolarisedSum(const EventType&, AmpGen::MinuitParameterSet&, const std::vector<MinuitProxy>& = {});
+      PolarisedSum(const EventType&, MinuitParameterSet&, const std::vector<MinuitProxy>& = {});
       void prepare();
-      void setEvents(AmpGen::EventList&);
-      void setMC(AmpGen::EventList&);
+      void setEvents(EventList&);
+      void setMC(EventList&);
       void reset(const bool& = false);
-      void debug(const AmpGen::Event&);
+      void debug(const Event&);
       void debug_norm(); 
       void setWeight(MinuitProxy);
       double getWeight() const;
-      void calculateNorms(const std::vector<bool>&); 
+      void calculateNorms(); 
       void generateSourceCode(const std::string&, const double& = 1, bool = false);
       void build_probunnormalised();
       Expression probExpression(const Tensor&, const std::vector<Expression>&, DebugSymbols* = nullptr) const; 
       size_t size() const;  
       real_t norm() const;
       complex_t norm(const size_t&, const size_t&, integrator* = nullptr); 
-      inline real_t operator()(const AmpGen::Event& evt) const { return m_weight * prob_unnormalised(evt) / m_norm; }
-      real_t prob_unnormalised(const AmpGen::Event&) const;
-      real_t prob(const AmpGen::Event&) const;
-      real_t getValNoCache(const AmpGen::Event&) ;
+      inline real_t operator()(const Event& evt) const { return m_weight * prob_unnormalised(evt) / m_norm; }
+      real_t prob_unnormalised(const Event&) const;
+      real_t prob(const Event&) const;
+      real_t getValNoCache(const Event&) ;
       std::vector<FitFraction> fitFractions(const LinearErrorPropagator&);
-      std::vector<TransitionMatrix<std::vector<complex_t>>> matrixElements() const;
+      std::vector<TransitionMatrix<void>> matrixElements() const;
       void transferParameters(); 
       Tensor transitionMatrix();
-      TransitionMatrix<std::vector<complex_t>> operator[](const size_t& i) const { return m_matrixElements[i] ; } 
-
+      const TransitionMatrix<void>& operator[](const size_t& i) const { return m_matrixElements[i] ; } 
+      std::function<real_t(const Event&)> evaluator(const EventList* = nullptr) const; 
+      KeyedView<double, EventList> componentEvaluator(const EventList* = nullptr) const;     
     private: 
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};
@@ -81,9 +82,9 @@ namespace AmpGen
       std::vector<size_t>           m_integIndex; 
       AmplitudeRules                m_rules;  
       std::pair<unsigned, unsigned> m_dim; 
-      std::vector<TransitionMatrix<std::vector<complex_t>>>       m_matrixElements;  
+      std::vector<TransitionMatrix<void>>                         m_matrixElements;  
       CompiledExpression<real_t, const real_t*, const complex_t*> m_probExpression; 
-
+      
       std::vector<std::vector<int>> indexProduct(const std::vector<std::vector<int>>&, const std::vector<int>&) const;
       std::vector<int> polarisations(const std::string&) const ;
   };

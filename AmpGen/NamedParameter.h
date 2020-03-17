@@ -74,7 +74,7 @@ namespace AmpGen
       setFromOptionsParser();
       if ( OptionsParser::printHelp() ) help( defVec.size() > 0 ? defVec[0] : T() );
     }
-    
+//    ~NamedParameter(){ INFO("Deconstructing: " << m_name ); } 
     void help(const T& def){
       std::string type = typeof<T>();
       if( type == "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >" ) type = "string";

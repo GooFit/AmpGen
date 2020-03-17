@@ -118,7 +118,7 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
   INFO("Time to read tree = " << read_time << "[ms]; nEntries = " << size() );
 }
 
-TTree* EventList::tree( const std::string& name, const std::vector<std::string>& extraBranches )
+TTree* EventList::tree( const std::string& name, const std::vector<std::string>& extraBranches ) const
 {
   std::string title = m_eventType.mother();
   for( unsigned i = 0 ; i != m_eventType.size(); ++i ) title += " " + m_eventType[i]; 
@@ -131,16 +131,13 @@ TTree* EventList::tree( const std::string& name, const std::vector<std::string>&
   double genPdf = 1;
   double weight = 1;
   auto format = m_eventType.getEventFormat( true );
-  
-  for ( auto& f : format ){
-    outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
-  }
-  for ( auto& f : m_extensions ){
-    outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
-  } 
+
+  for ( const auto& f : format ) outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );  
+  for ( const auto& f : m_extensions ) outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
+
   outputTree->Branch( "genPdf", &genPdf );
   outputTree->Branch( "weight", &weight );
-  for ( auto& evt : *this ) {
+  for ( const auto& evt : *this ) {
     tmp    = evt;
     genPdf = evt.genPdf();
     weight = evt.weight();
@@ -152,21 +149,17 @@ TTree* EventList::tree( const std::string& name, const std::vector<std::string>&
 std::vector<TH1D*> EventList::makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args )
 {
   std::vector<TH1D*> plots;
-  for ( auto& proj : projections ) {
-    TH1D* plot = makeProjection(proj, args );
-    DEBUG("Made plot ... " << plot->GetName() );
-    plots.push_back( plot );
-  }
+  for ( const auto& proj : projections ) plots.push_back( makeProjection(proj, args) );
   return plots;
 }
 
 TH1D* EventList::makeProjection( const Projection& projection, const ArgumentPack& args ) const 
 {
-  auto selection      = args.getArg<Selection>().val;
+  auto selection      = args.getArg<PlotOptions::Selection>().val;
   auto weightFunction = args.getArg<WeightFunction>().val;
-  std::string prefix  = args.getArg<Prefix>(std::string(""));
+  std::string prefix  = args.getArg<PlotOptions::Prefix>(std::string(""));
   auto plot = projection.plot(prefix);
-  plot->SetLineColor(args.getArg<LineColor>(kBlack).val); 
+  plot->SetLineColor(args.getArg<PlotOptions::LineColor>(kBlack).val); 
   plot->SetMarkerSize(0);
   for( auto& evt : m_data ){
     if( selection != nullptr && !selection(evt) ) continue;
@@ -179,9 +172,9 @@ TH1D* EventList::makeProjection( const Projection& projection, const ArgumentPac
 
 TH2D* EventList::makeProjection( const Projection2D& projection, const ArgumentPack& args ) const
 {
-  auto selection      = args.getArg<Selection>().val;
+  auto selection      = args.getArg<PlotOptions::Selection>().val;
   auto weightFunction = args.getArg<WeightFunction>().val;
-  std::string prefix  = args.getArg<Prefix>().val;
+  std::string prefix  = args.getArg<PlotOptions::Prefix>().val;
   auto plot           = projection.plot(prefix);
   for ( auto& evt : m_data ){
     if ( selection != nullptr && !selection(evt) ) continue;
@@ -228,12 +221,9 @@ void EventList::resetCache()
 
 double EventList::integral() const
 {
-  double integral = 0;
-  for ( auto& evt : *this ) {
-    integral += evt.weight();
-  }
-  return integral;
+  return std::accumulate( std::begin(*this), std::end(*this), 0, [](double rv, const auto& evt){ return rv + evt.weight(); } );
 }
+
 void EventList::add( const EventList& evts )
 {
   resetCache();
@@ -243,16 +233,6 @@ void EventList::add( const EventList& evts )
     rbegin()->resizeCache( 0 );
   }
 }
-double EventList::norm()
-{
-  if ( m_norm == 0 ) {
-    double totalWeight = 0;
-#pragma omp parallel for reduction( + : totalWeight )
-    for ( unsigned int i = 0; i < size(); ++i ) totalWeight += ( *this )[i].weight() / ( *this )[i].genPdf();
-    m_norm               = totalWeight;
-  }
-  return m_norm;
-}
 
 void EventList::clear() 
 { 
@@ -260,7 +240,7 @@ void EventList::clear()
 }
 
 void EventList::erase(const std::vector<Event>::iterator& begin, 
-                      const std::vector<Event>::iterator& end)
+    const std::vector<Event>::iterator& end)
 {
   m_data.erase( begin, end );
 }

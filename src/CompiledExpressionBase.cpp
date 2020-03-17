@@ -87,7 +87,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   stream << "extern \"C\" const char* " << progName() << "_name() {  return \"" << m_name << "\"; } \n";
   bool enable_cuda = NamedParameter<bool>("UseCUDA",false);
   size_t sizeOfStream = 0;
-  if( m_rto )
+  if( use_rto() )
   {
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );

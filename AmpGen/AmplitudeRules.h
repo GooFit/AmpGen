@@ -73,7 +73,7 @@ namespace AmpGen
       AmplitudeRules( const MinuitParameterSet& mps );
       std::vector<Coupling> rulesForDecay(const std::string& head, const std::string& prefix="");
       bool hasDecay( const std::string& head );
-      std::map<std::string, std::vector<Coupling>> rules();
+      const std::map<std::string, std::vector<Coupling>>& rules() const;
       std::vector<std::pair<Particle, TotalCoupling>> getMatchingRules( 
           const EventType& type, const std::string& prefix="" );
       std::vector<Coupling> processesThatProduce(const Particle& particle) const; 
@@ -113,8 +113,7 @@ namespace AmpGen
     size_t                                              addressData = {999};
   };
  
-  template <class RT>  
-  std::vector<size_t> processIndex(const std::vector<TransitionMatrix<RT>>& tm, const std::string& label)
+  template <class RT> std::vector<size_t> processIndex(const std::vector<TransitionMatrix<RT>>& tm, const std::string& label)
   {
     std::vector<size_t> indices;
     for ( size_t i = 0; i < tm.size(); ++i ) {
@@ -123,8 +122,7 @@ namespace AmpGen
     return indices;
   }
    
-  template <class RT>
-  size_t findIndex(const std::vector<TransitionMatrix<RT>>& tm, const std::string& decayDescriptor)
+  template <class RT> size_t findIndex(const std::vector<TransitionMatrix<RT>>& tm, const std::string& decayDescriptor)
   {
     for ( size_t i = 0; i < tm.size(); ++i ) {
       if ( tm[i].decayDescriptor() == decayDescriptor ) return i;
@@ -163,12 +161,12 @@ namespace AmpGen
       amp(decayTree.getExpression(debugThis ? &db : nullptr ), decayTree.decayDescriptor(), evtFormat, db, &mps ) { amp.use_rto();}
 
     const std::vector<complex_t> operator()(const Event& event) const { 
-      std::vector<complex_t> rt; 
+      std::vector<complex_t> rt(4); 
       amp(rt.data(), amp.externBuffer().data(), event.address() ); 
       return rt;
     }
     const std::vector<complex_t> operator()(const Event& event, const size_t& cacheOffset) const { 
-      std::vector<complex_t> rt; 
+      std::vector<complex_t> rt(4); 
       amp(rt.data(), amp.externBuffer().data(), event.address() + cacheOffset); 
       return rt;
     }
@@ -180,6 +178,7 @@ namespace AmpGen
     DebugSymbols                                        db; 
     CompiledExpression<void, complex_t*, const real_t*, const real_t*>  amp; 
     size_t                                              addressData = {999};
+    bool                                                workToDo    = {false};
   };
  
 } // namespace AmpGen

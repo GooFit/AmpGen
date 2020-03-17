@@ -103,7 +103,6 @@ void CoherentSum::prepare()
 
 void CoherentSum::updateNorms( const std::vector<size_t>& changedPdfIndices )
 {
-  //for ( auto& i : changedPdfIndices ) m_integrator.prepareExpression( m_matrixElements[i].amp );
   std::vector<size_t> cacheIndex;
   std::transform( m_matrixElements.begin(), m_matrixElements.end(), std::back_inserter(cacheIndex), 
     [this](auto& m){ return this->m_integrator.getCacheIndex( m.amp ) ; } );
@@ -282,7 +281,7 @@ void CoherentSum::reset( bool resetEvents )
   for ( auto& mE : m_matrixElements ) mE.addressData = 999;
   if ( resetEvents ){ 
     m_events = nullptr;
-    m_integrator = integrator();
+    m_integrator = Integrator2();
   }
 }
 
@@ -297,7 +296,7 @@ void CoherentSum::setMC( EventList& sim )
 {
   if ( m_verbosity ) INFO( "Setting norm. event list with:" << sim.size() << " events for " << this );
   reset();
-  m_integrator = integrator(&sim);
+  m_integrator = Integrator2(&sim);
 }
 
 real_t CoherentSum::norm() const
@@ -368,3 +367,53 @@ complex_t CoherentSum::getVal( const Event& evt, const std::vector<size_t>& cach
     value += m_matrixElements[i].coefficient * evt.getCache( cacheAddresses[i] );
   return value;
 }
+
+std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList* events) const 
+{
+  if( events != nullptr && events != &this->m_integrator.events() )
+    ERROR("Evaluator only working on the integration sample, fix me!"); 
+  std::vector<unsigned> address_mapping( size() );
+  for( const auto& me : m_matrixElements ) address_mapping[me.addressData] = m_integrator.getCacheIndex( me.amp );
+  std::vector<double> values( m_integrator.events().size() );
+  #ifdef _OPENMP
+  #pragma omp parallel for
+  #endif
+  for( unsigned int i = 0 ; i != m_integrator.events().size(); ++i )
+  {
+    complex_t amp = 0;
+    for( unsigned j = 0 ; j != address_mapping.size(); ++j ) amp += m_matrixElements[j].coefficient * this->m_integrator.get(address_mapping[j], i);
+    values[i] = m_weight * std::norm(amp) / m_norm;
+  }
+  return arrayToFunctor(values, events);
+}
+
+KeyedView<double, EventList> CoherentSum::componentEvaluator(const EventList* events) const 
+{
+  if( events != nullptr && events != &this->m_integrator.events() ) 
+    ERROR("Evaluator only working on the integration sample, fix me!"); 
+  
+  KeyedView<double, EventList> rt(*events, m_matrixElements.size() ); 
+  std::vector<unsigned> address_mapping(m_matrixElements.size());
+  for( unsigned i = 0; i != m_matrixElements.size(); ++i ) address_mapping[i] = m_integrator.getCacheIndex( m_matrixElements[i].amp ); 
+
+  for( unsigned i = 0 ; i != m_matrixElements.size(); ++i )
+  {
+    auto& me = m_matrixElements[i]; 
+    rt.setKey(i, programatic_name( me.decayTree.decayDescriptor() ) );
+    #ifdef _OPENMP
+    #pragma omp parallel for
+    #endif
+    for( unsigned evt = 0 ; evt != m_integrator.events().size(); ++evt )
+    {
+      complex_t total = 0;
+      for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ){
+          total          +=  this->m_integrator.get( address_mapping[i], evt ) * m_matrixElements[i].coefficient 
+                * std::conj( this->m_integrator.get( address_mapping[j], evt ) * m_matrixElements[j].coefficient );
+      }
+      
+      rt(events->at(evt), i) = m_weight * std::real( total ) / m_norm;  
+    }
+  }
+  return rt; 
+}
+

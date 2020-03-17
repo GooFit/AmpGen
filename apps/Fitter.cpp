@@ -129,12 +129,11 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
 
   if ( makePlots ) {
     auto ep = fr->getErrorPropagator();
-//    const size_t      NBins    = NamedParameter<size_t>     ("nBins"     , 100         , "Number of bins used for plotting.");
 
     unsigned int counter = 1;
     for_each( pdf.pdfs(), [&]( auto& f ) {
         auto tStartIntegral2 = std::chrono::high_resolution_clock::now();
-        auto mc_plot3 = mc.makeProjections( mc.eventType().defaultProjections(100), WeightFunction(f), Prefix("tMC_Category"+std::to_string(counter) ) );
+        auto mc_plot3 = mc.makeProjections( mc.eventType().defaultProjections(100), WeightFunction(f), PlotOptions::Prefix("tMC_Category"+std::to_string(counter) ) );
         auto tEndIntegral2   = std::chrono::high_resolution_clock::now();
         double t2            = std::chrono::duration<double, std::milli>( tEndIntegral2 - tStartIntegral2 ).count();
         INFO( "Time for plots = " << t2 );
@@ -146,7 +145,7 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
         counter++;
         } );
   }
-  Chi2Estimator chi2( data, mc, pdf, 15 );
+  Chi2Estimator chi2( data, mc, pdf, MinEvents(15) );
   fr->addChi2( chi2.chi2(), chi2.nBins() );
 
   auto twall_end  = std::chrono::high_resolution_clock::now();
@@ -279,7 +278,7 @@ int main( int argc, char* argv[] )
 
   fr->writeToFile( logFile );
   output->cd();
-  auto plots = events.makeDefaultProjections( Prefix( "Data_" ), Bins( NBins ) );
+  auto plots = events.makeDefaultProjections( PlotOptions::Prefix( "Data_" ), PlotOptions::Bins( NBins ) );
   for ( auto& plot : plots ) plot->Write();
 
   output->Write();

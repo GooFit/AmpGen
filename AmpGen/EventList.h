@@ -25,9 +25,7 @@
 
 namespace AmpGen
 {
-
-  DECLARE_ARGUMENT(Bins, size_t);
-
+  namespace PlotOptions { DECLARE_ARGUMENT(Bins, size_t); }
   class CompiledExpressionBase; 
   class EventList
   {
@@ -36,7 +34,6 @@ namespace AmpGen
     EventType                           m_eventType         = {};
     std::map<uint64_t, unsigned int>    m_pdfIndex          = {};
     std::map<std::string, unsigned int> m_extensions        = {};
-    double                              m_norm              = {0};
     size_t                              m_lastCachePosition = {0}; 
   public:
     typedef Event value_type;
@@ -74,7 +71,6 @@ namespace AmpGen
     const Event& at( const size_t& pos )          const { return m_data[pos]; }
     size_t size()                                 const { return m_data.size(); }
     double integral()                             const;
-    double norm();
 
     void reserve( const size_t& size ) { m_data.reserve( size ); }
     void push_back( const Event& evt ) { m_data.push_back( evt ); }
@@ -86,7 +82,7 @@ namespace AmpGen
     void clear();
     void erase( const std::vector<Event>::iterator& begin, const std::vector<Event>::iterator& end );
 
-    TTree* tree( const std::string& name, const std::vector<std::string>& extraBranches = {} );
+    TTree* tree( const std::string& name, const std::vector<std::string>& extraBranches = {} ) const;
     
     size_t getCacheIndex( const CompiledExpressionBase& PDF, bool& status ) const;
     size_t getCacheIndex( const CompiledExpressionBase& PDF ) const;
@@ -113,15 +109,25 @@ namespace AmpGen
       }
     }
 
-    template <class FCN>
-    void updateCache( const FCN& fcn, const size_t& index )
+    template <class FCN> void updateCache( const FCN& fcn, const size_t& index )
     {
-      #ifdef _OPENMP
-      #pragma omp parallel for
-      #endif
-      for ( unsigned int i = 0; i < size(); ++i ) {
-        ( *this )[i].setCache(fcn(getEvent(i)), index);
+      if constexpr( std::is_same< typename FCN::return_type, void >::value ) 
+      {
+        #ifdef _OPENMP
+        #pragma omp parallel for
+        #endif
+        for ( size_t i = 0; i < size(); ++i ) {
+          fcn( m_data[i].getCachePtr(index), fcn.externBuffer().data(), m_data[i].address() );
+        }
       }
+      else {
+        #ifdef _OPENMP
+        #pragma omp parallel for
+        #endif
+        for ( size_t i = 0; i < size(); ++i ) {
+          m_data[i].setCache(fcn(m_data[i].address()), index);
+        }
+     }
     }
     void reserveCache(const size_t& index);
     void resizeCache(const size_t& newCacheSize );
@@ -132,7 +138,7 @@ namespace AmpGen
     template <class... ARGS> std::vector<TH1D*> makeDefaultProjections( const ARGS&... args )
     {
       auto argPack = ArgumentPack( args... );
-      size_t nBins = argPack.getArg<Bins>(100);
+      size_t nBins = argPack.getArg<PlotOptions::Bins>(100);
       auto proj = eventType().defaultProjections(nBins); 
       return makeProjections( proj , argPack );
     }
@@ -174,10 +180,6 @@ namespace AmpGen
       return std::count_if( std::begin(*this), std::end(*this), fcn );
     }
   };
-  DECLARE_ARGUMENT(LineColor, int);
-  DECLARE_ARGUMENT(DrawStyle, std::string);
-  DECLARE_ARGUMENT(Selection, std::function<bool( const Event& )>);
-  DECLARE_ARGUMENT(WeightFunction, std::function<double( const Event& )>);
   DECLARE_ARGUMENT(Branches, std::vector<std::string>);
   DECLARE_ARGUMENT(EntryList, std::vector<size_t>);
   DECLARE_ARGUMENT(GetGenPdf, bool);
@@ -185,7 +187,8 @@ namespace AmpGen
   DECLARE_ARGUMENT(Filter, std::string);
   DECLARE_ARGUMENT(WeightBranch, std::string);      
   DECLARE_ARGUMENT(ApplySym, bool);  
-  DECLARE_ARGUMENT(Prefix, std::string);
+  DECLARE_ARGUMENT(WeightFunction, std::function<double( const Event& )>);
+
 } // namespace AmpGen
 
 #endif

@@ -7,8 +7,10 @@
 #include "TAxis.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "THStack.h"
 
 using namespace AmpGen;
+using namespace AmpGen::PlotOptions; 
 
 Projection::Projection() = default; 
 
@@ -44,10 +46,8 @@ TH1D* Projection::plot(const std::string& prefix) const {
   plot->SetMinimum(0);
   return plot;
 }
-std::function<size_t(const Event& evt )> Projection::binFunctor() const {
-  return [this](auto& evt){ 
-
-    return int ( ( (*this)(evt) - m_min ) / m_width ) ; };
+std::function<int(const Event& evt )> Projection::binFunctor() const {
+  return [this](auto& evt){ return int ( ( (*this)(evt) - m_min ) / m_width ) ;};
 }
 
 TH2D* Projection2D::plot(const std::string& prefix) const {
@@ -74,3 +74,30 @@ TH1D* Projection::projInternal( const EventList& events, const ArgumentPack& arg
 { 
   return events.makeProjection(*this, args); 
 }
+
+std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventList& events, const KeyedView<double, EventList>& weightFunction, const ArgumentPack& args) const
+{
+//  INFO("Making projection: " << m_name << " classes = " << weightFunction.width() << " " << &(events[0]) );
+  std::vector<TH1D*> hists; 
+  double norm_sum = args.getArg<Norm>(1).val;
+  std::string prefix = args.getArg<PlotOptions::Prefix>().val;
+  THStack* stack     = args.getArg<PlotOptions::AddTo>(new THStack()).val;
+  if( prefix != "" ) prefix = prefix +"_";
+  for( unsigned int i = 0 ; i != weightFunction.width(); ++i ) 
+    hists.push_back( plot(prefix + weightFunction.key(i)==""?"C"+std::to_string(i):weightFunction.key(i)) );
+  auto selection      = args.getArg<Selection>().val;
+  for( const auto& evt : events ){
+    if( selection != nullptr && !selection(evt) ) continue;
+    auto pos = operator()(evt);
+    auto weights = weightFunction(evt);
+    for( unsigned j = 0 ; j != weightFunction.width(); ++j ) hists[j]->Fill( pos, evt.weight() * weights[j] / evt.genPdf() ); 
+  }
+  std::sort( std::begin(hists), std::end(hists), [](auto& h1, auto& h2){ return h1->Integral() < h2->Integral() ; } );
+  double total = std::accumulate( std::begin(hists), std::end(hists), 0.0, [](double& t, auto& h){ return t + h->Integral() ; } ); 
+  if( total == 0 ) ERROR("Norm = " << total );
+  else for( auto& h : hists ) h->Scale( norm_sum / total );
+  stack->SetName( (prefix + name() + "_stack").c_str());
+  for( auto& h : hists ) stack->Add(h, "C HIST");
+  return {hists, stack};
+}
+

@@ -51,7 +51,7 @@ namespace AmpGen
     Integral(const size_t& i, const size_t& j, TransferFCN t) 
       : i(i), j(j), transfer(t) {}
   };
-
+/*
   template <size_t NROLL = 10>
     class Integrator
     {
@@ -87,10 +87,11 @@ namespace AmpGen
       public:
         Integrator( EventList* events = nullptr ) : m_events( events ){}
         
-        double sampleNorm()             { return m_events->norm(); } 
+        double norm()                   { return m_events->norm(); } 
         bool isReady()            const { return m_events != nullptr; }
         EventList& events()             { return *m_events; } 
         const EventList& events() const { return *m_events; } 
+        void reserveCache(const unsigned& size){ m_events->reserveCache(size); }
         template <class T1, class T2>
         void addIntegral( const T1& f1, const T2& f2, const Integral<arg>::TransferFCN& tf )
         {
@@ -136,7 +137,7 @@ namespace AmpGen
           return m_events->getCacheIndex(expression);
         }
     };
-
+  */
   template <size_t NBINS = 100, size_t NROLL = 10>
     class BinnedIntegrator
     {
@@ -149,6 +150,7 @@ namespace AmpGen
         std::vector<size_t>              m_slice   = {0};
         std::array<Integral<arg>, NROLL> m_integrals;
         EventList*                       m_events  = {nullptr};
+        real_t                           m_norm    = {0};
         void calculate()
         {
           integrateBlock();
@@ -187,17 +189,20 @@ namespace AmpGen
               }
             }
           }
-          double nv = m_events->norm();
           for ( size_t thisIntegral = 0; thisIntegral < m_counter; ++thisIntegral ) {
             std::vector<std::complex<double>> tmpBins( NBINS );
             size_t offset = thisIntegral * NBINS;
             for ( size_t nBin = 0; nBin < NBINS; ++nBin )
-              tmpBins[nBin]   = std::complex<double>( re[offset + nBin], im[offset + nBin] ) / nv;
+              tmpBins[nBin]   = std::complex<double>( re[offset + nBin], im[offset + nBin] ) / m_norm;
             m_integrals[thisIntegral].transfer( tmpBins );
           }
         }
       public:
-        BinnedIntegrator( EventList* events = nullptr ) : m_events( events ) {}
+        BinnedIntegrator( EventList* events = nullptr ) : m_events( events ) 
+        {
+          if( m_events == nullptr ) return; 
+          for ( const auto& event : *m_events ) m_norm += event.weight() / event.genPdf();
+        }
         void setView( const std::function<size_t( const Event& )>& binNumber )
         {
           if ( m_slice.size() == 0 ) {
