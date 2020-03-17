@@ -19,7 +19,6 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/MetaUtils.h"
 
-
 namespace AmpGen {
   template <class it_type, class F>
     std::string vectorToString( it_type begin,
@@ -162,6 +161,14 @@ namespace AmpGen {
         }
         return total;
       }
+  template <typename return_type, 
+            typename container_type> std::function<return_type(const typename container_type::value_type&)> 
+              arrayToFunctor( const std::vector<return_type>& values, const container_type* container )
+  {
+    return [container, values](const typename container_type::value_type& event) -> return_type {
+      int addr = &event - &container->at(0);
+      return *(values.data() + addr); }; 
+  }
 
   template<class iterator>
     void parallel_sort(iterator begin, 

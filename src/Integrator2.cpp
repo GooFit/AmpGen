@@ -13,16 +13,17 @@ void Integrator2::integrateBlock()
     addr_i[roll] = m_integrals[roll].i;
     addr_j[roll] = m_integrals[roll].j;
   }
-#pragma omp parallel for reduction(+: re, im)
-  for ( size_t i = 0; i < m_events->size(); ++i ) {
-    for ( size_t roll = 0; roll < N; ++roll ) {
-      auto c = m_buffer[addr_i[roll]][i] * std::conj(m_buffer[addr_j[roll]][i]);
+  for ( size_t roll = 0; roll < N; ++roll ) {
+    auto& b1 = m_buffer[m_integrals[roll].i];
+    auto& b2 = m_buffer[m_integrals[roll].j];
+    #pragma omp parallel for reduction(+: re, im)
+    for ( size_t i = 0; i < m_events->size(); ++i ) {
+      auto c = b1[i] * std::conj(b2[i]);
       re[roll] += m_weight[i] * std::real(c);
       im[roll] += m_weight[i] * std::imag(c);
     }
   }
-  for ( size_t j = 0; j < m_counter; ++j )
-    m_integrals[j].transfer( complex_t( re[j], im[j] ) / m_norm );
+  for ( size_t j = 0; j < m_counter; ++j ) m_integrals[j].transfer( complex_t( re[j], im[j] ) / m_norm );
   m_counter = 0;
 }
 

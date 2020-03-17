@@ -8,10 +8,10 @@
 
 #include "TH1D.h"
 #include "TH2D.h"
-#include "AmpGen/ArgumentPack.h"
+#include "THStack.h"
 
-class TH1D;
-class TH2D;
+#include "AmpGen/ArgumentPack.h"
+#include "AmpGen/LiteSpan.h"
 
 namespace AmpGen
 {
@@ -31,18 +31,26 @@ namespace AmpGen
           const std::string& xAxisTitle, const size_t& nBins, const double& min, const double& max,
           const std::string& units = "" );
       const std::string name() const; 
-      template <class... ARGS> TH1D* operator()(const EventList& evt, const ARGS... args) const { return projInternal(evt, ArgumentPack(args...) ); } 
-      
+      template <class... ARGS> TH1D* operator()(const EventList& evt, const ARGS... args) const 
+      {
+        return projInternal(evt, ArgumentPack(args...) ); 
+      } 
+      template <class... ARGS> std::tuple<std::vector<TH1D*>, THStack*> operator()(const EventList& evt, const KeyedView<double, EventList>& weightFunction, const ARGS... args ) const 
+      {
+        return projInternal(evt, weightFunction, ArgumentPack(args...) );
+      }
+
       double operator()( const Event& evt ) const;
       
       TH1D* plot(const std::string& prefix="") const;
 
-      std::function<size_t( const Event& evt )> binFunctor() const;
+      std::function<int( const Event& evt )> binFunctor() const;
       void setRange( const double& min, const double& max ){ m_min = (min); m_max = (max) ; }
 
       friend class Projection2D;
     private:
       TH1D* projInternal(const EventList&, const ArgumentPack&) const; 
+      std::tuple<std::vector<TH1D*>, THStack*> projInternal(const EventList&, const KeyedView<double, EventList>&, const ArgumentPack&) const; 
       std::function<double( const Event& )> m_func;
       std::string m_name       = {""};
       std::string m_xAxisTitle = {""};
@@ -66,7 +74,14 @@ namespace AmpGen
 
     std::pair<double, double> operator()( const Event& evt ) const;
   };
-
+  namespace PlotOptions {
+    DECLARE_ARGUMENT(LineColor     , int);
+    DECLARE_ARGUMENT(DrawStyle     , std::string);
+    DECLARE_ARGUMENT(Selection     , std::function<bool( const Event& )>);
+    DECLARE_ARGUMENT(Prefix        , std::string);
+    DECLARE_ARGUMENT(Norm          , double);
+    DECLARE_ARGUMENT(AddTo         , THStack*);
+  }
 } // namespace AmpGen
 
 #endif

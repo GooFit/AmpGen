@@ -16,11 +16,14 @@ namespace AmpGen
   class Chi2Estimator
   {
   public:
+    template <typename... argument_types> 
     Chi2Estimator( const EventList& dataEvents, const EventList& mcEvents,
-                   const std::function<double( const Event& )>& fcn, const unsigned int& minEvents = 10 );
+                   const std::function<double( const Event& )>& fcn, 
+                   const argument_types&... args ) : m_binning(dataEvents, ArgumentPack(args...) ) 
+    {
+      doChi2(dataEvents, mcEvents, fcn);
+    }
 
-    Chi2Estimator( const EventList& dataEvents, const EventList& mcEvents,
-                   const std::function<double( const Event& )>& fcn, const std::string& filename );
     double chi2() const;
     double nBins() const; 
     void writeBinningToFile( const std::string& filename ); 

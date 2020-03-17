@@ -5,7 +5,7 @@
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/ProfileClock.h"
-
+#include "AmpGen/LiteSpan.h"
 #include <tuple>
 
 namespace AmpGen
@@ -65,7 +65,7 @@ namespace AmpGen
     double operator()( const eventValueType& evt )
     {
       double prob = 0;
-      for_each( this->m_pdfs, [&prob, &evt]( auto& f ) { prob += f(evt); } );
+      for_each( this->m_pdfs, [&prob, &evt]( const auto& f ) { prob += f(evt); } );
       return prob;
     }
 
@@ -81,6 +81,25 @@ namespace AmpGen
 
     /// Returns the tuple of PDFs used by this function
     std::tuple<pdfTypes...> pdfs() const { return m_pdfs; }
+
+    std::function<double(const eventValueType&)> evaluator(const eventListType* events) const
+    {     
+      std::vector<double> values( events->size() );
+      for_each( this->m_pdfs, [events, &values](const auto& pdf ) mutable { 
+        auto eval = pdf.evaluator(events);
+        for( unsigned i = 0; i != events->size(); ++i ) values[i] += eval( events->at(i) ); 
+      } );
+      return arrayToFunctor(values, events);
+    }
+    KeyedView<double, eventListType> componentEvaluator(const eventListType* events) const
+    { 
+      KeyedView<double, eventListType> view(*events, nPDFs() ); 
+      unsigned pdf_counter = 0;
+      for_each( this->m_pdfs, [&events, &view, &pdf_counter](const auto& pdf) mutable { 
+        view.set(pdf.evaluator(events), pdf_counter++, typeof(pdf) );  
+      } );
+      return view; 
+    }
   };
 
   /** @function make_pdf 

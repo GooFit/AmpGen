@@ -80,7 +80,7 @@ std::function<std::vector<double>( const Event& )> BinDT::makeDefaultFunctors()
     DEBUG( "Problem has 2 d.o.f.s -> using Dalitz coordinates" );
     return []( const Event& evt ) -> std::vector<double> { return {evt.s( 0, 1 ), evt.s( 1, 2 )}; };
   }
-  ERROR( "No functors found for dim = " << m_dim );
+  ERROR( "No default functors found for dim = " << m_dim );
   return nullptr;
 }
 
@@ -97,6 +97,10 @@ BinDT::BinDT( const ArgumentPack& args )
   }
 }
 
+BinDT::BinDT( const EventList& events, const ArgumentPack& args ) : BinDT(args)
+{
+  m_top = makeNodes(events);
+}
 void BinDT::readFromStream( std::istream& stream )
 {
   std::map<std::string, std::pair<std::string, std::shared_ptr<INode>>> nodes;
@@ -362,4 +366,18 @@ void BinDT::Decision::visit( const std::function<void(BinDT::INode*)>& visit_fun
   visit_function( this );
   m_left->visit( visit_function );
   m_right->visit( visit_function );
+}
+
+std::shared_ptr<BinDT::INode> BinDT::makeNodes( const EventList& events )
+{ 
+  std::vector<double> data( m_dim * events.size() );
+  std::vector<double*> addresses( events.size() );
+  size_t counter = 0;
+  for ( auto& evt : events ) {
+    auto val = m_functors( evt );
+    for ( unsigned int i = 0; i < m_dim; ++i ) data[m_dim * counter + i] = val[i];
+    addresses[counter]                                                   = &( data[m_dim * counter] );
+    counter++;
+  }
+  return makeNodes( addresses );
 }

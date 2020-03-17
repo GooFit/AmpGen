@@ -160,13 +160,13 @@ int main( int argc, char** argv )
   if( accepted.size() == 0 ) return -1;
   TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
   accepted.tree( "DalitzEventList" )->Write();
-  auto plots = accepted.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
+  auto plots = accepted.makeDefaultProjections(PlotOptions::Bins(nBins), PlotOptions::LineColor(kBlack));
   for ( auto& plot : plots ) plot->Write();
   if( NamedParameter<bool>("plots_2d",true) == true ){
     auto proj = eventType.defaultProjections(nBins);
     for( size_t i = 0 ; i < proj.size(); ++i ){
       for( size_t j = i+1 ; j < proj.size(); ++j ){ 
-        accepted.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(); 
+        accepted.makeProjection( Projection2D(proj[i], proj[j]), PlotOptions::LineColor(kBlack) )->Write(); 
       }
     }
   } 

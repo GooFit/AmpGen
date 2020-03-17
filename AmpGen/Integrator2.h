@@ -26,7 +26,9 @@ namespace AmpGen {
       void flush();
       void setBuffer( complex_t* pos, const complex_t& value, const size_t& size );
       void setBuffer( complex_t* pos, const std::vector<complex_t>& value, const size_t& size);
-      
+      void reserveCache(const unsigned int& size){};
+      complex_t get(const unsigned& i, const unsigned& evt) const { return m_buffer[i][evt]; }
+      double norm() const { return m_norm; }
       template <class T> size_t getCacheIndex(const T& expression) const 
       {
         return m_index.find(expression.name())->second;
@@ -42,17 +44,28 @@ namespace AmpGen {
           index = m_buffer.size();
           m_index[ expression.name() ] = index;
           m_buffer.resize(index+vsize);
-          for(size_t j = 0 ; j != vsize; ++j )
-            m_buffer[index+j].resize( m_events->size() );
+          for(size_t j = 0 ; j != vsize; ++j ) m_buffer[index+j].resize( m_events->size() );
         }
         else index = it->second; 
-        #ifdef _OPENMP
-        #pragma omp parallel for
-        #endif
-        for ( size_t i = 0; i < m_events->size(); ++i )
+        if constexpr( std::is_same< typename T::return_type, void >::value ) 
         {
-          auto v = expression(m_events->at(i).address());
-          setBuffer( &(m_buffer[index][i]), v, vsize );
+          #ifdef _OPENMP
+          #pragma omp parallel for
+          #endif
+          for ( size_t i = 0; i < m_events->size(); ++i )
+          { 
+            std::vector<complex_t> buf(vsize);
+            expression(&buf[0], expression.externBuffer().data(), m_events->at(i).address() );
+            for( unsigned j = 0; j != vsize; ++j ) m_buffer[index+j][i] = buf[j];
+            //expression(&(m_buffer[index][i]), expression.externBuffer().data(), m_events->at(i).address() );
+          }
+        }
+        else {
+          #ifdef _OPENMP
+          #pragma omp parallel for
+          #endif
+          for ( size_t i = 0; i < m_events->size(); ++i )
+            setBuffer( &(m_buffer[index][i]), expression(m_events->at(i).address()), vsize );
         }
       }
     

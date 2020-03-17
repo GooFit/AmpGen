@@ -98,7 +98,7 @@ std::vector<Coupling> AmplitudeRules::rulesForDecay(const std::string& head, con
   return rt;
 }
 
-std::map<std::string, std::vector<Coupling>> AmplitudeRules::rules() 
+const std::map<std::string, std::vector<Coupling>>& AmplitudeRules::rules() const
 { 
   return m_rules;
 }

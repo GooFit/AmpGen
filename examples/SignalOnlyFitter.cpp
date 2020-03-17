@@ -103,7 +103,7 @@ int main( int argc, char* argv[] )
   /* Generate events to normalise the PDF with. This can also be loaded from a file, 
      which will be the case when efficiency variations are included. Default number of normalisation events 
      is 5 million. */
-  EventList eventsMC = intFile == "" ? Generator<>(evtType, &rndm).generate(1e7) : EventList(intFile, evtType, GetGenPdf(true));
+  EventList eventsMC = intFile == "" ? Generator<>(evtType, &rndm).generate(2e6) : EventList(intFile, evtType, GetGenPdf(true));
   
   sig.setMC( eventsMC );
 
@@ -124,7 +124,7 @@ int main( int argc, char* argv[] )
   /* Write out the data plots. This also shows the first example of the named arguments 
      to functions, emulating python's behaviour in this area */
 
-  auto plots = events.makeDefaultProjections(Prefix("Data"), Bins(100));
+  auto plots = events.makeDefaultProjections(PlotOptions::Prefix("Data"), PlotOptions::Bins(100));
   for ( auto& plot : plots ) plot->Write();
 
   output->Close();
@@ -147,27 +147,28 @@ FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, M
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - time_wall ).count();
   INFO( "Wall time = " << tWall / 1000. );
   INFO( "CPU  time = " << time_cpu );
+  
+  /* Estimate the chi2 using an adaptive / decision tree based binning, 
+     down to a minimum bin population of 15, and add it to the output. */
+  
+  Chi2Estimator chi2( data, mc, likelihood.evaluator(&mc), MinEvents(15), Dim(data.eventType().dof()) );
+  chi2.writeBinningToFile("chi2_binning.txt");
+  fr->addChi2( chi2.chi2(), chi2.nBins() );
+  fr->print();
 
   /* Make the plots for the different components in the PDF, i.e. the signal and backgrounds. 
      The structure assumed the PDF is some SumPDF<eventListType, pdfType1, pdfType2,... >. */
-  unsigned int counter = 1;
-  for_each(likelihood.pdfs(), [&](auto& pdf){
-    auto pfx = Prefix("Model_cat"+std::to_string(counter));
-    auto mc_plot3 = mc.makeDefaultProjections(WeightFunction(pdf), pfx);
-    for( auto& plot : mc_plot3 )
-    {
-      plot->Scale( ( data.integral() * pdf.getWeight() ) / plot->Integral() );
-      plot->Write();
-    }
-    counter++;
-  });
-
-  /* Estimate the chi2 using an adaptive / decision tree based binning, 
-     down to a minimum bin population of 15, and add it to the output. */
-  Chi2Estimator chi2( data, mc, likelihood, 15 );
-  chi2.writeBinningToFile("chi2_binning.txt");
-  fr->addChi2( chi2.chi2(), chi2.nBins() );
-  
-  fr->print();
+  auto evaluator                 = likelihood.componentEvaluator(&mc);
+  auto evaluator_per_component   = std::get<0>( likelihood.pdfs() ).componentEvaluator(&mc);
+  auto projections               = data.eventType().defaultProjections(100); 
+  for( const auto& proj : projections )
+  {
+    auto [components, total] = proj(mc, evaluator, PlotOptions::Norm(data.size() ) );
+    for( const auto& component : components ) component->Write();
+    total->Write();
+    auto [signal_components, total_signal_component] = proj(mc, evaluator_per_component, PlotOptions::Norm(data.size()) );
+    for( const auto& component : signal_components ) component->Write();
+    total_signal_component->Write();
+  }
   return fr;
 }
