@@ -330,7 +330,8 @@ TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
 
   if (outputVals){
     std::ofstream out;
-    out.open(ampFile.c_str());
+    auto ampFile_tag = tokens[0] + "_" + ampFile;
+    out.open(ampFile_tag.c_str());
     for (size_t i=0; i < acceptedSig.size(); i++){
       auto eventSig = acceptedSig[i];
       auto eventTag = acceptedTag[i];
