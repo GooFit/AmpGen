@@ -82,6 +82,27 @@ template <class PDF_TYPE, class PRIOR_TYPE>
   signalGenerator.fillEventList( pdf, eventsSig, eventsTag, nEvents );
 }
 
+template <class PDF_TYPE, class PRIOR_TYPE> 
+  void FilterEvents( EventList& eventsSig
+                       , EventList& eventsTag
+                       , EventList& inSig
+                       , EventList& inTag
+                       , PDF_TYPE& pdf 
+                       , PRIOR_TYPE& priorSig
+                       , PRIOR_TYPE& priorTag
+                       , const size_t& nEvents
+                       , const size_t& blockSize
+                       , TRandom* rndm 
+		       )
+{
+  QcGenerator<PRIOR_TYPE> signalGenerator( priorSig, priorTag );
+  signalGenerator.setRandom( rndm);
+  signalGenerator.setBlockSize( blockSize );
+  signalGenerator.filterEventList( pdf, eventsSig, eventsTag,inSig, inTag, nEvents );
+}
+
+
+
 void add_CP_conjugate( MinuitParameterSet& mps );
 
 EventList getEvents(std::string type, std::vector<std::string> sigName, std::string tagName, std::string intFile);
@@ -124,11 +145,14 @@ int main( int argc, char** argv )
   EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
                        NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
   bool doBoost  = NamedParameter<bool>("doBoost", true, "Boost to psi(3770) frame");
+  std::string inputSignal = NamedParameter<std::string> ("inputSignal", "inputSignal.root", "The initial signal events");
+  std::string inputTagPref = NamedParameter<std::string> ("inputTagPref", "inputTag_", "The file format for the input tag events - e.g. inputTag_ + KK = inputTag_KK.root");
 
 
  if(qcWeight){
-
-TFile* fRW = TFile::Open( rwfile.c_str(), "RECREATE" );
+  TRandom3 rand;
+  rand.SetSeed( seed + 934534 );
+TFile* fRW = TFile::Open( outfile.c_str(), "RECREATE" );
 
  for( auto& tag : tags ){
     auto tokens       = split(tag, ' ');
@@ -152,29 +176,25 @@ TFile* fRW = TFile::Open( rwfile.c_str(), "RECREATE" );
 
 
     pCorrelatedSum cs2( sigType, tagType, MPS );
-    auto sigMCevents = getEvents("sigMC", pNames, tag, intfile);
+ //   auto sigMCevents = getEvents("sigMC", pNames, tag, intfile);
+//    auto tagMCevents = getEvents("tagMC", pNames, tag, intfile);
 
-    auto tagMCevents = getEvents("tagMC", pNames, tag, intfile);
+    // Want something like signalIn.root, tagKKIn.root etc.
+    auto inSig = EventList(inputSignal,sigType);
+    std::stringstream inputTagSS;
+    inputTagSS<<inputTagPref<<tokens[0]<<".root";
+    auto inputTag = inputTagSS.str();
+    auto inTag = EventList(inputTag, tagType);
+    pCorrelatedSum cs( sigType, tagType, MPS );
 
+    PhaseSpace phspSig(sigType,&rand);
+    PhaseSpace phspTag(tagType,&rand);
+    INFO("Generating Events now!");
+    FilterEvents( acceptedSig, acceptedTag, inSig, inTag ,cs, phspSig, phspTag , nEvents, blockSize, &rand );
      
 //    auto cs = pCorrelatedSum(sigevents.eventType(), tagevents.eventType(), MPS);
     
-    cs2.setEvents(sigMCevents, tagMCevents);
-    cs2.setMC(sigMCevents, tagMCevents);
-    cs2.prepare();
-    for (int i=0; i<sigMCevents.size(); i++){
-	    auto old_weightS = sigMCevents[i].weight();
-	    auto old_weightT = sigMCevents[i].weight();
-//	    INFO("Sig Weight is = "<<old_weightS);
-//	    INFO("Tag Weight is = "<<old_weightT);
-	    auto weight = cs2.prob(sigMCevents[i], tagMCevents[i]);
-
-	    sigMCevents[i].setWeight(weight);
-	    tagMCevents[i].setWeight(weight);
-//	    INFO("Sig Weight is = "<<sigMCevents[i].weight());
-//	    INFO("Tag Weight is = "<<tagMCevents[i].weight());
-    }
-//    INFO( "Writing output file " );
+    INFO( "Writing output file " );
     std::stringstream signame;
     signame<<"Signal_";
     signame<<tokens[0];
@@ -182,14 +202,14 @@ TFile* fRW = TFile::Open( rwfile.c_str(), "RECREATE" );
     tagname<<"Tag_";
     tagname<<tokens[0];
 	fRW->cd();
-    TTree * sig = sigMCevents.tree(signame.str().c_str());
+    TTree * sig = acceptedSig.tree(signame.str().c_str());
     sig->Write(signame.str().c_str());
 
- TTree * tagTree = tagMCevents.tree(tagname.str().c_str());
+ TTree * tagTree = acceptedTag.tree(tagname.str().c_str());
  tagTree->Write(tagname.str().c_str());
  
  std::vector<std::string> dalitzNames = {"01", "02", "12"}; 
-  auto plots = sigMCevents.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
+  auto plots = acceptedSig.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
   int i=0;
   for ( auto& plot : plots ) {
          std::stringstream projName;
@@ -203,7 +223,7 @@ TFile* fRW = TFile::Open( rwfile.c_str(), "RECREATE" );
       for( size_t j = i+1 ; j < proj.size(); ++j ){ 
           std::stringstream projName;
           projName<<"Signal_vs_"<<tokens[0]<<"_s"<<dalitzNames[i]<<"_vs_"<<dalitzNames[j];
-        sigMCevents.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(projName.str().c_str()); 
+        acceptedSig.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(projName.str().c_str()); 
       }
     } 
 

@@ -155,6 +155,81 @@ namespace AmpGen
             INFO( "Evaluating PDF         : " << t_eval          << " ms"); 
             INFO( "Doing accept/reject    : " << t_acceptReject  << " ms"); 
           }
+template <class PDF>
+          void filterEventList( PDF& pdf, EventList& listSig, EventList& listTag, EventList& inSig, EventList& inTag, const size_t& N )
+          {
+            if ( m_rnd == nullptr ) {
+              ERROR( "Random generator not set!" );
+              return;
+            }
+            INFO("Starting to Generate events");
+            double normalisationConstant = m_normalise ? 0 : 1;
+            auto size0                 = listSig.size();
+            auto tStartTotal             = std::chrono::high_resolution_clock::now();
+            pdf.reset( true );
+            ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__) );
+            ProfileClock t_phsp, t_eval, t_acceptReject;
+            while ( listSig.size() - size0 < N ) {
+              t_eval.start();
+             
+              pdf.setEvents( inSig, inTag );
+              pdf.setMC( inSig, inTag );
+              pdf.prepare();
+            //Normalisation constant = max(pdf)  * Norm(pdf) * 15
+              t_eval.stop();
+              if ( normalisationConstant == 0 ) {
+                double max = 0;
+                for ( size_t i=0; i < inSig.size(); i++ ) {
+//                  double value           = pdf.prob_unnormalised( inSig[i], inTag[i] );
+ //                 auto vals = pdf.getVals(inSig[i], inTag[i]);
+  //                auto value = std::norm(vals[0]) * std::norm(vals[1]);
+                  double value           = pdf.prob_unnormalised( inSig[i], inTag[i] );
+                  if ( value > max ) max = value;
+                }
+                normalisationConstant = max * 15;
+                INFO( "Setting normalisation constant = " << normalisationConstant );
+              }
+              auto previousSize = listSig.size();
+              t_acceptReject.start();
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+              for ( size_t i=0;i< inSig.size(); ++i ) inSig[i].setGenPdf(pdf.prob_unnormalised(inSig[i], inTag[i]));
+              for ( size_t i=0;i< inTag.size(); ++i ) inTag[i].setGenPdf(pdf.prob_unnormalised(inSig[i], inTag[i]));
+
+              for( size_t i=0; i < inSig.size(); ++i ){
+              
+                if ( inSig[i].genPdf() > normalisationConstant  || inTag[i].genPdf() > normalisationConstant ) {
+                  std::cout << std::endl; 
+                  if (inSig[i].genPdf() > normalisationConstant ) WARNING( "PDF value exceeds norm value: " << inSig[i].genPdf() << " > " << normalisationConstant );
+                  if (inTag[i].genPdf() > normalisationConstant ) WARNING( "PDF value exceeds norm value: " << inTag[i].genPdf() << " > " << normalisationConstant );
+                }
+                auto threshold = normalisationConstant * m_rnd->Rndm();
+                if ( inSig[i].genPdf() > threshold &&  inTag[i].genPdf() > threshold   )
+                { listSig.push_back( inSig[i] );
+               listTag.push_back( inTag[i] );
+                }
+              
+                if ( listSig.size() - size0 == N  && listTag.size() - size0 == N) break;
+              }
+              t_acceptReject.stop();
+              double time = std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tStartTotal ).count();
+              double efficiency = 100. * ( listSig.size() - previousSize ) / (double)inSig.size();
+              pb.print( double(listSig.size()) / double(N), " ε[gen] = " + mysprintf("%.2f",efficiency) + "% , " + std::to_string(int(time/1000.))  + " seconds" );
+              if ( listSig.size() == previousSize ) {
+                ERROR( "No events generated, PDF: " << typeof<PDF>() << " is likely to be malformed" );
+                break;
+              }
+             
+            }
+            pb.finish();
+            double time = std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tStartTotal ).count();
+            INFO( "Generated " << N << " events in " << time     << " ms" );
+            INFO( "Generating phase space : " << t_phsp          << " ms"); 
+            INFO( "Evaluating PDF         : " << t_eval          << " ms"); 
+            INFO( "Doing accept/reject    : " << t_acceptReject  << " ms"); 
+          }
+ 
         template <class PDF, class = typename std::enable_if<!std::is_integral<PDF>::value>::type>
           corrEventList generate(PDF& pdf, const size_t& nEvents )
           {

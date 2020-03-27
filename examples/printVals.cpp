@@ -272,7 +272,7 @@ for (int i=0; i < tags.size(); i++){
 
     auto dd = std::arg(ACst);
     
-    out << s01 << "\t" << s02 << "\t" << s12 << "\t" << dd <<"\t" << cosDD << "\t"<<corr.real();
+    out << s01 << "\t" << s02 << "\t" << s12 << "\t" << dd <<"\t" << cosDD << "\t"<<corr.real()<<"\t"<<"\n";
 
 }
   out.close();
