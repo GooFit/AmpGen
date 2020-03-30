@@ -171,6 +171,12 @@ int main( int argc, char* argv[] )
 //csLLs.push_back(LL_KK2);
 INFO("Doing loop of Fits");
 for (int i=0; i < tags.size(); i++){
+MinuitParameterSet * MPS_tag = new MinuitParameterSet();
+  MPS_tag->loadFromStream();
+  if (makeCPConj){
+    INFO("Making CP conjugate states");
+    add_CP_conjugate(*MPS_tag);
+  }
     std::stringstream tag_log;
     auto tagName = split(tags[i],' ')[0];
     tag_log<<tagName<<"_fit.log";
@@ -185,13 +191,13 @@ for (int i=0; i < tags.size(); i++){
     auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
 
      
-    auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), MPS);
+    auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), *MPS_tag);
     cs_tag.setEvents(sigevents_tag, tagevents_tag);
     cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
     cs_tag.prepare();
     //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
     auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag, false, cs_tag);
-    auto mini_tag = Minimiser(LL_tag2, &MPS);
+    auto mini_tag = Minimiser(LL_tag2, MPS_tag);
     mini_tag.prepare();
     //INFO("Fitting "<<i<<" out of "<<tags.size()  );
     mini_tag.doFit();
@@ -200,7 +206,7 @@ for (int i=0; i < tags.size(); i++){
 auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.eventType().dof() ) );
 //void   Chi2Estimator::doChi2( const EventList& sigevents_tag, const EventList& sigMCevents_tag,
 //    const std::function<double( const Event& )>& fcn )
-//{
+//
   std::vector<Moment> data( binning.size() );
   std::vector<Moment> mc( binning.size() );
 
@@ -248,7 +254,7 @@ auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.
   fr->addChi2( chi2, Bins );
   fr->print();
   
-       std::map<std::string, std::vector<double> > fits = getParams(MPS);
+       std::map<std::string, std::vector<double> > fits = getParams(*MPS_tag);
     std::map<std::string, double> pulls = getPulls(fits, inits);
       for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
          INFO("Pull = "<<it->first<<" "<<it->second);
@@ -309,7 +315,7 @@ auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.
 
    fr->writeToFile(tag_logName);
     
-    //FitResult * fr_tag = Fit(LL_tag2, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, MPS, tag_logName, inits);
+    //FitResult * fr_tag = Fit(LL_tag2, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, MPS_tag, tag_logName, inits);
     csLLs.push_back(LL_tag2);
 
 }
@@ -318,7 +324,13 @@ auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.
 
 if (doCombFit){
 //doPlots(KK_fit.str(), cs_KK, events_KK, 100);
-
+MinuitParameterSet * MPS_comb = new MinuitParameterSet();
+  MPS_comb->loadFromStream();
+  if (makeCPConj){
+    INFO("Making CP conjugate states");
+    add_CP_conjugate(*MPS_comb);
+  }
+ 
 //auto LLs = {LL_KK2, LL_Kppim2};
 //INFO("Trying to do combined fit");
 // auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >({csLLs[0], csLLs[1]});
@@ -335,14 +347,14 @@ if (doCombFit){
     auto tagevents_0 = getEvents("tag", pNames, tags[0], dataFile, intFile);
     auto tagMCevents_0 = getEvents("tagMC", pNames, tags[0], dataFile, intFile);
     INFO("Making pCorrelatedSum 0");
-    auto cs_0 = pCorrelatedSum(sigevents_0.eventType(), tagevents_0.eventType(), MPS);
+    auto cs_0 = pCorrelatedSum(sigevents_0.eventType(), tagevents_0.eventType(), *MPS_comb);
     cs_0.setEvents(sigevents_0, tagevents_0);
     cs_0.setMC(sigMCevents_0, tagMCevents_0);
     cs_0.prepare();
     INFO("Making LL 0");
     //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
     auto LL_0 = make_likelihood( sigevents_0, tagevents_0, false, cs_0);
-    auto mini_0 = Minimiser(LL_0, &MPS);
+    auto mini_0 = Minimiser(LL_0, MPS_comb);
     LLs = {LL_0};
     
 
@@ -353,13 +365,13 @@ if (doCombFit){
       auto tagevents_1 = getEvents("tag", pNames, tags[1], dataFile, intFile);
       auto tagMCevents_1 = getEvents("tagMC", pNames, tags[1], dataFile, intFile);
       INFO("Making pCorrelatedSum 1");
-      auto cs_1 = pCorrelatedSum(sigevents_1.eventType(), tagevents_1.eventType(), MPS);
+      auto cs_1 = pCorrelatedSum(sigevents_1.eventType(), tagevents_1.eventType(), *MPS_comb);
       cs_1.setEvents(sigevents_1, tagevents_1);
       cs_1.setMC(sigMCevents_1, tagMCevents_1);
       cs_1.prepare();
       INFO("Making LL 1");
       auto LL_1 = make_likelihood( sigevents_1, tagevents_1, false, cs_1);
-      auto mini_1 = Minimiser(LL_1, &MPS);
+      auto mini_1 = Minimiser(LL_1, MPS_comb);
       LLs = {LL_0, LL_1};
      
       if (tags.size() > 2){
@@ -369,13 +381,13 @@ if (doCombFit){
         auto tagevents_2 = getEvents("tag", pNames, tags[2], dataFile, intFile);
         auto tagMCevents_2 = getEvents("tagMC", pNames, tags[2], dataFile, intFile);
         INFO("Making pCorrelatedSum 2");
-        auto cs_2 = pCorrelatedSum(sigevents_2.eventType(), tagevents_2.eventType(), MPS);
+        auto cs_2 = pCorrelatedSum(sigevents_2.eventType(), tagevents_2.eventType(), *MPS_comb);
         cs_2.setEvents(sigevents_2, tagevents_2);
         cs_2.setMC(sigMCevents_2, tagMCevents_2);
         cs_2.prepare(); 
         INFO("Making LL 2");
         auto LL_2 = make_likelihood( sigevents_2, tagevents_2, false, cs_2);
-        auto mini_2 = Minimiser(LL_2, &MPS);
+        auto mini_2 = Minimiser(LL_2, MPS_comb);
         LLs = {LL_0, LL_1, LL_2};
         }
       }
@@ -392,14 +404,14 @@ if (doCombFit){
 
   INFO("Making combLL"); 
     auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >(LLs);
-    auto combMini = Minimiser(combLL, &MPS);
+    auto combMini = Minimiser(combLL, MPS_comb);
     INFO("Minimising now");
     combMini.doFit();
 
   FitResult * fr = new FitResult(combMini); 
   fr->print();
    fr->writeToFile(logFile);
-       std::map<std::string, std::vector<double> > fits = getParams(MPS);
+       std::map<std::string, std::vector<double> > fits = getParams(*MPS_comb);
     std::map<std::string, double> pulls = getPulls(fits, inits);
       for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
          INFO("Pull = "<<it->first<<" "<<it->second);

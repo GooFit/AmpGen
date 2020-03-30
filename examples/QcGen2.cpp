@@ -238,6 +238,8 @@ TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
  for( auto& tag : tags ){
 
 
+    
+    INFO("tag = "<<tag);
     auto tokens       = split(tag, ' ');
     INFO("tag = "<<tokens[0]);
  
@@ -247,15 +249,15 @@ TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
   rand.SetSeed( seed + 934534 );
   //auto x = MinuitParameter("QcGen::X", Flag::Fix, 4, 0);
   //INFO("X = "<<x.mean());
-  MinuitParameterSet MPS;
-  MPS.loadFromStream();
-  for (auto param : MPS){
+  MinuitParameterSet* MPS = new MinuitParameterSet();
+  MPS->loadFromStream();
+  for (auto param : *MPS){
     INFO(param->name()<<" = "<<param->mean());
   }
   INFO("makeCPConj = "<<makeCPConj);
   if (makeCPConj){
     INFO("Making CP conjugate states");
-    add_CP_conjugate(MPS);
+    add_CP_conjugate(*MPS);
   }
 
   Particle p;
@@ -284,7 +286,7 @@ TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
 
  // if ( genType == generatorType::CoherentSum ) 
   INFO("Making CorrelatedSum");
-    pCorrelatedSum cs( sigType, tagType, MPS );
+    pCorrelatedSum cs( sigType, tagType, *MPS );
 
     PhaseSpace phspSig(sigType,&rand);
     PhaseSpace phspTag(tagType,&rand);
@@ -328,6 +330,7 @@ TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
    // acceptedSig.tree(tokens[0])->Write("Signal");
  //  acceptedTag.tree(tokens[0])->Write("Tag");
   
+  INFO( "Projecting" );
   
  std::vector<std::string> dalitzNames = {"01", "02", "12"}; 
   auto plots = acceptedSig.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
@@ -381,6 +384,7 @@ TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
     }
     out.close();
   }
+INFO("End of Tag Loop");
  }
     f->Close();
 

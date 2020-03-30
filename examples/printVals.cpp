@@ -219,12 +219,7 @@ int main( int argc, char** argv )
 
   std::string dataFile = NamedParameter<std::string>("DataSample", ""          , "Name of file containing data sample to fit." );
   std::string intFile = NamedParameter<std::string>("IntegrationSample", ""          , "Name of file containing flat sample." );
-   MinuitParameterSet MPS;
-  MPS.loadFromStream();
-  if (makeCPConj){
-    INFO("Making CP conjugate states");
-    add_CP_conjugate(MPS);
-  }
+
 
 
 
@@ -234,14 +229,25 @@ int main( int argc, char** argv )
 
 if (doQC){
 for (int i=0; i < tags.size(); i++){
-
+   MinuitParameterSet *  MPS = new MinuitParameterSet(); 
+  MPS->loadFromStream();
+  if (makeCPConj){
+    INFO("Making CP conjugate states");
+    add_CP_conjugate(*MPS);
+  }
     auto sigevents_tag = getEvents("signal", pNames, tags[i], dataFile, intFile);
     auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
     auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
     auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
 
+    auto sigEventType = sigevents_tag.eventType();
+    auto tagEventType = tagevents_tag.eventType();
+    CoherentSum sig(sigEventType, *MPS);
+    pCorrelatedSum cs_tag (sigevents_tag.eventType(), tagevents_tag.eventType(), *MPS);
+
      
-    auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), MPS);
+    
+
     cs_tag.setEvents(sigevents_tag, tagevents_tag);
     cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
     cs_tag.prepare();
@@ -274,16 +280,24 @@ for (int i=0; i < tags.size(); i++){
     
     out << s01 << "\t" << s02 << "\t" << s12 << "\t" << dd <<"\t" << cosDD << "\t"<<corr.real()<<"\t"<<"\n";
 
+
 }
   out.close();
+
 }  
 
 }
 else{
+   MinuitParameterSet *  MPS = new MinuitParameterSet(); 
+  MPS->loadFromStream();
+  if (makeCPConj){
+    INFO("Making CP conjugate states");
+    add_CP_conjugate(*MPS);
+  }
    EventList events(dataFile, eventType);
 
   EventList eventsMC =  Generator<>(eventType, &rndm).generate(2e6);
-  CoherentSum sig(eventType, MPS);
+  CoherentSum sig(eventType, *MPS);
   sig.setEvents(events);
   sig.setMC( eventsMC );
   sig.prepare();
