@@ -92,6 +92,7 @@ namespace AmpGen
     unsigned m_printLevel = {0};
     double   m_ll_zero    = {0};
     bool     m_normalise  = {false};
+    bool     m_debug      = {false};
     std::vector<IExtendLikelihood*> m_extendedTerms;
   };
 } // namespace AmpGen

@@ -78,7 +78,12 @@ int main( int argc, char** argv )
   size_t nEvents      = NamedParameter<size_t>     ("nEvents"  , 1, "Total number of events to generate" );
   size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
   int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
+  bool outputVals     = NamedParameter<bool>        ("outputVals"     , false, "Print Output values" );
+ 
+
+
   std::string outfile = NamedParameter<std::string>("Output"   , "Generate_Output.root" , "Name of output file" ); 
+  std::string ampFile = NamedParameter<std::string>("ampFile"   , "vals.csv" , "Name of printed values" ); 
   auto genType        = NamedParameter<generatorType>( "Type", generatorType::CoherentSum, optionalHelpString("Generator configuration to use:", 
     { {"CoherentSum"     , "Full phase-space generator with (pseudo)scalar amplitude"}
     , {"PolarisedSum"    , "Full phase-space generator with particles carrying spin in the initial/final states"}

@@ -467,7 +467,7 @@ if (doCombFit){
    // for (int i=0;  i<nFits; i++){
    
     
-    mini.GradientTest();
+    mini.gradientTest();
    // for (int i=0 ; i < nFits; i++){
     //   mini.setTolerance(std::pow(10, 2 - i));
 //   if (doFit) mini.doFit();
@@ -509,7 +509,7 @@ auto sumLLs= SumLL< CorrelatedLL<EventList, pCorrelatedSum&> >(LLs);
 //fs.push_back(mini.fitFunction());
    
     
-    mini.GradientTest();
+    mini.gradientTest();
    // for (int i=0 ; i < nFits; i++){
     //   mini.setTolerance(std::pow(10, 2 - i));
    //if (doFit) mini.doFit();
@@ -686,7 +686,7 @@ FitResult* Fit( PDF&& ll, pCorrelatedSum& cs, EventList data1, EventList data2, 
   Minimiser mini( ll, &MPS );
    
   mini.prepare();
-  mini.GradientTest();
+  mini.gradientTest();
  INFO("Fitting now"); 
   mini.doFit();
   INFO("Making Fit Result");
@@ -813,7 +813,7 @@ void add_CP_conjugate( MinuitParameterSet& mps )
       std::string name   = tokens[0];
       if ( reOrIm == "Re" || reOrIm == "Im" ){
         auto p = Particle( name ).conj();
-        sgn = reOrIm == "Re" ? p.quasiCP() : 1; 
+        sgn = reOrIm == "Re" ? p.CP() : 1; 
         new_name = p.uniqueString() +"_"+reOrIm;
       }
       else if( tokens.size() == 2 ) {

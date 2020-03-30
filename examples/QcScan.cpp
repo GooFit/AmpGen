@@ -176,7 +176,7 @@ int main( int argc, char* argv[] )
    // for (int i=0;  i<nFits; i++){
    
     
-    mini.GradientTest();
+    mini.gradientTest();
    // for (int i=0 ; i < nFits; i++){
     //   mini.setTolerance(std::pow(10, 2 - i));
    if (doFit) mini.doFit();
@@ -275,7 +275,7 @@ FitResult* doFit( PDF&& ll, EventList& data1, EventList& mc1, EventList& data2, 
   Minimiser mini( ll, &MPS );
    
   mini.prepare();
-  mini.GradientTest();
+  mini.gradientTest();
   
   mini.doFit();
   FitResult* fr = new FitResult(mini);
@@ -351,7 +351,7 @@ void add_CP_conjugate( MinuitParameterSet& mps )
       std::string name   = tokens[0];
       if ( reOrIm == "Re" || reOrIm == "Im" ){
         auto p = Particle( name ).conj();
-        sgn = reOrIm == "Re" ? p.quasiCP() : 1; 
+        sgn = reOrIm == "Re" ? p.CP() : 1; 
         new_name = p.uniqueString() +"_"+reOrIm;
       }
       else if( tokens.size() == 2 ) {

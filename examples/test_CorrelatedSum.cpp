@@ -178,7 +178,7 @@ int main(int argc, char** argv ){
             //INFO("LL = "<<LL);
             mini.prepare();
         
-            if (m_debug) mini.GradientTest();
+            if (m_debug) mini.gradientTest();
           
 
             mini.doFit();
@@ -249,7 +249,7 @@ void add_CP_conjugate( MinuitParameterSet& mps )
       std::string name   = tokens[0];
       if ( reOrIm == "Re" || reOrIm == "Im" ){
         auto p = Particle( name ).conj();
-        sgn = reOrIm == "Re" ? p.quasiCP() : 1; 
+        sgn = reOrIm == "Re" ? p.CP() : 1; 
         new_name = p.uniqueString() +"_"+reOrIm;
       }
       else if( tokens.size() == 2 ) {

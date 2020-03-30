@@ -189,7 +189,7 @@ int main( int argc, char** argv )
 
     INFO("LL = "<<csLL.getVal());
  Minimiser mini( csLL, &MPS );
-    mini.GradientTest();
+    mini.gradientTest();
 
    // for (int i=0;  i<nFits; i++){
    
@@ -333,7 +333,7 @@ void add_CP_conjugate( MinuitParameterSet& mps )
       std::string name   = tokens[0];
       if ( reOrIm == "Re" || reOrIm == "Im" ){
         auto p = Particle( name ).conj();
-        sgn = reOrIm == "Re" ? p.quasiCP() : 1; 
+        sgn = reOrIm == "Re" ? p.CP() : 1; 
         new_name = p.uniqueString() +"_"+reOrIm;
       }
       else if( tokens.size() == 2 ) {

@@ -126,7 +126,7 @@ void pCoherentSum::debug( const Event& evt, const std::string& nameMustContain )
       INFO( std::setw(70) << me.decayTree.uniqueString() 
           << " A = [ "  << std::real(A)             << " " << std::imag(A) 
           << " ] g = [ "<< std::real(me.coupling()) << " " << std::imag(me.coupling()) << " ] "
-          << me.decayTree.quasiCP() );
+          << me.decayTree.CP() );
       if( m_dbThis ) me.amp.debug( evt.address() );
       //me.coupling.print();
     }
