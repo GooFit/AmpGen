@@ -23,18 +23,17 @@ namespace AmpGen
   template <size_t NBINS, size_t NROLLS>
     std::array<Bilinears, NBINS> getNorms( CoherentSum& fcn, BinnedIntegrator<NBINS, NROLLS>& bid )
     {
-
       std::array<Bilinears, NBINS> normalisations;
       for ( unsigned int i = 0; i < NBINS; ++i ) normalisations[i] = Bilinears( fcn.size(), fcn.size() );
-
       for ( unsigned int i = 0; i < fcn.size(); ++i ) {
         for ( unsigned int j = i; j < fcn.size(); ++j ) {
-          bid.addIntegral( fcn[i].amp, fcn[j].amp, [i, j, &normalisations]( const auto& val ) {
-              for ( unsigned int bin = 0; bin < NBINS; ++bin ) {
+          bid.addIntegral( fcn[i].amp, fcn[j].amp, [i, j, &normalisations]( const auto& val ) 
+          {
+            for ( unsigned int bin = 0; bin < NBINS; ++bin ) {
               normalisations[bin].set( i, j, val[bin] );
               if ( i != j ) normalisations[bin].set( j, i, std::conj( val[bin] ) );
-              }
-              } );
+            }
+          } );
         }
       }
       bid.flush();

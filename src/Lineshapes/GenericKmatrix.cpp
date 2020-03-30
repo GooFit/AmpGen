@@ -35,21 +35,21 @@ DEFINE_LINESHAPE(GenericKmatrix)
   auto s0 = mass*mass;
   ADD_DEBUG(s, dbexpressions );
   ADD_DEBUG(s0, dbexpressions );
-  INFO("Initialising K-matrix with : " << nChannels); 
+  INFO("Initialising K-matrix with [nChannels = " << nChannels << ", nPoles = " << nPoles << "]"); 
   for( unsigned i = 0 ; i < channels.size(); i+=1 ){
     Particle p( channels[i] ); 
     INFO( p.decayDescriptor() );
-    Expression sf = Parameter( lineshapeModifier + "::phsp::sf::"+std::to_string(i+1), 1);
-    phsps.emplace_back( sf * phaseSpace(s, p, p.L() ) );
-    bw_phase_space.emplace_back( sf * phaseSpace(s0, p, p.L() ) );
-    ADD_DEBUG( *phsps.rbegin(), dbexpressions);
-    ADD_DEBUG( phaseSpace(s0,p,p.L()), dbexpressions );  
+    phsps.emplace_back( phaseSpace(s, p, p.L() ) );
+    bw_phase_space.emplace_back( phaseSpace(s0, p, p.L() ) );
+    if( dbexpressions != nullptr ) dbexpressions->emplace_back("phsp_"+p.decayDescriptor(), *phsps.rbegin() ); //ADD_DEBUG( *phsps.rbegin(), dbexpressions);
+//    ADD_DEBUG( phaseSpace(s0,p,p.L()), dbexpressions );  
   }
   Tensor non_resonant( Tensor::dim(nChannels, nChannels) );
   std::vector<poleConfig> poleConfigs;
   for (unsigned pole = 1; pole <= nPoles; ++pole ){
     std::string stub = lineshapeModifier + "::pole::" + std::to_string(pole);
     Expression mass  = Parameter(stub + "::mass");
+    INFO( "Will link to parameter: " << stub + "::mass");
     poleConfig thisPole(mass*mass);
     if( dbexpressions != nullptr ) dbexpressions->emplace_back(stub+"::mass", mass);
     Expression bw_width  = 0;
@@ -57,6 +57,7 @@ DEFINE_LINESHAPE(GenericKmatrix)
     for (unsigned channel = 1; channel <= nChannels; ++channel ) 
     {
       Expression g = Parameter(stub+"::g::"+std::to_string(channel));
+      INFO("Will link to parameter: " << stub+"::g::"+std::to_string(channel) );
       thisPole.add(g, 1);
       if( dbexpressions != nullptr ){
         dbexpressions->emplace_back( stub+"::g::"+std::to_string(channel), g); 

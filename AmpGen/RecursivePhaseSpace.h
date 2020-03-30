@@ -51,6 +51,7 @@ namespace AmpGen
       size_t size() const;
       EventType eventType() const ;
 
+      void provideEfficiencyReport(const std::vector<bool>& report){}
     private:
       PhaseSpace   m_phsp;
       unsigned     m_totalSize = {0};

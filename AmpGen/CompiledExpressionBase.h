@@ -55,7 +55,9 @@ namespace AmpGen
     virtual std::string args()           const = 0;
     virtual void print() const                 = 0;
     virtual ~CompiledExpressionBase();
-    virtual size_t returnTypeSize() const      = 0;    
+    virtual unsigned returnTypeSize() const    = 0;    
+    static std::string fcnSignature(const std::vector<std::string>& argList, bool rto); 
+    void use_rto(){ m_rto = true; }
   protected:
     Expression                                      m_obj;
     std::string                                     m_name;
@@ -66,7 +68,7 @@ namespace AmpGen
     std::vector<std::pair<uint64_t, Expression>>    m_debugSubexpressions; 
     std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;
     std::shared_ptr<ASTResolver>                    m_resolver;
-    
+    bool                                            m_rto = {false};     
   private:
     void addDebug( std::ostream& stream ) const;
     void addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const;

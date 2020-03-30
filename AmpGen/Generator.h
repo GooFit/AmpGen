@@ -64,12 +64,14 @@ namespace AmpGen
               ERROR( "Random generator not set!" );
               return;
             }
-            double normalisationConstant = m_normalise ? 0 : 1;
-            auto size0                 = list.size();
-            auto tStartTotal             = std::chrono::high_resolution_clock::now();
+            double maxProb   = m_normalise ? 0 : 1;
+            auto size0       = list.size();
+            auto tStartTotal = std::chrono::high_resolution_clock::now();
             pdf.reset( true );
             ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__) );
             ProfileClock t_phsp, t_eval, t_acceptReject;
+            std::vector<bool> efficiencyReport(m_generatorBlock,false); 
+            
             while ( list.size() - size0 < N ) {
               EventList mc( m_eventType );
               t_phsp.start();
@@ -79,30 +81,38 @@ namespace AmpGen
               pdf.setEvents( mc );
               pdf.prepare();
               t_eval.stop();
-              if ( normalisationConstant == 0 ) {
+              if ( maxProb == 0 ) {
                 double max = 0;
                 for ( auto& evt : mc ) {
-                  double value           = pdf.prob_unnormalised( evt ) / evt.genPdf();
+                  double value           = pdf.prob_unnormalised(evt) / evt.genPdf();
                   if ( value > max ) max = value;
                 }
-                normalisationConstant = max * 1.5;
-                INFO( "Setting normalisation constant = " << normalisationConstant );
+                maxProb = max * 1.5;
+                INFO( "Setting normalisation constant = " << maxProb );
               }
               auto previousSize = list.size();
               t_acceptReject.start();
               #ifdef _OPENMP
               #pragma omp parallel for
               #endif
-              for ( size_t i=0;i< mc.size(); ++i ) mc[i].setGenPdf(pdf.prob_unnormalised(mc[i]) / mc[i].genPdf());
+              for ( size_t i=0; i < mc.size(); ++i ) 
+                mc[i].setGenPdf(pdf.prob_unnormalised(mc[i]) / mc[i].genPdf());
 
-              for( auto& evt : mc ){
-                if ( evt.genPdf() > normalisationConstant ) {
+              for( size_t i=0; i != mc.size(); ++i )
+              { 
+                auto& evt = mc[i];
+                if ( evt.genPdf() > maxProb ) {
                   std::cout << std::endl; 
-                  WARNING( "PDF value exceeds norm value: " << evt.genPdf() << " > " << normalisationConstant );
+                  WARNING( "PDF value exceeds norm value: " << evt.genPdf() << " > " << maxProb );
                 }
-                if ( evt.genPdf() > normalisationConstant * m_rnd->Rndm() ) list.push_back( evt );
+                if ( evt.genPdf() > maxProb * m_rnd->Rndm() ){
+                  list.push_back(evt);
+                  efficiencyReport[i] = true; 
+                }
+                else efficiencyReport[i] = false; 
                 if ( list.size() - size0 == N ) break;
               }
+              m_gps.provideEfficiencyReport( efficiencyReport );
               t_acceptReject.stop();
               double time = std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tStartTotal ).count();
               double efficiency = 100. * ( list.size() - previousSize ) / (double)m_generatorBlock;
@@ -111,6 +121,7 @@ namespace AmpGen
                 ERROR( "No events generated, PDF: " << typeof<PDF>() << " is likely to be malformed" );
                 break;
               }
+//              maxProb = 0;
             } 
             pb.finish();
             double time = std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tStartTotal ).count();

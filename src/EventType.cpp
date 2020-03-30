@@ -31,7 +31,8 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
     throw std::runtime_error( "Not enough particles listed in particle names! Was it defined?" );
   }
   m_mother           = particleNames.at(0);
-  for ( unsigned int i  = 1; i < particleNames.size(); ++i ) m_particleNames.push_back( particleNames[i] );
+  m_alt_part_names = NamedParameter<bool>("EventType::AlternativeParticleNames", false );
+  
   auto motherProperties = ParticlePropertiesList::get( m_mother );
   if ( motherProperties != nullptr )
     m_motherMass = motherProperties->mass();
@@ -39,19 +40,27 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
     ERROR( "Particle not found: " << m_mother );
     return;
   }
-  m_alt_part_names = NamedParameter<bool>("EventType::AlternativeParicleNames", false );
-  for ( auto& particle : m_particleNames ) {
-    auto prop = ParticlePropertiesList::get( particle );
+  
+  m_ignore.resize(particleNames.size()-1,false);
+  for ( auto it = particleNames.begin()+1; it != particleNames.end(); ++it )
+  { 
+    if( *it->begin() == '{' && *it->rbegin() == '}' )
+    {
+      m_particleNames.push_back( it->substr(1, it->size() -2 ) );
+    }
+    else m_particleNames.push_back( *it );
+
+    auto prop = ParticlePropertiesList::get( *m_particleNames.rbegin() );
     if ( prop != nullptr )
       m_particleMasses.push_back( prop->mass() );
     else {
-      ERROR( "Particle not found: " << particle );
+      ERROR( "Particle not found: " << *m_particleNames.rbegin() );
       return;
     }
     if(m_alt_part_names)
-      m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "p" ), "-", "m" ) );
+      m_particleNamesPickled.push_back( replaceAll( *m_particleNames.rbegin(), {{"+","p"},{"-","m"},{"(",""},{")",""}}));
     else
-      m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "~" ), "-", "#" ) );
+      m_particleNamesPickled.push_back( replaceAll( *m_particleNames.rbegin(), {{"+","~"},{"-","#"},{"(",""},{")",""}}));
   }
   DEBUG( m_mother << " = " << m_motherMass << " -> " );
   for ( unsigned int i = 0; i < m_particleNames.size(); ++i ) {

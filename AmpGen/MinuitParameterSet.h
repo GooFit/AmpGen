@@ -21,11 +21,12 @@ namespace AmpGen
     typedef std::vector<MinuitParameter*>::const_iterator const_iterator; 
     
     MinuitParameterSet();
-    MinuitParameterSet(const std::vector<MinuitParameter*>& params );
-    MinuitParameterSet( const MinuitParameterSet& other );
-    ~MinuitParameterSet() = default;
+    explicit MinuitParameterSet(const std::vector<MinuitParameter*>& params );
 
-    MinuitParameterSet getFloating();
+    MinuitParameterSet( const MinuitParameterSet& other ) = delete;
+    ~MinuitParameterSet(); // = default;
+
+    // MinuitParameterSet getFloating();
 
     bool add( MinuitParameter* parPtr );
     MinuitParameter* add(const std::string& name, const Flag& flag, const double& mean, const double& sigma, const double& min = 0, const double& max = 0 );
@@ -38,7 +39,7 @@ namespace AmpGen
     void print( std::ostream& os = std::cout ) const;
     void printVariable( std::ostream& os = std::cout ) const;
     void set( const MinuitParameterSet& mps );
-    void rename(const std::string& name, const std::string& new_name); 
+    bool rename(const std::string& name, const std::string& new_name); 
     unsigned int size() const;
 
     const_iterator cbegin() const;

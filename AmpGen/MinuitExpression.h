@@ -15,13 +15,13 @@ namespace AmpGen
   class MinuitExpression : public MinuitParameter
   {
   public:
-    MinuitExpression( const std::vector<std::string>& tokens, MinuitParameterSet* mps );
+    MinuitExpression(const std::vector<std::string>& tokens, MinuitParameterSet* mps );
+    MinuitExpression(const std::string& name, const Expression& expression);
     double mean()   const override;
     complex_t getVal() const;
     Expression expression() const { return m_expression; }
     operator double() const override;
-    ~MinuitExpression() override;
-  
+    ~MinuitExpression() override;  
   private:
     Expression m_expression;
   };

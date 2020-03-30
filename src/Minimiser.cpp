@@ -112,6 +112,21 @@ bool Minimiser::doFit()
     }
   } 
   m_status = m_minimiser->Status();
+  /*
+  for( unsigned i = 0 ; i != m_nParams; ++i ){
+    double low  = 0;
+    double high = 0; 
+    int status  = 0; 
+    m_minimiser->GetMinosError(i, low, high, status); 
+    auto param = m_parSet->at( m_mapping[i] ); 
+    param->setResult( *param, param->err(), low, high  );
+  }
+  for( unsigned i = 0 ; i != m_nParams; ++i )
+  {
+    auto param = m_parSet->at( m_mapping[i] ); 
+    INFO( param->name() << " " << param->mean() << " " << param->errPos() << " " << param->errNeg() );
+  }
+  */
   return 1;
 }
 
@@ -161,24 +176,4 @@ void Minimiser::addExtendedTerm( IExtendLikelihood* m_term )
 }
 
 ROOT::Minuit2::Minuit2Minimizer* Minimiser::minimiserInternal() { return m_minimiser; }
-
-
-void Minimiser::GradientTest()
-{
-  for (size_t i = 0; i < m_mapping.size(); ++i) {
-    auto parameter = m_parSet->at( m_mapping[i] );
-    double m       = parameter->mean();
-    parameter->setCurrentFitVal( parameter->meanInit() + parameter->stepInit() );
-    double vp = FCN();
-    parameter->setCurrentFitVal( parameter->meanInit() - parameter->stepInit() );
-    double vm = FCN();
-    if ( parameter->stepInit() == 0 ) {
-      WARNING( "Step of free parameter: " << parameter->name() << " = 0" );
-    } else {
-      INFO( " dF/d{" << parameter->name() << "} = " << ( vp - vm ) / ( 2 * parameter->stepInit() ) );
-    }
-    parameter->setCurrentFitVal( m );
-  }
-}
-
 

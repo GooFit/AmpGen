@@ -19,7 +19,7 @@ namespace AmpGen
     explicit FitResult( const FitResult& other );
     explicit FitResult( const std::string& filename );
     explicit FitResult( const Minimiser& mini );
-    FitResult( const MinuitParameterSet& mps, const TMatrixD& covMini );
+    FitResult( MinuitParameterSet& mps, const TMatrixD& covMini );
 
     void addObservable( const std::string& name, const double& F );
     void addChi2( const double& chi2, const double& nBins );
@@ -43,7 +43,7 @@ namespace AmpGen
     int nBins()  const; 
 
     std::map<std::string, double> observables() const;
-    std::shared_ptr<MinuitParameterSet> mps()   const;
+    MinuitParameterSet* mps()   const;
 
     std::vector<FitFraction> fitFractions()     const;
     std::vector<MinuitParameter*> parameters()  const;
@@ -56,7 +56,7 @@ namespace AmpGen
     LinearErrorPropagator getErrorPropagator( const bool& extended = false ) const;
 
   private:
-    std::shared_ptr<MinuitParameterSet> m_mps;
+    MinuitParameterSet*                 m_mps;
     double                              m_chi2   = {0};
     double                              m_LL     = {-999};
     double                              m_nBins  = {0};

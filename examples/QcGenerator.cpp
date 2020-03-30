@@ -14,7 +14,7 @@
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/MinuitParameterSet.h"
-
+#include "AmpGen/AddCPConjugate.h"
 #include <TFile.h>
 #include <TRandom3.h>
 #include <TRandom.h>
@@ -92,8 +92,6 @@ class DTYieldCalculator {
     std::map<std::string, double> branchingRatios = {getKeyed("BranchingRatios")};
     std::map<std::string, double> efficiencies    = {getKeyed("Efficiencies")};
 };
-
-void add_CP_conjugate( MinuitParameterSet& mps );
 
 template <class PDF> struct normalised_pdf {
   PDF       pdf; 
@@ -282,10 +280,7 @@ int main( int argc, char** argv )
 #endif
   MinuitParameterSet MPS; 
   MPS.loadFromStream();
-  if (makeCPConj){
-      INFO("Making CP conjugates");
-      add_CP_conjugate( MPS );
-  }
+  AddCPConjugate(MPS);
   EventType signalType( pNames );
   TFile* f = TFile::Open( output.c_str() ,"RECREATE");
 
@@ -387,7 +382,7 @@ void add_CP_conjugate( MinuitParameterSet& mps )
       std::string pname   = tokens[0];
       if ( reOrIm == "Re" || reOrIm == "Im" ){
         auto p = Particle( pname ).conj();
-        sgn = reOrIm == "Re" ? p.quasiCP() : 1; 
+        sgn = reOrIm == "Re" ? p.CP() : 1; 
         new_name = p.uniqueString() +"_"+reOrIm;
       }
       else if( tokens.size() == 2 ) {
@@ -492,8 +487,9 @@ TTree* DTEventList::tree(const std::string& name)
     outputTree->Branch(("Tag_"+particleName(m_tagType, i)+"_ID").c_str(), &id_tag[i]);
     ids_tag[i] = ParticlePropertiesList::get( m_tagType[i] )->pdgID();
   }
+  bool sym = NamedParameter<bool>("symmetrise",true);
   for( auto& evt: *this ){
-    bool swap = gRandom->Uniform() > 0.5;
+    bool swap = sym && ( gRandom->Uniform() > 0.5 );
     tmp.set(evt.signal, evt.tag);
     if( swap ) tmp.invertParity();
     for(size_t i=0; i != m_sigType.size(); ++i)
@@ -502,6 +498,7 @@ TTree* DTEventList::tree(const std::string& name)
       id_tag[i] = swap ? -ids_tag[i] : ids_tag[i];
     outputTree->Fill();
   }
+
   return outputTree;
 }    
 

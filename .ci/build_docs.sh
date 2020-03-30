@@ -34,6 +34,8 @@ __AUTHOR__="Jeroen de Bruijn"
 
 ################################################################################
 ##### Setup this script and get the current gh-pages branch.               #####
+if [[ $TRAVIS_OS_NAME == "osx" ]]; then return ; fi
+
 echo 'Setting up the script...'
 # Exit with nonzero exit code if anything fails
 set -e

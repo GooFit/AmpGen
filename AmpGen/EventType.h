@@ -70,9 +70,10 @@ namespace AmpGen
       std::vector<std::string>  m_particleNames;        ///< names of decay products
       std::vector<std::string>  m_particleNamesPickled; ///< names of decay product pickled for ROOT
       std::vector<double>       m_particleMasses;       ///< masses of decay products
+      std::vector<bool>         m_ignore;               ///< Flag to ignore particle when reading events, for invisible or tags 
       bool                      m_timeDependent;        ///< Flag to include a decay time as the last element in the event vector
       std::vector<std::string>  m_eventTypeExtensions;  ///< extended event data
-      std::pair<unsigned, unsigned> m_dim;                  ///< Rank of the relevant transition matrix
+      std::pair<unsigned, unsigned> m_dim;              ///< Rank of the relevant transition matrix
       bool                      m_alt_part_names;       ///< alternative naming in ouput tree (e.g. Xi- pi+ pi+ becomes Xim pip0 pip1 rather than _1_Xi# _2_pi~ _3_pi~)
   };
   std::ostream& operator<<( std::ostream& os, const EventType& type );

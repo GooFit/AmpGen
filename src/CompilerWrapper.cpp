@@ -21,20 +21,29 @@
 #include "AmpGenVersion.h"
 
 using namespace AmpGen;
+#ifdef AMPGEN_CXX
+#pragma message "Using c++ compiler: " AMPGEN_CXX " for JIT"
+#else
+#pragma warning "No AMPGEN_CXX for JIT set"
+#endif 
 
 CompilerWrapper::CompilerWrapper( const bool& verbose ) :
   m_verbose(verbose),
-  m_cxx(getenv("CXX") != nullptr ? std::string( getenv( "CXX" ) ) : "")
+  m_cxx(getenv("AMPGEN_CXX") != nullptr ? std::string( getenv( "AMPGEN_CXX" ) ) : "")
 {
   if ( m_cxx == "" ) {
 #ifdef AMPGEN_CXX
     if( m_verbose ) 
-      INFO( "Using original compiler; set global variable CXX if another needed: " << AMPGEN_CXX );
+      INFO( "Global variable AMPGEN_CXX is undefined, using compiler variable AMPGEN_CXX: " << AMPGEN_CXX );
     m_cxx = AMPGEN_CXX;
 #else
     m_cxx = getenv("AMPGEN_CXX") != nullptr ? std::string( getenv( "AMPGEN_CXX" ) ) : "";
-    if( m_cxx == "" ) ERROR( "No configured compiler; set global variable CXX" );
+    if( m_cxx == "" ) ERROR( "No configured compiler; set global variable AMPGEN_CXX" );
 #endif
+  }
+  else {
+    if( m_verbose ) 
+      INFO( "Global variable CXX is defined: " << m_cxx << "; AMPGEN_CXX is ignored" ); // to use AMPGEN_CXX, unset CXX
   }
 }
 
@@ -128,8 +137,13 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     "-rdynamic", 
     "-fPIC"};
   std::transform( compile_flags.begin(), compile_flags.end(), std::back_inserter(argp), [](const auto& flag ){return flag.c_str() ; } );
-  if( m_cxx.find("clang") != std::string::npos ) 
+  if( m_cxx.find("clang") != std::string::npos || m_cxx.find("llvm-g++") != std::string::npos)
+  {
     argp.push_back( "-Wno-return-type-c-linkage");
+    #if __APPLE__
+    argp.push_back("-lstdc++");
+    #endif
+  }
 
   argp.push_back( fname.c_str() );
   argp.push_back( "-o");
@@ -146,7 +160,7 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
   if( childPID == 0 )
   {
     execv( argp[0], const_cast<char**>( &argp[0] ) );
-    perror( "execl()" );
+    perror( "execv() in ../src/CompilerWrapper.cpp" ); // add "CompilerWrapper::Verbose true" to .opt file to diagnose
     exit( 0 );
   }
   int status = 0;   

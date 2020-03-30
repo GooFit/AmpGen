@@ -65,7 +65,7 @@ ParticleProperties::ParticleProperties( const std::string& pdg_string ) : m_netQ
   m_status       = s[15][0];
   m_name         = s[16];
   m_quarks       = s[17];
-  m_Aformat      = s[11][0];
+  m_Aformat      = s[11].size() == 1 ? s[11][0] : ' ';
   m_chargeString = s[13];
   m_netQuarkContent = QuarkContent( m_quarks );
   bool spin_status = 1;
@@ -120,6 +120,7 @@ ParticleProperties ParticleProperties::anti() const
 
 std::string ParticleProperties::name() const
 {
+  if( m_customName ) return m_name; 
   std::string fullName = m_name;
   if ( m_pdgID < 0 && m_Aformat == 'F' ) fullName += "bar";
   fullName += m_chargeString;
@@ -140,6 +141,16 @@ bool ParticleProperties::isNonResonant() const
 
 bool ParticleProperties::isFermion() const {
   return m_twoSpin % 2 == 1;
+}
+
+bool ParticleProperties::isPhoton() const 
+{
+  return m_name == "gamma0";
+}
+
+bool ParticleProperties::isNeutrino() const 
+{
+  return abs(m_pdgID) == 12 || abs(m_pdgID) == 14 || abs(m_pdgID) == 16;
 }
 
 bool ParticleProperties::isBoson() const {

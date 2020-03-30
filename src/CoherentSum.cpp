@@ -34,15 +34,15 @@ using namespace AmpGen;
 CoherentSum::CoherentSum() = default; 
 
 CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
-  : m_protoAmplitudes( mps )
-  , m_evtType( type )
-  , m_printFreq(NamedParameter<size_t>(     "CoherentSum::PrintFrequency", 100)  )
-  , m_dbThis   (NamedParameter<bool>(       "CoherentSum::Debug"         , false))
-  , m_verbosity(NamedParameter<bool>(       "CoherentSum::Verbosity"     , 0)    )
-  , m_objCache (NamedParameter<std::string>("CoherentSum::ObjectCache"   ,"")    )
-  , m_prefix( prefix )
+  : m_rules(mps)
+  , m_evtType        (type)
+  , m_printFreq      (NamedParameter<size_t>(     "CoherentSum::PrintFrequency", 100)  )
+  , m_dbThis         (NamedParameter<bool>(       "CoherentSum::Debug"         , false))
+  , m_verbosity      (NamedParameter<bool>(       "CoherentSum::Verbosity"     , 0)    )
+  , m_objCache       (NamedParameter<std::string>("CoherentSum::ObjectCache"   ,"")    )
+  , m_prefix         (prefix)
 {
-  auto amplitudes      = m_protoAmplitudes.getMatchingRules( m_evtType, prefix);
+  auto amplitudes      = m_rules.getMatchingRules( m_evtType, prefix);
   if( amplitudes.size() == 0 ){
     WARNING("The defined amplitudes don't seem to be able to be able to generate eventType: " << type);
   }
@@ -71,7 +71,6 @@ void updateCache(EventList* events, TransitionMatrix<complex_t>& me, const size_
 
 void CoherentSum::prepare()
 {
-  if ( m_weightParam != nullptr ) m_weight = m_weightParam->mean();
   if ( m_isConstant && m_prepareCalls != 0 ) return;
   transferParameters(); 
   std::vector<size_t> changedPdfIndices;
@@ -125,9 +124,9 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
       INFO( std::setw(70) << me.decayTree.uniqueString() 
           << " A = [ "  << std::real(A)             << " " << std::imag(A) 
           << " ] g = [ "<< std::real(me.coupling()) << " " << std::imag(me.coupling()) << " ] "
-          << me.decayTree.quasiCP() );
+          << me.decayTree.CP() );
+
       if( m_dbThis ) me.amp.debug( evt.address() );
-      //me.coupling.print();
     }
   else
     for ( auto& me : m_matrixElements )
@@ -141,7 +140,7 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
   prepare();
   bool recomputeIntegrals    = NamedParameter<bool>("CoherentSum::RecomputeIntegrals", false );
   std::vector<FitFraction> outputFractions;
-  for(auto& rule : m_protoAmplitudes.rules()) 
+  for(auto& rule : m_rules.rules()) 
   {
     FitFractionCalculator<CoherentSum> pCalc(this, findIndices(m_matrixElements, rule.first), recomputeIntegrals);
     for(auto& process : rule.second) 
@@ -155,7 +154,7 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
     auto fractions = pCalc(rule.first, linProp);
     std::transform( fractions.begin(), fractions.end(), std::back_inserter(outputFractions),[](auto& p){ return p;} );
   };
-  auto ffForHead = m_protoAmplitudes.rulesForDecay(m_evtType.mother(), m_prefix);
+  auto ffForHead = m_rules.rulesForDecay(m_evtType.mother(), m_prefix);
   FitFractionCalculator<CoherentSum> iCalc(this, findIndices(m_matrixElements, m_evtType.mother()), recomputeIntegrals);
   for ( size_t i = 0; i < ffForHead.size(); ++i ) 
   {
@@ -332,6 +331,7 @@ complex_t CoherentSum::norm(const size_t& x, const size_t& y) const
 void CoherentSum::transferParameters()
 {
   for ( auto& mE : m_matrixElements ) mE.coefficient = mE.coupling();
+  m_weight.update();
 }
 
 void CoherentSum::printVal(const Event& evt)

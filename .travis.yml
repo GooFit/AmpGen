@@ -1,5 +1,30 @@
-sudo: false
-dist: xenial 
+language: cpp
+
+matrix: 
+  include:
+    - os: osx 
+      osx_image: xcode10.1
+      compiler: clang
+      addons:
+        homebrew:
+          packages:
+            - libomp
+    - os: linux
+      addons:
+       apt:
+         sources:
+           - ubuntu-toolchain-r-test
+         packages:
+           - g++-8
+           - doxygen
+           - doxygen-doc
+           - doxygen-gui
+           - graphviz
+           - libtbb-dev
+      env:
+        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
+  
+
 
 cache:
   ccache: true
@@ -21,23 +46,15 @@ env:
     - GH_REPO_REF: github.com/GooFit/AmpGen.git
     - DEPS_DIR: "${TRAVIS_BUILD_DIR}/deps"
 
-# Install dependencies
-addons:
-  apt:
-    packages:
-      - doxygen
-      - doxygen-doc
-      - doxygen-gui
-      - graphviz
-      - libtbb-dev
-      
 before_install:
-- source .ci/build_root.sh
+  - eval "${MATRIX_EVAL}"
+  - chmod +x .ci/build_root_${TRAVIS_OS_NAME}.sh
+  - source .ci/build_root_${TRAVIS_OS_NAME}.sh 
 
 # Build your code e.g. by calling make
 script:
-  - chmod +x .ci/travis.sh
-  - source .ci/travis.sh
+  - chmod +x .ci/travis_${TRAVIS_OS_NAME}.sh
+  - source .ci/travis_${TRAVIS_OS_NAME}.sh
 
 # Generate and deploy documentation
 after_success:

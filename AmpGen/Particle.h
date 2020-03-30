@@ -26,7 +26,8 @@ namespace stdx {
 #include "AmpGen/Expression.h"
 #include "AmpGen/Tensor.h"
 #include "AmpGen/QuarkContent.h"
-
+#include "AmpGen/NamedParameter.h"
+#include "AmpGen/enum.h"
 namespace AmpGen
 {
   /** @class Particle
@@ -94,6 +95,10 @@ namespace AmpGen
     Similar to other components of AmpGen, Particles will rarely be constructed in the C++ context, 
     and will instead be instantiated dynamically at runtime from a user supplied options file. */
   class ParticleProperties; 
+      
+  declare_enum( spinFormalism, Covariant, Canonical )
+  declare_enum( spinBasis    , Dirac    , Weyl ) 
+
   class Particle
   {
     public:
@@ -115,6 +120,10 @@ namespace AmpGen
       /// (Quasi) Constructor that returns the (quasi)CP conjugated amplitude. The full behaviour of the amplitude is made more complicated by the ordering convention. 
       Particle conj(bool invertHead = true, bool reorder = true);
 
+      /// CP conjugate this particle //
+
+      void conjThis();
+
       static bool isValidDecayDescriptor( const std::string& decayDescriptor ); 
       /// Set the orbital quantum number 'L' for this decay.       
       void setOrbital( const unsigned int& orbital );
@@ -124,9 +133,9 @@ namespace AmpGen
 
       /// Set the index'th daughter of this to particle. 
       void setDaughter( const Particle& particle, const unsigned int& index );
-
-      /// Set the flag to say this 
-      void setTop( bool state = true );
+ 
+      /// Set the parent particle for this particle 
+      void setParent( const Particle* particle );
 
       /// Set the index of this particle, i.e. where it is positioned in the event data structure. 
       void setIndex( const unsigned int& index, const bool& setOri = false );
@@ -151,6 +160,7 @@ namespace AmpGen
 
       /// Set the polarisation state of this particle, which is twice the projection of the spin along the quantisation axis.
       void setPolarisationState( const int& state );
+      void setPolarisationState( const std::vector<int>& state);
 
       /// Returns the range of orbital angular momentum between the decay products
       std::pair<size_t,size_t> orbitalRange( const bool& converseParity = true ) const;
@@ -172,9 +182,8 @@ namespace AmpGen
       int finalStateParity() const;  ///< Returns the parity of the final state of this particle 
 
       int polState() const;          ///< Returns the polarisation state, i.e. twice the projection of the spin along the quantisation axis, of this particle. 
-      int quasiCP() const;           ///< Returns the ``quasi'' CP Quantum number for this decay, see the Particle       
+      int CP() const;                ///< Returns the CP of this decay. 
       int C() const;                 ///< Returns the C quantum number for this decay
-
       double mass() const;           ///< Returns the (PDG) mass of the particle
       double spin() const;           ///< Returns the spin of the particle
       double S() const;              ///< Returns the spin configuration of the decay products of the particle
@@ -191,7 +200,6 @@ namespace AmpGen
       unsigned originalIndex() const;     ///< Returns the original index of the particle
       std::string name() const;           ///< Name of the decaying particle.
       std::string lineshape() const;      ///< Name of the propagator to use for the decay of this particle.
-      std::string vertexName() const;     ///< Name of the (spin)vertex to use for the decay of this particle 
 
       std::string uniqueString() const;   ///< Returns the unique string (i.e. decay descriptor) that identifies this decay, which can be parsed to generate the decay tree.
       std::string decayDescriptor() const;///< Returns the unique string (i.e. decay descriptor) that identifies this decay, which can be parsed to generate the decay tree.
@@ -268,20 +276,10 @@ namespace AmpGen
       /// matches Check the matching between two decay chains, according to the MatchState enum. 
 
       unsigned int matches( const Particle& other ) const; 
-
-      Expression Zemach(Expression m2ab, Expression m2ac, Expression m2bc, Expression m2d, Expression m2a, Expression m2b, Expression m2c, double spin);
-      Expression ZemachLaura( const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>&   h, double spin, bool parent);
-      Expression ZemachGooFit(const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& C, double spin);
-      Expression GooFitDamping(const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& C, double spin);
-      Expression GooFitCMom(Expression m2res, Expression m1, Expression m2);
-
-      Expression pq( const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>&   h, bool parent);
-      Expression cosHel( const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>&   h );
-      Expression LegendreZemach(Expression x, double n);
-      int Factorial(int n);      
+      std::string makeUniqueString();                        ///< Generate the decay descriptor for this decay. 
     private:
-      const ParticleProperties* m_props      = {nullptr};    ///< Particle Properties from the PDG
       std::string m_name                     = {""};         ///< Name of the particle
+      const ParticleProperties* m_props      = {nullptr};    ///< Particle Properties from the PDG
       std::string m_lineshape                = {"BW"};       ///< Propagator to use
       std::string m_uniqueString             = {""};         ///< Unique string of particle tree
       int m_parity                           = {0};          ///< Intrinsic parity of particle
@@ -291,20 +289,24 @@ namespace AmpGen
       unsigned m_orbital                     = {0};          ///< Orbital angular momentum between daughters
       unsigned m_spinConfigurationNumber     = {0};          ///< Spin configuration quantum number 'S'
       unsigned m_minL                        = {0};          ///< Minimum orbital angular momentum
-      bool m_isHead                          = {true};       ///< Flag that particle is head of decay chain
       bool m_usesDefaultLineshape            = {false};      ///< Flag to check if default shape is used
       bool m_isStateGood                     = {true};       ///< Flag to check the decay is well-formed
       std::vector<std::shared_ptr<Particle>> m_daughters;    ///< Array of daughter particles
       std::vector<std::string> m_modifiers;                  ///< Additional modifiers for amplitude
-      std::string m_spinFormalism            = {""};         ///< Spin formalism to use for this particle (global)
-      std::string m_spinBasis                = {""};         ///< Basis to use for external polarisations (global)
-      std::string m_defaultModifier          = {""};         ///< Default Modifier to use (global)
- 
+      const Particle*   m_parent             = {nullptr};    ///< Pointer to the parent particle of this particle
       void pdgLookup();                                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
       bool hasModifier( const std::string& modifier ) const; ///< Check if this particle has a given modifier
       std::string modifierString() const;                    ///< Re-generate modifier string used to create particle
-      std::string makeUniqueString();                        ///< Generate the decay descriptor for this decay. 
       void sortDaughters();                                  ///< Recursively order the particle's decay products. 
+
+      NamedParameter<spinFormalism> m_spinFormalism  = {"Particle::SpinFormalism"  ,spinFormalism::Covariant, optionalHelpString("Formalism to use for spin calculations", {  
+             {"Covariant", "[default] Covariant Tensor, based on Rarita-Schwinger constraints on the allowed covariant wavefunctions."}
+           , {"Canonical", "Canonical formulation, based on rotational properties of wavefunctions, i.e. Wigner D-matrices and Clebsch-Gordan for (L,S) expansion."} } ) };
+
+      NamedParameter<spinBasis>     m_spinBasis      = {"Particle::SpinBasis", spinBasis::Dirac, optionalHelpString("Basis to use for calculating external polarisation tensors / spinors.", {
+                      {"Dirac", "[default] Quantises along the z-axis"}
+                    , {"Weyl" , "Quantises along the direction of motion"}} )};
+      NamedParameter<std::string> m_defaultModifier = {"Particle::DefaultModifier","", "Default modifier to use for lineshapes, for example to use normalised vs unnormalised Blatt-Weisskopf factors."};
   };
   std::ostream& operator<<( std::ostream& os, const Particle& particle );
 } // namespace AmpGen

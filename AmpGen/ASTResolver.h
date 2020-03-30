@@ -48,7 +48,10 @@ namespace AmpGen {
       void addResolvedParameter(const IExpression* param, const std::string& thing);
       void addResolvedParameter(const IExpression* param, const size_t& address, const size_t& arg=0);
       std::string resolvedParameter( const IExpression* param ) const; 
+      
       void clear();
+
+      std::map<const IExpression*, std::string> parameters() const { return m_resolvedParameters; }
     private: 
       std::map<const IExpression*, std::string>             m_resolvedParameters;          /// Map of parameters that have been resolved
       std::map<std::string, std::shared_ptr<CacheTransfer>> m_cacheFunctions;              /// Container of functions for calculating function cache

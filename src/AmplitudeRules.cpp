@@ -18,12 +18,6 @@
 using namespace AmpGen;
 using namespace std::complex_literals; 
 
-namespace AmpGen 
-{
-  make_enum(coordinateType, cartesian, polar)
-  make_enum(angType, deg, rad)
-}
-
 Coupling::Coupling(MinuitParameter* re, MinuitParameter* im) :
   m_re(re),
   m_im(im)
@@ -73,7 +67,7 @@ AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
       bool isCoupling = Particle::isValidDecayDescriptor( it_re->name() );
       if( isCoupling ){
         MinuitExpression* expression = dynamic_cast<MinuitExpression*>( it_re );
-        INFO("Constructing: " << expression << " " << it_re->name() );
+        DEBUG("Constructing: " << expression << " " << it_re->name() );
         if( expression != nullptr ){
           Coupling p(expression);
           m_rules[p.head()].emplace_back(p);
@@ -100,7 +94,7 @@ std::vector<Coupling> AmplitudeRules::rulesForDecay(const std::string& head, con
   if(!hasDecay(head)) return std::vector<Coupling>();
   if( prefix == "" )return m_rules[head];
   std::vector<Coupling> rt = m_rules[head];
-  rt.erase( std::remove_if( std::begin(rt), std::end(rt), [&prefix](auto& p){ return p.prefix() != prefix; } ) );
+  rt.erase( std::remove_if( std::begin(rt), std::end(rt), [&prefix](auto& p){ return p.prefix() != prefix; } ), rt.end() );
   return rt;
 }
 
@@ -201,6 +195,6 @@ bool TotalCoupling::isFixed() const
 
 bool TotalCoupling::contains( const std::string& label ) const 
 {
-  return std::any_of(begin(), end(), [&label](auto& c){ return c.x()->name().find(label) != std::string::npos ; } );
+  return std::any_of(begin(), end(), [&label](auto& c){ return c.name().find(label) != std::string::npos ; } );
 }
 

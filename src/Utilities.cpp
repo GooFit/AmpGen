@@ -17,13 +17,7 @@
 std::vector<std::string> AmpGen::vectorFromFile( const std::string& filename, const char ignoreLinesThatBeginWith )
 {
   std::vector<std::string> output;
-  std::string tmp;
-  std::ifstream inFile( filename.c_str() );
-  while ( inFile.good() ) {
-    std::getline( inFile, tmp );
-    if ( tmp.size() == 0 || tmp[0] == ignoreLinesThatBeginWith ) continue;
-    output.push_back( tmp );
-  }
+  processFile( filename, [&output](const std::string& line) mutable -> void {output.push_back(line);} ); 
   return output;
 }
 
@@ -105,6 +99,13 @@ std::string AmpGen::replaceAll( const std::string& input, const std::string& toR
       start_pos = pos + toReplace.length();
     }
   } while ( pos != std::string::npos );
+  return output;
+}
+
+std::string AmpGen::replaceAll( const std::string& input, const std::vector<std::pair<std::string,std::string>>& rules )
+{
+  std::string output = input; 
+  for( auto& rule : rules ) output = replaceAll(output, rule.first, rule.second);
   return output;
 }
 

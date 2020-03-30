@@ -32,6 +32,8 @@
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/TreePhaseSpace.h"
 #include "AmpGen/enum.h"
+#include "AmpGen/ParticlePropertiesList.h"
+#include "AmpGen/AddCPConjugate.h"
 
 using namespace AmpGen;
 
@@ -101,34 +103,23 @@ int main( int argc, char** argv )
   MinuitParameterSet MPS;
   MPS.loadFromStream();
   
-
-  Particle p;
-  bool debug=false;
+  EventType eventType; 
+  std::string decay   = NamedParameter<std::string>("Decay","","Single decay written on the command line"); 
+  if( decay != "" )
+  {
+    Particle p(decay);
+    eventType = p.eventType();
+    MPS.add(p.decayDescriptor()+"_Re", Flag::Fix, 1., 0);
+    MPS.add(p.decayDescriptor()+"_Im", Flag::Fix, 0., 0);
+  } 
+  else eventType = EventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
+                  NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
   
-
-//  EventType eventType2( NamedParameter<std::string>( "EventType2" , "", "EventType to generate second lot of events, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
-//                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
-
-
-
-
-
-
-//  EventType eventType2( NamedParameter<std::string>( "EventType2" , "", "EventType to generate second lot of events, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
-//                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
-
-
-
-
-
-
-  bool outputVals = NamedParameter<bool>("outputVals", false, "Whether to print out values for amplitude in a csv file");
-  std::string ampFile = NamedParameter<std::string>("ampFile", "corr.csv", "Output file for correlated amplitude");
-
-
-
-  EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
-                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+  if ( NamedParameter<bool>( "conj", false ) == true ) {
+    eventType = eventType.conj();
+    INFO( eventType );
+    AddCPConjugate(MPS);
+  }
 
   INFO("Generating time-dependence? " << eventType.isTimeDependent() );
   EventList accepted( eventType );
@@ -171,7 +162,7 @@ int main( int argc, char** argv )
     signalGenerator.fillEventList( sig, accepted, nEvents );
   }
   else if ( genType == generatorType::TreePhaseSpace ) {
-    CoherentSum sig( eventType, MPS, "" );
+    PolarisedSum sig( eventType, MPS);
     std::vector<Particle> channels; 
     for( auto& chain : sig.matrixElements() ) channels.push_back( chain.decayTree );
     Generator<TreePhaseSpace> signalGenerator(channels, eventType, &rand);

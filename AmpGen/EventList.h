@@ -46,6 +46,10 @@ namespace AmpGen
     {
       loadFromFile( fname, ArgumentPack(args...) );
     }
+    template < class ... ARGS > EventList( const std::string& fname, const ARGS&... args ) : EventList() 
+    {
+      loadFromFile( fname, ArgumentPack(args...) );
+    }
     template < class ... ARGS > EventList( const std::vector<std::string>& fname, const EventType& evtType, const ARGS&... args ) : EventList(evtType) 
     {
       for( auto& f : fname ) loadFromFile( f, ArgumentPack(args...) );
@@ -152,16 +156,22 @@ namespace AmpGen
       return makeProjection( projection, ArgumentPack(args...) );
     }
 
-    template <class FCN> EventList& transform( FCN&& fcn )
+    template <typename functor> EventList& transform( functor&& fcn )
     {
       for ( auto& event : m_data ) fcn( event );
       return *this;
     }
     
-    template <class FCN> void filter( FCN&& fcn ){
-      size_t currentSize = size();
+    template <typename functor> void filter( functor&& fcn )
+    {
+      unsigned currentSize = size();
       m_data.erase( std::remove_if( m_data.begin(), m_data.end(), fcn ) , m_data.end() );
       INFO("Filter removes: " << currentSize - size() << " / " << currentSize << " events");
+    }
+
+    template <typename functor> unsigned count( functor&& fcn ) const 
+    {
+      return std::count_if( std::begin(*this), std::end(*this), fcn );
     }
   };
   DECLARE_ARGUMENT(LineColor, int);

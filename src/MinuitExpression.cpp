@@ -16,6 +16,13 @@ MinuitExpression::MinuitExpression( const std::vector<std::string>& tokens, Minu
   fix(); 
 }
 
+MinuitExpression::MinuitExpression(const std::string& name, const Expression& expression)
+{
+  setName(name); 
+  m_expression = expression; 
+  fix();
+}
+
 double MinuitExpression::mean() const { return std::real(getVal()); }
 complex_t MinuitExpression::getVal() const { return m_expression(); } 
 MinuitExpression::operator double() const { return std::real(getVal()); }
