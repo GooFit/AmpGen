@@ -39,6 +39,14 @@
 
 namespace AmpGen { 
 
+Expression CPPoly(Expression x, Expression y, unsigned int mu, unsigned int lambda, int CP){
+  auto M00 = fcn::sin(M_PI * lambda * x);
+  auto M01 = fcn::sin(M_PI * lambda * y);
+  auto M10 = fcn::sin(M_PI * mu * x);
+  auto M11 = fcn::sin(M_PI * mu * y);
+  return M00 * M11 + CP*M10*M01;
+}
+
 Expression chebychev(Expression x, unsigned int order){
     Expression output = 0;
     if (order == 0){
@@ -141,8 +149,8 @@ class pCorrelatedSum {
         return P;
         }
 
-    double getC(int i, int j)const {
-        std::string key = "pCorrelatedSum::C"+std::to_string(i)+std::to_string(j);
+    double getC(int i, int j, std::string pref="")const {
+        std::string key = "pCorrelatedSum::C"+pref+std::to_string(i)+std::to_string(j);
         double val=0;
         //if (m_debug) INFO(m_mps[key]->name()<<" = "<<m_mps[key]->mean());
         val = m_mps[key]->mean(); 
@@ -225,6 +233,12 @@ class pCorrelatedSum {
                 else if (m_polyType=="bessel"){
                     sum_i = sum_i + Cij * bessel(X(), i) * bessel(Y(), j);
                 }
+                else if (m_polyType=="CPPoly"){
+                  double Cpij = getC(i,j,"P");
+                  double Cmij = getC(i,j,"M");
+                  sum_i = sum_i + Cpij * CPPoly(X(), Y(), i, j, 1) + Cmij * CPPoly(X(), Y(), i, j, -1);
+                }
+
 
                 if (m_pdebug){
                     INFO("sum_"<<i<<" = "<<sum_i());
