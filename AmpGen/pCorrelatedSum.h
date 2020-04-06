@@ -39,7 +39,7 @@
 
 namespace AmpGen { 
 
-Expression CPPoly(Expression x, Expression y, unsigned int mu, unsigned int lambda, int CP){
+Expression CPSinPoly(Expression x, Expression y, unsigned int mu, unsigned int lambda, int CP){
   auto M00 = fcn::sin(M_PI * lambda * x);
   auto M01 = fcn::sin(M_PI * lambda * y);
   auto M10 = fcn::sin(M_PI * mu * x);
@@ -233,11 +233,21 @@ class pCorrelatedSum {
                 else if (m_polyType=="bessel"){
                     sum_i = sum_i + Cij * bessel(X(), i) * bessel(Y(), j);
                 }
-                else if (m_polyType=="CPPoly"){
+                else if (m_polyType=="CPSinPoly"){
                   double Cpij = getC(i,j,"P");
                   double Cmij = getC(i,j,"M");
-                  sum_i = sum_i + Cpij * CPPoly(X(), Y(), i, j, 1) + Cmij * CPPoly(X(), Y(), i, j, -1);
+                  sum_i = sum_i + Cpij * CPSinPoly(X(), Y(), i, j, 1) + Cmij * CPSinPoly(X(), Y(), i, j, -1);
                 }
+                else if (m_polyType=="CP_legendre"){
+                   double Cpij = getC(i,j,"P");
+                   double Cmij = getC(i,j,"M");
+                   auto zp = 0.5 * (X() + Y());
+                   auto zm = 0.5 * (X() - Y());
+                  sum_i = sum_i + Cpij* legendre(zp, i) * legendre(zm, 2*j) + Cmij * legendre(zp, i) * legendre(zm, 2*j+1);
+                   
+
+                }
+
 
 
                 if (m_pdebug){
