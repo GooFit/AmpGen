@@ -211,6 +211,22 @@ class pCorrelatedSum {
         for (int i=0; i < m_order+1; i++){
             Expression sum_i=0;
             for (unsigned int j=0; j<m_order+1-i; j++){
+                if (m_polyType=="CPSinPoly"){
+                  double Cpij = getC(i,j,"P");
+                  double Cmij = getC(i,j,"M");
+                  sum_i = sum_i + Cpij * CPSinPoly(X(), Y(), i, j, 1) + Cmij * CPSinPoly(X(), Y(), i, j, -1);
+                }
+                else if (m_polyType=="CP_legendre"){
+                   double Cpij = getC(i,j,"P");
+                   double Cmij = getC(i,j,"M");
+                   auto zp = 0.5 * (X() + Y());
+                   auto zm = 0.5 * (X() - Y());
+                  sum_i = sum_i + Cpij* legendre(zp, i) * legendre(zm, 2*j) + Cmij * legendre(zp, i) * legendre(zm, 2*j+1);
+                   
+
+                }
+
+                else{
                 double Cij = getC(i,j);
                 if (m_pdebug){
                     INFO("x = "<<x);
@@ -233,22 +249,8 @@ class pCorrelatedSum {
                 else if (m_polyType=="bessel"){
                     sum_i = sum_i + Cij * bessel(X(), i) * bessel(Y(), j);
                 }
-                else if (m_polyType=="CPSinPoly"){
-                  double Cpij = getC(i,j,"P");
-                  double Cmij = getC(i,j,"M");
-                  sum_i = sum_i + Cpij * CPSinPoly(X(), Y(), i, j, 1) + Cmij * CPSinPoly(X(), Y(), i, j, -1);
                 }
-                else if (m_polyType=="CP_legendre"){
-                   double Cpij = getC(i,j,"P");
-                   double Cmij = getC(i,j,"M");
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i + Cpij* legendre(zp, i) * legendre(zm, 2*j) + Cmij * legendre(zp, i) * legendre(zm, 2*j+1);
-                   
-
-                }
-
-
+               
 
                 if (m_pdebug){
                     INFO("sum_"<<i<<" = "<<sum_i());
