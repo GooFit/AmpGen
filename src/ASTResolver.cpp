@@ -19,6 +19,7 @@ ASTResolver::ASTResolver(const std::map<std::string, unsigned>& evtMap,
   m_nParameters(0)
 {
   m_enable_cuda                 = NamedParameter<bool>("UseCUDA",false);
+  m_enable_avx                  = NamedParameter<bool>("UseAVX",false);
   m_enable_compileTimeConstants = NamedParameter<bool>("ASTResolver::CompileTimeConstants", false);
 }
 

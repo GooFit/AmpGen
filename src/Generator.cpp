@@ -8,7 +8,7 @@ extern "C" void AmpGen::PyGenerate(const char* eventType, double* out, const uns
   EventType type( split( std::string(eventType),' ') ); 
   INFO( type << " generating: " );
   auto phsp = Generator<PhaseSpace>(type, new TRandom3() );
-  auto events = phsp.generate( size,0 ); 
+  auto events = phsp.generate( size ); 
   for( size_t i = 0 ; i < events.size(); ++i ){
     for( size_t j = 0 ; j < events[i].size(); ++j)
       out[events[i].size() * i + j] = events[i][j]; 

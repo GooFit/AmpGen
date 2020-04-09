@@ -97,10 +97,11 @@ BinDT::BinDT( const ArgumentPack& args )
   }
 }
 
-BinDT::BinDT( const EventList& events, const ArgumentPack& args ) : BinDT(args)
+BinDT::BinDT( const EventList& events, const ArgumentPack& args ) : BinDT(args) 
 {
-  m_top = makeNodes(events);
+  makeNodes( events.begin(), events.end() );
 }
+
 void BinDT::readFromStream( std::istream& stream )
 {
   std::map<std::string, std::pair<std::string, std::shared_ptr<INode>>> nodes;
@@ -368,16 +369,3 @@ void BinDT::Decision::visit( const std::function<void(BinDT::INode*)>& visit_fun
   m_right->visit( visit_function );
 }
 
-std::shared_ptr<BinDT::INode> BinDT::makeNodes( const EventList& events )
-{ 
-  std::vector<double> data( m_dim * events.size() );
-  std::vector<double*> addresses( events.size() );
-  size_t counter = 0;
-  for ( auto& evt : events ) {
-    auto val = m_functors( evt );
-    for ( unsigned int i = 0; i < m_dim; ++i ) data[m_dim * counter + i] = val[i];
-    addresses[counter]                                                   = &( data[m_dim * counter] );
-    counter++;
-  }
-  return makeNodes( addresses );
-}

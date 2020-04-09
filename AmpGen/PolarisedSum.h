@@ -15,11 +15,13 @@
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
-#include "AmpGen/Integrator2.h"
+#include "AmpGen/Integrator.h"
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/Expression.h"
 #include "AmpGen/Tensor.h"
 #include "AmpGen/MinuitParameter.h"
+
+#include "AmpGen/IntegratorSIMD.h"
 
 #include "TMatrixD.h"
 
@@ -35,7 +37,17 @@ namespace AmpGen
   class PolarisedSum
   {
     public: 
-      typedef Integrator2        integrator;
+    #if ENABLE_AVX2
+      using EventList_type = EventListSIMD; 
+      using Integrator_type= IntegratorSIMD;
+      using complex_v      = AVX2::complex_t; 
+      using float_v        = AVX2::float_t;
+    #else 
+      using EventList_type  = EventList; 
+      using Integrator_type = Integrator;
+      using complex_v       = complex_t;
+      using float_v         = real_t; 
+    #endif
 
       PolarisedSum() = default; 
       PolarisedSum(const EventType&, MinuitParameterSet&, const std::vector<MinuitProxy>& = {});
@@ -53,7 +65,7 @@ namespace AmpGen
       Expression probExpression(const Tensor&, const std::vector<Expression>&, DebugSymbols* = nullptr) const; 
       size_t size() const;  
       real_t norm() const;
-      complex_t norm(const size_t&, const size_t&, integrator* = nullptr); 
+      complex_t norm(const size_t&, const size_t&, Integrator* = nullptr); 
       inline real_t operator()(const Event& evt) const { return m_weight * prob_unnormalised(evt) / m_norm; }
       real_t prob_unnormalised(const Event&) const;
       real_t prob(const Event&) const;
@@ -74,7 +86,7 @@ namespace AmpGen
       std::vector<MinuitProxy>      m_pVector     = {}; 
       bool                          m_verbosity   = {0};
       bool                          m_debug       = {0};
-      integrator                    m_integrator;
+      Integrator                    m_integrator;
       std::vector<Bilinears>        m_norms;
       EventType                     m_eventType;
       std::string                   m_prefix      = "";
@@ -83,7 +95,7 @@ namespace AmpGen
       AmplitudeRules                m_rules;  
       std::pair<unsigned, unsigned> m_dim; 
       std::vector<TransitionMatrix<void>>                         m_matrixElements;  
-      CompiledExpression<real_t, const real_t*, const complex_t*> m_probExpression; 
+      CompiledExpression<real_t(const real_t*, const complex_t*)> m_probExpression; 
       
       std::vector<std::vector<int>> indexProduct(const std::vector<std::vector<int>>&, const std::vector<int>&) const;
       std::vector<int> polarisations(const std::string&) const ;

@@ -48,6 +48,10 @@ std::string AmpGen::programatic_name( std::string s )
 void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
 {
   if( m_resolver == nullptr ) m_resolver = std::make_shared<ASTResolver>( m_evtMap, mps );
+  if( fcnSignature().find("AVX") != std::string::npos ) {
+    m_resolver->setEnableAVX();   
+    enableBatch();
+  }
   m_dependentSubexpressions = m_resolver->getOrderedSubExpressions( m_obj ); 
   for ( auto& sym : m_db ){
     auto expressions_for_this = m_resolver->getOrderedSubExpressions( sym.second); 
@@ -103,7 +107,6 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     }
   }
   else if( !enable_cuda ){
-//    stream << "#pragma clang diagnostic push\n#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );
     stream << "return " << m_obj.to_string(m_resolver.get()) << ";\n}\n";
@@ -124,6 +127,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     stream << "}\n";
   }
   if ( m_db.size() != 0 ) addDebug( stream );
+  if( m_enableBatch ) compileBatch(stream);    
 }
 
 std::ostream& AmpGen::operator<<( std::ostream& os, const CompiledExpressionBase& expression )

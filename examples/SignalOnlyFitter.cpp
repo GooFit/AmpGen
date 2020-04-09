@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "AmpGen/Chi2Estimator.h"
-#include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/IncoherentSum.h"
@@ -27,14 +26,21 @@
   #include <thread>
 #endif
 
+#if ENABLE_AVX2
+  #include "AmpGen/EventListSIMD.h"
+  using EventList_type = AmpGen::EventListSIMD;
+#else
+  #include "AmpGen/EventList.h"
+  using EventList_type = AmpGen::EventList; 
+#endif
+
 #include <TH1.h>
 #include <TFile.h>
 #include <TRandom3.h>
 
 using namespace AmpGen;
 
-template <typename PDF>
-FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS );
+template <typename PDF> FitResult* doFit( PDF&& pdf, EventList_type& data, EventList_type& mc, MinuitParameterSet& MPS );
 
 int main( int argc, char* argv[] )
 {
@@ -98,12 +104,12 @@ int main( int argc, char* argv[] )
   /* Events are read in from ROOT files. If only the filename and the event type are specified, 
      the file is assumed to be in the specific format that is defined by the event type, 
      unless the branches to load are specified in the user options */
-  EventList events(dataFile, evtType, Branches(bNames), GetGenPdf(false) );
+  EventList_type events(dataFile, evtType, Branches(bNames), GetGenPdf(false) );
   
   /* Generate events to normalise the PDF with. This can also be loaded from a file, 
      which will be the case when efficiency variations are included. Default number of normalisation events 
      is 5 million. */
-  EventList eventsMC = intFile == "" ? Generator<>(evtType, &rndm).generate(2e6) : EventList(intFile, evtType, GetGenPdf(true));
+  EventList_type eventsMC = intFile == "" ? Generator<>(evtType, &rndm).generate(2.5e6) : EventList_type(intFile, evtType, GetGenPdf(true));
   
   sig.setMC( eventsMC );
 
@@ -119,19 +125,12 @@ int main( int argc, char* argv[] )
   
   fr->addFractions( fitFractions );
   fr->writeToFile( logFile );
-  output->cd();
   
-  /* Write out the data plots. This also shows the first example of the named arguments 
-     to functions, emulating python's behaviour in this area */
-
-  auto plots = events.makeDefaultProjections(PlotOptions::Prefix("Data"), PlotOptions::Bins(100));
-  for ( auto& plot : plots ) plot->Write();
-
   output->Close();
 }
 
 template <typename likelihoodType>
-FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, MinuitParameterSet& MPS )
+FitResult* doFit( likelihoodType&& likelihood, EventList_type& data, EventList_type& mc, MinuitParameterSet& MPS )
 {
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time      = std::clock();
@@ -151,9 +150,9 @@ FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, M
   /* Estimate the chi2 using an adaptive / decision tree based binning, 
      down to a minimum bin population of 15, and add it to the output. */
   
-  Chi2Estimator chi2( data, mc, likelihood.evaluator(&mc), MinEvents(15), Dim(data.eventType().dof()) );
-  chi2.writeBinningToFile("chi2_binning.txt");
-  fr->addChi2( chi2.chi2(), chi2.nBins() );
+  //Chi2Estimator chi2( data, mc, likelihood.evaluator(&mc), MinEvents(15), Dim(data.eventType().dof()) );
+  //chi2.writeBinningToFile("chi2_binning.txt");
+  //fr->addChi2( chi2.chi2(), chi2.nBins() );
   fr->print();
 
   /* Make the plots for the different components in the PDF, i.e. the signal and backgrounds. 
@@ -163,12 +162,9 @@ FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, M
   auto projections               = data.eventType().defaultProjections(100); 
   for( const auto& proj : projections )
   {
-    auto [components, total] = proj(mc, evaluator, PlotOptions::Norm(data.size() ) );
-    for( const auto& component : components ) component->Write();
-    total->Write();
-    auto [signal_components, total_signal_component] = proj(mc, evaluator_per_component, PlotOptions::Norm(data.size()) );
-    for( const auto& component : signal_components ) component->Write();
-    total_signal_component->Write();
+    proj(mc, evaluator,                                           PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
+    proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
+    proj(data, PlotOptions::Prefix("Data") )->Write();
   }
   return fr;
 }

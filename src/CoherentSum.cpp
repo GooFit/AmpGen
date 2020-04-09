@@ -25,6 +25,7 @@
 #include "AmpGen/CompilerWrapper.h"
 #include "AmpGen/ThreadPool.h"
 #include "AmpGen/ProfileClock.h"
+#include "AmpGen/simd/utils.h"
 
 #ifdef _OPENMP
   #include <omp.h>
@@ -34,13 +35,13 @@ using namespace AmpGen;
 CoherentSum::CoherentSum() = default; 
 
 CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
-  : m_rules(mps)
-  , m_evtType        (type)
-  , m_printFreq      (NamedParameter<size_t>(     "CoherentSum::PrintFrequency", 100)  )
-  , m_dbThis         (NamedParameter<bool>(       "CoherentSum::Debug"         , false))
-  , m_verbosity      (NamedParameter<bool>(       "CoherentSum::Verbosity"     , 0)    )
-  , m_objCache       (NamedParameter<std::string>("CoherentSum::ObjectCache"   ,"")    )
-  , m_prefix         (prefix)
+  : m_rules    (mps)
+  , m_evtType  (type)
+  , m_printFreq(NamedParameter<size_t>(     "CoherentSum::PrintFrequency", 100)  )
+  , m_dbThis   (NamedParameter<bool>(       "CoherentSum::Debug"         , false))
+  , m_verbosity(NamedParameter<bool>(       "CoherentSum::Verbosity"     , 0)    )
+  , m_objCache (NamedParameter<std::string>("CoherentSum::ObjectCache"   ,"")    )
+  , m_prefix   (prefix)
 {
   auto amplitudes      = m_rules.getMatchingRules( m_evtType, prefix);
   if( amplitudes.size() == 0 ){
@@ -53,21 +54,12 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   ThreadPool tp(nThreads);
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
     tp.enqueue( [i,this,&mps,&amplitudes]{ 
-    m_matrixElements[i] = TransitionMatrix<complex_t>( amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), this->m_dbThis);
+    m_matrixElements[i] = TransitionMatrix<CoherentSum::complex_v>( amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), this->m_dbThis);
     CompilerWrapper().compile( m_matrixElements[i].amp, this->m_objCache); } );
   }
   m_isConstant = false;
 }
 
-void updateCache(EventList* events, TransitionMatrix<complex_t>& me, const size_t& sizeMax)
-{
-  if ( me.addressData == 999 )
-  { 
-    if( events->at(0).cacheSize() <= sizeMax) events->resizeCache(sizeMax);
-    me.addressData = events->registerExpression( me.amp );
-  }
-  events->updateCache(me.amp, me.addressData);
-}
 
 void CoherentSum::prepare()
 {
@@ -75,22 +67,38 @@ void CoherentSum::prepare()
   transferParameters(); 
   std::vector<size_t> changedPdfIndices;
   ProfileClock clockEval; 
-  bool print    = false;
+  if( m_prepareCalls == 0 && m_events != nullptr ){
+    m_events->reserveCache(m_matrixElements.size());
+    for( auto& me : m_matrixElements ) me.addressData = m_events->registerExpression( me.amp );
+  }
+  if( m_prepareCalls == 0 ) m_integrator.allocate( m_matrixElements );
   for ( size_t i = 0; i < m_matrixElements.size(); ++i ) {
     m_matrixElements[i].amp.prepare();
     if ( m_prepareCalls != 0 && !m_matrixElements[i].amp.hasExternalsChanged() ) continue;
-    if ( m_events != nullptr ) updateCache( m_events, m_matrixElements[i], m_matrixElements.size() ); 
-    m_integrator.prepareExpression( m_matrixElements[i].amp );
+    if ( m_events != nullptr ) m_events->updateCache( m_matrixElements[i].amp, m_matrixElements[i].addressData ); 
+    m_integrator.prepareExpression(m_matrixElements[i].amp );
     changedPdfIndices.push_back(i);
     m_matrixElements[i].amp.resetExternals();
-    print = true; 
   }
   clockEval.stop();
   ProfileClock clockIntegral;
   if ( m_integrator.isReady())  updateNorms( changedPdfIndices );
   else if ( m_verbosity ) WARNING( "No simulated sample specified for " << this );
   m_norm = norm();
-  if ( m_verbosity && print ) {
+  if ( m_prepareCalls == 0 ){
+    INFO( "Norm: " << m_norm );
+    for(unsigned i = 0 ; i != m_matrixElements.size() ; ++i ){
+      for(unsigned j = 0 ; j != m_matrixElements.size() ; ++j ){
+        if( std::isnan( std::real(m_normalisations(i,j) )) || std::isnan( std::imag(m_normalisations(i,j))) ) 
+          ERROR("Norm: " << m_matrixElements[i].name() << " " << m_matrixElements[j].name() << " is ill-posed!");
+      }
+    }
+    // INFO( m_normalisations.get(0,0) << " "  
+   //    << m_normalisations.get(1,0) << " "  
+   //    << m_normalisations.get(0,1) << " "  
+   //    << m_normalisations.get(2,2) ); 
+  }
+  if ( m_verbosity && changedPdfIndices.size() !=0 ) {
     clockIntegral.stop();
     INFO( "Time Performance: "
         << "Eval = "       << clockEval     << " ms"
@@ -121,17 +129,18 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
     for ( auto& me : m_matrixElements ) {
       auto A = me(evt);
       INFO( std::setw(70) << me.decayTree.uniqueString() 
-          << " A = [ "  << std::real(A)             << " " << std::imag(A) 
-          << " ] g = [ "<< std::real(me.coupling()) << " " << std::imag(me.coupling()) << " ] "
+          << " A = [ "  << utils::get(A.real())             << " " << utils::get(A.imag())
+          << " ] g = [ "<< me.coupling().real() << " " << me.coupling().imag() << " ] "
+          << m_events->cache( evt.index(), me.addressData )
           << me.decayTree.CP() );
 
-      if( m_dbThis ) me.amp.debug( evt.address() );
+     // if( m_dbThis ) me.amp.debug( evt.address() );
     }
-  else
-    for ( auto& me : m_matrixElements )
-      if ( me.amp.name().find( nameMustContain ) != std::string::npos ) me.amp.debug( evt.address() );
-  if( evt.cacheSize() != 0 ) INFO( "Pdf = " << prob_unnormalised( evt ) );
-  INFO( "A(x) = " << getVal(evt) );
+  //else
+  //  for ( auto& me : m_matrixElements )
+  //    if ( me.amp.name().find( nameMustContain ) != std::string::npos ) me.amp.debug( evt.address() );
+  // if( evt.cacheSize() != 0 ) INFO( "Pdf = " << prob_unnormalised( evt ) );
+  INFO( "A(x) = " << getVal(evt) << " without cache: " << getValNoCache(evt) );
 }
 
 std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& linProp)
@@ -194,11 +203,11 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
     Expression this_amplitude = p.coupling() * Function( programatic_name( p.amp.name() ) + "_wParams", {event} ); 
     amplitude = amplitude + ( p.decayTree.finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
   }
-  stream << CompiledExpression< std::complex<double>, const double*, const int&>( amplitude  , "AMP" ) << std::endl; 
-  stream << CompiledExpression< double, const double*, const int&>(fcn::norm(amplitude) / normalisation, "FCN" ) << std::endl; 
+  stream << CompiledExpression<std::complex<double>(const double*, const int&)>( amplitude  , "AMP" ) << std::endl; 
+  stream << CompiledExpression<double(const double*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN" ) << std::endl; 
   if( includePythonBindings ){
-    stream << CompiledExpression< unsigned int >( m_matrixElements.size(), "matrix_elements_n" ) << std::endl;
-    stream << CompiledExpression< double >      ( normalisation, "normalization") << std::endl;
+    stream << CompiledExpression<unsigned int(void)>( m_matrixElements.size(), "matrix_elements_n" ) << std::endl;
+    stream << CompiledExpression<double      (void)>( normalisation, "normalization") << std::endl;
 
     stream << "extern \"C\" const char* matrix_elements(int n) {\n";
     for ( size_t i = 0; i < m_matrixElements.size(); i++ ) {
@@ -228,21 +237,6 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
       stream << ( i == size() - 1 ? ";" : " +" ) << "\n";
     }
     stream << "  out[i] =  std::norm(amplitude) / " << normalisation << ";\n  }\n}\n";
-    stream << "extern \"C\" void FCN_mt(double* out, double* events, unsigned int size, int parity, double* amps){\n";
-    stream << "  unsigned int n = std::thread::hardware_concurrency();\n";
-    stream << "  unsigned int batch_size = size / n;\n";
-    stream << "  std::vector<std::thread> threads;\n";
-    stream << "  for(size_t i=0; i<n; i++) {\n";
-    stream << "    size_t start = batch_size*i;\n";
-    stream << "    size_t len = i+1!=n ? batch_size : size-start;\n";
-    stream << "    threads.emplace_back(FCN_all, out+start"
-      << ", events+start*" 
-      << ( *this->m_events )[0].size() 
-      << ", len, parity, amps);\n";
-    stream << "  }\n";
-    stream << "  for(auto &thread : threads)\n";
-    stream << "    thread.join();\n";
-    stream << "}\n\n";
 
     stream << "extern \"C\" double coefficients( int n, int which, int parity){\n";
     for ( size_t i = 0; i < size(); i++ ) {
@@ -260,18 +254,10 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
 
 complex_t CoherentSum::getValNoCache( const Event& evt ) const
 {
-  return std::accumulate( m_matrixElements.begin(), 
+  return utils::get<0>( complex_v(std::accumulate( m_matrixElements.begin(), 
       m_matrixElements.end(), 
-      complex_t(0,0), 
-      [&evt]( auto& a, auto& b ){ return a + b.coefficient * b(evt);} );
-}
-
-complex_t CoherentSum::getValNoCache(const Event& evt, const size_t& offset) const
-{
-  return std::accumulate( m_matrixElements.begin(), 
-      m_matrixElements.end(), 
-      complex_t(0,0), 
-      [&evt,&offset]( auto& a, auto& b ){ return a + b.coefficient * b(evt, offset);} );
+      complex_v(0,0), 
+      [&evt]( const auto& a, const auto& b ){ return a + b.coefficient * b(evt);} )) );
 }
 
 void CoherentSum::reset( bool resetEvents )
@@ -281,22 +267,23 @@ void CoherentSum::reset( bool resetEvents )
   for ( auto& mE : m_matrixElements ) mE.addressData = 999;
   if ( resetEvents ){ 
     m_events = nullptr;
-    m_integrator = Integrator2();
+    m_integrator = Integrator_type();
   }
 }
 
-void CoherentSum::setEvents( EventList& list )
+void CoherentSum::setEvents( EventList_type& list )
 {
   if ( m_verbosity ) INFO( "Setting event list with:" << list.size() << " events for " << this );
   reset();
   m_events = &list;
 }
 
-void CoherentSum::setMC( EventList& sim )
+
+void CoherentSum::setMC( EventList_type& sim )
 {
   if ( m_verbosity ) INFO( "Setting norm. event list with:" << sim.size() << " events for " << this );
   reset();
-  m_integrator = Integrator2(&sim);
+  m_integrator = Integrator_type( &sim );
 }
 
 real_t CoherentSum::norm() const
@@ -333,7 +320,7 @@ void CoherentSum::printVal(const Event& evt)
 {
   for ( auto& mE : m_matrixElements ) {
     unsigned int address = mE.addressData;
-    std::cout << mE.decayTree.decayDescriptor() << " = " << mE.coefficient << " x " << evt.getCache( address )
+    std::cout << mE.decayTree.decayDescriptor() << " = " << mE.coefficient << " x " << m_events->cache( evt.index(), address )
       << " address = " << address << " " << mE( evt ) << std::endl;
     if( mE.coupling.size() != 1 ){
       std::cout << "CouplingConstants: " << std::endl;
@@ -343,56 +330,57 @@ void CoherentSum::printVal(const Event& evt)
   }
 }
 
-std::vector<size_t> CoherentSum::cacheAddresses( const EventList& evts ) const
-{
-  std::vector<size_t> addresses;
-  std::transform( m_matrixElements.begin(), m_matrixElements.end(), std::back_inserter(addresses),
-      [&evts](auto& it ){ return evts.getCacheIndex( it.amp ) ; } );
-  return addresses;
-}
-
 complex_t CoherentSum::getVal( const Event& evt ) const
 {
-  complex_t value( 0., 0. );
-  for ( auto& mE : m_matrixElements ) {
-    value += mE.coefficient * evt.getCache( mE.addressData );
+  complex_v value( 0., 0. );
+  for ( const auto& mE : m_matrixElements ) {
+    value = value + mE.coefficient * m_events->cache( evt.index(), mE.addressData );
   }
+  #if ENABLE_AVX2 
+  return value.at(evt.index() % float_v::size);
+  #else 
   return value;
+  #endif
 }
 
-complex_t CoherentSum::getVal( const Event& evt, const std::vector<size_t>& cacheAddresses ) const
+#if ENABLE_AVX2 
+float_v CoherentSum::operator()( const float_v* /*evt*/, const unsigned block ) const 
 {
-  complex_t value( 0., 0. );
-  for ( size_t i = 0; i < m_matrixElements.size(); ++i )
-    value += m_matrixElements[i].coefficient * evt.getCache( cacheAddresses[i] );
-  return value;
+  complex_v value( 0., 0. );
+  for ( const auto& mE : m_matrixElements ) {
+    value = value + mE.coefficient * m_events->cache()[ block * m_events->cacheSize() + mE.addressData ];
+  }
+  return (m_weight/m_norm ) * AVX2::norm( value ); 
 }
 
-std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList* events) const 
+#endif
+
+
+std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type* events) const 
 {
-  if( events != nullptr && events != &this->m_integrator.events() )
+  if( events != nullptr && events != m_integrator.events() )
     ERROR("Evaluator only working on the integration sample, fix me!"); 
   std::vector<unsigned> address_mapping( size() );
   for( const auto& me : m_matrixElements ) address_mapping[me.addressData] = m_integrator.getCacheIndex( me.amp );
-  std::vector<double> values( m_integrator.events().size() );
+  std::vector<double> values( events->size() );
   #ifdef _OPENMP
   #pragma omp parallel for
   #endif
-  for( unsigned int i = 0 ; i != m_integrator.events().size(); ++i )
+  for( unsigned int i = 0 ; i != events->size(); ++i )
   {
     complex_t amp = 0;
     for( unsigned j = 0 ; j != address_mapping.size(); ++j ) amp += m_matrixElements[j].coefficient * this->m_integrator.get(address_mapping[j], i);
     values[i] = m_weight * std::norm(amp) / m_norm;
   }
-  return arrayToFunctor(values, events);
+  return arrayToFunctor<double, Event>(values);
 }
 
-KeyedView<double, EventList> CoherentSum::componentEvaluator(const EventList* events) const 
+KeyedView<double, CoherentSum::EventList_type> CoherentSum::componentEvaluator(const EventList_type* events) const 
 {
-  if( events != nullptr && events != &this->m_integrator.events() ) 
+  if( events != nullptr && events != m_integrator.events() ) 
     ERROR("Evaluator only working on the integration sample, fix me!"); 
   
-  KeyedView<double, EventList> rt(*events, m_matrixElements.size() ); 
+  KeyedView<double, EventList_type> rt(*events, m_matrixElements.size() ); 
   std::vector<unsigned> address_mapping(m_matrixElements.size());
   for( unsigned i = 0; i != m_matrixElements.size(); ++i ) address_mapping[i] = m_integrator.getCacheIndex( m_matrixElements[i].amp ); 
 
@@ -403,14 +391,13 @@ KeyedView<double, EventList> CoherentSum::componentEvaluator(const EventList* ev
     #ifdef _OPENMP
     #pragma omp parallel for
     #endif
-    for( unsigned evt = 0 ; evt != m_integrator.events().size(); ++evt )
+    for( unsigned evt = 0 ; evt != events->size(); ++evt )
     {
       complex_t total = 0;
       for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ){
           total          +=  this->m_integrator.get( address_mapping[i], evt ) * m_matrixElements[i].coefficient 
                 * std::conj( this->m_integrator.get( address_mapping[j], evt ) * m_matrixElements[j].coefficient );
-      }
-      
+      } 
       rt(events->at(evt), i) = m_weight * std::real( total ) / m_norm;  
     }
   }

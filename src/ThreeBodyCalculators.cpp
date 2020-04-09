@@ -136,18 +136,18 @@ double ThreeBodyCalculator::PartialWidth::getWidth( const double& s )
 }
 
 Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(
-    const std::vector<TransitionMatrix<complex_t>>& elements, DebugSymbols* msym )
+    const std::vector<std::pair<Particle, TotalCoupling>>& elements, DebugSymbols* msym )
 {
   std::vector<Tensor> currents;
-  for ( auto& element : elements ) {
-    Particle particle(element.decayDescriptor(), type.finalStates() ); 
+  for ( auto& [s, c] : elements ) {
+    Particle particle(s.decayDescriptor(), type.finalStates() ); 
     auto perm = particle.identicalDaughterOrderings();
     for ( auto& p : perm ) {
       particle.setOrdering(p);
       particle.setLineshape( "FormFactor" );
-      Expression prop = make_cse( element.coupling.to_expression() ) * make_cse( particle.propagator( msym ) );
-      if ( msym != nullptr ) msym->emplace_back( element.decayTree.name() + "_g", element.coupling.to_expression() );
-      if ( msym != nullptr ) msym->emplace_back( element.decayTree.name() + "_p", particle.propagator() );
+      Expression prop = make_cse( c.to_expression() ) * make_cse( particle.propagator( msym ) );
+      if ( msym != nullptr ) msym->emplace_back( s.name() + "_g", c.to_expression() );
+      if ( msym != nullptr ) msym->emplace_back( s.name() + "_p", particle.propagator() );
       Tensor zt = particle.spinTensor(msym);
       zt.st() ;
       currents.push_back( zt * prop );
@@ -232,14 +232,17 @@ ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitPar
   , type(evt)
 {
   DebugSymbols msym;
-  Expression matrixElementTotal = spinAverageMatrixElement( fcs.matrixElements(), &msym );
+  std::vector<std::pair<Particle,TotalCoupling>> unpacked; 
+  for( auto& p : fcs.matrixElements() ) unpacked.emplace_back( p.decayTree, p.coupling );
+
+  Expression matrixElementTotal = spinAverageMatrixElement(unpacked, &msym );
   std::string name              = "";
   auto evtFormat = evt.getEventFormat();
-  for ( auto& p : fcs.matrixElements() ) {
-    name += p.decayDescriptor();
-    partialWidths.emplace_back( spinAverageMatrixElement( {p}, &msym ), p.decayDescriptor(), evtFormat, DebugSymbols(), &mps );
+  for ( auto& p : unpacked ) {
+    name += p.first.decayDescriptor();
+    partialWidths.emplace_back( spinAverageMatrixElement( {p}, &msym ), p.first.decayDescriptor(), evtFormat, DebugSymbols(), &mps );
   }
-  totalWidth = CompiledExpression< std::complex<real_t>, const real_t*, const real_t* > ( matrixElementTotal, "width", evtFormat, {} , &mps );
+  totalWidth = CompiledExpression< complex_t(const real_t*, const real_t*) > ( matrixElementTotal, "width", evtFormat, {} , &mps );
   CompilerWrapper(true).compile( totalWidth, "");
 }
 

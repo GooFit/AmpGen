@@ -8,6 +8,11 @@
 #include "AmpGen/LiteSpan.h"
 #include <tuple>
 
+#if ENABLE_AVX2 
+  #include "AmpGen/simd/avx2_types.h"
+  #include "AmpGen/simd/utils.h"
+#endif
+
 namespace AmpGen
 {
   class EventList; 
@@ -49,18 +54,42 @@ namespace AmpGen
     SumPDF( const pdfTypes&... pdfs ) : m_pdfs( std::tuple<pdfTypes...>( pdfs... ) ) {}
 
     /// Returns negative twice the log-likelihood for this PDF and the given dataset.     
+
     double getVal()
     {
-      double LL = 0;
-      for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
-      #pragma omp parallel for reduction( +: LL )
-      for ( unsigned int i = 0; i < m_events->size(); ++i ) {
-        auto prob = ((*this))(( *m_events)[i] );
-        LL += log(prob);
+      if constexpr( std::is_same<eventListType,EventList>::value )
+      {
+        double LL = 0;
+        for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
+        #pragma omp parallel for reduction( +: LL )
+        for ( unsigned int i = 0; i < m_events->size(); ++i ) {
+          auto prob = ((*this))(( *m_events)[i] );
+          LL += log(prob);
+        }
+        return -2 * LL;
       }
-      return -2 * LL;
+      #if ENABLE_AVX2 
+      if constexpr( std::is_same<eventListType, EventListSIMD>::value )
+      {
+        float_v LL = 0.f;
+        for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
+        #pragma omp parallel for reduction( +: LL )
+        for ( unsigned int block = 0; block < m_events->nBlocks(); ++block ) {
+          LL += log(this->operator()(m_events->block(block), block));
+        }
+        return -2 * utils::sum_elements(LL);
+      }
+      #endif
+    } 
+    /// Returns the probability for the given event. 
+    #if ENABLE_AVX2 
+    float_v operator()( const float_v* evt , const unsigned block)
+    {
+      float_v prob = 0.f;
+      for_each( this->m_pdfs, [&prob, &evt,block]( const auto& f ) { prob += f(evt, block); } );
+      return prob;
     }
-    
+    #endif
     /// Returns the probability for the given event. 
     double operator()( const eventValueType& evt )
     {

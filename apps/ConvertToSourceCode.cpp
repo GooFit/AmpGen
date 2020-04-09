@@ -16,11 +16,12 @@
 #include "AmpGen/Particle.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/AddCPConjugate.h"
-
+#include "AmpGen/simd/utils.h"
 #include "TRandom3.h"
 
 using namespace AmpGen;
 
+/*
 template <class T>
 void create_integration_tests(T& pdf, 
     const EventType& type,
@@ -62,12 +63,13 @@ void create_integration_tests(T& pdf,
     unit_tests << "};" << std::endl; 
     unit_tests << "  auto expr = make_expression<complex_t>(p.getExpression(), p.decayDescriptor(), type.getEventFormat(), mps);" << std::endl; 
     unit_tests << "  auto eval = expr(event);" << std::endl;
-    unit_tests << "  BOOST_TEST( std::real(eval) == " << std::real(value)<< ", boost::test_tools::tolerance(1e-6)) ;" << std::endl;
-    unit_tests << "  BOOST_TEST( std::imag(eval) == " << std::imag(value)<< ", boost::test_tools::tolerance(1e-6)) ;" << std::endl;
+    unit_tests << "  BOOST_TEST( std::real(eval) == " << std::real(utils::get<0>(value))<< ", boost::test_tools::tolerance(1e-6)) ;" << std::endl;
+    unit_tests << "  BOOST_TEST( std::imag(eval) == " << std::imag(utils::get<0>(value))<< ", boost::test_tools::tolerance(1e-6)) ;" << std::endl;
     unit_tests << "}\n\n";
   }
   unit_tests.close();
 }
+*/
 
 template <class T> void generate_source(T& pdf, EventList& normEvents, const std::string& sourceFile, MinuitParameterSet& mps, const double& sf)
 {
@@ -130,7 +132,7 @@ int main( int argc, char** argv )
   if( type == "CoherentSum" ){
     CoherentSum sig( eventType, MPS, "" );
     generate_source( sig, phspEvents, sourceFile, MPS, safetyFactor );
-    create_integration_tests(sig, eventType, MPS, {phspEvents[15]}, sourceFile );
+    //create_integration_tests(sig, eventType, MPS, {phspEvents[15]}, sourceFile );
   }
   if( type == "PolarisedSum" ){
     PolarisedSum sig( eventType, MPS );

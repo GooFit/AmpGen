@@ -50,7 +50,7 @@ struct DTEvent
   AmpGen::Event signal;
   AmpGen::Event    tag;
   double prob;
-  DTEvent() : signal(0,0,0), tag(0,0,0) {};
+  DTEvent() : signal(0,0), tag(0,0) {};
   DTEvent( const AmpGen::Event& signal, const AmpGen::Event& tag ) : signal(signal), tag(tag) {};
   void set( const AmpGen::Event& s1, const AmpGen::Event& s2 ) { signal.set(s1); tag.set(s2); };
   void invertParity(){
@@ -143,7 +143,7 @@ template <class T1, class T2> class Psi3770 {
       {
         double n1(0), n2(0), zR(0), zI(0);
         auto normEvents = Generator<PhaseSpace>(type).generate(m_blockSize);
-#pragma omp parallel for reduction(+:zR,zI,n1,n2)
+        #pragma omp parallel for reduction(+:zR,zI,n1,n2)
         for(size_t i = 0; i < m_blockSize; ++i){
           auto p1 = t1(normEvents[i]);
           auto p2 = t2(normEvents[i]);
