@@ -57,6 +57,11 @@
   complex_t X::operator()() const { return F( m_expression() ); } \
   std::string X::to_string(const ASTResolver* resolver) const { return std::string(#F)+"("+ m_expression.to_string(resolver)+")";}
 
+#define DEFINE_UNARY_OPERATOR_NO_RESOLVER( X, F ) \
+  X::X( const AmpGen::Expression& expression) : IUnaryExpression(expression) {} \
+  X::operator Expression() const { return Expression( std::make_shared<X>(*this) ) ; } \
+  complex_t X::operator()() const { return F( m_expression() ); }  
+
 /// @ingroup ExpressionEngine macro DECLARE_UNARY_OPERATOR
 /// Macro to declare a unary operator, \ref ExpressionEngine "see IUnaryExpression"
 #define DECLARE_UNARY_OPERATOR( X )                         \

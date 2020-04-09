@@ -31,10 +31,10 @@ namespace AmpGen
   {
   private:
     std::vector<Event>                  m_data              = {};
+    std::vector<complex_t>              m_cache             = {};
     EventType                           m_eventType         = {};
     std::map<uint64_t, unsigned int>    m_pdfIndex          = {};
     std::map<std::string, unsigned int> m_extensions        = {};
-    size_t                              m_lastCachePosition = {0}; 
   public:
     typedef Event value_type;
     EventList() = default;
@@ -71,7 +71,7 @@ namespace AmpGen
     const Event& at( const size_t& pos )          const { return m_data[pos]; }
     size_t size()                                 const { return m_data.size(); }
     double integral()                             const;
-
+    
     void reserve( const size_t& size ) { m_data.reserve( size ); }
     void push_back( const Event& evt ) { m_data.push_back( evt ); }
     void setEventType( const EventType& type ) { m_eventType = type; }
@@ -86,48 +86,50 @@ namespace AmpGen
     
     size_t getCacheIndex( const CompiledExpressionBase& PDF, bool& status ) const;
     size_t getCacheIndex( const CompiledExpressionBase& PDF ) const;
-    template <class T>
-    size_t registerExpression(const T& expression, const size_t& size_of=0)
+    template <class T> size_t registerExpression(const T& expression, const size_t& size_of=0)
     {
       auto key = FNV1a_hash( expression.name() );
       auto pdfIndex = m_pdfIndex.find( key );
-      if ( pdfIndex != m_pdfIndex.end() ) {
-        return pdfIndex->second;
-      } else {
-        size_t lcp            = m_lastCachePosition;
-        size_t expression_size = size_of == 0 ? 
-          expression.returnTypeSize() / sizeof(complex_t) : size_of; 
-        if (lcp >= at( 0 ).cacheSize() ) { 
-          WARNING("Cache index " << lcp << " exceeds cache size = " 
-                                 << at(0).cacheSize() << " resizing to " 
-                                 << lcp + expression_size );
-          resizeCache( lcp + expression_size );
-        }
-        m_pdfIndex[key] = m_lastCachePosition;
-        m_lastCachePosition += expression_size; 
-        return lcp;
+      if ( pdfIndex != m_pdfIndex.end() ) return pdfIndex->second;
+      else {
+        size_t expression_size = size_of == 0 ? expression.returnTypeSize() / sizeof(complex_t) : size_of; 
+        m_pdfIndex[key] = m_cache.size() / m_data.size();
+        m_cache.resize( m_cache.size() + m_data.size() * expression_size );
+        return m_pdfIndex[key];
       }
     }
-
+    complex_t cache( const unsigned& evtIndex, const unsigned& cacheElement )
+    {
+      unsigned cacheSize = m_cache.size() / m_data.size();
+      return m_cache[cacheSize * evtIndex + cacheElement];
+    }
+    void setCache( const complex_t& v, const unsigned& p )
+    {
+      m_cache[p] = v; 
+    }
+    void setCache( const std::vector<complex_t>& v, const unsigned& p )
+    {
+      std::memmove(m_cache.data() +p, v.data(), sizeof(complex_t) * v.size() );
+    }
     template <class FCN> void updateCache( const FCN& fcn, const size_t& index )
     {
+      unsigned cacheSize = m_cache.size() / m_data.size();
       if constexpr( std::is_same< typename FCN::return_type, void >::value ) 
       {
         #ifdef _OPENMP
         #pragma omp parallel for
         #endif
-        for ( size_t i = 0; i < size(); ++i ) {
-          fcn( m_data[i].getCachePtr(index), fcn.externBuffer().data(), m_data[i].address() );
+        for ( size_t evt = 0; evt < size(); ++evt )
+        {
+          fcn( m_cache.data() + cacheSize*evt +index , fcn.externBuffer().data(), m_data[evt].address() );
         }
       }
       else {
         #ifdef _OPENMP
         #pragma omp parallel for
         #endif
-        for ( size_t i = 0; i < size(); ++i ) {
-          m_data[i].setCache(fcn(m_data[i].address()), index);
-        }
-     }
+        for ( size_t evt = 0; evt < size(); ++evt ) { setCache( fcn(m_data[evt].address() ), cacheSize*evt + index ) ; }
+      }
     }
     void reserveCache(const size_t& index);
     void resizeCache(const size_t& newCacheSize );
@@ -183,7 +185,6 @@ namespace AmpGen
   DECLARE_ARGUMENT(Branches, std::vector<std::string>);
   DECLARE_ARGUMENT(EntryList, std::vector<size_t>);
   DECLARE_ARGUMENT(GetGenPdf, bool);
-  DECLARE_ARGUMENT(CacheSize, size_t);
   DECLARE_ARGUMENT(Filter, std::string);
   DECLARE_ARGUMENT(WeightBranch, std::string);      
   DECLARE_ARGUMENT(ApplySym, bool);  

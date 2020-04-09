@@ -51,7 +51,7 @@ namespace AmpGen
         void generate();
         void print(const unsigned& offset = 0) const;
         void place(Event& event);
-        Event event(const unsigned& eventSize, const unsigned& cacheSize=0);
+        Event event(const unsigned& eventSize);
         void generateFullEvent();
         void setRhoMax(); 
         void setRandom(TRandom3* rnd);
@@ -82,7 +82,7 @@ namespace AmpGen
       TreePhaseSpace(const std::vector<Particle>& decayChains, const EventType& type, TRandom* rndm = nullptr);
 
       void setRandom( TRandom* rand );
-      Event makeEvent( const unsigned& cacheSize = 0 );
+      Event makeEvent();
       size_t size() const;
       EventType eventType() const ;
       double genPdf( const Event& event) const ; 

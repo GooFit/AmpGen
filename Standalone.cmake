@@ -13,6 +13,7 @@ if( NOT "${CMAKE_CXX_STANDARD}" )
 endif() 
 
 SET(USE_OPENMP TRUE CACHE BOOL "USE_OPENMP")
+SET(ENABLE_AVX2   TRUE CACHE BOOL "ENABLE_AVX2")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -137,18 +138,25 @@ endif()
 
 target_compile_definitions(AmpGen PRIVATE
   "AMPGENROOT_CMAKE=\"${CMAKE_BINARY_DIR}/bin\""
+  "AMPGENROOT=\"${PROJECT_SOURCE_DIR}\""
   "AMPGEN_CXX=\"${AMPGEN_CXX}\""
   "USE_OPENMP=\"${USE_OPENMP}\""
   $<$<BOOL:${AMPGEN_DEBUG}>:DEBUGLEVEL=1>
   $<$<BOOL:${AMPGEN_TRACE}>:TRACELEVEL=1>)
+
 
 target_compile_options(AmpGen
   INTERFACE
   -Wall -Wextra -Wpedantic -g3
   -Wno-unused-parameter
   -Wno-unknown-pragmas
-  -march=native
-  $<$<CONFIG:Release>:-Ofast>)
+  $<$<CONFIG:Release>:-O3>)
+
+if( ENABLE_AVX2  )
+  message(STATUS "Enabling AVX2...")
+  target_compile_definitions(AmpGen PUBLIC "ENABLE_AVX2=1")
+  target_compile_options(AmpGen PUBLIC -march=native -ftree-vectorize -mavx2 -DHAVE_AVX2_INSTRUCTIONS)
+endif()
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "AppleClang" )
   target_link_libraries(AmpGen PUBLIC stdc++)

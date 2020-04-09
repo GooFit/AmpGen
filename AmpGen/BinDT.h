@@ -89,9 +89,15 @@ namespace AmpGen
       {
         m_top = makeNodes( addr );
       }
-      template <class... ARGS> BinDT( const EventList& events, const ARGS&... args ) : BinDT(ArgumentPack( args... ) )
+      template <class... ARGS> BinDT( const EventList& events, const ARGS&... args ) : BinDT(ArgumentPack(args...) )
+    {
+      m_top = makeNodes( events.begin(), events.end() ); 
+    }
+      template <class iterator_type, 
+                class... ARGS> BinDT( const iterator_type& begin,
+                                      const iterator_type& end, const ARGS&... args ) : BinDT(ArgumentPack( args... ) )
       {
-        m_top = makeNodes( events );
+        m_top = makeNodes(begin, end );
       }
       explicit BinDT( const ArgumentPack& args );
       BinDT( const EventList& events, const ArgumentPack& args );
@@ -114,7 +120,21 @@ namespace AmpGen
 
       std::function<std::vector<double>( const Event& )> makeDefaultFunctors();
       void refreshQueue(const std::vector<double*>&, std::queue<unsigned>&, const unsigned&);
-      std::shared_ptr<INode> makeNodes(const EventList&); 
+      template <class iterator_type> 
+      std::shared_ptr<INode> makeNodes(const iterator_type& begin, const iterator_type& end)
+      {    
+        std::vector<double> data( m_dim * (end-begin) );
+        std::vector<double*> addresses( end-begin );
+        size_t counter = 0;
+        for ( auto evt = begin; evt != end; ++evt ) 
+        {
+          auto val = m_functors( *evt );
+          for ( unsigned int i = 0; i < m_dim; ++i ) data[m_dim * counter + i] = val[i];
+          addresses[counter]                                                   = &( data[m_dim * counter] );
+          counter++;
+        }
+        return makeNodes( addresses );
+      } 
       std::shared_ptr<INode> makeNodes(const std::vector<double*>&, std::queue<unsigned>, const unsigned&);
       std::shared_ptr<INode> makeNodes(const std::vector<double*>&);
       std::shared_ptr<INode> makeNodes(const std::vector<double*>&, const std::vector<double*>&);

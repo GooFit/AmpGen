@@ -51,231 +51,80 @@ namespace AmpGen
     Integral(const size_t& i, const size_t& j, TransferFCN t) 
       : i(i), j(j), transfer(t) {}
   };
-/*
-  template <size_t NROLL = 10>
-    class Integrator
-    {
-      private:
-        typedef const complex_t& arg;
-        size_t                           m_counter = {0};
-        std::array<Integral<arg>, NROLL> m_integrals;
-        EventList*                       m_events  = {nullptr};
-        void calculate()
-        {
-          integrateBlock();
-          m_counter = 0;
-        }
-        void integrateBlock()
-        {
-          real_t re[NROLL] = {0};
-          real_t im[NROLL] = {0};
-          #pragma omp parallel for reduction(+: re, im)
-          for ( size_t i = 0; i < m_events->size(); ++i ) {
-            auto& evt = ( *m_events )[i];
-            real_t w  = evt.weight() / evt.genPdf();
-            for ( size_t roll = 0; roll < NROLL; ++roll ) {
-              auto c = evt.getCache(m_integrals[roll].i) * std::conj(evt.getCache(m_integrals[roll].j));
-              re[roll] += w * std::real(c);
-              im[roll] += w * std::imag(c);
-            }
-          }
-          real_t nv = m_events->norm();
-          for ( size_t j = 0; j < m_counter; ++j )
-            m_integrals[j].transfer( complex_t( re[j], im[j] ) / nv );
-        }
+  class Integrator
+  {
+      typedef const complex_t& arg;
+      typedef std::function<void(arg)> TransferFCN;
 
-      public:
-        Integrator( EventList* events = nullptr ) : m_events( events ){}
-        
-        double norm()                   { return m_events->norm(); } 
-        bool isReady()            const { return m_events != nullptr; }
-        EventList& events()             { return *m_events; } 
-        const EventList& events() const { return *m_events; } 
-        void reserveCache(const unsigned& size){ m_events->reserveCache(size); }
-        template <class T1, class T2>
-        void addIntegral( const T1& f1, const T2& f2, const Integral<arg>::TransferFCN& tf )
-        {
-          addIntegralKeyed( m_events->getCacheIndex(f1), m_events->getCacheIndex(f2), tf );
-        }
-        void queueIntegral(const size_t& i, const size_t& j, complex_t* result){
-          addIntegralKeyed(i, j, [result](arg& val){ *result = val ; } ); 
-        }
-        void queueIntegral(const size_t& c1, 
-                           const size_t& c2, 
-                           const size_t& i, 
-                           const size_t& j, 
-                           Bilinears* out, 
-                           const bool& sim = true )
-        {
-          if( ! out->workToDo(i,j) )return;
-          if( sim ) 
-            addIntegralKeyed( c1, c2, [out,i,j]( arg& val ){ 
-              out->set(i,j,val);
-              if( i != j ) out->set(j,i, std::conj(val) ); } );
-          else 
-            addIntegralKeyed( c1, c2, [out,i,j]( arg& val ){ out->set(i,j,val); } );
-        }
-        void addIntegralKeyed(const size_t& c1, const size_t& c2, const Integral<arg>::TransferFCN& tf )
-        {
-          m_integrals[m_counter++] = Integral<arg>(c1, c2, tf);
-          if ( m_counter == NROLL ) calculate();
-        }
+    public:
+      explicit Integrator( const EventList* events = nullptr );
 
-        void flush()
-        {
-          if ( m_counter == 0 ) return;
-          calculate();
+      bool isReady()            const;
+      const EventList* events() const;
+      void queueIntegral(const size_t& c1, 
+          const size_t& c2, 
+          const size_t& i, 
+          const size_t& j, 
+          Bilinears* out, 
+          const bool& sim = true);
+      void addIntegralKeyed( const size_t& c1, const size_t& c2, const TransferFCN& tFunc );
+      void queueIntegral(const size_t& i, const size_t& j, complex_t* result);
+      void flush();
+      void setBuffer( complex_t* pos, const complex_t& value, const size_t& size );
+      void setBuffer( complex_t* pos, const std::vector<complex_t>& value, const size_t& size);
+      complex_t get(const unsigned& i, const unsigned& evt) const { return m_cache[i * m_events->size() + evt ]; }
+      template <class T> unsigned getCacheIndex( const T& t ) const { return m_index.find( t.name() )->second.first; }
+      double norm() const { return m_norm; }
+      template <class T> void allocate( const std::vector<T>& expressions, const size_t& size_of = 0)
+      {
+        if( m_events == nullptr ) return; 
+        unsigned totalSize = 0; 
+        for( unsigned i = 0; i != expressions.size(); ++i ){
+          size_t vsize = size_of == 0 ? expressions[i].returnTypeSize() / sizeof(complex_t) : size_of;
+          m_index[ expressions[i].name() ] = std::make_pair(totalSize, vsize);
+          totalSize += vsize;
         }
-        template <class EXPRESSION>
-          void prepareExpression( const EXPRESSION& expression, const size_t& size_of = 0 )
-          {
-            if( m_events == nullptr ) return; 
-            auto index = m_events->registerExpression( expression , size_of );
-            m_events->updateCache( expression, index );
-          }
-        size_t getCacheIndex(const CompiledExpressionBase& expression) const {
-          return m_events->getCacheIndex(expression);
-        }
-    };
-  */
-  template <size_t NBINS = 100, size_t NROLL = 10>
-    class BinnedIntegrator
-    {
-      private:
-        typedef const std::vector<std::complex<double>>& arg;
-        typedef std::function<void( arg )> TransferFCN;
-
-        size_t                           m_counter = {0};
-        std::vector<unsigned int>        m_view    = {0};
-        std::vector<size_t>              m_slice   = {0};
-        std::array<Integral<arg>, NROLL> m_integrals;
-        EventList*                       m_events  = {nullptr};
-        real_t                           m_norm    = {0};
-        void calculate()
+        m_cache.resize( m_events->size() * totalSize );
+      }
+      
+      template <class T> void prepareExpression(const T& expression)
+      {
+        if( m_events == nullptr ) return; 
+        auto f = m_index.find( expression.name() ); 
+        if( f == m_index.end() ) FATAL("Expression: " << expression.name() << " is not registed");
+        auto [p0, s] = f->second;
+        INFO("Preparing: " << expression.name() << " index = " << p0 << " with: " << s << " values" );
+        if constexpr( std::is_same< typename T::return_type, void >::value ) 
         {
-          integrateBlock();
-          m_counter = 0;
-        }
-        void integrateBlock()
-        {
-          double re[( NBINS + 1 ) * NROLL] = {0};
-          double im[( NBINS + 1 ) * NROLL] = {0};
-          auto ij                          = [&]( const Event& evt, const unsigned int& i, const unsigned int& j ) {
-            return evt.getCache( i ) * std::conj( evt.getCache( j ) );
-          };
-          if ( m_slice.size() == 0 ) {
-            #pragma omp parallel for reduction( + : re, im )
-            for ( unsigned int i = 0; i < m_events->size(); ++i ) {
-              auto& evt    = ( *m_events )[i];
-              size_t binNo = m_view[i];
-              double w     = evt.weight() / evt.genPdf();
-              for ( unsigned int roll = 0; roll < NROLL; ++roll ) {
-                auto c = ij( evt, m_integrals[roll].i, m_integrals[roll].j );
-                DEBUG( "pos = " << roll * NBINS + binNo << " val = " << w * c );
-                re[roll * NBINS + binNo] += w * std::real( c );
-                im[roll * NBINS + binNo] += w * std::imag( c );
-              }
-            }
-          } else {
-            #pragma omp parallel for reduction( + : re, im )
-            for ( unsigned int i = 0; i < m_slice.size(); ++i ) {
-              auto& evt    = ( *m_events )[m_slice[i]];
-              size_t binNo = m_view[i];
-              double w     = evt.weight() / evt.genPdf();
-              for ( unsigned int roll = 0; roll < NROLL; ++roll ) {
-                auto c = ij( evt, m_integrals[roll].i, m_integrals[roll].j );
-                re[roll * NBINS + binNo] += w * std::real( c );
-                im[roll * NBINS + binNo] += w * std::imag( c );
-              }
-            }
-          }
-          for ( size_t thisIntegral = 0; thisIntegral < m_counter; ++thisIntegral ) {
-            std::vector<std::complex<double>> tmpBins( NBINS );
-            size_t offset = thisIntegral * NBINS;
-            for ( size_t nBin = 0; nBin < NBINS; ++nBin )
-              tmpBins[nBin]   = std::complex<double>( re[offset + nBin], im[offset + nBin] ) / m_norm;
-            m_integrals[thisIntegral].transfer( tmpBins );
+          #ifdef _OPENMP
+          #pragma omp parallel for
+          #endif
+          for ( size_t i = 0; i < m_events->size(); ++i )
+          { 
+            std::vector<complex_t> buf(s);
+            expression(&buf[0], expression.externBuffer().data(), m_events->at(i).address() );
+            for( unsigned j = 0; j != s; ++j ) m_cache[ (p0+j) * m_events->size() + i] = buf[j];
           }
         }
-      public:
-        BinnedIntegrator( EventList* events = nullptr ) : m_events( events ) 
-        {
-          if( m_events == nullptr ) return; 
-          for ( const auto& event : *m_events ) m_norm += event.weight() / event.genPdf();
+        else {
+          #ifdef _OPENMP
+          #pragma omp parallel for
+          #endif
+          for ( size_t i = 0; i < m_events->size(); ++i )
+            setBuffer( &(m_cache[p0 * m_events->size() +i] ), expression(m_events->at(i).address()),s );
         }
-        void setView( const std::function<size_t( const Event& )>& binNumber )
-        {
-          if ( m_slice.size() == 0 ) {
-            if ( m_view.size() != m_events->size() ) m_view.resize( m_events->size() );
-            for ( unsigned int i = 0; i < m_events->size(); ++i ) {
-
-              m_view[i] = binNumber( ( *m_events )[i] );
-
-              if ( m_view[i] >= NBINS ) {
-                m_view[i] = NBINS;
-                WARNING( "Event " << m_slice[i] << " bin number = " << m_view[i] << " is out of range!" );
-              }
-            }
-          } else {
-            if ( m_view.size() != m_slice.size() ) m_view.resize( m_slice.size() );
-            for ( unsigned int i = 0; i < m_slice.size(); ++i ) {
-              m_view[i] = binNumber( ( *m_events )[m_slice[i]] );
-              if ( m_view[i] >= NBINS ) {
-                m_view[i] = NBINS;
-                WARNING( "Event " << m_slice[i] << " bin number = " << m_view[i] << " is out of range!" );
-              }
-            }
-          }
-        }
-        void setSlice( const std::function<bool( const Event& )>& sliceFunction )
-        {
-          if ( m_slice.size() != 0 ) m_slice.clear();
-          for ( unsigned int i = 0; i < m_events->size(); ++i )
-            if ( sliceFunction( ( *m_events )[i] ) ) m_slice.push_back( i );
-        }
-
-        template <class T1, class T2>
-          void addIntegral( const T1& f1, const T2& f2, const TransferFCN& tFunc )
-          {
-            m_integrals[m_counter++] = Integral<arg>( m_events->getCacheIndex( f1 ), m_events->getCacheIndex( f2 ), tFunc );
-            if ( m_counter == NROLL ) calculate();
-          }
-        void flush()
-        {
-          if ( m_counter == 0 ) return;
-          calculate();
-        }
-        template <class FCN>
-          void update( FCN& fcn, std::array<Bilinears, NBINS>& normalisations )
-          {
-            auto mE   = fcn.matrixElements();
-            auto size = mE.size();
-            std::vector<size_t> toUpdate;
-            std::vector<size_t> integralHasChanged( size * size );
-            for ( size_t x = 0; x < size; ++x ) {
-              auto& pdf = mE[x].amp;
-              pdf.prepare();
-              if ( !pdf.hasExternalsChanged() ) continue;
-              m_events->updateCache( pdf, m_events->getCacheIndex( pdf ) );
-              toUpdate.push_back( x );
-            }
-            for ( auto& i : toUpdate ) {
-              DEBUG( "Updating: " << mE[i].decayTree->uniqueString() );
-              for ( unsigned int j = 0; j < size; ++j ) {
-                if ( integralHasChanged[i * size + j] ) continue;
-                integralHasChanged[i * size + j] = true;
-                integralHasChanged[j * size + i] = true;
-
-                addIntegral( mE[i].amp, mE[j].amp,
-                    [i, j, &normalisations]( const auto& val ) {
-                    for ( unsigned int bin = 0; bin < NBINS; ++bin ) {
-                    normalisations[bin].set( i, j, val[bin] );
-                    if ( i != j ) normalisations[bin].set( j, i, std::conj( val[bin] ) );
-                    }
-                    } );
-              }
-            }
-          }
-    };
+      }
+    
+    private:
+      static constexpr size_t             N         = {10}; ///unroll factor
+      size_t                              m_counter = {0};  ///
+      std::array<Integral<arg>, N>        m_integrals;
+      const EventList*                    m_events  = {nullptr};
+      std::vector<complex_t>              m_cache;
+      std::vector<double>                 m_weight; 
+      std::map<std::string, std::pair<unsigned, unsigned>>       m_index; 
+      double                              m_norm    = {0};
+      void integrateBlock();
+  };
 } // namespace AmpGen
 #endif

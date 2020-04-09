@@ -35,12 +35,12 @@ double PhaseSpace::q( double m, double m1, double m2 ) const
   return 0.5 * sqrt( m*m - 2*m1*m1 - 2*m2*m2 + (m1*m1-m2*m2)*(m1*m1-m2*m2)/(m*m) );
 }
 
-Event PhaseSpace::makeEvent(const size_t& cacheSize) 
+Event PhaseSpace::makeEvent()
 {
   std::array<double, kMAXP> rno;
   std::array<double, kMAXP> pd;
   std::array<double, kMAXP> invMas; 
-  Event rt(4*m_nt + m_type.isTimeDependent(), cacheSize);
+  Event rt(4*m_nt + m_type.isTimeDependent());
 
   rno[0] = 0;
   size_t n;

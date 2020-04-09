@@ -47,11 +47,11 @@ TreePhaseSpace::TreePhaseSpace(const std::vector<Particle>& decayChains, const E
   m_dice = std::discrete_distribution<>(m_weights.begin(), m_weights.end()); 
 }
 
-Event TreePhaseSpace::makeEvent( const unsigned& cacheSize )
+Event TreePhaseSpace::makeEvent()
 {
   unsigned j = m_dice(m_gen); 
   m_top[j].generate();
-  auto event = m_top[j].event(m_type.size(), cacheSize);
+  auto event = m_top[j].event(m_type.size());
   event.setGenPdf(genPdf(event) / m_top[j].weight());
   m_generatorRecord.push_back(j);
   return event; 
@@ -195,9 +195,9 @@ void TreePhaseSpace::Vertex::place(Event& event)
   if( right != nullptr ) right->place(event);
 }
 
-Event TreePhaseSpace::Vertex::event(const unsigned& eventSize, const unsigned& cacheSize)
+Event TreePhaseSpace::Vertex::event(const unsigned& eventSize)
 {
-  Event output(4 * eventSize, cacheSize);
+  Event output(4 * eventSize); 
   mom.SetXYZT(0,0,0,sqrt(s)); 
   generateFullEvent();
   place(output); 

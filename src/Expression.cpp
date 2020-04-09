@@ -17,6 +17,8 @@
 #include "AmpGen/Types.h"
 
 using namespace AmpGen;
+using namespace AmpGen::fcn;
+using namespace std::complex_literals;
 
 DEFINE_CAST(Constant )
 DEFINE_CAST(Parameter )
@@ -53,10 +55,20 @@ std::string Constant::to_string(const ASTResolver* resolver) const {
     str.erase ( str.find_last_not_of('0') + 1, std::string::npos );  
     return str; 
   };
-  std::string complex_type_string = resolver != nullptr && resolver->enableCuda() ? "ampgen_cuda::complex_t" : typeof<complex_t>() ;
-  std::string literalSuffix = resolver != nullptr && resolver->enableCuda() ? "f" : ""; 
+  std::string complex_type = typeof<complex_t>();
+  std::string literalSuffix = "";
+  if( resolver != nullptr && resolver->enableCuda() )
+  {
+    complex_type = "ampgen_cuda::complex_t";
+    literalSuffix = "f";
+  }
+  if( resolver != nullptr && resolver->enableAVX() )
+  {
+    complex_type = "AmpGen::AVX2::complex_t";
+    literalSuffix = "f";
+  }
   return std::imag(m_value) == 0 ? "(" + rounded_string(std::real(m_value)) +literalSuffix + ")" : 
-      complex_type_string +"("+rounded_string(std::real(m_value))+literalSuffix+","+rounded_string(std::imag(m_value))+literalSuffix+")";
+      complex_type +"("+rounded_string(std::real(m_value))+literalSuffix+","+rounded_string(std::imag(m_value))+literalSuffix+")";
 }
 
 Expression simplify_constant_addition( const Constant& constant, const Expression& expression )
@@ -203,7 +215,9 @@ Ternary::Ternary( const Expression& cond, const Expression& v1, const Expression
 }
 std::string Ternary::to_string(const ASTResolver* resolver) const
 {
-  return "(" + m_cond.to_string(resolver) + "?" + m_v1.to_string(resolver) + ":" + m_v2.to_string(resolver) + ")";
+  return resolver != nullptr && resolver->enableAVX() ? "AmpGen::AVX2::select(" + m_cond.to_string(resolver) + ", " +
+    m_v1.to_string(resolver) + ", " + m_v2.to_string(resolver) +")"
+    : "(" + m_cond.to_string(resolver) + "?" + m_v1.to_string(resolver) + ":" + m_v2.to_string(resolver) + ")";
 }
 
 void Ternary::resolve( ASTResolver& resolver ) const
@@ -295,7 +309,7 @@ Expression AmpGen::fcn::complex_sqrt( const Expression& expression )
 {
   if( is<Constant>(expression ) ) return sqrt( expression() );
   auto st = make_cse(expression);
-  return Ternary( st > 0, Sqrt(st), Constant(0,1)*Sqrt(-st) );
+  return Ternary( st > 0, Sqrt(st), 1i*Sqrt(-st) );
 }
 
 Expression AmpGen::fcn::isqrt( const Expression& expression )

@@ -21,11 +21,31 @@ namespace AmpGen{
   };
 
   template <int N, class FCN> 
-    double  Profile( const FCN& fcn ){
+    double  Profile( const FCN& fcn, const std::string& name ="" ){
       ProfileClock t; 
       for( size_t i = 0 ; i < N; ++i ) fcn();
       t.stop();
-      INFO( typeof<FCN>() << " " << t/double(N) << "[ms] per iteration" );
+      INFO( (name == "" ? typeof<FCN>() : name ) << " " << t/double(N) << "[ms] per iteration" );
+      return t;
+    }
+  template <int N, class FCN> 
+    double  ProfileWithStat( const FCN& fcn, const std::string& name ="" ){
+      double t = 0;
+      double t2 = 0;
+      double tmin = 1e9;
+      double tmax = 0;
+      for( size_t i = 0 ; i < N; ++i ){
+        ProfileClock pi;
+        fcn();
+        pi.stop();
+        t  += pi;
+        t2 += pi*pi;
+        tmin = pi < tmin ? pi : tmin;
+        tmax = pi > tmax ? pi : tmax;
+      }
+      t /= double(N);
+      t2 = sqrt( t2 / double(N) - t*t);
+      INFO( (name == "" ? typeof<FCN>() : name ) << " " << t << " ± " << t2 << "[ms] per iteration << [" << tmin << ", " << tmax << "]" );
       return t;
     }
   

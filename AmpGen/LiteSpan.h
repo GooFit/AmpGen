@@ -27,14 +27,12 @@ namespace AmpGen {
       typedef typename container_type::value_type value_type;
     public:
       KeyedView( const container_type& container, const unsigned width ) : 
-        m_begin( &(container[0]) ), 
+        m_container(&container), 
         m_cache( width * container.size(),0 ), 
         m_width(width),
         m_size(container.size()),
         m_keys( width, "") {}
-      unsigned index(const value_type& it)                                      const { 
-        if( &it - m_begin < 0 || &it -m_begin >= m_size ) ERROR("Invalid address: " <<  &it - m_begin );
-        return &it -m_begin; }
+      unsigned index(const value_type& it)                                      const { return it.index() ; }
       const std::string& key(const unsigned int& column )                       const { return m_keys[column] ; }
       const return_type* operator()( const value_type& it )                     const { 
         if( m_width *index(it) >= m_cache.size()) ERROR("Out-of-bounds access : " << index(it) );
@@ -48,7 +46,7 @@ namespace AmpGen {
                                                 unsigned int column,
                                                 const std::string& key = "")
       { 
-        for( unsigned i = 0 ; i != m_size; ++i ) m_cache[ i*m_width + column] = functor(m_begin[i]); 
+        for(const auto& element : *m_container) m_cache[ element.index() * m_width + column] = functor(element); 
         if( key != "" ) m_keys[column] = key; 
       }
       cache_type& operator()(const value_type& it, const unsigned entry ) { 
@@ -58,11 +56,11 @@ namespace AmpGen {
       void setKey(const unsigned& column, const std::string& key ) { m_keys[column] = key ; }
       void print()
       {
-        INFO( "width = " << m_width << ", size = " << m_size << " begin = " << m_begin << " keys = " << vectorToString( m_keys , " ") << " cache size = " << m_cache.size() );
+        INFO( "width = " << m_width << ", size = " << m_size << " keys = " << vectorToString( m_keys , " ") << " cache size = " << m_cache.size() );
         for( unsigned int i = 0 ; i != m_width ; ++i ) std::cout << m_cache[i] << " ";
       }
     private:
-      const value_type*         m_begin; 
+      const container_type*     m_container; 
       std::vector<cache_type>   m_cache; 
       unsigned                  m_width; 
       unsigned                  m_size; 

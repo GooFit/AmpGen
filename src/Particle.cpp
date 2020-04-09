@@ -431,7 +431,14 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
   }
   ADD_DEBUG( total, db );
   double nPermutations = doSymmetrisation ? orderings.size() : 1;
-  if ( sumAmplitudes ) return total / fcn::sqrt( nPermutations );
+  if ( sumAmplitudes )
+  {
+    if ( is<Constant>(total) ){
+      WARNING("Amplitude is just a constant: " << total << " may cause problems for compiler, making a little bit complex" );
+      total += 1i * 0.00001;
+    }
+    return total / fcn::sqrt( nPermutations );
+  }
   else {
     Expression sqrted = fcn::sqrt( total / nPermutations );
     ADD_DEBUG( sqrted, db );

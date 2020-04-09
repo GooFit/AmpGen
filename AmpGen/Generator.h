@@ -33,20 +33,29 @@ namespace AmpGen
           m_rnd = rand;
           m_gps.setRandom( m_rnd );
         }
-        void fillEventListPhaseSpace( EventList& list, const size_t& N, const size_t& cacheSize = 0 )
+        void fillEventListPhaseSpace( EventList& list, const size_t& N)
         {
-          fillEventListPhaseSpace( list, N, cacheSize, []( const Event& evt ) { return 1; } );
+          list.reserve( N );
+          while( list.size() < N ){  
+            Event newEvent = m_gps.makeEvent();
+            newEvent.setWeight( 1 );
+            newEvent.setIndex( list.size() );
+            list.push_back( newEvent );
+          }
         }
         void setBlockSize( const size_t& blockSize ) { m_generatorBlock = blockSize; }
         void setNormFlag( const bool& normSetting ) { m_normalise = normSetting; }
 
-        template <class HARD_CUT> void fillEventListPhaseSpace( EventList& list, const size_t& N, const size_t& cacheSize, HARD_CUT cut )
+        template <class HARD_CUT> void fillEventListPhaseSpace( EventList& list, const size_t& N, HARD_CUT cut)
         {
           list.reserve( N );
           while( list.size() < N ){  
-            Event newEvent = m_gps.makeEvent( cacheSize );
+            Event newEvent = m_gps.makeEvent();
             newEvent.setWeight( 1 );
-            if ( cut( newEvent ) ) list.push_back( newEvent );
+            if ( cut( newEvent ) ){
+              newEvent.setIndex( list.size() );
+              list.push_back( newEvent );
+            }
           }
         }
 
@@ -74,7 +83,7 @@ namespace AmpGen
             while ( list.size() - size0 < N ) {
               EventList mc( m_eventType );
               t_phsp.start();
-              fillEventListPhaseSpace( mc, m_generatorBlock, pdf.size(), cut );
+              fillEventListPhaseSpace(mc, m_generatorBlock, cut);
               t_phsp.stop();
               t_eval.start();
               pdf.setEvents( mc );
@@ -136,10 +145,10 @@ namespace AmpGen
             fillEventList( pdf, evts, nEvents );
             return evts;
           }
-        EventList generate(const size_t& nEvents, const size_t& cacheSize=0)
+        EventList generate(const size_t& nEvents)
         {
           EventList evts( m_eventType );
-          fillEventListPhaseSpace( evts, nEvents, cacheSize );
+          fillEventListPhaseSpace( evts, nEvents);
           return evts;
         }
     };

@@ -1,3 +1,5 @@
+#if ENABLE_AVX2 
+
 #include <Rtypes.h>
 #include <TDirectory.h>
 #include <TEventList.h>
@@ -19,7 +21,7 @@
 
 #include "AmpGen/ArgumentPack.h"
 #include "AmpGen/CompiledExpressionBase.h"
-#include "AmpGen/EventList.h"
+#include "AmpGen/EventListSIMD.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Projection.h"
@@ -28,11 +30,12 @@
 #include "AmpGen/Event.h"
 #include "AmpGen/Types.h"
 #include "AmpGen/ProfileClock.h"
+#include "AmpGen/simd/utils.h"
 using namespace AmpGen;
 
-EventList::EventList( const EventType& type ) : m_eventType( type ) {} 
+EventListSIMD::EventListSIMD( const EventType& type ) : m_eventType( type ), m_eventSize( m_eventType.eventSize() ) {} 
 
-void EventList::loadFromFile( const std::string& fname, const ArgumentPack& args )
+void EventListSIMD::loadFromFile( const std::string& fname, const ArgumentPack& args )
 {
   auto current_file = gFile; 
   auto tokens = split( fname, ':'); 
@@ -46,6 +49,7 @@ void EventList::loadFromFile( const std::string& fname, const ArgumentPack& args
   else {
     gFile = TFile::Open( fname.c_str(), "READ");
     if( gFile == nullptr ) FATAL("Failed to load file: " << tokens[0] );
+    if( tree == nullptr ) tree = (TTree*)gFile->Get("EventList");
     tree = (TTree*)gFile->Get("DalitzEventList");
   }
   if( tree == nullptr ) FATAL( "Failed to load tree from file: " << fname );
@@ -54,12 +58,12 @@ void EventList::loadFromFile( const std::string& fname, const ArgumentPack& args
   gFile = current_file; 
 }
 
-void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
+void EventListSIMD::loadFromTree( TTree* tree, const ArgumentPack& args )
 {
   ProfileClock read_time; 
   if( m_eventType.size() == 0 ){
     auto tokens = split( tree->GetTitle(), ' ');
-    if( tokens.size() != 1 ) m_eventType = EventType( tokens ); 
+    if( tokens.size() != 1 ) setEventType( EventType( tokens ) ); 
     INFO("Attempted automatic deduction of eventType: " << m_eventType );
   } 
   auto filter       = args.getArg<Filter>(std::string("")).val;
@@ -71,7 +75,6 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
   auto eventFormat  = m_eventType.getEventFormat( true );
 
   Event temp( branches.size() == 0 ? eventFormat.size() : branches.size());
-
   temp.setWeight( 1 );
   temp.setGenPdf( 1 );
   tree->SetBranchStatus( "*", 0 );
@@ -82,10 +85,6 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
     for ( auto branch = branches.begin(); branch != branches.end(); ++branch ) {
       unsigned int pos = std::distance( branches.begin(), branch );
       tr.setBranch( *branch, &(temp[pos]) );
-      if( pos >= eventFormat.size() ){
-        INFO("Specifiying event extension: " << *branch << " " << pos << " " << eventFormat.size() );
-        m_extensions[ *branch ] = pos; 
-      }
     }
   }
   else {
@@ -102,24 +101,55 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
     tr.prepare();
     tree->Draw(">>evtList", filter.c_str() );
     TEventList* evtList = (TEventList*)gDirectory->Get("evtList");
-    for( int i = 0 ; i < evtList->GetN(); ++i ) 
-      entryList.push_back( evtList->GetEntry(i) );
+    for( int i = 0 ; i < evtList->GetN(); ++i ) entryList.push_back( evtList->GetEntry(i) );
   }
   bool hasEventList    = entryList.size() != 0;
-  unsigned int nEvents = hasEventList ? entryList.size() : tree->GetEntries();
-  m_data.reserve( nEvents );
+  m_nEvents = hasEventList ? entryList.size() : tree->GetEntries();
+  auto aligned_size = utils::aligned_size<float_v>(m_nEvents);
+  std::array<Event, float_v::size> buffer;
+   
+  m_nBlocks    = aligned_size / float_v::size;
+  m_data.resize( m_nBlocks * m_eventSize );
+  m_weights.resize( m_nBlocks );
+  m_genPDF.resize( m_nBlocks );
   auto symmetriser = m_eventType.symmetriser();
-  for ( unsigned int evt = 0; evt < nEvents; ++evt ) {
-    tr.getEntry( hasEventList ? entryList[evt] : evt );
-    if( applySym ) symmetriser( temp );
-    temp.setIndex( m_data.size() );
-    m_data.push_back( temp );
+  for ( unsigned int block = 0; block < m_nBlocks; ++block ) 
+  {
+    for( unsigned k = 0 ; k != float_v::size; ++k )
+    {
+      auto evt = k + block * float_v::size; 
+      if(evt >= m_nEvents ) break; 
+      tr.getEntry( hasEventList ? entryList[evt] : evt );
+      if( applySym ) symmetriser( temp );
+      buffer[k] = temp;  
+    }
+    gather( buffer, block );
   }
   read_time.stop();
   INFO("Time to read tree = " << read_time << "[ms]; nEntries = " << size() );
 }
 
-TTree* EventList::tree( const std::string& name, const std::vector<std::string>& extraBranches ) const
+
+EventListSIMD::EventListSIMD( const EventList& other ) : EventListSIMD( other.eventType() ) 
+{
+  unsigned aligned_size = utils::aligned_size<float_v>(other.size());
+  m_nBlocks = aligned_size / float_v::size; 
+  m_nEvents = other.size();
+  m_data.resize( m_nBlocks * m_eventSize ) ;
+  m_weights.resize( m_nBlocks );
+  m_genPDF.resize ( m_nBlocks );
+  for( unsigned evt = 0 ; evt != m_nBlocks; evt ++ )
+  {
+    for( unsigned j = 0 ; j != m_eventSize; ++j ) 
+      m_data[m_eventSize * evt + j] = utils::gather<float_v>(other, [j](auto& event){ return event[j]; } , evt * float_v::size );
+    m_weights[evt] = utils::gather<float_v>(other,  [](auto& event){ return event.weight(); }, evt * float_v::size, 0);
+    m_genPDF [evt] = utils::gather<float_v>(other,  [](auto& event){ return event.genPdf(); }, evt * float_v::size, 1 );
+  }
+} 
+
+
+
+TTree* EventListSIMD::tree( const std::string& name, const std::vector<std::string>& extraBranches ) const
 {
   std::string title = m_eventType.mother();
   for( unsigned i = 0 ; i != m_eventType.size(); ++i ) title += " " + m_eventType[i]; 
@@ -134,7 +164,7 @@ TTree* EventList::tree( const std::string& name, const std::vector<std::string>&
   auto format = m_eventType.getEventFormat( true );
 
   for ( const auto& f : format ) outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );  
-  for ( const auto& f : m_extensions ) outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
+  // for ( const auto& f : m_extensions ) outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
 
   outputTree->Branch( "genPdf", &genPdf );
   outputTree->Branch( "weight", &weight );
@@ -147,14 +177,14 @@ TTree* EventList::tree( const std::string& name, const std::vector<std::string>&
   return outputTree;
 }
 
-std::vector<TH1D*> EventList::makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args )
+std::vector<TH1D*> EventListSIMD::makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args )
 {
   std::vector<TH1D*> plots;
   for ( const auto& proj : projections ) plots.push_back( makeProjection(proj, args) );
   return plots;
 }
 
-TH1D* EventList::makeProjection( const Projection& projection, const ArgumentPack& args ) const 
+TH1D* EventListSIMD::makeProjection( const Projection& projection, const ArgumentPack& args ) const 
 {
   auto selection      = args.getArg<PlotOptions::Selection>().val;
   auto weightFunction = args.getArg<WeightFunction>().val;
@@ -162,7 +192,8 @@ TH1D* EventList::makeProjection( const Projection& projection, const ArgumentPac
   auto plot = projection.plot(prefix);
   plot->SetLineColor(args.getArg<PlotOptions::LineColor>(kBlack).val); 
   plot->SetMarkerSize(0);
-  for( auto& evt : m_data ){
+  for( const auto evt : *this )
+  {
     if( selection != nullptr && !selection(evt) ) continue;
     auto pos = projection(evt);
     plot->Fill( pos, evt.weight() * ( weightFunction == nullptr ? 1 : weightFunction(evt) / evt.genPdf() ) );
@@ -170,14 +201,13 @@ TH1D* EventList::makeProjection( const Projection& projection, const ArgumentPac
   if( selection != nullptr ) INFO("Filter efficiency = " << plot->GetEntries() << " / " << size() );
   return plot;
 }
-
-TH2D* EventList::makeProjection( const Projection2D& projection, const ArgumentPack& args ) const
+TH2D* EventListSIMD::makeProjection( const Projection2D& projection, const ArgumentPack& args ) const
 {
   auto selection      = args.getArg<PlotOptions::Selection>().val;
   auto weightFunction = args.getArg<WeightFunction>().val;
   std::string prefix  = args.getArg<PlotOptions::Prefix>().val;
   auto plot           = projection.plot(prefix);
-  for ( auto& evt : m_data ){
+  for ( const auto evt : *this ){
     if ( selection != nullptr && !selection(evt) ) continue;
     auto pos = projection(evt);
     plot->Fill( pos.first, pos.second, evt.weight() * ( weightFunction == nullptr ? 1 : weightFunction(evt) / evt.genPdf() ) );
@@ -185,14 +215,7 @@ TH2D* EventList::makeProjection( const Projection2D& projection, const ArgumentP
   return plot;
 }
 
-void EventList::printCacheInfo( const unsigned int& nEvt )
-{
-  for ( auto& ind : m_pdfIndex ) {
-    INFO( "Cache[" << ind.second << "] = " << ind.first << " = " << cache(nEvt, ind.second ) );
-  }
-}
-
-size_t EventList::getCacheIndex( const CompiledExpressionBase& PDF ) const
+size_t EventListSIMD::getCacheIndex( const CompiledExpressionBase& PDF ) const
 {
   auto pdfIndex = m_pdfIndex.find( FNV1a_hash( PDF.name() ) );
   if ( pdfIndex != m_pdfIndex.end() )
@@ -202,7 +225,7 @@ size_t EventList::getCacheIndex( const CompiledExpressionBase& PDF ) const
   return 999;
 }
 
-size_t EventList::getCacheIndex( const CompiledExpressionBase& PDF, bool& isRegistered ) const
+size_t EventListSIMD::getCacheIndex( const CompiledExpressionBase& PDF, bool& isRegistered ) const
 {
   auto pdfIndex = m_pdfIndex.find( FNV1a_hash( PDF.name() ) );
   if ( pdfIndex != m_pdfIndex.end() ) {
@@ -213,38 +236,68 @@ size_t EventList::getCacheIndex( const CompiledExpressionBase& PDF, bool& isRegi
   return 999;
 }
 
-void EventList::resetCache()
+void EventListSIMD::resetCache()
 {
   m_pdfIndex.clear();
   m_cache.clear();
 }
 
-double EventList::integral() const
-{
-  return std::accumulate( std::begin(*this), std::end(*this), 0, [](double rv, const auto& evt){ return rv + evt.weight(); } );
-}
-
-void EventList::add( const EventList& evts )
-{
-  resetCache();
-  WARNING( "Adding event lists invalidates cache state" );
-  for ( auto& evt : evts ) m_data.push_back( evt );
-}
-
-void EventList::clear() 
+void EventListSIMD::clear() 
 { 
   m_data.clear(); 
+  m_cache.clear();
 }
 
-void EventList::erase(const std::vector<Event>::iterator& begin, 
-    const std::vector<Event>::iterator& end)
-{
-  m_data.erase( begin, end );
-}
-
-void EventList::reserveCache(const size_t& size)
+void EventListSIMD::reserveCache(const unsigned& newSize)
 { 
-  if ( size * m_data.size() >= m_cache.size() )
-    m_cache.reserve( m_data.size() * m_cache.size() );
+  m_cache.reserve( newSize * nBlocks() );
 }
 
+void EventListSIMD::resizeCache(const unsigned& newSize )
+{
+  WARNING("Will only reserve, because i don't want to keep track anymore ... ");
+  reserveCache( newSize );
+}
+
+const Event EventListSIMD::operator[]( const size_t& pos ) const 
+{ 
+  unsigned nEvents = size();
+  unsigned p = pos / float_v::size; 
+  unsigned q = pos % float_v::size; 
+  Event tempEvent( m_eventSize );
+  for( unsigned i = 0 ; i != m_eventSize; ++i ) 
+    tempEvent[i] = m_data[p * m_eventSize + i ].at(q);
+  tempEvent.setWeight( m_weights[p].at(q) );
+  tempEvent.setGenPdf( m_genPDF[p].at(q) );
+  tempEvent.setIndex( pos );
+  return tempEvent; 
+}
+
+std::array<Event, AmpGen::float_v::size> EventListSIMD::scatter( unsigned pos ) const
+{
+  unsigned p = pos / float_v::size;
+  std::array<Event, float_v::size> rt;
+  auto vw = m_weights[p].to_array();
+  auto vg = m_genPDF[p].to_array();
+  for( unsigned evt = 0 ; evt != float_v::size; ++evt ){
+    rt[evt] = Event( m_eventSize );
+    rt[evt].setWeight(vw[evt]); 
+    rt[evt].setGenPdf(vg[evt]); 
+    rt[evt].setIndex(evt + pos);
+  }
+  for( unsigned field = 0 ; field != m_eventSize; ++field){
+    auto v = m_data[p * m_eventSize +field].to_array();
+    for( unsigned evt = 0; evt != float_v::size; ++evt ) rt[evt][field] = v[evt]; 
+  }
+  return rt;
+}
+
+void EventListSIMD::gather( const std::array<Event, float_v::size>& data, unsigned pos )
+{
+  for( unsigned field = 0 ; field != m_eventSize; ++field ) 
+    m_data[pos*m_eventSize +field] = utils::gather<float_v>(data, [field](auto& event){ return event[field]; } );
+  m_weights[pos] = utils::gather<float_v>(data, [](auto& event){ return event.weight() ; } );
+  m_genPDF[pos]  = utils::gather<float_v>(data, [](auto& event){ return event.genPdf(); } );
+}
+
+#endif

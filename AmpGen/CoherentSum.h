@@ -13,14 +13,15 @@
 #include "AmpGen/AmplitudeRules.h"
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/EventList.h"
+#include "AmpGen/EventListSIMD.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/Integrator.h"
-#include "AmpGen/Integrator2.h"
+#include "AmpGen/IntegratorSIMD.h"
 #include "AmpGen/Types.h"
 #include "AmpGen/Event.h"
 #include "AmpGen/Projection.h"
 #include "AmpGen/MinuitParameter.h"
-//#include "AmpGen/functional/pdf.h"
+
 
 namespace AmpGen
 {
@@ -40,9 +41,20 @@ namespace AmpGen
       where @f$\mathcal{P}(\psi)@f$ is the probability, @f$g_i@f$ is the coupling to an isobar channel, 
       and @f$\mathcal{A}_i(\psi)@f$ is the amplitude of the ith channel.
   */
-  class CoherentSum // : public functional::pdf_base<CoherentSum>
+  class CoherentSum
   {
   public:
+    #if ENABLE_AVX2
+      using EventList_type = EventListSIMD; 
+      using Integrator_type= IntegratorSIMD;
+      using complex_v      = AVX2::complex_t; 
+      using float_v        = AVX2::float_t;
+    #else 
+      using EventList_type  = EventList; 
+      using Integrator_type = Integrator;
+      using complex_v       = complex_t;
+      using float_v         = real_t; 
+    #endif
     CoherentSum();
     CoherentSum( const EventType& type, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "" );
     virtual ~CoherentSum() = default; 
@@ -50,8 +62,8 @@ namespace AmpGen
     AmplitudeRules protoAmplitudes() { return m_rules; }
     std::string prefix() const { return m_prefix; }
     
-    TransitionMatrix<complex_t> operator[]( const size_t& index ) { return m_matrixElements[index]; }
-    const TransitionMatrix<complex_t> operator[]( const size_t& index ) const { return m_matrixElements[index]; }
+    auto operator[]( const size_t& index ) { return m_matrixElements[index]; }
+    const auto operator[]( const size_t& index ) const { return m_matrixElements[index]; }
     size_t size() const { return m_matrixElements.size(); }
     
     real_t getWeight() const { return m_weight; }
@@ -64,10 +76,8 @@ namespace AmpGen
 
     complex_t norm( const size_t& x, const size_t& y ) const;
     complex_t getVal( const Event& evt ) const;
-    complex_t getVal( const Event& evt, const std::vector<size_t>& cacheAddresses ) const;
     complex_t getValNoCache( const Event& evt ) const;
-    complex_t getValNoCache( const Event& evt, const size_t& offset ) const;
-    
+      
     void transferParameters();
     void prepare();
     void printVal( const Event& evt );
@@ -75,28 +85,35 @@ namespace AmpGen
     void setWeight( MinuitProxy param ) { m_weight = param; }
     void makeTotalExpression();
     void reset( bool resetEvents = false );
-    void setEvents( EventList& list );
-    void setMC( EventList& sim );
+    void setEvents( EventList_type& list );
+    #if ENABLE_AVX2 
+      void setEvents( EventList& list) { setEvents( *(new EventListSIMD(list)) ) ; } 
+      void setMC( EventList& list)     { setMC( *(new EventListSIMD(list)) ) ; } 
+      float_v operator()( const float_v*, const unsigned) const; 
+    #endif
+    void setMC( EventList_type& sim );
+
     void debug( const Event& evt, const std::string& nameMustContain="");
     void generateSourceCode( const std::string& fname, const double& normalisation = 1, bool add_mt = false );
 
-    std::vector<size_t> cacheAddresses( const EventList& evts ) const; 
     std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
-    std::vector<TransitionMatrix<complex_t>> matrixElements() const { return m_matrixElements; }
+    auto matrixElements() const { return m_matrixElements; }
 
     std::map<std::string, std::vector<unsigned int>> getGroupedAmplitudes();
     Bilinears norms() const { return m_normalisations ; }
       
-    std::function<real_t(const Event&)> evaluator(const EventList* = nullptr) const; 
-    KeyedView<double, EventList> componentEvaluator(const EventList* = nullptr) const; 
+    std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
+    KeyedView<double, EventList_type> componentEvaluator(const EventList_type* = nullptr) const; 
 
   protected:
-    std::vector<TransitionMatrix<complex_t>> m_matrixElements; ///< Vector of (expanded) matrix elements
+    std::vector<TransitionMatrix<complex_v>> m_matrixElements; ///< Vector of (expanded) matrix elements
     Bilinears        m_normalisations;                         ///< Normalisation integrals
     AmplitudeRules   m_rules;                                  ///< Ruleset for the selected transition.
-    Integrator2      m_integrator;                             ///< Integral dispatch tool (with default unroll = 10) 
+     
+    Integrator_type  m_integrator;                             ///< Integral dispatch tool (with default unroll = 10) 
     TransitionMatrix<complex_t> m_total;                       ///< Total Matrix Element 
-    EventList*       m_events       = {nullptr};               ///< Data events to evaluate PDF on
+    EventList_type*  m_events       = {nullptr};               ///< Data events to evaluate PDF on
+    
     EventType        m_evtType;                                ///< Final state for this amplitude
     size_t           m_prepareCalls = {0};                     ///< Number of times prepare has been called
     size_t           m_lastPrint    = {0};                     ///< Last time verbose PDF info was printed

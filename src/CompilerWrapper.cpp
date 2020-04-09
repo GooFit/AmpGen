@@ -23,6 +23,8 @@
 using namespace AmpGen;
 #ifdef AMPGEN_CXX
 #pragma message "Using c++ compiler: " AMPGEN_CXX " for JIT"
+#pragma message "Using AMPGENROOT: "       AMPGENROOT
+#pragma message "Using AMPGENROOT_CMAKE: " AMPGENROOT_CMAKE 
 #else
 #pragma warning "No AMPGEN_CXX for JIT set"
 #endif 
@@ -51,6 +53,7 @@ void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, 
 {
   std::ofstream output( filename );
   for ( auto& include : m_includes ) output << "#include <" << include << ">\n";
+  if( expression.fcnSignature().find("AVX2") != std::string::npos )  output << "#include \"AmpGen/simd/avx2_types.h\"\n" ;
   output << expression << std::endl; 
   output.close();
 }
@@ -130,7 +133,17 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
 {
   using namespace std::chrono_literals;
   std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", 
-   {"-Ofast", "--std="+get_cpp_version(),"-march=native"} ); 
+   {"-Ofast", "--std="+get_cpp_version()}); 
+  
+  #if ENABLE_AVX2 
+    compile_flags.push_back("-march=native");
+    compile_flags.push_back("-mavx2");
+    compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
+    compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
+  #endif
+  #ifdef _OPENMP
+    compile_flags.push_back("-fopenmp");
+  #endif
 
   std::vector<const char*> argp = { m_cxx.c_str(), 
     "-shared", 

@@ -161,13 +161,10 @@ namespace AmpGen {
         }
         return total;
       }
-  template <typename return_type, 
-            typename container_type> std::function<return_type(const typename container_type::value_type&)> 
-              arrayToFunctor( const std::vector<return_type>& values, const container_type* container )
+  template <typename return_type, typename contained_type> std::function<return_type(const contained_type&)> 
+              arrayToFunctor( const std::vector<return_type>& values)
   {
-    return [container, values](const typename container_type::value_type& event) -> return_type {
-      int addr = &event - &container->at(0);
-      return *(values.data() + addr); }; 
+    return [values](const contained_type& event) -> return_type {return *(values.data() + event.index()); }; 
   }
 
   template<class iterator>

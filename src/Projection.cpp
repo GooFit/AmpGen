@@ -2,6 +2,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Event.h"
 #include "AmpGen/EventList.h"
+#include "AmpGen/EventListSIMD.h"
 #include <stdio.h>
 
 #include "TAxis.h"
@@ -70,17 +71,22 @@ std::pair<double, double> Projection2D::operator()( const Event& evt ) const
   return {xAxis.m_func( evt ), yAxis.m_func( evt )};
 }
 
-TH1D* Projection::projInternal( const EventList& events, const ArgumentPack& args) const 
+template <> TH1D* Projection::projInternal( const EventList& events, const ArgumentPack& args) const 
 { 
   return events.makeProjection(*this, args); 
 }
 
-std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventList& events, const KeyedView<double, EventList>& weightFunction, const ArgumentPack& args) const
+template <> TH1D* Projection::projInternal( const EventListSIMD& events, const ArgumentPack& args) const 
+{ 
+  return events.makeProjection(*this, args); 
+}
+
+template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventList& events, const KeyedView<double, EventList>& weightFunction, const ArgumentPack& args) const
 {
-//  INFO("Making projection: " << m_name << " classes = " << weightFunction.width() << " " << &(events[0]) );
   std::vector<TH1D*> hists; 
   double norm_sum = args.getArg<Norm>(1).val;
   std::string prefix = args.getArg<PlotOptions::Prefix>().val;
+  bool autowrite     = args.get<PlotOptions::AutoWrite>() != nullptr;
   THStack* stack     = args.getArg<PlotOptions::AddTo>(new THStack()).val;
   if( prefix != "" ) prefix = prefix +"_";
   for( unsigned int i = 0 ; i != weightFunction.width(); ++i ) 
@@ -97,7 +103,41 @@ std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventLis
   if( total == 0 ) ERROR("Norm = " << total );
   else for( auto& h : hists ) h->Scale( norm_sum / total );
   stack->SetName( (prefix + name() + "_stack").c_str());
-  for( auto& h : hists ) stack->Add(h, "C HIST");
+  for( auto& h : hists ){
+    stack->Add(h, "C HIST");
+    if( autowrite ) h->Write();
+  }
+  if( autowrite ) stack->Write();
+  return {hists, stack};
+}
+
+template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventListSIMD& events, const KeyedView<double, EventListSIMD>& weightFunction, const ArgumentPack& args) const
+{
+  std::vector<TH1D*> hists; 
+  double norm_sum = args.getArg<Norm>(1).val;
+  std::string prefix = args.getArg<PlotOptions::Prefix>().val;
+  bool autowrite     = args.get<PlotOptions::AutoWrite>() != nullptr;
+  THStack* stack     = args.getArg<PlotOptions::AddTo>(new THStack()).val;
+  if( prefix != "" ) prefix = prefix +"_";
+  for( unsigned int i = 0 ; i != weightFunction.width(); ++i ) 
+    hists.push_back( plot(prefix + weightFunction.key(i)==""?"C"+std::to_string(i):weightFunction.key(i)) );
+  auto selection      = args.getArg<Selection>().val;
+  for( const auto& evt : events ){
+    if( selection != nullptr && !selection(evt) ) continue;
+    auto pos = operator()(evt);
+    auto weights = weightFunction(evt);
+    for( unsigned j = 0 ; j != weightFunction.width(); ++j ) hists[j]->Fill( pos, evt.weight() * weights[j] / evt.genPdf() ); 
+  }
+  std::sort( std::begin(hists), std::end(hists), [](auto& h1, auto& h2){ return h1->Integral() < h2->Integral() ; } );
+  double total = std::accumulate( std::begin(hists), std::end(hists), 0.0, [](double& t, auto& h){ return t + h->Integral() ; } ); 
+  if( total == 0 ) ERROR("Norm = " << total );
+  else for( auto& h : hists ) h->Scale( norm_sum / total );
+  stack->SetName( (prefix + name() + "_stack").c_str());
+  for( auto& h : hists ){
+    stack->Add(h, "C HIST");
+    if( autowrite ) h->Write();
+  }
+  if( autowrite ) stack->Write();
   return {hists, stack};
 }
 
