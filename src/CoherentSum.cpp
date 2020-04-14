@@ -343,7 +343,7 @@ std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type*
 {
   auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
   Store<complex_v, Alignment::AoS> store( events->size(), m_matrixElements);
-  for( auto& me : m_matrixElements ) store.update(m_events->store(), me );
+  for( auto& me : m_matrixElements ) store.update(events->store(), me );
   
   std::vector<double> values( events->aligned_size() );
   #ifdef _OPENMP
@@ -356,7 +356,7 @@ std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type*
       amp = amp + m_matrixElements[j].coefficient * store(block, j);
     utils::store( values.data() + block * utils::size<float_v>::value,  (m_weight/m_norm) * utils::norm(amp)  );
   }
-  return arrayToFunctor<double, Event>(values);
+  return arrayToFunctor<double, typename EventList_type::value_type>(values);
 }
 
 KeyedView<double, CoherentSum::EventList_type> CoherentSum::componentEvaluator(const EventList_type* ievents) const 

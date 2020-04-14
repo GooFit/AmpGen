@@ -135,10 +135,10 @@ namespace AmpGen {
       std::map<std::string, std::pair<unsigned, unsigned>> m_index; 
   };
 }
-//using aos_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::AoS>;
-//using soa_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::SoA>;
-//
-//ENABLE_DEBUG(aos_store)
-//ENABLE_DEBUG(soa_store)
+using aos_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::AoS>;
+using soa_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::SoA>;
+
+ENABLE_DEBUG(aos_store)
+ENABLE_DEBUG(soa_store)
 
 #endif
