@@ -216,7 +216,7 @@ void   PolarisedSum::prepare()
   for( auto& me : m_matrixElements ) me.workToDo = false; 
   auto pw = m_weight / m_norm; 
   #pragma omp parallel for
-  for( unsigned block = 0 ; block != m_events->nBlocks(); ++block ) 
+  for( unsigned block = 0 ; block < m_events->nBlocks(); ++block ) 
     m_pdfCache[block] = pw * m_probExpression(&m_cache(block, 0)); 
 
   DEBUG( "m_pdfCache[0] = " << m_pdfCache[0] << " w/o caching = " << pw * getValNoCache(m_events->at(0))  ); 
@@ -494,7 +494,7 @@ std::function<real_t(const Event&)> PolarisedSum::evaluator(const EventList_type
   #ifdef _OPENMP
   #pragma omp parallel for
   #endif
-  for( unsigned int block = 0 ; block != events->nBlocks(); ++block )
+  for( unsigned int block = 0 ; block < events->nBlocks(); ++block )
   {
     utils::store(values.data() + utils::size<float_v>::value * block, (m_weight/m_norm) * m_probExpression(&store(block,0)) ); 
   }

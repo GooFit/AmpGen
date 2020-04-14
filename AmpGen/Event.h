@@ -26,13 +26,6 @@ namespace AmpGen {
       void set( const real_t* evt );
       void set( const unsigned& i, const real_t& p ) ;
       void swap( const unsigned int& i , const unsigned int& j );
-      // void setCache(const complex_t& value, const unsigned& pos) ;
-      // template <unsigned N> void setCache( const std::array<complex_t,N>& value, const unsigned& pos )
-      // {
-      //   std::memmove( m_cache.data() + pos, value.data(), sizeof(std::array<complex_t,N>) );
-      // }
-      // void setCache( const std::vector<complex_t>& value, const unsigned& pos );
-      // void resizeCache( const unsigned int& new_size );
       
       unsigned   size()                                   const { return m_event.size(); } 
 
@@ -41,17 +34,12 @@ namespace AmpGen {
       const real_t* address(const unsigned& ref=0)        const { return &(m_event[ref]); }
       real_t*       address(const unsigned& ref=0)              { return &(m_event[ref]); }
 
-     //  unsigned cacheSize()                                const { return m_cache.size(); } 
       real_t weight()                                     const { return m_weight; } 
       real_t genPdf()                                     const { return m_genPdf; }
       real_t  operator[](const unsigned& i)               const { return m_event[i]; }
       real_t& operator[](const unsigned& i)                     { return m_event[i]; }
       operator const real_t*()                            const { return &(m_event[0]); }
       operator       real_t*()                                  { return &(m_event[0]); }
-
-      // const complex_t& getCache(const unsigned& pos)      const { return m_cache[pos]; }
-      // const complex_t* getCachePtr(const unsigned& pos=0) const { return &(m_cache[0]) + pos; }
-      //       complex_t* getCachePtr(const unsigned& pos=0)       { return &(m_cache[0]) + pos; }
 
       void setWeight( const real_t& weight ){ m_weight = weight ; } 
       void setGenPdf( const real_t& genPdf ){ m_genPdf = genPdf ; } 
@@ -67,7 +55,6 @@ namespace AmpGen {
       real_t s( const std::vector<unsigned>& indices ) const ;
     private:
       std::vector<real_t>    m_event; 
-     // std::vector<complex_t> m_cache;
       real_t                 m_genPdf = {1};
       real_t                 m_weight = {1}; 
       unsigned               m_index  = {0};
