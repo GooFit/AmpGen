@@ -49,16 +49,17 @@ void invertParity( Event& event, const size_t& nParticles)
 
 template < class FCN > void debug( FCN& sig, EventList& accepted, bool verbose, TRandom3* rndm, MinuitParameterSet& mps ){
   INFO("Debugging: ");
+  unsigned eventToDebug = 0;
   sig.setEvents( accepted );
   sig.prepare();
-  sig.debug( accepted[0] );
-  accepted[0].print();
+  sig.debug( accepted[eventToDebug] );
+  accepted[eventToDebug].print();
 //  if( verbose ) print( accepted[0], sig.matrixElements(), verbose ); 
-  invertParity(accepted[0], accepted.eventType().size() );
-  accepted[0].print();
+  invertParity(accepted[eventToDebug], accepted.eventType().size() );
+  accepted[eventToDebug].print();
   sig.reset();
   sig.prepare();
-  sig.debug( accepted[0] );
+  sig.debug( accepted[eventToDebug] );
 }
 
 int main( int argc, char** argv )
@@ -93,11 +94,10 @@ int main( int argc, char** argv )
   if( infile == "" ){
     for( unsigned i = 0 ; i != 16; ++i ){
       Event evt = PhaseSpace( eventType, rndm ).makeEvent();
+      evt.setIndex(i);
       accepted.push_back(evt);
     }
   }
-  accepted[0].print();
-
   std::string type = NamedParameter<std::string>("Type","CoherentSum");
 
   if( type == "PolarisedSum")

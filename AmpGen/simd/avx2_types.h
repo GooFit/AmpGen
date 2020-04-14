@@ -20,38 +20,11 @@ namespace AmpGen {
       float_t(const double& f )     : data( _mm256_set1_ps( float(f) )) {}
       float_t(const float* f )      : data( _mm256_loadu_ps( f ) ) {}
       void store( float* ptr ) const { _mm256_storeu_ps( ptr, data ); }
-      std::array<float, size> to_array() const { std::array<float, size> b; store( &b[0] ); return b; }
+      std::array<float, 8> to_array() const { std::array<float, 8> b; store( &b[0] ); return b; }
       float at(const unsigned i) const { return to_array()[i] ; }       
       operator __m256() const { return data ; } 
     };
-
-    struct complex_t {
-      float_t re;
-      float_t im;
-      typedef std::complex<float> scalar_type;
-      static constexpr unsigned size = 8 ;
-
-      float_t real() const { return re; }
-      float_t imag() const { return im; }
-      complex_t() = default; 
-      complex_t( const float_t& re, const float_t& im) : re(re), im(im) {}
-      complex_t( const float&   re, const float& im) : re(re), im(im) {}
-      complex_t( const std::complex<double>& f ) : re( f.real() ), im( f.imag() ) {}
-      complex_t( const std::complex<float>& f  ) : re( f.real() ), im( f.imag() ) {}
-      const std::complex<float> at(const unsigned i) const { return std::complex<float>(re.to_array()[i], im.to_array()[i]) ; }       
-      void store( float* sre, float* sim ){ re.store(sre); im.store(sim);  } 
-      void store( std::complex<float>* r ){ 
-        auto re_arr = re.to_array();
-        auto im_arr = im.to_array();
-        for( unsigned i = 0 ; i != float_t::size; ++i ) r[i] = std::complex<float>( re_arr[i], im_arr[i] ); 
-      }
-    };
-
-    inline std::ostream& operator<<( std::ostream& os, const float_t& obj ) { 
-      auto buffer = obj.to_array();
-      for( unsigned i = 0 ; i != float_t::size; ++i ) os << buffer[i] << " ";
-      return os; 
-    }
+    
     inline float_t operator+( const float_t& lhs, const float_t& rhs ) { return _mm256_add_ps(lhs, rhs); }
     inline float_t operator-( const float_t& lhs, const float_t& rhs ) { return _mm256_sub_ps(lhs, rhs); }
     inline float_t operator*( const float_t& lhs, const float_t& rhs ) { return _mm256_mul_ps(lhs, rhs); }
@@ -80,13 +53,45 @@ namespace AmpGen {
     inline float_t select(const float_t& mask, const float_t& a, const float_t& b ) { return _mm256_blendv_ps( b, a, mask ); }
     inline float_t select(const bool& mask   , const float_t& a, const float_t& b ) { return mask ? a : b; } 
     inline float_t atan2( const float_t& y, const float_t& x ){ 
-      std::array<float, float_t::size> bx{x.to_array()}, by{y.to_array()}, rt;
-      for( unsigned i = 0 ; i != float_t::size ; ++i ) rt[i] = std::atan2( by[i] , bx[i] );
+      std::array<float, 8> bx{x.to_array()}, by{y.to_array()}, rt;
+      for( unsigned i = 0 ; i != 8 ; ++i ) rt[i] = std::atan2( by[i] , bx[i] );
       return float_t (rt.data() ); 
+    }
+    inline float_t fmadd( const float_t& a, const float_t& b, const float_t& c )
+    {
+      return _mm256_fmadd_ps(a, b, c );
+    }
+    struct complex_t {
+      float_t re;
+      float_t im;
+      typedef std::complex<float> scalar_type;
+
+      float_t real() const { return re; }
+      float_t imag() const { return im; }
+      float_t norm() const { return re*re + im *im ; }
+      complex_t() = default; 
+      complex_t( const float_t& re, const float_t& im) : re(re), im(im) {}
+      complex_t( const float&   re, const float& im) : re(re), im(im) {}
+      complex_t( const std::complex<double>& f ) : re( f.real() ), im( f.imag() ) {}
+      complex_t( const std::complex<float>& f  ) : re( f.real() ), im( f.imag() ) {}
+      const std::complex<float> at(const unsigned i) const { return std::complex<float>(re.to_array()[i], im.to_array()[i]) ; }       
+      void store( float* sre, float* sim ){ re.store(sre); im.store(sim);  } 
+      void store( std::complex<float>* r ){ 
+        auto re_arr = re.to_array();
+        auto im_arr = im.to_array();
+        for( unsigned i = 0 ; i != re_arr.size(); ++i ) r[i] = std::complex<float>( re_arr[i], im_arr[i] ); 
+      }
+    };
+
+    inline std::ostream& operator<<( std::ostream& os, const float_t& obj ) { 
+      auto buffer = obj.to_array();
+      for( unsigned i = 0 ; i != 8; ++i ) os << buffer[i] << " ";
+      return os; 
     }
     inline float_t     real(const complex_t& arg ){ return arg.re ; }
     inline float_t     imag(const complex_t& arg ){ return arg.im ; }
     inline complex_t   conj(const complex_t& arg ){ return complex_t(arg.re, -arg.im) ; }
+    inline float_t     conj(const float_t& arg ){ return arg ; } 
     inline complex_t operator+( const complex_t& lhs, const float_t& rhs ) { return complex_t(lhs.re + rhs, lhs.im); }
     inline complex_t operator-( const complex_t& lhs, const float_t& rhs ) { return complex_t(lhs.re - rhs, lhs.im); }
     inline complex_t operator*( const complex_t& lhs, const float_t& rhs ) { return complex_t(lhs.re*rhs, lhs.im*rhs); }

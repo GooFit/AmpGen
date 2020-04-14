@@ -41,7 +41,7 @@ struct FixedLibPDF {
 
   void prepare(){};
   void setEvents( AmpGen::EventList& evts ){};
-  double prob_unnormalised( const AmpGen::Event& evt ) const { return PDF( evt, 1 ); }
+  double operator()( const AmpGen::Event& evt ) const { return PDF( evt, 1 ); }
   FixedLibPDF( const std::string& lib )
   {
     void* handle = dlopen( lib.c_str(), RTLD_NOW );

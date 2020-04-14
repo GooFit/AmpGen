@@ -36,42 +36,29 @@ void   Bilinears::resize( const size_t& r, const size_t& c)
 
 void Integrator::integrateBlock()
 {
-  real_t re[N] = {0};
-  real_t im[N] = {0};
-  size_t addr_i[N] = {0};
-  size_t addr_j[N] = {0};
-  for( size_t roll = 0 ; roll < N; ++roll )
-  {
-    addr_i[roll] = m_integrals[roll].i;
-    addr_j[roll] = m_integrals[roll].j;
-  }
+  #pragma omp parallel for
   for ( size_t roll = 0; roll < N; ++roll ) {
-    complex_t* b1 = m_cache.data() + m_integrals[roll].i * m_events->size();
-    complex_t* b2 = m_cache.data() + m_integrals[roll].j * m_events->size();
-    #pragma omp parallel for reduction(+: re, im)
-    for ( size_t i = 0; i < m_events->size(); ++i ) {
-      auto c    = b1[i] * std::conj(b2[i]);
-      re[roll] += m_weight[i] * std::real(c);
-      im[roll] += m_weight[i] * std::imag(c);
+    float_v re( 0.f );
+    float_v im( 0.f );
+    auto b1 = m_cache.data() + m_integrals[roll].i * m_cache.nBlocks();
+    auto b2 = m_cache.data() + m_integrals[roll].j * m_cache.nBlocks();
+    for ( size_t i = 0; i < m_cache.nBlocks(); ++i ) {
+      auto c = b1[i] * conj(b2[i]);
+      #if ENABLE_AVX2 
+      re = fmadd(re, m_weight[i], real(c) );
+      im = fmadd(im, m_weight[i], imag(c) );
+      #else
+      re = re + m_weight[i] * real(c);
+      im = im + m_weight[i] * imag(c); 
+      #endif
     }
+    m_integrals[roll].transfer( utils::sum_elements( complex_v(re, im) ) / m_norm );
   }
-  for ( size_t j = 0; j < m_counter; ++j ) m_integrals[j].transfer( complex_t( re[j], im[j] ) / m_norm );
   m_counter = 0;
 }
 
-Integrator::Integrator( const EventList* events ) : m_events( events )
-{
-  if( m_events == nullptr ) return;
-  m_weight.resize( m_events->size() );
-  for( size_t i = 0 ; i < m_events->size(); ++i )
-  {
-    m_weight[i] = m_events->at(i).weight() / m_events->at(i).genPdf();
-    m_norm      += m_weight[i]; 
-  }
-}
-
 bool Integrator::isReady()            const { return m_events != nullptr; }
-const EventList* Integrator::events() const { return m_events; } 
+
 void Integrator::queueIntegral(const size_t& c1, 
     const size_t& c2, 
     const size_t& i, 
@@ -81,32 +68,36 @@ void Integrator::queueIntegral(const size_t& c1,
 {
   if( !out->workToDo(i,j) ) return;
   if( sim ) 
-    addIntegralKeyed( c1, c2, [out,i,j]( arg& val ){ 
-        out->set(i,j,val);
-        if( i != j ) out->set(j,i, std::conj(val) ); } );
+    addIntegralKeyed( c1, c2, [out,i,j]( const complex_t& val ){ out->set(i,j,val); if( i != j ) out->set(j,i, std::conj(val) ); } );
   else 
-    addIntegralKeyed( c1, c2, [out,i,j]( arg& val ){ out->set(i,j,val); } );
+    addIntegralKeyed( c1, c2, [out,i,j]( const complex_t& val ){ out->set(i,j,val); } );
 }
+
 void Integrator::addIntegralKeyed( const size_t& c1, const size_t& c2, const TransferFCN& tFunc )
 {
-  m_integrals[m_counter++] = Integral<arg>(c1,c2,tFunc);
+  m_integrals[m_counter++] = Integral<complex_t>(c1,c2,tFunc);
   if ( m_counter == N ) integrateBlock(); 
 }
+
 void Integrator::queueIntegral(const size_t& i, const size_t& j, complex_t* result)
 {
-  addIntegralKeyed(i, j, [result](arg& val){ *result = val ; } ); 
+  addIntegralKeyed(i, j, [result](const complex_t& val){ *result = val ; } ); 
 }
+
 void Integrator::flush()
 {
   if ( m_counter == 0 ) return;
   integrateBlock();
 }
-void Integrator::setBuffer( complex_t* pos, const complex_t& value, const size_t& size )
-{
-  *pos = value;
-}
 
-void Integrator::setBuffer( complex_t* pos, const std::vector<complex_t>& value, const size_t& size)
+#if ENABLE_AVX2
+template <> complex_t Integrator::get( const unsigned& index, const unsigned& evt ) const 
 {
-  memcpy( pos, &(value[0]), size * sizeof(complex_t) );
+  return utils::at( m_cache( evt/utils::size<float_v>::value, index), evt % utils::size<float_v>::value ); 
+}
+#endif
+
+template <> complex_v Integrator::get( const unsigned& index, const unsigned& evt ) const 
+{
+  return m_cache(evt, index); 
 }

@@ -76,11 +76,6 @@ template <> TH1D* Projection::projInternal( const EventList& events, const Argum
   return events.makeProjection(*this, args); 
 }
 
-template <> TH1D* Projection::projInternal( const EventListSIMD& events, const ArgumentPack& args) const 
-{ 
-  return events.makeProjection(*this, args); 
-}
-
 template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventList& events, const KeyedView<double, EventList>& weightFunction, const ArgumentPack& args) const
 {
   std::vector<TH1D*> hists; 
@@ -109,6 +104,12 @@ template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(co
   }
   if( autowrite ) stack->Write();
   return {hists, stack};
+}
+
+#if ENABLE_AVX2
+template <> TH1D* Projection::projInternal( const EventListSIMD& events, const ArgumentPack& args) const 
+{ 
+  return events.makeProjection(*this, args); 
 }
 
 template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventListSIMD& events, const KeyedView<double, EventListSIMD>& weightFunction, const ArgumentPack& args) const
@@ -140,4 +141,4 @@ template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(co
   if( autowrite ) stack->Write();
   return {hists, stack};
 }
-
+#endif

@@ -33,7 +33,7 @@
 #include "AmpGen/simd/utils.h"
 using namespace AmpGen;
 
-EventListSIMD::EventListSIMD( const EventType& type ) : m_eventType( type ), m_eventSize( m_eventType.eventSize() ) {} 
+EventListSIMD::EventListSIMD( const EventType& type ) : m_eventType( type ) {}
 
 void EventListSIMD::loadFromFile( const std::string& fname, const ArgumentPack& args )
 {
@@ -104,21 +104,19 @@ void EventListSIMD::loadFromTree( TTree* tree, const ArgumentPack& args )
     for( int i = 0 ; i < evtList->GetN(); ++i ) entryList.push_back( evtList->GetEntry(i) );
   }
   bool hasEventList    = entryList.size() != 0;
-  m_nEvents = hasEventList ? entryList.size() : tree->GetEntries();
-  auto aligned_size = utils::aligned_size<float_v>(m_nEvents);
+  size_t nEvents       = hasEventList ? entryList.size() : tree->GetEntries();
   std::array<Event, float_v::size> buffer;
    
-  m_nBlocks    = aligned_size / float_v::size;
-  m_data.resize( m_nBlocks * m_eventSize );
-  m_weights.resize( m_nBlocks );
-  m_genPDF.resize( m_nBlocks );
+  m_data = Store<float_v, Alignment::AoS>(nEvents, m_eventType.eventSize() );
+  m_weights.resize( m_data.nBlocks() ); 
+  m_genPDF.resize(  m_data.nBlocks() ); 
   auto symmetriser = m_eventType.symmetriser();
-  for ( unsigned int block = 0; block < m_nBlocks; ++block ) 
+  for ( unsigned int block = 0; block < m_data.nBlocks(); ++block ) 
   {
     for( unsigned k = 0 ; k != float_v::size; ++k )
     {
       auto evt = k + block * float_v::size; 
-      if(evt >= m_nEvents ) break; 
+      if(evt >= m_data.size() ) break; 
       tr.getEntry( hasEventList ? entryList[evt] : evt );
       if( applySym ) symmetriser( temp );
       buffer[k] = temp;  
@@ -132,18 +130,15 @@ void EventListSIMD::loadFromTree( TTree* tree, const ArgumentPack& args )
 
 EventListSIMD::EventListSIMD( const EventList& other ) : EventListSIMD( other.eventType() ) 
 {
-  unsigned aligned_size = utils::aligned_size<float_v>(other.size());
-  m_nBlocks = aligned_size / float_v::size; 
-  m_nEvents = other.size();
-  m_data.resize( m_nBlocks * m_eventSize ) ;
-  m_weights.resize( m_nBlocks );
-  m_genPDF.resize ( m_nBlocks );
-  for( unsigned evt = 0 ; evt != m_nBlocks; evt ++ )
+  m_data = Store<float_v, Alignment::AoS>(other.size(), m_eventType.eventSize() );
+  m_weights.resize( m_data.nBlocks() );
+  m_genPDF.resize ( m_data.nBlocks() );
+  for( unsigned block = 0 ; block != m_data.nBlocks(); block++ )
   {
-    for( unsigned j = 0 ; j != m_eventSize; ++j ) 
-      m_data[m_eventSize * evt + j] = utils::gather<float_v>(other, [j](auto& event){ return event[j]; } , evt * float_v::size );
-    m_weights[evt] = utils::gather<float_v>(other,  [](auto& event){ return event.weight(); }, evt * float_v::size, 0);
-    m_genPDF [evt] = utils::gather<float_v>(other,  [](auto& event){ return event.genPdf(); }, evt * float_v::size, 1 );
+    for( unsigned j = 0 ; j != m_data.nFields(); ++j ) 
+      m_data(block, j ) = utils::gather<float_v>(other, [j](auto& event){ return event[j]; } , block * float_v::size );
+    m_weights[block] = utils::gather<float_v>(other,  [](auto& event){ return event.weight(); }, block * float_v::size, 0);
+    m_genPDF [block] = utils::gather<float_v>(other,  [](auto& event){ return event.genPdf(); }, block * float_v::size, 1 );
   }
 } 
 
@@ -215,48 +210,10 @@ TH2D* EventListSIMD::makeProjection( const Projection2D& projection, const Argum
   return plot;
 }
 
-size_t EventListSIMD::getCacheIndex( const CompiledExpressionBase& PDF ) const
-{
-  auto pdfIndex = m_pdfIndex.find( FNV1a_hash( PDF.name() ) );
-  if ( pdfIndex != m_pdfIndex.end() )
-    return pdfIndex->second;
-  else
-    ERROR( "FATAL: PDF Index for " << PDF.name() << " not found" );
-  return 999;
-}
-
-size_t EventListSIMD::getCacheIndex( const CompiledExpressionBase& PDF, bool& isRegistered ) const
-{
-  auto pdfIndex = m_pdfIndex.find( FNV1a_hash( PDF.name() ) );
-  if ( pdfIndex != m_pdfIndex.end() ) {
-    isRegistered = true;
-    return pdfIndex->second;
-  }
-  isRegistered = false;
-  return 999;
-}
-
-void EventListSIMD::resetCache()
-{
-  m_pdfIndex.clear();
-  m_cache.clear();
-}
 
 void EventListSIMD::clear() 
 { 
   m_data.clear(); 
-  m_cache.clear();
-}
-
-void EventListSIMD::reserveCache(const unsigned& newSize)
-{ 
-  m_cache.reserve( newSize * nBlocks() );
-}
-
-void EventListSIMD::resizeCache(const unsigned& newSize )
-{
-  WARNING("Will only reserve, because i don't want to keep track anymore ... ");
-  reserveCache( newSize );
 }
 
 const Event EventListSIMD::operator[]( const size_t& pos ) const 
@@ -264,9 +221,9 @@ const Event EventListSIMD::operator[]( const size_t& pos ) const
   unsigned nEvents = size();
   unsigned p = pos / float_v::size; 
   unsigned q = pos % float_v::size; 
-  Event tempEvent( m_eventSize );
-  for( unsigned i = 0 ; i != m_eventSize; ++i ) 
-    tempEvent[i] = m_data[p * m_eventSize + i ].at(q);
+  Event tempEvent( eventSize() );
+  for( unsigned i = 0 ; i !=  tempEvent.size(); ++i ) 
+    tempEvent[i] = m_data(p, i).at(q);
   tempEvent.setWeight( m_weights[p].at(q) );
   tempEvent.setGenPdf( m_genPDF[p].at(q) );
   tempEvent.setIndex( pos );
@@ -280,13 +237,13 @@ std::array<Event, AmpGen::float_v::size> EventListSIMD::scatter( unsigned pos ) 
   auto vw = m_weights[p].to_array();
   auto vg = m_genPDF[p].to_array();
   for( unsigned evt = 0 ; evt != float_v::size; ++evt ){
-    rt[evt] = Event( m_eventSize );
+    rt[evt] = Event( m_data.nFields() );
     rt[evt].setWeight(vw[evt]); 
     rt[evt].setGenPdf(vg[evt]); 
     rt[evt].setIndex(evt + pos);
   }
-  for( unsigned field = 0 ; field != m_eventSize; ++field){
-    auto v = m_data[p * m_eventSize +field].to_array();
+  for( unsigned field = 0 ; field != m_data.nFields(); ++field){
+    auto v = m_data(p, field).to_array();
     for( unsigned evt = 0; evt != float_v::size; ++evt ) rt[evt][field] = v[evt]; 
   }
   return rt;
@@ -294,8 +251,8 @@ std::array<Event, AmpGen::float_v::size> EventListSIMD::scatter( unsigned pos ) 
 
 void EventListSIMD::gather( const std::array<Event, float_v::size>& data, unsigned pos )
 {
-  for( unsigned field = 0 ; field != m_eventSize; ++field ) 
-    m_data[pos*m_eventSize +field] = utils::gather<float_v>(data, [field](auto& event){ return event[field]; } );
+  for( unsigned field = 0; field != m_data.nFields(); ++field ) 
+    m_data(pos, field) = utils::gather<float_v>(data, [field](auto& event){ return event[field]; } );
   m_weights[pos] = utils::gather<float_v>(data, [](auto& event){ return event.weight() ; } );
   m_genPDF[pos]  = utils::gather<float_v>(data, [](auto& event){ return event.genPdf(); } );
 }

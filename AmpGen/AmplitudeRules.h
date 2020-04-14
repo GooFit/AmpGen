@@ -85,44 +85,38 @@ namespace AmpGen
       std::map<std::string, std::vector<Coupling>> m_rules;
   };
 
-  template <class RT> struct TransitionMatrix 
+  template <class RT> struct TransitionMatrix : public CompiledExpression<RT(const real_t*, const float_v*)>  
   {
-    #if ENABLE_AVX2
-      using float_v = AVX2::float_t;
-    #else
-      using float_v = real_t; 
-    #endif 
+    using amp_type = CompiledExpression<RT(const real_t*, const float_v*)>; 
     TransitionMatrix() = default;
-    TransitionMatrix(const Particle& dt, 
+    TransitionMatrix(Particle dt, 
                      const TotalCoupling& coupling, 
-                     const CompiledExpression<RT(const real_t*, const float_v*)> & amp) : 
+                     const amp_type& amp) :
+          amp_type(amp),
           decayTree(dt), 
-          coupling(coupling), 
-          amp(amp) {}
+          coupling(coupling) {}
 
-    TransitionMatrix(const Particle& dt, 
+    TransitionMatrix(Particle dt, 
                      const TotalCoupling& coupling, 
                      const MinuitParameterSet& mps,
                      const std::map<std::string, unsigned>& evtFormat, 
                      const bool& debugThis=false) :
+      amp_type(dt.getExpression(debugThis ? &db : nullptr ), dt.decayDescriptor(), evtFormat, db, &mps ),
       decayTree(dt),
-      coupling(coupling),
-      amp(decayTree.getExpression(debugThis ? &db : nullptr ), decayTree.decayDescriptor(), evtFormat, db, &mps ) {}
+      coupling(coupling) {}
+
     #if ENABLE_AVX2 
-    const RT operator()(const Event& event) const { return amp(EventListSIMD::makeEvent(event).data()); }
+    const RT operator()(const Event& event) const { return amp_type::operator()(EventListSIMD::makeEvent(event).data()); }
     #else
-    const RT operator()(const Event& event) const { return amp(event.address()); }
+    const RT operator()(const Event& event) const { return amp_type::operator()(event.address()); }
     #endif
     const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
-    std::string name() const { return amp.name(); }
-    unsigned returnTypeSize() const { return amp.returnTypeSize(); }
 
     Particle                                            decayTree;
     TotalCoupling                                       coupling;
     complex_t                                           coefficient;
     DebugSymbols                                        db; 
-    CompiledExpression<RT(const real_t*, const float_v*)> amp; 
-    size_t                                               addressData = {999};
+    bool                                                workToDo    = {false};
   };
  
   template <class RT> std::vector<size_t> processIndex(const std::vector<TransitionMatrix<RT>>& tm, const std::string& label)
@@ -153,46 +147,46 @@ namespace AmpGen
     return rt;
   }
   
-  template <> struct TransitionMatrix<void>
+  template <> struct TransitionMatrix<void> : public CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>
   {
+    using amp_type    = CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>;
     TransitionMatrix() = default;
-    TransitionMatrix(const Particle& dt, 
+    TransitionMatrix(Particle dt, 
                      const TotalCoupling& coupling, 
-                     const CompiledExpression<void(complex_t*, const real_t*, const real_t*)> & amp) : 
+                     const amp_type& amp) : 
+          amp_type(amp),
           decayTree(dt), 
-          coupling(coupling), 
-          amp(amp) {}
+          coupling(coupling) {}
 
-    TransitionMatrix(const Particle& dt, 
+    TransitionMatrix(Particle dt, 
                      const TotalCoupling& coupling, 
                      const MinuitParameterSet& mps,
                      const std::map<std::string, unsigned>& evtFormat, 
                      const bool& debugThis=false) :
+      amp_type(dt.getExpression(debugThis ? &db : nullptr ), dt.decayDescriptor(), evtFormat, db, &mps ),
       decayTree(dt),
-      coupling(coupling),
-      amp(decayTree.getExpression(debugThis ? &db : nullptr ), decayTree.decayDescriptor(), evtFormat, db, &mps ) { amp.use_rto();}
+      coupling(coupling)
+      { use_rto();}
 
-    const std::vector<complex_t> operator()(const Event& event) const { 
-      std::vector<complex_t> rt(4); 
-      amp(rt.data(), amp.externBuffer().data(), event.address() ); 
+    const std::vector<complex_v> operator()(const Event& event) const 
+    { 
+      std::vector<complex_v> rt(4); 
+      #if ENABLE_AVX2 
+      amp_type::operator()(rt.data(), 1, externBuffer().data(), EventListSIMD::makeEvent(event).data());
+      #else
+      amp_type::operator()(rt.data(), 1, externBuffer().data(), event.address()); 
+      #endif
       return rt;
     }
-    const std::vector<complex_t> operator()(const Event& event, const size_t& cacheOffset) const { 
-      std::vector<complex_t> rt(4); 
-      amp(rt.data(), amp.externBuffer().data(), event.address() + cacheOffset); 
-      return rt;
-    }
+     
     const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
 
     Particle                                            decayTree;
     TotalCoupling                                       coupling;
     complex_t                                           coefficient;
     DebugSymbols                                        db; 
-    CompiledExpression<void(complex_t*, const real_t*, const real_t*)>  amp; 
-    size_t                                              addressData = {999};
     bool                                                workToDo    = {false};
-    std::string name() const { return amp.name(); }
-    unsigned returnTypeSize() const { return amp.returnTypeSize(); }
+    unsigned                                            size        = {0};
   };
  
 } // namespace AmpGen

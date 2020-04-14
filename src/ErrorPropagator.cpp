@@ -106,7 +106,7 @@ double LinearErrorPropagator::getError( const std::function<double(void)>& fcn )
   unsigned int N = m_cov.GetNrows();
   TVectorD errorVec( N );
   for ( unsigned int i = 0; i < N; ++i ) {
-    DEBUG( "Perturbing parameter: [" << m_parameters[i]->name() << "] " << startingValue << " by "
+    DEBUG( "Perturbing parameter: [" << m_parameters[i]->name() << "] " << m_parameters[i]->mean() << " by "
         << sqrt( m_cov( i, i ) ) << " " << m_parameters[i] );
     errorVec(i) = derivative(fcn,i);
     fcn(); 

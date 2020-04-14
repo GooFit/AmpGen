@@ -59,12 +59,12 @@ std::string Constant::to_string(const ASTResolver* resolver) const {
   std::string literalSuffix = "";
   if( resolver != nullptr && resolver->enableCuda() )
   {
-    complex_type = "ampgen_cuda::complex_t";
+    complex_type = "AmpGen::CUDA::complex_t";
     literalSuffix = "f";
   }
   if( resolver != nullptr && resolver->enableAVX() )
   {
-    complex_type = "AmpGen::AVX2::complex_t";
+    complex_type = "AmpGen::AVX2d::complex_t";
     literalSuffix = "f";
   }
   return std::imag(m_value) == 0 ? "(" + rounded_string(std::real(m_value)) +literalSuffix + ")" : 
@@ -215,7 +215,7 @@ Ternary::Ternary( const Expression& cond, const Expression& v1, const Expression
 }
 std::string Ternary::to_string(const ASTResolver* resolver) const
 {
-  return resolver != nullptr && resolver->enableAVX() ? "AmpGen::AVX2::select(" + m_cond.to_string(resolver) + ", " +
+  return resolver != nullptr && resolver->enableAVX() ? "AmpGen::AVX2d::select(" + m_cond.to_string(resolver) + ", " +
     m_v1.to_string(resolver) + ", " + m_v2.to_string(resolver) +")"
     : "(" + m_cond.to_string(resolver) + "?" + m_v1.to_string(resolver) + ":" + m_v2.to_string(resolver) + ")";
 }

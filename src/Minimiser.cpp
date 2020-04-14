@@ -29,9 +29,7 @@ double Minimiser::operator()( const double* xx )
     m_parSet->at( m_mapping[i] )->setCurrentFitVal( xx[i] );
   }
   double LL = m_theFunction() ;
-  for ( auto& extendTerm : m_extendedTerms ) {
-    LL -= 2 * extendTerm->getVal();
-  }
+  for ( auto& extendTerm : m_extendedTerms ) LL -= 2 * extendTerm->getVal();
   return LL - m_ll_zero;
 }
 
@@ -59,7 +57,7 @@ void Minimiser::prepare()
 {
   std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse");
   size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
-  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 2.0);
+  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 1.0);
   m_printLevel          = NamedParameter<size_t>( "Minimiser::PrintLevel", 4);
   m_normalise           = NamedParameter<bool>(   "Minimiser::Normalise",false);
   if ( m_minimiser != nullptr ) delete m_minimiser;
@@ -68,6 +66,8 @@ void Minimiser::prepare()
   m_minimiser->SetMaxFunctionCalls( maxCalls );
   m_minimiser->SetMaxIterations( 100000 );
   m_minimiser->SetTolerance( tolerance );
+//  m_minimiser->SetStrategy( 3 );
+  //  m_minimiser->SetPrecision(std::numeric_limits<double>::epsilon());
   m_minimiser->SetPrintLevel( m_printLevel );
   m_mapping.clear();
   m_covMatrix.clear();

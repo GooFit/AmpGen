@@ -3,9 +3,12 @@
 
 #include "AmpGen/Types.h"
 #include "AmpGen/EventList.h"
-#include "AmpGen/CompiledExpressionBase.h"
 #include <array>
 #include <complex>
+#include "AmpGen/simd/utils.h"
+#include "AmpGen/Store.h"
+#include "AmpGen/EventListSIMD.h"
+#include "AmpGen/EventList.h"
 
 /*
  *  Calculates Bilinears A_i A_j^* integrated over the phase-space.
@@ -43,7 +46,7 @@ namespace AmpGen
 
   template <class TYPE = complex_t> struct Integral 
   {
-    typedef std::function<void(TYPE)> TransferFCN;
+    typedef std::function<void(const TYPE&)> TransferFCN;
     size_t i = {0};
     size_t j = {0};
     TransferFCN transfer;
@@ -51,80 +54,67 @@ namespace AmpGen
     Integral(const size_t& i, const size_t& j, TransferFCN t) 
       : i(i), j(j), transfer(t) {}
   };
+  
   class Integrator
   {
-      typedef const complex_t& arg;
-      typedef std::function<void(arg)> TransferFCN;
+    typedef std::function<void(complex_t)> TransferFCN;
 
     public:
-      explicit Integrator( const EventList* events = nullptr );
+    Integrator() = default; 
 
-      bool isReady()            const;
-      const EventList* events() const;
-      void queueIntegral(const size_t& c1, 
-          const size_t& c2, 
-          const size_t& i, 
-          const size_t& j, 
-          Bilinears* out, 
-          const bool& sim = true);
-      void addIntegralKeyed( const size_t& c1, const size_t& c2, const TransferFCN& tFunc );
-      void queueIntegral(const size_t& i, const size_t& j, complex_t* result);
-      void flush();
-      void setBuffer( complex_t* pos, const complex_t& value, const size_t& size );
-      void setBuffer( complex_t* pos, const std::vector<complex_t>& value, const size_t& size);
-      complex_t get(const unsigned& i, const unsigned& evt) const { return m_cache[i * m_events->size() + evt ]; }
-      template <class T> unsigned getCacheIndex( const T& t ) const { return m_index.find( t.name() )->second.first; }
-      double norm() const { return m_norm; }
-      template <class T> void allocate( const std::vector<T>& expressions, const size_t& size_of = 0)
-      {
-        if( m_events == nullptr ) return; 
-        unsigned totalSize = 0; 
-        for( unsigned i = 0; i != expressions.size(); ++i ){
-          size_t vsize = size_of == 0 ? expressions[i].returnTypeSize() / sizeof(complex_t) : size_of;
-          m_index[ expressions[i].name() ] = std::make_pair(totalSize, vsize);
-          totalSize += vsize;
-        }
-        m_cache.resize( m_events->size() * totalSize );
+    template <typename EventList_type, typename T> Integrator( const EventList_type* events, const std::vector<T>& expressions ={}, const size_t& size_of =0) : m_events(events)
+    {
+      if( events == nullptr ) {
+        WARNING("No events specified, returning");
+        return; 
       }
-      
-      template <class T> void prepareExpression(const T& expression)
+      m_cache = Store<complex_v, Alignment::SoA>(events->size(), expressions, size_of );
+      m_weight.resize( events->nBlocks() );
+      float_v norm_acc = 0.;
+      for( size_t i = 0 ; i < events->nBlocks(); ++i )
       {
-        if( m_events == nullptr ) return; 
-        auto f = m_index.find( expression.name() ); 
-        if( f == m_index.end() ) FATAL("Expression: " << expression.name() << " is not registed");
-        auto [p0, s] = f->second;
-        INFO("Preparing: " << expression.name() << " index = " << p0 << " with: " << s << " values" );
-        if constexpr( std::is_same< typename T::return_type, void >::value ) 
-        {
-          #ifdef _OPENMP
-          #pragma omp parallel for
-          #endif
-          for ( size_t i = 0; i < m_events->size(); ++i )
-          { 
-            std::vector<complex_t> buf(s);
-            expression(&buf[0], expression.externBuffer().data(), m_events->at(i).address() );
-            for( unsigned j = 0; j != s; ++j ) m_cache[ (p0+j) * m_events->size() + i] = buf[j];
-          }
-        }
-        else {
-          #ifdef _OPENMP
-          #pragma omp parallel for
-          #endif
-          for ( size_t i = 0; i < m_events->size(); ++i )
-            setBuffer( &(m_cache[p0 * m_events->size() +i] ), expression(m_events->at(i).address()),s );
-        }
+        m_weight[i]  = events->weight(i) / events->genPDF(i);
+        norm_acc = norm_acc + m_weight[i]; 
       }
+      m_norm = utils::sum_elements(norm_acc);
+    }
+
+    bool isReady()            const;
+    void queueIntegral(const size_t& c1, 
+        const size_t& c2, 
+        const size_t& i, 
+        const size_t& j, 
+        Bilinears* out, 
+        const bool& sim = true);
+    void addIntegralKeyed( const size_t& c1, const size_t& c2, const TransferFCN& tFunc );
+    void queueIntegral(const size_t& i, const size_t& j, complex_t* result);
+    void flush();
     
+    template <class return_type> return_type get( const unsigned& index, const unsigned& evt ) const ;
+    template <class T> unsigned getCacheIndex( const T& t ) const { return m_cache.find(t) ; }
+    double norm() const { return m_norm; }
+
+    template <class T> void updateCache(const T& expression)
+    {
+      #if ENABLE_AVX2
+      if( m_events != nullptr ) m_cache.update( static_cast<const EventListSIMD*>(m_events)->store(), expression );
+      #else
+      if( m_events != nullptr ) m_cache.update( static_cast<const EventList*>(m_events)->store(), expression );
+      #endif
+    }
+    template <class T>
+    const T* events() const { return static_cast<const T*>(m_events) ; }
+
     private:
-      static constexpr size_t             N         = {10}; ///unroll factor
-      size_t                              m_counter = {0};  ///
-      std::array<Integral<arg>, N>        m_integrals;
-      const EventList*                    m_events  = {nullptr};
-      std::vector<complex_t>              m_cache;
-      std::vector<double>                 m_weight; 
-      std::map<std::string, std::pair<unsigned, unsigned>>       m_index; 
-      double                              m_norm    = {0};
-      void integrateBlock();
+    static constexpr size_t             N         = {8}; ///unroll factor
+    size_t                              m_counter = {0};  ///
+    std::array<Integral<complex_t>, N>  m_integrals;
+    const void*                         m_events  = {nullptr};
+    std::vector<float_v>                m_weight; 
+    Store<complex_v, Alignment::SoA>    m_cache;      
+    double                              m_norm    = {0};
+    void integrateBlock();
   };
+
 } // namespace AmpGen
 #endif

@@ -32,10 +32,18 @@
 #include <TFile.h>
 #include <TRandom3.h>
 
+#if ENABLE_AVX2
+  #include "AmpGen/EventListSIMD.h"
+  using EventList_type = AmpGen::EventListSIMD;
+#else
+  #include "AmpGen/EventList.h"
+  using EventList_type = AmpGen::EventList; 
+#endif
+
 using namespace AmpGen;
 
 template <typename PDF>
-FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS );
+FitResult* doFit( PDF&& pdf, EventList_type& data, EventList_type& mc, MinuitParameterSet& MPS );
 
 int main( int argc, char* argv[] )
 {
@@ -79,6 +87,7 @@ int main( int argc, char* argv[] )
      the parsed options. For historical reasons, this is referred to as loading it from a "Stream" */
   MinuitParameterSet MPS;
   MPS.loadFromStream();
+  for( auto& p : MPS ) if( p->flag() == Flag::Free ) p->setResult( gRandom->Gaus( p->mean(), p->err() ), p->err(), 0,0 );
 
   /* An EventType specifies the initial and final state particles as a vector that will be described by the fit. 
      It is typically loaded from the interface parameter EventType. */
@@ -94,12 +103,12 @@ int main( int argc, char* argv[] )
   /* Events are read in from ROOT files. If only the filename and the event type are specified, 
      the file is assumed to be in the specific format that is defined by the event type, 
      unless the branches to load are specified in the user options */
-  EventList events(dataFile, evtType, Branches(bNames), GetGenPdf(false) );
+  EventList_type events(dataFile, evtType, Branches(bNames), GetGenPdf(false) );
   
   /* Generate events to normalise the PDF with. This can also be loaded from a file, 
      which will be the case when efficiency variations are included. Default number of normalisation events 
      is 2 million. */
-  EventList eventsMC = Generator<>(evtType, &rndm).generate(int(2e6));
+  EventList_type eventsMC = Generator<>(evtType, &rndm).generate(int(2e6));
   
   sig.setMC( eventsMC );
 
@@ -107,7 +116,7 @@ int main( int argc, char* argv[] )
   
   /* Do the fit and return the fit results, which can be written to the log and contains the 
      covariance matrix, fit parameters, and other observables such as fit fractions */
-  FitResult* fr = doFit(make_pdf(sig), events, eventsMC, MPS );
+  FitResult* fr = doFit(make_pdf<EventList_type>(sig), events, eventsMC, MPS );
   /* Calculate the `fit fractions` using the signal model and the error propagator (i.e. 
      fit results + covariance matrix) of the fit result, and write them to a file. 
    */
@@ -116,20 +125,12 @@ int main( int argc, char* argv[] )
   INFO("Adding fraction to file..."); 
   fr->addFractions( fitFractions );
   INFO("Writing file ... ");
-  fr->writeToFile( logFile );
-  output->cd();
-  
-  /* Write out the data plots. This also shows the first example of the named arguments 
-     to functions, emulating python's behaviour in this area */
-
-  auto plots = events.makeDefaultProjections(PlotOptions::Prefix("Data"), PlotOptions::Bins(100));
-  for ( auto& plot : plots ) plot->Write();
-
+  fr->writeToFile( logFile ); 
   output->Close();
 }
 
 template <typename PDF>
-FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS )
+FitResult* doFit( PDF&& pdf, EventList_type& data, EventList_type& mc, MinuitParameterSet& MPS )
 {
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time      = std::clock();
@@ -166,6 +167,18 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - time_wall ).count();
   INFO( "Wall time = " << tWall / 1000. );
   INFO( "CPU  time = " << time_cpu );
+  auto evaluator     = pdf.componentEvaluator(&mc);
+  auto projections   = data.eventType().defaultProjections(100); 
+  
+  /* Write out the data plots. This also shows the first example of the named arguments 
+     to functions, emulating python's behaviour in this area */
+
+  for( const auto& proj : projections )
+  {
+    proj(mc, evaluator,                                           PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
+    //proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
+    proj(data, PlotOptions::Prefix("Data") )->Write();
+  }
   fr->print();
   return fr;
 }

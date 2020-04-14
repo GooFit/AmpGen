@@ -7,6 +7,7 @@ namespace AmpGen {
     std::array<stored_type, simd_size> m_buffer;
     size_t                   m_pos{0};
     public:
+    int pos() const { return m_pos ; }
     scatter_iterator( const size_t& pos, store_type* store ) : 
       m_store(store), 
       m_pos(pos) { 
@@ -36,6 +37,7 @@ namespace AmpGen {
     }
     bool operator==( const scatter_iterator& rhs ) const { return m_pos == rhs.m_pos ; }
     bool operator!=( const scatter_iterator& rhs ) const { return m_pos != rhs.m_pos ; }
+    friend int  operator-( const scatter_iterator& lhs, const scatter_iterator& rhs) { return lhs.pos() - rhs.pos() ; } 
   };
   template<unsigned simd_size, bool modifiable = false, class store_type> 
     auto make_scatter_iterator( const unsigned& pos, store_type* store) { 

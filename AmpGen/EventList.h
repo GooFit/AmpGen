@@ -31,10 +31,9 @@ namespace AmpGen
   {
   private:
     std::vector<Event>                  m_data              = {};
-    std::vector<complex_t>              m_cache             = {};
     EventType                           m_eventType         = {};
-    std::map<uint64_t, unsigned int>    m_pdfIndex          = {};
     std::map<std::string, unsigned int> m_extensions        = {};
+        
   public:
     typedef Event value_type;
     EventList() = default;
@@ -55,8 +54,7 @@ namespace AmpGen
     {
       loadFromTree( tree, ArgumentPack(args...) );
     }
-    
-    void resetCache();
+    const EventList& store()                      const { return *this;}    
     std::vector<Event>::reverse_iterator rbegin()       { return m_data.rbegin(); }
     std::vector<Event>::reverse_iterator rend()         { return m_data.rend(); }
     std::vector<Event>::iterator begin()                { return m_data.begin(); }
@@ -70,69 +68,22 @@ namespace AmpGen
     EventType eventType()                         const { return m_eventType; }
     const Event& at( const size_t& pos )          const { return m_data[pos]; }
     size_t size()                                 const { return m_data.size(); }
+    size_t aligned_size()                         const { return m_data.size() ; }
+    size_t nBlocks()                              const { return m_data.size() ; }
     double integral()                             const;
-    
+    real_t weight( const size_t& pos)             const { return m_data[pos].weight(); }
+    real_t genPDF( const size_t& pos)             const { return m_data[pos].genPdf(); }
     void reserve( const size_t& size ) { m_data.reserve( size ); }
     void push_back( const Event& evt ) { m_data.push_back( evt ); }
     void setEventType( const EventType& type ) { m_eventType = type; }
     void add( const EventList& evts );
     void loadFromTree( TTree* tree, const ArgumentPack& args ); 
     void loadFromFile( const std::string& fname, const ArgumentPack& args );
-    void printCacheInfo( const unsigned int& nEvt = 0 );
     void clear();
     void erase( const std::vector<Event>::iterator& begin, const std::vector<Event>::iterator& end );
 
     TTree* tree( const std::string& name, const std::vector<std::string>& extraBranches = {} ) const;
-    
-    size_t getCacheIndex( const CompiledExpressionBase& PDF, bool& status ) const;
-    size_t getCacheIndex( const CompiledExpressionBase& PDF ) const;
-    template <class T> size_t registerExpression(const T& expression, const size_t& size_of=0)
-    {
-      auto key = FNV1a_hash( expression.name() );
-      auto pdfIndex = m_pdfIndex.find( key );
-      if ( pdfIndex != m_pdfIndex.end() ) return pdfIndex->second;
-      else {
-        size_t expression_size = size_of == 0 ? expression.returnTypeSize() / sizeof(complex_t) : size_of; 
-        m_pdfIndex[key] = m_cache.size() / m_data.size();
-        m_cache.resize( m_cache.size() + m_data.size() * expression_size );
-        return m_pdfIndex[key];
-      }
-    }
-    complex_t cache( const unsigned& evtIndex, const unsigned& cacheElement )
-    {
-      unsigned cacheSize = m_cache.size() / m_data.size();
-      return m_cache[cacheSize * evtIndex + cacheElement];
-    }
-    void setCache( const complex_t& v, const unsigned& p )
-    {
-      m_cache[p] = v; 
-    }
-    void setCache( const std::vector<complex_t>& v, const unsigned& p )
-    {
-      std::memmove(m_cache.data() +p, v.data(), sizeof(complex_t) * v.size() );
-    }
-    template <class FCN> void updateCache( const FCN& fcn, const size_t& index )
-    {
-      unsigned cacheSize = m_cache.size() / m_data.size();
-      if constexpr( std::is_same< typename FCN::return_type, void >::value ) 
-      {
-        #ifdef _OPENMP
-        #pragma omp parallel for
-        #endif
-        for ( size_t evt = 0; evt < size(); ++evt )
-        {
-          fcn( m_cache.data() + cacheSize*evt +index , fcn.externBuffer().data(), m_data[evt].address() );
-        }
-      }
-      else {
-        #ifdef _OPENMP
-        #pragma omp parallel for
-        #endif
-        for ( size_t evt = 0; evt < size(); ++evt ) { setCache( fcn(m_data[evt].address() ), cacheSize*evt + index ) ; }
-      }
-    }
-    void reserveCache(const size_t& index);
-    void resizeCache(const size_t& newCacheSize );
+     
     TH1D* makeProjection(const Projection& projection  , const ArgumentPack& args = ArgumentPack()) const; 
     TH2D* makeProjection(const Projection2D& projection, const ArgumentPack& args = ArgumentPack()) const;
     std::vector<TH1D*> makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args );
