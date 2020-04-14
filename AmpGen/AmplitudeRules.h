@@ -108,8 +108,11 @@ namespace AmpGen
     #if ENABLE_AVX2 
     const RT operator()(const Event& event) const { return amp_type::operator()(EventListSIMD::makeEvent(event).data()); }
     #else
-    const RT operator()(const Event& event) const { return amp_type::operator()(event.address()); }
+    const RT operator()(const Event& event) const { return amp_type::operator()(event.address()) ; }
     #endif
+    template <class... arg_types> auto operator()(arg_types... args ) const { return amp_type::operator()(args...) ; }
+    
+    const RT operator()(const float_v* t) const     { return amp_type::operator()(t) ; }
     const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
 
     Particle                                            decayTree;
@@ -178,6 +181,7 @@ namespace AmpGen
       #endif
       return rt;
     }
+    template <class... arg_types> auto operator()(arg_types... args ) const { return amp_type::operator()(args...) ; }
      
     const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
 

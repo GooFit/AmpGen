@@ -121,7 +121,7 @@ namespace AmpGen {
           #pragma omp parallel for
           #endif
           for ( size_t evt = 0; evt < events.size(); ++evt ){
-            auto tmp = fcn( events[evt].address( ) );
+            auto tmp = fcn( events[evt].address() );
             store( evt, p0, &tmp, s);
           }
         }

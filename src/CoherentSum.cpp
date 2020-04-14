@@ -342,12 +342,14 @@ float_v CoherentSum::operator()( const float_v* /*evt*/, const unsigned block ) 
 std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type* ievents) const 
 {
   auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
-  Store<complex_v, Alignment::AoS> store( events->store(), m_matrixElements);
+  Store<complex_v, Alignment::AoS> store( events->size(), m_matrixElements);
+  for( auto& me : m_matrixElements ) store.update(m_events->store(), me );
+  
   std::vector<double> values( events->aligned_size() );
   #ifdef _OPENMP
   #pragma omp parallel for
   #endif
-  for( unsigned int block = 0 ; block != events->nBlocks(); ++block )
+  for( unsigned int block = 0 ; block < events->nBlocks(); ++block )
   {
     complex_v amp(0.,0.);
     for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ) 
@@ -369,7 +371,7 @@ KeyedView<double, CoherentSum::EventList_type> CoherentSum::componentEvaluator(c
     #ifdef _OPENMP
     #pragma omp parallel for
     #endif
-    for( unsigned evt = 0 ; evt != events->size(); ++evt )
+    for( unsigned evt = 0 ; evt < events->size(); ++evt )
     {
       complex_t total = 0;
       for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ){
