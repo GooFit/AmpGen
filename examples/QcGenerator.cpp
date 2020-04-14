@@ -184,7 +184,7 @@ template <class T1, class T2> class Psi3770 {
     DTEventList generate( const size_t& N )
     {
       DTEventList output( m_signalType, m_tagType );
-      ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__));
+      ProgressBar pb(60, detail::trimmedString(__PRETTY_FUNCTION__));
       auto tStartTotal = std::chrono::high_resolution_clock::now();
       int currentSize  = 0;
       double norm      = -1;

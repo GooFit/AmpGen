@@ -203,20 +203,16 @@ bool AmpGen::stringMatchesWildcard( const std::string& input, const std::string&
 {
   auto pos = wildcard_string.find( wildcard_character ); /// TEST_foobar -> *_foobar
   if ( wildcard_string.size() == 1 && wildcard_string[0] == wildcard_character ) {
-    DEBUG( "Returning true" );
     return true;
   }
   if ( pos == std::string::npos ) {
-    DEBUG( "Returning " << input << " = " << wildcard_string << " ?" );
     return input == wildcard_string;
   }
   if ( pos == wildcard_string.size() - 1 ) {
-    DEBUG( "Returning " << input << " contains " << wildcard_string );
     return input.find( wildcard_string.substr( 0, wildcard_string.size() - 1 ) ) == 0;
   } else {
     const std::string pattern1 = wildcard_string.substr( 0, pos + 1 );
     const std::string pattern2 = wildcard_string.substr( pos + 1 );
-    DEBUG( "Matching " << pattern1 << " to " << input );
     bool match1 = stringMatchesWildcard( input, pattern1, wildcard_character );
     if ( !match1 ) return false;
     auto pos2             = pattern2.find( wildcard_character );
@@ -285,6 +281,15 @@ void AmpGen::printSplash()
   #elif defined(__GNUC__) || defined(__GNUG__)
     std::cout << "gcc " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__;
   #endif
+  #if ENABLE_AVX2 
+    std::cout << " (avx2;";
+  #if DOUBLE_PRECISION
+    std::cout << " double)";
+  #else
+    std::cout << " single)";
+  #endif
+  #endif
+    
   std::cout << "  " << __DATE__ << " " << __TIME__ << bold_off << "\n\n";
 
   char* AmpGenRoot = getenv("AMPGENROOT");
@@ -336,7 +341,6 @@ std::string AmpGen::expandGlobals( std::string path )
     std::string old_path = path;
     size_t len           = end_pos == std::string::npos ? path.length() - pos + 1 : end_pos - pos + 1;
     path                 = path.replace( pos, len, global_var );
-    DEBUG( old_path << " -> " << path );
   } while ( pos != std::string::npos );
 
   return path;

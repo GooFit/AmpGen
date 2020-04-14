@@ -15,6 +15,8 @@ namespace AmpGen
      Deals with final state configuration of events,
      specifically dealing with the ordering of particles in trees.
    */
+  class EventType; 
+  std::ostream& operator<<( std::ostream& os, const EventType& type );
 
   class EventType
   {
@@ -63,6 +65,8 @@ namespace AmpGen
 
       /// Calculates the number of spin indices associated with the initial and final state, i.e. the rank of the relevant transition matrix.
       std::pair<unsigned, unsigned> dim() const;
+  
+      friend std::ostream& AmpGen::operator<<( std::ostream& os, const EventType& type );
 
     private:
       std::string               m_mother;               ///< name of decaying particle
@@ -76,7 +80,6 @@ namespace AmpGen
       std::pair<unsigned, unsigned> m_dim;              ///< Rank of the relevant transition matrix
       bool                      m_alt_part_names;       ///< alternative naming in ouput tree (e.g. Xi- pi+ pi+ becomes Xim pip0 pip1 rather than _1_Xi# _2_pi~ _3_pi~)
   };
-  std::ostream& operator<<( std::ostream& os, const EventType& type );
 } // namespace AmpGen
 
 #endif

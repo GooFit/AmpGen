@@ -75,21 +75,19 @@ namespace AmpGen
         for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
         #pragma omp parallel for reduction( +: LL )
         for ( unsigned int block = 0; block < m_events->nBlocks(); ++block ) {
-          LL += log(this->operator()(m_events->block(block), block));
+          LL += m_events->weight(block) *  log(this->operator()(m_events->block(block), block));
         }
         return -2 * utils::sum_elements(LL);
       }
       #endif
     } 
     /// Returns the probability for the given event. 
-    #if ENABLE_AVX2 
     float_v operator()( const float_v* evt , const unsigned block)
     {
       float_v prob = 0.f;
       for_each( this->m_pdfs, [&prob, &evt,block]( const auto& f ) { prob += f(evt, block); } );
       return prob;
     }
-    #endif
     /// Returns the probability for the given event. 
     double operator()( const eventValueType& evt )
     {

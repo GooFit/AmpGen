@@ -102,7 +102,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     else {
       auto as_tensor = cast<TensorExpression>(m_obj).tensor();
       for(unsigned j=0; j != as_tensor.size(); ++j )
-        stream << "r["<<j<<"] = " << as_tensor[j].to_string(m_resolver.get()) << ";\n";
+        stream << "r[s * "<< j<<"] = " << as_tensor[j].to_string(m_resolver.get()) << ";\n";
       stream << "}\n";  
     }
   }
@@ -119,7 +119,6 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   }
 
   if( NamedParameter<bool>("IncludePythonBindings", false) == true && returnTypename().find("complex") != std::string::npos ){
-//    stream << "#pragma clang diagnostic pop\n\n";
     stream << "extern \"C\" void " <<  progName() << "_c" << "(double *real, double *imag, " << fcnSignature() << "){\n";
     stream << "  auto val = " << progName() << "(" << args() << ") ;\n"; 
     stream << "  *real = val.real();\n";
@@ -161,10 +160,10 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
   }
 }
 
-std::string CompiledExpressionBase::fcnSignature(const std::vector<std::string>& argList, bool rto=false)
+std::string CompiledExpressionBase::fcnSignature(const std::vector<std::string>& argList, bool rto, bool includeStagger)
 {
   unsigned counter=0;
   auto fcn = [counter](const auto& str) mutable {return str + " x"+std::to_string(counter++); }; 
-  if( rto ) return argList[0] + " r, " + vectorToString( argList.begin()+1, argList.end(), ", ", fcn );
+  if( rto ) return argList[0] + " r, " + argList[1] + " s, " + vectorToString( argList.begin()+2, argList.end(), ", ", fcn );
   return vectorToString( argList.begin(), argList.end(), ", ", fcn);
 }

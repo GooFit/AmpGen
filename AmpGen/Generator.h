@@ -76,7 +76,7 @@ namespace AmpGen
             auto size0       = list.size();
             auto tStartTotal = std::chrono::high_resolution_clock::now();
             pdf.reset( true );
-            ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__) );
+            ProgressBar pb(60, detail::trimmedString(__PRETTY_FUNCTION__) );
             ProfileClock t_phsp, t_eval, t_acceptReject;
             std::vector<bool> efficiencyReport(m_generatorBlock,false); 
             
@@ -92,7 +92,7 @@ namespace AmpGen
               if ( maxProb == 0 ) {
                 double max = 0;
                 for ( auto& evt : mc ) {
-                  double value           = pdf.prob_unnormalised(evt) / evt.genPdf();
+                  double value           = pdf(evt) / evt.genPdf();
                   if ( value > max ) max = value;
                 }
                 maxProb = max * 1.5;
@@ -104,7 +104,7 @@ namespace AmpGen
               #pragma omp parallel for
               #endif
               for ( size_t i=0; i < mc.size(); ++i ) 
-                mc[i].setGenPdf(pdf.prob_unnormalised(mc[i]) / mc[i].genPdf());
+                mc[i].setGenPdf(pdf(mc[i]) / mc[i].genPdf());
 
               for( size_t i=0; i != mc.size(); ++i )
               { 

@@ -21,7 +21,6 @@
 #include "AmpGen/Tensor.h"
 #include "AmpGen/MinuitParameter.h"
 
-#include "AmpGen/IntegratorSIMD.h"
 
 #include "TMatrixD.h"
 
@@ -38,49 +37,47 @@ namespace AmpGen
   {
     public: 
     #if ENABLE_AVX2
-      using EventList_type = EventListSIMD; 
-      using Integrator_type= IntegratorSIMD;
-      using complex_v      = AVX2::complex_t; 
-      using float_v        = AVX2::float_t;
+      using EventList_type  = EventListSIMD; 
     #else 
       using EventList_type  = EventList; 
-      using Integrator_type = Integrator;
-      using complex_v       = complex_t;
-      using float_v         = real_t; 
     #endif
 
       PolarisedSum() = default; 
       PolarisedSum(const EventType&, MinuitParameterSet&, const std::vector<MinuitProxy>& = {});
       void prepare();
-      void setEvents(EventList&);
-      void setMC(EventList&);
+      void setEvents(EventList_type&);
+      void setMC(EventList_type&);
+      #if ENABLE_AVX2
+        void setEvents(EventList& evts){ m_ownEvents = true; setEvents( *new EventList_type(evts)) ; };
+        void setMC(EventList& evts){ setMC( *new EventList_type(evts)) ; };
+      #endif
+      float_v operator()( const float_v*, const unsigned) const; 
+      real_t  operator()(const Event& evt) const;
       void reset(const bool& = false);
       void debug(const Event&);
       void debug_norm(); 
       void setWeight(MinuitProxy);
       double getWeight() const;
-      void calculateNorms(); 
+      void updateNorms(); 
       void generateSourceCode(const std::string&, const double& = 1, bool = false);
-      void build_probunnormalised();
       Expression probExpression(const Tensor&, const std::vector<Expression>&, DebugSymbols* = nullptr) const; 
       size_t size() const;  
       real_t norm() const;
       complex_t norm(const size_t&, const size_t&, Integrator* = nullptr); 
-      inline real_t operator()(const Event& evt) const { return m_weight * prob_unnormalised(evt) / m_norm; }
-      real_t prob_unnormalised(const Event&) const;
-      real_t prob(const Event&) const;
-      real_t getValNoCache(const Event&) ;
+      real_t getValNoCache(const Event&) const;
       std::vector<FitFraction> fitFractions(const LinearErrorPropagator&);
       std::vector<TransitionMatrix<void>> matrixElements() const;
       void transferParameters(); 
       Tensor transitionMatrix();
       const TransitionMatrix<void>& operator[](const size_t& i) const { return m_matrixElements[i] ; } 
-      std::function<real_t(const Event&)> evaluator(const EventList* = nullptr) const; 
-      KeyedView<double, EventList> componentEvaluator(const EventList* = nullptr) const;     
+      std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
+      KeyedView<double, EventList_type> componentEvaluator(const EventList_type* = nullptr) const;     
     private: 
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};
-      EventList*                    m_events      = {nullptr};
+      EventList_type*               m_events      = {nullptr};
+      Store<complex_v, Alignment::AoS> m_cache    = {};
+      bool                          m_ownEvents   = {false};
       MinuitParameterSet*           m_mps         = {nullptr};
       MinuitProxy                   m_weight      = {nullptr,1}; 
       std::vector<MinuitProxy>      m_pVector     = {}; 
@@ -94,9 +91,9 @@ namespace AmpGen
       std::vector<size_t>           m_integIndex; 
       AmplitudeRules                m_rules;  
       std::pair<unsigned, unsigned> m_dim; 
-      std::vector<TransitionMatrix<void>>                         m_matrixElements;  
-      CompiledExpression<real_t(const real_t*, const complex_t*)> m_probExpression; 
-      
+      std::vector<TransitionMatrix<void>>                          m_matrixElements;  
+      CompiledExpression<float_v(const real_t*, const complex_v*)> m_probExpression; 
+      std::vector<float_v>          m_pdfCache; 
       std::vector<std::vector<int>> indexProduct(const std::vector<std::vector<int>>&, const std::vector<int>&) const;
       std::vector<int> polarisations(const std::string&) const ;
   };

@@ -185,39 +185,11 @@ TH2D* EventList::makeProjection( const Projection2D& projection, const ArgumentP
   return plot;
 }
 
-void EventList::printCacheInfo( const unsigned int& nEvt )
-{
-  for ( auto& ind : m_pdfIndex ) {
-    INFO( "Cache[" << ind.second << "] = " << ind.first << " = " << cache(nEvt, ind.second ) );
-  }
-}
-
-size_t EventList::getCacheIndex( const CompiledExpressionBase& PDF ) const
-{
-  auto pdfIndex = m_pdfIndex.find( FNV1a_hash( PDF.name() ) );
-  if ( pdfIndex != m_pdfIndex.end() )
-    return pdfIndex->second;
-  else
-    ERROR( "FATAL: PDF Index for " << PDF.name() << " not found" );
-  return 999;
-}
-
-size_t EventList::getCacheIndex( const CompiledExpressionBase& PDF, bool& isRegistered ) const
-{
-  auto pdfIndex = m_pdfIndex.find( FNV1a_hash( PDF.name() ) );
-  if ( pdfIndex != m_pdfIndex.end() ) {
-    isRegistered = true;
-    return pdfIndex->second;
-  }
-  isRegistered = false;
-  return 999;
-}
-
-void EventList::resetCache()
-{
-  m_pdfIndex.clear();
-  m_cache.clear();
-}
+// void EventList::resetCache()
+// {
+//   m_index.clear();
+//   //m_cache.clear();
+// }
 
 double EventList::integral() const
 {
@@ -226,8 +198,6 @@ double EventList::integral() const
 
 void EventList::add( const EventList& evts )
 {
-  resetCache();
-  WARNING( "Adding event lists invalidates cache state" );
   for ( auto& evt : evts ) m_data.push_back( evt );
 }
 
@@ -242,9 +212,9 @@ void EventList::erase(const std::vector<Event>::iterator& begin,
   m_data.erase( begin, end );
 }
 
-void EventList::reserveCache(const size_t& size)
-{ 
-  if ( size * m_data.size() >= m_cache.size() )
-    m_cache.reserve( m_data.size() * m_cache.size() );
-}
+//void EventList::reserveCache(const size_t& size)
+//{ 
+//  if ( size * m_data.size() >= m_cache.size() )
+//    m_cache.reserve( m_data.size() * m_cache.size() );
+//}
 

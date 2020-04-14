@@ -53,11 +53,11 @@ namespace AmpGen
     virtual bool isReady() const               = 0;
     virtual std::string returnTypename() const = 0;
     virtual std::string fcnSignature()   const = 0;
-    virtual std::string args(bool=false) const = 0;
+    virtual std::string args()           const = 0;
     virtual void print() const                 = 0;
     virtual ~CompiledExpressionBase();
     virtual unsigned returnTypeSize() const    = 0;    
-    static std::string fcnSignature(const std::vector<std::string>&, bool); 
+    static std::string fcnSignature(const std::vector<std::string>&, bool=false, bool=true); 
     virtual bool use_rto() const     = 0;
     Expression expression() const { return m_obj; }
     void enableBatch() { m_enableBatch  = true ; }

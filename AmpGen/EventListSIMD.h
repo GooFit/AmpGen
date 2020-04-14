@@ -23,29 +23,20 @@
   #include <omp.h>
 #endif
 
-#if ENABLE_AVX2
-
-  #include "AmpGen/simd/avx2_types.h"
-  #include "AmpGen/simd/iterator.h"
+#include "AmpGen/simd/iterator.h"
+#include "AmpGen/simd/utils.h"
+#include "AmpGen/Store.h"
 
 namespace AmpGen
 {
-  using float_v   = AVX2::float_t;
-  using complex_v = AVX2::complex_t; 
-
   class CompiledExpressionBase; 
   class EventListSIMD
   {
   private:
-    std::vector<float_v>         m_data              = {};
-    std::vector<float_v>         m_weights           = {};
-    std::vector<float_v>         m_genPDF            = {};
-    std::vector<complex_v>       m_cache             = {};
-    EventType                    m_eventType         = {};
-    std::map<uint64_t, unsigned> m_pdfIndex          = {};
-    unsigned                     m_eventSize         = {0};
-    unsigned                     m_nEvents           = {0};
-    unsigned                     m_nBlocks           = {0};
+    Store<float_v, Alignment::AoS>   m_data      {};
+    std::vector<float_v>             m_weights   {};
+    std::vector<float_v>             m_genPDF    {};
+    EventType                        m_eventType {};
   public:
     typedef Event value_type;
     EventListSIMD() = default;
@@ -66,63 +57,36 @@ namespace AmpGen
     {
       loadFromTree( tree, ArgumentPack(args...) );
     }
-    const float_v* data() const { return m_data.data(); }
-    const AVX2::complex_t* cache() const { return m_cache.data() ; } 
     EventListSIMD( const EventList& other );     
-    void resetCache();
-    const AVX2::complex_t cache( const unsigned& evtIndex, const unsigned& cachePos )
-    {
-      return m_cache[ (unsigned)(evtIndex/float_v::size) * cacheSize() + cachePos ]; 
-    }
+    const float_v* data() const { return m_data.data(); }
+    operator Store<float_v, Alignment::AoS> () const { return m_data ; }
+    const auto& store() const { return m_data; }    
     const Event at(const unsigned& p) const { return EventListSIMD::operator[](p) ; }
-    const float_v* block(const unsigned& p) { return m_data.data() + p * m_eventSize ; }
+    const float_v* block(const unsigned& p) { return m_data.data() + p * m_data.nFields(); }
     float_v weight(const unsigned& p) const { return m_weights[p]; }
     float_v genPDF(const unsigned& p) const { return m_genPDF[p]; }
     const Event operator[]( const size_t&) const;
-    std::array<Event, float_v::size> scatter(unsigned) const;
-    void gather(const std::array<Event, float_v::size>&, unsigned);   
-    auto begin() const { return make_scatter_iterator<float_v::size>(0,this); }
-    auto   end() const { return make_scatter_iterator<float_v::size>(m_nEvents, (const EventListSIMD*)(nullptr) ); } 
-    auto begin()       { return make_scatter_iterator<float_v::size, true>(0, this); }
-    auto   end()       { return make_scatter_iterator<float_v::size, true>(m_nEvents, (EventListSIMD*)(nullptr) ); }
+    std::array<Event, utils::size<float_v>::value> scatter(unsigned) const;
+    void gather(const std::array<Event, utils::size<float_v>::value>&, unsigned);   
+    auto begin() const { return make_scatter_iterator<utils::size<float_v>::value>(0,this); }
+    auto   end() const { return make_scatter_iterator<utils::size<float_v>::value>(size(), (const EventListSIMD*)(nullptr) ); } 
+    auto begin()       { return make_scatter_iterator<utils::size<float_v>::value, true>(0, this); }
+    auto   end()       { return make_scatter_iterator<utils::size<float_v>::value, true>(size(), (EventListSIMD*)(nullptr) ); }
     EventType eventType()                         const { return m_eventType; }
-    size_t aligned_size()                         const { return nBlocks() * float_v::size; } ///aligned number of events
-    size_t cacheSize()                            const { return m_cache.size() / m_nBlocks; }  /// number of cached elements
+    size_t aligned_size()                         const { return m_data.aligned_size(); }
     double integral()                             const;
-    size_t eventSize()                            const { return m_eventSize; }
-    size_t size()                                 const { return m_nEvents ; }
-    size_t nBlocks()                              const { return m_nBlocks; }
-    void reserve( const size_t& size ) { m_data.reserve( size * m_eventType.size() ); }
-    void setEventType( const EventType& type ) { m_eventType = type; m_eventSize = m_eventType.size(); }
+    size_t eventSize()                            const { return m_data.nFields(); }
+    size_t size()                                 const { return m_data.size(); }
+    size_t nBlocks()                              const { return m_data.nBlocks(); }
+    void setEventType( const EventType& type ) { m_eventType = type; }
     void add( const EventListSIMD& evts );
     void loadFromTree( TTree* tree, const ArgumentPack& args ); 
     void loadFromFile( const std::string& fname, const ArgumentPack& args );
-    void printCacheInfo( const unsigned int& nEvt = 0 );
     void clear();
 
     TTree* tree( const std::string& name, const std::vector<std::string>& extraBranches = {} ) const;
     
-    size_t getCacheIndex( const CompiledExpressionBase& PDF, bool& status ) const;
-    size_t getCacheIndex( const CompiledExpressionBase& PDF ) const;
-    template <class T> unsigned registerExpression(const T& expression, const unsigned& size_of=0)
-    {
-      auto key = FNV1a_hash( expression.name() );
-      auto pdfIndex = m_pdfIndex.find( key );
-      if ( pdfIndex != m_pdfIndex.end() ) return pdfIndex->second;
-      else {
-        unsigned nEvents = aligned_size();
-        unsigned expression_size = size_of == 0 ? expression.returnTypeSize() / sizeof(AmpGen::AVX2::complex_t) : size_of; 
-        m_pdfIndex[key] = m_cache.size() / nBlocks(); 
-        m_cache.resize(m_cache.size() + nBlocks() * expression_size);
-        return m_pdfIndex[key];
-      }
-    }
-    template <class FCN> void updateCache( const FCN& fcn, const size_t& index )
-    {
-      fcn.batch(m_cache.data() + index, aligned_size(), m_eventSize, cacheSize(), fcn.externBuffer().data(), m_data.data());
-    }
-    void reserveCache(const unsigned& index);
-    void resizeCache( const unsigned& index);
+
     TH1D* makeProjection(const Projection& projection  , const ArgumentPack& args = ArgumentPack()) const; 
     TH2D* makeProjection(const Projection2D& projection, const ArgumentPack& args = ArgumentPack()) const;
     std::vector<TH1D*> makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args );
@@ -168,6 +132,4 @@ namespace AmpGen
   };
 
 } // namespace AmpGen
-#endif
-
 #endif

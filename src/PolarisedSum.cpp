@@ -29,11 +29,19 @@
 #include "AmpGen/DiracMatrices.h"
 #include "AmpGen/Simplify.h"
 #include "AmpGen/enum.h"
+#include "AmpGen/simd/utils.h"
 
 using namespace AmpGen;
 using namespace std::complex_literals; 
 
 namespace AmpGen { make_enum(spaceType, spin, flavour) }
+
+std::vector<Expression> convertProxies(const std::vector<MinuitProxy>& proxyVector, const std::function<Expression(const MinuitProxy&)>& transform)
+{
+  std::vector<Expression> rt;
+  std::transform(proxyVector.begin(), proxyVector.end(), std::back_inserter(rt), transform );
+  return rt; 
+}
 
 PolarisedSum::PolarisedSum(const EventType& type, 
                            MinuitParameterSet& mps, 
@@ -63,9 +71,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
     {
       tp.enqueue( [i, &protoAmps, &polStates, this]{
       Tensor thisExpression( Tensor::dim(polStates.size()) );
-      auto& p = protoAmps[i].first;
-      auto& coupling = protoAmps[i].second; 
-      //auto& [p,coupling] = protoAmps.at(i);
+      auto& [p, coupling] = protoAmps[i];
       DebugSymbols syms;  
       for(unsigned j = 0; j != polStates.size(); ++j){
         p.setPolarisationState( polStates[j] );
@@ -74,11 +80,11 @@ PolarisedSum::PolarisedSum(const EventType& type,
       m_matrixElements[i] = TransitionMatrix<void>( 
           p,
           coupling, 
-          CompiledExpression<void(complex_t*, const real_t*, const real_t*)>(
+          CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>(
           TensorExpression(thisExpression), 
           p.decayDescriptor(),
           this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ,this->m_mps ) );
-        CompilerWrapper().compile( m_matrixElements[i].amp );
+        CompilerWrapper().compile( m_matrixElements[i] );
       });
     }
   }
@@ -100,11 +106,11 @@ PolarisedSum::PolarisedSum(const EventType& type,
       m_matrixElements[i] = TransitionMatrix<void>( 
           tm.first,
           tm.second, 
-          CompiledExpression<void(complex_t*, const real_t*, const real_t*)>(
+          CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>(
           TensorExpression(thisExpression), 
           tm.first.decayDescriptor(),
           this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ,this->m_mps ) ); 
-        CompilerWrapper().compile( m_matrixElements[i].amp );
+        CompilerWrapper().compile( m_matrixElements[i] );
       });
     }
   }
@@ -116,6 +122,12 @@ PolarisedSum::PolarisedSum(const EventType& type,
     else if( m_dim.first == 3 ) m_pVector = {p("Px"), p("Py"), p("Pz"), p("Tyy"), p("Tzz"), p("Txy"), p("Txz"), p("Tyz")};
   }
   for(size_t i=0; i < m_dim.second * m_dim.first * m_dim.first; ++i) m_norms.emplace_back( m_matrixElements.size(), m_matrixElements.size() ); 
+  
+  DebugSymbols db; 
+  auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector,[](auto& p){ return Parameter(p->name());} ), m_debug ? &db : nullptr);
+  m_probExpression = CompiledExpression<float_v(const real_t*, const complex_v*)>(prob, "prob_unnormalised", {}, db, m_mps);
+  CompilerWrapper().compile(m_probExpression);
+  m_probExpression.prepare();
 }
 
 std::vector<int> PolarisedSum::polarisations( const std::string& name ) const 
@@ -172,12 +184,6 @@ std::vector<complex_t> densityMatrix(const unsigned& dim, const std::vector<Minu
   return {1.};
 }
 
-std::vector<Expression> convertProxies(const std::vector<MinuitProxy>& proxyVector, const std::function<Expression(const MinuitProxy&)>& transform)
-{
-  std::vector<Expression> rt;
-  std::transform(proxyVector.begin(), proxyVector.end(), std::back_inserter(rt), transform );
-  return rt; 
-}
 
 std::vector<TransitionMatrix<void>> PolarisedSum::matrixElements() const
 {
@@ -188,52 +194,44 @@ void   PolarisedSum::prepare()
 {
   DEBUG( "Preparing: " << m_prefix << " " << m_events << " ready = " << m_integrator.isReady() );
   transferParameters();
-  size_t nChanges = 0; 
   ProfileClock tEval; 
   size_t size_of = size() / m_matrixElements.size();
-  if( m_events != nullptr ) m_events->reserveCache( size() );
-  if( m_integrator.isReady() ) m_integrator.allocate(m_matrixElements, size() );
   for(auto& t : m_matrixElements){
-    if( m_nCalls != 0 && !t.amp.hasExternalsChanged() ) continue; 
-    m_events->updateCache(t.amp, t.addressData);
-    m_integrator.prepareExpression(t.amp);
-    t.amp.resetExternals();
+    if( m_nCalls != 0 && !t.hasExternalsChanged() ) continue; 
+    if( m_events != nullptr ) m_cache.update(m_events->store(), t);
+    m_integrator.updateCache(t);
+    t.resetExternals();
     t.workToDo = true; 
-    nChanges++;
-    if( m_nCalls == 0 && m_integrator.isReady() ) m_integIndex.push_back( m_integrator.getCacheIndex( t.amp ) );
   }
-  if( !m_probExpression.isLinked() ) build_probunnormalised();
   tEval.stop(); 
   ProfileClock tIntegral;  
   m_rho = densityMatrix(m_dim.first, m_pVector);
-  if( m_integrator.isReady() )
-  {
-    if(nChanges != 0) calculateNorms();
-    complex_t z = 0;
-    for(size_t i = 0; i < m_matrixElements.size(); ++i){
-      for(size_t j = 0; j < m_matrixElements.size(); ++j){
-       //  z += ((i==j) ? 1. : 2. ) * m_matrixElements[i].coupling()*std::conj(m_matrixElements[j].coupling())*norm(i,j);
-         z += m_matrixElements[i].coupling()*std::conj(m_matrixElements[j].coupling())* ( i > j ? std::conj(norm(j,i)) : norm(i,j) );
-      }
-    }
-    m_norm = std::real(z); 
-    if(m_nCalls % 10000 == 0 && m_prefix == "") debug_norm();
-  }
-
+  if( m_integrator.isReady() ) updateNorms();
   tIntegral.stop();
-  if(m_verbosity && nChanges != 0)
-    INFO("Time to evaluate = " << tEval << " ms; " << "norm = "  << tIntegral << " ms; " << "pdfs = "  << nChanges);
+  if( m_verbosity && m_nCalls % 100 == 0 ){
+    INFO("Time to evaluate = " << tEval << " ms; " << "norm = "  << tIntegral << " ms; ");
+  }
+//   debug_norm();
   m_nCalls++;
   for( auto& me : m_matrixElements ) me.workToDo = false; 
+  auto pw = m_weight / m_norm; 
+  #pragma omp parallel for
+  for( unsigned block = 0 ; block != m_events->nBlocks(); ++block ) 
+    m_pdfCache[block] = pw * m_probExpression(&m_cache(block, 0)); 
+
+  DEBUG( "m_pdfCache[0] = " << m_pdfCache[0] << " w/o caching = " << pw * getValNoCache(m_events->at(0))  ); 
+}
+
+float_v PolarisedSum::operator()( const float_v*, const unsigned index ) const 
+{ 
+  return m_pdfCache[index];
 }
 
 void PolarisedSum::debug_norm()
 {
   double norm_slow = 0;
-  for( auto& evt : *m_integrator.events() ) 
+  for( auto& evt : *m_integrator.events<EventList_type>() ) 
     norm_slow += evt.weight() * getValNoCache(evt) / evt.genPdf();
-  auto evt = (*m_integrator.events())[0];
-  INFO("Event[0]: " << prob_unnormalised(evt) << " " << getValNoCache(evt) );
   INFO("Norm    : " << std::setprecision(10) 
       << "bilinears=" << m_norm 
       << "; exact="     << norm_slow /  m_integrator.norm()
@@ -241,19 +239,22 @@ void PolarisedSum::debug_norm()
       << "; sample=" << m_integrator.norm() );
 }
 
-void   PolarisedSum::setEvents( EventList& events )
+void   PolarisedSum::setEvents( EventList_type& events )
 { 
   reset();
+  if( m_events != nullptr && m_ownEvents ) delete m_events; 
   m_events = &events;
-  for( unsigned i = 0; i != m_matrixElements.size(); ++i ) 
-    m_matrixElements[i].addressData  = m_events->registerExpression(m_matrixElements[i].amp, m_dim.first * m_dim.second ); 
+  m_cache = Store<complex_v, Alignment::AoS>(m_events->size(), m_matrixElements, m_dim.first * m_dim.second );
+  m_pdfCache.resize( m_events->nBlocks() );
 }
 
-void   PolarisedSum::setMC( EventList& events )
+void   PolarisedSum::setMC( EventList_type& events )
 {
   m_nCalls = 0;
-  m_integrator = Integrator(&events);
-  
+  m_integrator = Integrator(&events, m_matrixElements, m_dim.first * m_dim.second );
+  m_integIndex.clear();
+  for( auto& i : m_matrixElements )
+    m_integIndex.push_back( m_integrator.getCacheIndex(i) );
 }
 
 size_t PolarisedSum::size() const 
@@ -263,35 +264,27 @@ size_t PolarisedSum::size() const
 
 void   PolarisedSum::reset( const bool& flag ){ m_nCalls = 0 ; }
 
-void   PolarisedSum::build_probunnormalised()
-{
-  DebugSymbols db; 
-  auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector,[](auto& p){ return Parameter(p->name());} ), m_debug ? &db : nullptr);
-  m_probExpression = CompiledExpression<real_t(const real_t*, const complex_t*)>(prob, "prob_unnormalised", {}, db, m_mps);
-  CompilerWrapper().compile(m_probExpression);
-  m_probExpression.prepare();
-} 
-  
 Tensor PolarisedSum::transitionMatrix()
 { 
   auto size = m_dim.first * m_dim.second;
   std::vector<Expression> expressions(size, 0);
+  unsigned totalSize = 0 ; 
   for( auto& me : m_matrixElements ){
     auto coupling   = me.coupling.to_expression() ;
-    auto cacheIndex = m_events->getCacheIndex(me.amp); 
+    auto cacheIndex = totalSize; 
     for( size_t i = 0 ; i < size ; ++i ){
       expressions[i] = expressions[i] + coupling * Parameter( "x1["+std::to_string(cacheIndex+i)+"]",0,true); 
     }
+    totalSize += size; 
   }
   Tensor T_matrix(expressions, {m_dim.first, m_dim.second});
   T_matrix.st();
   return T_matrix; 
 }
 
-real_t PolarisedSum::prob_unnormalised( const Event& evt ) const
-{
-  return 0;
-  //return m_probExpression( &m_events->cache(evt.index(), 0) );
+real_t PolarisedSum::operator()(const Event& evt) const 
+{   
+  return utils::at( m_pdfCache[ evt.index() / utils::size<float_v>::value ], evt.index() % utils::size<float_v>::value );
 }
 
 double PolarisedSum::norm() const 
@@ -316,42 +309,36 @@ complex_t PolarisedSum::norm(const size_t& i, const size_t& j, Integrator* integ
   return total; 
 }
 
-void PolarisedSum::calculateNorms()
+void PolarisedSum::updateNorms()
 {
+  if(std::any_of(m_matrixElements.begin(),m_matrixElements.end(), [](auto& me){ return me.workToDo; } )){
   for( unsigned i = 0 ; i < m_matrixElements.size(); ++i ){
     for( unsigned j = i; j < m_matrixElements.size(); ++j ){
       if( m_matrixElements[i].workToDo || m_matrixElements[j].workToDo ) norm(i, j, &m_integrator);
     }
   }
   m_integrator.flush();
-}
-
-double PolarisedSum::prob(const Event& evt) const 
-{
-  return m_weight * prob_unnormalised(evt) / m_norm;
+  }
+  complex_t z = 0;
+  for(size_t i = 0; i < m_matrixElements.size(); ++i){
+    for(size_t j = 0; j < m_matrixElements.size(); ++j){
+       z += m_matrixElements[i].coupling()*std::conj(m_matrixElements[j].coupling())* ( i > j ? std::conj(norm(j,i)) : norm(i,j) );
+    }
+  }
+  m_norm = std::real(z); 
 }
 
 void PolarisedSum::debug(const Event& evt)
 {
   auto tsize = m_dim.first * m_dim.second;   
-  for(const auto& me : m_matrixElements)
+  for(unsigned j = 0; j != m_matrixElements.size(); ++j)
   {
-    std::vector<complex_t> this_cache(0,tsize);
-    for(unsigned i = 0 ; i != tsize; ++i ) this_cache.emplace_back( m_events->cache(evt.index(), me.addressData+i) );
-    INFO( me.decayDescriptor() << " " << vectorToString( this_cache, " ") );
+    std::vector<complex_v> this_cache; 
+    for(unsigned i = 0 ; i != tsize; ++i ) this_cache.emplace_back( m_cache(evt.index() / utils::size<float_v>::value, j*tsize + i) );
+    INFO( m_matrixElements[j].decayDescriptor() << " " << vectorToString( this_cache, " ") );
   }
-  INFO("P(x) = " << getValNoCache(evt) );
+  INFO("P(x) = " << getValNoCache(evt) << " " << operator()(nullptr, evt.index() / utils::size<float_v>::value ) );
   INFO("Prod = [" << vectorToString(m_pVector , ", ") <<"]");
-  if( m_debug )
-  {
-    transferParameters();
-    std::vector<complex_t> cache( tsize * m_matrixElements.size() );
-    for( unsigned i = 0 ; i != m_matrixElements.size(); ++i ){
-      std::memmove( cache.data() + tsize *i, m_matrixElements[i](evt).data(), tsize * sizeof(complex_t) );
-      m_matrixElements[i].amp.debug( evt.address() );
-    }
-    m_probExpression.debug( cache.data() ); 
-  }
 }
 
 void PolarisedSum::generateSourceCode(const std::string& fname, const double& normalisation, bool add_mt)
@@ -364,13 +351,13 @@ void PolarisedSum::generateSourceCode(const std::string& fname, const double& no
   std::vector<Expression> expressions(size);
   for( auto& p : m_matrixElements ){
     auto expr = CompiledExpression<std::vector<complex_t>(const real_t*, const real_t*)>(
-          p.amp.expression(), 
+          p.expression(), 
           p.decayDescriptor(),
           m_eventType.getEventFormat(), DebugSymbols() ,m_mps ) ;
     expr.prepare();
     expr.to_stream( stream );
     expr.compileWithParameters( stream );
-    Array z( make_cse( Function( programatic_name( p.amp.name()) + "_wParams", {event} ) ), size );
+    Array z( make_cse( Function( programatic_name( p.name()) + "_wParams", {event} ) ), size );
     INFO( p.decayDescriptor() << " coupling = " << p.coupling() );
     for( unsigned int j = 0 ; j < size; ++j ) expressions[j] = expressions[j] + p.coupling() * z[j];
   }
@@ -449,8 +436,7 @@ std::vector<FitFraction> PolarisedSum::fitFractions(const LinearErrorPropagator&
   for(const auto& p : outputFractions) INFO(p);  
   
   if( interferenceFractions )
-  {
-  
+  {  
     auto head_rules = m_rules.rulesForDecay(m_eventType.mother(), m_prefix);   
     FitFractionCalculator<PolarisedSum> iCalc(this, findIndices(m_matrixElements, m_eventType.mother()), recomputeIntegrals);
     for(size_t i = 0 ; i < head_rules.size(); ++i)
@@ -478,83 +464,77 @@ void PolarisedSum::transferParameters()
   if( m_probExpression.isLinked() ) m_probExpression.prepare();
   for(auto& me : m_matrixElements){
     me.coefficient = me.coupling();
-    me.amp.prepare();
+    me.prepare();
   }
   for(auto& p  : m_pVector ) p.update();
   m_weight.update();
 }
 
-real_t PolarisedSum::getValNoCache( const Event& evt )
+real_t PolarisedSum::getValNoCache( const Event& evt ) const
 {
-  transferParameters();
   auto tsize = m_dim.first * m_dim.second;   
-  std::vector<complex_t> cache( tsize * m_matrixElements.size() );
+  std::vector<complex_v> cache( tsize * m_matrixElements.size() );
   for( unsigned i = 0 ; i != m_matrixElements.size(); ++i ){
-    std::memmove( cache.data() + tsize *i, m_matrixElements[i](evt).data(), tsize * sizeof(complex_t) );
+    std::memmove( cache.data() + tsize * i , m_matrixElements[i](evt).data(), tsize * sizeof(complex_v) );
   }
-  return m_probExpression( cache.data() );
+  return utils::get<0>(m_probExpression( cache.data() ));
 }
 
 void   PolarisedSum::setWeight( MinuitProxy param ){ m_weight = param; } 
 double PolarisedSum::getWeight() const { return m_weight ; }
 
-std::function<real_t(const Event&)> PolarisedSum::evaluator(const EventList* events) const 
+
+std::function<real_t(const Event&)> PolarisedSum::evaluator(const EventList_type* ievents) const 
 {
-  if( events != nullptr && events != m_integrator.events() ) 
-    ERROR("Evaluator only working on the integration sample, fix me!"); 
- 
-  std::vector<unsigned> address_mapping( size() );
-  for( const auto& me : m_matrixElements ){ 
-    for( unsigned i = 0; i != size() / m_matrixElements.size(); ++i )
-    address_mapping[me.addressData+i] = m_integrator.getCacheIndex( me.amp ) + i;
-  }
-  std::vector<double> values( m_integrator.events()->size() );
-  std::vector<complex_t> buffer(address_mapping.size());
+  auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
+  Store<complex_v, Alignment::AoS> store( events->size(), m_matrixElements);
+  for( auto& me : m_matrixElements ) store.update(m_events->store(), me );
+
+  std::vector<double> values( events->aligned_size() );
   #ifdef _OPENMP
-  #pragma omp parallel for firstprivate(buffer)
+  #pragma omp parallel for
   #endif
-  for( unsigned int i = 0 ; i != m_integrator.events()->size(); ++i )
+  for( unsigned int block = 0 ; block != events->nBlocks(); ++block )
   {
-    for( unsigned j = 0 ; j != address_mapping.size(); ++j ) buffer[j] = this->m_integrator.get(address_mapping[j], i);
-    values[i] = m_weight * m_probExpression(&buffer[0]) / m_norm;
+    utils::store(values.data() + utils::size<float_v>::value * block, (m_weight/m_norm) * m_probExpression(&store(block,0)) ); 
   }
+  for( unsigned int i = 0 ; i != 10; ++i )
+    DEBUG(values[i] << " " << getValNoCache( events->at(i) )  * ( m_weight / m_norm ) ); 
   return arrayToFunctor<double, Event>(values);
 }
 
-KeyedView<double, EventList> PolarisedSum::componentEvaluator(const EventList* events) const 
+KeyedView<double, PolarisedSum::EventList_type> PolarisedSum::componentEvaluator(const EventList_type* events) const 
 {
-  if( events != nullptr && events != m_integrator.events() ) 
-    ERROR("Evaluator only working on the integration sample, fix me!"); 
-  KeyedView<double, EventList> rt(*events, m_matrixElements.size() ); 
-  std::vector<unsigned> address_mapping(m_matrixElements.size());
-  for( unsigned i = 0; i != m_matrixElements.size(); ++i ) 
-    address_mapping[i] = m_integrator.getCacheIndex( m_matrixElements[i].amp ); 
-
-  for( unsigned i = 0 ; i != m_matrixElements.size(); ++i )
-  {
-    auto& me = m_matrixElements[i]; 
-    rt.setKey(i, programatic_name( me.decayTree.decayDescriptor() ) );
-    #ifdef _OPENMP
-    #pragma omp parallel for
-    #endif
-    for( unsigned evt = 0 ; evt != m_integrator.events()->size(); ++evt )
-    {
-      complex_t total = 0;
-      for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ){
-        for( unsigned x = 0; x != m_norms.size(); ++x )
-        {
-          auto        s1 = m_dim.first;
-          auto        s2 = m_dim.second;
-          auto f         = x % s2;
-          auto psiIndex  = (x-f) / s2;
-          auto m2        = psiIndex % s1;
-          auto m1        = (psiIndex-m2)/s1;
-          total          += m_rho[psiIndex] * this->m_integrator.get( address_mapping[i] + m1 * s2 + f, evt ) * m_matrixElements[i].coefficient 
-                                 * std::conj( this->m_integrator.get( address_mapping[j] + m2 * s2 + f, evt ) * m_matrixElements[j].coefficient );
-        }
-      }
-      rt(events->at(evt), i) = m_weight * std::real( total ) / m_norm;  
-    }
-  }
+  KeyedView<double, PolarisedSum::EventList_type> rt(*events, m_matrixElements.size() ); 
+//  std::vector<unsigned> address_mapping(m_matrixElements.size());
+//  for( unsigned i = 0; i != m_matrixElements.size(); ++i ) 
+//    address_mapping[i] = m_integrator.getCacheIndex( m_matrixElements[i].amp ); 
+//
+//  for( unsigned i = 0 ; i != m_matrixElements.size(); ++i )
+//  {
+//    auto& me = m_matrixElements[i]; 
+//    rt.setKey(i, programatic_name( me.decayTree.decayDescriptor() ) );
+//    #ifdef _OPENMP
+//    #pragma omp parallel for
+//    #endif
+//    for( unsigned evt = 0 ; evt != m_integrator.events()->size(); ++evt )
+//    {
+//      complex_t total = 0;
+//      for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ){
+//        for( unsigned x = 0; x != m_norms.size(); ++x )
+//        {
+//          auto        s1 = m_dim.first;
+//          auto        s2 = m_dim.second;
+//          auto f         = x % s2;
+//          auto psiIndex  = (x-f) / s2;
+//          auto m2        = psiIndex % s1;
+//          auto m1        = (psiIndex-m2)/s1;
+//          total          += m_rho[psiIndex] * this->m_integrator.get( address_mapping[i] + m1 * s2 + f, evt ) * m_matrixElements[i].coefficient 
+//                                 * std::conj( this->m_integrator.get( address_mapping[j] + m2 * s2 + f, evt ) * m_matrixElements[j].coefficient );
+//        }
+//      }
+//      rt(events->at(evt), i) = m_weight * std::real( total ) / m_norm;  
+//    }
+//  }
   return rt; 
 }

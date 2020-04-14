@@ -91,7 +91,7 @@ template <class T> void generate_source(T& pdf, EventList& normEvents, const std
         mps["Pz"]->setCurrentFitVal(pz);
         pdf.transferParameters();
       }
-      double n = pdf.prob_unnormalised( evt );
+      double n = pdf(evt);
       if ( n > pMax ) pMax = n;
     }
     norm = pMax * sf ; 

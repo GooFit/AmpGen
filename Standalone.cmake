@@ -13,7 +13,8 @@ if( NOT "${CMAKE_CXX_STANDARD}" )
 endif() 
 
 SET(USE_OPENMP TRUE CACHE BOOL "USE_OPENMP")
-SET(ENABLE_AVX2   TRUE CACHE BOOL "ENABLE_AVX2")
+SET(ENABLE_AVX2    FALSE  CACHE BOOL "ENABLE_AVX2")
+SET(PRECISION     "DOUBLE" CACHE STRING "PRECISION")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -152,9 +153,15 @@ target_compile_options(AmpGen
   -Wno-unknown-pragmas
   $<$<CONFIG:Release>:-O3>)
 
-if( ENABLE_AVX2  )
-  message(STATUS "Enabling AVX2...")
-  target_compile_definitions(AmpGen PUBLIC "ENABLE_AVX2=1")
+if( ENABLE_AVX2 )
+  if( "${PRECISION}" MATCHES "DOUBLE" )
+  message(STATUS "Enabling AVX2 [double precision]")
+  target_compile_definitions(AmpGen PUBLIC "ENABLE_AVX2=1" "DOUBLE_PRECISION=1")
+  elseif( "${PRECISION}" MATCHES "SINGLE" )
+  message(STATUS "Enabling AVX2 [single precision]")
+  target_compile_definitions(AmpGen PUBLIC "ENABLE_AVX2=1" "DOUBLE_PRECISION=0")
+
+  endif()
   target_compile_options(AmpGen PUBLIC -march=native -ftree-vectorize -mavx2 -DHAVE_AVX2_INSTRUCTIONS)
 endif()
 

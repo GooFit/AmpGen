@@ -9,7 +9,7 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Types.h"
-
+#include "AmpGen/simd/utils.h"
 #include <cxxabi.h>
 #include <dlfcn.h>
 #include <vector>
@@ -35,7 +35,7 @@ namespace AmpGen
 
       private:
         DynamicFCN<RETURN_TYPE( ARGS... )>                                       m_fcn;
-        DynamicFCN<void( RETURN_TYPE*, const size_t&, const size_t&, const size_t&, ARGS ... )> m_batchFcn;
+        DynamicFCN<void( const size_t&, const size_t&, const size_t&, RETURN_TYPE*, ARGS... )> m_batchFcn;
         DynamicFCN<std::vector<std::pair<std::string, complex_t>>(ARGS...)>      m_fdb;
         std::vector<real_t>  m_externals             = {};
         bool                 m_hasExternalsChanged   = {false};
@@ -64,13 +64,13 @@ namespace AmpGen
         bool use_rto() const override {
           return std::is_same<RETURN_TYPE, void>::value;   
         }
-        std::string args(bool includeTypes = false) const override 
+        std::string args() const override 
         {
           std::string signature; 
           auto argTypes = typelist<ARGS...>();
           for( unsigned int i = 0 ; i < argTypes.size(); ++i )
           {
-            signature += (includeTypes ? argTypes[i] : "") + " x"+std::to_string(i) ;
+            signature += " x"+std::to_string(i) ;
             if( i != argTypes.size() - 1 ) signature += ", ";
           }
           return signature;
@@ -125,13 +125,16 @@ namespace AmpGen
         {
           stream << "#include <omp.h>\n";
           stream << "extern \"C\" void " << progName() 
-                 << "_batch("  << returnTypename() << "* rt" 
-                 << ", const size_t& N, " 
+                 << "_batch(";
+          stream << " const size_t& N, " 
                  << " const size_t& eventSize, " 
-                 << " const size_t& cacheSize, " << args(true) << ") {\n";
+                 << " const size_t& cacheSize, ";
+          stream <<  typeof<return_type>() << " * rt, ";
+          stream << CompiledExpressionBase::fcnSignature(typelist<ARGS...>(), use_rto(), false) << ") {\n";
           stream << "#pragma omp parallel for\n";
-          stream << "for( unsigned int i = 0; i != N/8; ++i ){\n";
-          stream << " rt[cacheSize*i] = " << progName() + "( x0, x1 +  i * eventSize);";
+          stream << "for( size_t i = 0; i != N/" << utils::size<float_v>::value << "; ++i ){\n";
+          if( use_rto() ) stream << progName() + "( r + cacheSize * i, s, x0, x1 +  i * eventSize);";
+          else            stream << " rt[cacheSize*i] = " << progName() + "( x0, x1 +  i * eventSize);";
           stream << "}\n}";
         }
 
