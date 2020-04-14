@@ -150,9 +150,9 @@ FitResult* doFit( likelihoodType&& likelihood, EventList_type& data, EventList_t
   /* Estimate the chi2 using an adaptive / decision tree based binning, 
      down to a minimum bin population of 15, and add it to the output. */
   
-  //Chi2Estimator chi2( data, mc, likelihood.evaluator(&mc), MinEvents(15), Dim(data.eventType().dof()) );
-  //chi2.writeBinningToFile("chi2_binning.txt");
-  //fr->addChi2( chi2.chi2(), chi2.nBins() );
+  Chi2Estimator chi2( data, mc, likelihood.evaluator(&mc), MinEvents(15), Dim(data.eventType().dof()) );
+  chi2.writeBinningToFile("chi2_binning.txt");
+  fr->addChi2( chi2.chi2(), chi2.nBins() );
   fr->print();
 
   /* Make the plots for the different components in the PDF, i.e. the signal and backgrounds. 

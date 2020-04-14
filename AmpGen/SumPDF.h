@@ -116,7 +116,7 @@ namespace AmpGen
         auto eval = pdf.evaluator(events);
         for( unsigned i = 0; i != events->size(); ++i ) values[i] += eval( events->at(i) ); 
       } );
-      return arrayToFunctor(values, events);
+      return arrayToFunctor<double, typename eventListType::value_type>(values);
     }
     KeyedView<double, eventListType> componentEvaluator(const eventListType* events) const
     { 

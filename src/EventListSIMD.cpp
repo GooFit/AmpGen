@@ -116,10 +116,13 @@ void EventListSIMD::loadFromTree( TTree* tree, const ArgumentPack& args )
     for( unsigned k = 0 ; k != float_v::size; ++k )
     {
       auto evt = k + block * float_v::size; 
-      if(evt >= m_data.size() ) break; 
-      tr.getEntry( hasEventList ? entryList[evt] : evt );
-      if( applySym ) symmetriser( temp );
-      buffer[k] = temp;  
+      if(evt  < m_data.size() )
+      {
+        tr.getEntry( hasEventList ? entryList[evt] : evt );
+        if( applySym ) symmetriser( temp );
+        buffer[k] = temp;  
+      } 
+      else buffer[k].setWeight(0);
     }
     gather( buffer, block );
   }

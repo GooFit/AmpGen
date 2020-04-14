@@ -15,9 +15,9 @@
 #include <vector>
 
 #include "AmpGen/ArgumentPack.h"
-#include "AmpGen/EventList.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Types.h"
+#include "AmpGen/EventList.h"
 
 namespace AmpGen
 {

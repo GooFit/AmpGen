@@ -488,7 +488,7 @@ std::function<real_t(const Event&)> PolarisedSum::evaluator(const EventList_type
 {
   auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
   Store<complex_v, Alignment::AoS> store( events->size(), m_matrixElements);
-  for( auto& me : m_matrixElements ) store.update(m_events->store(), me );
+  for( auto& me : m_matrixElements ) store.update(events->store(), me );
 
   std::vector<double> values( events->aligned_size() );
   #ifdef _OPENMP
