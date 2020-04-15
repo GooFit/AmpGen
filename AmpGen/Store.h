@@ -19,10 +19,10 @@ namespace AmpGen {
         m_nFields(nFields),
         m_store(m_nBlocks * m_nFields) {}
      
-      template <class functor_type, class input_type> Store( const Store<input_type, Alignment::AoS>& store, const std::vector<functor_type>& functors, const size_t& fieldsPerFunctor=0)
-       : Store(store.size(), functors, fieldsPerFunctor){
-        for( auto& f : functors ) update(store,f);
-       }  
+     //  template <class functor_type, class input_type> Store( const Store<input_type, Alignment::AoS>& store, const std::vector<functor_type>& functors, const size_t& fieldsPerFunctor=0)
+     //   : Store(store.size(), functors, fieldsPerFunctor){
+     //    for( auto& f : functors ) update(store,f);
+     //   }  
 
       template <class functor_type> Store( const size_t& nEntries, const std::vector<functor_type>& functors, const size_t& fieldsPerFunctor = 0)
       {
@@ -135,10 +135,11 @@ namespace AmpGen {
       std::map<std::string, std::pair<unsigned, unsigned>> m_index; 
   };
 }
+/*
 using aos_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::AoS>;
 using soa_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::SoA>;
 
 ENABLE_DEBUG(aos_store)
 ENABLE_DEBUG(soa_store)
-
+*/
 #endif

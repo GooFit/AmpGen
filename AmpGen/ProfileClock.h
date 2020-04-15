@@ -1,6 +1,7 @@
 #ifndef AMPGEN_PROFILECLOCK_H
 #define AMPGEN_PROFILECLOCK_H 1
 #include <chrono>
+#include <math.h>
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
 
@@ -44,7 +45,7 @@ namespace AmpGen{
         tmax = pi > tmax ? pi : tmax;
       }
       t /= double(N);
-      t2 = sqrt( t2 / double(N) - t*t);
+      t2 = std::sqrt( t2 / double(N) - t*t);
       INFO( (name == "" ? typeof<FCN>() : name ) << " " << t << " ± " << t2 << "[ms] per iteration << [" << tmin << ", " << tmax << "]" );
       return t;
     }

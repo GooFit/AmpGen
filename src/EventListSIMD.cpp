@@ -33,6 +33,8 @@
 #include "AmpGen/simd/utils.h"
 using namespace AmpGen;
 
+// ENABLE_DEBUG(EventListSIMD)
+
 EventListSIMD::EventListSIMD( const EventType& type ) : m_eventType( type ) {}
 
 void EventListSIMD::loadFromFile( const std::string& fname, const ArgumentPack& args )
@@ -134,14 +136,15 @@ void EventListSIMD::loadFromTree( TTree* tree, const ArgumentPack& args )
 EventListSIMD::EventListSIMD( const EventList& other ) : EventListSIMD( other.eventType() ) 
 {
   m_data = Store<float_v, Alignment::AoS>(other.size(), m_eventType.eventSize() );
+  DEBUG("Converting EventList -> EventListSIMD, allocate: " << m_data.size() << " events in " << m_data.nBlocks() << " with: " << m_data.nFields() << " fields");
   m_weights.resize( m_data.nBlocks() );
   m_genPDF.resize ( m_data.nBlocks() );
   for( unsigned block = 0 ; block != m_data.nBlocks(); block++ )
   {
     for( unsigned j = 0 ; j != m_data.nFields(); ++j ) 
-      m_data(block, j ) = utils::gather<float_v>(other, [j](auto& event){ return event[j]; } , block * float_v::size );
+      m_data(block, j) = utils::gather<float_v>(other, [j](auto& event){ return event[j]; } , block * float_v::size );
     m_weights[block] = utils::gather<float_v>(other,  [](auto& event){ return event.weight(); }, block * float_v::size, 0);
-    m_genPDF [block] = utils::gather<float_v>(other,  [](auto& event){ return event.genPdf(); }, block * float_v::size, 1 );
+    m_genPDF [block] = utils::gather<float_v>(other,  [](auto& event){ return event.genPdf(); }, block * float_v::size, 1);
   }
 } 
 

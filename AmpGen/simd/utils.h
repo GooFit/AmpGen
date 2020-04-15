@@ -45,7 +45,7 @@ namespace AmpGen {
     template <>        struct is_vector_type <complex_v> : std::false_type {}; 
 #endif
     template <class simd_type, class container_type, class functor_type> simd_type gather(
-        const container_type& container, const functor_type& functor, unsigned offset=0, float df =0.)
+        const container_type& container, const functor_type& functor, unsigned offset=0, typename simd_type::scalar_type df =0.)
     {
       std::array<typename simd_type::scalar_type, simd_type::size> rv; 
       if( df == 0. )

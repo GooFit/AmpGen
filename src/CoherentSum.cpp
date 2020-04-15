@@ -34,14 +34,17 @@
 using namespace AmpGen;
 CoherentSum::CoherentSum() = default; 
 
+//ENABLE_DEBUG(CoherentSum)
+
 CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
-  : m_rules    (mps)
+  :   m_rules    (mps)
     , m_evtType  (type)
     , m_printFreq(NamedParameter<size_t>(     "CoherentSum::PrintFrequency", 100)  )
     , m_dbThis   (NamedParameter<bool>(       "CoherentSum::Debug"         , false))
     , m_verbosity(NamedParameter<bool>(       "CoherentSum::Verbosity"     , 0)    )
-  , m_objCache (NamedParameter<std::string>("CoherentSum::ObjectCache"   ,"")    )
+    , m_objCache (NamedParameter<std::string>("CoherentSum::ObjectCache"   ,"")    )
     , m_prefix   (prefix)
+    , m_mps(&mps) 
 {
   auto amplitudes      = m_rules.getMatchingRules( m_evtType, prefix);
   if( amplitudes.size() == 0 ){
@@ -52,14 +55,18 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() ); 
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , std::thread::hardware_concurrency(), "Number of threads to use" );
   ThreadPool tp(nThreads);
-  //#pragma omp parallel for
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
-    tp.enqueue( [i,this,&mps,&amplitudes]{ 
-        m_matrixElements[i] = TransitionMatrix<complex_v>( amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), this->m_dbThis);
-        CompilerWrapper().compile( m_matrixElements[i], this->m_objCache); } );
+    tp.enqueue( [i,this,&mps,&amplitudes]{
+       auto& [p, c] = amplitudes[i];  
+        m_matrixElements[i] = 
+          TransitionMatrix<complex_v>(p, c, 
+          CompiledExpression<complex_v(const real_t*, const float_v*)>( 
+            p.getExpression(), p.decayDescriptor(),
+            this->m_evtType.getEventFormat(), DebugSymbols(), this->m_mps ) );
+        CompilerWrapper().compile( m_matrixElements[i], this->m_objCache); 
+      } ); 
   }
 }
-
 
 void CoherentSum::prepare()
 {
@@ -75,7 +82,7 @@ void CoherentSum::prepare()
   }
   clockEval.stop();
   ProfileClock clockIntegral;
-  if ( m_integrator.isReady()) updateNorms();
+  if (m_integrator.isReady()) updateNorms();
   else if ( m_verbosity ) WARNING( "No simulated sample specified for " << this );
   clockIntegral.stop();
   if ( m_verbosity && m_prepareCalls % 100 == 0  ) {
@@ -175,8 +182,13 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
   bool includePythonBindings = NamedParameter<bool>("CoherentSum::IncludePythonBindings",false);
 
   for ( auto& p : m_matrixElements ){
-    stream << p << std::endl;
-    p.compileWithParameters( stream );
+    auto expr = CompiledExpression<complex_t(const real_t*, const real_t*)>(
+          p.expression(), 
+          p.decayDescriptor(),
+          m_evtType.getEventFormat(), DebugSymbols() , m_mps );
+    expr.prepare();
+    stream << expr << std::endl;
+    expr.compileWithParameters( stream );
     if( includePythonBindings ) p.compileDetails( stream );
   }
   Expression event = Parameter("x0",0,true);
@@ -254,17 +266,18 @@ void CoherentSum::reset( bool resetEvents )
   }
 }
 
-void CoherentSum::setEvents( EventList_type& list )
+void CoherentSum::setEvents( const EventList_type& list )
 {
-  if ( m_verbosity ) INFO( "Setting event list with:" << list.size() << " events for " << this );
+  DEBUG( "Setting event list with:" << list.size() << " events for " << this );
   reset();
+  for( auto& me : m_matrixElements ){ DEBUG("Registering: " << me.name() ) ; }
   if( m_ownEvents && m_events != nullptr ) delete m_events; 
   m_events = &list;
   m_cache = Store<complex_v, Alignment::AoS>( m_events->size(), m_matrixElements );   
 }
 
 
-void CoherentSum::setMC( EventList_type& sim )
+void CoherentSum::setMC( const EventList_type& sim )
 {
   if ( m_verbosity ) INFO( "Setting norm. event list with:" << sim.size() << " events for " << this );
   reset();

@@ -74,14 +74,14 @@ namespace AmpGen
     void setWeight( MinuitProxy param ) { m_weight = param; }
     void makeTotalExpression();
     void reset( bool resetEvents = false );
-    void setEvents( EventList_type& list );
+    void setEvents( const EventList_type& list );
+    void setMC( const EventList_type& sim );
     #if ENABLE_AVX2 
-      void setEvents( EventList& list) { m_ownEvents = true; setEvents( *(new EventListSIMD(list)) ) ; } 
-      void setMC( EventList& list)     { setMC( *(new EventListSIMD(list)) ) ; } 
+      void setEvents( const EventList& list) { m_ownEvents = true; setEvents( *(new EventListSIMD(list)) ) ; } 
+      void setMC( const EventList& list)     { setMC( *(new EventListSIMD(list)) ) ; } 
     #endif
     float_v operator()(const float_v*, const unsigned) const; 
     real_t  operator()(const Event& evt )              const { return m_weight*std::norm(getVal(evt))/m_norm; }
-    void setMC( EventList_type& sim );
 
     void debug( const Event& evt, const std::string& nameMustContain="");
     void generateSourceCode( const std::string& fname, const double& normalisation = 1, bool add_mt = false );
@@ -101,7 +101,7 @@ namespace AmpGen
     AmplitudeRules   m_rules;                                  ///< Ruleset for the selected transition.
      
     Integrator       m_integrator;                             ///< Tool to calculate integrals 
-    EventList_type*  m_events       = {nullptr};               ///< Data events to evaluate PDF on
+    const EventList_type*  m_events       = {nullptr};               ///< Data events to evaluate PDF on
     Store<complex_v, Alignment::AoS> m_cache;                  ///< Store of intermediate values for the PDF calculation 
 
     bool             m_ownEvents    = {false};                 ///< Flag as to whether events are owned by this PDF or not  
@@ -116,7 +116,10 @@ namespace AmpGen
     bool             m_verbosity    = {false};                 ///< Flag for verbose printing
     std::string      m_objCache     = {""};                    ///< Directory that contains (cached) amplitude objects
     std::string      m_prefix       = {""};                    ///< Prefix for matrix elements
+    const MinuitParameterSet* m_mps       = {nullptr};
+
     void addMatrixElement( std::pair<Particle, TotalCoupling>& particleWithCoupling, const MinuitParameterSet& mps );
+
   };
 } // namespace AmpGen
 

@@ -89,19 +89,19 @@ namespace AmpGen
   {
     using amp_type = CompiledExpression<RT(const real_t*, const float_v*)>; 
     TransitionMatrix() = default;
-    TransitionMatrix(Particle dt, 
+    TransitionMatrix(const Particle& dt, 
                      const TotalCoupling& coupling, 
                      const amp_type& amp) :
           amp_type(amp),
           decayTree(dt), 
           coupling(coupling) {}
 
-    TransitionMatrix(Particle dt, 
+    TransitionMatrix(const Particle& dt, 
                      const TotalCoupling& coupling, 
                      const MinuitParameterSet& mps,
                      const std::map<std::string, unsigned>& evtFormat, 
                      const bool& debugThis=false) :
-      amp_type(dt.getExpression(debugThis ? &db : nullptr ), dt.decayDescriptor(), evtFormat, db, &mps ),
+      amp_type(Particle(dt).getExpression(debugThis ? &db : nullptr ), dt.decayDescriptor(), evtFormat, db, &mps ),
       decayTree(dt),
       coupling(coupling) {}
 
@@ -154,19 +154,19 @@ namespace AmpGen
   {
     using amp_type    = CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>;
     TransitionMatrix() = default;
-    TransitionMatrix(Particle dt, 
+    TransitionMatrix(const Particle& dt, 
                      const TotalCoupling& coupling, 
                      const amp_type& amp) : 
           amp_type(amp),
           decayTree(dt), 
           coupling(coupling) {}
 
-    TransitionMatrix(Particle dt, 
+    TransitionMatrix(const Particle& dt, 
                      const TotalCoupling& coupling, 
                      const MinuitParameterSet& mps,
                      const std::map<std::string, unsigned>& evtFormat, 
                      const bool& debugThis=false) :
-      amp_type(dt.getExpression(debugThis ? &db : nullptr ), dt.decayDescriptor(), evtFormat, db, &mps ),
+      amp_type(Particle(dt).getExpression(debugThis ? &db : nullptr ), dt.decayDescriptor(), evtFormat, db, &mps ),
       decayTree(dt),
       coupling(coupling)
       { use_rto();}
