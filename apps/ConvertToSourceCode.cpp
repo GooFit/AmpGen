@@ -73,8 +73,8 @@ void create_integration_tests(T& pdf,
 
 template <class T> void generate_source(T& pdf, EventList& normEvents, const std::string& sourceFile, MinuitParameterSet& mps, const double& sf)
 {
-  bool normalise                      = NamedParameter<bool>("Normalise",true);
-  std::string type                    = NamedParameter<std::string>( "Type", "CoherentSum" );
+  bool normalise    = NamedParameter<bool>("Normalise",true);
+  std::string type  = NamedParameter<std::string>("Type", "CoherentSum" );
 
   double norm = 1; 
   if( normalise ){

@@ -17,10 +17,11 @@
 #include <type_traits>
 
 #define WARNINGLEVEL 1
-#define FCNNAMELENGTH 45
 
 namespace AmpGen {
   namespace detail {
+    constexpr static int FCNNAMELENGTH = 45; 
+
     inline std::string trimmedString( std::string thing, const unsigned int& length = FCNNAMELENGTH )
     {
       size_t pos2=0;
@@ -42,6 +43,10 @@ namespace AmpGen {
       }
       return thing.size() < length ? thing : thing.substr( 0, length ) + "...";
     }
+    inline std::ostream& labelled_stream(const std::string& function_name)
+    {
+      return std::cout << "\033[2;34m" << std::left << std::setw(FCNNAMELENGTH) << trimmedString(function_name) << "  INFO         " << "\033[0m";
+    } 
     template <typename T> struct debug_type : std::false_type {};
   }
 }
@@ -53,38 +58,36 @@ namespace AmpGen {
 /// Used for printing verbose debugging messages, only if DEBUGLEVEL is defined.  
 #define DEBUG( X ) { \
       if constexpr( AmpGen::detail::debug_type<typename std::decay<decltype(*this)>::type>::value ) { \
-      std::cout << "\033[2;32m" << std::left << std::setw( FCNNAMELENGTH ) << AmpGen::detail::trimmedString(__PRETTY_FUNCTION__) \
+      std::cout << "\033[2;32m" << std::left << std::setw( AmpGen::detail::FCNNAMELENGTH ) << AmpGen::detail::trimmedString(__PRETTY_FUNCTION__) \
         << "  DEBUG        "                    \
         << "\033[0m" << X << " " << std::endl; } }
 
 /// @ingroup msgService macro INFO
 /// Used for printing information messages, and will always be printed. 
-#define INFO( X )                                                                                                      \
-  std::cout << "\033[2;34m" << std::left << std::setw( FCNNAMELENGTH ) << detail::trimmedString( __PRETTY_FUNCTION__ )         \
-  << "  INFO         "                                                                                       \
-  << "\033[0m" << X << std::endl
+#define INFO( X ) \
+  AmpGen::detail::labelled_stream(__PRETTY_FUNCTION__) << X << std::endl 
 
 /// @ingroup msgService macro ERROR
 /// Used for printing errors messages, and will always be printed. 
 #define ERROR( X )                                                                                                     \
-  std::cout << "\033[1;31m" << std::left << std::setw( FCNNAMELENGTH ) << detail::trimmedString( __PRETTY_FUNCTION__ )         \
+  std::cout << "\033[1;31m" << std::left << std::setw( AmpGen::detail::FCNNAMELENGTH ) << AmpGen::detail::trimmedString( __PRETTY_FUNCTION__ )         \
   << "  ERROR        "                                                                                                   \
   << "\033[0m" << X << std::endl
 
 /// @ingroup msgService macro FATAL
 /// Used for printing fatal errors messages, and will always be printed and will terminate the process afterwards.
 #define FATAL( X )                                                                                                     \
-{ std::cout << "\033[1;31m" << std::left << std::setw( FCNNAMELENGTH ) << detail::trimmedString( __PRETTY_FUNCTION__ )         \
+{ std::cout << "\033[1;31m" << std::left << std::setw( AmpGen::detail::FCNNAMELENGTH ) << AmpGen::detail::trimmedString( __PRETTY_FUNCTION__ )         \
   << "  FATAL        "                                                                                                   \
   << "\033[0m" << X << std::endl;                                                                                         \
-  throw std::runtime_error( detail::trimmedString( __PRETTY_FUNCTION__)+ " FATAL" ) ;}
+  throw std::runtime_error( AmpGen::detail::trimmedString( __PRETTY_FUNCTION__)+ " FATAL" ) ;}
 
 
 /// @ingroup msgService macro FATAL
 /// Used for printing warning messages, can be switched off using WARNINGLEVEL. These messages are often harmless, but sometimes not!
 #ifdef WARNINGLEVEL
 #define WARNING( X )                                                                                                   \
-  std::cout << "\033[1;35m" << std::left << std::setw( FCNNAMELENGTH ) << detail::trimmedString( __PRETTY_FUNCTION__ )         \
+  std::cout << "\033[1;35m" << std::left << std::setw( AmpGen::detail::FCNNAMELENGTH ) << AmpGen::detail::trimmedString( __PRETTY_FUNCTION__ )         \
   << "  WARNING      "                                                                                       \
   << "\033[0m" << X << std::endl
 #else

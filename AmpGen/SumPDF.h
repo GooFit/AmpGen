@@ -16,6 +16,7 @@
 namespace AmpGen
 {
   class EventList; 
+  class EventListSIMD;
   /** @class SumPDF
       @brief A pdf that contains one or more terms.
 
