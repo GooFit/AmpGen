@@ -11,6 +11,7 @@
 #include "THStack.h"
 
 #include "AmpGen/ArgumentPack.h"
+#include "AmpGen/Types.h"
 #include "AmpGen/LiteSpan.h"
 
 namespace AmpGen
@@ -21,6 +22,7 @@ namespace AmpGen
 
   class Projection
   {
+    using keyedFunctors = KeyedFunctors<double, Event>; 
     public:
       Projection();
       template <class FCN>
@@ -35,7 +37,8 @@ namespace AmpGen
       {
         return projInternal(evts, ArgumentPack(args...) ); 
       } 
-      template <class eventlist_type, class... ARGS> std::tuple<std::vector<TH1D*>, THStack*> operator()(const eventlist_type& evts, const KeyedView<double, eventlist_type>& weightFunction, const ARGS... args ) const 
+      template <class eventlist_type, class... ARGS> std::tuple<std::vector<TH1D*>, THStack*> operator()(const eventlist_type& evts, 
+          const keyedFunctors& weightFunction, const ARGS... args ) const 
       {
         return projInternal(evts, weightFunction, ArgumentPack(args...) );
       }
@@ -52,7 +55,7 @@ namespace AmpGen
       template <class eventlist_type> 
       TH1D* projInternal(const eventlist_type&, const ArgumentPack&) const; 
       template <class eventlist_type> 
-      std::tuple<std::vector<TH1D*>, THStack*> projInternal(const eventlist_type&, const KeyedView<double, eventlist_type>&, const ArgumentPack&) const; 
+      std::tuple<std::vector<TH1D*>, THStack*> projInternal(const eventlist_type&, const keyedFunctors&, const ArgumentPack&) const; 
       std::function<double( const Event& )> m_func;
       std::string m_name       = {""};
       std::string m_xAxisTitle = {""};

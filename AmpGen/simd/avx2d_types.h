@@ -5,7 +5,6 @@
 #include <array>
 #include <iostream>
 #include <complex>
-#include "AmpGen/simd/avx_mathfun.h"
 #include <omp.h>
 
 namespace AmpGen {
@@ -23,7 +22,7 @@ namespace AmpGen {
       float_t(const double& x0, const double& x1, const double& x2, const double& x3 )
       {
         double tmp[4] = {x0,x1,x2,x3};
-        _mm256_loadu_pd(tmp); 
+        data = _mm256_loadu_pd(tmp); 
       }
       float_t(const double* f ) : data( _mm256_loadu_pd( f ) ) {}
       void store( double* ptr ) const { _mm256_storeu_pd( ptr, data ); }
@@ -55,10 +54,10 @@ namespace AmpGen {
     // inline float_t sin( const float_t& v )  { return sin256_pd(v) ; }
     // inline float_t cos( const float_t& v )  { return cos256_pd(v) ; }
     // inline float_t tan( const float_t& v )  { float_t s; float_t c; sincos256_pd(v, (__m256*)&s, (__m256*)&c) ; return s/c; }
-    // inline float_t log( const float_t& v )  { return log256_ps(v) ; }
     // inline float_t exp( const float_t& v )  { return exp256_ps(v) ; }
     inline float_t select(const float_t& mask, const float_t& a, const float_t& b ) { return _mm256_blendv_pd( b, a, mask ); }
     inline float_t select(const bool& mask   , const float_t& a, const float_t& b ) { return mask ? a : b; } 
+    inline float_t sign  ( const float_t& v){ return select( v > 0., +1., -1. ); }
     inline float_t atan2( const float_t& y, const float_t& x ){ 
       std::array<double, 4> bx{x.to_array()}, by{y.to_array()};
       return float_t ( 
@@ -77,12 +76,51 @@ namespace AmpGen {
     {
      return _mm256_i64gather_pd(base_addr, double_to_int(offsets),sizeof(double));
     } 
-    stl_fallback( log )   
+    
+    inline void frexp(const AVX2d::float_t& value, AVX2d::float_t& mant, AVX2d::float_t& exponent)
+    {
+      auto arg_as_int = _mm256_castpd_si256(value);
+      static const AVX2d::float_t offset(4503599627370496.0 + 1022.0);   // 2^52 + 1022.0
+      static const __m256i pow2_52_i = _mm256_set1_epi64x(0x4330000000000000); // *reinterpret_cast<const uint64_t*>(&pow2_52_d);
+      auto b = _mm256_srl_epi64(arg_as_int, _mm_cvtsi32_si128(52));
+      auto c = _mm256_or_si256( b , pow2_52_i);
+      exponent = AVX2d::float_t( _mm256_castsi256_pd(c) ) - offset;
+      mant     = _mm256_castsi256_pd(_mm256_or_si256(_mm256_and_si256 (arg_as_int, _mm256_set1_epi64x(0x000FFFFFFFFFFFFFll) ), _mm256_set1_epi64x(0x3FE0000000000000ll)));
+    }
+    
+    inline float_t fmadd( const float_t& a, const float_t& b, const float_t& c )
+    {
+      return _mm256_fmadd_pd(a, b, c);
+    }
+    inline float_t log(const AVX2d::float_t& arg)
+    {
+      static const AVX2d::float_t corr     = 0.693147180559945286226764;
+      static const AVX2d::float_t CL15     = 0.148197055177935105296783;
+      static const AVX2d::float_t CL13     = 0.153108178020442575739679;
+      static const AVX2d::float_t CL11     = 0.181837339521549679055568;
+      static const AVX2d::float_t CL9      = 0.22222194152736701733275;
+      static const AVX2d::float_t CL7      = 0.285714288030134544449368;
+      static const AVX2d::float_t CL5      = 0.399999999989941956712869;
+      static const AVX2d::float_t CL3      = 0.666666666666685503450651;
+      static const AVX2d::float_t CL1      = 2.0;
+      AVX2d::float_t mant, exponent;
+      frexp(arg, mant, exponent);
+      auto x  = (mant - 1.) / (mant + 1.);
+      auto x2 = x * x;
+      auto p = fmadd(CL15, x2, CL13);
+      p = fmadd(p, x2, CL11);
+      p = fmadd(p, x2, CL9);
+      p = fmadd(p, x2, CL7);
+      p = fmadd(p, x2, CL5);
+      p = fmadd(p, x2, CL3);
+      p = fmadd(p, x2, CL1);
+      p = fmadd(p, x, corr * exponent);
+      return p;
+    }
     stl_fallback( exp )
     stl_fallback( tan )
     stl_fallback( sin )
     stl_fallback( cos )
-    
     inline float_t remainder( const float_t& a, const float_t& b ){ return a - _mm256_round_pd(a/b, _MM_FROUND_TO_NEG_INF) * b; }
     inline float_t fmod( const float_t& a, const float_t& b )
     {
@@ -149,15 +187,15 @@ namespace AmpGen {
     inline complex_t exp( const complex_t& v ){ 
       return exp( v.re) * complex_t( cos( v.im ), sin( v.im ) );
     }
-    inline float_t fmadd( const float_t& a, const float_t& b, const float_t& c )
-    {
-      return _mm256_fmadd_pd(a, b, c );
-    }
     inline complex_t sqrt( const complex_t& v )
     {
       auto r = abs(v);
-      return complex_t ( sqrt( 0.5 * (r + v.re) ), sqrt( 0.5*( r - v.re ) ) );
+      return complex_t ( sqrt( 0.5 * (r + v.re) ), sign(v.im) * sqrt( 0.5*( r - v.re ) ) );
     }
+    inline complex_t log( const complex_t& v )
+    {
+      return complex_t( log( v.re ) , atan2(v.im, v.re) );
+    } 
 
     inline std::ostream& operator<<( std::ostream& os, const complex_t& obj ) { return os << "( "<< obj.re << ") (" << obj.im << ")"; }
     #pragma omp declare reduction(+: float_t: \

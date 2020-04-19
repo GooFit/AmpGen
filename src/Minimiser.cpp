@@ -17,6 +17,7 @@
 #include "Math/Factory.h"
 #include "Math/Functor.h"
 #include "Math/Minimizer.h"
+#include "AmpGen/ProfileClock.h"
 
 using namespace AmpGen;
 using namespace ROOT;
@@ -25,11 +26,13 @@ unsigned int Minimiser::nPars() const { return m_nParams; }
 
 double Minimiser::operator()( const double* xx )
 {
+  ProfileClock callTime;
   for(size_t i = 0; i < m_mapping.size(); ++i ) {
     m_parSet->at( m_mapping[i] )->setCurrentFitVal( xx[i] );
   }
   double LL = m_theFunction() ;
   for ( auto& extendTerm : m_extendedTerms ) LL -= 2 * extendTerm->getVal();
+  callTime.stop();
   return LL - m_ll_zero;
 }
 

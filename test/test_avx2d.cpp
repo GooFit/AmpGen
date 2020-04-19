@@ -12,6 +12,16 @@ namespace utf = boost::unit_test;
 
 using namespace AmpGen; 
 
+BOOST_AUTO_TEST_CASE( test_log )
+{
+  AVX2d::float_t p(0.3, 0.5, 10.0, 7.0);
+  auto logged = AVX2d::log( p ).to_array() ;
+  BOOST_TEST( logged[0] == std::log(0.3), boost::test_tools::tolerance(1e-15 ) );
+  BOOST_TEST( logged[1] == std::log(0.5), boost::test_tools::tolerance(1e-15 ) );
+  BOOST_TEST( logged[2] == std::log(10.0), boost::test_tools::tolerance(1e-15 ) );
+  BOOST_TEST( logged[3] == std::log(7.0), boost::test_tools::tolerance(1e-15 ) );
+}
+
 BOOST_AUTO_TEST_CASE( test_fmod ) 
 {
   std::vector<double> a = {5.1, -5.1, 5.1, -5.1};
@@ -53,6 +63,8 @@ BOOST_AUTO_TEST_CASE( test_gather )
   BOOST_TEST( v[2] == data[3] );
   BOOST_TEST( v[3] == data[3] );
 }
+
+
 
 #else 
 BOOST_AUTO_TEST_CASE( test_dummy )

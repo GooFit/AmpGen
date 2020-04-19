@@ -71,12 +71,13 @@ namespace AmpGen
       Tensor transitionMatrix();
       const TransitionMatrix<void>& operator[](const size_t& i) const { return m_matrixElements[i] ; } 
       std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
-      KeyedView<double, EventList_type> componentEvaluator(const EventList_type* = nullptr) const;     
+      KeyedFunctors<double, Event> componentEvaluator(const EventList_type* = nullptr) const;     
     private: 
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};
       EventList_type*               m_events      = {nullptr};
       Store<complex_v, Alignment::AoS> m_cache    = {};
+      Store<float_v  , Alignment::SoA> m_pdfCache = {}; 
       bool                          m_ownEvents   = {false};
       MinuitParameterSet*           m_mps         = {nullptr};
       MinuitProxy                   m_weight      = {nullptr,1}; 
@@ -93,7 +94,6 @@ namespace AmpGen
       std::pair<unsigned, unsigned> m_dim; 
       std::vector<TransitionMatrix<void>>                          m_matrixElements;  
       CompiledExpression<float_v(const real_t*, const complex_v*)> m_probExpression; 
-      std::vector<float_v>          m_pdfCache; 
       std::vector<std::vector<int>> indexProduct(const std::vector<std::vector<int>>&, const std::vector<int>&) const;
       std::vector<int> polarisations(const std::string&) const ;
   };

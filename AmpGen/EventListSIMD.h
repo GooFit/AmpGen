@@ -60,9 +60,9 @@ namespace AmpGen
     EventListSIMD( const EventList& other );     
     const float_v* data() const { return m_data.data(); }
     operator Store<float_v, Alignment::AoS> () const { return m_data ; }
-    const auto& store() const { return m_data; }    
-    const Event at(const unsigned& p) const { return EventListSIMD::operator[](p) ; }
-    const float_v* block(const unsigned& p) { return m_data.data() + p * m_data.nFields(); }
+    const auto& store()                     const { return m_data; }    
+    const Event at(const unsigned& p)       const { return EventListSIMD::operator[](p) ; }
+    const float_v* block(const unsigned& p) const { return m_data.data() + p * m_data.nFields(); }
     float_v weight(const unsigned& p) const { return m_weights[p]; }
     float_v genPDF(const unsigned& p) const { return m_genPDF[p]; }
     const Event operator[]( const size_t&) const;

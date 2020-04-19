@@ -18,21 +18,27 @@ namespace AmpGen {
         m_nBlocks(utils::aligned_size<stored_type>( nEntries ) / utils::size<stored_type>::value ),
         m_nFields(nFields),
         m_store(m_nBlocks * m_nFields) {}
-     
-     //  template <class functor_type, class input_type> Store( const Store<input_type, Alignment::AoS>& store, const std::vector<functor_type>& functors, const size_t& fieldsPerFunctor=0)
-     //   : Store(store.size(), functors, fieldsPerFunctor){
-     //    for( auto& f : functors ) update(store,f);
-     //   }  
-
+      
+      template <class functor_type> 
+      void addFunctor( const functor_type& functor, unsigned fieldsPerFunctor=0 )
+      {
+        auto vsize = fieldsPerFunctor == 0 ? functor.returnTypeSize() / sizeof(stored_type) : fieldsPerFunctor;
+        DEBUG("Registering: " << functor.name() << " field = " << m_nFields ); 
+        m_index[ functor.name() ] = std::make_pair(m_nFields, vsize);
+        m_nFields += vsize;
+      }
+       
       template <class functor_type> Store( const size_t& nEntries, const std::vector<functor_type>& functors, const size_t& fieldsPerFunctor = 0)
       {
-        for(const auto& functor : functors)
-        {
-          auto vsize = fieldsPerFunctor == 0 ? functor.returnTypeSize() / sizeof(stored_type) : fieldsPerFunctor;
-          DEBUG("Registering: " << functor.name() << " I = " << m_nFields << " / " << functors.size() * vsize ); 
-          m_index[ functor.name() ] = std::make_pair(m_nFields, vsize);
-          m_nFields += vsize;
-        }
+        for(const auto& functor : functors) addFunctor( functor, fieldsPerFunctor);
+        m_nEntries = nEntries;
+        m_nBlocks  = utils::aligned_size<stored_type>(nEntries)/utils::size<stored_type>::value;
+        m_store.resize(m_nBlocks * m_nFields); 
+      }
+      template <class functor_type, class = typename std::enable_if<!std::is_integral<functor_type>::value>::type>
+      Store( const size_t& nEntries, const functor_type& functor, const size_t& fieldsPerFunctor=0 )
+      {
+        addFunctor(functor);
         m_nEntries = nEntries;
         m_nBlocks  = utils::aligned_size<stored_type>(nEntries)/utils::size<stored_type>::value;
         m_store.resize(m_nBlocks * m_nFields); 
@@ -50,6 +56,11 @@ namespace AmpGen {
       {
         if constexpr( align == Alignment::SoA ) return m_store[ field * m_nBlocks + index] ; 
         else return m_store[index*m_nFields+field]; 
+      }
+      template <class return_type> 
+      __always_inline const return_type get(const size_t& index, const size_t& field ) const 
+      {
+        return utils::at( operator()( index / utils::size<stored_type>::value, field ), index % utils::size<stored_type>::value );
       }
       __always_inline const stored_type* data() const { return m_store.data(); }
       __always_inline stored_type& operator()(const size_t& index, const size_t& field)
@@ -135,11 +146,9 @@ namespace AmpGen {
       std::map<std::string, std::pair<unsigned, unsigned>> m_index; 
   };
 }
-/*
-using aos_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::AoS>;
-using soa_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::SoA>;
-
-ENABLE_DEBUG(aos_store)
-ENABLE_DEBUG(soa_store)
-*/
+// using aos_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::AoS>;
+// using soa_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::SoA>;
+// 
+// ENABLE_DEBUG(aos_store)
+// ENABLE_DEBUG(soa_store)
 #endif

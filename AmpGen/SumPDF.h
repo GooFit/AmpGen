@@ -45,7 +45,7 @@ namespace AmpGen
   private:
     typedef typename eventListType::value_type eventValueType; ///< The value type stored in the eventListType
     std::tuple<pdfTypes...> m_pdfs;                            ///< The tuple of probability density functions
-    eventListType*          m_events = {nullptr};              ///< The event list to evaluate likelihoods on
+    const eventListType*    m_events = {nullptr};              ///< The event list to evaluate likelihoods on
 
   public:
     /// Default Constructor
@@ -75,8 +75,9 @@ namespace AmpGen
         float_v LL = 0.f;
         for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
         #pragma omp parallel for reduction( +: LL )
-        for ( unsigned int block = 0; block < m_events->nBlocks(); ++block ) {
-          LL += m_events->weight(block) *  log(this->operator()(m_events->block(block), block));
+        for ( size_t block = 0; block < m_events->nBlocks(); ++block ) 
+        {
+          LL += m_events->weight(block) * AVX2d::log(this->operator()(m_events->block(block), block));
         }
         return -2 * utils::sum_elements(LL);
       }
@@ -119,12 +120,12 @@ namespace AmpGen
       } );
       return arrayToFunctor<double, typename eventListType::value_type>(values);
     }
-    KeyedView<double, eventListType> componentEvaluator(const eventListType* events) const
+    KeyedFunctors<double, eventValueType> componentEvaluator(const eventListType* events) const
     { 
-      KeyedView<double, eventListType> view(*events, nPDFs() ); 
-      unsigned pdf_counter = 0;
-      for_each( this->m_pdfs, [&events, &view, &pdf_counter](const auto& pdf) mutable { 
-        view.set(pdf.evaluator(events), pdf_counter++, typeof(pdf) );  
+      KeyedFunctors<double, eventValueType> view;
+      for_each( this->m_pdfs, [&view, &events]( const auto& pdf) mutable { 
+        auto eval = pdf.evaluator(events);
+        view.add([eval](const auto& event){ return eval(event) ; } , typeof(pdf), "" ); 
       } );
       return view; 
     }
