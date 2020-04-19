@@ -6,6 +6,7 @@ export PATH="$DEPS_DIR/miniconda/bin:$PATH"
 hash -r
 conda config --add channels conda-forge
 conda install --quiet --yes -c conda-forge/label/gcc8 root 
+conda config --set channel_priority strict
 
 source "$DEPS_DIR/miniconda/bin/thisroot.sh"
 export CXX="$DEPS_DIR/miniconda/bin/g++"

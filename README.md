@@ -28,8 +28,8 @@ There is at the time of writing only a master branch (FIXME)
 
 ##### Build requirements:
 * cmake >= 3.11.0
-* C++ compiler with CXX standard >= 14 (gcc >= 4.9.3, clang ~ 5).
-  Defaults to Cxx17 (enable cxx14 with cmake flag `-DCMAKE_CXX_STANDARD=14` )
+* C++ compiler with CXX standard >= 17 (gcc >= 8)
+  Defaults to Cxx17
 * ROOT >= 6 with MathMore
   To (re)configure root with these options, use the additional command line options `-Dcxx14 -Dmathmore=ON` when configuring the installation of ROOT.
 
@@ -38,7 +38,7 @@ There is at the time of writing only a master branch (FIXME)
 * xROOTd for network file access
 * OpenMP for multithreading
 * ROOT >= 6 with MathMore and Minuit2 enabled. The external version of Minuit2 provided as an external package of GooFit is used if the ROOT version is not unavailable.
-  To (re)configure root with these options, use the additional command line options `-Dcxx14 -Dminuit2=ON -Dmathmore=ON` when configuring the installation of ROOT.
+  To (re)configure root with these options, use the additional command line options `-Dminuit2=ON -Dmathmore=ON` when configuring the installation of ROOT.
 
 #### Building
 The configuration of the AmpGen build is performed by cmake.
