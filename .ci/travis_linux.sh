@@ -7,6 +7,7 @@ conda config --add channels conda-forge
 conda config --set channel_priority strict
 # conda install --quiet --yes -c conda-forge/label/gcc8 root_base doxygen
 conda create --quiet --yes -n my_root_env root_base doxygen -c conda-forge/label/gcc8
+conda init bash
 conda activate my_root_env
 
 echo -en 'travis_fold:start:script.build\\r'
@@ -14,9 +15,11 @@ echo "Building..."
 echo "Building under OS: $TRAVIS_OS_NAME, CXX =$CXX"
 set -evx
 
+# -DCMAKE_CXX_COMPILER=$CXX
+
 mkdir -p build
 cd build
-cmake .. -DCMAKE_CXX_COMPILER=$CXX
+cmake .. 
 cmake --build . -- -j2
 
 set +evx
