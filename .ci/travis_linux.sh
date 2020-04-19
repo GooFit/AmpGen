@@ -5,6 +5,7 @@ set -evx
 
 mkdir -p build
 cd build
+conda activate my_root_env
 cmake .. -DCMAKE_CXX_COMPILER=$CXX
 cmake --build . -- -j2
 
