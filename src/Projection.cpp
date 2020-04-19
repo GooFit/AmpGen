@@ -76,22 +76,22 @@ template <> TH1D* Projection::projInternal( const EventList& events, const Argum
   return events.makeProjection(*this, args); 
 }
 
-template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventList& events, const KeyedView<double, EventList>& weightFunction, const ArgumentPack& args) const
+template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventList& events, const Projection::keyedFunctors& weightFunction, const ArgumentPack& args) const
 {
   std::vector<TH1D*> hists; 
   double norm_sum = args.getArg<Norm>(1).val;
   std::string prefix = args.getArg<PlotOptions::Prefix>().val;
   bool autowrite     = args.get<PlotOptions::AutoWrite>() != nullptr;
   THStack* stack     = args.getArg<PlotOptions::AddTo>(new THStack()).val;
-  if( prefix != "" ) prefix = prefix +"_";
-  for( unsigned int i = 0 ; i != weightFunction.width(); ++i ) 
-    hists.push_back( plot(prefix + weightFunction.key(i)==""?"C"+std::to_string(i):weightFunction.key(i)) );
   auto selection      = args.getArg<Selection>().val;
+  if( prefix != "" ) prefix = prefix +"_";
+  for( auto& key : weightFunction.keys ) 
+    hists.push_back( plot(prefix + key ) );
   for( const auto& evt : events ){
     if( selection != nullptr && !selection(evt) ) continue;
     auto pos = operator()(evt);
     auto weights = weightFunction(evt);
-    for( unsigned j = 0 ; j != weightFunction.width(); ++j ) hists[j]->Fill( pos, evt.weight() * weights[j] / evt.genPdf() ); 
+    for( unsigned j = 0 ; j != weights.size(); ++j ) hists[j]->Fill( pos, evt.weight() * weights[j] / evt.genPdf() ); 
   }
   std::sort( std::begin(hists), std::end(hists), [](auto& h1, auto& h2){ return h1->Integral() < h2->Integral() ; } );
   double total = std::accumulate( std::begin(hists), std::end(hists), 0.0, [](double& t, auto& h){ return t + h->Integral() ; } ); 
@@ -112,22 +112,22 @@ template <> TH1D* Projection::projInternal( const EventListSIMD& events, const A
   return events.makeProjection(*this, args); 
 }
 
-template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventListSIMD& events, const KeyedView<double, EventListSIMD>& weightFunction, const ArgumentPack& args) const
+template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventListSIMD& events, const Projection::keyedFunctors& weightFunction, const ArgumentPack& args) const
 {
   std::vector<TH1D*> hists; 
   double norm_sum = args.getArg<Norm>(1).val;
   std::string prefix = args.getArg<PlotOptions::Prefix>().val;
   bool autowrite     = args.get<PlotOptions::AutoWrite>() != nullptr;
   THStack* stack     = args.getArg<PlotOptions::AddTo>(new THStack()).val;
-  if( prefix != "" ) prefix = prefix +"_";
-  for( unsigned int i = 0 ; i != weightFunction.width(); ++i ) 
-    hists.push_back( plot(prefix + weightFunction.key(i)==""?"C"+std::to_string(i):weightFunction.key(i)) );
   auto selection      = args.getArg<Selection>().val;
+  if( prefix != "" ) prefix = prefix +"_";
+  for( auto& key : weightFunction.keys ) 
+    hists.push_back( plot(prefix + key ) );
   for( const auto& evt : events ){
     if( selection != nullptr && !selection(evt) ) continue;
     auto pos = operator()(evt);
     auto weights = weightFunction(evt);
-    for( unsigned j = 0 ; j != weightFunction.width(); ++j ) hists[j]->Fill( pos, evt.weight() * weights[j] / evt.genPdf() ); 
+    for( unsigned j = 0 ; j != weights.size(); ++j ) hists[j]->Fill( pos, evt.weight() * weights[j] / evt.genPdf() ); 
   }
   std::sort( std::begin(hists), std::end(hists), [](auto& h1, auto& h2){ return h1->Integral() < h2->Integral() ; } );
   double total = std::accumulate( std::begin(hists), std::end(hists), 0.0, [](double& t, auto& h){ return t + h->Integral() ; } ); 

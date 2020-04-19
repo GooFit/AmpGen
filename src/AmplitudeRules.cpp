@@ -125,7 +125,7 @@ std::complex<double> Coupling::operator()() const
 
 Expression Coupling::to_expression() const 
 {
-  return m_expr != nullptr ? m_expr->expression() : ( m_isCartesian ? Parameter(m_re->name()) + 1i * Parameter(m_im->name()) : Parameter( m_re->name() ) * fcn::exp( 1i * m_sf * Parameter(m_im->name()) ) );
+  return m_expr != nullptr ? m_expr->expression() : ( m_isCartesian ? ComplexParameter(Parameter(m_re->name()), Parameter(m_im->name())) : Parameter( m_re->name() ) * fcn::exp( 1i * m_sf * Parameter(m_im->name()) ) );
 }
 
 std::complex<double> TotalCoupling::operator()() const

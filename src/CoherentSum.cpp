@@ -98,15 +98,12 @@ void CoherentSum::prepare()
 
 void CoherentSum::updateNorms()
 {
-  std::vector<size_t> cacheIndex;
-  std::transform( m_matrixElements.begin(), m_matrixElements.end(), std::back_inserter(cacheIndex), 
-      [this](auto& m){ return this->m_integrator.getCacheIndex( m ) ; } );
   if(std::any_of(m_matrixElements.begin(),m_matrixElements.end(), [](auto& me){ return me.workToDo; } ))
   {
     for ( unsigned i = 0; i != m_matrixElements.size(); ++i )
       for ( size_t j = i; j < size(); ++j ){
         if( m_matrixElements[i].workToDo || m_matrixElements[j].workToDo ) 
-        m_integrator.queueIntegral( cacheIndex[i], cacheIndex[j] ,i, j, &m_normalisations );
+          m_normalisations.get(i, j, &m_integrator, i, j);
       }
   }
   m_integrator.flush();
@@ -294,10 +291,9 @@ real_t CoherentSum::norm(const Bilinears& norms) const
   complex_t acc(0, 0);
   for ( size_t i = 0; i < size(); ++i ) {
     for ( size_t j = 0; j < size(); ++j ) {
-      auto val = norms.get(i, j) 
-        * m_matrixElements[i].coefficient 
-        * std::conj(m_matrixElements[j].coefficient);
-      acc += val;
+      acc += m_matrixElements[i].coefficient 
+        * std::conj(m_matrixElements[j].coefficient)
+        * ( i > j ? std::conj(norm(j,i)) : norm(i,j) );
     }
   }
   return acc.real();
@@ -372,27 +368,24 @@ std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type*
   return arrayToFunctor<double, typename EventList_type::value_type>(values);
 }
 
-KeyedView<double, CoherentSum::EventList_type> CoherentSum::componentEvaluator(const EventList_type* ievents) const 
+KeyedFunctors<double, Event> CoherentSum::componentEvaluator(const EventList_type* ievents) const 
 {
-  auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
-
-  KeyedView<double, EventList_type> rt(*events, m_matrixElements.size() ); 
+  auto& cache = m_integrator.cache();
+  KeyedFunctors<double, Event> rt; 
   for( unsigned i = 0 ; i != m_matrixElements.size(); ++i )
   {
-    auto& me = m_matrixElements[i]; 
-    rt.setKey(i, programatic_name( me.decayTree.decayDescriptor() ) );
-    #ifdef _OPENMP
-    #pragma omp parallel for
-    #endif
-    for( unsigned evt = 0 ; evt < events->size(); ++evt )
-    {
-      complex_t total = 0;
-      for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ){
-        total          +=  this->m_integrator.get<complex_t>(i, evt) * m_matrixElements[i].coefficient 
-          * std::conj( this->m_integrator.get<complex_t>(j, evt) * m_matrixElements[j].coefficient );
-      } 
-      rt(events->at(evt), i) = m_weight * std::real( total ) / m_norm;  
+    for( unsigned j = i ; j != m_matrixElements.size(); ++j ){
+      auto mi = m_matrixElements[i]; 
+      auto mj = m_matrixElements[j]; 
+      auto ci = this->m_matrixElements[i].coefficient;
+      auto cj = this->m_matrixElements[j].coefficient;
+      double s = (i==j) ? 1 : 2 ;
+      auto name = programatic_name(mi.decayTree.decayDescriptor()) + "_" + programatic_name( mj.decayTree.decayDescriptor() );
+      INFO("Adding evaluator for: " << name  );
+      auto functor = [ci,cj,i,j,s, &cache](const Event& event){ return s * std::real( ci * cache.get<complex_t>( event.index(), i ) *  std::conj( cj * cache.get<complex_t>( event.index(), j ) ) ) ;};
+      rt.add(functor, name, "");
     }
   }
+  INFO(" Returning: " << rt.keys.size() << " functors" );
   return rt; 
 }

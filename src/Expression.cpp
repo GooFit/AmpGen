@@ -25,6 +25,7 @@ DEFINE_CAST(Parameter )
 DEFINE_CAST(SubTree )
 DEFINE_CAST(Ternary )
 DEFINE_CAST(Function )
+DEFINE_CAST(ComplexParameter);
 
 Expression::Expression( const std::shared_ptr<IExpression>& expression ) : m_expression( expression ) {}
 
@@ -323,4 +324,26 @@ Expression AmpGen::fcn::fpow( const Expression& x, const int& n){
   Expression rt = 1;
   for( int y=0;y<n;++y) rt = rt * x;
   return rt;
+}
+
+ComplexParameter::ComplexParameter( const Parameter& real, const Parameter& imag ) 
+ : m_real(real), m_imag(imag) {}
+
+std::string ComplexParameter::to_string(const ASTResolver* resolver) const
+{
+  std::string complex_type = "std::complex<double>";
+  if( resolver != nullptr && resolver->enableCuda() ) complex_type = "AmpGen::CUDA::complex_t";
+  if( resolver != nullptr && resolver->enableAVX()  ) complex_type = "AmpGen::AVX2d::complex_t";
+  return complex_type + "(" + m_real.to_string(resolver) + ", " + m_imag.to_string(resolver) +")";
+}
+
+void ComplexParameter::resolve( ASTResolver& resolver ) const
+{
+  m_real.resolve(resolver);
+  m_imag.resolve(resolver);
+}
+
+complex_t ComplexParameter::operator()() const
+{
+  return m_real() + 1i * m_imag();
 }

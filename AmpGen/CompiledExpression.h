@@ -220,13 +220,13 @@ namespace AmpGen
       rt.prepare();
       return rt;
     }
-  template <class RT> 
-    CompiledExpression<RT(const double*, const double*)> 
+  template <class RT, class arg1 = double, class arg2 =double> 
+    CompiledExpression<RT(const arg1*, const arg2*)> 
     make_expression( const Expression& expression, 
         const std::string& name, 
         const MinuitParameterSet& mps )
     {
-      CompiledExpression<RT(const double*, const double*)> rt(expression,name,{},{},&mps);
+      CompiledExpression<RT(const arg1*, const arg2*)> rt(expression,name,{},{},&mps);
       rt.compile();
       rt.prepare();
       return rt;

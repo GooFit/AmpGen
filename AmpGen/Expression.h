@@ -194,6 +194,17 @@ namespace AmpGen
     double       m_defaultValue;
     bool         m_resolved; 
   };
+  class ComplexParameter : public IExpression {
+    public:
+    ComplexParameter( const Parameter& real, const Parameter& imag );
+    std::string to_string(const ASTResolver* resolver = nullptr ) const override;
+    void resolve( ASTResolver& resolver ) const override;
+    operator Expression() const ;
+    complex_t operator()() const override;  
+    private:
+    Parameter m_real;
+    Parameter m_imag;
+  };
 
   /** @ingroup ExpressionEngine class Ternary 
       @brief Evaluates the ternary operator.
