@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # from https://stackoverflow.com/questions/55342122/conda-activate-on-travis-ci
+export PATH="$DEPS_DIR/miniconda/bin:$PATH"
 . $(conda info --root)/etc/profile.d/conda.sh
 conda activate env_${TRAVIS_OS_NAME}
 
