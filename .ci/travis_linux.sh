@@ -9,7 +9,7 @@
 # conda create --quiet --yes -n my_root_env root_base doxygen -c conda-forge/label/gcc8
 
 # from https://stackoverflow.com/questions/55342122/conda-activate-on-travis-ci
-source $(conda info --root)/etc/profile.d/conda.sh
+. $(conda info --root)/etc/profile.d/conda.sh
 conda activate my_root_env
 
 echo -en 'travis_fold:start:script.build\\r'
