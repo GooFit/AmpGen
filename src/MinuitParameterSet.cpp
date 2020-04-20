@@ -248,5 +248,8 @@ double MinuitParameterSet::operator()( const std::string& name )
 
 MinuitParameterSet::~MinuitParameterSet()
 {
-  for( auto& param : m_parameters ) if( param != nullptr ) delete param; 
+  for( auto& param : m_parameters ) {
+      if( param != nullptr ) delete param;
+      }
 }
+

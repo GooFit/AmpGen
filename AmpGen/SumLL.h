@@ -38,6 +38,9 @@ namespace AmpGen
             }
             return res;
         }
+    double operator()(){
+        return getVal();
+    }
     };
 
 

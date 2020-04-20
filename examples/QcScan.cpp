@@ -264,7 +264,7 @@ auto findParam = MPS.find(scanName);
 //    }
  } 
 
-
+/*
 //doPlots(KK_fit.str(), cs_KK, events_KK, 100);
 MinuitParameterSet * MPS_comb = new MinuitParameterSet();
   MPS_comb->loadFromStream();
@@ -340,30 +340,41 @@ MinuitParameterSet * MPS_comb = new MinuitParameterSet();
       }
 
 
-
+MinuitParameterSet * MPS_comb2 = new MinuitParameterSet();
+  MPS_comb2->loadFromStream();
+  if (makeCPConj){
+    INFO("Making CP conjugate states");
+    add_CP_conjugate(*MPS_comb2);
+  }
+ 
 
 
 
   INFO("Making combLL"); 
-    auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >(LLs);
+  SumLL<CorrelatedLL<EventList, pCorrelatedSum&> > combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >(LLs);
+    INFO("Making CombMini");
     auto combMini = Minimiser(combLL, MPS_comb);
-
+    INFO("Made CombMini");
     std::ofstream scanfile_comb;
   scanfile_comb.open("scan_Comb.txt", std::ios_base::app);
+  INFO("Get Param "<<scanName);
         auto param = MPS[scanName];
         double minimum=param->minInit();
+        INFO("Minimum = "<<minimum);
         double maximum=param->maxInit();
+        INFO("Maximum = "<<maximum);
         double val = minimum;
         double stepSize = param->stepInit();
+        INFO("StepSize = "<<stepSize);
 
-        MPS[scanName]->setCurrentFitVal(val);   
+        (*MPS_comb)[scanName]->setCurrentFitVal(val);   
 
 
         while (val < maximum){
     
         
 
-     MPS[scanName]->setCurrentFitVal(val);    
+     (*MPS_comb)[scanName]->setCurrentFitVal(val);    
 
 
         
@@ -375,9 +386,11 @@ MinuitParameterSet * MPS_comb = new MinuitParameterSet();
         }
        
     scanfile_comb.close();
+    INFO("Finished Scan");
 
-     
-
+    //delete MPS_comb; 
+//    delete MPS_comb2; 
+*/
    
 
 

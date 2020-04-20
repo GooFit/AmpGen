@@ -25,6 +25,7 @@ namespace AmpGen
 
     MinuitParameterSet( const MinuitParameterSet& other ) = default;
     ~MinuitParameterSet(); // = default;
+    
 
     // MinuitParameterSet getFloating();
 
