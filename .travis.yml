@@ -48,8 +48,8 @@ env:
 
 before_install:
   - eval "${MATRIX_EVAL}"
-  - chmod +x .ci/build_root_${TRAVIS_OS_NAME}.sh
-  - source .ci/build_root_${TRAVIS_OS_NAME}.sh 
+  - chmod +x .ci/build_root.sh 
+  - source .ci/build_root.sh ${TRAVIS_OS_NAME} 
 
 # Build your code e.g. by calling make
 script:
