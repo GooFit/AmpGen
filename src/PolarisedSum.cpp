@@ -202,7 +202,7 @@ void   PolarisedSum::prepare()
   for_each_sequence(m_matrixElements.begin(), m_matrixElements.end(), flagUpdate, updateData, updateInteg); 
   if( m_integrator.isReady() ) updateNorms();
   std::for_each( m_matrixElements.begin(), m_matrixElements.end(), resetFlags );
-  if( m_nCalls % 10000 == 0 ) debug_norm();
+//  if( m_nCalls % 10000 == 0 ) debug_norm();
   DEBUG( "m_pdfCache[0] = " << m_pdfCache[0] << " w/o caching = " << (m_weight/m_norm) * getValNoCache(m_events->at(0)));
   m_pdfCache.update(m_cache, m_probExpression); 
   m_nCalls++; 
