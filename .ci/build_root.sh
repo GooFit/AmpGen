@@ -7,7 +7,7 @@ elif [[ $os == "linux" ]] ; then
   wget -nv http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda_${os}.sh
 fi
 
-bash miniconda_${os}.sh -b -p $DEPS_DIR/miniconda_${os}
+bash miniconda_${os}.sh -b -p $DEPS_DIR/miniconda
 export PATH="$DEPS_DIR/miniconda/bin:$PATH"
 hash -r
 conda config --add channels conda-forge
