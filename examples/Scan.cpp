@@ -35,6 +35,9 @@ using namespace AmpGen;
 
 template <typename PDF>
 FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS, int nBins );
+template <typename likelihoodType>
+void Scan( likelihoodType&& likelihood, MinuitParameterSet& MPS, std::string pName);
+
 
 std::map<std::string, std::vector<double> > getParams(MinuitParameterSet & mps);
 std::map<std::string, double > getPulls(std::map<std::string, std::vector<double> > fits, std::map<std::string, std::vector<double> > inits);
@@ -56,6 +59,9 @@ int main( int argc, char* argv[] )
   std::string intFile  = NamedParameter<std::string>("IntegrationSample",""    , "Name of file containing events to use for MC integration.");
   std::string logFile  = NamedParameter<std::string>("LogFile"   , "Fitter.log", "Name of the output log file");
   std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
+
+
+  auto pName = NamedParameter<std::string>("Parameter", "", "Name of parameter to scan over");
   
   auto bNames = NamedParameter<std::string>("Branches", std::vector<std::string>()
               ,"List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m" ).getVector();
@@ -160,18 +166,13 @@ int main( int argc, char* argv[] )
 }
 
 template <typename likelihoodType>
-FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, MinuitParameterSet& MPS, int nBins )
+void Scan( likelihoodType&& likelihood, MinuitParameterSet& MPS, std::string pName)
 {
-  auto time_wall = std::chrono::high_resolution_clock::now();
-  auto time      = std::clock();
-  /* Minimiser is a general interface to Minuit1/Minuit2, 
-     that is constructed from an object that defines an operator() that returns a double 
-     (i.e. the likielihood, and a set of MinuitParameters. */
-  Minimiser mini( likelihood, &MPS );
+Minimiser mini( likelihood, &MPS );
 
 
       std::ofstream scanfile;
-      auto pName = "D0{K*(892)bar-{K0S0,pi-},pi+}_Re";
+      
         scanfile.open("Scan.txt", std::ios_base::app);
         auto param = MPS[pName];
         double minimum=param->minInit();
@@ -196,6 +197,18 @@ FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, M
         }
        
     scanfile.close();
+ }
+
+
+template <typename likelihoodType>
+FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, MinuitParameterSet& MPS, int nBins )
+{
+  auto time_wall = std::chrono::high_resolution_clock::now();
+  auto time      = std::clock();
+  /* Minimiser is a general interface to Minuit1/Minuit2, 
+     that is constructed from an object that defines an operator() that returns a double 
+     (i.e. the likielihood, and a set of MinuitParameters. */
+  Minimiser mini( likelihood, &MPS );
 
 
   auto covar = mini.covMatrix();
