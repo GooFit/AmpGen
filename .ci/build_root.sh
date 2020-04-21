@@ -14,7 +14,7 @@ hash -r
 conda config --add channels conda-forge
 conda config --set channel_priority strict
 
-conda create --quiet --yes -n env_${os} root doxygen zstd=1.3.7 -c conda-forge
+conda create --yes -n env_${os} root doxygen zstd=1.3.7 -c conda-forge
 
 set +evx 
 popd
