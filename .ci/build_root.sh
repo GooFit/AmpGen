@@ -1,4 +1,5 @@
 pushd $DEPS_DIR 
+set -evx
 
 os=$1
 if [[ $os == "osx" ]] ; then 
@@ -13,9 +14,7 @@ hash -r
 conda config --add channels conda-forge
 conda config --set channel_priority strict
 
-# conda install --quiet --yes -c conda-forge/label/gcc8 root_base doxygen
 conda create --quiet --yes -n env_${os} root doxygen zstd=1.3.7 -c conda-forge
-# conda init bash
-# source "$DEPS_DIR/miniconda/bin/thisroot.sh"
-# export CXX="$DEPS_DIR/miniconda/bin/g++"
+
+set +evx 
 popd
