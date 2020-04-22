@@ -124,6 +124,11 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
   return true;
 }
 
+bool CompilerWrapper::isClang() const 
+{
+  return m_cxx.find("clang") != std::string::npos || m_cxx.find("llvm-g++") != std::string::npos;
+}
+
 std::string get_cpp_version(){
   if( __cplusplus >= 201703L ) return "c++17";
   if( __cplusplus >= 201402L ) return "c++14";
@@ -151,11 +156,14 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     "-rdynamic", 
     "-fPIC"};
   std::transform( compile_flags.begin(), compile_flags.end(), std::back_inserter(argp), [](const auto& flag ){return flag.c_str() ; } );
-  if( m_cxx.find("clang") != std::string::npos || m_cxx.find("llvm-g++") != std::string::npos)
+  if(isClang())
   {
     argp.push_back( "-Wno-return-type-c-linkage");
     #if __APPLE__
     argp.push_back("-lstdc++");
+    #endif
+    #ifdef _OPENMP 
+     argp.push_back("-fopenmp=libiomp5");
     #endif
   }
 

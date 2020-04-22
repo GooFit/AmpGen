@@ -9,6 +9,7 @@
 #include <ostream>
 #include <ratio>
 #include <utility>
+#include <thread>
 
 #include "AmpGen/CompilerWrapper.h"
 #include "AmpGen/NamedParameter.h"
@@ -68,17 +69,14 @@ PolarisedSum::PolarisedSum(const EventType& type,
     auto protoAmps       = m_rules.getMatchingRules(m_eventType);
     for(const auto& m : protoAmps ) INFO( m.first.uniqueString() ); 
     m_matrixElements.resize( protoAmps.size() );
-    ThreadPool tp(8);
+    ThreadPool tp( std::thread::hardware_concurrency() );
     for(unsigned i = 0; i < m_matrixElements.size(); ++i)
     {
-      tp.enqueue( [i, &protoAmps, &polStates, this]{
+    //  tp.enqueue( [i, &protoAmps, &polStates, this]{
       Tensor thisExpression( Tensor::dim(polStates.size()) );
       auto& [p, coupling] = protoAmps[i];
       DebugSymbols syms;  
-      for(unsigned j = 0; j != polStates.size(); ++j){
-        p.setPolarisationState( polStates[j] );
-        thisExpression[j] = make_cse( p.getExpression(&syms) ); 
-      }
+      for(unsigned j = 0; j != polStates.size(); ++j) thisExpression[j] = make_cse( p.getExpression(&syms, polStates[j] ) ); 
       m_matrixElements[i] = TransitionMatrix<void>( 
           p,
           coupling, 
@@ -87,7 +85,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
           p.decayDescriptor(),
           this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ,this->m_mps ) );
         CompilerWrapper().compile( m_matrixElements[i] );
-      });
+     // });
     }
   }
   if ( stype == spaceType::flavour )

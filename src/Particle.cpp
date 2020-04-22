@@ -372,8 +372,9 @@ Tensor Particle::transitionMatrix( DebugSymbols* db  )
   return spinTensor();
 }
 
-Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index )
+Expression Particle::getExpression( DebugSymbols* db, const std::vector<int>& state)
 {
+  if( state.size() !=0 ) setPolarisationState( state );
   if( db != nullptr && !isStable() ) 
     db->emplace_back( uniqueString() , Parameter( "NULL", 0, true ) );
   Expression total = 0;
