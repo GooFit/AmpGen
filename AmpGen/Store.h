@@ -3,6 +3,9 @@
 
 #include "AmpGen/simd/utils.h"
 #include "AmpGen/EventList.h"
+#ifdef _OPENMP 
+#include <omp.h>
+#endif
 
 namespace AmpGen {
 
@@ -44,26 +47,26 @@ namespace AmpGen {
         m_store.resize(m_nBlocks * m_nFields); 
       }
 
-      __always_inline stored_type operator[]( const size_t& index ) const { return m_store[index]; }
-      __always_inline stored_type& operator[]( const size_t& index ) { return m_store[index]; }
+      inline stored_type operator[]( const size_t& index ) const { return m_store[index]; }
+      inline stored_type& operator[]( const size_t& index ) { return m_store[index]; }
       template <class T> unsigned find( const T& t ) const { return m_index.find( t.name() )->second.first; }
 
-      __always_inline size_t size()         const { return m_nEntries; }
-      __always_inline size_t nBlocks()      const { return m_nBlocks; }
-      __always_inline size_t nFields()      const { return m_nFields; }
-      __always_inline size_t aligned_size() const { return m_nBlocks * utils::size<stored_type>::value ; }
-      __always_inline const stored_type& operator()(const size_t& index, const size_t& field) const
+      inline size_t size()         const { return m_nEntries; }
+      inline size_t nBlocks()      const { return m_nBlocks; }
+      inline size_t nFields()      const { return m_nFields; }
+      inline size_t aligned_size() const { return m_nBlocks * utils::size<stored_type>::value ; }
+      inline const stored_type& operator()(const size_t& index, const size_t& field) const
       {
         if constexpr( align == Alignment::SoA ) return m_store[ field * m_nBlocks + index] ; 
         else return m_store[index*m_nFields+field]; 
       }
       template <class return_type> 
-      __always_inline const return_type get(const size_t& index, const size_t& field ) const 
+      inline const return_type get(const size_t& index, const size_t& field ) const 
       {
         return utils::at( operator()( index / utils::size<stored_type>::value, field ), index % utils::size<stored_type>::value );
       }
-      __always_inline const stored_type* data() const { return m_store.data(); }
-      __always_inline stored_type& operator()(const size_t& index, const size_t& field)
+      inline const stored_type* data() const { return m_store.data(); }
+      inline stored_type& operator()(const size_t& index, const size_t& field)
       {
         if constexpr( align == Alignment::SoA ) return m_store[ field * m_nBlocks + index] ; 
         else return m_store[index*m_nFields+field]; 
@@ -133,7 +136,8 @@ namespace AmpGen {
           #ifdef _OPENMP
           #pragma omp parallel for
           #endif
-          for ( size_t evt = 0; evt < events.size(); ++evt ){
+          for ( size_t evt = 0; evt < events.size(); ++evt )
+          {
             auto tmp = fcn( events[evt].address() );
             store( evt, p0, &tmp, s);
           }
