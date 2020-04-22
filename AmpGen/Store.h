@@ -113,7 +113,9 @@ namespace AmpGen {
       {  
         auto f = m_index.find( fcn.name() ); 
         if( f == m_index.end() ) FATAL("Expression: " << fcn.name() << " is not registed");
-        auto [p0, s] = f->second;
+        //auto& [p0, s] = f->second; /// bug in the C++ standard. Such fun. 
+        auto p0 = f->second.first;
+        auto s  = f->second.second; 
         if constexpr( std::is_same< typename functor_type::return_type, void >::value ) 
         {
           

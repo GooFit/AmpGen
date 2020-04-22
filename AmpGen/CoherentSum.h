@@ -56,10 +56,10 @@ namespace AmpGen
     std::string prefix() const { return m_prefix; }
     
     auto operator[]( const size_t& index ) { return m_matrixElements[index]; }
-    const auto operator[]( const size_t& index ) const { return m_matrixElements[index]; }
-    size_t size()                                const { return m_matrixElements.size(); }
-    real_t getWeight()                           const { return m_weight; }
-    real_t norm( const Bilinears& norms )        const;
+    auto operator[]( const size_t& index ) const { return m_matrixElements[index]; }
+    size_t size()                          const { return m_matrixElements.size(); }
+    real_t getWeight()                     const { return m_weight; }
+    real_t norm( const Bilinears& norms )  const;
     real_t norm() const;
     real_t getNorm( const Bilinears& normalisations );
 
