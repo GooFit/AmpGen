@@ -121,7 +121,7 @@ namespace AmpGen
             stream << "  if(n == " << i << ") return  " << m_externals.at( i ) << ";\n";
           stream << "  return 0;\n}\n";
         }
-        void compileBatch( std::ostream& stream ) const 
+        void compileBatch( std::ostream& stream ) const override  
         {
           stream << "#include <omp.h>\n";
           stream << "extern \"C\" void " << progName() 

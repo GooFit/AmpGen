@@ -69,7 +69,7 @@ namespace AmpGen {
     inline __m256i double_to_int( const float_t& x )
     {
       // based on:  https://stackoverflow.com/questions/41144668/how-to-efficiently-perform-double-int64-conversions-with-sse-avx
-      return _mm256_sub_epi64(_mm256_castpd_si256(x + _mm256_set1_pd(0x0018000000000000)), 
+      return _mm256_sub_epi64(_mm256_castpd_si256(_mm256_add_pd(x, _mm256_set1_pd(0x0018000000000000))), 
              _mm256_castpd_si256(_mm256_set1_pd(0x0018000000000000)));
     }
     inline float_t gather( const double* base_addr, const float_t& offsets) 
@@ -121,7 +121,7 @@ namespace AmpGen {
     stl_fallback( tan )
     stl_fallback( sin )
     stl_fallback( cos )
-    inline float_t remainder( const float_t& a, const float_t& b ){ return a - _mm256_round_pd(a/b, _MM_FROUND_TO_NEG_INF) * b; }
+    inline float_t remainder( const float_t& a, const float_t& b ){ return a - float_t(_mm256_round_pd(a/b, _MM_FROUND_TO_NEG_INF)) * b; }
     inline float_t fmod( const float_t& a, const float_t& b )
     {
       auto r = remainder( abs(a), abs(b) );
