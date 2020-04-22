@@ -258,7 +258,7 @@ namespace AmpGen
       Expression propagator( DebugSymbols* db = nullptr ) const;
 
       /// Calculates the total expression for this particle, including symmetrisation and the current polarisation state
-      Expression getExpression( DebugSymbols* db = nullptr, const unsigned int& index = 0 );
+      Expression getExpression( DebugSymbols* db = nullptr, const std::vector<int>& = {} );
 
       /// Calculate the transition matrix for this decay 
       Tensor transitionMatrix( DebugSymbols* db = nullptr );
