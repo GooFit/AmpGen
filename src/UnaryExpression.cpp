@@ -28,7 +28,7 @@ DEFINE_UNARY_OPERATOR_NO_RESOLVER( Real, std::real )
 DEFINE_UNARY_OPERATOR_NO_RESOLVER( Imag, std::imag )
 DEFINE_UNARY_OPERATOR_NO_RESOLVER( ISqrt, rsqrt )
 DEFINE_UNARY_OPERATOR_NO_RESOLVER( Conj, std::conj )
-DEFINE_UNARY_OPERATOR_NO_RESOLVER( Abs , std::fabs )
+DEFINE_UNARY_OPERATOR_NO_RESOLVER( Abs , std::abs )
 
 LGamma::LGamma( const Expression& expression) : IUnaryExpression(expression) {} 
 LGamma::operator Expression() const { return Expression( std::make_shared<LGamma>(*this) ) ; }
@@ -47,7 +47,7 @@ std::string Abs::to_string( const ASTResolver* resolver ) const
 {
   return resolver != nullptr && resolver->enableAVX() ? 
     "abs(" + m_expression.to_string(resolver) +")" :
-    "std::fabs("+m_expression.to_string(resolver) +")";
+    "std::abs("+m_expression.to_string(resolver) +")";
 }
 
 std::string Conj::to_string( const ASTResolver* resolver ) const
