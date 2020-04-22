@@ -5,6 +5,7 @@
 #include "AmpGen/SumLL.h"
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/corrEventList.h"
+#include "AmpGen/CombCorrLL.h"
 //#include <boost/algorithm/string.hpp>
 using namespace AmpGen;
 using namespace std::complex_literals;
@@ -137,6 +138,12 @@ auto findParam = MPS.find(scanName);
     return 0;
     
  }
+ std::vector<EventList> SigData;
+ std::vector<EventList> TagData;
+ std::vector<EventList> SigInt;
+ std::vector<EventList> TagInt;
+ std::vector<EventType> SigType;
+ std::vector<EventType> TagType;
  for( auto& tag : tags )
  {
     EventType signalType( pNames );
@@ -178,31 +185,14 @@ auto findParam = MPS.find(scanName);
     }
     for( auto& event : sigEvents ) event.setGenPdf(1) ;
     for( auto& event : tagEvents ) event.setGenPdf(1) ;
-    /*
-     CorrelatedSum cs(signalType, tagType, MPS);
-    cs.setEvents(sigEvents, tagEvents);
-    cs.setMC(sigMCEvents, tagMCEvents);
-     cs.prepare();  
-    auto csLL = make_likelihood(sigEvents, tagEvents, cs);
-    csLL.setEvents(sigEvents, tagEvents);
-    
-
-    INFO( "norm[0] = " << cs.norm() );
    
-    cs.debugNorm();
- Minimiser mini( csLL, &MPS );
-   // for (int i=0;  i<nFits; i++){
-   
-    
-    mini.gradientTest();
-   // for (int i=0 ; i < nFits; i++){
-    //   mini.setTolerance(std::pow(10, 2 - i));
-   if (doFit) mini.doFit();
-   // }
-   // 
-*/
-   
-    
+   SigData.push_back(sigEvents);
+   TagData.push_back(tagEvents);
+   SigInt.push_back(sigMCEvents);
+   TagInt.push_back(tagMCEvents);
+   SigType.push_back(signalType);
+   TagType.push_back(tagType);
+ 
     
     pCorrelatedSum cs(signalType, tagType, MPS);
     cs.setEvents(sigEvents, tagEvents);
@@ -214,55 +204,45 @@ auto findParam = MPS.find(scanName);
 
     INFO( "uncorrected norm = " << cs.norm() );
     INFO( "corrected norm = " << cs.slowNorm() );
-//    cs.debugNorm();
- Minimiser mini( csLL, &MPS );
-   // for (int i=0;  i<nFits; i++){
-  
-
-
-
-   // for (int i=0 ; i < nFits; i++){
-    //   mini.setTolerance(std::pow(10, 2 - i));
-
-   // }
-   // 
+    Minimiser mini( csLL, &MPS );
+   
     
  
 
-        std::stringstream ss_tag;
-        ss_tag<<"Scan_"<<tokens[0]<<".txt";
-        auto scanOutput_tag =ss_tag.str();
+    std::stringstream ss_tag;
+    ss_tag<<"Scan_"<<tokens[0]<<".txt";
+    auto scanOutput_tag =ss_tag.str();
 
-        std::ofstream scanfile;
-        scanfile.open(scanOutput_tag, std::ios_base::app);
-        auto param = MPS[scanName];
-        double minimum=param->minInit();
-        double maximum=param->maxInit();
-        double val = minimum;
-        double stepSize = param->stepInit();
-  
-        MPS[scanName]->setCurrentFitVal(val);   
- 
+    std::ofstream scanfile;
+    scanfile.open(scanOutput_tag, std::ios_base::app);
+    auto param = MPS[scanName];
+    double minimum=param->minInit();
+    double maximum=param->maxInit();
+    double val = minimum;
+    double stepSize = param->stepInit();
 
-        while (val < maximum){
+    MPS[scanName]->setCurrentFitVal(val);   
+
+
+    while (val < maximum){
+
     
-        
 
      MPS[scanName]->setCurrentFitVal(val);    
 
 
-        
-        scanfile<<val<<"\t"<<mini.FCN()<<"\n";      
-        val += stepSize;
-        
-        }
-       
+      
+      scanfile<<val<<"\t"<<mini.FCN()<<"\n";      
+      val += stepSize;
+      
+      }
+      
     scanfile.close();
-
-     
-
-//    }
  } 
+
+  CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS);
+  INFO("Making Combined Minimiser object");
+  Minimiser mini_Comb = Minimiser(combLL, &MPS);
 
 /*
 //doPlots(KK_fit.str(), cs_KK, events_KK, 100);
