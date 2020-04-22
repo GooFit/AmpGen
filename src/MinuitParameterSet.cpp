@@ -245,11 +245,11 @@ double MinuitParameterSet::operator()( const std::string& name )
   }
   return m_keyAccess[name]->mean();
 }
-
+/*
 MinuitParameterSet::~MinuitParameterSet()
 {
   for( auto& param : m_parameters ) {
       if( param != nullptr ) delete param;
       }
 }
-
+*/
