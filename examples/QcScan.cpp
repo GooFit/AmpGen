@@ -242,7 +242,44 @@ auto findParam = MPS.find(scanName);
 
   CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS);
   INFO("Making Combined Minimiser object");
-  Minimiser mini_Comb = Minimiser(combLL, &MPS);
+  bool doComb = true;
+  if (doComb){
+
+    
+    Minimiser mini_Comb = Minimiser(combLL, &MPS);
+
+    std::stringstream ss_comb;
+    ss_comb<<"Scan_"<<"Comb"<<".txt";
+    auto scanOutput_comb =ss_comb.str();
+
+    std::ofstream scanfile;
+    scanfile.open(scanOutput_comb, std::ios_base::app);
+    auto param = MPS[scanName];
+    double minimum=param->minInit();
+    double maximum=param->maxInit();
+    double val = minimum;
+    double stepSize = param->stepInit();
+
+    MPS[scanName]->setCurrentFitVal(val);   
+
+
+    while (val < maximum){
+
+    
+
+      MPS[scanName]->setCurrentFitVal(val);    
+
+
+      
+      scanfile<<val<<"\t"<<mini_Comb.FCN()<<"\n";      
+      val += stepSize;
+      
+      }
+      
+    scanfile.close();
+  
+  }
+
 
 /*
 //doPlots(KK_fit.str(), cs_KK, events_KK, 100);
