@@ -155,14 +155,17 @@ target_compile_options(AmpGen
 
 if( ENABLE_AVX2 )
   if( "${PRECISION}" MATCHES "DOUBLE" )
-  message(STATUS "Enabling AVX2 [double precision]")
-  target_compile_definitions(AmpGen PUBLIC "ENABLE_AVX2=1" "DOUBLE_PRECISION=1")
+    message(STATUS "Enabling AVX2 [double precision]")
+    target_compile_definitions(AmpGen PUBLIC "ENABLE_AVX2=1" "DOUBLE_PRECISION=1")
   elseif( "${PRECISION}" MATCHES "SINGLE" )
-  message(STATUS "Enabling AVX2 [single precision]")
-  target_compile_definitions(AmpGen PUBLIC "ENABLE_AVX2=1" "DOUBLE_PRECISION=0")
-
+    message(STATUS "Enabling AVX2 [single precision]")
+    target_compile_definitions(AmpGen PUBLIC "ENABLE_AVX2=1" "DOUBLE_PRECISION=0")
   endif()
   target_compile_options(AmpGen PUBLIC -march=native -ftree-vectorize -mavx2 -DHAVE_AVX2_INSTRUCTIONS)
+  if("${CMAKE_CXX_COMPILER_ID}" MATCHES "AppleClang" OR 
+     "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" )
+   target_compile_options(AmpGen PUBLIC -mfma)
+  endif()
 endif()
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "AppleClang" )
