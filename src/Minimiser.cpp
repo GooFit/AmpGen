@@ -67,43 +67,43 @@ void Minimiser::prepare()
 
   if ( m_minimiser != nullptr ) delete m_minimiser;
   
-  INFO("Set Algorithm");
+  if (m_debug) INFO("Set Algorithm");
   m_minimiser = new Minuit2::Minuit2Minimizer(algorithm.c_str() );
   DEBUG( "Error definition = " << m_minimiser->ErrorDef() );
-  INFO("Set MaxCalls");
+  if (m_debug) INFO("Set MaxCalls");
   m_minimiser->SetMaxFunctionCalls( maxCalls );
-  INFO("Set MaxIterations");
+  if (m_debug) INFO("Set MaxIterations");
   m_minimiser->SetMaxIterations( 100000 );
-  INFO("Set Tolerance");
+  if (m_debug) INFO("Set Tolerance");
   m_minimiser->SetTolerance( tolerance );
-  INFO("Set PrintLevel");
+  if (m_debug) INFO("Set PrintLevel");
   m_minimiser->SetPrintLevel( m_printLevel );
 
-  INFO("Clear Mapping");
+  if (m_debug) INFO("Clear Mapping");
   m_mapping.clear();
-  INFO("Clear covMatrix");
+  if (m_debug) INFO("Clear covMatrix");
   m_covMatrix.clear();
-  INFO("MPS loop");
+  if (m_debug) INFO("MPS loop");
   for(size_t i = 0 ; i < m_parSet->size(); ++i) 
   {
-    INFO("At "<<i<<" out of "<<m_parSet->size());
+    if (m_debug) INFO("At "<<i<<" out of "<<m_parSet->size());
     auto par = m_parSet->at(i);
-    //INFO("Is "<<par->name()<<" free? = "<<par->isFree());
+    //if (m_debug) INFO("Is "<<par->name()<<" free? = "<<par->isFree());
     if ( ! par->isFree() ) continue;
-    INFO("Input variable  to minimiser within "<<par->mean()<<"±"<<par->stepInit());
-    INFO("Mapping Size = "<<m_mapping.size());
+    if (m_debug) INFO("Input variable  to minimiser within "<<par->mean()<<"±"<<par->stepInit());
+    if (m_debug) INFO("Mapping Size = "<<m_mapping.size());
     m_minimiser->SetVariable(m_mapping.size(), par->name(), par->mean(), par->stepInit());
-    INFO("Set limits");
+    if (m_debug) INFO("Set limits");
     if ( par->minInit() != 0 || par->maxInit() != 0 ) m_minimiser->SetVariableLimits( m_mapping.size(), par->minInit(), par->maxInit() );
-      INFO("Push back "<<par->name());
+      if (m_debug) INFO("Push back "<<par->name());
     m_mapping.push_back(i);
-    if ( m_printLevel != 0 ) INFO( *par );
+    if ( m_printLevel != 0 ) if (m_debug) INFO( *par );
   }
-  INFO("nParams = "<<m_mapping.size());
+  if (m_debug) INFO("nParams = "<<m_mapping.size());
   m_nParams = m_mapping.size();
-  INFO("Resize covMatrix");
+  if (m_debug) INFO("Resize covMatrix");
   m_covMatrix.resize( m_nParams * m_nParams, 0 );
-  INFO("Finished!");
+  if (m_debug) INFO("Finished!");
 }
 
 void Minimiser::setTolerance(double tolerance){

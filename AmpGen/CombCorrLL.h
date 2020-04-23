@@ -29,6 +29,7 @@ namespace AmpGen
         std::vector<EventType> m_SigType;
         std::vector<EventType> m_TagType;
         MinuitParameterSet m_mps;
+        
 
 
       public:
@@ -48,6 +49,7 @@ namespace AmpGen
                         m_TagType(TagType),
                         m_mps(mps)
                         {
+
 
                         }
         double LL(int i){

@@ -412,7 +412,7 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
         ADD_DEBUG_TENSOR(is, db );
         spinFactor = dot(is,st);
       }
-      INFO(name()<<" spinFactor = "<< spinFactor);
+      DEBUG(name()<<" spinFactor = "<< spinFactor);
     }
     if ( includeSpin && m_spinFormalism == spinFormalism::Canonical ){
       TransformSequence t = TransformSequence();
@@ -430,7 +430,7 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
         finalStateString = finalStateString.substr(0, finalStateString.size()-1);
       db->emplace_back( "SF_"+std::to_string(polState()) +"_"+ finalStateString , spinFactor );
     }
-    DEBUG( "Got spin matrix element -> calculating lineshape product" );
+    
     Expression ls = make_cse(propagator(db)) * spinFactor; 
     //INFO(name()<<" LS = "<<ls());
     if(sumAmplitudes) total = total + exchangeParity.second * ls;
