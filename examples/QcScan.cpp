@@ -270,7 +270,7 @@ auto findParam = MPS.find(scanName);
       MPS[scanName]->setCurrentFitVal(val);    
 
 
-      
+      INFO("At "<<val<<" FCN = "<<mini_Comb.FCN());      
       scanfile<<val<<"\t"<<mini_Comb.FCN()<<"\n";      
       val += stepSize;
       
@@ -279,139 +279,6 @@ auto findParam = MPS.find(scanName);
     scanfile.close();
   
   }
-
-
-/*
-//doPlots(KK_fit.str(), cs_KK, events_KK, 100);
-MinuitParameterSet * MPS_comb = new MinuitParameterSet();
-  MPS_comb->loadFromStream();
-  if (makeCPConj){
-    INFO("Making CP conjugate states");
-    add_CP_conjugate(*MPS_comb);
-  }
- 
-//auto LLs = {LL_KK2, LL_Kppim2};
-//INFO("Trying to do combined fit");
-// auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >({csLLs[0], csLLs[1]});
-// auto combMini = Minimiser(combLL, &MPS);
-// INFO("Minimising now");
-// combMini.doFit();
-//FitResult * fr_KK = new FitResult(mini_KK);
-  std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > LLs;
-//FitResult * fr_comb = new FitResult(combMini);
-  if (tags.size()>0){
-    INFO("Making events 0");
-    auto sigevents_0 = getEvents("signal", pNames, tags[0], dataFile, intFile);
-    auto sigMCevents_0 = getEvents("sigMC", pNames, tags[0], dataFile, intFile);
-    auto tagevents_0 = getEvents("tag", pNames, tags[0], dataFile, intFile);
-    auto tagMCevents_0 = getEvents("tagMC", pNames, tags[0], dataFile, intFile);
-    INFO("Making pCorrelatedSum 0");
-    auto cs_0 = pCorrelatedSum(sigevents_0.eventType(), tagevents_0.eventType(), *MPS_comb);
-    cs_0.setEvents(sigevents_0, tagevents_0);
-    cs_0.setMC(sigMCevents_0, tagMCevents_0);
-    cs_0.prepare();
-    INFO("Making LL 0");
-    //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
-    auto LL_0 = make_likelihood( sigevents_0, tagevents_0, false, cs_0);
-    auto mini_0 = Minimiser(LL_0, MPS_comb);
-    LLs = {LL_0};
-    
-
-    if (tags.size() > 1){
-      INFO("Making events 1");
-      auto sigevents_1 = getEvents("signal", pNames, tags[1], dataFile, intFile);
-      auto sigMCevents_1 = getEvents("sigMC", pNames, tags[1], dataFile, intFile);
-      auto tagevents_1 = getEvents("tag", pNames, tags[1], dataFile, intFile);
-      auto tagMCevents_1 = getEvents("tagMC", pNames, tags[1], dataFile, intFile);
-      INFO("Making pCorrelatedSum 1");
-      auto cs_1 = pCorrelatedSum(sigevents_1.eventType(), tagevents_1.eventType(), *MPS_comb);
-      cs_1.setEvents(sigevents_1, tagevents_1);
-      cs_1.setMC(sigMCevents_1, tagMCevents_1);
-      cs_1.prepare();
-      INFO("Making LL 1");
-      auto LL_1 = make_likelihood( sigevents_1, tagevents_1, false, cs_1);
-      auto mini_1 = Minimiser(LL_1, MPS_comb);
-      LLs = {LL_0, LL_1};
-     
-      if (tags.size() > 2){
-        INFO("Making events 2");
-        auto sigevents_2 = getEvents("signal", pNames, tags[2], dataFile, intFile);
-        auto sigMCevents_2 = getEvents("sigMC", pNames, tags[2], dataFile, intFile);
-        auto tagevents_2 = getEvents("tag", pNames, tags[2], dataFile, intFile);
-        auto tagMCevents_2 = getEvents("tagMC", pNames, tags[2], dataFile, intFile);
-        INFO("Making pCorrelatedSum 2");
-        auto cs_2 = pCorrelatedSum(sigevents_2.eventType(), tagevents_2.eventType(), *MPS_comb);
-        cs_2.setEvents(sigevents_2, tagevents_2);
-        cs_2.setMC(sigMCevents_2, tagMCevents_2);
-        cs_2.prepare(); 
-        INFO("Making LL 2");
-        auto LL_2 = make_likelihood( sigevents_2, tagevents_2, false, cs_2);
-        auto mini_2 = Minimiser(LL_2, MPS_comb);
-        LLs = {LL_0, LL_1, LL_2};
-        }
-      }
-    }
-  else{
-        INFO("No tags - returning 0");
-        return 0;
-      }
-
-
-MinuitParameterSet * MPS_comb2 = new MinuitParameterSet();
-  MPS_comb2->loadFromStream();
-  if (makeCPConj){
-    INFO("Making CP conjugate states");
-    add_CP_conjugate(*MPS_comb2);
-  }
- 
-
-
-
-  INFO("Making combLL"); 
-  SumLL<CorrelatedLL<EventList, pCorrelatedSum&> > combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >(LLs);
-    INFO("Making CombMini");
-    auto combMini = Minimiser(combLL, MPS_comb);
-    INFO("Made CombMini");
-    std::ofstream scanfile_comb;
-  scanfile_comb.open("scan_Comb.txt", std::ios_base::app);
-  INFO("Get Param "<<scanName);
-        auto param = MPS[scanName];
-        double minimum=param->minInit();
-        INFO("Minimum = "<<minimum);
-        double maximum=param->maxInit();
-        INFO("Maximum = "<<maximum);
-        double val = minimum;
-        double stepSize = param->stepInit();
-        INFO("StepSize = "<<stepSize);
-
-        (*MPS_comb)[scanName]->setCurrentFitVal(val);   
-
-
-        while (val < maximum){
-    
-        
-
-     (*MPS_comb)[scanName]->setCurrentFitVal(val);    
-
-
-        
-       
-
-        scanfile_comb<<val<<"\t"<<combMini.FCN()<<"\n";      
-        val += stepSize;
-        
-        }
-       
-    scanfile_comb.close();
-    INFO("Finished Scan");
-
-    //delete MPS_comb; 
-//    delete MPS_comb2; 
-*/
-   
-
-
-
 
   return 0;
 }

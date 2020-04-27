@@ -29,6 +29,7 @@ namespace AmpGen
         std::vector<EventType> m_SigType;
         std::vector<EventType> m_TagType;
         MinuitParameterSet m_mps;
+        bool m_debug;
         std::vector<pCorrelatedSum> m_Psi;
         
 
@@ -48,7 +49,8 @@ namespace AmpGen
                         m_TagInt(TagInt),
                         m_SigType(SigType),
                         m_TagType(TagType),
-                        m_mps(mps)
+                        m_mps(mps),
+                        m_debug(NamedParameter<bool>("CombCorrLL::Debug", false, "Debug CombCorrLL"))
                         {
                             std::vector<pCorrelatedSum> pCS = {};
                             for (int i=0; i < m_SigData.size() ; i++){
@@ -58,6 +60,7 @@ namespace AmpGen
                                 _pCS.prepare();
                                 m_Psi.push_back(_pCS);
                             }
+
     //                        m_Psi(*pCS);
 
 
@@ -74,9 +77,12 @@ namespace AmpGen
 
         double getVal(){
             double ll =0 ;
+
             for (int i=0; i < m_SigData.size(); i++){
+                if (m_debug) INFO("LL_"<<i<<" = "<<LL(i));
                 ll += LL(i);
             }
+            if (m_debug) INFO("LL = "<<ll);
             return -2 * ll;
         }
 
