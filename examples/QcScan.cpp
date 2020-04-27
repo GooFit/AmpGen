@@ -232,8 +232,11 @@ auto findParam = MPS.find(scanName);
 
 
       
+
       INFO("At "<<val<<" FCN = "<<mini.FCN());      
       scanfile<<val<<"\t"<<mini.FCN()<<"\n";      
+
+      INFO("Norm = "<<cs.norm());
       val += stepSize;
       
       }
