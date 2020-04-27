@@ -68,7 +68,7 @@ namespace AmpGen
         double LL(int i){
 
             double ll =0 ;
-            for (int j=0; j<m_SigData.size();j++){
+            for (int j=0; j<m_SigData[i].size();j++){
                 double Psi2 = m_Psi[i].prob(m_SigData[i][j], m_TagData[i][j]);
                 ll += log(Psi2);
             }
