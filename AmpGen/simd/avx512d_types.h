@@ -132,6 +132,7 @@ namespace AmpGen {
     struct complex_v {
       real_v re;
       real_v im;
+      static constexpr unsigned size = 8;
       typedef std::complex<double> scalar_type;
 
       real_v real() const { return re; }
