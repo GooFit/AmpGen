@@ -105,6 +105,7 @@ int main( int argc, char* argv[] )
   std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
   bool makeCPConj      = NamedParameter<bool>("makeCPConj", false, "Make CP Conjugates");
   bool doCombFit      = NamedParameter<bool>("doCombFit", false, "Do combined fit");
+  bool doTagFit      = NamedParameter<bool>("doTagFit", false, "Do fit for each tag");
   bool QcGen2 = NamedParameter<bool>("QcGen2", false, "internal boolean - for new QcGenerator");
   bool doFit = NamedParameter<bool>("doFit", true, "Do the fit");
   if( dataFile == "" ) FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off );
@@ -180,7 +181,7 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     auto mini_tag = Minimiser(LL_tag2, MPS_tag);
     mini_tag.prepare();
     //INFO("Fitting "<<i<<" out of "<<tags.size()  );
-    mini_tag.doFit();
+    if (doTagFit) mini_tag.doFit();
   FitResult * fr = new FitResult(mini_tag); 
  int minEvents=15;
 auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.eventType().dof() ) );
@@ -308,7 +309,8 @@ if (doCombFit){
 
     
     Minimiser combMini = Minimiser(combLL, &MPS);
-
+    
+    combMini.prepare();
 
     INFO("Minimising now");
     combMini.doFit();
