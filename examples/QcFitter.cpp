@@ -171,163 +171,137 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     SigType.push_back(sigevents_tag.eventType());
     TagType.push_back(tagevents_tag.eventType());
 
-     
-    auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), *MPS_tag);
-    cs_tag.setEvents(sigevents_tag, tagevents_tag);
-    cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
-    cs_tag.prepare();
-    //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
-    auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag, false, cs_tag);
-    auto mini_tag = Minimiser(LL_tag2, MPS_tag);
-    mini_tag.prepare();
-    //INFO("Fitting "<<i<<" out of "<<tags.size()  );
-    if (doTagFit) mini_tag.doFit();
-  FitResult * fr = new FitResult(mini_tag); 
- int minEvents=15;
-auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.eventType().dof() ) );
-//void   Chi2Estimator::doChi2( const EventList& sigevents_tag, const EventList& sigMCevents_tag,
-//    const std::function<double( const Event& )>& fcn )
-//
-  std::vector<Moment> data( binning.size() );
-  std::vector<Moment> mc( binning.size() );
+    if (doTagFit) { 
+      auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), *MPS_tag);
+      cs_tag.setEvents(sigevents_tag, tagevents_tag);
+      cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
+      cs_tag.prepare();
+      //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
+      auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag, false, cs_tag);
+      auto mini_tag = Minimiser(LL_tag2, MPS_tag);
+      mini_tag.prepare();
+      //INFO("Fitting "<<i<<" out of "<<tags.size()  );
+      mini_tag.doFit();
+      FitResult * fr = new FitResult(mini_tag); 
+      int minEvents=15;
+      auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.eventType().dof() ) );
 
-  INFO( "Splitting: " << sigevents_tag.size() << " data " << sigMCevents_tag.size() << " amongst " << binning.size()
+      std::vector<Moment> data( binning.size() );
+      std::vector<Moment> mc( binning.size() );
+
+      INFO( "Splitting: " << sigevents_tag.size() << " data " << sigMCevents_tag.size() << " amongst " << binning.size()
       << " bins" );
-  unsigned int j           = 0;
-  double total_data_weight = 0;
-  double total_int_weight  = 0;
-  for ( auto& d : sigevents_tag ) {
-    if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " data events" );
-    double w = d.weight();
-    data[binning.getBinNumber( d )].add( d.weight() );
-    total_data_weight += w;
-    j++;
-  }
-  j = 0;
-  for ( int i=0; i < sigMCevents_tag.size(); i++ ) {
-    auto evt1 = sigMCevents_tag[i];
-    auto evt2 = tagMCevents_tag[i];
-    if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " sim. events" );
-    double w = cs_tag.prob( evt1, evt2 ) * (evt1.weight() / evt1.genPdf()) * (evt2.weight() / evt2.genPdf());
-    mc[binning.getBinNumber( evt1 )].add( w );
-    total_int_weight += w;
-    j++;
-  }
-  double chi2 = 0;
-
-  for ( unsigned int i = 0; i < binning.size(); ++i ) {
-    mc[i].rescale( total_data_weight / total_int_weight );
-    double delta = data[i].val() - mc[i].val();
-    double tChi2 = delta * delta / ( data[i].val() + mc[i].var() );
-    chi2 += tChi2;
-  }
-
-  auto Bins = binning.size();
-  auto fitFractionss = cs_tag.fitFractions( fr->getErrorPropagator() ); 
-  std::vector<FitFraction> ffs;
-  for (auto fitFractions : fitFractionss){
-    for (auto fitFraction : fitFractions){
-      ffs.push_back(fitFraction);
-    }
-  }
-  fr->addFractions( ffs );
-  //chi2.writeBinningToFile("chi2_binning.txt");
-  fr->addChi2( chi2, Bins );
-  fr->print();
-  
-       std::map<std::string, std::vector<double> > fits = getParams(*MPS_tag);
-    std::map<std::string, double> pulls = getPulls(fits, inits);
-      for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
-         INFO("Pull = "<<it->first<<" "<<it->second);
-       }
-    writePulls(tag_logName, pulls);
-
-
-   if (doProjections){
-    INFO( "norm[1] = " << cs_tag.norm() );
-    TFile* f = TFile::Open(tag_plotName.c_str(),"RECREATE");
-
-    auto projections = sigevents_tag.eventType().defaultProjections(nBins);
-    for( auto& projection : projections ){
-      auto data_plot = projection(sigevents_tag);
-      auto hist = projection.plot();
-      for(unsigned i = 0 ; i != sigMCevents_tag.size(); ++i)
-      {
-        hist->Fill( projection( sigMCevents_tag[i] ), cs_tag.prob( sigMCevents_tag[i], tagMCevents_tag[i] ) );
+      unsigned int j           = 0;
+      double total_data_weight = 0;
+      double total_int_weight  = 0;
+      for ( auto& d : sigevents_tag ) {
+        if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " data events" );
+        double w = d.weight();
+        data[binning.getBinNumber( d )].add( d.weight() );
+        total_data_weight += w;
+        j++;
       }
-      hist->Scale( data_plot->Integral() / hist->Integral() );
-      hist->SetName( (std::string("MC_")+hist->GetName()).c_str() );
-      hist->Write();
-      data_plot->Write();
-      auto pull = (TH1D*) hist->Clone();
-      pull->Add(data_plot, -1);
-      pull->SetName( (std::string("Pull_") + data_plot->GetName()).c_str() );
-      pull->Write();
-    }
-    auto p2 = sigMCevents_tag.eventType().defaultProjections(nBins);
-    for( unsigned i = 0 ; i != p2.size() -1; ++i )
-    {
-      for( unsigned j=i+1; j < p2.size(); ++j )
-      {
-        auto dalitz = Projection2D( p2[i], p2[j] );
-        auto hdalitz = dalitz.plot();
-        auto data_plot = sigevents_tag.makeProjection(dalitz);
-        for( unsigned event = 0 ; event != sigMCevents_tag.size(); ++event )
-        {
-          auto pos = dalitz(sigMCevents_tag[event]);
-          hdalitz->Fill( pos.first, pos.second, cs_tag.prob( sigMCevents_tag[event], tagMCevents_tag[event] ) );
+      j = 0;
+      for ( int i=0; i < sigMCevents_tag.size(); i++ ) {
+        auto evt1 = sigMCevents_tag[i];
+        auto evt2 = tagMCevents_tag[i];
+        if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " sim. events" );
+        double w = cs_tag.prob( evt1, evt2 ) * (evt1.weight() / evt1.genPdf()) * (evt2.weight() / evt2.genPdf());
+        mc[binning.getBinNumber( evt1 )].add( w );
+        total_int_weight += w;
+        j++;
+      }
+      double chi2 = 0;
+      for ( unsigned int i = 0; i < binning.size(); ++i ) {
+        mc[i].rescale( total_data_weight / total_int_weight );
+        double delta = data[i].val() - mc[i].val();
+        double tChi2 = delta * delta / ( data[i].val() + mc[i].var() );
+        chi2 += tChi2;
+      }
+      auto Bins = binning.size();
+      auto fitFractionss = cs_tag.fitFractions( fr->getErrorPropagator() ); 
+      std::vector<FitFraction> ffs;
+      for (auto fitFractions : fitFractionss){
+        for (auto fitFraction : fitFractions){
+          ffs.push_back(fitFraction);
         }
-        hdalitz->Scale( data_plot->Integral() / hdalitz->Integral() );
-        hdalitz->SetName( ( std::string("MC_") + hdalitz->GetName() ).c_str() );
-        hdalitz->Write();
-
-        data_plot->Write(); 
-        auto pull2D = (TH2D*) hdalitz->Clone();
-        pull2D->Add(data_plot, -1);
-
-        pull2D->SetName( (std::string("Pull_") + data_plot->GetName()).c_str() );
-        pull2D->Write();
       }
-    }
+      fr->addFractions( ffs );
+      fr->addChi2( chi2, Bins );
+      fr->print();
+      std::map<std::string, std::vector<double> > fits = getParams(*MPS_tag);
+      std::map<std::string, double> pulls = getPulls(fits, inits);
+      for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
+        INFO("Pull = "<<it->first<<" "<<it->second);
+      }
+      writePulls(tag_logName, pulls);
+      if (doProjections){
+        INFO( "norm[1] = " << cs_tag.norm() );
+        TFile* f = TFile::Open(tag_plotName.c_str(),"RECREATE");
+        auto projections = sigevents_tag.eventType().defaultProjections(nBins);
+        for( auto& projection : projections ){
+          auto data_plot = projection(sigevents_tag);
+          auto hist = projection.plot();
+          for(unsigned i = 0 ; i != sigMCevents_tag.size(); ++i)
+          {
+            hist->Fill( projection( sigMCevents_tag[i] ), cs_tag.prob( sigMCevents_tag[i], tagMCevents_tag[i] ) );
+          }
+          hist->Scale( data_plot->Integral() / hist->Integral() );
+          hist->SetName( (std::string("MC_")+hist->GetName()).c_str() );
+          hist->Write();
+          data_plot->Write();
+          auto pull = (TH1D*) hist->Clone();
+          pull->Add(data_plot, -1);
+          pull->SetName( (std::string("Pull_") + data_plot->GetName()).c_str() );
+          pull->Write();
+        }
+        auto p2 = sigMCevents_tag.eventType().defaultProjections(nBins);
+        for( unsigned i = 0 ; i != p2.size() -1; ++i )
+        {
+          for( unsigned j=i+1; j < p2.size(); ++j )
+          {
+            auto dalitz = Projection2D( p2[i], p2[j] );
+            auto hdalitz = dalitz.plot();
+            auto data_plot = sigevents_tag.makeProjection(dalitz);
+            for( unsigned event = 0 ; event != sigMCevents_tag.size(); ++event )
+            {
+              auto pos = dalitz(sigMCevents_tag[event]);
+              hdalitz->Fill( pos.first, pos.second, cs_tag.prob( sigMCevents_tag[event], tagMCevents_tag[event] ) );
+            }
+            hdalitz->Scale( data_plot->Integral() / hdalitz->Integral() );
+            hdalitz->SetName( ( std::string("MC_") + hdalitz->GetName() ).c_str() );
+            hdalitz->Write();
+            data_plot->Write(); 
+            auto pull2D = (TH2D*) hdalitz->Clone();
+            pull2D->Add(data_plot, -1);
+            pull2D->SetName( (std::string("Pull_") + data_plot->GetName()).c_str() );
+            pull2D->Write();
+          }
+        }
+        f->Close();
+      }
+      fr->writeToFile(tag_logName);
+    }     
+  }
 
-    f->Close();
-    
-    }
-
-   fr->writeToFile(tag_logName);
-    
-    //FitResult * fr_tag = Fit(LL_tag2, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, MPS_tag, tag_logName, inits);
-
- 
-}
 
 
-
-if (doCombFit){
-  CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS);
-  INFO("Making Combined Minimiser object");
-
-    
+  if (doCombFit){
+    CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS);
+    INFO("Making Combined Minimiser object");
     Minimiser combMini = Minimiser(combLL, &MPS);
-    
     combMini.prepare();
-
     INFO("Minimising now");
     combMini.doFit();
-
-  FitResult * fr = new FitResult(combMini); 
-  fr->print();
-   fr->writeToFile(logFile);
-       std::map<std::string, std::vector<double> > fits = getParams(MPS);
+    FitResult * fr = new FitResult(combMini); 
+    fr->print();
+    fr->writeToFile(logFile);
+    std::map<std::string, std::vector<double> > fits = getParams(MPS);
     std::map<std::string, double> pulls = getPulls(fits, inits);
-      for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
-         INFO("Pull = "<<it->first<<" "<<it->second);
-       }
+    for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
+      INFO("Pull = "<<it->first<<" "<<it->second);
+    }
     writePulls(logFile, pulls);
-
-
-
-
    fr->writeToFile(logFile);
  }
 
