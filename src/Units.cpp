@@ -8,6 +8,6 @@ namespace AmpGen {
 
 double AmpGen::to_double(const AmpGen::Units& unit)
 {
-  static constexpr double value_table[5] = {TeV, GeV, MeV, KeV, eV};
+  static const double value_table[5] = {TeV, GeV, MeV, KeV, eV};
   return value_table[unsigned(unit)];  
 } 
