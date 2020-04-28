@@ -49,13 +49,13 @@ namespace AmpGen{
           const double& min, 
           const double& max );
 
-      Spline( const Spline& spline, const Expression& x );
+      Spline( const Spline& spline, const Expression& x, DebugSymbols* db =nullptr );
       void resolve( ASTResolver& resolver ) const override ;
       std::string to_string(const ASTResolver* resolver=nullptr) const override;
       operator Expression() ;
       complex_t operator()() const override ;
-      Expression operator()( const Expression& x ); 
-      Expression eval() const ;
+      Expression operator()( const Expression& x, DebugSymbols* db); 
+      Expression eval(DebugSymbols* db=nullptr) const ;
 
       Array                        m_points; 
       std::string                  m_name;

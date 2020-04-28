@@ -54,6 +54,12 @@ void EventList::loadFromFile( const std::string& fname, const ArgumentPack& args
   gFile = current_file; 
 }
 
+template <typename key_type, typename value_type, typename default_type=key_type> key_type inv_map(const std::map<key_type, value_type>& mp, const value_type& k, const default_type& df = default_type()) 
+{
+  for( const auto& [key,val] : mp ) if( val == k ) return key; 
+  return df;
+}
+
 void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
 {
   ProfileClock read_time; 
@@ -66,32 +72,36 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
   auto getGenPdf    = args.getArg<GetGenPdf>(false).val;
   auto weightBranch = args.getArg<WeightBranch>(std::string("")).val;
   auto branches     = args.getArg<Branches>().val;
+  auto extraBranches= args.getArg<ExtraBranches>().val; 
   auto applySym     = args.getArg<ApplySym>(false).val;
   auto entryList    = args.getArg<EntryList>().val; 
   auto eventFormat  = m_eventType.getEventFormat( true );
-
-  Event temp( branches.size() == 0 ? eventFormat.size() : branches.size());
-
+  auto inputUnits   = args.getArg<InputUnits>(Units::GeV);
+  auto idBranches   = args.getArg<IdBranches>({}).val;
+  Event temp( eventFormat.size() + extraBranches.size());
   temp.setWeight( 1 );
   temp.setGenPdf( 1 );
   tree->SetBranchStatus( "*", 0 );
-
-  TreeReader<real_t> tr( tree );
-  if( branches.size() != 0 ){
-    INFO("Branches = [" << vectorToString(branches, ", ") << "]" );
-    for ( auto branch = branches.begin(); branch != branches.end(); ++branch ) {
-      unsigned int pos = std::distance( branches.begin(), branch );
-      tr.setBranch( *branch, &(temp[pos]) );
-      if( pos >= eventFormat.size() ){
-        INFO("Specifiying event extension: " << *branch << " " << pos << " " << eventFormat.size() );
-        m_extensions[ *branch ] = pos; 
-      }
+  TreeReader tr( tree );
+  bool hasEnergy = branches.size() == 0 || branches.size() == 4 * m_eventType.size(); // if the energy of the particle has been explicitly specified //   
+  if( branches.size() != 0 )
+  {
+    DEBUG("Branches = [" << vectorToString(branches, ", ") << "]" );
+    for (unsigned p = 0 ; p != branches.size(); ++p ) 
+    {
+      auto pos = hasEnergy ? p : 4 * int(p/3) + p % 3 ;  
+      DEBUG("Setting branch: " << branches[p] << " pos: " << pos << " fmt = " << inv_map( eventFormat, pos, "NOT FOUND" ) << " has energy? " << hasEnergy );
+      tr.setBranch( branches[p], &(temp[pos]) );
     }
+    auto pos = eventFormat.size();
+    for( const auto& branch : extraBranches ) m_extensions[branch] = pos++;
   }
-  else {
-    for ( auto& branch : eventFormat ){
-      tr.setBranch( branch.first, &(temp[branch.second]) );
-    }
+  else for ( auto& branch : eventFormat ) tr.setBranch( branch.first, &(temp[branch.second]) );
+  std::vector<int> ids( m_eventType.size()  ); 
+  if( idBranches.size() != 0  )
+  {
+    if( idBranches.size() != m_eventType.size() ){ FATAL("Number of ID branches should be number of final state particles"); }
+    for( int i = 0; i != ids.size(); ++i ) tr.setBranch( idBranches[i], ids.data() + i);
   }
   if( getGenPdf )          tr.setBranch( "genPdf",     temp.pGenPdf() );
   if( weightBranch != "" ) tr.setBranch( weightBranch, temp.pWeight() );
@@ -105,13 +115,18 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
     for( int i = 0 ; i < evtList->GetN(); ++i ) 
       entryList.push_back( evtList->GetEntry(i) );
   }
-  bool hasEventList    = entryList.size() != 0;
-  unsigned int nEvents = hasEventList ? entryList.size() : tree->GetEntries();
-  m_data.reserve( nEvents );
+  if( entryList.size() != 0 ) tr.setEntryList( entryList );
+  m_data.reserve( tr.nEntries() );
   auto symmetriser = m_eventType.symmetriser();
-  for ( unsigned int evt = 0; evt < nEvents; ++evt ) {
-    tr.getEntry( hasEventList ? entryList[evt] : evt );
-    if( applySym ) symmetriser( temp );
+  auto automaticOrdering = m_eventType.automaticOrdering();
+  for (const auto& evt : tr) {
+    if( inputUnits != Units::GeV ) for( unsigned k = 0; k != eventFormat.size(); ++k ) temp[k] *= to_double(inputUnits); 
+    if( idBranches.size() != 0 ) automaticOrdering(temp, ids);
+    if( applySym ) symmetriser(temp); 
+    if( ! hasEnergy ){ 
+      for( unsigned int k = 0 ; k != m_eventType.size(); ++k ) 
+        temp[4*k + 3] = sqrt( m_eventType.mass(k) * m_eventType.mass(k) + temp[4*k+0]*temp[4*k+0] + temp[4*k+1]*temp[4*k+1] + temp[4*k+2]*temp[4*k+2] ); 
+    }
     temp.setIndex( m_data.size() );
     m_data.push_back( temp );
   }
@@ -132,10 +147,8 @@ TTree* EventList::tree( const std::string& name, const std::vector<std::string>&
   double genPdf = 1;
   double weight = 1;
   auto format = m_eventType.getEventFormat( true );
-
   for ( const auto& f : format ) outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );  
   for ( const auto& f : m_extensions ) outputTree->Branch( f.first.c_str(), tmp.address( f.second ) );
-
   outputTree->Branch( "genPdf", &genPdf );
   outputTree->Branch( "weight", &weight );
   for ( const auto& evt : *this ) {
@@ -185,12 +198,6 @@ TH2D* EventList::makeProjection( const Projection2D& projection, const ArgumentP
   return plot;
 }
 
-// void EventList::resetCache()
-// {
-//   m_index.clear();
-//   //m_cache.clear();
-// }
-
 double EventList::integral() const
 {
   return std::accumulate( std::begin(*this), std::end(*this), 0, [](double rv, const auto& evt){ return rv + evt.weight(); } );
@@ -211,10 +218,3 @@ void EventList::erase(const std::vector<Event>::iterator& begin,
 {
   m_data.erase( begin, end );
 }
-
-//void EventList::reserveCache(const size_t& size)
-//{ 
-//  if ( size * m_data.size() >= m_cache.size() )
-//    m_cache.reserve( m_data.size() * m_cache.size() );
-//}
-

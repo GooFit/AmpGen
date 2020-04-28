@@ -26,7 +26,7 @@
   #include <thread>
 #endif
 
-#if ENABLE_AVX2
+#if ENABLE_AVX
   #include "AmpGen/EventListSIMD.h"
   using EventList_type = AmpGen::EventListSIMD;
 #else

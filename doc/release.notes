@@ -3,6 +3,11 @@
 ! Responsible : Tim Evans
 ! Purpose     : 
 !-----------------------------------------------------------------------------
+!=================== AmpGen v2r0 2020-25-04
+ - Refactored caching logic away from being computations being stored with event data.
+ - Support for AVX2 for amplitude evaluation / integration single/double precision.
+ - Updated plotting for making component amplitude plots. 
+ - Better thread safety of integration should improve fit stability. 
 !=================== AmpGen v1r2 2019-11-12 ==================
  - New phase space Generator TreePhaseSpace for producing narrow resonances. 
  - Improved handling of CP conjugated amplitudes.

@@ -13,6 +13,7 @@
 #include "AmpGen/ASTResolver.h"
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/Tensor.h"
+#include "AmpGen/simd/utils.h"
 using namespace AmpGen;
 
 CompiledExpressionBase::CompiledExpressionBase() = default; 
@@ -143,7 +144,7 @@ void CompiledExpressionBase::compile(const std::string& fname)
 void CompiledExpressionBase::addDebug( std::ostream& stream ) const
 {
   stream << "#include<string>\n";
-  stream << "extern \"C\" std::vector<std::pair< std::string, std::complex<double>>> " 
+  stream << "extern \"C\" std::vector<std::pair< std::string, " << typeof<complex_v>() << " >> " 
          << m_progName << "_DB(" << fcnSignature() << "){\n";
   for ( auto& dep : m_debugSubexpressions ) {
     std::string rt = "auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver.get()) +";"; 
@@ -155,8 +156,8 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
     const auto expression = m_db[i].second; 
     stream << std::endl << "{\"" << m_db[i].first << "\",";
     if ( expression.to_string(m_resolver.get()) != "NULL" )
-      stream << expression.to_string(m_resolver.get()) << "}" << comma;
-    else stream << "-999}" << comma ;
+      stream << typeof<complex_v>() << "("<< expression.to_string(m_resolver.get()) << ")}" << comma;
+    else stream << typeof<complex_v>() << "(-999.,0.)}" << comma ;
   }
 }
 

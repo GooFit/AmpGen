@@ -36,7 +36,7 @@ namespace AmpGen
       private:
         DynamicFCN<RETURN_TYPE( ARGS... )>                                       m_fcn;
         DynamicFCN<void( const size_t&, const size_t&, const size_t&, RETURN_TYPE*, ARGS... )> m_batchFcn;
-        DynamicFCN<std::vector<std::pair<std::string, complex_t>>(ARGS...)>      m_fdb;
+        DynamicFCN<std::vector<std::pair<std::string, complex_v>>(ARGS...)>      m_fdb;
         std::vector<real_t>  m_externals             = {};
         bool                 m_hasExternalsChanged   = {false};
 
@@ -100,10 +100,9 @@ namespace AmpGen
           m_externals[address]  = value;
           m_hasExternalsChanged = true;
         }
-        void resizeExternalCache(const size_t& N ) override { 
-          if( m_externals.size() < N ){
-            m_externals.resize(N);
-          }
+        void resizeExternalCache(const size_t& N ) override 
+        { 
+          if( m_externals.size() < N ) m_externals.resize(N);
         }
         bool hasExternalsChanged() { return m_hasExternalsChanged; }
         void resetExternals() { m_hasExternalsChanged = false; }
@@ -165,26 +164,26 @@ namespace AmpGen
           m_batchFcn(args...); 
         }
 
-        template < class T> 
-          void debug( const T* event ) const
-          {
-            if ( !m_fcn.isLinked() ) {
-              FATAL( "Function " << name() << " not linked" );
-            }
-            if ( !m_fdb.isLinked() ) {
-              FATAL( "Function" << name() << " debugging symbols not linked" );
-            }
-            std::vector<std::pair<std::string, complex_t>> debug_results;
-            if constexpr(std::is_same<void, RETURN_TYPE>::value) debug_results = m_fdb( nullptr, &( m_externals[0] ), event );
-            else debug_results = m_fdb( &(m_externals[0]), event);
-            for( auto& debug_result : debug_results ){ 
-              auto val = debug_result.second;  
-              auto label = debug_result.first; 
-              if( std::real(val) == -999. )  std::cout << bold_on << std::setw(50) << std::left << label << bold_off << std::endl; 
-              else if( std::imag(val) == 0 ) std::cout << "  " << std::setw(50) << std::left << label << " = " << std::real(val) << std::endl; 
-              else                           std::cout << "  " << std::setw(50) << std::left << label << " = " << val << std::endl; 
-            }
+        template < class T> void debug( const T* event ) const
+        {
+          if ( !m_fcn.isLinked() ) {
+            FATAL( "Function " << name() << " not linked" );
           }
+          if ( !m_fdb.isLinked() ) {
+            FATAL( "Function" << name() << " debugging symbols not linked" );
+          }
+          std::vector<std::pair<std::string, complex_v>> debug_results;
+          if constexpr(std::is_same<void, RETURN_TYPE>::value) debug_results = m_fdb( nullptr, &( m_externals[0] ), event );
+          else debug_results = m_fdb( &(m_externals[0]), event);
+          for( auto& debug_result : debug_results ){ 
+            auto val = debug_result.second;  
+            auto label = debug_result.first; 
+            if( utils::all_of(val.real(), -999.) )  std::cout << bold_on << std::setw(50) << std::left << label << bold_off << std::endl; 
+            else if( utils::all_of(val.imag(), 0.) ) std::cout << "  "    << std::setw(50) << std::left << label << " = " << val.real() << std::endl; 
+            else
+              std::cout << "  "    << std::setw(50) << std::left << label << " = " << val << std::endl; 
+          }
+        }
 
         bool link( void* handle ) override
         {

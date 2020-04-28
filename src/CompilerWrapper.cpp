@@ -53,8 +53,10 @@ void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, 
 {
   std::ofstream output( filename );
   for ( auto& include : m_includes ) output << "#include <" << include << ">\n";
-  if( expression.fcnSignature().find("AVX2d") != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
-  else if( expression.fcnSignature().find("AVX2") != std::string::npos )  output << "#include \"AmpGen/simd/avx2_types.h\"\n; using namespace AmpGen::AVX2;\n;" ;
+  if( expression.fcnSignature().find("AVX2d")        != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
+  else if( expression.fcnSignature().find("AVX2")    != std::string::npos )  output << "#include \"AmpGen/simd/avx2_types.h\"\n; using namespace AmpGen::AVX2;\n;" ;
+  else if( expression.fcnSignature().find("AVX512d") != std::string::npos )  output << "#include \"AmpGen/simd/avx512d_types.h\"\n; using namespace AmpGen::AVX512d;\n;" ;
+  else if( expression.fcnSignature().find("AVX512")  != std::string::npos )  output << "#include \"AmpGen/simd/avx512_types.h\"\n; using namespace AmpGen::AVX512;\n;" ;
   output << expression << std::endl; 
   output.close();
 }
@@ -141,11 +143,13 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
   std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", 
    {"-Ofast", "--std="+get_cpp_version()}); 
   
-  #if ENABLE_AVX2 
+  #if ENABLE_AVX 
     compile_flags.push_back("-march=native");
+    compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
+  #endif
+  #if ENABLE_AVX2d 
     compile_flags.push_back("-mavx2");
     compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
-    compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
   #endif
   #ifdef _OPENMP
     compile_flags.push_back("-fopenmp");

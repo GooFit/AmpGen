@@ -36,11 +36,10 @@ void invertParity( Event& event, const size_t& nParticles=0)
   }
 }
 
-
 int main( int argc, char* argv[] )
 {
   OptionsParser::setArgs( argc, argv );
-  std::string inputFilename                = NamedParameter<std::string>("Input"     , "", "Input ROOT file" );
+  std::string inputFilename                = NamedParameter<std::string>("Input"     , "", "Input ROOT file(s)" );
   std::string treeName                     = NamedParameter<std::string>("Tree"      , "", "Input ROOT tree." );
   std::string outputFilename               = NamedParameter<std::string>("Output"    , "", "Output ROOT file" );
   std::string pdfLibrary                   = NamedParameter<std::string>("PdfLibrary", "", "PDF Library that used to generate this sample for MC reweighting (MC only)" );
@@ -50,10 +49,14 @@ int main( int argc, char* argv[] )
   std::vector<std::string> monitorBranches = NamedParameter<std::string>("Monitors"      , std::vector<std::string>() ).getVector();
   std::vector<std::string> branchFormat    = NamedParameter<std::string>("BranchFormat"  , std::vector<std::string>() ).getVector();
   std::vector<std::string> friends         = NamedParameter<std::string>("Friends"       , std::vector<std::string>() ).getVector();
-  bool usePIDCalib                         = NamedParameter<bool>("usePIDCalib"             , false );
-  bool rejectMultipleCandidates            = NamedParameter<bool>("rejectMultipleCandidates", true  );
+  std::vector<std::string> idBranches      = NamedParameter<std::string>("IdBranches"    , std::vector<std::string>() ).getVector(); 
+  bool usePIDCalib                         = NamedParameter<bool>("usePIDCalib"             , false);
+  bool rejectMultipleCandidates            = NamedParameter<bool>("rejectMultipleCandidates", true );
   std::string cuts                         = vectorToString( NamedParameter<std::string>("Cut","").getVector() , " && "); 
   EventType evtType( NamedParameter<std::string>( "EventType" ).getVector() );
+  
+  std::vector<std::string> branches; 
+  for( auto& particle : particles ) for(auto& bf : branchFormat) branches.push_back( mysprintf(bf, particle.c_str()));
 
   INFO( "Reading file " << inputFilename );
   INFO( "Outputting file: " << outputFilename);
@@ -82,12 +85,6 @@ int main( int argc, char* argv[] )
   INFO( "Total efficiency = " << elist->GetN() / (double)in_tree->GetEntries() );
 
   std::vector<size_t> eventsToTake;
-  
-  std::vector<std::string> branches;
-  for( auto& particle : particles ) {
-    for(size_t i = 0 ; i < 4; ++i ) branches.push_back( mysprintf(branchFormat[i], particle.c_str()));
-  }
-  for(auto& branch : monitorBranches) branches.push_back( branch );
   
   if ( rejectMultipleCandidates ) {
     ULong64_t totCandidate;
@@ -130,7 +127,13 @@ int main( int argc, char* argv[] )
     }
   }
 
-  EventList evts( in_tree, evtType, Branches(branches), EntryList(eventsToTake), GetGenPdf(false), ApplySym(true) );
+  EventList evts( in_tree, evtType, Branches(branches), 
+                                    EntryList(eventsToTake), 
+                                    GetGenPdf(false), 
+                                    ApplySym(true) , 
+                                    ExtraBranches(monitorBranches),
+                                    IdBranches(idBranches), 
+                                    InputUnits(Units::MeV) );
 
   INFO( "Branches = ["<< vectorToString(branches, ", " ) << "]" );
 
@@ -182,8 +185,6 @@ int main( int argc, char* argv[] )
       evts[i].setWeight( weight );
     }
   }
-  evts.transform( [=](auto& event){ for( size_t i = 0 ; i < 4*evtType.size(); ++i ) event[i] /= 1000. ; } );
-
   if ( pdfLibrary != "" ) {
     INFO( "Setting generator level PDF from " << pdfLibrary );
     void* handle = dlopen( pdfLibrary.c_str(), RTLD_NOW );
@@ -208,9 +209,13 @@ int main( int argc, char* argv[] )
   outputFile->Close();
   TFile* outputPlotFile = TFile::Open( plotsName.c_str(), "RECREATE" );
   auto plots            = evts.makeDefaultProjections();
+  auto proj = Projection([](auto& event){ return sqrt(event.s({0,1,2,3})) ; }, "m_D", "m_D",100, 1.8, 1.9 );
   for ( auto& plot : plots ) {
     INFO( "Writing plot " << plot->GetName() << " to file" );
     plot->Write();
   }
+  proj( evts )->Write();
+  for( int i = 0 ;i != 4; ++i )
+  Projection([i](auto& event){ return sqrt(event.s(i)) ; }, "m_"+std::to_string(i), "m_D",100, 0, 1.0 )(evts)->Write();
   outputPlotFile->Close();
 }

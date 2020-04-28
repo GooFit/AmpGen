@@ -15,7 +15,7 @@
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Types.h"
-
+#include "AmpGen/simd/utils.h"
 using namespace AmpGen;
 using namespace AmpGen::fcn;
 using namespace std::complex_literals;
@@ -58,15 +58,10 @@ std::string Constant::to_string(const ASTResolver* resolver) const {
   };
   std::string complex_type = typeof<complex_t>();
   std::string literalSuffix = "";
-  if( resolver != nullptr && resolver->enableCuda() )
-  {
-    complex_type = "AmpGen::CUDA::complex_t";
+  if( resolver != nullptr && (resolver->enableCuda() || resolver->enableAVX()) )
+  { 
     literalSuffix = "f";
-  }
-  if( resolver != nullptr && resolver->enableAVX() )
-  {
-    complex_type = "AmpGen::AVX2d::complex_t";
-    literalSuffix = "f";
+    complex_type = typeof<complex_v>();
   }
   return std::imag(m_value) == 0 ? "(" + rounded_string(std::real(m_value)) +literalSuffix + ")" : 
       complex_type +"("+rounded_string(std::real(m_value))+literalSuffix+","+rounded_string(std::imag(m_value))+literalSuffix+")";
@@ -216,7 +211,7 @@ Ternary::Ternary( const Expression& cond, const Expression& v1, const Expression
 }
 std::string Ternary::to_string(const ASTResolver* resolver) const
 {
-  return resolver != nullptr && resolver->enableAVX() ? "AmpGen::AVX2d::select(" + m_cond.to_string(resolver) + ", " +
+  return resolver != nullptr && resolver->enableAVX() ? "select(" + m_cond.to_string(resolver) + ", " +
     m_v1.to_string(resolver) + ", " + m_v2.to_string(resolver) +")"
     : "(" + m_cond.to_string(resolver) + "?" + m_v1.to_string(resolver) + ":" + m_v2.to_string(resolver) + ")";
 }
@@ -331,9 +326,8 @@ ComplexParameter::ComplexParameter( const Parameter& real, const Parameter& imag
 
 std::string ComplexParameter::to_string(const ASTResolver* resolver) const
 {
-  std::string complex_type = "std::complex<double>";
-  if( resolver != nullptr && resolver->enableCuda() ) complex_type = "AmpGen::CUDA::complex_t";
-  if( resolver != nullptr && resolver->enableAVX()  ) complex_type = "AmpGen::AVX2d::complex_t";
+  std::string complex_type = typeof<complex_t>();
+  if( resolver != nullptr && (resolver->enableCuda() || resolver->enableAVX()) ) complex_type = typeof<complex_v>();
   return complex_type + "(" + m_real.to_string(resolver) + ", " + m_imag.to_string(resolver) +")";
 }
 

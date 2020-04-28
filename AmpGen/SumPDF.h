@@ -8,8 +8,7 @@
 #include "AmpGen/LiteSpan.h"
 #include <tuple>
 
-#if ENABLE_AVX2 
-  #include "AmpGen/simd/avx2_types.h"
+#if ENABLE_AVX
   #include "AmpGen/simd/utils.h"
 #endif
 
@@ -69,7 +68,7 @@ namespace AmpGen
         }
         return -2 * LL;
       }
-      #if ENABLE_AVX2 
+      #if ENABLE_AVX 
       if constexpr( std::is_same<eventListType, EventListSIMD>::value )
       {
         float_v LL = 0.f;
@@ -77,7 +76,7 @@ namespace AmpGen
         #pragma omp parallel for reduction( +: LL )
         for ( size_t block = 0; block < m_events->nBlocks(); ++block ) 
         {
-          LL += m_events->weight(block) * AVX2d::log(this->operator()(m_events->block(block), block));
+          LL += m_events->weight(block) * AVX::log(this->operator()(m_events->block(block), block));
         }
         return -2 * utils::sum_elements(LL);
       }

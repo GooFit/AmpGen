@@ -230,7 +230,7 @@ std::function<void( Event& )> EventType::symmetriser() const
     for ( auto& s : shuffle ) shuffle_string += std::to_string( s ) + " ";
     DEBUG( "Shuffle = " << shuffle_string );
   }
-  auto fcn = [shuffles, rng]( auto& event ) mutable -> void {
+  return [shuffles, rng]( auto& event ) mutable -> void {
     for ( auto shuffled : shuffles ) {
       for ( unsigned int index = 0; index < shuffled.size(); ++index ) {
         unsigned int j = std::uniform_int_distribution<int>( 0, index )( rng );
@@ -240,8 +240,43 @@ std::function<void( Event& )> EventType::symmetriser() const
       }
     }
   };
-  return fcn;
 }
+
+std::function<void(Event&, const std::vector<int>&)> EventType::automaticOrdering() const 
+{
+  std::vector<int> ids;
+  for( unsigned i = 0 ; i != m_particleNames.size(); ++i ) ids.push_back( ParticleProperties::get(m_particleNames[i])->pdgID() );
+  auto matches = [](const auto& c1, const auto& c2 , unsigned sgn = +1)
+  {
+    std::vector<bool> used( c1.size(), false );
+    for(unsigned i = 0; i != c1.size(); ++i )
+    {
+      for( unsigned j = 0; j != c2.size(); ++j )
+      {
+        if( c1[i] == sgn * c2[j] && ! used[j] ) used[j] = true;
+      }
+    }
+    return std::all_of( std::begin(used), std::end(used), [](auto b) { return b; }  ) ;
+  };
+
+  return [ids, matches](auto& event, const auto& actual_ids) -> void {
+    std::vector<unsigned> new_addresses( ids.size(), 999 ); 
+    int sgn = +1; 
+    if( matches(ids, actual_ids ) ) sgn = +1;
+    else if( matches(ids, actual_ids, -1 ) ) sgn = -1;
+    else { FATAL("Ids: " << vectorToString(actual_ids, " ") << " do not match either particle or antiparticle ["<< vectorToString(ids, " ") << "]" );}
+    
+    for( unsigned i = 0 ; i != ids.size(); ++i )
+    {
+      for( unsigned j = 0 ; j != actual_ids.size(); ++j )
+      {
+        if( actual_ids[j] ==  sgn * ids[i] && new_addresses[j]==999 ){ new_addresses[j] = i; break ; }
+      }
+    }
+    event.reorder( new_addresses );
+  };
+}
+
 
 bool EventType::has( const std::string& name ) const
 {

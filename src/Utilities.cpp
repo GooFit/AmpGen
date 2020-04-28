@@ -281,13 +281,12 @@ void AmpGen::printSplash()
   #elif defined(__GNUC__) || defined(__GNUG__)
     std::cout << "gcc " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__;
   #endif
-  #if ENABLE_AVX2 
-    std::cout << " (avx2;";
-  #if DOUBLE_PRECISION
-    std::cout << " double)";
-  #else
-    std::cout << " single)";
-  #endif
+  #if ENABLE_AVX2d
+    std::cout << " (avx2; double)";
+  #elif ENABLE_AVX2f
+    std::cout << " (avx2; single)";
+  #elif ENABLE_AVX512
+    std::cout << " (avx512; double)";
   #endif
     
   std::cout << "  " << __DATE__ << " " << __TIME__ << bold_off << "\n\n";

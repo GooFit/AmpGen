@@ -7,7 +7,7 @@
 
 #include "AmpGen/BinDT.h"
 
-#if ENABLE_AVX2
+#if ENABLE_AVX
 #include "AmpGen/EventListSIMD.h"
 #else 
 #include "AmpGen/EventList.h"
@@ -21,7 +21,7 @@ namespace AmpGen
 
   class Chi2Estimator
   {
-    #if ENABLE_AVX2 
+    #if ENABLE_AVX
     typedef EventListSIMD EventList_type;
     #else
     typedef EventList     EventList_type;
