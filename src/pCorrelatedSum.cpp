@@ -2,6 +2,11 @@
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/NamedParameter.h"
 #include <limits>
+
+
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
 using namespace AmpGen;
 
 pCorrelatedSum::pCorrelatedSum() = default; 
@@ -470,7 +475,7 @@ complex_t pCorrelatedSum::getVal(const Event& evt1, const Event& evt2) const {
     f -= correction(evt2);
   }
   auto i = Constant(0,1);
-  complex_t val = A  *exp(i()*f) * B - C * D;
+  complex_t val = A  *exp(i()*f/2.) * B - C * D  *exp(-i()*f/2.);
   //INFO("Correction  = "<<f);
   if (m_debug) INFO("A2 = "<<std::norm(A));
   if (m_debug) INFO("B2 = "<<std::norm(B));
