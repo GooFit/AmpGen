@@ -233,6 +233,14 @@ class pCorrelatedSum {
                    
 
                 }
+                else if (m_polyType=="Sym_legendre"){
+                   double Cij = getC(i,j);
+                   auto zp = 0.5 * (X() + Y());
+                   auto zm = 0.5 * (X() - Y());
+                  sum_i = sum_i +  Cij * legendre(zp, i) * legendre(zm, 2*j);
+                   
+
+                }
 
 
 

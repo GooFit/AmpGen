@@ -3,7 +3,7 @@
 #include "AmpGen/CorrelatedSum.h"
 #include "AmpGen/CorrelatedLL.h"
 #include "AmpGen/corrEventList.h"
-#include "AmpGen/SumLL.h"
+#include "AmpGen/CombCorrLL.h"
 #include "AmpGen/MetaUtils.h"
 #include <typeinfo>
 
@@ -133,43 +133,16 @@ int main( int argc, char* argv[] )
   }
   std::map<std::string, std::vector<double> > inits = getParams(MPS);
 //auto fs = std::vector<std::function<double(void)> > {};
-  std::vector< CorrelatedLL<EventList, pCorrelatedSum&> > csLLs = {};
 
-//auto sigevents_KK = getEvents("signal", pNames, tags[2], dataFile, intFile);
-//auto sigMCevents_KK = getEvents("sigMC", pNames, tags[2], dataFile, intFile);
-//auto tagevents_KK = getEvents("tag", pNames, tags[2], dataFile, intFile);
-//auto tagMCevents_KK = getEvents("tagMC", pNames, tags[2], dataFile, intFile);
-
-
-
-//auto events_Kppim = getEvents(pNames, tags[1], dataFile, intFile);
-//auto events_Kspipi = getEvents(pNames, tags[2], dataFile, intFile);
-//auto types_KK = makeEventTypes(pNames, tags[0]);
-//auto types_Kppim = makeEventTypes(pNames, tags[1]);
-//auto types_Kspipi = makeEventTypes(pNames, tags[2]);
-//auto LL_KK =  tagLL(events_KK, MPS);
-//auto LL_Kppim =  tagLL(events_Kppim, MPS);
-//auto LL_Kspipi =  tagLL(events_Kspipi, MPS);
-
-//std::stringstream KK_log;
-//KK_log<<tags[2]<<"_fit.log";
-//std::stringstream KK_fit;
-//KK_fit<<tags[2]<<"_plots.root";
-//auto KK_logName = KK_log.str();
-////auto cs_KK = makeCs(events_KK, MPS);
-//auto cs_KK = pCorrelatedSum(sigevents_KK.eventType(), tagevents_KK.eventType(), MPS);
-//cs_KK.setEvents(sigevents_KK, tagevents_KK);
-//cs_KK.setMC(sigMCevents_KK, tagMCevents_KK);
-//cs_KK.prepare();
-////auto LL_KK2 = make_likelihood( events_KK["signal"], events_KK["tag"], false, cs_KK);
-//auto LL_KK2 = make_likelihood( sigevents_KK, tagevents_KK, false, cs_KK);
-//auto mini_KK = Minimiser(LL_KK2, &MPS);
-//mini_KK.prepare();
-//mini_KK.doFit();
-//FitResult * fr_KK = new FitResult(mini_KK);
-//FitResult * fr_KK = Fit(LL_KK2, cs_KK, sigevents_KK, tagevents_KK, sigMCevents_KK, tagMCevents_KK, MPS, KK_logName);
-//csLLs.push_back(LL_KK2);
 INFO("Doing loop of Fits");
+
+ std::vector<EventList> SigData;
+ std::vector<EventList> TagData;
+ std::vector<EventList> SigInt;
+ std::vector<EventList> TagInt;
+ std::vector<EventType> SigType;
+ std::vector<EventType> TagType;
+
 for (int i=0; i < tags.size(); i++){
 MinuitParameterSet * MPS_tag = new MinuitParameterSet();
   MPS_tag->loadFromStream();
@@ -189,6 +162,13 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
     auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
     auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
+
+    SigData.push_back(sigevents_tag);
+    TagData.push_back(tagevents_tag);
+    SigInt.push_back(sigMCevents_tag);
+    TagInt.push_back(tagMCevents_tag);
+    SigType.push_back(sigevents_tag.eventType());
+    TagType.push_back(tagevents_tag.eventType());
 
      
     auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), *MPS_tag);
@@ -316,102 +296,27 @@ auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.
    fr->writeToFile(tag_logName);
     
     //FitResult * fr_tag = Fit(LL_tag2, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, MPS_tag, tag_logName, inits);
-    csLLs.push_back(LL_tag2);
 
+ 
 }
 
 
 
 if (doCombFit){
-//doPlots(KK_fit.str(), cs_KK, events_KK, 100);
-MinuitParameterSet * MPS_comb = new MinuitParameterSet();
-  MPS_comb->loadFromStream();
-  if (makeCPConj){
-    INFO("Making CP conjugate states");
-    add_CP_conjugate(*MPS_comb);
-  }
- 
-//auto LLs = {LL_KK2, LL_Kppim2};
-//INFO("Trying to do combined fit");
-// auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >({csLLs[0], csLLs[1]});
-// auto combMini = Minimiser(combLL, &MPS);
-// INFO("Minimising now");
-// combMini.doFit();
-//FitResult * fr_KK = new FitResult(mini_KK);
-  std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > LLs;
-//FitResult * fr_comb = new FitResult(combMini);
-  if (tags.size()>0){
-    INFO("Making events 0");
-    auto sigevents_0 = getEvents("signal", pNames, tags[0], dataFile, intFile);
-    auto sigMCevents_0 = getEvents("sigMC", pNames, tags[0], dataFile, intFile);
-    auto tagevents_0 = getEvents("tag", pNames, tags[0], dataFile, intFile);
-    auto tagMCevents_0 = getEvents("tagMC", pNames, tags[0], dataFile, intFile);
-    INFO("Making pCorrelatedSum 0");
-    auto cs_0 = pCorrelatedSum(sigevents_0.eventType(), tagevents_0.eventType(), *MPS_comb);
-    cs_0.setEvents(sigevents_0, tagevents_0);
-    cs_0.setMC(sigMCevents_0, tagMCevents_0);
-    cs_0.prepare();
-    INFO("Making LL 0");
-    //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
-    auto LL_0 = make_likelihood( sigevents_0, tagevents_0, false, cs_0);
-    auto mini_0 = Minimiser(LL_0, MPS_comb);
-    LLs = {LL_0};
+  CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS);
+  INFO("Making Combined Minimiser object");
+
     
-
-    if (tags.size() > 1){
-      INFO("Making events 1");
-      auto sigevents_1 = getEvents("signal", pNames, tags[1], dataFile, intFile);
-      auto sigMCevents_1 = getEvents("sigMC", pNames, tags[1], dataFile, intFile);
-      auto tagevents_1 = getEvents("tag", pNames, tags[1], dataFile, intFile);
-      auto tagMCevents_1 = getEvents("tagMC", pNames, tags[1], dataFile, intFile);
-      INFO("Making pCorrelatedSum 1");
-      auto cs_1 = pCorrelatedSum(sigevents_1.eventType(), tagevents_1.eventType(), *MPS_comb);
-      cs_1.setEvents(sigevents_1, tagevents_1);
-      cs_1.setMC(sigMCevents_1, tagMCevents_1);
-      cs_1.prepare();
-      INFO("Making LL 1");
-      auto LL_1 = make_likelihood( sigevents_1, tagevents_1, false, cs_1);
-      auto mini_1 = Minimiser(LL_1, MPS_comb);
-      LLs = {LL_0, LL_1};
-     
-      if (tags.size() > 2){
-        INFO("Making events 2");
-        auto sigevents_2 = getEvents("signal", pNames, tags[2], dataFile, intFile);
-        auto sigMCevents_2 = getEvents("sigMC", pNames, tags[2], dataFile, intFile);
-        auto tagevents_2 = getEvents("tag", pNames, tags[2], dataFile, intFile);
-        auto tagMCevents_2 = getEvents("tagMC", pNames, tags[2], dataFile, intFile);
-        INFO("Making pCorrelatedSum 2");
-        auto cs_2 = pCorrelatedSum(sigevents_2.eventType(), tagevents_2.eventType(), *MPS_comb);
-        cs_2.setEvents(sigevents_2, tagevents_2);
-        cs_2.setMC(sigMCevents_2, tagMCevents_2);
-        cs_2.prepare(); 
-        INFO("Making LL 2");
-        auto LL_2 = make_likelihood( sigevents_2, tagevents_2, false, cs_2);
-        auto mini_2 = Minimiser(LL_2, MPS_comb);
-        LLs = {LL_0, LL_1, LL_2};
-        }
-      }
-    }
-  else{
-        INFO("No tags - returning 0");
-        return 0;
-      }
+    Minimiser combMini = Minimiser(combLL, &MPS);
 
 
-
-
-
-
-  INFO("Making combLL"); 
-    auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >(LLs);
-    auto combMini = Minimiser(combLL, MPS_comb);
     INFO("Minimising now");
     combMini.doFit();
 
   FitResult * fr = new FitResult(combMini); 
   fr->print();
    fr->writeToFile(logFile);
-       std::map<std::string, std::vector<double> > fits = getParams(*MPS_comb);
+       std::map<std::string, std::vector<double> > fits = getParams(MPS);
     std::map<std::string, double> pulls = getPulls(fits, inits);
       for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
          INFO("Pull = "<<it->first<<" "<<it->second);
