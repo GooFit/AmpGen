@@ -44,7 +44,7 @@ void Integrator::integrateBlock()
     auto b2 = m_cache.data() + m_integrals[roll].j * m_cache.nBlocks();
     for ( size_t i = 0; i < m_cache.nBlocks(); ++i ) {
       auto c = b1[i] * conj(b2[i]);
-      #if ENABLE_AVX2 
+      #if ENABLE_AVX
       re = fmadd( m_weight[i], real(c), re );
       im = fmadd( m_weight[i], imag(c), im ); 
       #else

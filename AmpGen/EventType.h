@@ -62,6 +62,7 @@ namespace AmpGen
 
       /// Functor to randomly symmetrise data of this event type, using the Fisher-Yates shuffle.
       std::function<void( Event& )> symmetriser() const;
+      std::function<void( Event&, const std::vector<int>& ids)> automaticOrdering() const;
 
       /// Calculates the number of spin indices associated with the initial and final state, i.e. the rank of the relevant transition matrix.
       std::pair<unsigned, unsigned> dim() const;

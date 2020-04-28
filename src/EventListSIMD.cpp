@@ -1,4 +1,4 @@
-#if ENABLE_AVX2 
+#if ENABLE_AVX 
 
 #include <Rtypes.h>
 #include <TDirectory.h>
@@ -81,7 +81,7 @@ void EventListSIMD::loadFromTree( TTree* tree, const ArgumentPack& args )
   temp.setGenPdf( 1 );
   tree->SetBranchStatus( "*", 0 );
 
-  TreeReader<real_t> tr( tree );
+  TreeReader tr( tree );
   if( branches.size() != 0 ){
     INFO("Branches = [" << vectorToString(branches, ", ") << "]" );
     for ( auto branch = branches.begin(); branch != branches.end(); ++branch ) {

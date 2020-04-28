@@ -10,7 +10,7 @@ echo "Building under OS: $TRAVIS_OS_NAME"
 mkdir -p build
 cd build
 echo "CMake-ing, CXX = $CXX"
-cmake .. -DCMAKE_CXX_COMPILER=clang
+cmake .. -DCMAKE_CXX_COMPILER=clang -DUSE_SIMD=""
 echo "Building ..."
 cmake --build . -- -j2 
 cd ..

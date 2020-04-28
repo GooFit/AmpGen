@@ -33,37 +33,40 @@ namespace AmpGen
           m_rnd = rand;
           m_gps.setRandom( m_rnd );
         }
-        void fillEventListPhaseSpace( EventList& list, const size_t& N)
-        {
-          list.reserve( N );
-          while( list.size() < N ){  
-            Event newEvent = m_gps.makeEvent();
-            newEvent.setWeight( 1 );
-            newEvent.setIndex( list.size() );
-            list.push_back( newEvent );
-          }
-        }
         void setBlockSize( const size_t& blockSize ) { m_generatorBlock = blockSize; }
         void setNormFlag( const bool& normSetting ) { m_normalise = normSetting; }
 
-        template <class HARD_CUT> void fillEventListPhaseSpace( EventList& list, const size_t& N, HARD_CUT cut)
+        template <typename cut_type=std::nullptr_t> void fillEventListPhaseSpace( EventList& list, const size_t& N, cut_type cut = nullptr)
         {
-          list.reserve( N );
-          while( list.size() < N ){  
-            Event newEvent = m_gps.makeEvent();
-            newEvent.setWeight( 1 );
-            if ( cut( newEvent ) ){
-              newEvent.setIndex( list.size() );
-              list.push_back( newEvent );
+          if constexpr( std::is_same<cut_type, std::nullptr_t>::value ) 
+          {
+            if( cut != nullptr ) FATAL("This shouldn't happen...");
+            list.resize(N);
+//            #pragma omp parallel for
+            for( unsigned int i = 0 ; i != N; ++i )
+            {  
+              list[i] = m_gps.makeEvent();
+              list[i].setWeight( 1 );
+              list[i].setIndex(i);
+            }
+          }
+          else { 
+            list.reserve( N );
+            while( list.size() < N ){  
+              Event newEvent = m_gps.makeEvent();
+              newEvent.setWeight( 1 );
+              if ( cut( newEvent ) ){
+                newEvent.setIndex( list.size() );
+                list.push_back( newEvent );
+              }
             }
           }
         }
 
-        template <class PDF>
-          void fillEventList( PDF& pdf, EventList& list, const size_t& N )
-          {
-            fillEventList( pdf, list, N, []( const Event& /*evt*/ ) { return 1; } );
-          }
+        template <class PDF> void fillEventList( PDF& pdf, EventList& list, const size_t& N )
+        {
+          fillEventList( pdf, list, N, nullptr);
+        }
 
         template <class PDF, class HARD_CUT>
           void fillEventList( PDF& pdf, EventList& list, const size_t& N, HARD_CUT cut )
@@ -77,7 +80,7 @@ namespace AmpGen
             auto tStartTotal = std::chrono::high_resolution_clock::now();
             pdf.reset( true );
             ProgressBar pb(60, detail::trimmedString(__PRETTY_FUNCTION__) );
-            ProfileClock t_phsp, t_eval, t_acceptReject;
+            ProfileClock t_phsp, t_eval, t_acceptReject, t_gather;
             std::vector<bool> efficiencyReport(m_generatorBlock,false); 
             
             while ( list.size() - size0 < N ) {
@@ -85,8 +88,10 @@ namespace AmpGen
               t_phsp.start();
               fillEventListPhaseSpace(mc, m_generatorBlock, cut);
               t_phsp.stop();
-              t_eval.start();
+              t_gather.start(); 
               pdf.setEvents( mc );
+              t_gather.stop();
+              t_eval.start();
               pdf.prepare();
               t_eval.stop();
               if ( maxProb == 0 ) {
@@ -133,10 +138,11 @@ namespace AmpGen
             } 
             pb.finish();
             double time = std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tStartTotal ).count();
-            INFO( "Generated " << N << " events in " << time     << " ms" );
-            INFO( "Generating phase space : " << t_phsp          << " ms"); 
-            INFO( "Evaluating PDF         : " << t_eval          << " ms"); 
-            INFO( "Doing accept/reject    : " << t_acceptReject  << " ms"); 
+            INFO("Generated " << N << " events in " << time     << " ms");
+            INFO("Generating phase space : " << t_phsp          << " ms"); 
+            INFO("Evaluating PDF         : " << t_eval          << " ms"); 
+            INFO("Doing accept/reject    : " << t_acceptReject  << " ms");
+            INFO("Gathering              : " << t_gather        << " ms"); 
           }
         template <class PDF, class = typename std::enable_if<!std::is_integral<PDF>::value>::type>
           EventList generate(PDF& pdf, const size_t& nEvents )

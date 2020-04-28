@@ -36,7 +36,7 @@ namespace AmpGen
   class PolarisedSum
   {
     public: 
-    #if ENABLE_AVX2
+    #if ENABLE_AVX
       using EventList_type  = EventListSIMD; 
     #else 
       using EventList_type  = EventList; 
@@ -47,7 +47,7 @@ namespace AmpGen
       void prepare();
       void setEvents(EventList_type&);
       void setMC(EventList_type&);
-      #if ENABLE_AVX2
+      #if ENABLE_AVX
         void setEvents(EventList& evts){ m_ownEvents = true; setEvents( *new EventList_type(evts)) ; };
         void setMC(EventList& evts){ setMC( *new EventList_type(evts)) ; };
       #endif

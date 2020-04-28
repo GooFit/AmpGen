@@ -89,12 +89,8 @@ void Event::swap( const unsigned& i , const unsigned& j )
   std::memmove( &m_event[4*i], &tmp,sizeof(tmp));
 }
 
-/*
-void Event::setCache(const complex_t& value, const unsigned& pos){ m_cache[pos] = value; }
-void Event::setCache( const std::vector<complex_t>& value, const unsigned& pos )
+void Event::reorder( const std::vector<unsigned>& addresses )
 {
-  std::memmove( m_cache.data() + pos, value.data(), sizeof(complex_t) * value.size() );
+  auto copy = m_event;
+  for( unsigned i = 0; i != addresses.size(); ++i ) set( addresses[i], copy.data() + 4 *i );  
 }
-
-void Event::resizeCache( const unsigned int& new_size ){ m_cache.resize(new_size); }
-*/

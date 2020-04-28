@@ -53,7 +53,7 @@ namespace AmpGen
 
     template <class T> void updateCache(const T& expression)
     {
-      #if ENABLE_AVX2
+      #if ENABLE_AVX
       if( m_events != nullptr ) m_cache.update( static_cast<const EventListSIMD*>(m_events)->store(), expression );
       #else
       if( m_events != nullptr ) m_cache.update( static_cast<const EventList*>(m_events)->store(), expression );

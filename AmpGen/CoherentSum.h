@@ -43,7 +43,7 @@ namespace AmpGen
   class CoherentSum
   {
   public:
-    #if ENABLE_AVX2
+    #if ENABLE_AVX
       using EventList_type = EventListSIMD; 
     #else 
       using EventList_type  = EventList; 
@@ -76,7 +76,7 @@ namespace AmpGen
     void reset( bool resetEvents = false );
     void setEvents( const EventList_type& list );
     void setMC( const EventList_type& sim );
-    #if ENABLE_AVX2 
+    #if ENABLE_AVX
       void setEvents( const EventList& list) { m_ownEvents = true; setEvents( *(new EventListSIMD(list)) ) ; } 
       void setMC( const EventList& list)     { setMC( *(new EventListSIMD(list)) ) ; } 
     #endif

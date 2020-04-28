@@ -72,7 +72,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
     ThreadPool tp( std::thread::hardware_concurrency() );
     for(unsigned i = 0; i < m_matrixElements.size(); ++i)
     {
-    //  tp.enqueue( [i, &protoAmps, &polStates, this]{
+      tp.enqueue( [i, &protoAmps, &polStates, this]{
       Tensor thisExpression( Tensor::dim(polStates.size()) );
       auto& [p, coupling] = protoAmps[i];
       DebugSymbols syms;  
@@ -85,7 +85,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
           p.decayDescriptor(),
           this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ,this->m_mps ) );
         CompilerWrapper().compile( m_matrixElements[i] );
-     // });
+      });
     }
   }
   if ( stype == spaceType::flavour )

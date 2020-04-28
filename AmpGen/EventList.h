@@ -8,6 +8,7 @@
 #include "AmpGen/Projection.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/MetaUtils.h"
+#include "AmpGen/Units.h"
 
 #include <chrono>
 #include <functional>
@@ -71,10 +72,13 @@ namespace AmpGen
     size_t aligned_size()                         const { return m_data.size() ; }
     size_t nBlocks()                              const { return m_data.size() ; }
     double integral()                             const;
+    const double* block(const unsigned pos) const { return m_data[pos].address(); }
     real_t weight( const size_t& pos)             const { return m_data[pos].weight(); }
     real_t genPDF( const size_t& pos)             const { return m_data[pos].genPdf(); }
     void reserve( const size_t& size ) { m_data.reserve( size ); }
+    void resize ( const size_t& size ) { m_data.resize(size) ; } 
     void push_back( const Event& evt ) { m_data.push_back( evt ); }
+    void emplace_back( const Event& evt) { m_data.emplace_back(evt) ; }
     void setEventType( const EventType& type ) { m_eventType = type; }
     void add( const EventList& evts );
     void loadFromTree( TTree* tree, const ArgumentPack& args ); 
@@ -132,15 +136,17 @@ namespace AmpGen
     {
       return std::count_if( std::begin(*this), std::end(*this), fcn );
     }
-  };
-  DECLARE_ARGUMENT(Branches, std::vector<std::string>);
+  }; 
+  DECLARE_ARGUMENT(Branches, std::vector<std::string>);      /// Branch names containing kinematic information 
+  DECLARE_ARGUMENT(ExtraBranches, std::vector<std::string>); /// additional information about the event to include
+  DECLARE_ARGUMENT(IdBranches, std::vector<std::string>);    /// Branches containing PID information, used if the names of particles are incorrect (looking at you, DTF)  
   DECLARE_ARGUMENT(EntryList, std::vector<size_t>);
   DECLARE_ARGUMENT(GetGenPdf, bool);
   DECLARE_ARGUMENT(Filter, std::string);
   DECLARE_ARGUMENT(WeightBranch, std::string);      
   DECLARE_ARGUMENT(ApplySym, bool);  
   DECLARE_ARGUMENT(WeightFunction, std::function<double( const Event& )>);
-
+  DECLARE_ARGUMENT(InputUnits, AmpGen::Units);
 } // namespace AmpGen
 
 #endif

@@ -2,47 +2,41 @@
 #define AMPGEN_SIMD_UTILS_H
 
 #include <array>
-#if ENABLE_AVX2 
-#if DOUBLE_PRECISION
+
+#if ENABLE_AVX512
+  #include "AmpGen/simd/avx512d_types.h"
+#elif ENABLE_AVX2d
   #include "AmpGen/simd/avx2d_types.h"
-#else
-  #include "AmpGen/simd/avx2_types.h"
-#endif
+#elif ENABLE_AVX2f
+  #include "AmpGen/simd/avx2f_types.h"
 #endif
 
 namespace AmpGen {
-#if ENABLE_AVX2
-#if DOUBLE_PRECISION
-  using float_v    = AVX2d::float_t;
-  using complex_v  = AVX2d::complex_t;
-#else
-  using float_v    = AVX2::float_t;
-  using complex_v  = AVX2::complex_t;
+#if ENABLE_AVX512 
+  namespace AVX        = AVX512d;  
+#elif ENABLE_AVX2d
+  namespace AVX        = AVX2d;
+#elif ENABLE_AVX2f
+  namespace AVX        = AVX2f;
 #endif
+
+#if ENABLE_AVX
+  using float_v      = AVX::real_v;
+  using complex_v    = AVX::complex_v;
 #else 
-  using float_v    = double;
-  using complex_v  = std::complex<double>;
+  using float_v      = double;
+  using complex_v    = std::complex<double>;
 #endif
 
   namespace utils {
 
     template <class T> struct is_vector_type : std::false_type {}; 
     template <class T> struct size           { static constexpr unsigned value = 1; } ;
-#if ENABLE_AVX2 
-#if DOUBLE_PRECISION
-    template <>        struct is_vector_type <AVX2d::complex_t> : std::true_type {}; 
-    template <>        struct is_vector_type <AVX2d::float_t  > : std::true_type {}; 
-    template <>        struct size           <AVX2d::complex_t>{ static constexpr unsigned value = 4; }; 
-    template <>        struct size           <AVX2d::float_t>  { static constexpr unsigned value = 4; };
-#else
-    template <>        struct is_vector_type <AVX2::complex_t> : std::true_type {}; 
-    template <>        struct is_vector_type <AVX2::float_t  > : std::true_type {}; 
-    template <>        struct size           <AVX2::complex_t>{ static constexpr unsigned value = 8; }; 
-    template <>        struct size           <AVX2::float_t>  { static constexpr unsigned value = 8; };
-#endif
-#else
-    template <>        struct is_vector_type <float_v>   : std::false_type {}; 
-    template <>        struct is_vector_type <complex_v> : std::false_type {}; 
+#if ENABLE_AVX
+    template <>        struct is_vector_type <AVX::complex_v> : std::true_type {}; 
+    template <>        struct is_vector_type <AVX::real_v  >  : std::true_type {}; 
+    template <>        struct size           <AVX::complex_v>{ static constexpr unsigned value = AVX::complex_v::size; }; 
+    template <>        struct size           <AVX::real_v>   { static constexpr unsigned value = AVX::complex_v::size; };
 #endif
     template <class simd_type, class container_type, class functor_type> simd_type gather(
         const container_type& container, const functor_type& functor, unsigned offset=0, typename simd_type::scalar_type df =0.)
@@ -69,6 +63,15 @@ namespace AmpGen {
       }
       else return obj;
     }
+    template <class simd_type, class value_type> bool all_of( const simd_type& obj, const value_type& v )
+    {
+      if constexpr( ! is_vector_type<simd_type>::value ) return obj == v;
+      else {
+        auto arr = obj.to_array();
+        for( unsigned i = 0 ; i != size<simd_type>::value; ++i ) if( arr[i] != v ) return false; 
+        return true; 
+      }
+    }
     template <unsigned p=0, class vtype> auto get( vtype v )
     { 
       if constexpr ( is_vector_type<vtype>::value ) return v.at(p); 
@@ -81,11 +84,8 @@ namespace AmpGen {
     }
     template <class ctype> auto norm( const ctype& v )
     {
-      #if ENABLE_AVX2 && DOUBLE_PRECISION 
-      if constexpr(   is_vector_type<ctype>::value ) return AVX2d::norm(v);
-      #endif 
-      #if ENABLE_AVX2 && ! DOUBLE_PRECISION 
-      if constexpr(   is_vector_type<ctype>::value ) return AVX2::norm(v);
+      #if ENABLE_AVX 
+      if constexpr(   is_vector_type<ctype>::value ) return AVX::norm(v);
       #endif 
       if constexpr( ! is_vector_type<ctype>::value ) return std::norm(v);
     }

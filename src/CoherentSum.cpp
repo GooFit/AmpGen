@@ -34,8 +34,6 @@
 using namespace AmpGen;
 CoherentSum::CoherentSum() = default; 
 
-//ENABLE_DEBUG(CoherentSum)
-
 CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
   :   m_rules    (mps)
     , m_evtType  (type)
@@ -57,12 +55,12 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   ThreadPool tp(nThreads);
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
     tp.enqueue( [i,this,&mps,&amplitudes]{
-       auto& [p, c] = amplitudes[i];  
+       auto& [p, c] = amplitudes[i];
+        DebugSymbols db;
         m_matrixElements[i] = 
           TransitionMatrix<complex_v>(p, c, 
-          CompiledExpression<complex_v(const real_t*, const float_v*)>( 
-            p.getExpression(), p.decayDescriptor(),
-            this->m_evtType.getEventFormat(), DebugSymbols(), this->m_mps ) );
+          CompiledExpression<complex_v(const real_t*, const float_v*)>( p.getExpression(m_dbThis ? &db : nullptr), p.decayDescriptor(),
+            this->m_evtType.getEventFormat(), db, this->m_mps ) );
         CompilerWrapper().compile( m_matrixElements[i], this->m_objCache); 
       } ); 
   }
@@ -121,13 +119,8 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
         << " ] g = [ "<< me.coupling().real() << " " << me.coupling().imag() << " ] "
         << m_cache( evt.index(), std::distance(&m_matrixElements[0], &me ) )
         << me.decayTree.CP() );
-
-    // if( m_dbThis ) me.amp.debug( evt.address() );
   }
-  //else
-  //  for ( auto& me : m_matrixElements )
-  //    if ( me.amp.name().find( nameMustContain ) != std::string::npos ) me.amp.debug( evt.address() );
-  // if( evt.cacheSize() != 0 ) INFO( "Pdf = " << prob_unnormalised( evt ) );
+  if( m_dbThis ) for ( auto& me : m_matrixElements ) me.debug( m_events->block(0)  );
   INFO( "A(x) = " << getVal(evt) << " without cache: " << getValNoCache(evt) );
 }
 
@@ -330,7 +323,7 @@ complex_t CoherentSum::getVal( const Event& evt ) const
   for (unsigned int i = 0 ; i != m_matrixElements.size(); ++i ) {
     value = value + m_matrixElements[i].coefficient * m_cache(evt.index() / utils::size<float_v>::value, i );
   }
-#if ENABLE_AVX2 
+#if ENABLE_AVX
   return value.at(evt.index() % utils::size<float_v>::value );
 #else 
   return value;

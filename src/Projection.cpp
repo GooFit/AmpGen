@@ -106,7 +106,7 @@ template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(co
   return {hists, stack};
 }
 
-#if ENABLE_AVX2
+#if ENABLE_AVX
 template <> TH1D* Projection::projInternal( const EventListSIMD& events, const ArgumentPack& args) const 
 { 
   return events.makeProjection(*this, args); 

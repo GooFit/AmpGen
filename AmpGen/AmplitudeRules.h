@@ -14,7 +14,7 @@
 #include "AmpGen/Event.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/ExpressionParser.h"
-#if ENABLE_AVX2 
+#if ENABLE_AVX 
   #include "AmpGen/EventListSIMD.h"
 #endif
 
@@ -105,14 +105,18 @@ namespace AmpGen
       decayTree(dt),
       coupling(coupling) {}
 
-    #if ENABLE_AVX2 
+    #if ENABLE_AVX
     const RT operator()(const Event& event) const { return amp_type::operator()(EventListSIMD::makeEvent(event).data()); }
+    void debug( const Event& event ) const {               amp_type::debug(EventListSIMD::makeEvent(event).data() ) ; } 
+    
     #else
     const RT operator()(const Event& event) const { return amp_type::operator()(event.address()) ; }
+    void debug( const Event& event )        const {        amp_type::debug(event.address()) ; }
     #endif
     template <class... arg_types> auto operator()(arg_types... args ) const { return amp_type::operator()(args...) ; }
     
     const RT operator()(const float_v* t) const     { return amp_type::operator()(t) ; }
+    void debug( const float_v* t )        const     {        amp_type::debug(t) ; } 
     const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
 
     Particle                                            decayTree;
@@ -174,7 +178,7 @@ namespace AmpGen
     const std::vector<complex_v> operator()(const Event& event) const 
     { 
       std::vector<complex_v> rt(4); 
-      #if ENABLE_AVX2 
+      #if ENABLE_AVX 
       amp_type::operator()(rt.data(), 1, externBuffer().data(), EventListSIMD::makeEvent(event).data());
       #else
       amp_type::operator()(rt.data(), 1, externBuffer().data(), event.address()); 
