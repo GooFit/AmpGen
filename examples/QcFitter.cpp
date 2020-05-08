@@ -177,7 +177,7 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
       cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
       cs_tag.prepare();
       //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
-      auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag, false, cs_tag);
+      auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag,cs_tag);
       auto mini_tag = Minimiser(LL_tag2, MPS_tag);
       mini_tag.prepare();
       //INFO("Fitting "<<i<<" out of "<<tags.size()  );
@@ -853,7 +853,7 @@ INFO("Test function");
     cs.setMC(sigMCEvents, tagMCEvents);
     cs.prepare();  
 
-    CorrelatedLL<EventList, pCorrelatedSum&> csLL =  make_likelihood(sigEvents, tagEvents, false, cs);
+    CorrelatedLL<EventList, pCorrelatedSum&> csLL =  make_likelihood(sigEvents, tagEvents, cs);
     csLL.setEvents(sigEvents, tagEvents);
     INFO( "norm[0] = " << cs.norm() );
     cs.debugNorm();

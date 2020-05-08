@@ -149,7 +149,7 @@ int main( int argc, char* argv[] )
     CorrelatedSum cs(signalType, tagType, MPS);
     cs.setEvents(UsigEvents, tagEvents);
     cs.setMC(sigMCEvents, tagMCEvents);
-    auto csLL = make_likelihood(UsigEvents, tagEvents, false, cs);
+    auto csLL = make_likelihood(UsigEvents, tagEvents, cs);
     csLL.setEvents(UsigEvents, tagEvents);
     
     cs.prepare(); 

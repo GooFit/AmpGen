@@ -50,9 +50,8 @@ namespace AmpGen
     CorrelatedLL() = default; 
 
     /// Constructor from a set of PDF functions
-    CorrelatedLL(bool ext, const pdfTypes&... pdfs ) : 
+    CorrelatedLL(const pdfTypes&... pdfs ) : 
       m_pdfs( std::tuple<pdfTypes...>( pdfs... ) ),
-      m_ext(ext),
       m_debug(NamedParameter<bool>("CorrelatedLL::Debug", false, "Print debug messages for CorrelatedLL")) {}
 
     /// Returns negative twice the log-likelihood for this PDF and the given dataset.     
@@ -98,12 +97,12 @@ namespace AmpGen
  
 
         }
-        if (m_ext){
-        return LL;
-        }
-        else {
+
+
+
+
         return -2*LL;
-        }
+
     }
 
 
@@ -188,9 +187,9 @@ namespace AmpGen
   }
   
   template <class eventListType = EventList, class... pdfTypes> 
-  auto make_likelihood( eventListType& events1, eventListType& events2, bool ext ,pdfTypes&&... pdfs)
+  auto make_likelihood( eventListType& events1, eventListType& events2, pdfTypes&&... pdfs)
   {
-    auto rt = CorrelatedLL<eventListType, pdfTypes...>(ext, std::forward<pdfTypes>( pdfs )...);
+    auto rt = CorrelatedLL<eventListType, pdfTypes...>( std::forward<pdfTypes>( pdfs )...);
     rt.setEvents(events1, events2);
     return rt; 
   }

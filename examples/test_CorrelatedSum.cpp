@@ -168,7 +168,7 @@ int main(int argc, char** argv ){
           //just redoes the fit n times, obviously should be identical results!
           auto n=1;
           while(i < n){
-            auto csLL = make_likelihood(sigEvents, tagEvents, false, cs);
+            auto csLL = make_likelihood(sigEvents, tagEvents,  cs);
   //          csLL.setEvents(sigEvents, tagEvents);
             //auto LL = csLL.getVal();
             INFO("Beginning the fit"); 

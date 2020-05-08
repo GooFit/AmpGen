@@ -198,7 +198,7 @@ auto findParam = MPS.find(scanName);
     cs.setEvents(sigEvents, tagEvents);
     cs.setMC(sigMCEvents, tagMCEvents);
      cs.prepare();  
-    auto csLL = make_likelihood(sigEvents, tagEvents, false, cs);
+    auto csLL = make_likelihood(sigEvents, tagEvents, cs);
     csLL.setEvents(sigEvents, tagEvents);
     
 

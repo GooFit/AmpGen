@@ -156,7 +156,8 @@ class pCorrelatedSum {
         val = m_mps[key]->mean(); 
         return val;
     }
-
+    
+    
 
     real_t prob_unnormalised(const Event& event1, const Event& event2) const {return std::norm(getVal(event1, event2));}
     void prepare();

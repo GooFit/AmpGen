@@ -65,6 +65,7 @@ void add_CP_conjugate( MinuitParameterSet& mps )
       auto tokens=split(name,'_');
       std::string reOrIm = *tokens.rbegin();
       std::string name   = tokens[0];
+
       if ( reOrIm == "Re" || reOrIm == "Im" ){
         auto p = Particle( name ).conj();
         sgn = reOrIm == "Re" ? p.CP() : 1; 
@@ -278,8 +279,23 @@ for (int i=0; i < tags.size(); i++){
 
     auto dd = std::arg(ACst);
     
-    out << s01 << "\t" << s02 << "\t" << s12 << "\t" << dd <<"\t" << cosDD << "\t"<<corr.real()<<"\t"<<std::norm(ABCD)<<"\n";
-
+    out << s01 << "\t" //0
+        << s02 << "\t" //1
+        << s12 << "\t" //2
+        << dd  << "\t" //3
+        << cosDD << "\t" //4
+        <<corr.real()<<"\t" //5
+        << std::arg(C) - std::arg(A)<<"\t" //6
+        <<std::norm(ABCD)<<"\t" //7
+        <<A.real()<<"\t" //8
+        <<A.imag()<<"\t" //9 
+        <<std::abs(A)<<"\t" //10
+        <<std::arg(A)<<"\t"
+        <<C.real()<<"\t"
+        <<C.imag()<<"\t"
+        <<std::abs(C)<<"\t"
+        <<std::arg(C)<<"\t"
+        <<"\n";
 
 }
   out.close();
