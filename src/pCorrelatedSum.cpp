@@ -13,8 +13,8 @@ pCorrelatedSum::pCorrelatedSum() = default;
 
 pCorrelatedSum::pCorrelatedSum(const EventType& type1, const EventType& type2, const MinuitParameterSet& mps):
   m_A(type1, mps),
-  m_B(type2.conj(true), mps),
-  m_C(type1.conj(true), mps),
+  m_B(type2.conj(NamedParameter<bool>("pCorrelatedSum::ConjHead", true, "Only Conjugate the head of the EventType")), mps),
+  m_C(type1.conj(NamedParameter<bool>("pCorrelatedSum::ConjHead", true, "Only Conjugate the head of the EventType")), mps),
   m_D(type2, mps),
   m_debug(NamedParameter<bool>("pCorrelatedSum::debug", false, "Print Debug messages for pCorrelatedSum")),
   m_debugFreq(NamedParameter<int>("pCorrelatedSum::debugFreq", 1000, "Print Debug messages for pCorrelatedSum")),
