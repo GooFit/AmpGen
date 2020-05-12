@@ -206,8 +206,9 @@ class pCorrelatedSum {
         Expression ymin = pow(mp + mK, 2);
         Expression ymax = pow(mD - mp, 2);
         Expression y0 = (ymax + ymin)/2;
-        Expression X = x/x0 - 1;
-        Expression Y = y/y0 - 1;
+        Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
+        Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
+        
         //INFO("Order = "<<m_order);
         for (int i=0; i < m_order+1; i++){
             Expression sum_i=0;
