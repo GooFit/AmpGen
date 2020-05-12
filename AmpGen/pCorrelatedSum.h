@@ -243,6 +243,14 @@ class pCorrelatedSum {
                    
 
                 }
+                else if (m_polyType=="antiSym_chebyshev"){
+                   double Cij = getC(i,j);
+                   auto zp = 0.5 * (X() + Y());
+                   auto zm = 0.5 * (X() - Y());
+                  sum_i = sum_i +  Cij * chebychev(zp, i) * chebychev(zm, 2*j+1);
+                   
+
+                }
                 else if (m_polyType=="Sym_legendre"){
                    double Cij = getC(i,j);
                    auto zp = 0.5 * (X() + Y());
