@@ -106,6 +106,7 @@ int main( int argc, char* argv[] )
   bool makeCPConj      = NamedParameter<bool>("makeCPConj", false, "Make CP Conjugates");
   bool doCombFit      = NamedParameter<bool>("doCombFit", false, "Do combined fit");
   bool doTagFit      = NamedParameter<bool>("doTagFit", false, "Do fit for each tag");
+  int  maxAttempts = NamedParameter<int>("maxAttempts", 5, "Max attempts to get a valid minimum from Minuit2");
   bool QcGen2 = NamedParameter<bool>("QcGen2", false, "internal boolean - for new QcGenerator");
   bool doFit = NamedParameter<bool>("doFit", true, "Do the fit");
   if( dataFile == "" ) FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off );
@@ -181,7 +182,15 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
       auto mini_tag = Minimiser(LL_tag2, MPS_tag);
       mini_tag.prepare();
       //INFO("Fitting "<<i<<" out of "<<tags.size()  );
+
+      int attempt = 1;
       mini_tag.doFit();
+      while (attempt < maxAttempts || mini_tag.status() == 0){
+        INFO("Didn't seem to get a minimum (returned "<<mini_tag.status()<<" , trying "<<attempt<<"/"<<maxAttempt);
+        mini_tag.doFit();
+        attempt++;
+      }
+
       FitResult * fr = new FitResult(mini_tag); 
       int minEvents=15;
       auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.eventType().dof() ) );
@@ -292,7 +301,14 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     Minimiser combMini = Minimiser(combLL, &MPS);
     combMini.prepare();
     INFO("Minimising now");
-    combMini.doFit();
+    int attempt = 1;
+      combMini.doFit(); 
+      while (attempt < maxAttempts || combMini.status() == 0){
+        INFO("Didn't seem to get a minimum (returned "<<mini_tag.status()<<" , trying "<<attempt<<"/"<<maxAttempt);
+        combMini.doFit();
+        attempt++;
+      }
+
     FitResult * fr = new FitResult(combMini); 
     fr->print();
     fr->writeToFile(logFile);
@@ -305,244 +321,7 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
    fr->writeToFile(logFile);
  }
 
-/*
- for( auto& tag : tags )
- {
-    EventType signalType( pNames );
-    auto tokens       = split(tag, ' ');
-    auto tagParticle  = Particle(tokens[1], {}, false);
-    EventType    tagType = tagParticle.eventType(); 
-    auto sigBranches = makeBranches(signalType, "");
-    auto tagBranches = makeBranches(tagType, "Tag_");
 
-    EventList sigEvents;
-    EventList tagEvents;
-    EventList sigMCEvents;
-    EventList tagMCEvents;
-
-    if (QcGen2){
-        INFO("Generated Events used QcGen2");
-    std::stringstream signame;
-    signame<<":Signal_";
-    signame<<tokens[0];
-    std::stringstream tagname;
-    tagname<<":Tag_";
-    tagname<<tokens[0];
-      sigEvents = EventList(dataFile + signame.str() , signalType);
-      tagEvents = EventList(dataFile + tagname.str() , tagType);
-      sigMCEvents = EventList(intFile + signame.str() , signalType);
-      tagMCEvents = EventList(intFile + tagname.str() , tagType);
-
-    }
-    else{
-
-        INFO("Generated Events used QcGenerator");
-    sigEvents = EventList(dataFile +":"+ tokens[0], signalType, Branches(sigBranches));
-    sigMCEvents = EventList(intFile +":"+ tokens[0], signalType, Branches(sigBranches));
-    tagEvents = EventList(dataFile +":"+ tokens[0], tagType, Branches(tagBranches));
-    tagMCEvents = EventList(intFile +":"+ tokens[0], tagType, Branches(tagBranches));
-    }
-    for( auto& event : sigEvents ) event.setGenPdf(1) ;
-    for( auto& event : tagEvents ) event.setGenPdf(1) ;
-    
-  //   CorrelatedSum cs(signalType, tagType, MPS);
-  //  cs.setEvents(sigEvents, tagEvents);
-  //  cs.setMC(sigMCEvents, tagMCEvents);
-  //   cs.prepare();  
-  //  auto csLL = make_likelihood(sigEvents, tagEvents, cs);
-  //  csLL.setEvents(sigEvents, tagEvents);
-    
-
-    //INFO( "norm[0] = " << cs.norm() );
-   
-  //  cs.debugNorm();
-// Minimiser mini( csLL, &MPS );
-   // for (int i=0;  i<nFits; i++){
-   
-    
-    mini.gradientTest();
-   // for (int i=0 ; i < nFits; i++){
-    //   mini.setTolerance(std::pow(10, 2 - i));
-//   if (doFit) mini.doFit();
-   // }
-   // 
-
-   
-    
-    pCorrelatedSum cs(signalType, tagType, MPS);
-    cs.setEvents(sigEvents, tagEvents);
-    cs.setMC(sigMCEvents, tagMCEvents);
-     cs.prepare();  
-//    auto csLL = make_likelihood(sigEvents, tagEvents, false, cs);
-    CorrelatedLL<EventList, pCorrelatedSum&> csLL =  make_likelihood(sigEvents, tagEvents, false, cs);
-    csLL.setEvents(sigEvents, tagEvents);
-    INFO( "norm[0] = " << cs.norm() );
-    cs.debugNorm();
-
-    CorrelatedLL<EventList, pCorrelatedSum&> * csLL1 = new CorrelatedLL<EventList, pCorrelatedSum&>(false, cs);
-   // csLLs.push_back(csLL);
-    //csLLs.push_back(csLL);
-    //
-
-  std::vector< CorrelatedLL<EventList, pCorrelatedSum&> > LLs = {csLL, csLL};
-
- //   auto pCsLL=*csLL;
- Minimiser mini( csLL, &MPS );
-
-auto sumLLs= SumLL< CorrelatedLL<EventList, pCorrelatedSum&> >(LLs);
-
- auto combMini = Minimiser(sumLLs, &MPS);
- combMini.prepare();
-// combMini.doFit();
-
- INFO("type of CS = "<<typeid(cs).name());
- INFO("type of CSLL = "<<typeid(csLLs).name());
- INFO("CLL = "<<csLL.getVal());
-   // for (int i=0;  i<nFits; i++){
-//fs.push_back(mini.fitFunction());
-   
-    
-    mini.gradientTest();
-   // for (int i=0 ; i < nFits; i++){
-    //   mini.setTolerance(std::pow(10, 2 - i));
-   //if (doFit) mini.doFit();
-   // }
-   // 
-      
-     
-
-//    }
-    FitResult * fr = new FitResult(mini);
- auto dataEvents = sigEvents;
- auto mcEvents = sigMCEvents;
- int minEvents=15;
-auto binning = BinDT( dataEvents, MinEvents( minEvents ), Dim( dataEvents.eventType().dof() ) );
-//void   Chi2Estimator::doChi2( const EventList& dataEvents, const EventList& mcEvents,
-//    const std::function<double( const Event& )>& fcn )
-//{
-  std::vector<Moment> data( binning.size() );
-  std::vector<Moment> mc( binning.size() );
-
-  INFO( "Splitting: " << dataEvents.size() << " data " << mcEvents.size() << " amongst " << binning.size()
-      << " bins" );
-  unsigned int j           = 0;
-  double total_data_weight = 0;
-  double total_int_weight  = 0;
-  for ( auto& d : dataEvents ) {
-    if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " data events" );
-    double w = d.weight();
-    data[binning.getBinNumber( d )].add( d.weight() );
-    total_data_weight += w;
-    j++;
-  }
-  j = 0;
-  for ( int i=0; i < mcEvents.size(); i++ ) {
-    auto evt1 = mcEvents[i];
-    auto evt2 = tagMCEvents[i];
-    if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " sim. events" );
-    double w = cs.prob( evt1, evt2 ) * (evt1.weight() / evt1.genPdf()) * (evt2.weight() / evt2.genPdf());
-    mc[binning.getBinNumber( evt1 )].add( w );
-    total_int_weight += w;
-    j++;
-  }
-  double chi2 = 0;
-
-  for ( unsigned int i = 0; i < binning.size(); ++i ) {
-    mc[i].rescale( total_data_weight / total_int_weight );
-    double delta = data[i].val() - mc[i].val();
-    double tChi2 = delta * delta / ( data[i].val() + mc[i].var() );
-    chi2 += tChi2;
-  }
-  
-  auto Bins = binning.size();
-  auto fitFractionss = cs.fitFractions( fr->getErrorPropagator() ); 
-  std::vector<FitFraction> ffs;
-  for (auto fitFractions : fitFractionss){
-    for (auto fitFraction : fitFractions){
-      ffs.push_back(fitFraction);
-    }
-  }
-  fr->addFractions( ffs );
-  //chi2.writeBinningToFile("chi2_binning.txt");
-  fr->addChi2( chi2, Bins );
-  fr->print();
-   fr->writeToFile(logFile);
-       std::map<std::string, std::vector<double> > fits = getParams(MPS);
-    std::map<std::string, double> pulls = getPulls(fits, inits);
-      for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
-         INFO("Pull = "<<it->first<<" "<<it->second);
-       }
-    writePulls(logFile, pulls);
-
-
-    if (doProjections){
-    INFO( "norm[1] = " << cs.norm() );
-    TFile* f = TFile::Open(plotFile.c_str(),"RECREATE");
-
-    auto projections = signalType.defaultProjections(nBins);
-    for( auto& projection : projections ){
-      auto data_plot = projection(sigEvents);
-      auto hist = projection.plot();
-      for(unsigned i = 0 ; i != sigMCEvents.size(); ++i)
-      {
-        hist->Fill( projection( sigMCEvents[i] ), cs.prob( sigMCEvents[i], tagMCEvents[i] ) );
-      }
-      hist->Scale( data_plot->Integral() / hist->Integral() );
-      hist->SetName( (std::string("MC_")+hist->GetName()).c_str() );
-      hist->Write();
-      data_plot->Write();
-      auto pull = (TH1D*) hist->Clone();
-      pull->Add(data_plot, -1);
-      pull->SetName( (std::string("Pull_") + data_plot->GetName()).c_str() );
-      pull->Write();
-    }
-    auto p2 = signalType.defaultProjections(nBins);
-    for( unsigned i = 0 ; i != p2.size() -1; ++i )
-    {
-      for( unsigned j=i+1; j < p2.size(); ++j )
-      {
-        auto dalitz = Projection2D( p2[i], p2[j] );
-        auto hdalitz = dalitz.plot();
-        auto data_plot = sigEvents.makeProjection(dalitz);
-        for( unsigned event = 0 ; event != sigMCEvents.size(); ++event )
-        {
-          auto pos = dalitz(sigMCEvents[event]);
-          hdalitz->Fill( pos.first, pos.second, cs.prob( sigMCEvents[event], tagMCEvents[event] ) );
-        }
-        hdalitz->Scale( data_plot->Integral() / hdalitz->Integral() );
-        hdalitz->SetName( ( std::string("MC_") + hdalitz->GetName() ).c_str() );
-        hdalitz->Write();
-
-        data_plot->Write(); 
-        auto pull2D = (TH2D*) hdalitz->Clone();
-        pull2D->Add(data_plot, -1);
-
-        pull2D->SetName( (std::string("Pull_") + data_plot->GetName()).c_str() );
-        pull2D->Write();
-      }
-    }
-
-    f->Close();
-    
-    }
-    
-  }
- //auto combLL = SumLL<CorrelatedLL<EventList, pCorrelatedSum&> >(csLLs);
- 
- //auto combLL = SumLL<std::function<double(void)> >(fs);
-// auto combMini = Minimiser(combLL, &MPS);
- //combMini.prepare();
-//auto ll0 = combLL.getVal();
-//INFO("LL = "<<ll0);
- //combMini.doFit();
- //INFO("Number of LL = "<<csLLs.size());
-// double x = csLLs[0]->getVal();
-// INFO("x = "<<x);
-  //for (auto & csll : csLLs){
-//      auto l = csll.getVal();
-//      INFO("l = "<<l);
-  //}
-  */
   return 0;
 }
 
