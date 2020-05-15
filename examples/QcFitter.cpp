@@ -185,10 +185,14 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
 
       int attempt = 1;
       mini_tag.doFit();
-      while (attempt < maxAttempts || mini_tag.status() == 0){
+      if (mini_tag.status()!=0){
+
+        INFO("Didn't seem to get a minimum (returned "<<mini_tag.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
+      while (attempt < maxAttempts && mini_tag.status() != 0){
         INFO("Didn't seem to get a minimum (returned "<<mini_tag.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
         mini_tag.doFit();
         attempt++;
+      }
       }
 
       FitResult * fr = new FitResult(mini_tag); 
@@ -303,10 +307,13 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     INFO("Minimising now");
     int attempt = 1;
       combMini.doFit(); 
-      while (attempt < maxAttempts || combMini.status() == 0){
+      if (combMini.status() != 0){
+        INFO("Didn't seem to get a minimum (returned "<<combMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
+      while (attempt < maxAttempts && combMini.status() != 0){
         INFO("Didn't seem to get a minimum (returned "<<combMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
         combMini.doFit();
         attempt++;
+      }
       }
 
     FitResult * fr = new FitResult(combMini); 
