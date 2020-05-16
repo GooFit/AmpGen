@@ -2,6 +2,7 @@
 #define AMPGEN_SIMD_UTILS_H
 
 #include <array>
+#include <complex>
 
 #if ENABLE_AVX512
   #include "AmpGen/simd/avx512d_types.h"
@@ -10,6 +11,8 @@
 #elif ENABLE_AVX2f
   #include "AmpGen/simd/avx2f_types.h"
 #endif
+
+
 
 namespace AmpGen {
 #if ENABLE_AVX512 
@@ -66,11 +69,12 @@ namespace AmpGen {
     template <class simd_type, class value_type> bool all_of( const simd_type& obj, const value_type& v )
     {
       if constexpr( ! is_vector_type<simd_type>::value ) return obj == v;
-      else {
-        auto arr = obj.to_array();
-        for( unsigned i = 0 ; i != size<simd_type>::value; ++i ) if( arr[i] != v ) return false; 
-        return true; 
-      }
+      else return _mm256_movemask_pd( obj == v ) == 0xF;
+    }
+    template <class simd_type> bool all_of( const simd_type& obj)
+    {
+      if constexpr( ! is_vector_type<simd_type>::value ) return obj;
+      else return _mm256_movemask_pd( obj ) == 0xF;
     }
     template <unsigned p=0, class vtype> auto get( vtype v )
     { 

@@ -15,7 +15,7 @@ namespace AmpGen
       and identifying if a class can be constructed in different ways. 
     */
  
-  template <class TYPE> std::string typeof()
+  template <class TYPE> std::string type_string()
   {
     int status = 0;
     std::string name = abi::__cxa_demangle( typeid( TYPE ).name(), nullptr, nullptr, &status );
@@ -25,7 +25,7 @@ namespace AmpGen
     return name; 
   }
 
-  template <class TYPE> std::string typeof( const TYPE& t ) { return typeof<TYPE>(); }
+  template <class TYPE> std::string type_string( const TYPE& t ) { return type_string<TYPE>(); }
 
   namespace detail {
     template<typename T, typename... args> struct zeroType { typedef T type; };
@@ -94,8 +94,8 @@ namespace AmpGen
   template <typename arg=void, typename... args> std::vector<std::string> typelist()
   {
     std::vector< std::string > rt;
-    if( typeof<arg>() != "void" ) {
-      rt.emplace_back( typeof<arg>() );
+    if( type_string<arg>() != "void" ) {
+      rt.emplace_back( type_string<arg>() );
       auto rtp = typelist<args...>(); 
       std::copy( rtp.begin(), rtp.end(), std::back_inserter(rt) );
     }
@@ -106,6 +106,16 @@ namespace AmpGen
   template <typename ...T> struct isTuple<std::tuple<T...>>: std::true_type {};
   template <typename> struct isVector : std::false_type {};
   template <typename    T> struct isVector<std::vector<T>> : std::true_type {};
+
+
+  #define def_has_function(function_name) \
+  template <typename T>      \
+  struct has_##function_name { \
+    template<typename U> static auto test(int) -> decltype(std::declval<U>().function_name() == 1, std::true_type()); \
+    template<typename>   static std::false_type test(...); \
+    static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value; \
+  } 
+
 } // namespace AmpGen
 
 #endif

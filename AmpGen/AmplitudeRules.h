@@ -177,7 +177,7 @@ namespace AmpGen
 
     const std::vector<complex_v> operator()(const Event& event) const 
     { 
-      std::vector<complex_v> rt(4); 
+      std::vector<complex_v> rt(size); 
       #if ENABLE_AVX 
       amp_type::operator()(rt.data(), 1, externBuffer().data(), EventListSIMD::makeEvent(event).data());
       #else
@@ -186,7 +186,9 @@ namespace AmpGen
       return rt;
     }
     template <class... arg_types> auto operator()(arg_types... args ) const { return amp_type::operator()(args...) ; }
-     
+    #if ENABLE_AVX
+    void debug( const Event& event ) const {               amp_type::debug(EventListSIMD::makeEvent(event).data() ) ; } 
+    #endif 
     const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
 
     Particle                                            decayTree;

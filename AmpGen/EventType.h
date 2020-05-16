@@ -38,7 +38,7 @@ namespace AmpGen
       /// Counts the number of particles in this event type with
       /// the same name as the index'th name.
       std::pair<unsigned,unsigned>  count(const unsigned& index) const;
-      std::pair<double, double> minmax( const std::vector<unsigned>& indices, bool isGeV = false ) const;
+      std::pair<double, double> minmax( const std::vector<unsigned>& indices) const;
       std::vector<double> masses() const;
       std::string mother() const;
       double mass( const unsigned& index ) const;
@@ -52,7 +52,7 @@ namespace AmpGen
       std::string decayDescriptor() const;
       std::string label( const unsigned& index, bool isRoot = true ) const;
       std::string label( const std::vector<unsigned>& index, bool isRoot = true ) const;
-      std::vector<Projection> defaultProjections(const unsigned& nBins) const;
+      std::vector<Projection> defaultProjections(const unsigned& nBins=100) const;
       Projection projection(const unsigned& nBins, const std::vector<unsigned>& indices, const std::string& observable = "mass2") const;
 
       bool operator==( const EventType& other ) const;
@@ -62,7 +62,7 @@ namespace AmpGen
 
       /// Functor to randomly symmetrise data of this event type, using the Fisher-Yates shuffle.
       std::function<void( Event& )> symmetriser() const;
-      std::function<void( Event&, const std::vector<int>& ids)> automaticOrdering() const;
+      std::function<bool( Event&, const std::vector<int>& ids)> automaticOrdering() const;
 
       /// Calculates the number of spin indices associated with the initial and final state, i.e. the rank of the relevant transition matrix.
       std::pair<unsigned, unsigned> dim() const;

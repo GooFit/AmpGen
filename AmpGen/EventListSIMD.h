@@ -63,8 +63,21 @@ namespace AmpGen
     const auto& store()                     const { return m_data; }    
     const Event at(const unsigned& p)       const { return EventListSIMD::operator[](p) ; }
     const float_v* block(const unsigned& p) const { return m_data.data() + p * m_data.nFields(); }
+          float_v* block(const unsigned& p)       { return m_data.data() + p * m_data.nFields(); }
     float_v weight(const unsigned& p) const { return m_weights[p]; }
     float_v genPDF(const unsigned& p) const { return m_genPDF[p]; }
+    
+    void setWeight( const unsigned& block, const float_v& w, const float_v& g=1)
+    {
+      m_weights[block] = w;
+      m_genPDF[block] = g;
+    } 
+    void resize( const unsigned nEvents )
+    {
+      m_data = Store<float_v, Alignment::AoS>( nEvents, m_eventType.eventSize() );
+      m_weights.resize( aligned_size(), 1);
+      m_genPDF.resize( aligned_size(), 1 );
+    }
     const Event operator[]( const size_t&) const;
     std::array<Event, utils::size<float_v>::value> scatter(unsigned) const;
     void gather(const std::array<Event, utils::size<float_v>::value>&, unsigned);   

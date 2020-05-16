@@ -87,7 +87,7 @@ void addExtendedTerms( Minimiser& mini, SIGPDF& pdf, MinuitParameterSet& mps )
 template <typename PDF>
 FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS )
 {
-  INFO( "Type = " << typeof<PDF>() );
+  INFO( "Type = " << type_string<PDF>() );
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time      = std::clock();
   pdf.setEvents( data );

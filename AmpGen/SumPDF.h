@@ -124,7 +124,7 @@ namespace AmpGen
       KeyedFunctors<double, eventValueType> view;
       for_each( this->m_pdfs, [&view, &events]( const auto& pdf) mutable { 
         auto eval = pdf.evaluator(events);
-        view.add([eval](const auto& event){ return eval(event) ; } , typeof(pdf), "" ); 
+        view.add([eval](const auto& event){ return eval(event) ; } , type_string(pdf), "" ); 
       } );
       return view; 
     }

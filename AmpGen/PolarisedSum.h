@@ -50,8 +50,9 @@ namespace AmpGen
       #if ENABLE_AVX
         void setEvents(EventList& evts){ m_ownEvents = true; setEvents( *new EventList_type(evts)) ; };
         void setMC(EventList& evts){ setMC( *new EventList_type(evts)) ; };
+        double operator()(const double*, const unsigned) const; 
       #endif
-      float_v operator()( const float_v*, const unsigned) const; 
+      float_v operator()(const float_v*, const unsigned) const; 
       real_t  operator()(const Event& evt) const;
       void reset(const bool& = false);
       void debug(const Event&);

@@ -76,7 +76,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
       Tensor thisExpression( Tensor::dim(polStates.size()) );
       auto& [p, coupling] = protoAmps[i];
       DebugSymbols syms;  
-      for(unsigned j = 0; j != polStates.size(); ++j) thisExpression[j] = make_cse( p.getExpression(&syms, polStates[j] ) ); 
+      for(unsigned j = 0; j != polStates.size(); ++j) thisExpression[j] = make_cse( p.getExpression(j == 0 ? &syms: nullptr, polStates[j] ) ); 
       m_matrixElements[i] = TransitionMatrix<void>( 
           p,
           coupling, 
@@ -85,7 +85,9 @@ PolarisedSum::PolarisedSum(const EventType& type,
           p.decayDescriptor(),
           this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ,this->m_mps ) );
         CompilerWrapper().compile( m_matrixElements[i] );
-      });
+      m_matrixElements[i].size = thisExpression.size();
+      }
+      );
     }
   }
   if ( stype == spaceType::flavour )
@@ -201,8 +203,8 @@ void   PolarisedSum::prepare()
   if( m_integrator.isReady() ) updateNorms();
   std::for_each( m_matrixElements.begin(), m_matrixElements.end(), resetFlags );
 //  if( m_nCalls % 10000 == 0 ) debug_norm();
-  DEBUG( "m_pdfCache[0] = " << m_pdfCache[0] << " w/o caching = " << (m_weight/m_norm) * getValNoCache(m_events->at(0)));
   m_pdfCache.update(m_cache, m_probExpression); 
+  DEBUG( "m_pdfCache[0] = " << m_pdfCache[0] << " w/o caching = " << (m_weight/m_norm) * getValNoCache(m_events->at(0)));
   m_nCalls++; 
 }
 
@@ -210,6 +212,14 @@ float_v PolarisedSum::operator()( const float_v*, const unsigned index ) const
 { 
   return ( m_weight / m_norm ) * m_pdfCache[index];
 }
+
+#if ENABLE_AVX
+double PolarisedSum::operator()( const double*, const unsigned index ) const 
+{ 
+  return operator()((const float_v*)nullptr, index / utils::size<float_v>::value ).at( index % utils::size<float_v>::value );
+}
+#endif
+
 
 void PolarisedSum::debug_norm()
 {
@@ -225,8 +235,8 @@ void   PolarisedSum::setEvents( EventList_type& events )
   reset();
   if( m_events != nullptr && m_ownEvents ) delete m_events; 
   m_events = &events;
-  m_cache    = Store<complex_v, Alignment::AoS>(m_events->size(), m_matrixElements, m_dim.first * m_dim.second );
-  m_pdfCache = Store<float_v>(m_events->size(), m_probExpression );
+  m_cache    . allocate( m_events->size(), m_matrixElements, m_dim.first * m_dim.second );
+  m_pdfCache . allocate( m_events->size(), m_probExpression);
 }
 
 void   PolarisedSum::setMC( EventList_type& events )
@@ -267,6 +277,7 @@ real_t PolarisedSum::operator()(const Event& evt) const
 {   
   return utils::at( m_pdfCache[ evt.index() / utils::size<float_v>::value ], evt.index() % utils::size<float_v>::value );
 }
+
 
 double PolarisedSum::norm() const 
 {
@@ -317,8 +328,9 @@ void PolarisedSum::debug(const Event& evt)
     std::vector<complex_v> this_cache; 
     for(unsigned i = 0 ; i != tsize; ++i ) this_cache.emplace_back( m_cache(evt.index() / utils::size<float_v>::value, j*tsize + i) );
     INFO( m_matrixElements[j].decayDescriptor() << " " << vectorToString( this_cache, " ") );
+    if( m_debug ) m_matrixElements[0].debug( evt ); 
   }
-  INFO("P(x) = " << getValNoCache(evt) << " " << operator()(nullptr, evt.index() / utils::size<float_v>::value ) );
+  INFO("P(x) = " << getValNoCache(evt) << " " << operator()((const float_v*)nullptr, evt.index() / utils::size<float_v>::value ) );
   INFO("Prod = [" << vectorToString(m_pVector , ", ") <<"]");
 }
 

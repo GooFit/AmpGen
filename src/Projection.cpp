@@ -45,6 +45,11 @@ TH1D* Projection::plot(const std::string& prefix) const {
   plot->GetYaxis()->SetTitleOffset(1.35);
   plot->SetMarkerSize(0);
   plot->SetMinimum(0);
+  
+  DEBUG("Returning plot: [" << m_min << " " << m_max << "] " << m_name << " " << 
+     plot->GetXaxis()->GetBinLowEdge(1) << " " <<
+     plot->GetXaxis()->GetBinLowEdge(1 + m_nBins)
+      );
   return plot;
 }
 std::function<int(const Event& evt )> Projection::binFunctor() const {
@@ -73,7 +78,20 @@ std::pair<double, double> Projection2D::operator()( const Event& evt ) const
 
 template <> TH1D* Projection::projInternal( const EventList& events, const ArgumentPack& args) const 
 { 
-  return events.makeProjection(*this, args); 
+  auto selection      = args.getArg<PlotOptions::Selection>().val;
+  auto weightFunction = args.getArg<WeightFunction>().val;
+  std::string prefix  = args.getArg<PlotOptions::Prefix>(std::string(""));
+  auto axis           = plot(prefix);
+  axis->SetLineColor(args.getArg<PlotOptions::LineColor>(kBlack).val); 
+  axis->SetMarkerSize(0);
+  for( auto& evt : events )
+  {
+    if( selection != nullptr && !selection(evt) ) continue;
+    auto pos = operator()(evt);
+    axis->Fill( pos, evt.weight() * ( weightFunction == nullptr ? 1 : weightFunction(evt) / evt.genPdf() ) );
+  }
+  if( selection != nullptr ) INFO("Filter efficiency = " << axis->GetEntries() << " / " << events.size() );
+  return axis;
 }
 
 template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventList& events, const Projection::keyedFunctors& weightFunction, const ArgumentPack& args) const

@@ -82,7 +82,7 @@ namespace AmpGen {
   template <class RETURN_TYPE>
     RETURN_TYPE lexical_cast( const std::string& word, bool& status )
     {
-      WARNING( "Only use specialised versions of this template (word = " << word << ", type = " << AmpGen::typeof<RETURN_TYPE>()
+      WARNING( "Only use specialised versions of this template (word = " << word << ", type = " << AmpGen::type_string<RETURN_TYPE>()
           << ")  " );
       status = 0;
       return RETURN_TYPE();

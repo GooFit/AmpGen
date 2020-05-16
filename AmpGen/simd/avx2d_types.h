@@ -6,12 +6,20 @@
 #include <iostream>
 #include <complex>
 #include <omp.h>
+#include <math.h>
+
+extern "C" __m256d _ZGVcN4v_cos(__m256d x);
+extern "C" __m256d _ZGVcN4v_sin(__m256d x);
+extern "C" __m256d _ZGVcN4v_exp(__m256d x);                    
+extern "C" __m256d _ZGVcN4v_log(__m256d x);
+extern "C" void    _ZGVdN4vvv_sincos(__m256d x, __m256i ptrs, __m256i ptrc);
 
 namespace AmpGen {
   namespace AVX2d {
-    #define stl_fallback( x ) \
-      inline real_v x( const real_v& v ){  auto a = v.to_array(); return real_v( std::x(a[0]), std::x(a[1]), std::x(a[2]), std::x(a[3]) ) ; } 
-       
+    
+    #define libmvec_alias( function_name, avx_function_name ) \
+      inline real_v function_name( const real_v& v ){ return avx_function_name (v) ; }
+ 
     struct real_v {
       __m256d data;
       static constexpr unsigned size = 4;
@@ -25,6 +33,7 @@ namespace AmpGen {
         data = _mm256_loadu_pd(tmp); 
       }
       real_v(const double* f ) : data( _mm256_loadu_pd( f ) ) {}
+      real_v(const std::array<double,4> f ) : data( _mm256_loadu_pd( f.data() ) ) {}
       void store( double* ptr ) const { _mm256_storeu_pd( ptr, data ); }
       std::array<double, 4> to_array() const { std::array<double, 4> b; store( &b[0] ); return b; }
       double at(const unsigned i) const { return to_array()[i] ; }       
@@ -51,10 +60,25 @@ namespace AmpGen {
     inline real_v operator==( const real_v& lhs, const real_v& rhs ){ return _mm256_cmp_pd( lhs, rhs, _CMP_EQ_OS ); }
     inline real_v sqrt( const real_v& v ) { return _mm256_sqrt_pd(v); } 
     inline real_v abs ( const real_v& v ) { return _mm256_andnot_pd(_mm256_set1_pd(-0.), v);  }
-    // inline real_v sin( const real_v& v )  { return sin256_pd(v) ; }
-    // inline real_v cos( const real_v& v )  { return cos256_pd(v) ; }
-    // inline real_v tan( const real_v& v )  { real_v s; real_v c; sincos256_pd(v, (__m256*)&s, (__m256*)&c) ; return s/c; }
-    // inline real_v exp( const real_v& v )  { return exp256_ps(v) ; }
+    
+    libmvec_alias( sin, _ZGVcN4v_sin )
+    libmvec_alias( cos, _ZGVcN4v_cos )
+    libmvec_alias( exp, _ZGVcN4v_exp )
+    libmvec_alias( log, _ZGVcN4v_log )
+    inline void sincos( const real_v& v, real_v& s, real_v& c )
+    {
+      __m256i sp = _mm256_add_epi64(_mm256_set1_epi64x((uint64_t)&s),_mm256_set_epi64x(24,16,8,0)); 
+      __m256i cp = _mm256_add_epi64(_mm256_set1_epi64x((uint64_t)&c),_mm256_set_epi64x(24,16,8,0)); 
+      _ZGVdN4vvv_sincos(v,sp,cp); 
+    }
+
+    inline real_v tan( const real_v& v )
+    {
+      real_v s, c;
+      sincos( v, s, c );
+      return s / c ;  
+    }
+
     inline real_v select(const real_v& mask, const real_v& a, const real_v& b ) { return _mm256_blendv_pd( b, a, mask ); }
     inline real_v select(const bool& mask   , const real_v& a, const real_v& b ) { return mask ? a : b; } 
     inline real_v sign  ( const real_v& v){ return select( v > 0., +1., -1. ); }
@@ -78,50 +102,10 @@ namespace AmpGen {
      return _mm256_i64gather_pd(base_addr, udouble_to_uint(offsets),sizeof(double));
     } 
     
-    inline void frexp(const real_v& value, real_v& mant, real_v& exponent)
-    {
-      auto arg_as_int = _mm256_castpd_si256(value);
-      static const real_v offset(4503599627370496.0 + 1022.0);   // 2^52 + 1022.0
-      static const __m256i pow2_52_i = _mm256_set1_epi64x(0x4330000000000000); // *reinterpret_cast<const uint64_t*>(&pow2_52_d);
-      auto b = _mm256_srl_epi64(arg_as_int, _mm_cvtsi32_si128(52));
-      auto c = _mm256_or_si256( b , pow2_52_i);
-      exponent = real_v( _mm256_castsi256_pd(c) ) - offset;
-      mant     = _mm256_castsi256_pd(_mm256_or_si256(_mm256_and_si256 (arg_as_int, _mm256_set1_epi64x(0x000FFFFFFFFFFFFFll) ), _mm256_set1_epi64x(0x3FE0000000000000ll)));
-    }
-    
     inline real_v fmadd( const real_v& a, const real_v& b, const real_v& c )
     {
       return _mm256_fmadd_pd(a, b, c);
     }
-    inline real_v log(const real_v& arg)
-    {
-      static const real_v corr     = 0.693147180559945286226764;
-      static const real_v CL15     = 0.148197055177935105296783;
-      static const real_v CL13     = 0.153108178020442575739679;
-      static const real_v CL11     = 0.181837339521549679055568;
-      static const real_v CL9      = 0.22222194152736701733275;
-      static const real_v CL7      = 0.285714288030134544449368;
-      static const real_v CL5      = 0.399999999989941956712869;
-      static const real_v CL3      = 0.666666666666685503450651;
-      static const real_v CL1      = 2.0;
-      real_v mant, exponent;
-      frexp(arg, mant, exponent);
-      auto x  = (mant - 1.) / (mant + 1.);
-      auto x2 = x * x;
-      auto p = fmadd(CL15, x2, CL13);
-      p = fmadd(p, x2, CL11);
-      p = fmadd(p, x2, CL9);
-      p = fmadd(p, x2, CL7);
-      p = fmadd(p, x2, CL5);
-      p = fmadd(p, x2, CL3);
-      p = fmadd(p, x2, CL1);
-      p = fmadd(p, x, corr * exponent);
-      return p;
-    }
-    stl_fallback( exp )
-    stl_fallback( tan )
-    stl_fallback( sin )
-    stl_fallback( cos )
     inline real_v remainder( const real_v& a, const real_v& b ){ return a - real_v(_mm256_round_pd(a/b, _MM_FROUND_TO_NEG_INF)) * b; }
     inline real_v fmod( const real_v& a, const real_v& b )
     {
@@ -189,7 +173,9 @@ namespace AmpGen {
     inline complex_v select(const real_v& mask, const complex_v& a, const real_v& b   ) { return complex_v( select(mask, a.re, b )  , select(mask, a.im, 0.f) ); }
     inline complex_v select(const bool& mask   , const complex_v& a, const complex_v& b ) { return mask ? a : b; }
     inline complex_v exp( const complex_v& v ){ 
-      return exp( v.re) * complex_v( cos( v.im ), sin( v.im ) );
+      real_v c, s; 
+      sincos( v.im, c, s );
+      return exp(v.re) * complex_v(c, s);
     }
     inline complex_v sqrt( const complex_v& v )
     {

@@ -155,9 +155,7 @@ void AmpGen::boost( Event& evt, const std::tuple<double, double, double>& n, con
 
 void AmpGen::rotate( Event& evt, const std::tuple<double,double,double>& n, const double& v )
 {
-  double nx   = std::get<0>( n );
-  double ny   = std::get<1>( n );
-  double nz   = std::get<2>( n );
+  auto& [nx,ny,nz ] = n;
   double cv   = cos(v);
   double sv   = sin(v);
   double norm = sqrt( nx * nx + ny * ny + nz * nz );

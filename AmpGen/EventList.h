@@ -75,15 +75,20 @@ namespace AmpGen
     const double* block(const unsigned pos) const { return m_data[pos].address(); }
     real_t weight( const size_t& pos)             const { return m_data[pos].weight(); }
     real_t genPDF( const size_t& pos)             const { return m_data[pos].genPdf(); }
-    void reserve( const size_t& size ) { m_data.reserve( size ); }
-    void resize ( const size_t& size ) { m_data.resize(size) ; } 
-    void push_back( const Event& evt ) { m_data.push_back( evt ); }
-    void emplace_back( const Event& evt) { m_data.emplace_back(evt) ; }
+    void reserve( const size_t& size );
+    void resize ( const size_t& size );
+    void push_back( const Event& evt );
+    void emplace_back( const Event& evt);
     void setEventType( const EventType& type ) { m_eventType = type; }
     void add( const EventList& evts );
     void loadFromTree( TTree* tree, const ArgumentPack& args ); 
     void loadFromFile( const std::string& fname, const ArgumentPack& args );
     void clear();
+    void setWeight( const unsigned int& pos, const double& w, const double&g=+1)
+    {
+      m_data[pos].setWeight(w);
+      m_data[pos].setGenPdf(g);
+    }
     void erase( const std::vector<Event>::iterator& begin, const std::vector<Event>::iterator& end );
 
     TTree* tree( const std::string& name, const std::vector<std::string>& extraBranches = {} ) const;

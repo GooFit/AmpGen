@@ -105,7 +105,7 @@ void EventType::extendEventType( const std::string& branch )
 {
   m_eventTypeExtensions.push_back(branch);
 }
-std::pair<double, double> EventType::minmax( const std::vector<unsigned>& indices, bool isGeV ) const
+std::pair<double, double> EventType::minmax( const std::vector<unsigned>& indices) const
 {
   std::vector<unsigned> ivec( size() );
   std::iota( ivec.begin(), ivec.end(), 0 );
@@ -114,7 +114,7 @@ std::pair<double, double> EventType::minmax( const std::vector<unsigned>& indice
   double max = motherMass();
   for ( auto& x : ivec )
     if ( std::find( indices.begin(), indices.end(), x ) == indices.end() ) max -= mass( x );
-  return std::pair<double, double>(min*min, max*max);
+  return std::pair<double, double>(min, max);
 }
 std::pair<unsigned, unsigned> EventType::count(const unsigned& index) const
 {
@@ -180,19 +180,19 @@ std::vector<Projection> EventType::defaultProjections(const unsigned& nBins) con
 Projection EventType::projection(const unsigned& nBins, const std::vector<unsigned>& indices, const std::string& observable) const
 {
   bool useRootLabelling = NamedParameter<bool>("EventType::UseRootTEX", false );
-  auto mm               = minmax(indices, true);
+  auto mm               = minmax(indices);
   std::string gevcccc   = useRootLabelling ? "GeV^{2}/c^{4}" : "\\mathrm{GeV}^{2}/c^{4}";
   std::string gevcc     = useRootLabelling ? "GeV/c^{2}"     : "\\mathrm{GeV}/c^{2}";
   if( observable == "mass2" )
     return Projection( [indices]( const Event& evt ) { return evt.s( indices ); },
         "s" + vectorToString( indices ),
         "s_{" + label( indices ) + "}", nBins,
-        ( mm.first - 0.05 ) ,  ( mm.second + 0.05 ) , gevcccc );
+        ( mm.first * mm.first - 0.05 ) ,  ( mm.second * mm.second + 0.05 ) , gevcccc );
   else if( observable == "mass" ){
     return Projection( [indices]( const Event& evt ) { return sqrt( evt.s( indices ) ); },
         "m" + vectorToString( indices ),
         "m_{" + label( indices ) + "}", nBins,
-        mm.first > 0.05 ? sqrt(mm.first - 0.05) :0 ,  sqrt( mm.second + 0.05 ) , gevcc );
+        mm.first > 0.05 ? mm.first - 0.05 :0 ,  mm.second + 0.05, gevcc );
   }
   return Projection();
 }
@@ -242,7 +242,7 @@ std::function<void( Event& )> EventType::symmetriser() const
   };
 }
 
-std::function<void(Event&, const std::vector<int>&)> EventType::automaticOrdering() const 
+std::function<bool(Event&, const std::vector<int>&)> EventType::automaticOrdering() const 
 {
   std::vector<int> ids;
   for( unsigned i = 0 ; i != m_particleNames.size(); ++i ) ids.push_back( ParticleProperties::get(m_particleNames[i])->pdgID() );
@@ -259,12 +259,14 @@ std::function<void(Event&, const std::vector<int>&)> EventType::automaticOrderin
     return std::all_of( std::begin(used), std::end(used), [](auto b) { return b; }  ) ;
   };
 
-  return [ids, matches](auto& event, const auto& actual_ids) -> void {
+  return [ids, matches](auto& event, const auto& actual_ids) -> bool {
     std::vector<unsigned> new_addresses( ids.size(), 999 ); 
     int sgn = +1; 
     if( matches(ids, actual_ids ) ) sgn = +1;
     else if( matches(ids, actual_ids, -1 ) ) sgn = -1;
-    else { FATAL("Ids: " << vectorToString(actual_ids, " ") << " do not match either particle or antiparticle ["<< vectorToString(ids, " ") << "]" );}
+    else { ERROR("Ids: " << vectorToString(actual_ids, " ") << " do not match either particle or antiparticle ["<< vectorToString(ids, " ") << "]" );
+      return false; 
+    }
     
     for( unsigned i = 0 ; i != ids.size(); ++i )
     {
@@ -274,6 +276,7 @@ std::function<void(Event&, const std::vector<int>&)> EventType::automaticOrderin
       }
     }
     event.reorder( new_addresses );
+    return true; 
   };
 }
 

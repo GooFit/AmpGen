@@ -18,7 +18,7 @@
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Projection.h"
-
+#include "AmpGen/TreeReader.h"
 #include "TEventList.h"
 #include "TFile.h"
 #include "TH1.h"
@@ -52,7 +52,7 @@ int main( int argc, char* argv[] )
   std::vector<std::string> idBranches      = NamedParameter<std::string>("IdBranches"    , std::vector<std::string>() ).getVector(); 
   bool usePIDCalib                         = NamedParameter<bool>("usePIDCalib"             , false);
   bool rejectMultipleCandidates            = NamedParameter<bool>("rejectMultipleCandidates", true );
-  std::string cuts                         = vectorToString( NamedParameter<std::string>("Cut","").getVector() , " && "); 
+  std::string cuts                         = NamedParameter<std::string>("Cut",""); 
   EventType evtType( NamedParameter<std::string>( "EventType" ).getVector() );
   
   std::vector<std::string> branches; 
@@ -141,14 +141,14 @@ int main( int argc, char* argv[] )
   INFO("Constructing eventList");
 
   if ( motherID != "" ) {
+    bool neg = motherID[0] == '-';
     INFO( "Converting " << evtType.mother() << " " << eventsToTake.size() << " " << evts.size()  );
-    in_tree->SetBranchStatus( "*", 0 );
+    TreeReader tr( in_tree );
     int id = 0;
-    in_tree->SetBranchStatus( motherID.c_str() );
-    in_tree->SetBranchAddress( motherID.c_str(), &id );
+    tr.setBranch( neg ? motherID.substr(1, motherID.size() -1 ) : motherID, & id );  
     for ( unsigned int i = 0; i < eventsToTake.size(); ++i ) {
-      in_tree->GetEntry( eventsToTake[i] );
-      if ( id < 0 ) invertParity( evts[i] , evtType.size() );
+      tr.getEntry(eventsToTake[i] );
+      if ( neg ? id > 0 : id < 0 ) invertParity( evts[i] , evtType.size() );
     }
   }
 
