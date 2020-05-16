@@ -19,7 +19,6 @@ ASTResolver::ASTResolver(const std::map<std::string, unsigned>& evtMap,
   m_nParameters(0)
 {
   m_enable_cuda                 = NamedParameter<bool>("UseCUDA",false);
-  m_enable_avx                  = NamedParameter<bool>("UseAVX",false);
   m_enable_compileTimeConstants = NamedParameter<bool>("ASTResolver::CompileTimeConstants", false);
 }
 
@@ -69,7 +68,7 @@ template <> void ASTResolver::resolve<SubTree>( const SubTree& subTree )
 template <> void ASTResolver::resolve<Spline>( const Spline& spline )
 { 
   if( m_resolvedParameters.count( &spline) != 0  ) return ; 
-  auto address = addCacheFunction<SplineTransfer>(spline.m_name,spline.m_nKnots,spline.m_min,spline.m_max);
+  auto address = addCacheFunction<SplineTransfer>(spline.m_name, spline.m_nKnots, spline.m_min, spline.m_max);
   addResolvedParameter( &spline, address );
   addResolvedParameter( spline.m_points.top().get(), address );  
   auto splineTransfer = dynamic_cast<SplineTransfer*>( m_cacheFunctions[spline.m_name].get() );

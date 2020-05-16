@@ -36,7 +36,7 @@ namespace AmpGen {
       {
         auto it = m_cacheFunctions.find(name);
         if( it != m_cacheFunctions.end() ) return it->second->address();
-        auto cacheFunction = std::make_shared<TYPE>(m_nParameters, args... );
+        auto cacheFunction = std::make_shared<TYPE>(m_nParameters, name, args... );
         m_cacheFunctions[name] = cacheFunction;
         m_nParameters += cacheFunction->size();
         return m_nParameters - cacheFunction->size();
@@ -63,8 +63,8 @@ namespace AmpGen {
       std::map<const SubTree*, uint64_t>                    m_tempTrees;                   /// temporary store of sub-trees for performing cse reduction 
       unsigned int                                          m_nParameters;                 /// Number of parameters
       bool                                                  m_enable_cuda                 {false}; /// flag to generate CUDA code <<experimental>>
-      bool                                                  m_enable_avx                  {false};/// flag to generate vectorised code <<experimental>>
       bool                                                  m_enable_compileTimeConstants {false}; /// flag to enable compile time constants <<experimental>> 
+      bool                                                  m_enable_avx                  {false}; /// flag to generate code using AVX instructions <<experimental>>
   };
   
   template <> void ASTResolver::resolve<Parameter>( const Parameter& obj );

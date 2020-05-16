@@ -1,4 +1,5 @@
 #ifndef AMPGEN_EXPRESSIONPARSER_H
+#define AMPGEN_EXPRESSIONPARSER_H 1 
 
 #include <complex>
 #include <functional>

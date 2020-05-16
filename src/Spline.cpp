@@ -85,7 +85,7 @@ void SplineTransfer::print() const { INFO( "Source: " << m_parameters[0]->name()
 SplineTransfer::SplineTransfer() = default;
 
 SplineTransfer::SplineTransfer( const SplineTransfer& other )
-  : CacheTransfer(other.m_address, other.m_value, other.m_size)
+  : CacheTransfer(other.m_address, other.m_name, other.m_value, other.m_size)
   , m_transferMatrix( other.m_transferMatrix )
   , m_parameters( other.m_parameters )
   , m_nKnots( other.m_nKnots )
@@ -94,8 +94,8 @@ SplineTransfer::SplineTransfer( const SplineTransfer& other )
 {
 }
 
-SplineTransfer::SplineTransfer( const size_t& address, const unsigned int& N, const double& min, const double& max )
-  : CacheTransfer(address)
+SplineTransfer::SplineTransfer( const size_t& address, const std::string& name, const unsigned int& N, const double& min, const double& max )
+  : CacheTransfer(address, name)
   , m_transferMatrix( TMatrixD( N - 2, N - 2 ) )
   , m_parameters( N, nullptr )
   , m_nKnots(N)

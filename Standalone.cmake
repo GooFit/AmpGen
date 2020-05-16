@@ -64,7 +64,7 @@ target_include_directories(AmpGen PUBLIC $<BUILD_INTERFACE:${${PROJECT_NAME}_SOU
 
 target_include_directories(AmpGen SYSTEM PUBLIC "${ROOT_INCLUDE_DIRS}")
 
-target_link_libraries(AmpGen PUBLIC ${ROOT_LIBRARIES} ${CMAKE_DL_LIBS})
+target_link_libraries(AmpGen PUBLIC -lmvec -lm ${ROOT_LIBRARIES} ${CMAKE_DL_LIBS} )
 
 
 if( ( NOT TARGET ROOT::Minuit2 AND NOT TARGET Minuit2 ) OR "${extern_minuit2}" )
@@ -156,15 +156,15 @@ target_compile_options(AmpGen
   if ( ${USE_SIMD} MATCHES "AVX2d" )
   message(STATUS "Enabling AVX2 [double precision]")
   target_compile_definitions(AmpGen PUBLIC "ENABLE_AVX=1" "ENABLE_AVX2d=1") 
-  target_compile_options(AmpGen PUBLIC -march=native -ftree-vectorize -mavx2 -DHAVE_AVX2_INSTRUCTIONS)
+  target_compile_options(AmpGen PUBLIC -march=native -ftree-vectorize -mavx2 -ffast-math -DHAVE_AVX2_INSTRUCTIONS)
   elseif ( ${USE_SIMD} MATCHES "AVX2f" )
   message(STATUS "Enabling AVX2 [single precision]")
   target_compile_definitions(AmpGen PUBLIC "ENABLE_AVX=1" "ENABLE_AVX2f=1") 
-  target_compile_options(AmpGen PUBLIC -march=native -ftree-vectorize -mavx2 -DHAVE_AVX2_INSTRUCTIONS)
+  target_compile_options(AmpGen PUBLIC -march=native -ftree-vectorize -mavx2 -ffast-math -DHAVE_AVX2_INSTRUCTIONS)
   elseif ( ${USE_SIMD} MATCHES "AVX512d" )
   message(STATUS "Enabling AVX2 [double precision]")
   target_compile_definitions(AmpGen PUBLIC "ENABLE_AVX=1" "ENABLE_AVX512=1") 
-  target_compile_options(AmpGen PUBLIC -march=native -ftree-vectorize -mavx512f -DHAVE_AVX512_INSTRUCTIONS)
+  target_compile_options(AmpGen PUBLIC -march=native -ftree-vectorize -mavx512f -ffast-math -DHAVE_AVX512_INSTRUCTIONS)
   endif()
   if("${CMAKE_CXX_COMPILER_ID}" MATCHES "AppleClang" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" )
    target_compile_options(AmpGen PUBLIC -mfma)
@@ -184,22 +184,14 @@ else()
   target_compile_options(AmpGen PUBLIC -Wno-suggest-override)
 endif()
 
-file(GLOB_RECURSE applications apps/*.cpp )
-file(GLOB_RECURSE examples examples/*.cpp )
+file(GLOB_RECURSE applications apps/*.cpp examples/*.cpp )
 
 foreach( file ${applications} )
   get_filename_component( Executable ${file} NAME_WE )
   #   cmake_print_variables(Executable)
   add_executable(${Executable} ${file})
   target_compile_options(${Executable} PUBLIC -g3 -Ofast)
-  target_link_libraries(${Executable} PUBLIC AmpGen ${ROOT_LIBRARIES})
-endforeach()
-
-foreach( file ${examples} )
-  get_filename_component( Executable ${file} NAME_WE )
-  # cmake_print_variables(Executable)
-  add_executable(${Executable} ${file})
-  target_link_libraries(${Executable} PUBLIC AmpGen)
+  target_link_libraries(${Executable} PUBLIC AmpGen  )
 endforeach()
 
 file(GLOB_RECURSE options_files options/*.*)

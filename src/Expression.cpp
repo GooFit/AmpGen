@@ -56,12 +56,12 @@ std::string Constant::to_string(const ASTResolver* resolver) const {
     str.erase ( str.find_last_not_of('0') + 1, std::string::npos );  
     return str; 
   };
-  std::string complex_type = typeof<complex_t>();
+  std::string complex_type = type_string<complex_t>();
   std::string literalSuffix = "";
   if( resolver != nullptr && (resolver->enableCuda() || resolver->enableAVX()) )
   { 
     literalSuffix = "f";
-    complex_type = typeof<complex_v>();
+    complex_type = type_string<complex_v>();
   }
   return std::imag(m_value) == 0 ? "(" + rounded_string(std::real(m_value)) +literalSuffix + ")" : 
       complex_type +"("+rounded_string(std::real(m_value))+literalSuffix+","+rounded_string(std::imag(m_value))+literalSuffix+")";
@@ -326,8 +326,8 @@ ComplexParameter::ComplexParameter( const Parameter& real, const Parameter& imag
 
 std::string ComplexParameter::to_string(const ASTResolver* resolver) const
 {
-  std::string complex_type = typeof<complex_t>();
-  if( resolver != nullptr && (resolver->enableCuda() || resolver->enableAVX()) ) complex_type = typeof<complex_v>();
+  std::string complex_type = type_string<complex_t>();
+  if( resolver != nullptr && (resolver->enableCuda() || resolver->enableAVX()) ) complex_type = type_string<complex_v>();
   return complex_type + "(" + m_real.to_string(resolver) + ", " + m_imag.to_string(resolver) +")";
 }
 

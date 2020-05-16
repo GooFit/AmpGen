@@ -26,7 +26,7 @@ namespace AmpGen{
     public:
       SplineTransfer();
       SplineTransfer( const SplineTransfer& other );
-      SplineTransfer( const size_t& address, const unsigned int& N, const double& min, const double& max );
+      SplineTransfer( const size_t& address, const std::string& name, const unsigned int& N, const double& min, const double& max );
       void transfer( CompiledExpressionBase* destination ) override;
       bool isConfigured();
       void set( const unsigned int& N, AmpGen::MinuitParameter* f );

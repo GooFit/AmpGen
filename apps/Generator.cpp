@@ -31,39 +31,98 @@
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/AddCPConjugate.h"
 
+#if ENABLE_AVX
+  #include "AmpGen/EventListSIMD.h"
+  using EventList_t = AmpGen::EventListSIMD;
+#else
+  #include "AmpGen/EventList.h"
+  using EventList_t = AmpGen::EventList; 
+#endif
+
 using namespace AmpGen;
 
-namespace AmpGen { make_enum(generatorType, CoherentSum, PolarisedSum, FixedLib, RGenerator, TreePhaseSpace) }
+namespace AmpGen { 
+  make_enum(pdfTypes, CoherentSum, PolarisedSum, FixedLib)
+  make_enum(phspTypes, PhaseSpace, RecursivePhaseSpace, TreePhaseSpace)
+}  
 
-struct FixedLibPDF {
+struct FixedLibPDF 
+{
   void* lib = {nullptr};
-  AmpGen::DynamicFCN<double( const double*, int )> PDF;
-
+  DynamicFCN<double( const double*, int )> PDF;
+  void debug( const Event& event) {};
   void prepare(){};
   void setEvents( AmpGen::EventList& evts ){};
   double operator()( const AmpGen::Event& evt ) const { return PDF( evt, 1 ); }
+  double operator()( const double* evt, const unsigned& index )
+  {
+    return PDF(evt, 1 ); 
+  } 
   FixedLibPDF( const std::string& lib )
   {
     void* handle = dlopen( lib.c_str(), RTLD_NOW );
     if ( handle == nullptr ) ERROR( dlerror() );
-    PDF = AmpGen::DynamicFCN<double( const double*, int )>( handle, "FCN" );
+    PDF = DynamicFCN<double( const double*, int )>( handle, "FCN" );
   }
   size_t size() { return 0; }
   void reset( const bool& flag = false ){};
 };
 
-template <class PDF_TYPE, class PRIOR_TYPE> 
-  void GenerateEvents( EventList& events
-                       , PDF_TYPE& pdf 
-                       , PRIOR_TYPE& prior
+
+template <typename pdf_t> Particle getTopology(const pdf_t& pdf)
+{
+  if constexpr( std::is_same<pdf_t, FixedLibPDF>::value )
+  {
+    FATAL("Cannot deduce decay topology from a compiled library, check generator options");
+  }
+  else return pdf.matrixElements()[0].decayTree.quasiStableTree();
+}
+
+template <typename pdf_t> std::vector<Particle> getDecayChains( const pdf_t& pdf )
+{
+  if constexpr( std::is_same<pdf_t, FixedLibPDF>::value )
+  {
+    FATAL("Cannot deduce decay topology from a compiled library, check generator options");
+  }
+  else {
+    std::vector<Particle> channels; 
+    for( auto& chain : pdf.matrixElements() ) channels.push_back( chain.decayTree );
+    return channels;
+  }
+}
+
+template <typename pdf_t> void generateEvents( EventList& events
+                       , pdf_t& pdf 
+                       , const phspTypes& phsp_type
                        , const size_t& nEvents
                        , const size_t& blockSize
-                       , TRandom* rndm )
+                       , TRandom* rndm
+                       , const bool& normalise = true )
 {
-  Generator<PRIOR_TYPE> signalGenerator( prior );
-  signalGenerator.setRandom( rndm);
-  signalGenerator.setBlockSize( blockSize );
-  signalGenerator.fillEventList( pdf, events, nEvents );
+  if( phsp_type == phspTypes::PhaseSpace )
+  {
+    Generator<PhaseSpace, EventList_t> signalGenerator(events.eventType(), rndm);
+    signalGenerator.setBlockSize(blockSize);
+//    signalGenerator.setNormFlag(normalise);
+    signalGenerator.fillEventList(pdf, events, nEvents );
+  }
+  else if( phsp_type == phspTypes::RecursivePhaseSpace )
+  {
+    Generator<RecursivePhaseSpace, EventList_t> signalGenerator( getTopology(pdf), events.eventType(), rndm );
+    signalGenerator.setBlockSize(blockSize);
+//    signalGenerator.setNormFlag(normalise);
+    signalGenerator.fillEventList(pdf, events, nEvents);
+  }
+  else if( phsp_type == phspTypes::TreePhaseSpace )
+  {
+    Generator<TreePhaseSpace, EventList_t> signalGenerator(getDecayChains(pdf), events.eventType(), rndm);
+    signalGenerator.setBlockSize(blockSize);
+//    signalGenerator.setNormFlag(normalise);
+    signalGenerator.fillEventList(pdf, events, nEvents );
+  }
+  else {
+    FATAL("Phase space configuration: " << phsp_type << " is not supported");
+  }
 }
 
 
@@ -72,16 +131,17 @@ int main( int argc, char** argv )
   OptionsParser::setArgs( argc, argv );
 
   size_t nEvents      = NamedParameter<size_t>     ("nEvents"  , 1, "Total number of events to generate" );
-  size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
+  size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 5000000, "Number of events to generate per block" );
   int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
   std::string outfile = NamedParameter<std::string>("Output"   , "Generate_Output.root" , "Name of output file" ); 
-  auto genType        = NamedParameter<generatorType>( "Type", generatorType::CoherentSum, optionalHelpString("Generator configuration to use:", 
+  auto pdfType        = NamedParameter<pdfTypes>( "Type", pdfTypes::CoherentSum, optionalHelpString("Generator configuration to use:", 
     { {"CoherentSum"     , "Full phase-space generator with (pseudo)scalar amplitude"}
     , {"PolarisedSum"    , "Full phase-space generator with particles carrying spin in the initial/final states"}
-    , {"FixedLib"        , "Full phase-space generator with an amplitude from a precompiled library"}
-    , {"RGenerator"      , "Recursive phase-space generator for intermediate (quasi)stable states such as the D-mesons"}
-    , {"TreePhaseSpace"  , "Recursive phase-space generator with generic handling of intermediate states."} } ) );
-  
+    , {"FixedLib"        , "Full phase-space generator with an amplitude from a precompiled library"}} ) ); 
+  auto phspType        = NamedParameter<phspTypes>( "PhaseSpace", phspTypes::PhaseSpace, optionalHelpString("Phase-space generator to use:", 
+    { {"CoherentSum"     , "Full phase-space generator with (pseudo)scalar amplitude"}
+    , {"PolarisedSum"    , "Full phase-space generator with particles carrying spin in the initial/final states"}
+    , {"FixedLib"        , "Full phase-space generator with an amplitude from a precompiled library"}} ) ); 
   std::string lib     = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
   size_t nBins        = NamedParameter<size_t>     ("nBins"     ,100, "Number of bins for monitoring plots." );
 
@@ -122,40 +182,20 @@ int main( int argc, char** argv )
 
   INFO("Generating events with type = " << eventType );
 
-  if ( genType == generatorType::CoherentSum ) {
-    CoherentSum sig( eventType, MPS );
-    PhaseSpace phsp(eventType,&rand);
-    GenerateEvents( accepted, sig, phsp , nEvents, blockSize, &rand );
-  } 
-  else if ( genType == generatorType::PolarisedSum ){
-    PolarisedSum sig( eventType, MPS ); 
-    RecursivePhaseSpace phsp( sig.matrixElements()[0].decayTree.quasiStableTree() , eventType, &rand );
-    GenerateEvents( accepted, sig, phsp, nEvents, blockSize, &rand );
+  if ( pdfType == pdfTypes::CoherentSum ){
+    CoherentSum pdf( eventType, MPS);
+    generateEvents(accepted, pdf, phspType , nEvents, blockSize, &rand );
   }
-  else if ( genType == generatorType::RGenerator ) {
-    CoherentSum sig( eventType, MPS, "" );
-    Generator<RecursivePhaseSpace> signalGenerator( sig[0].decayTree.quasiStableTree(), eventType );
-    signalGenerator.setRandom( &rand );
-    signalGenerator.fillEventList( sig, accepted, nEvents );
+  else if ( pdfType == pdfTypes::PolarisedSum ){
+    PolarisedSum pdf(eventType, MPS);
+    generateEvents( accepted, pdf, phspType, nEvents, blockSize, &rand );
   }
-  else if ( genType == generatorType::TreePhaseSpace ) {
-    PolarisedSum sig( eventType, MPS);
-    std::vector<Particle> channels; 
-    for( auto& chain : sig.matrixElements() ) channels.push_back( chain.decayTree );
-    Generator<TreePhaseSpace> signalGenerator(channels, eventType, &rand);
-    signalGenerator.setRandom( &rand );
-    signalGenerator.fillEventList( sig, accepted, nEvents );
-  }
-  else if ( genType == generatorType::FixedLib ) {
-    Generator<> signalGenerator( eventType );
-    signalGenerator.setRandom( &rand );
-    signalGenerator.setBlockSize( blockSize );
-    signalGenerator.setNormFlag( false );
-    FixedLibPDF pdf( lib );
-    signalGenerator.fillEventList( pdf, accepted, nEvents );
-  } 
+ // else if ( pdfType == pdfTypes::FixedLib ){
+ //   FixedLibPDF pdf(lib);
+ //   generateEvents( accepted, pdf, phspType, nEvents, blockSize, &rand, false );
+ // }
   else {
-    FATAL("Did not recognise configuration: " << genType );
+    FATAL("Did not recognise configuration: " << pdfType );
   }
   if( accepted.size() == 0 ) return -1;
   TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cstddef>
+#include <string>
 
 namespace AmpGen
 {
@@ -13,7 +14,7 @@ namespace AmpGen
   {
     public:
       CacheTransfer();
-      CacheTransfer( const size_t& address, const double& value=0, const size_t& size=1);
+      CacheTransfer( const size_t& address, const std::string& name, const double& value=0, const size_t& size=1);
       virtual ~CacheTransfer() = default;
       
       size_t address() const { return m_address ; }
@@ -25,13 +26,14 @@ namespace AmpGen
     protected: 
       size_t       m_address = {0};
       size_t       m_size    = {0}; 
-      double       m_value   = {0}; 
+      double       m_value   = {0};
+      std::string  m_name    = {""}; 
   };
 
   class ParameterTransfer : public CacheTransfer
   {
   public:
-    ParameterTransfer( const size_t& address, AmpGen::MinuitParameter* source );
+    ParameterTransfer( const size_t& address, const std::string& name, AmpGen::MinuitParameter* source );
     virtual ~ParameterTransfer() = default;
     
     size_t size()    const override { return 1 ; }  
@@ -40,7 +42,7 @@ namespace AmpGen
     void print()     const override;
   
   protected:
-    AmpGen::MinuitParameter* m_source = {nullptr};
+    MinuitParameter* m_source = {nullptr};
   };
 
 } // namespace AmpGen

@@ -35,7 +35,9 @@ using namespace AmpGen;
 
 // ENABLE_DEBUG(EventListSIMD)
 
-EventListSIMD::EventListSIMD( const EventType& type ) : m_eventType( type ) {}
+EventListSIMD::EventListSIMD( const EventType& type ) : 
+  m_data(0, type.eventSize() ), 
+  m_eventType( type ) {}
 
 void EventListSIMD::loadFromFile( const std::string& fname, const ArgumentPack& args )
 {
@@ -108,10 +110,8 @@ void EventListSIMD::loadFromTree( TTree* tree, const ArgumentPack& args )
   bool hasEventList    = entryList.size() != 0;
   size_t nEvents       = hasEventList ? entryList.size() : tree->GetEntries();
   std::array<Event, float_v::size> buffer;
-   
-  m_data = Store<float_v, Alignment::AoS>(nEvents, m_eventType.eventSize() );
-  m_weights.resize( m_data.nBlocks() ); 
-  m_genPDF.resize(  m_data.nBlocks() ); 
+  
+  resize( nEvents ); 
   auto symmetriser = m_eventType.symmetriser();
   for ( unsigned int block = 0; block < m_data.nBlocks(); ++block ) 
   {
@@ -135,10 +135,7 @@ void EventListSIMD::loadFromTree( TTree* tree, const ArgumentPack& args )
 
 EventListSIMD::EventListSIMD( const EventList& other ) : EventListSIMD( other.eventType() ) 
 {
-  m_data = Store<float_v, Alignment::AoS>(other.size(), m_eventType.eventSize() );
-  DEBUG("Converting EventList -> EventListSIMD, allocate: " << m_data.size() << " events in " << m_data.nBlocks() << " with: " << m_data.nFields() << " fields");
-  m_weights.resize( m_data.nBlocks() );
-  m_genPDF.resize ( m_data.nBlocks() );
+  resize( other.size() );
   for( unsigned block = 0 ; block != m_data.nBlocks(); block++ )
   {
     for( unsigned j = 0 ; j != m_data.nFields(); ++j ) 

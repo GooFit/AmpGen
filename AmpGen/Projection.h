@@ -48,7 +48,12 @@ namespace AmpGen
       TH1D* plot(const std::string& prefix="") const;
 
       std::function<int( const Event& evt )> binFunctor() const;
-      void setRange( const double& min, const double& max ){ m_min = (min); m_max = (max) ; }
+      void setRange( const double& min, const double& max )
+      { 
+        m_min = min; 
+        m_max = max; 
+        m_width = (m_max-m_min)/double(m_nBins);
+      }
 
       friend class Projection2D;
     private:

@@ -49,6 +49,7 @@ namespace AmpGen
         bool operator==( const Iterator& rhs ) const { return m_position == rhs.m_position; }
         bool operator!=( const Iterator& rhs ) const { return m_position != rhs.m_position; }
         size_t operator*() const { return m_position; }
+        unsigned pos() const { return m_position; }
       };
       TTree* m_tree                        = {nullptr};
       bool   m_ready                       = {false};
@@ -90,7 +91,7 @@ namespace AmpGen
           ERROR( "Branch type:" << branchType <<  " not recognised" );
           return;   
         }
-        DEBUG("Making branch with properties: [name = " << name  << ", input type = "  << branchType << " output type = " << typeof<OutputType>() << "]" );
+        DEBUG("Making branch with properties: [name = " << name  << ", input type = "  << branchType << " output type = " << type_string<OutputType>() << "]" );
         m_ready = false;
         m_branches.push_back( new_branch );
       }

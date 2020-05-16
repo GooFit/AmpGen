@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "TMatrixTSym.h"
+#include "AmpGen/MetaUtils.h"
 
 /** @cond PRIVATE */
 namespace ROOT
@@ -31,24 +32,13 @@ namespace AmpGen
   class Minimiser
   {
   private:
-  template <typename T>
-  struct HasGetVal
-  {
-    typedef char YesType[1];
-    typedef char NoType[2]; 
-    template <typename C> static YesType& test( decltype(&C::getVal) ) ;
-    template <typename C> static NoType& test(...);
-    enum { value = sizeof(test<T>(0)) == sizeof(YesType) };
-  };
-  
+    def_has_function(getVal);
+
   public:
-    template <typename TYPE> typename std::enable_if_t<HasGetVal<TYPE>::value, void> setFunction( TYPE& fcn )
+    template <typename TYPE> void setFunction( TYPE& fcn )
     {
-      m_theFunction = [&fcn]() { return fcn.getVal(); };
-    }
-    template <typename TYPE> typename std::enable_if_t<!HasGetVal<TYPE>::value, void> setFunction(TYPE& fcn)
-    {
-      m_theFunction = [&fcn](){ return fcn() ; } ;
+      if constexpr( has_getVal<TYPE>::value ) m_theFunction = [&fcn]() { return fcn.getVal(); };
+      else m_theFunction = fcn;
     }
 
     template <typename TYPE> 

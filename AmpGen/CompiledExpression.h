@@ -22,10 +22,8 @@ namespace AmpGen
      but in principal support also exists for computing coupled channel propagators
      (i.e. returning array types) */
   namespace detail {
-    template <typename T> struct size_of {       unsigned operator()(){ return sizeof(T); } };
-    template <>           struct size_of<void> { unsigned operator()(){ 
-      WARNING("Asking for the size_of the return buffer of an RTO expression");
-      return 0; } };
+    template <typename T> struct size_of {       static constexpr unsigned value = sizeof(T); };
+    template <>           struct size_of<void> { static constexpr unsigned value = 0; } ;
   }
   template <class RETURN_TYPE, class... ARGS> class CompiledExpression; 
 
@@ -56,7 +54,7 @@ namespace AmpGen
 
         CompiledExpression( const std::string& name = "" ) : CompiledExpressionBase( name ) {};
         std::vector<real_t> externBuffer() const { return m_externals ; } 
-        std::string returnTypename() const override { return typeof<RETURN_TYPE>(); }
+        std::string returnTypename() const override { return type_string<RETURN_TYPE>(); }
         std::string fcnSignature() const override
         {
           return CompiledExpressionBase::fcnSignature(typelist<ARGS...>(), use_rto());
@@ -90,7 +88,12 @@ namespace AmpGen
           INFO( "Hash     = " << hash() );
           INFO( "IsReady? = " << isReady() << " IsLinked? " << (m_fcn.isLinked() ) );
           INFO( "args     = ["<< vectorToString( m_externals, ", ") <<"]");
-          for( auto& c : m_cacheTransfers ){ c->print() ; } 
+          std::vector<const CacheTransfer*> ordered_cache_functors; 
+          for( const auto& c : m_cacheTransfers ) ordered_cache_functors.push_back( c.get() );
+          std::sort( ordered_cache_functors.begin(),
+                     ordered_cache_functors.end(),
+                     [](auto& c1, auto& c2 ) { return c1->address() < c2->address() ; } );
+          for( auto& c : ordered_cache_functors ) c->print() ;
         }
 
         void setExternal( const double& value, const unsigned int& address ) override
@@ -128,7 +131,7 @@ namespace AmpGen
           stream << " const size_t& N, " 
                  << " const size_t& eventSize, " 
                  << " const size_t& cacheSize, ";
-          stream <<  typeof<return_type>() << " * rt, ";
+          stream <<  type_string<return_type>() << " * rt, ";
           stream << CompiledExpressionBase::fcnSignature(typelist<ARGS...>(), use_rto(), false) << ") {\n";
           stream << "#pragma omp parallel for\n";
           stream << "for( size_t i = 0; i < N/" << utils::size<float_v>::value << "; ++i ){\n";
@@ -149,7 +152,7 @@ namespace AmpGen
         bool isReady()          const override { return m_fcn.isLinked(); }
         bool isLinked()         const { return m_fcn.isLinked() ; } 
 
-        unsigned returnTypeSize() const override { return detail::size_of<RETURN_TYPE>()(); }
+        unsigned returnTypeSize() const override { return detail::size_of<RETURN_TYPE>::value; }
 
         template < class T > 
           RETURN_TYPE operator()( const T* event ) const
@@ -173,7 +176,7 @@ namespace AmpGen
             FATAL( "Function" << name() << " debugging symbols not linked" );
           }
           std::vector<std::pair<std::string, complex_v>> debug_results;
-          if constexpr(std::is_same<void, RETURN_TYPE>::value) debug_results = m_fdb( nullptr, &( m_externals[0] ), event );
+          if constexpr(std::is_same<void, RETURN_TYPE>::value) debug_results = m_fdb( nullptr, 0, &( m_externals[0] ), event );
           else debug_results = m_fdb( &(m_externals[0]), event);
           for( auto& debug_result : debug_results ){ 
             auto val = debug_result.second;  

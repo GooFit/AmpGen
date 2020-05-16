@@ -77,9 +77,15 @@ namespace AmpGen
     void setEvents( const EventList_type& list );
     void setMC( const EventList_type& sim );
     #if ENABLE_AVX
-      void setEvents( const EventList& list) { m_ownEvents = true; setEvents( *(new EventListSIMD(list)) ) ; } 
-      void setMC( const EventList& list)     { setMC( *(new EventListSIMD(list)) ) ; } 
+      void setEvents( const EventList& list) { 
+        WARNING("Setting events from a AoS container, will need to make a copy");
+        m_ownEvents = true; setEvents( *(new EventListSIMD(list)) ) ; } 
+      void setMC    ( const EventList& list) { 
+        WARNING("Setting integration events from a AoS container, will need to make a copy");
+        setMC( *(new EventListSIMD(list)) ) ; } 
+      double operator()(const double*, const unsigned) const; 
     #endif
+
     float_v operator()(const float_v*, const unsigned) const; 
     real_t  operator()(const Event& evt )              const { return m_weight*std::norm(getVal(evt))/m_norm; }
 

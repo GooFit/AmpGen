@@ -17,6 +17,11 @@ namespace AmpGen{
       t_end      = std::chrono::high_resolution_clock::now() ; 
       t_duration += std::chrono::duration<double, std::milli>( t_end - t_start ).count();
     }
+    double count() const 
+    {
+      auto now = std::chrono::high_resolution_clock::now() ; 
+      return std::chrono::duration<double, std::milli>(now - t_start ).count();
+    }
     void start(){ t_start = std::chrono::high_resolution_clock::now() ; }
     operator double() const { return t_duration; } ; 
   };
@@ -26,7 +31,7 @@ namespace AmpGen{
       ProfileClock t; 
       for( size_t i = 0 ; i < N; ++i ) fcn();
       t.stop();
-      INFO( (name == "" ? typeof<FCN>() : name ) << " " << t/double(N) << "[ms] per iteration" );
+      INFO( (name == "" ? type_string<FCN>() : name ) << " " << t/double(N) << "[ms] per iteration" );
       return t;
     }
   template <int N, class FCN> 
@@ -46,7 +51,7 @@ namespace AmpGen{
       }
       t /= double(N);
       t2 = std::sqrt( t2 / double(N) - t*t);
-      INFO( (name == "" ? typeof<FCN>() : name ) << " " << t << " ± " << t2 << "[ms] per iteration << [" << tmin << ", " << tmax << "]" );
+      INFO( (name == "" ? type_string<FCN>() : name ) << " " << t << " ± " << t2 << "[ms] per iteration << [" << tmin << ", " << tmax << "]" );
       return t;
     }
   
@@ -56,7 +61,7 @@ namespace AmpGen{
       auto z = 0 ; 
       for( size_t i = 0 ; i < N; ++i ) z += fcn();
       t.stop();
-      INFO( typeof<FCN>() << " " << t/double(N) << "[ms] per iteration; " << z );
+      INFO( type_string<FCN>() << " " << t/double(N) << "[ms] per iteration; " << z );
       return t;
     }
 }

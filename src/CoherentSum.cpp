@@ -263,7 +263,7 @@ void CoherentSum::setEvents( const EventList_type& list )
   for( auto& me : m_matrixElements ){ DEBUG("Registering: " << me.name() ) ; }
   if( m_ownEvents && m_events != nullptr ) delete m_events; 
   m_events = &list;
-  m_cache = Store<complex_v, Alignment::AoS>( m_events->size(), m_matrixElements );   
+  m_cache . allocate( m_events->size(), m_matrixElements );   
 }
 
 
@@ -340,6 +340,13 @@ float_v CoherentSum::operator()( const float_v* /*evt*/, const unsigned block ) 
   }
   return (m_weight/m_norm ) * utils::norm(value); 
 }
+
+#if ENABLE_AVX
+double CoherentSum::operator()( const double* /*evt*/, const unsigned block ) const 
+{
+  return operator()((const float_v*)nullptr, block / utils::size<float_v>::value ).at( block % utils::size<float_v>::value );
+}
+#endif
 
 std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type* ievents) const 
 {

@@ -13,7 +13,7 @@ namespace AmpGen {
     SoA, AoS
   };
 
-  template <class stored_type, Alignment align = SoA> class Store 
+  template <typename stored_type, Alignment align = SoA> class Store 
   {
     public:
       Store( const size_t& nEntries=0, const size_t& nFields=0) : 
@@ -22,34 +22,46 @@ namespace AmpGen {
         m_nFields(nFields),
         m_store(m_nBlocks * m_nFields) {}
       
-      template <class functor_type> 
+      template <typename functor_type> 
       void addFunctor( const functor_type& functor, unsigned fieldsPerFunctor=0 )
       {
-        auto vsize = fieldsPerFunctor == 0 ? functor.returnTypeSize() / sizeof(stored_type) : fieldsPerFunctor;
-        DEBUG("Registering: " << functor.name() << " field = " << m_nFields ); 
-        m_index[ functor.name() ] = std::make_pair(m_nFields, vsize);
-        m_nFields += vsize;
+        if( m_index.count(functor.name()) == 0 )
+        {
+          auto vsize = fieldsPerFunctor == 0 ? functor.returnTypeSize() / sizeof(stored_type) : fieldsPerFunctor;
+          DEBUG("Registering: " << functor.name() << " field = " << m_nFields ); 
+          m_index[ functor.name() ] = std::make_pair(m_nFields, vsize);
+          m_nFields += vsize;
+        }
       }
-       
-      template <class functor_type> Store( const size_t& nEntries, const std::vector<functor_type>& functors, const size_t& fieldsPerFunctor = 0)
+      template <typename functor_type> void allocate( const size_t& nEntries, const std::vector<functor_type>& functors, const size_t& fieldsPerFunctor = 0)
       {
         for(const auto& functor : functors) addFunctor( functor, fieldsPerFunctor);
         m_nEntries = nEntries;
         m_nBlocks  = utils::aligned_size<stored_type>(nEntries)/utils::size<stored_type>::value;
         m_store.resize(m_nBlocks * m_nFields); 
       }
-      template <class functor_type, class = typename std::enable_if<!std::is_integral<functor_type>::value>::type>
-      Store( const size_t& nEntries, const functor_type& functor, const size_t& fieldsPerFunctor=0 )
+      template <typename functor_type, typename = typename std::enable_if<!std::is_integral<functor_type>::value>::type > 
+        void allocate( const size_t& nEntries, const functor_type& functor, const size_t& fieldsPerFunctor = 0)
       {
-        addFunctor(functor);
+        addFunctor(functor, fieldsPerFunctor);
         m_nEntries = nEntries;
         m_nBlocks  = utils::aligned_size<stored_type>(nEntries)/utils::size<stored_type>::value;
         m_store.resize(m_nBlocks * m_nFields); 
       }
+       
+      template <typename functor_type> Store( const size_t& nEntries, const std::vector<functor_type>& functors, const size_t& fieldsPerFunctor = 0)
+      {
+        allocate(nEntries, functors, fieldsPerFunctor);
+      }
+      template <typename functor_type, typename = typename std::enable_if<!std::is_integral<functor_type>::value>::type>
+      Store( const size_t& nEntries, const functor_type& functor, const size_t& fieldsPerFunctor=0 )
+      {
+        allocate( nEntries, {functor}, fieldsPerFunctor);
+      }
 
       inline stored_type operator[]( const size_t& index ) const { return m_store[index]; }
       inline stored_type& operator[]( const size_t& index ) { return m_store[index]; }
-      template <class T> unsigned find( const T& t ) const { return m_index.find( t.name() )->second.first; }
+      template <typename T> unsigned find( const T& t ) const { return m_index.find( t.name() )->second.first; }
 
       inline size_t size()         const { return m_nEntries; }
       inline size_t nBlocks()      const { return m_nBlocks; }
@@ -60,12 +72,13 @@ namespace AmpGen {
         if constexpr( align == Alignment::SoA ) return m_store[ field * m_nBlocks + index] ; 
         else return m_store[index*m_nFields+field]; 
       }
-      template <class return_type> 
+      template <typename return_type> 
       inline const return_type get(const size_t& index, const size_t& field ) const 
       {
         return utils::at( operator()( index / utils::size<stored_type>::value, field ), index % utils::size<stored_type>::value );
       }
       inline const stored_type* data() const { return m_store.data(); }
+      inline stored_type* data() { return m_store.data() ;}
       inline stored_type& operator()(const size_t& index, const size_t& field)
       {
         if constexpr( align == Alignment::SoA ) return m_store[ field * m_nBlocks + index] ; 
@@ -91,7 +104,7 @@ namespace AmpGen {
         }   
       }
 
-      template <class functor_type, class input_type> void update(const Store<input_type, Alignment::AoS>& is, const functor_type& fcn)
+      template <typename functor_type, typename input_type> void update(const Store<input_type, Alignment::AoS>& is, const functor_type& fcn)
       {
         auto f = m_index.find( fcn.name() ); 
         if( f == m_index.end() ) FATAL("Expression: " << fcn.name() << " is not registed");
@@ -112,7 +125,7 @@ namespace AmpGen {
             fcn.batch(aligned_size(), is.nFields(), 1         , m_store.data() + p0*m_nBlocks           , fcn.externBuffer().data(), is.data() ); 
         }
       }
-      template <class functor_type> void update( const EventList& events, const functor_type& fcn )
+      template <typename functor_type> void update( const EventList& events, const functor_type& fcn )
       {  
         auto f = m_index.find( fcn.name() ); 
         if( f == m_index.end() ) FATAL("Expression: " << fcn.name() << " is not registed");

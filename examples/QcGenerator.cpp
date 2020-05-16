@@ -102,7 +102,7 @@ template <class PDF> struct normalised_pdf {
     norm = sqrt(yc.bf(type)/n);
     if( it != nullptr ) norm *= exp( 1i * it->mean() * M_PI/180. );
     pc.stop();
-    INFO(type << " Time to construct: " << pc << "[ms], norm = " << norm  << " " << typeof<PDF>() );
+    INFO(type << " Time to construct: " << pc << "[ms], norm = " << norm  << " " << type_string<PDF>() );
   }
   complex_t operator()(const Event& event){ return norm * pdf.getValNoCache(event); }
 };

@@ -12,8 +12,8 @@ if(COMMAND gaudi_subdir)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -Wno-unused-parameter -ldl")
-    set(AmpGen_VERSION_MAJOR "1")
-    set(AmpGen_VERSION_MINOR "1")
+    set(AmpGen_VERSION_MAJOR "2")
+    set(AmpGen_VERSION_MINOR "0")
     set(AMPGEN_CXX ${CMAKE_CXX_COMPILER}  CACHE FILEPATH "This should be the path to compiler (use which c++ for macOS)" )
     configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/AmpGen/Version.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/AmpGen/Version.h")
     gaudi_add_library(AmpGen
