@@ -99,7 +99,7 @@ namespace AmpGen
             #ifdef _OPENMP
             #pragma omp parallel for
             #endif
-            for ( size_t block=0; block != mc.nBlocks(); ++block ) 
+            for ( size_t block=0; block < mc.nBlocks(); ++block ) 
               mc.setWeight(block, 1.0, pdf(mc.block(block), block) / mc.genPDF(block));
             t_eval.stop();
             t_acceptReject.start(); 
