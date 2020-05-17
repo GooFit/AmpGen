@@ -187,7 +187,9 @@ namespace AmpGen
     }
     template <class... arg_types> auto operator()(arg_types... args ) const { return amp_type::operator()(args...) ; }
     #if ENABLE_AVX
-    void debug( const Event& event ) const {               amp_type::debug(EventListSIMD::makeEvent(event).data() ) ; } 
+    void debug( const Event& event ) const { amp_type::debug(EventListSIMD::makeEvent(event).data() ) ; } 
+    #else 
+    void debug( const Event& event ) const { amp_type::debug(event.address()) ; }
     #endif 
     const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
 
