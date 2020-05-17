@@ -9,22 +9,24 @@
 #include <math.h>
 
 #if USE_MVEC
-extern "C" __m256d _ZGVcN4v_cos(__m256d x);
-extern "C" __m256d _ZGVcN4v_sin(__m256d x);
-extern "C" __m256d _ZGVcN4v_exp(__m256d x);                    
-extern "C" __m256d _ZGVcN4v_log(__m256d x);
+// extern "C" __m256d _ZGVcN4v_cos(__m256d x);
+// extern "C" __m256d _ZGVcN4v_sin(__m256d x);
+// extern "C" __m256d _ZGVcN4v_exp(__m256d x);                    
+// extern "C" __m256d _ZGVcN4v_log(__m256d x);
 extern "C" void    _ZGVdN4vvv_sincos(__m256d x, __m256i ptrs, __m256i ptrc);
+#endif
+
+#if USE_MVEC 
+#define libmvec_alias( function_name) \
+  extern "C" __m256d _ZGVcN4v_##function_name(__m256d x);                                    \
+  inline real_v function_name( const real_v& v ){ return _ZGVcN4v_##function_name (v) ; }
+#else
+#define libmvec_alias( F ) \
+  inline real_v F( const real_v& v ){ auto arr = v.to_array(); return real_v( std::F(arr[0]), std::F(arr[1]), std::F(arr[2]), std::F(arr[3])) ; }
 #endif
 
 namespace AmpGen {
   namespace AVX2d {
-    #if USE_MVEC 
-    #define libmvec_alias( function_name) \
-      inline real_v function_name( const real_v& v ){ return _ZGVcN4v_##function_name (v) ; }
-    #else
-    #define libmvec_alias( F ) \
-      inline real_v F( const real_v& v ){ auto arr = v.to_array(); return real_v( std::F(arr[0]), std::F(arr[1]), std::F(arr[2]), std::F(arr[3])) ; }
-    #endif
 
     struct real_v {
       __m256d data;
