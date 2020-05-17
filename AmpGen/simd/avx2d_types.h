@@ -8,18 +8,24 @@
 #include <omp.h>
 #include <math.h>
 
+#if USE_MVEC
 extern "C" __m256d _ZGVcN4v_cos(__m256d x);
 extern "C" __m256d _ZGVcN4v_sin(__m256d x);
 extern "C" __m256d _ZGVcN4v_exp(__m256d x);                    
 extern "C" __m256d _ZGVcN4v_log(__m256d x);
 extern "C" void    _ZGVdN4vvv_sincos(__m256d x, __m256i ptrs, __m256i ptrc);
+#endif
 
 namespace AmpGen {
   namespace AVX2d {
-    
-    #define libmvec_alias( function_name, avx_function_name ) \
-      inline real_v function_name( const real_v& v ){ return avx_function_name (v) ; }
- 
+    #if USE_MVEC 
+    #define libmvec_alias( function_name) \
+      inline real_v function_name( const real_v& v ){ return _ZGVcN4v_##function_name (v) ; }
+    #else
+    #define libmvec_alias( F ) \
+      inline real_v F( const real_v& v ){ auto arr = v.to_array(); return real_v( std::F(arr[0]), std::F(arr[1]), std::F(arr[2]), std::F(arr[3])) ; }
+    #endif
+
     struct real_v {
       __m256d data;
       static constexpr unsigned size = 4;
@@ -29,8 +35,7 @@ namespace AmpGen {
       real_v(const double& f ) : data( _mm256_set1_pd( f )) {}
       real_v(const double& x0, const double& x1, const double& x2, const double& x3 )
       {
-        double tmp[4] = {x0,x1,x2,x3};
-        data = _mm256_loadu_pd(tmp); 
+        data = _mm256_set_pd(x0,x1,x2,x3); 
       }
       real_v(const double* f ) : data( _mm256_loadu_pd( f ) ) {}
       real_v(const std::array<double,4> f ) : data( _mm256_loadu_pd( f.data() ) ) {}
@@ -60,22 +65,30 @@ namespace AmpGen {
     inline real_v operator==( const real_v& lhs, const real_v& rhs ){ return _mm256_cmp_pd( lhs, rhs, _CMP_EQ_OS ); }
     inline real_v sqrt( const real_v& v ) { return _mm256_sqrt_pd(v); } 
     inline real_v abs ( const real_v& v ) { return _mm256_andnot_pd(_mm256_set1_pd(-0.), v);  }
-    
-    libmvec_alias( sin, _ZGVcN4v_sin )
-    libmvec_alias( cos, _ZGVcN4v_cos )
-    libmvec_alias( exp, _ZGVcN4v_exp )
-    libmvec_alias( log, _ZGVcN4v_log )
+    libmvec_alias( sin )
+    libmvec_alias( cos )
+    libmvec_alias( exp )
+    libmvec_alias( log )
     inline void sincos( const real_v& v, real_v& s, real_v& c )
     {
+#if USE_MVEC
       __m256i sp = _mm256_add_epi64(_mm256_set1_epi64x((uint64_t)&s),_mm256_set_epi64x(24,16,8,0)); 
       __m256i cp = _mm256_add_epi64(_mm256_set1_epi64x((uint64_t)&c),_mm256_set_epi64x(24,16,8,0)); 
       _ZGVdN4vvv_sincos(v,sp,cp); 
+#else
+      s = sin(v);
+      c = cos(v);
+#endif
     }
-
+    inline std::pair<real_v, real_v> sincos( const real_v& v )
+    {
+      std::pair<real_v, real_v> rt;
+      sincos( v, rt.first, rt.second );
+      return rt; 
+    }
     inline real_v tan( const real_v& v )
     {
-      real_v s, c;
-      sincos( v, s, c );
+      auto [s,c] = sincos( v );
       return s / c ;  
     }
 

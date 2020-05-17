@@ -12,8 +12,9 @@ if( NOT "${CMAKE_CXX_STANDARD}" )
   set(CMAKE_CXX_STANDARD 17) 
 endif() 
 
-SET(USE_OPENMP TRUE CACHE BOOL   "USE_OPENMP")
-SET(USE_SIMD   "AVX2d" CACHE STRING "USE_SIMD")
+SET(USE_OPENMP TRUE    CACHE BOOL   "USE_OPENMP") # flag to use openmp for threading 
+SET(USE_SIMD   "AVX2d" CACHE STRING "USE_SIMD")   # AVX instruction set + precision to use 
+SET(USE_MVEC   TRUE    CACHE BOOL   "USE_MVEC")   # flag to use vector math library mvec 
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -30,6 +31,7 @@ include(GNUInstallDirs)
 
 option(AMPGEN_DEBUG "AmpGen Debug printout")
 option(AMPGEN_TRACE "AmpGen Trace printout")
+
 
 configure_file ("${PROJECT_SOURCE_DIR}/AmpGen/Version.h.in" "${CMAKE_BINARY_DIR}/AmpGenVersion.h")
 
@@ -64,7 +66,19 @@ target_include_directories(AmpGen PUBLIC $<BUILD_INTERFACE:${${PROJECT_NAME}_SOU
 
 target_include_directories(AmpGen SYSTEM PUBLIC "${ROOT_INCLUDE_DIRS}")
 
-target_link_libraries(AmpGen PUBLIC -lmvec -lm ${ROOT_LIBRARIES} ${CMAKE_DL_LIBS} )
+target_link_libraries(AmpGen PUBLIC -lm ${ROOT_LIBRARIES} ${CMAKE_DL_LIBS} )
+
+find_library(libmvec mvec)
+
+if ( USE_MVEC AND libmvec  )
+  message( STATUS "Using libmvec for vectorised math operations")
+  target_link_libraries(AmpGen PUBLIC mvec)
+  target_compile_definitions(AmpGen PUBLIC "USE_MVEC=1") 
+else()
+  message( STATUS "Warning: libmvec not found, with use scalar math where necessary.")
+  target_compile_definitions(AmpGen PUBLIC "USE_MVEC=0") 
+endif()
+
 
 
 if( ( NOT TARGET ROOT::Minuit2 AND NOT TARGET Minuit2 ) OR "${extern_minuit2}" )
