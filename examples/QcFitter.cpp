@@ -310,7 +310,7 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
 //    auto commLL2 = SumLL(_LLs);
     INFO("Making Combined Minimiser object");
     Minimiser combMini = Minimiser(totalLL, &MPS);
-    combMini.prepare();
+   // combMini.prepare();
     INFO("Minimising now");
     int attempt = 1;
       combMini.doFit(); 

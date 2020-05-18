@@ -210,9 +210,9 @@ class pCorrelatedSum {
         Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
         
         //INFO("Order = "<<m_order);
-        for (int i=0; i < m_order+1; i++){
+        for (auto i=0; i < m_order+1; i++){
             Expression sum_i=0;
-            for (unsigned int j=0; j<m_order+1-i; j++){
+            for (auto j=0; j<m_order+1-i; j++){
                 if (m_polyType=="CPSinPoly"){
                   double Cpij = getC(i,j,"P");
                   double Cmij = getC(i,j,"M");
@@ -305,10 +305,8 @@ class pCorrelatedSum {
 
     double getCParam(int i, int j) const{
         std::string key = "MyPoly::C"+std::to_string(i)+std::to_string(j);
-        bool present=false;
         for (auto param : m_mps){
             if (param->name()==key){
-                present=true;
                 return param->mean();
             }
         }

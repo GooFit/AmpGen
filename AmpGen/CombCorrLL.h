@@ -53,7 +53,7 @@ namespace AmpGen
                         m_debug(NamedParameter<bool>("CombCorrLL::Debug", false, "Debug CombCorrLL"))
                         {
                             std::vector<pCorrelatedSum> pCS = {};
-                            for (int i=0; i < m_SigData.size() ; i++){
+                            for (auto i=0; i < m_SigData.size() ; i++){
                                 pCorrelatedSum _pCS = pCorrelatedSum(m_SigType[i], m_TagType[i], m_mps);
                                 _pCS.setEvents(m_SigData[i], m_TagData[i]);
                                 _pCS.setMC(m_SigInt[i], m_TagInt[i]);
@@ -68,7 +68,7 @@ namespace AmpGen
         double LL(int i){
 
             double ll =0 ;
-            for (int j=0; j<m_SigData[i].size();j++){
+            for (auto j=0; j<m_SigData[i].size();j++){
                 double Psi2 = m_Psi[i].prob(m_SigData[i][j], m_TagData[i][j]);
                 ll += log(Psi2);
             }
@@ -78,7 +78,7 @@ namespace AmpGen
         double getVal(){
             double ll =0 ;
 
-            for (int i=0; i < m_SigData.size(); i++){
+            for (auto i=0; i < m_SigData.size(); i++){
                 if (m_debug) INFO("LL_"<<i<<" = "<<LL(i));
                 ll += LL(i);
             }
