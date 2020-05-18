@@ -147,8 +147,8 @@ INFO("Doing loop of Fits");
  std::vector<EventType> SigType;
  std::vector<EventType> TagType;
 
- std::vector<pCorrelatedSum> _LLs;
- SimFit totalLL;
+ std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > totalLL;
+// SimFit totalLL;
 for (int i=0; i < tags.size(); i++){
 MinuitParameterSet * MPS_tag = new MinuitParameterSet();
   MPS_tag->loadFromStream();
@@ -184,23 +184,26 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
       //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
       auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag,cs_tag);
       auto mini_tag = Minimiser(LL_tag2, MPS_tag);
-//      _LLs.push_back(LL_tag2);
-      totalLL.add(LL_tag2);
+      totalLL.push_back(LL_tag2);
+      //_LLs.push_back(LL_tag2);
+
       mini_tag.prepare();
       //INFO("Fitting "<<i<<" out of "<<tags.size()  );
 
       int attempt = 1;
+        mini_tag.gradientTest();
       mini_tag.doFit();
       if (mini_tag.status()!=0){
 
         INFO("Didn't seem to get a minimum (returned "<<mini_tag.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
       while (attempt < maxAttempts && mini_tag.status() != 0){
         INFO("Didn't seem to get a minimum (returned "<<mini_tag.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
+
         mini_tag.doFit();
         attempt++;
       }
       }
-
+//      totalLL.add(LL_tag2);
       FitResult * fr = new FitResult(mini_tag); 
       int minEvents=15;
       auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.eventType().dof() ) );
@@ -307,9 +310,13 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
 
   if (doCombFit){
     CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS);
+    auto combLL2 = SumLL<CorrelatedLL<EventList, pCorrelatedSum&>>(totalLL);
+    INFO("CombCorrLL = "<<combLL.getVal());
 //    auto commLL2 = SumLL(_LLs);
     INFO("Making Combined Minimiser object");
-    Minimiser combMini = Minimiser(totalLL, &MPS);
+//    INFO("totalLL = "<<totalLL.getVal());
+    Minimiser combMini = Minimiser(combLL, &MPS);
+    combMini.gradientTest();
    // combMini.prepare();
     INFO("Minimising now");
     int attempt = 1;

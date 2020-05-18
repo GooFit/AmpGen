@@ -10,6 +10,7 @@
 #include "AmpGen/EventType.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/pCorrelatedSum.h"
+#include "AmpGen/CorrelatedLL.h"
 
 #include <tuple>
 namespace AmpGen
@@ -66,13 +67,8 @@ namespace AmpGen
 
                         }
         double LL(int i){
-
-            double ll =0 ;
-            for (auto j=0; j<m_SigData[i].size();j++){
-                double Psi2 = m_Psi[i].prob(m_SigData[i][j], m_TagData[i][j]);
-                ll += log(Psi2);
-            }
-            return ll;
+            auto _LL =  make_likelihood( m_SigData[i], m_TagData[i] , m_Psi[i]);
+            return _LL.getVal();
         }
 
         double getVal(){
@@ -83,7 +79,7 @@ namespace AmpGen
                 ll += LL(i);
             }
             if (m_debug) INFO("LL = "<<ll);
-            return -2 * ll;
+            return ll;
         }
 
   };

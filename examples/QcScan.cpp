@@ -144,6 +144,8 @@ auto findParam = MPS.find(scanName);
  std::vector<EventList> TagInt;
  std::vector<EventType> SigType;
  std::vector<EventType> TagType;
+
+  std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > totalLL;
  for( auto& tag : tags )
  {
     EventType signalType( pNames );
@@ -192,7 +194,7 @@ auto findParam = MPS.find(scanName);
    TagInt.push_back(tagMCEvents);
    SigType.push_back(signalType);
    TagType.push_back(tagType);
- 
+   
     
     pCorrelatedSum cs(signalType, tagType, MPS);
     cs.setEvents(sigEvents, tagEvents);
@@ -200,7 +202,7 @@ auto findParam = MPS.find(scanName);
      cs.prepare();  
     auto csLL = make_likelihood(sigEvents, tagEvents, cs);
     csLL.setEvents(sigEvents, tagEvents);
-    
+       totalLL.push_back(csLL); 
 
  //   INFO( "uncorrected norm = " << cs.norm() );
 //    INFO( "corrected norm = " << cs.slowNorm() );
@@ -245,6 +247,9 @@ auto findParam = MPS.find(scanName);
  } 
 
   CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS);
+
+  auto combLL2 = SumLL<CorrelatedLL<EventList, pCorrelatedSum&>>(totalLL);
+  //INFO("CombLL2 = "<<combLL2.getVal());
   INFO("Making Combined Minimiser object");
   bool doComb = true;
   if (doComb){
