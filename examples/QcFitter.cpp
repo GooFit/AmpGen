@@ -3,6 +3,8 @@
 #include "AmpGen/CorrelatedSum.h"
 #include "AmpGen/CorrelatedLL.h"
 #include "AmpGen/corrEventList.h"
+#include "AmpGen/SumLL.h"
+#include "AmpGen/SimPDF.h"
 #include "AmpGen/CombCorrLL.h"
 #include "AmpGen/MetaUtils.h"
 #include <typeinfo>
@@ -104,8 +106,8 @@ int main( int argc, char* argv[] )
   std::string logFile  = NamedParameter<std::string>("LogFile"   , "QcFitter.log", "Name of the output log file");
   std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
   bool makeCPConj      = NamedParameter<bool>("makeCPConj", false, "Make CP Conjugates");
-  bool doCombFit      = NamedParameter<bool>("doCombFit", false, "Do combined fit");
-  bool doTagFit      = NamedParameter<bool>("doTagFit", false, "Do fit for each tag");
+  bool doCombFit      = NamedParameter<bool>("doCombFit", true, "Do combined fit");
+  bool doTagFit      = NamedParameter<bool>("doTagFit", true, "Do fit for each tag");
   int  maxAttempts = NamedParameter<int>("maxAttempts", 5, "Max attempts to get a valid minimum from Minuit2");
   bool QcGen2 = NamedParameter<bool>("QcGen2", false, "internal boolean - for new QcGenerator");
   bool doFit = NamedParameter<bool>("doFit", true, "Do the fit");
@@ -145,6 +147,8 @@ INFO("Doing loop of Fits");
  std::vector<EventType> SigType;
  std::vector<EventType> TagType;
 
+ std::vector<pCorrelatedSum> _LLs;
+ SimFit totalLL;
 for (int i=0; i < tags.size(); i++){
 MinuitParameterSet * MPS_tag = new MinuitParameterSet();
   MPS_tag->loadFromStream();
@@ -180,6 +184,8 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
       //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
       auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag,cs_tag);
       auto mini_tag = Minimiser(LL_tag2, MPS_tag);
+//      _LLs.push_back(LL_tag2);
+      totalLL.add(LL_tag2);
       mini_tag.prepare();
       //INFO("Fitting "<<i<<" out of "<<tags.size()  );
 
@@ -301,8 +307,9 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
 
   if (doCombFit){
     CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS);
+//    auto commLL2 = SumLL(_LLs);
     INFO("Making Combined Minimiser object");
-    Minimiser combMini = Minimiser(combLL, &MPS);
+    Minimiser combMini = Minimiser(totalLL, &MPS);
     combMini.prepare();
     INFO("Minimising now");
     int attempt = 1;

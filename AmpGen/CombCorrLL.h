@@ -86,10 +86,6 @@ namespace AmpGen
             return -2 * ll;
         }
 
-        double operator() (){
-            return getVal();
-        }
-
   };
 }
 #endif

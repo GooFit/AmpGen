@@ -202,8 +202,8 @@ auto findParam = MPS.find(scanName);
     csLL.setEvents(sigEvents, tagEvents);
     
 
-    INFO( "uncorrected norm = " << cs.norm() );
-    INFO( "corrected norm = " << cs.slowNorm() );
+ //   INFO( "uncorrected norm = " << cs.norm() );
+//    INFO( "corrected norm = " << cs.slowNorm() );
     Minimiser mini( csLL, &MPS );
    
     
