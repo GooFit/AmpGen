@@ -64,7 +64,7 @@ Tensor Transform::boost_spinor() const
   return Identity(2) * fcn::sqrt(0.5*(m_arg+1)) + sigma_dot_p(m_k)*fcn::sqrt(0.5*(m_arg-1));
 }
 
-Tensor Transform::operator()(const Representation& repr) const
+Tensor Transform::operator()(const Representation& repr)const
 {
   Tensor::Index m,j,k;
   Tensor I2 = Identity(2);
@@ -100,35 +100,40 @@ TransformSequence TransformSequence::inverse() const
 {
   TransformSequence rt; 
   for( auto i = m_transforms.rbegin(); i != m_transforms.rend(); ++i )
-    rt.add( i->inverse() );
+    rt.push_back( i->inverse() );
   return rt;
 }
 
-Tensor TransformSequence::operator()( const Transform::Representation& repr )
+Tensor TransformSequence::operator()( const Transform::Representation& repr ) const  
 {
-  if( m_cache[repr].nElements() != 1 )
+  return m_cache[repr];
+}
+
+void TransformSequence::buildCache() 
+{
+  for( auto repr : { Transform::Representation::Spinor, Transform::Representation::Bispinor, Transform::Representation::Vector } )
   {
-    return m_cache[repr];
+   if( m_transforms.size() == 0 ){
+     if( repr == Transform::Representation::Spinor ) m_cache[repr] = Identity(2);
+     m_cache[repr] = Identity(4);
+   }
+   else { 
+    Tensor::Index a,b,c;
+    Tensor rt = m_transforms[0](repr);
+    rt.st();
+    for( size_t i = 1 ; i < m_transforms.size(); ++i )
+    {
+      Tensor rti = m_transforms[i](repr);
+      rti.st(true);
+      rt = rti(a,b) * rt(b,c);
+    }
+    m_cache[repr] = rt;
+   }
   }
-  if( m_transforms.size() == 0 ){
-    if( repr == Transform::Representation::Spinor ) return Identity(2);
-    else return Identity(4);
-  }
-  Tensor::Index a,b,c;
-  Tensor rt = m_transforms[0](repr);
-  rt.st();
-  for( size_t i = 1 ; i < m_transforms.size(); ++i )
-  {
-    Tensor rti = m_transforms[i](repr);
-    rti.st(true);
-    rt = rti(a,b) * rt(b,c);
-  }
-  m_cache[repr] = rt;
-  return rt;
 }
 
 Tensor TransformSequence::operator()( const Tensor& tensor, 
-    const Transform::Representation& repr )
+    const Transform::Representation& repr ) const 
 {
   Tensor::Index a,b,c;
   auto seq = this->operator()(repr);
@@ -136,26 +141,29 @@ Tensor TransformSequence::operator()( const Tensor& tensor,
 }
 
 Tensor Transform::operator()( const Tensor& tensor, 
-    const Transform::Representation& repr ) const
+    const Transform::Representation& repr ) const 
 {
   Tensor::Index a,b;
   auto seq = this->operator()(repr);
   return seq(a,b)*tensor(b);
 }
 
-void TransformSequence::add( const Transform& transform )
+void TransformSequence::push_back( const Transform& transform )
 {
   m_transforms.emplace_back( transform );
+  buildCache();
 }
 
-void TransformSequence::add( const TransformSequence& transform )
+void TransformSequence::push_back( const TransformSequence& transform )
 {
   for( auto& t : transform ) m_transforms.emplace_back(t);
+  buildCache();
 }
 
 void TransformSequence::clear()
 {
   m_transforms.clear();
+  buildCache();
 }
 
 void TransformSequence::stepThrough(const Tensor& tensor, 
@@ -170,4 +178,38 @@ void TransformSequence::stepThrough(const Tensor& tensor,
   }
 }
 
+TransformSequence::TransformSequence( const Transform& transform ) : m_transforms{transform} {
+  buildCache();
+}
+
+TransformSequence::TransformSequence( const TransformSequence& t1, const TransformSequence& t2) {
+  for( const auto& t : t1 ) m_transforms.push_back(t);
+  for( const auto& t : t2 ) m_transforms.push_back(t);
+  Tensor::Index a,b,c; 
+  
+  for( auto repr : { Transform::Representation::Spinor, Transform::Representation::Bispinor, Transform::Representation::Vector } )
+  {
+    auto r1 = t1( repr ); 
+    auto r2 = t2( repr ); 
+    m_cache[repr] = r2(a,b) * r1(b,c);
+    m_cache[repr].st();  
+  }
+}
+
+TransformSequence::TransformSequence( const Transform& t1, const Transform& t2) : m_transforms{t1,t2} {
+  Tensor::Index a,b,c;
+
+  for( auto repr : { Transform::Representation::Spinor, Transform::Representation::Bispinor, Transform::Representation::Vector } )
+  {
+    auto r1 = t1(repr); 
+    auto r2 = t2(repr); 
+    m_cache[repr] = r2(a,b) * r1(b,c);
+    m_cache[repr].st();
+  }
+}
+
+TransformSequence::TransformSequence() 
+{ 
+  buildCache();
+}  
 

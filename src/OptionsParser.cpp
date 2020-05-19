@@ -110,6 +110,9 @@ void OptionsParser::addArg( const std::string& arg )
   int bc = 0 ; 
   auto tokens = makeParsedStrings( arg, bc );
   auto name = tokens[0];
+  if ( name == "ParticlePropertiesList::Alias" && tokens.size() == 3 ) {
+    ParticlePropertiesList::getMutable()->makeAlias( tokens[1], tokens[2] );
+  }
   m_parsedLines[name] = tokens; 
 }
 

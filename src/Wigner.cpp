@@ -97,9 +97,9 @@ double AmpGen::CG(
 }
 
 TransformSequence AmpGen::wickTransform( const Tensor& P, 
-    const Expression& mass,
+    const Particle& particle,
     const int& ve,
-    const bool& handleZero )
+    DebugSymbols* db )
 {
   Tensor x({1,0,0}, Tensor::dim(3));
   Tensor y({0,1,0}, Tensor::dim(3));
@@ -111,17 +111,19 @@ TransformSequence AmpGen::wickTransform( const Tensor& P,
   Transform rot  = ve == + 1 ? Transform( cos_theta,  sin_phi*x - cos_phi*y, Transform::Type::Rotate) :
                                Transform(-cos_theta, -sin_phi*x + cos_phi*y, Transform::Type::Rotate) ;
 
-  TransformSequence sequence;
-  sequence.add(rot);
-  if( ve == -1 ) sequence.add( Transform( -1, x, Transform::Type::Rotate ) );
-  if( std::real(mass()) != 0. ){
+  TransformSequence sequence(rot);
+  if( ve == -1 ) sequence.push_back( Transform( -1, x, Transform::Type::Rotate ) );
+    
+  if( !particle.isStable() || !( particle.props()->isPhoton() || particle.props()->isNeutrino() )  )
+  {
+    Expression mass = fcn::sqrt( particle.massSq() );   
     Transform boost( P[3]/mass, z, Transform::Type::Boost );
-    sequence.add(boost); 
+    return TransformSequence(sequence, boost);
   }
-  return sequence; 
+  return TransformSequence(sequence); 
 }
 
-std::pair<Expression, Expression> angCoordinates(const Tensor& P)
+std::pair<Expression, Expression> angCoordinates(const Tensor& P, DebugSymbols* db)
 {
   Expression pz = make_cse( P[2] / sqrt( P[0]*P[0] + P[1] * P[1] + P[2]*P[2] ) );  
   Expression pt2 = make_cse( P[0]*P[0] + P[1]*P[1] );
@@ -137,6 +139,9 @@ Expression AmpGen::wigner_D(const std::pair<Expression, Expression>& P,
 {
   auto little_d = make_cse ( wigner_d( P.first, J, lA, lB ) );
   if( J != 0 && db != nullptr ){
+    db->emplace_back("cos(θ)", P.first );
+    db->emplace_back("Ω", atan2( Imag(P.second), Real(P.second) ) );
+    
     db->emplace_back("d[" + std::to_string(J)  +", " + 
                             std::to_string(lA) +", " + 
                             std::to_string(lB) +"](θ)", little_d );
@@ -206,27 +211,40 @@ std::vector<LS> userHelicityCouplings( const std::string& key ){
   return couplings;
 }
 
+std::string index_string(const Particle& particle)
+{
+  if( particle.isStable() ) return std::to_string(particle.index()); 
+  std::string f = "{";
+  for( const auto& i : particle.daughters() ) f += index_string( *i );
+  return f+ "}";
+}
+
 Expression AmpGen::helicityAmplitude(const Particle& particle, 
-                                     TransformSequence& parentFrame, 
+                                     const TransformSequence& parentFrame, 
                                      const double& Mz, 
                                      DebugSymbols* db, 
                                      int sgn,
-                                     std::map<const Particle*, TransformSequence>* cachePtr )
+                                     TransformCache* cachePtr )
 {  
-  if( cachePtr == nullptr ) cachePtr = new std::map<const Particle*, TransformSequence>();
+  if( cachePtr == nullptr ) cachePtr = new TransformCache();
   if( particle.daughters().size() > 2 ) return 1; 
   if( particle.daughters().size() == 1 ) 
     return helicityAmplitude( *particle.daughter(0), parentFrame, Mz, db, sgn, cachePtr);
   Tensor::Index a,b,c; 
-  auto myFrame = parentFrame; 
-  if( particle.spin() == 0 ) myFrame.clear();
+  // if( particle.props()->twoSpin() == 0 ) myFrame.clear();
   Tensor pInParentFrame = parentFrame(particle.P());
   pInParentFrame.st();
-  auto my_sequence = wickTransform(pInParentFrame, fcn::sqrt(particle.massSq()), sgn, true);
-  if( cachePtr->count(&particle) != 0 ) my_sequence = (*cachePtr)[&particle];
-  else (*cachePtr)[&particle] = my_sequence; 
+  auto key = index_string(particle);
+  if( cachePtr->count(key) == 0 )
+  {
+    if( ! particle.isHead() || NamedParameter<bool>("helicityAmplitude::MovingParent", false) )
+    {
+      (*cachePtr)[key] = TransformSequence(parentFrame, wickTransform(pInParentFrame, particle, sgn, db) );
+    }
+    else (*cachePtr)[key] = TransformSequence();
+  }
+  const TransformSequence& myFrame = (*cachePtr)[key];
 
-  if( ! particle.isHead() ) myFrame.add( my_sequence );
   if( particle.isStable() )
   {
     if( particle.props()->twoSpin() == 0 ) return Mz==0; // a scalar
@@ -272,7 +290,8 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
       vectorToString( particle_couplings, ", ", []( auto& ls ){ return "("+std::to_string(int(ls.first)) + ", " + std::to_string(ls.second) +")";} ) );
   } 
   Expression total = 0; 
-  std::pair<Expression, Expression> hco = angCoordinates( myFrame(d1.P()) );
+  
+  std::pair<Expression, Expression> hco = angCoordinates( myFrame(d1.P()) , db);
   for( auto& coupling : recoupling_constants )
   {          
     auto dm = coupling.m1 - coupling.m2;

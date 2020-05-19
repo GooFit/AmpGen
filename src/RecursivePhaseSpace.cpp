@@ -58,7 +58,7 @@ AmpGen::Event RecursivePhaseSpace::makeEvent()
         rt[4*segment.sink + 3] = pE;
       }
     } else {
-      auto evtTmp = segment.decayProds->makeEvent();
+      auto evtTmp = segment.decayProds->makeEvent();    
       double v    = sqrt( px * px + py * py + pz * pz ) / pE;
       boost( evtTmp, std::tuple<double,double,double>(px, py, pz), v );
       for(size_t j = 0; j < rt.size(); ++j) rt[j] += evtTmp[j];

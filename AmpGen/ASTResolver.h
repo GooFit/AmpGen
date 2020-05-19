@@ -60,11 +60,12 @@ namespace AmpGen {
       std::map<std::string, unsigned>                       m_evtMap;                      /// Event specification 
       std::map<std::string, std::string>                    m_parameterMapping;            /// Mapping of parameters to compile parameters
       const MinuitParameterSet*                             m_mps;                         /// Set of MinuitParameters 
-      std::map<const SubTree*, uint64_t>                    m_tempTrees;                   /// temporary store of sub-trees for performing cse reduction 
+      std::map<const IExpression*, const SubTree*>          m_tempTrees;                   /// temporary store of sub-trees for performing cse reduction 
       unsigned int                                          m_nParameters;                 /// Number of parameters
       bool                                                  m_enable_cuda                 {false}; /// flag to generate CUDA code <<experimental>>
       bool                                                  m_enable_compileTimeConstants {false}; /// flag to enable compile time constants <<experimental>> 
       bool                                                  m_enable_avx                  {false}; /// flag to generate code using AVX instructions <<experimental>>
+      bool                                                  m_check_hashes                {false}; /// flag to check that hashes are unique 
   };
   
   template <> void ASTResolver::resolve<Parameter>( const Parameter& obj );

@@ -98,6 +98,9 @@ int main( int argc, char** argv )
       accepted.push_back(evt);
     }
   }
+  std::vector<double> event = NamedParameter<double>("Event",0).getVector();
+  if( event.size() != 1 ) accepted[0].set( event.data() );
+  
   std::string type = NamedParameter<std::string>("Type","CoherentSum");
 
   if( type == "PolarisedSum")
