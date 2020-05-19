@@ -69,7 +69,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
     auto protoAmps       = m_rules.getMatchingRules(m_eventType);
     for(const auto& m : protoAmps ) INFO( m.first.uniqueString() ); 
     m_matrixElements.resize( protoAmps.size() );
-    ThreadPool tp( std::thread::hardware_concurrency() );
+    ThreadPool tp(std::thread::hardware_concurrency() );
     for(unsigned i = 0; i < m_matrixElements.size(); ++i)
     {
       tp.enqueue( [i, &protoAmps, &polStates, this]{

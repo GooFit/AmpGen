@@ -56,7 +56,7 @@ namespace AmpGen
       }
 
       friend class Projection2D;
-    private:
+  ///  private:
       template <class eventlist_type> 
       TH1D* projInternal(const eventlist_type&, const ArgumentPack&) const; 
       template <class eventlist_type> 

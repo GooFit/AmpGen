@@ -153,6 +153,7 @@ int main( int argc, char** argv )
     omp_set_dynamic( 0 );
   #endif
 
+  INFO("Writing output: " << outfile );
   TRandom3 rand;
   rand.SetSeed( seed + 934534 );
 

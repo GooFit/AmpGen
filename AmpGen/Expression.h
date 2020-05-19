@@ -233,6 +233,7 @@ namespace AmpGen
     complex_t operator()() const override { return m_expression(); }
     uint64_t key() const;
     void setKey( const size_t& new_key ); 
+    Expression expression() const { return m_expression; }
     Expression  m_expression;
     uint64_t    m_key; 
   };

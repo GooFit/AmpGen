@@ -194,9 +194,9 @@ Tensor Particle::P() const
       Tensor rt( std::vector<Expression>( {
             Parameter(index + "_Px"), 
             Parameter(index + "_Py"),
-            Parameter(index + "_Pz"), 0 }) , Tensor::dim(4) );
-      rt[3] = make_cse( fcn::sqrt( mass()*mass() + rt[0]*rt[0] + rt[1]*rt[1] + rt[2]*rt[2] ) );
-         //   Parameter( index + "_E" , 0, false, 1 )} ),
+            Parameter(index + "_Pz"), 
+            Parameter(index + "_E") }) , Tensor::dim(4) );
+//      rt[3] = fcn::sqrt( mass()*mass() + rt[0]*rt[0] + rt[1]*rt[1] + rt[2]*rt[2] ) ;
       return rt;
     } else ERROR( "Stable particle " << m_index << "is unindexed!" );
   } 

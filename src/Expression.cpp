@@ -157,7 +157,7 @@ Expression AmpGen::operator/( const Expression& A, const Expression& B )
     if( is<Constant>( as_prod.r() ) ) return ( Constant( 1./as_prod.r()() ) * A )/ as_prod.l();
   }
   else if( is<Divide>(B) ) return ( A * cast<Divide>(B).r() ) / cast<Divide>(B).l();
-  else if( is<Sqrt>(B) ) return ( A * fcn::isqrt( cast<Sqrt>(B).arg() ) ); 
+//   else if( is<Sqrt>(B) ) return ( A / fcn::sqrt( cast<Sqrt>(B).arg() ) ); 
   return Expression( Divide( A, B ) );
 }
 Expression AmpGen::operator&&( const Expression& A, const Expression& B ) { return Expression( And( A, B ) ); }
@@ -249,7 +249,7 @@ std::string SubTree::to_string(const ASTResolver* /*resolver*/) const
 void SubTree::resolve( ASTResolver& resolver ) const  
 { 
   resolver.resolve( *this );
-  m_expression.resolve( resolver );
+  // m_expression.resolve( resolver );
 }
 
 Expression AmpGen::make_cse( const Expression& A , bool simplify )

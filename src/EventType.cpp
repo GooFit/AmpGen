@@ -54,7 +54,7 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
     if ( prop != nullptr )
       m_particleMasses.push_back( prop->mass() );
     else {
-      ERROR( "Particle not found: " << *m_particleNames.rbegin() );
+      FATAL( "Particle not found: " << *m_particleNames.rbegin() );
       return;
     }
     if(m_alt_part_names)

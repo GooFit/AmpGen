@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "AmpGen/Chi2Estimator.h"
+#include "AmpGen/RecursivePhaseSpace.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/CoherentSum.h"
@@ -41,6 +42,11 @@
 #endif
 
 using namespace AmpGen;
+
+template <typename pdf_t> Particle getTopology(const pdf_t& pdf)
+{
+  return pdf.matrixElements()[0].decayTree.quasiStableTree();
+}
 
 template <typename PDF>
 FitResult* doFit( PDF&& pdf, EventList_type& data, EventList_type& mc, MinuitParameterSet& MPS );
@@ -108,7 +114,9 @@ int main( int argc, char* argv[] )
   /* Generate events to normalise the PDF with. This can also be loaded from a file, 
      which will be the case when efficiency variations are included. Default number of normalisation events 
      is 2 million. */
-  EventList_type eventsMC = simFile == "" ? EventList_type(Generator<>(evtType, &rndm).generate(int(3365617)) ) : EventList_type(simFile, evtType);
+  Generator<RecursivePhaseSpace, EventList> signalGenerator( getTopology(sig), events.eventType(), &rndm );
+  auto events_l = signalGenerator.generate(1e6);
+  EventList_type eventsMC = simFile == "" ? EventList_type(events_l) : EventList_type(simFile, evtType);
   
   sig.setMC( eventsMC );
 

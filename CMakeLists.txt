@@ -4,7 +4,7 @@
 
 # Support standalone build
 if(COMMAND gaudi_subdir)
-    gaudi_subdir(AmpGen v1r2)
+    gaudi_subdir(AmpGen v2r0)
 
     find_package(ROOT COMPONENTS RIO Hist Matrix Graf Minuit2 Tree MathMore MathCore Physics)
     find_package(TBB REQUIRED)
@@ -29,6 +29,6 @@ if(COMMAND gaudi_subdir)
     endforeach()
 else()
     cmake_minimum_required(VERSION 3.12)
-    project(AmpGen LANGUAGES CXX VERSION 1.2)
+    project(AmpGen LANGUAGES CXX VERSION 2.0)
     include(Standalone.cmake)
 endif()
