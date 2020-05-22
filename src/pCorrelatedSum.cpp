@@ -297,6 +297,7 @@ void pCorrelatedSum::updateNorms(const std::vector<size_t>& iA, const std::vecto
 real_t pCorrelatedSum::norm() const {
   if (m_debug) INFO("Getting the value for the normalised pdf");
   if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
+  complex_t sumFactor = getSumFactor();  
   auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
   {
     complex_t v; 
@@ -334,14 +335,14 @@ real_t pCorrelatedSum::norm() const {
       nD = nDD.real(); 
   }
 
-  
-  complex_t mix = nAC * nBD;
-  real_t intTerm = -2 * mix.real();
+
+  complex_t mix = nAC * nBD * std::conj(sumFactor);
+  real_t intTerm = 2 * mix.real();
 
   
 
   if (m_debug) INFO("interference = "<<intTerm);
-  real_t N = nA * nB + nC * nD + intTerm;
+  real_t N = nA * nB + std::norm(sumFactor) * nC * nD + intTerm;
 
   if (m_debug) INFO("Normalisation = "<<N);
   return N;
@@ -475,7 +476,8 @@ complex_t pCorrelatedSum::getVal(const Event& evt1, const Event& evt2) const {
     f -= correction(evt2);
   }
   auto i = Constant(0,1);
-  complex_t val = A  *exp(i()*f/2.) * B - C * D  *exp(-i()*f/2.);
+  auto sumFactor = getSumFactor();
+  complex_t val = A  *exp(i()*f/2.) * B + sumFactor* C * D  *exp(-i()*f/2.);
   //INFO("Correction  = "<<f);
   if (m_debug) INFO("A2 = "<<std::norm(A));
   if (m_debug) INFO("B2 = "<<std::norm(B));
@@ -502,7 +504,10 @@ complex_t pCorrelatedSum::getValNoCache(const Event& evt1, const Event& evt2) co
     f -= correction(evt2);
   }
   auto i = Constant(0,1);
-  complex_t val = A *exp(i()*f)* B - C * D;
+
+  auto sumFactor = getSumFactor();
+  complex_t val = A  *exp(i()*f/2.) * B + sumFactor * C * D  *exp(-i()*f/2.);
+  //complex_t val = A *exp(i()*f)* B - C * D;
   if (m_flat){
     val = 1;
   }

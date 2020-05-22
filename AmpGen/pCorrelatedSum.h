@@ -156,6 +156,38 @@ class pCorrelatedSum {
         val = m_mps[key]->mean(); 
         return val;
     }
+
+    complex_t getSumFactor()const {
+        double r = 0;
+        double d = 0;
+        double g = 0;
+        std::string key_r = "pCorrelatedSum::r";
+        std::string key_d = "pCorrelatedSum::d";
+        std::string key_g = "pCorrelatedSum::g";
+        auto mps_r = m_mps.find(key_r);
+        auto mps_d = m_mps.find(key_d);
+        auto mps_g = m_mps.find(key_g);
+        if (mps_r==nullptr){
+            r = 1;
+        }
+        else {
+            r = mps_r->mean();
+        }
+        if (mps_d==nullptr){
+            d = 0;
+            d = mps_d->mean();
+        }
+        if (mps_g==nullptr){
+            g = 0;
+            g = mps_g->mean();
+        }
+
+
+
+        complex_t sumFactor = exp(Constant(0, 1)() * (g + d)) * r;
+        return sumFactor;
+        
+    }
     
     
 

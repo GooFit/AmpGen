@@ -67,8 +67,10 @@ namespace AmpGen
 
                         }
         double LL(int i){
-            auto _LL =  make_likelihood( m_SigData[i], m_TagData[i] , m_Psi[i]);
+
+                auto _LL =  make_likelihood( m_SigData[i], m_TagData[i] , m_Psi[i]);
             return _LL.getVal();
+
         }
 
         double getVal(){
@@ -79,7 +81,7 @@ namespace AmpGen
                 ll += LL(i);
             }
             if (m_debug) INFO("LL = "<<ll);
-            return ll;
+            return -2*ll;
         }
 
   };
