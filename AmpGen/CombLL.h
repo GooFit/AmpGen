@@ -87,7 +87,7 @@ namespace AmpGen
                 ll += LL(i);
             }
             if (m_debug) INFO("LL = "<<ll);
-            return -2*ll;
+            return ll;
         }
 
   };

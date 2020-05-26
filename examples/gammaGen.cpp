@@ -171,14 +171,15 @@ INFO("B DecayType = "<<BTag);
     
 
     auto B_Name = split(BTag,' ')[0];
-    int gammaSign = std::stoi(split(BTag,' ')[1]);
+    auto B_Pref = split(BTag,' ')[1];
+    int gammaSign = std::stoi(split(BTag,' ')[2]);
     int nEvents_B = nEvents;
-    if (split(BTag, ' ').size() > 2){
-      nEvents_B = std::stod(split(BTag, ' ')[2]) * nEvents;
+    if (split(BTag, ' ').size() > 3){
+      nEvents_B = std::stod(split(BTag, ' ')[3]) * nEvents;
     }
     INFO("GammaSign = "<<gammaSign);
 
-    pCoherentSum sig2( eventType, MPS, B_Name, gammaSign);
+    pCoherentSum sig2( eventType, MPS, B_Pref, gammaSign);
     EventList mc( eventType);
       Generator<PhaseSpace> signalGenerator( phsp );
 //      CoherentSum sig(eventType, MPS);

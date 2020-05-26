@@ -165,6 +165,10 @@ INFO("Doing loop of Fits");
 
  std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > totalLL;
 // SimFit totalLL;
+
+
+  bool doCorrFit = NamedParameter<bool>("doCorrFit", false);
+ if (doCorrFit){
 for (int i=0; i < tags.size(); i++){
 MinuitParameterSet * MPS_tag = new MinuitParameterSet();
   MPS_tag->loadFromStream();
@@ -244,11 +248,16 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     writePulls(logFile, pulls);
    fr->writeToFile(logFile);
  }
+ }
 
   auto Btags           = NamedParameter<std::string>("BTagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();
   std::string BDataFile       = NamedParameter<std::string>("BDataFile", "", "Data file for BDecays");
   std::string BIntFile       = NamedParameter<std::string>("BIntFile", "", "Integration file for BDecays");
   std::string BlogFile      = NamedParameter<std::string> ("BLogFile", "BFitter.log", "Log File for combined B fit");
+  auto scanName = NamedParameter<std::string>("scanName", "pCoherentSum::gamma");
+  auto scanOutput = NamedParameter<std::string>("scanOutput","scan.txt");
+  bool doBScan = NamedParameter<bool>("doBScan", false);
+  bool doBFit = NamedParameter<bool>("doBFit", false);
 
  std::vector<EventList> SigData_B;
 
@@ -264,7 +273,8 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
 
     std::stringstream B_log;
     auto B_Name = split(BTag,' ')[0];
-    int gammaSign = std::stoi(split(BTag,' ')[1]);
+    auto B_Pref = split(BTag, ' ')[1];
+    int gammaSign = std::stoi(split(BTag,' ')[2]);
     B_log<<B_Name<<"_fit.log";
     std::stringstream B_fit;
     B_fit<<B_Name<<"_plots.root";
@@ -290,20 +300,65 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     SigData_B.push_back(sigevents_B);
     SigInt_B.push_back(sigMCevents_B);
     SigType_B.push_back(BEventType);
-    sfList_B.push_back(B_Name);
+    sfList_B.push_back(B_Pref);
     gammaSigns.push_back(gammaSign);
 
-    auto cs_B = pCoherentSum(sigevents_B.eventType(),  *MPS_B, B_Name , gammaSign);
+    auto cs_B = pCoherentSum(sigevents_B.eventType(),  *MPS_B, B_Pref , gammaSign);
     cs_B.setEvents(sigevents_B);
     cs_B.setMC(sigMCevents_B);
     cs_B.prepare();
     //auto LL_B2 = make_likelihood( events_B["signal"], events_B["tag"], false, cs_B);
     auto LL_B = make_likelihood( sigevents_B, cs_B);
+    Minimiser mini_B = Minimiser(LL_B, MPS_B);
+
+    if (doBScan){
+    std::stringstream ss_B;
+    ss_B<<"Scan_"<<B_Name<<".txt";
+    auto scanOutput_B =ss_B.str();
+
+    std::ofstream scanfile;
+    scanfile.open(scanOutput_B, std::ios_base::app);
+    auto param = (*MPS_B)[scanName];
+    double minimum=param->minInit();
+    double maximum=param->maxInit();
+    double val = minimum;
+    double stepSize = param->stepInit();
+
+    param->setCurrentFitVal(val);   
+
+
+    while (val < maximum){
+
+    
+
+     param->setCurrentFitVal(val);    
+
+
+      
+
+      INFO("At "<<val<<" FCN = "<<mini_B.FCN());      
+      scanfile<<val<<"\t"<<mini_B.FCN()<<"\n";      
+
+      INFO("Norm = "<<cs_B.norm());
+      val += stepSize;
+      
+      }
+      
+    scanfile.close();
+
+    }    
+
+if (doBFit){
    FitResult * fr_B = Fit(LL_B, cs_B, sigevents_B, sigMCevents_B, *MPS_B, B_logName, inits, maxAttempts, repeatFits);
 
       doPlots(B_plotName, cs_B, sigevents_B, sigMCevents_B,nBins);
  //   doPlots(B_plotName, cs_B, sigevents_B, tagevents_B, sigMCevents_B, tagMCevents_B, nBins);
   //  fr_B->writeToFile(B_logName);
+}
+
+
+
+
   delete MPS_B;
   }      
   MinuitParameterSet * MPS_B = new MinuitParameterSet();
@@ -315,6 +370,45 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
 
   Minimiser combMini_B = Minimiser(combLL_B, MPS_B);
     combMini_B.gradientTest();
+
+
+     if (doBScan){ 
+   
+
+    std::stringstream ss_comb;
+    ss_comb<<"Scan_"<<"Comb"<<".txt";
+    auto scanOutput_comb =ss_comb.str();
+
+    std::ofstream scanfile;
+    scanfile.open(scanOutput_comb, std::ios_base::app);
+    auto param = (*MPS_B)[scanName];
+    double minimum=param->minInit();
+    double maximum=param->maxInit();
+    double val = minimum;
+    double stepSize = param->stepInit();
+
+    param->setCurrentFitVal(val);   
+
+
+    while (val < maximum){
+
+    
+
+      param->setCurrentFitVal(val);    
+
+
+      INFO("At "<<val<<" FCN = "<<combMini_B.FCN());      
+      scanfile<<val<<"\t"<<combMini_B.FCN()<<"\n";      
+      val += stepSize;
+      
+      }
+      
+    scanfile.close();
+  
+     }  
+
+
+    if (doBFit){
    // combMini.prepare();
     INFO("Minimising now for combined");
     int attempt = 1;
@@ -340,6 +434,7 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     }
     writePulls(BlogFile, pulls_B);
    fr_B->writeToFile(BlogFile);
+    }
   return 0;
 }
 
