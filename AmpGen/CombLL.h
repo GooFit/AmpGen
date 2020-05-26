@@ -1,5 +1,5 @@
-#ifndef COMBCORRLL
-#define COMBCORRLL
+#ifndef COMBLL
+#define COMBLL
 
 #include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/MetaUtils.h"
@@ -9,58 +9,61 @@
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/MinuitParameterSet.h"
-#include "AmpGen/pCorrelatedSum.h"
-#include "AmpGen/CorrelatedLL.h"
+#include "AmpGen/pCoherentSum.h"
+#include "AmpGen/SumPDF.h"
 
 #include <tuple>
 namespace AmpGen
 {
   class EventList;
   /**
-   * @class CombCorrLL
-   * @brief A combined log-likelihood for correlated amplitudes.
+   * @class CombLL
+   * @brief A combined log-likelihood for elated amplitudes.
    **/
-  class CombCorrLL
+  class CombLL
   {
       private:
         std::vector<EventList> m_SigData;
-        std::vector<EventList> m_TagData;
+
         std::vector<EventList> m_SigInt;
-        std::vector<EventList> m_TagInt;
+
         std::vector<EventType> m_SigType;
-        std::vector<EventType> m_TagType;
+
         MinuitParameterSet m_mps;
         bool m_debug;
-        std::vector<pCorrelatedSum> m_Psi;
+        std::vector<pCoherentSum> m_Psi;
         std::vector<std::string> m_SumFactors;
+        std::vector<int> m_gammaSigns;
         
 
 
       public:
-        CombCorrLL() = default;
-        CombCorrLL(std::vector<EventList> SigData, 
-                   std::vector<EventList> TagData, 
+        CombLL() = default;
+        CombLL(std::vector<EventList> SigData, 
+
                    std::vector<EventList> SigInt, 
-                   std::vector<EventList> TagInt,
+
                    std::vector<EventType> SigType,
-                   std::vector<EventType> TagType,
+
                    MinuitParameterSet mps,
-                   std::vector<std::string> sumFactors):
+                   std::vector<std::string> sumFactors,
+                   std::vector<int> gammaSigns):
                         m_SigData(SigData),
-                        m_TagData(TagData),
+
                         m_SigInt(SigInt),
-                        m_TagInt(TagInt),
+
                         m_SigType(SigType),
-                        m_TagType(TagType),
+
                         m_mps(mps),
                         m_SumFactors(sumFactors),
-                        m_debug(NamedParameter<bool>("CombCorrLL::Debug", false, "Debug CombCorrLL"))
+                        m_gammaSigns(gammaSigns),
+                        m_debug(NamedParameter<bool>("CombLL::Debug", false, "Debug CombLL"))
                         {
-                            std::vector<pCorrelatedSum> pCS = {};
+                            std::vector<pCoherentSum> pCS = {};
                             for (auto i=0; i < m_SigData.size() ; i++){
-                                pCorrelatedSum _pCS = pCorrelatedSum(m_SigType[i], m_TagType[i], m_mps, m_SumFactors[i]);
-                                _pCS.setEvents(m_SigData[i], m_TagData[i]);
-                                _pCS.setMC(m_SigInt[i], m_TagInt[i]);
+                                pCoherentSum _pCS = pCoherentSum(m_SigType[i], m_mps, m_SumFactors[i], m_gammaSigns[i]);
+                                _pCS.setEvents(m_SigData[i]);
+                                _pCS.setMC(m_SigInt[i]);
                                 _pCS.prepare();
                                 m_Psi.push_back(_pCS);
                             }
@@ -71,7 +74,7 @@ namespace AmpGen
                         }
         double LL(int i){
 
-                auto _LL =  make_likelihood( m_SigData[i], m_TagData[i] , m_Psi[i]);
+                auto _LL =  make_likelihood( m_SigData[i], m_Psi[i]);
             return _LL.getVal();
 
         }

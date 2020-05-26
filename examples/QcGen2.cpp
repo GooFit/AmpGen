@@ -119,6 +119,7 @@ int main( int argc, char** argv )
   std::string intfile = NamedParameter<std::string>("IntFile"   , "flat.root" , "Name of flat file" ); 
   std::string rwfile = NamedParameter<std::string>("RWFile"   , "RW.root" , "Name of reweighted file" ); 
   bool qcWeight	      = NamedParameter<bool>("qcWeight", false, "Do QC weighting");
+  bool debug          = NamedParameter<bool>("debug", false);
   auto genType        = NamedParameter<generatorType>( "Type", generatorType::CoherentSum, optionalHelpString("Generator configuration to use:", 
     { {"CoherentSum" , "Full phase-space generator with (pseudo)scalar amplitude"}
     , {"PolarisedSum", "Full phase-space generator with particles carrying spin in the initial/final states"}
@@ -147,102 +148,24 @@ int main( int argc, char** argv )
   bool doBoost  = NamedParameter<bool>("doBoost", true, "Boost to psi(3770) frame");
   std::string inputSignal = NamedParameter<std::string> ("inputSignal", "inputSignal.root", "The initial signal events");
   std::string inputTagPref = NamedParameter<std::string> ("inputTagPref", "inputTag_", "The file format for the input tag events - e.g. inputTag_ + KK = inputTag_KK.root");
+  std::string sumFactor = NamedParameter<std::string>("sumFactor", "Psi3770", "KeyWord for SumFactor between A(X->f) and A(Xbar -> f) - default is Psi3770 -> A - Abar");
 
 
- if(qcWeight){
-  TRandom3 rand;
-  rand.SetSeed( seed + 934534 );
-TFile* fRW = TFile::Open( outfile.c_str(), "RECREATE" );
-
- for( auto& tag : tags ){
-    auto tokens       = split(tag, ' ');
-    INFO("tag = "<<tokens[0]);
- 
-    auto tagParticle  = Particle(tokens[1], {}, false);
-    EventType    tagType = tagParticle.eventType();
-  INFO("Generating time-dependence? " << eventType.isTimeDependent() );
-  EventList acceptedSig( sigType );
-  EventList acceptedTag( tagType );
-
-  INFO("Generating events with type = " << sigType << " and "<<tagType);
-
-  MinuitParameterSet MPS;
-  MPS.loadFromStream();
-  INFO("makeCPConj = "<<makeCPConj);
-  if (makeCPConj){
-    INFO("Making CP conjugate states");
-    add_CP_conjugate(MPS);
-  }
-
-
-    pCorrelatedSum cs2( sigType, tagType, MPS );
- //   auto sigMCevents = getEvents("sigMC", pNames, tag, intfile);
-//    auto tagMCevents = getEvents("tagMC", pNames, tag, intfile);
-
-    // Want something like signalIn.root, tagKKIn.root etc.
-    auto inSig = EventList(inputSignal,sigType);
-    std::stringstream inputTagSS;
-    inputTagSS<<inputTagPref<<tokens[0]<<".root";
-    auto inputTag = inputTagSS.str();
-    auto inTag = EventList(inputTag, tagType);
-    pCorrelatedSum cs( sigType, tagType, MPS );
-
-    PhaseSpace phspSig(sigType,&rand);
-    PhaseSpace phspTag(tagType,&rand);
-    INFO("Generating Events now!");
-    FilterEvents( acceptedSig, acceptedTag, inSig, inTag ,cs, phspSig, phspTag , nEvents, blockSize, &rand );
-     
-//    auto cs = pCorrelatedSum(sigevents.eventType(), tagevents.eventType(), MPS);
-    
-    INFO( "Writing output file " );
-    std::stringstream signame;
-    signame<<"Signal_";
-    signame<<tokens[0];
-    std::stringstream tagname;
-    tagname<<"Tag_";
-    tagname<<tokens[0];
-	fRW->cd();
-    TTree * sig = acceptedSig.tree(signame.str().c_str());
-    sig->Write(signame.str().c_str());
-
- TTree * tagTree = acceptedTag.tree(tagname.str().c_str());
- tagTree->Write(tagname.str().c_str());
- 
- std::vector<std::string> dalitzNames = {"01", "02", "12"}; 
-  auto plots = acceptedSig.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
-  int i=0;
-  for ( auto& plot : plots ) {
-         std::stringstream projName;
-         projName<<"Signal_vs_"<<tokens[0]<<"_s"<<dalitzNames[i];
-
-         plot->Write(projName.str().c_str());
-         i++;
-    }
-          auto proj = eventType.defaultProjections(nBins);      
-    for( size_t i = 0 ; i < proj.size(); ++i ){
-      for( size_t j = i+1 ; j < proj.size(); ++j ){ 
-          std::stringstream projName;
-          projName<<"Signal_vs_"<<tokens[0]<<"_s"<<dalitzNames[i]<<"_vs_"<<dalitzNames[j];
-        acceptedSig.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(projName.str().c_str()); 
-      }
-    } 
-
-
-
-     }
-fRW->Close();
- }
- else{
 TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
 
- for( auto& tag : tags ){
+for( auto& tag : tags ){
 
 
     
     INFO("tag = "<<tag);
     auto tokens       = split(tag, ' ');
     INFO("tag = "<<tokens[0]);
- 
+    int nEvents_tag = nEvents;
+    if (tokens.size() > 2){
+      double fraction = std::stod(tokens[2]);
+      nEvents_tag *= fraction;
+      INFO("Generate "<<nEvents_tag);
+    }
     auto tagParticle  = Particle(tokens[1], {}, false);
     EventType    tagType = tagParticle.eventType();
   TRandom3 rand;
@@ -261,7 +184,7 @@ TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
   }
 
   Particle p;
-  bool debug=true;
+
   
 
 //  EventType eventType2( NamedParameter<std::string>( "EventType2" , "", "EventType to generate second lot of events, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
@@ -286,12 +209,12 @@ TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
 
  // if ( genType == generatorType::CoherentSum ) 
   INFO("Making CorrelatedSum");
-    pCorrelatedSum cs( sigType, tagType, *MPS );
+    pCorrelatedSum cs( sigType, tagType, *MPS ,sumFactor);
 
     PhaseSpace phspSig(sigType,&rand);
     PhaseSpace phspTag(tagType,&rand);
     INFO("Generating Events now!");
-    GenerateEvents( acceptedSig, acceptedTag, cs, phspSig, phspTag , nEvents, blockSize, &rand );
+    GenerateEvents( acceptedSig, acceptedTag, cs, phspSig, phspTag , nEvents_tag, blockSize, &rand );
 
     if (debug){
 	    for (int i=0; i<acceptedSig.size(); i++){
@@ -388,70 +311,12 @@ INFO("End of Tag Loop");
  }
     f->Close();
 
- }
+ 
 
  return 0;
 }
 
-/*
-  DTEvent tmp(at(0).signal, at(0).tag);
-  std::vector<int> id_sig(m_sigType.size()), 
-    ids_sig(m_sigType.size()), 
-    id_tag(m_tagType.size()),
-    ids_tag(m_tagType.size());
- TTree* outputTree = new TTree(name.c_str(),name.c_str());
-  for(size_t i = 0 ; i < sigType.size(); ++i )
-  {
-    outputTree->Branch((particleName(sigType, i)+"_PX").c_str(), &tmp.signal[4*i+0]); 
-    outputTree->Branch((particleName(sigType, i)+"_PY").c_str(), &tmp.signal[4*i+1]); 
-    outputTree->Branch((particleName(sigType, i)+"_PZ").c_str(), &tmp.signal[4*i+2]); 
-    outputTree->Branch((particleName(sigType, i)+"_E").c_str(),  &tmp.signal[4*i+3]);
-    outputTree->Branch((particleName(sigType, i)+"_ID").c_str(), &id_sig[i]);
-    ids_sig[i] = ParticlePropertiesList::get( sigType[i] )->pdgID();
-  }  
-  for(size_t i = 0 ; i < m_tagType.size(); ++i )
-  {
-    outputTree->Branch(("Tag_"+particleName(tagType, i)+"_PX").c_str(), &tmp.tag[4*i+0]); 
-    outputTree->Branch(("Tag_"+particleName(tagType, i)+"_PY").c_str(), &tmp.tag[4*i+1]); 
-    outputTree->Branch(("Tag_"+particleName(tagType, i)+"_PZ").c_str(), &tmp.tag[4*i+2]); 
-    outputTree->Branch(("Tag_"+particleName(tagType, i)+"_E").c_str(),  &tmp.tag[4*i+3]); 
-    outputTree->Branch(("Tag_"+particleName(tagType, i)+"_ID").c_str(), &id_tag[i]);
-    ids_tag[i] = ParticlePropertiesList::get( tagType[i] )->pdgID();
-  }
-  for( auto& evt: *this ){
-    bool swap = gRandom->Uniform() > 0.5;
-    tmp.set(evt.signal, evt.tag);
-    if( swap ) tmp.invertParity();
-    for(size_t i=0; i != m_sigType.size(); ++i)
-      id_sig[i] = swap ? -ids_sig[i] : ids_sig[i];
-    for(size_t i=0; i != m_tagType.size(); ++i)
-      id_tag[i] = swap ? -ids_tag[i] : ids_tag[i];
-    outputTree->Fill();
-  }
-    outputTree->Write();
-    f->Close();
-*/
-  //} 
- // else {
- //   FATAL("Did not recognise configuration: " << genType );
- // }
- 
 
- 
-  /*
-  TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
-  acceptedSig.tree( "DalitzEventList" )->Write();
-  auto plots = acceptedSig.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
-  for ( auto& plot : plots ) plot->Write();
-  if( NamedParameter<bool>("plots_2d",true) == true ){
-    auto proj = eventType.defaultProjections(nBins);
-    for( size_t i = 0 ; i < proj.size(); ++i ){
-      for( size_t j = i+1 ; j < proj.size(); ++j ){ 
-        acceptedSig.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(); 
-      }
-    }
-  } 
-  */
 
 void add_CP_conjugate( MinuitParameterSet& mps )
 {
@@ -494,16 +359,6 @@ void add_CP_conjugate( MinuitParameterSet& mps )
 
 EventList getEvents(std::string type, std::vector<std::string> sigName, std::string tagName, std::string intFile){
    
-    /*
-    EventType signalType( sigName );
-    INFO("Getting Tag name split "<<tagName);
-    auto tokens       = split(tagName, ' ');
-    INFO("Building Tag particle"<<tokens[1]);
-    auto tagParticle  = Particle(tokens[1], {}, false);
-    INFO("Build EventType");
-    EventType    tagType = tagParticle.eventType(); 
-    */
-
     INFO("Getting Tag name split "<<tagName);
     auto tokens       = split(tagName, ' ');
     INFO("Building Tag particle"<<tokens[1]);

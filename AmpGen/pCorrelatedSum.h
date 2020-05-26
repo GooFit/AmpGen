@@ -113,7 +113,7 @@ class pCorrelatedSum {
     public:
       //Takes amplitudes - 
         pCorrelatedSum();
-        pCorrelatedSum(const EventType& type1, const EventType& type2, const MinuitParameterSet& mps);
+        pCorrelatedSum(const EventType& type1, const EventType& type2, const MinuitParameterSet& mps, std::string SFType="Psi3770");
         virtual ~pCorrelatedSum()=default;
         real_t operator()( const Event& event1, const Event& event2) const { return prob(event1, event2); }
         real_t prob(const Event& event1, const Event& event2) const {
@@ -158,34 +158,35 @@ class pCorrelatedSum {
     }
 
     complex_t getSumFactor()const {
+        if (m_SFType=="Psi3770"){
+            return -1;
+        }
+        else{
         double r = 0;
         double d = 0;
         double g = 0;
-        std::string key_r = "pCorrelatedSum::r";
-        std::string key_d = "pCorrelatedSum::d";
-        std::string key_g = "pCorrelatedSum::g";
+        std::stringstream ss_key_r;
+        std::stringstream ss_key_d;
+        std::stringstream ss_key_g;
+        ss_key_r<<"pCorrelatedSum::"<<m_SFType<<"r";
+        ss_key_d<<"pCorrelatedSum::"<<m_SFType<<"d";
+        ss_key_g<<"pCorrelatedSum::"<<m_SFType<<"g";
+
+        std::string key_r = ss_key_r.str();
+        std::string key_d = ss_key_d.str();
+        std::string key_g = ss_key_g.str();
+
         auto mps_r = m_mps.find(key_r);
         auto mps_d = m_mps.find(key_d);
         auto mps_g = m_mps.find(key_g);
-        if (mps_r==nullptr){
-            r = 1;
-        }
-        else {
-            r = mps_r->mean();
-        }
-        if (mps_d==nullptr){
-            d = 0;
-            d = mps_d->mean();
-        }
-        if (mps_g==nullptr){
-            g = 0;
-            g = mps_g->mean();
-        }
-
-
+        
+    r = mps_r->mean();
+    d = mps_d->mean();
+     g = mps_g->mean();
 
         complex_t sumFactor = exp(Constant(0, 1)() * (g + d)) * r;
         return sumFactor;
+        }
         
     }
     
@@ -354,6 +355,7 @@ class pCorrelatedSum {
         Bilinears m_normalisationsCC;
         Bilinears m_normalisationsDD;
         MinuitParameterSet m_mps;
+        std::string m_SFType;
         CoherentSum  m_A;
         CoherentSum  m_B;
         CoherentSum  m_C;

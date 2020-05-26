@@ -11,7 +11,7 @@ using namespace AmpGen;
 
 pCorrelatedSum::pCorrelatedSum() = default; 
 
-pCorrelatedSum::pCorrelatedSum(const EventType& type1, const EventType& type2, const MinuitParameterSet& mps):
+pCorrelatedSum::pCorrelatedSum(const EventType& type1, const EventType& type2, const MinuitParameterSet& mps, std::string SFType):
   m_A(type1, mps),
   m_B(type2.conj(NamedParameter<bool>("pCorrelatedSum::ConjHead", true, "Only Conjugate the head of the EventType")), mps),
   m_C(type1.conj(NamedParameter<bool>("pCorrelatedSum::ConjHead", true, "Only Conjugate the head of the EventType")), mps),
@@ -29,7 +29,8 @@ pCorrelatedSum::pCorrelatedSum(const EventType& type1, const EventType& type2, c
   m_coherentIntegralA(NamedParameter<bool>("pCorrelatedSum::coherentIntegralA", false, "Do the super slow method to calculate normalisation")),
   m_coherentIntegralB(NamedParameter<bool>("pCorrelatedSum::coherentIntegralB", false, "Do the super slow method to calculate normalisation")),
   m_coherentIntegralC(NamedParameter<bool>("pCorrelatedSum::coherentIntegralC", false, "Do the super slow method to calculate normalisation")),
-  m_coherentIntegralD(NamedParameter<bool>("pCorrelatedSum::coherentIntegralD", false, "Do the super slow method to calculate normalisation"))
+  m_coherentIntegralD(NamedParameter<bool>("pCorrelatedSum::coherentIntegralD", false, "Do the super slow method to calculate normalisation")),
+  m_SFType(SFType)
 {
   m_normalisationsAC.resize( m_A.matrixElements().size(), m_C.matrixElements().size() ); 
   m_normalisationsBD.resize( m_B.matrixElements().size(), m_D.matrixElements().size() ); 
@@ -173,14 +174,22 @@ void pCorrelatedSum::prepare(){
   
 
   updateNorms(changedPdfIndicesA, changedPdfIndicesB, changedPdfIndicesC, changedPdfIndicesD);
+
+  
   m_Anorm = m_A.norm();
+  if (m_debug) INFO("Got Normalisation for m_A");
   m_Bnorm = m_B.norm();
+  if (m_debug) INFO("Got Normalisation for m_B");
   m_Cnorm = m_C.norm();
+  if (m_debug) INFO("Got Normalisation for m_C");
   m_Dnorm = m_D.norm();
+  if (m_debug) INFO("Got Normalisation for m_D");
   m_norm = slowNorm();
+  if (m_debug) INFO("Got Normalisation from full integral");
 
 
   m_prepareCalls++;
+  if (m_debug) INFO("CorrelatedSum is prepared!");
 }
 
 void pCorrelatedSum::updateNorms(const std::vector<size_t>& iA, const std::vector<size_t>& iB,
@@ -244,6 +253,7 @@ void pCorrelatedSum::updateNorms(const std::vector<size_t>& iA, const std::vecto
   m_integratorBD.flush();
   m_normalisationsBD.resetCalculateFlags();
 
+  if (m_debug) INFO("Finished Updating Norms");
 
   if (m_coherentIntegralA){
     if (m_debug) INFO("Queuing the integral for nAA"); 
@@ -308,11 +318,66 @@ real_t pCorrelatedSum::norm() const {
     }
     return v; 
   };
-/*
-    */
-  complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
 
-  complex_t nBD = sum_amps( m_normalisationsBD, m_B.matrixElements(), m_D.matrixElements() );
+  complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
+ std::complex<double> nBD = sum_amps( m_normalisationsBD, m_B.matrixElements(), m_D.matrixElements() );
+
+
+
+   std::complex<double> rAC = 0; 
+
+   auto eventsAC = m_integratorAC.events();
+    
+    for( int i=0 ; i < eventsAC.size(); i++ ) {
+      auto ab = m_A.getVal(eventsAC[i]) * std::conj(m_C.getVal(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
+  //    if (std::abs(ab) > 1e3){
+ 
+      auto abA = abs(m_A.getVal(eventsAC[i]));
+      auto abC = abs(m_C.getVal(eventsAC[i]));
+    
+      if (abA>1e10 || abC>1e10){
+  //      INFO("A or C too large?");
+      }
+      else{
+//   if (m_debug)   INFO("ab = "<<abs(ab));
+//    if (m_debug)    INFO("correction = "<<correction(eventsAC[i]));
+//      if (m_debug)    INFO("rAC = "<<abs(rAC));
+
+        rAC = rAC + ab;
+    }
+    }
+
+
+   auto eventsBD = m_integratorBD.events();
+   if (m_sameTag) {
+   std::complex<double> rBD = 0; 
+    for( int i=0 ; i < eventsBD.size(); i++ ) {
+      auto ab = m_B.getVal(eventsBD[i]) * std::conj(m_D.getVal(eventsBD[i])) * exp(-Constant(0,1)() * correction(eventsBD[i]))/(double)eventsBD.size();
+  //    if (std::abs(ab) > 1e3){
+ 
+      auto abB = abs(m_B.getVal(eventsBD[i]));
+      auto abD = abs(m_D.getVal(eventsBD[i]));
+    
+      if (abB>1e10 || abD>1e10){
+  //      INFO("B or D too large?");
+      }
+      else{
+//   if (m_debug)   INFO("ab = "<<abs(ab));
+//    if (m_debug)    INFO("correction = "<<correction(eventsBD[i]));
+//      if (m_debug)    INFO("rBD = "<<abs(rBD));
+
+        rBD = rBD + ab;
+    }
+    }
+    nBD = rBD;
+    }
+    
+
+
+
+
+
+
   real_t nA = m_A.norm();
   real_t nB = m_B.norm();
   real_t nC = m_C.norm();

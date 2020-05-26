@@ -360,6 +360,7 @@ complex_t CoherentSum::getVal( const Event& evt ) const
 {
   complex_t value( 0., 0. );
   for ( auto& mE : m_matrixElements ) {
+
     value += mE.coefficient * evt.getCache( mE.addressData );
   }
   return value;
@@ -369,6 +370,7 @@ complex_t CoherentSum::getVal( const Event& evt, const std::vector<size_t>& cach
 {
   complex_t value( 0., 0. );
   for ( size_t i = 0; i < m_matrixElements.size(); ++i )
+
     value += m_matrixElements[i].coefficient * evt.getCache( cacheAddresses[i] );
   return value;
 }

@@ -1,375 +1,728 @@
 #include "AmpGen/pCoherentSum.h"
-
-
-#include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <ctime>
-#include <iomanip>
-#include <iostream>
-#include <numeric>
-#include <ratio>
-#include <thread>
-
-#include "AmpGen/CompiledExpression.h"
-#include "AmpGen/ErrorPropagator.h"
-#include "AmpGen/EventList.h"
-#include "AmpGen/EventType.h"
-#include "AmpGen/Expression.h"
-#include "AmpGen/FitFraction.h"
-#include "AmpGen/MinuitParameter.h"
-#include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
-#include "AmpGen/Particle.h"
-#include "AmpGen/Utilities.h"
-#include "AmpGen/CompiledExpressionBase.h"
-#include "AmpGen/CompilerWrapper.h"
-#include "AmpGen/ThreadPool.h"
 #include "AmpGen/ProfileClock.h"
+#include "AmpGen/NamedParameter.h"
+#include <limits>
+
 
 #ifdef _OPENMP
   #include <omp.h>
 #endif
-
 using namespace AmpGen;
+
 pCoherentSum::pCoherentSum() = default; 
 
-pCoherentSum::pCoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
-  : m_protoAmplitudes( mps )
-  , m_evtType( type )
-  , m_printFreq(NamedParameter<size_t>(     "pCoherentSum::PrintFrequency", 100)  )
-  , m_dbThis   (NamedParameter<bool>(       "pCoherentSum::Debug"         , false))
-  , m_verbosity(NamedParameter<bool>(       "pCoherentSum::Verbosity"     , 0)    )
-  , m_objCache (NamedParameter<std::string>("pCoherentSum::ObjectCache"   ,"")    )
-  , m_prefix( prefix )
-{
-  auto amplitudes      = m_protoAmplitudes.getMatchingRules( m_evtType, prefix);
-  if( amplitudes.size() == 0 ){
-    WARNING("The defined amplitudes don't seem to be able to be able to generate eventType: " << type);
-  }
-  for( auto& amp : amplitudes ) INFO( amp.first.decayDescriptor() );
-  m_matrixElements.resize( amplitudes.size() );
-  m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() ); 
-  size_t      nThreads = NamedParameter<size_t>     ("nCores"    , std::thread::hardware_concurrency(), "Number of threads to use" );
-  ThreadPool tp(nThreads);
-  for(size_t i = 0; i < m_matrixElements.size(); ++i){
-    tp.enqueue( [i,this,&mps,&amplitudes]{ 
-    m_matrixElements[i] = TransitionMatrix<complex_t>( amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), this->m_dbThis);
-    CompilerWrapper().compile( m_matrixElements[i].amp, this->m_objCache); } );
-  }
-  m_isConstant = false;
-}
+pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType, int gamSign):
+  m_A(type1, mps),
 
-void pupdateCache(EventList* events, TransitionMatrix<complex_t>& me, const size_t& sizeMax)
-{
-  if ( me.addressData == 999 )
-  { 
-    if( events->at(0).cacheSize() <= sizeMax) events->resizeCache(sizeMax);
-    me.addressData = events->registerExpression( me.amp );
-  }
-  events->updateCache(me.amp, me.addressData);
-}
+  m_C(type1.conj(NamedParameter<bool>("pCoherentSum::ConjHead", true, "Only Conjugate the head of the EventType")), mps),
 
-void pCoherentSum::prepare()
+  m_debug(NamedParameter<bool>("pCoherentSum::debug", false, "Print Debug messages for pCoherentSum")),
+  m_debugFreq(NamedParameter<int>("pCoherentSum::debugFreq", 1000, "Print Debug messages for pCoherentSum")),
+  m_pdebug(NamedParameter<bool>("pCoherentSum::pdebug", false, "Print Debug messages for pCoherentSum")),
+  m_pNorm(NamedParameter<bool>("pCoherentSum::pNorm", true, "Perform the slower normalisation for polynomial")),
+  m_updateNorms(NamedParameter<bool>("pCoherentSum::updateNorms", true, "Update the individual norms for A,B,C,D")),
+  m_order(NamedParameter<unsigned int>( "pCorrelatedSum::Order" )),
+  m_polyType(NamedParameter<std::string>("pCorrelatedSum::PolyType", "simple")),
+  m_mps(mps),
+  m_gamSign(gamSign),
+  m_flat(NamedParameter<bool>("pCoherentSum::flat", false, "Force Amplitude=1")),
+  m_coherentIntegral(NamedParameter<bool>("pCoherentSum::coherentIntegral", false, "Do the super slow method to calculate normalisation")),
+  m_coherentIntegralA(NamedParameter<bool>("pCoherentSum::coherentIntegralA", false, "Do the super slow method to calculate normalisation")),
+
+  m_coherentIntegralC(NamedParameter<bool>("pCoherentSum::coherentIntegralC", false, "Do the super slow method to calculate normalisation")),
+
+  m_SFType(SFType)
 {
-  if ( m_weightParam != nullptr ) m_weight = m_weightParam->mean();
-  if ( m_isConstant && m_prepareCalls != 0 ) return;
-  transferParameters(); 
-  std::vector<size_t> changedPdfIndices;
+  m_normalisationsAC.resize( m_A.matrixElements().size(), m_C.matrixElements().size() ); 
+
+  if (m_coherentIntegral){
+    INFO("Using Slow option - set pCoherentSum::coherentIntegral false to avoid this behaviour");
+    m_normalisationsAA.resize( m_A.matrixElements().size(), m_A.matrixElements().size() ); 
+
+    m_normalisationsCC.resize( m_C.matrixElements().size(), m_C.matrixElements().size() ); 
+
+  }
+  if (m_coherentIntegralA) {
+    INFO("Using Slow option for amplitude A");
+    m_normalisationsAA.resize( m_A.matrixElements().size(), m_A.matrixElements().size() ); 
+  }
+
+  if (m_coherentIntegralC) {
+      INFO("Using Slow option for amplitude C");
+      m_normalisationsCC.resize( m_C.matrixElements().size(), m_C.matrixElements().size() ); 
+  }
+  INFO("Type 1 "<<type1);
+  
+  
+}
+void pCoherentSum::prepare(){
+  if (m_debug) INFO("Preparing A");
+  m_A.prepare();
+  
+  if (m_debug) INFO("Preparing C");
+  m_C.prepare();
+ 
+ 
+
+
+
+  if (m_debug) INFO("Preparing pCoherentSum");
+  std::vector<size_t> changedPdfIndicesA;
+ 
+  std::vector<size_t> changedPdfIndicesC;
+ 
+  if (m_debug) INFO("Get Matrix Elements");
+  auto matrixElementsA = m_A.matrixElements();
+ 
+  auto matrixElementsC = m_C.matrixElements();
+ 
   ProfileClock clockEval; 
-  bool print    = false;
-  for ( size_t i = 0; i < m_matrixElements.size(); ++i ) {
-    m_matrixElements[i].amp.prepare();
-    if ( m_prepareCalls != 0 && !m_matrixElements[i].amp.hasExternalsChanged() ) continue;
-    if ( m_events != nullptr ) pupdateCache( m_events, m_matrixElements[i], m_matrixElements.size() ); 
-    m_integrator.prepareExpression( m_matrixElements[i].amp );
-    changedPdfIndices.push_back(i);
-    m_matrixElements[i].amp.resetExternals();
-    print = true; 
+  if (m_debug) INFO("Call Transfer Parameters");
+  m_A.transferParameters();
+ 
+  m_C.transferParameters();
+ 
+  if (m_debug) INFO("Get changedPdfIndiciesA for "<<matrixElementsA.size()<<" Elements");
+  for ( size_t i = 0; i < matrixElementsA.size(); ++i ) {
+    auto& amp = matrixElementsA[i].amp;
+    if (m_debug) INFO("Prepare matrix element "<<i<<" with initial value "<<matrixElementsA[i].addressData);
+    amp.prepare();
+    if ( m_prepareCalls != 0 && !amp.hasExternalsChanged() ) continue;
+    ProfileClock clockThisElement;
+    if ( m_events1 != nullptr ) {
+      if ( matrixElementsA[i].addressData == 999 ) {
+        if (m_debug) INFO("Set addressData for the matrixElements using data from m_events1 "<<m_events1->size());
+        matrixElementsA[i].addressData = m_events1->registerExpression( amp );
+      }
+      if (m_debug) INFO("Update Cache for matrixElements");
+      m_events1->updateCache( amp, matrixElementsA[i].addressData );
+    } 
+    clockThisElement.stop();
+    changedPdfIndicesA.push_back(i);
+    amp.resetExternals();
   }
-  clockEval.stop();
-  ProfileClock clockIntegral;
-  if ( m_integrator.isReady())  updateNorms( changedPdfIndices );
-  else if ( m_verbosity ) WARNING( "No simulated sample specified for " << this );
+
+   if (m_debug) INFO("Get changedPdfIndiciesC");
+  for ( size_t i = 0; i < matrixElementsC.size(); ++i ) {
+    auto& amp = matrixElementsC[i].amp;
+    amp.prepare();
+    if ( m_prepareCalls != 0 && !amp.hasExternalsChanged() ) continue;
+    ProfileClock clockThisElement;
+    if ( m_events1 != nullptr ) {
+      if ( matrixElementsC[i].addressData == 999 ) 
+        matrixElementsC[i].addressData = m_events1->registerExpression( amp );
+      m_events1->updateCache( amp, matrixElementsC[i].addressData );
+    } 
+    clockThisElement.stop();
+    changedPdfIndicesC.push_back(i);
+    amp.resetExternals();
+  }
+
+ 
+  if (m_debug) INFO("Get Normalisation");
+
+  
+  if (m_debug) INFO("length of changedPdfIndiciesA = "<<changedPdfIndicesA.size());
+  if (m_debug) INFO("length of changedPdfIndiciesC = "<<changedPdfIndicesC.size());
+  if (m_debug) INFO("Is integratorAA ready "<<m_integratorAA.isReady());
+  if (m_debug) INFO("Is integratorAC ready "<<m_integratorAC.isReady());
+  if (m_debug) INFO("Is integratorCC ready "<<m_integratorAC.isReady());
+  if (m_integratorAA.isReady() && m_integratorAC.isReady() && m_integratorCC.isReady() ) updateNorms(changedPdfIndicesA,  changedPdfIndicesC );
+
+  
+  m_Anorm = m_A.norm();
+  if (m_debug) INFO("Got Normalisation for m_A");
+ 
+ 
+  m_Cnorm = m_C.norm();
+  if (m_debug) INFO("Got Normalisation for m_C");
+ 
+ 
   m_norm = norm();
-  if ( m_verbosity && print ) {
-    clockIntegral.stop();
-    INFO( "Time Performance: "
-        << "Eval = "       << clockEval     << " ms"
-        << ", Integral = " << clockIntegral << " ms"
-        << ", Total = "    << clockEval + clockIntegral << " ms; normalisation = "  << m_norm );
-    m_lastPrint = m_prepareCalls;
-  }
+  if (m_debug) INFO("Got Normalisation from full integral");
+
+
   m_prepareCalls++;
+  if (m_debug) INFO("CoherentSum is prepared!");
 }
 
-void pCoherentSum::updateNorms( const std::vector<size_t>& changedPdfIndices )
-{
-  //for ( auto& i : changedPdfIndices ) m_integrator.prepareExpression( m_matrixElements[i].amp );
-  std::vector<size_t> cacheIndex;
-  std::transform( m_matrixElements.begin(), m_matrixElements.end(), std::back_inserter(cacheIndex), 
-    [this](auto& m){ return this->m_integrator.getCacheIndex( m.amp ) ; } );
-  for ( auto& i : changedPdfIndices )
-    for ( size_t j = 0; j < size(); ++j )
-      m_integrator.queueIntegral( cacheIndex[i], cacheIndex[j] ,i, j, &m_normalisations );
-  m_integrator.flush();
-  m_normalisations.resetCalculateFlags();
-}
+void pCoherentSum::updateNorms(const std::vector<size_t>& iA, const std::vector<size_t>& iC){
+  for (auto& i : iA ) m_integratorAC.prepareExpression(m_A.matrixElements()[i].amp);
 
-void pCoherentSum::debug( const Event& evt, const std::string& nameMustContain )
-{
-  prepare();
-  for ( auto& me : m_matrixElements ) me.amp.resetExternals();
-  if ( nameMustContain == "" )
-    for ( auto& me : m_matrixElements ) {
-      auto A = me(evt);
-      INFO( std::setw(70) << me.decayTree.uniqueString() 
-          << " A = [ "  << std::real(A)             << " " << std::imag(A) 
-          << " ] g = [ "<< std::real(me.coupling()) << " " << std::imag(me.coupling()) << " ] "
-          << me.decayTree.CP() );
-      if( m_dbThis ) me.amp.debug( evt.address() );
-      //me.coupling.print();
+
+  for (auto& i : iC ) m_integratorAC.prepareExpression(m_C.matrixElements()[i].amp);
+
+
+  if (m_debug) INFO("UpdateNorms for component Amplitude");
+  if (m_updateNorms){ 
+    m_A.updateNorms(iA);
+
+    m_C.updateNorms(iC);
+
+  if (m_coherentIntegralA) for (auto& i : iA ) m_integratorAA.prepareExpression(m_A.matrixElements()[i].amp);
+
+  if (m_coherentIntegralC) for (auto& i : iC ) m_integratorCC.prepareExpression(m_C.matrixElements()[i].amp);
+
+  }
+  
+  std::vector<size_t> cacheIndexA;
+
+  std::vector<size_t> cacheIndexC;
+ // if (m_debug) INFO("Getting events from integratorAC"); 
+ // auto ACevents = m_integratorAC.events();
+//  if (m_debug) INFO("Got events from integratorAC"); 
+
+
+
+  if (m_debug) INFO("integratorAC has "<<m_integratorAC.events().size());
+
+
+  if (m_debug) INFO("Beginning to get CacheIndex for amplitudes A,C - for the integrator to use");
+  if (m_debug) INFO("A index");
+  for (auto& m : m_A.matrixElements() ){
+    cacheIndexA.push_back(m_integratorAC.events().getCacheIndex(m.amp));
+  }
+  
+  for (auto& m : m_C.matrixElements()){
+    cacheIndexC.push_back(m_integratorAC.events().getCacheIndex(m.amp));
+  }
+  
+  
+  
+  if (m_debug) INFO("Queuing the integral for nAC"); 
+  for (auto i : iA ){
+    for (auto j : iC){
+      m_integratorAC.queueIntegral(cacheIndexA[i], cacheIndexC[j], i, j, &m_normalisationsAC, false);
     }
-  else
-    for ( auto& me : m_matrixElements )
-      if ( me.amp.name().find( nameMustContain ) != std::string::npos ) me.amp.debug( evt.address() );
-  if( evt.cacheSize() != 0 ) INFO( "Pdf = " << prob_unnormalised( evt ) );
-  INFO( "A(x) = " << getVal(evt) );
+  }
+  if (m_debug) INFO("Finishing integral for nAC");
+  m_integratorAC.flush();
+  m_normalisationsAC.resetCalculateFlags();
+  
+
+  if (m_debug) INFO("Finished Updating Norms");
+
+  if (m_coherentIntegralA){
+    if (m_debug) INFO("Queuing the integral for nAA"); 
+    for (auto i : iA ){
+      for (auto j : iA){
+        m_integratorAA.queueIntegral(cacheIndexA[i], cacheIndexA[j], i, j, &m_normalisationsAA);
+      }
+    }
+  if (m_debug) INFO("Finishing integral for nAA");
+  m_integratorAA.flush();
+  m_normalisationsAA.resetCalculateFlags();
+  }
+
+  if (m_coherentIntegralC){
+    if (m_debug) INFO("Queuing the integral for nCC"); 
+    for (auto i : iC ){
+      for (auto j : iC){
+        m_integratorCC.queueIntegral(cacheIndexC[i], cacheIndexC[j], i, j, &m_normalisationsCC);
+      }
+    }
+    if (m_debug) INFO("Finishing integral for nCC");
+    m_integratorCC.flush();
+    m_normalisationsCC.resetCalculateFlags();
+  }
+
+  
 }
 
-std::vector<FitFraction> pCoherentSum::fitFractions(const LinearErrorPropagator& linProp)
-{
-  prepare();
-  bool recomputeIntegrals    = NamedParameter<bool>("pCoherentSum::RecomputeIntegrals", false );
-  std::vector<FitFraction> outputFractions;
-  for(auto& rule : m_protoAmplitudes.rules()) 
+
+
+real_t pCoherentSum::norm() const {
+  if (m_debug) INFO("Getting the value for the normalised pdf");
+  if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
+  complex_t sumFactor = getSumFactor();  
+  auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
   {
-    FitFractionCalculator<pCoherentSum> pCalc(this, findIndices(m_matrixElements, rule.first), recomputeIntegrals);
-    for(auto& process : rule.second) 
-    {
-      if(process.head() == m_evtType.mother() && process.prefix() != m_prefix) continue;
-      auto numeratorIndices   = processIndex(m_matrixElements,process.name());
-      if(numeratorIndices.size() == 0 || numeratorIndices == pCalc.normSet ) continue; 
-      pCalc.emplace_back(process.name(), numeratorIndices);
+    complex_t v; 
+    for (size_t i=0; i< mA.size(); i++){
+      for (size_t j=0; j< mB.size(); j++){
+        v += bl.get(i, j) * mA[i].coefficient * std::conj(mB[j].coefficient);;
+      }
     }
-    if( pCalc.calculators.size() == 0 ) continue;  
-    auto fractions = pCalc(rule.first, linProp);
-    std::transform( fractions.begin(), fractions.end(), std::back_inserter(outputFractions),[](auto& p){ return p;} );
+    return v; 
   };
-  auto ffForHead = m_protoAmplitudes.rulesForDecay(m_evtType.mother(), m_prefix);
-  FitFractionCalculator<pCoherentSum> iCalc(this, findIndices(m_matrixElements, m_evtType.mother()), recomputeIntegrals);
-  for ( size_t i = 0; i < ffForHead.size(); ++i ) 
+/*
+
+    */
+  complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
+
+
+
+
+   std::complex<double> rAC = 0; 
+
+   auto eventsAC = m_integratorAC.events();
+
+if (m_debug){
+for (int i=0; i<eventsAC.size(); i++){
+  INFO("Can I call getVal for A at "<<i<<" out of "<<eventsAC.size());
+  INFO("Event = "<<eventsAC[i]);
+  INFO("m_A = "<<m_A.getValNoCache(eventsAC[i]));  
+  INFO("m_C = "<<m_C.getValNoCache(eventsAC[i]));  
+}
+}
+
+    
+    for( int i=0 ; i < eventsAC.size(); i++ ) {
+      auto ab = m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
+  //    if (std::abs(ab) > 1e3){
+ 
+      auto abA = abs(m_A.getValNoCache(eventsAC[i]));
+      auto abC = abs(m_C.getValNoCache(eventsAC[i]));
+    
+      if (abA>1e10 || abC>1e10){
+  //      INFO("A or C too large?");
+      }
+      else{
+//   if (m_debug)   INFO("ab = "<<abs(ab));
+//    if (m_debug)    INFO("correction = "<<correction(eventsAC[i]));
+//      if (m_debug)    INFO("rAC = "<<abs(rAC));
+
+        rAC = rAC + ab;
+    }
+    }
+
+   
+
+
+
+
+
+
+  real_t nA = m_A.norm();
+
+  real_t nC = m_C.norm();
+
+
+  if (m_coherentIntegralA) {
+      complex_t nAA = sum_amps( m_normalisationsAA, m_A.matrixElements(), m_A.matrixElements() );
+      nA = nAA.real(); 
+  }
+
+  if (m_coherentIntegralC) {
+      complex_t nCC = sum_amps( m_normalisationsCC, m_C.matrixElements(), m_C.matrixElements() );
+      nC = nCC.real(); 
+  }
+
+  complex_t mix = rAC * std::conj(sumFactor);
+  real_t intTerm = 2 * mix.real();
+
+  
+
+  if (m_debug) INFO("interference = "<<intTerm);
+  real_t N = nA  + std::norm(sumFactor) * nC  + intTerm;
+
+  if (m_debug) INFO("Normalisation = "<<N);
+  return N;
+}
+
+
+
+/*
+real_t pCoherentSum::norm() const {
+  if (m_debug) INFO("Getting the value for the normalised pdf");
+  if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
+  complex_t sumFactor = getSumFactor();  
+  auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
   {
-    for ( size_t j = i + 1; j < ffForHead.size(); ++j ) 
-    {
-      iCalc.emplace_back(ffForHead[i].name() + "x" + ffForHead[j].name(), 
-            processIndex(m_matrixElements, ffForHead[i].name()), 
-            processIndex(m_matrixElements, ffForHead[j].name()) );
+    complex_t v; 
+    for (size_t i=0; i< mA.size(); i++){
+      for (size_t j=0; j< mB.size(); j++){
+        v += bl.get(i, j) * mA[i].coefficient * std::conj(mB[j].coefficient);;
+      }
+    }
+    return v; 
+  };
+
+  complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
+
+
+  real_t nA = m_A.norm();
+
+  real_t nC = m_C.norm();
+
+
+  if (m_coherentIntegralA) {
+      complex_t nAA = sum_amps( m_normalisationsAA, m_A.matrixElements(), m_A.matrixElements() );
+      nA = nAA.real(); 
+  }
+  
+  if (m_coherentIntegralC) {
+      complex_t nCC = sum_amps( m_normalisationsCC, m_C.matrixElements(), m_C.matrixElements() );
+      nC = nCC.real(); 
+  }
+  
+  complex_t mix = nAC *  std::conj(sumFactor);
+  real_t intTerm = 2 * mix.real();
+
+  
+
+  if (m_debug) INFO("interference = "<<intTerm);
+  real_t N = nA   + std::norm(sumFactor) * nC  + intTerm;
+
+  if (m_debug) INFO("Normalisation = "<<N);
+  return N;
+}
+*/
+
+
+real_t pCoherentSum::testnorm() const {
+  if (m_debug) INFO("Getting the value for the normalised pdf");
+ 
+  if (m_debug) INFO("Getting SumFactor");
+  complex_t sumFactor = getSumFactor();  
+  if (m_debug) INFO("SumFactor = "<<sumFactor);
+ if (m_debug) INFO("Get Matrix Elements for A,C");
+  auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
+  {
+    complex_t v; 
+    for (size_t i=0; i< mA.size(); i++){
+      for (size_t j=0; j< mB.size(); j++){
+        v += bl.get(i, j) * mA[i].coefficient * std::conj(mB[j].coefficient);;
+      }
+    }
+    return v; 
+  };
+/*
+    */
+    std::complex<double> rAC = 0; 
+   auto eventsAC = m_integratorAC.events();
+
+    complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
+  real_t nA = m_A.norm();
+  if (m_debug) INFO("m_A norm = "<<nA);
+  real_t nC = m_C.norm();
+  if (m_debug) INFO("m_C norm = "<<nC);
+
+
+  if (m_coherentIntegralA) {
+      complex_t nAA = sum_amps( m_normalisationsAA, m_A.matrixElements(), m_A.matrixElements() );
+      nA = nAA.real(); 
+  }
+  
+  if (m_coherentIntegralC) {
+      complex_t nCC = sum_amps( m_normalisationsCC, m_C.matrixElements(), m_C.matrixElements() );
+      nC = nCC.real(); 
+  }
+  
+
+
+    for( int i=0 ; i < eventsAC.size(); i++ ) {
+
+      if (m_debug) INFO("Getting value for ab");
+      if (m_debug) INFO("At "<<i<<" out of "<<eventsAC.size());
+    if (m_debug) INFO("m_A matrixElements = "<<m_A.matrixElements().size()<<" long");
+    if (m_debug) INFO("A = "<<m_A.getValNoCache(eventsAC[i]));
+    if (m_debug) INFO("C = "<<m_C.getValNoCache(eventsAC[i]));
+
+      auto ab = m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
+  //    if (std::abs(ab) > 1e3){
+    if (m_debug) INFO("ab = "<<ab);
+ 
+    if (m_debug) INFO("Getting value for |a|");
+
+    auto abA = abs(m_A.getValNoCache(eventsAC[i]));
+    if (m_debug) INFO("|a| = "<<abA);
+    if (m_debug) INFO("Getting value for |c|");
+    auto abC = abs(m_C.getValNoCache(eventsAC[i]));
+
+    if (m_debug) INFO("|c| = "<<abC);
+    
+      if (abA>1e10 || abC>1e10){
+  //      INFO("A or C too large?");
+      }
+      else{
+//   if (m_debug)   INFO("ab = "<<abs(ab));
+//    if (m_debug)    INFO("correction = "<<correction(eventsAC[i]));
+//      if (m_debug)    INFO("rAC = "<<abs(rAC));
+
+        rAC = rAC + ab;
+    }
+    }
+
+
+  complex_t mix = rAC  * std::conj(sumFactor);
+  real_t intTerm = 2 * mix.real();
+
+  
+
+  if (m_debug) INFO("interference = "<<intTerm);
+  real_t N = nA + std::norm(sumFactor) * nC  + intTerm;
+
+  if (m_debug) INFO("Normalisation = "<<N);
+  return N;
+}
+
+double pCoherentSum::slowNorm(){
+  if (m_debug) INFO("Started slowNorm");
+  if (m_debug) INFO("SumFactor prefix = "<<m_SFType);
+  complex_t sumFactor = getSumFactor();  
+  if (m_debug) INFO("sumFactor = "<<sumFactor);
+  auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
+  {
+    complex_t v; 
+    for (size_t i=0; i< mA.size(); i++){
+      for (size_t j=0; j< mB.size(); j++){
+        v += bl.get(i, j) * mA[i].coefficient * std::conj(mB[j].coefficient);;
+      }
+    }
+    return v; 
+  };
+/*
+    */
+ // complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
+
+
+
+
+   std::complex<double> rAC = 0; 
+   if (m_debug) INFO("Getting events for AC");
+   auto eventsAC = m_integratorAC.events();
+   if (m_debug) INFO("Have "<<eventsAC.size()<< " integration events"); 
+    for( int i=0 ; i < eventsAC.size(); i++ ) {
+      if (m_debug) INFO("Getting value for ab");
+      auto ab = m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
+  //    if (std::abs(ab) > 1e3){
+    if (m_debug) INFO("ab = "<<ab);
+ 
+      if (m_debug) INFO("Getting value for |a|");
+
+      auto abA = abs(m_A.getValNoCache(eventsAC[i]));
+    if (m_debug) INFO("|a| = "<<abA);
+      if (m_debug) INFO("Getting value for |c|");
+      auto abC = abs(m_C.getValNoCache(eventsAC[i]));
+
+    if (m_debug) INFO("|c| = "<<abC);
+    
+      if (abA>1e10 || abC>1e10){
+  //      INFO("A or C too large?");
+      }
+      else{
+//   if (m_debug)   INFO("ab = "<<abs(ab));
+//    if (m_debug)    INFO("correction = "<<correction(eventsAC[i]));
+//      if (m_debug)    INFO("rAC = "<<abs(rAC));
+
+        rAC = rAC + ab;
+    }
+    }
+
+    if (m_debug) INFO("AC = "<<rAC);
+
+
+
+  if(m_debug) INFO("Do I have norm?");   
+  double n_fast = m_norm;
+  if (m_debug) INFO("m_norm = "<<n_fast);
+
+
+//  double norm = m_A.norm() * m_B.norm() + m_C.norm() * m_D.norm();
+
+
+  auto inter = rAC  * std::conj(sumFactor);
+  auto Norm = m_Anorm  + m_Cnorm  ;
+
+
+  Norm += 2 * std::real(inter);  
+return Norm;
+}
+
+void pCoherentSum::reset(bool resetEvents){
+  if (resetEvents){
+    m_events1 = nullptr;
+
+    m_integratorAC = Integrator<10>();
+
+    m_integratorAA = Integrator<10>();
+
+    m_integratorCC = Integrator<10>();
+
+    m_A.reset(true);
+
+    m_C.reset(true);
+
+  }
+}
+
+void pCoherentSum::setEvents(EventList& list1){
+  m_events1 = &list1;
+
+  m_A.setEvents(list1);
+
+  m_C.setEvents(list1);
+
+}
+
+void pCoherentSum::setMC(EventList& list1){
+  m_A.setMC(list1);
+  
+  m_C.setMC(list1);
+  m_integratorAC = Integrator<10>(&list1);
+  
+  m_integratorAA = Integrator<10>(&list1);
+  
+  m_integratorCC = Integrator<10>(&list1);
+  
+
+  
+}
+
+complex_t pCoherentSum::getVal(const Event& evt1) const {
+  complex_t A = m_A.getValNoCache(evt1);
+
+  complex_t C = m_C.getValNoCache(evt1);
+
+  complex_t f = correction(evt1);
+  
+  auto i = Constant(0,1);
+  auto corr = exp(i() * f);
+  auto sumFactor = getSumFactor();
+  complex_t val = A  *exp(i()*f/2.) + sumFactor* C  *exp(-i()*f/2.);
+  //INFO("Correction  = "<<f);
+  if (m_debug) INFO("A2 = "<<std::norm(A));
+
+  if (m_debug) INFO("C2 = "<<std::norm(C));
+
+  if (m_debug) INFO("ReAC* = "<<std::real(A*std::conj(C)* corr * std::conj(sumFactor) ) );
+  if (m_debug) INFO("val2 = "<<std::norm(val));
+  if (m_debug) INFO("A2+C2-2ReAC* = "<<std::norm(A) + std::norm(C)*std::norm(sumFactor) - 2 *std::real(A*std::conj(C)*sumFactor*exp(i()*f)));
+
+  if (m_flat){
+    val = 1;
+  }
+
+
+  return val;
+}
+complex_t pCoherentSum::getValNoCache(const Event& evt1) const {
+  complex_t A = m_A.getValNoCache(evt1);
+  
+  complex_t C = m_C.getValNoCache(evt1);
+  
+  complex_t f = correction(evt1);
+  
+  auto i = Constant(0,1);
+
+  auto sumFactor = getSumFactor();
+  complex_t val = A  *exp(i()*f/2.)  + sumFactor * C   *exp(-i()*f/2.);
+  //complex_t val = A *exp(i()*f)* B - C * D;
+  if (m_flat){
+    val = 1;
+  }
+  return val;
+}
+
+
+void pCoherentSum::debugNorm()
+{
+auto i = Constant(0,1);
+  auto n_slow = 0.0;
+  auto nEvents = m_integratorAC.events().size();
+  INFO("nEvents = "<<nEvents);
+  for(unsigned int j = 0; j < m_integratorAC.events().size(); ++j ) {
+    auto val = getValNoCache(m_integratorAC.events()[j]);
+    auto val2 = val.real() * val.real() + val.imag() * val.imag();
+    auto val3 = m_A.getValNoCache(m_integratorAC.events()[j]) * std::conj(m_C.getValNoCache(m_integratorAC.events()[j]));
+    auto rval3 = m_A.getValNoCache(m_integratorAC.events()[j]) * std::conj(m_C.getValNoCache(m_integratorAC.events()[j]))/(std::abs(m_A.getValNoCache(m_integratorAC.events()[j])) * std::abs(m_C.getValNoCache(m_integratorAC.events()[j])));
+    auto rpval3 = m_A.getValNoCache(m_integratorAC.events()[j]) * std::conj(m_C.getValNoCache(m_integratorAC.events()[j])) * exp(i() * correction(m_integratorAC.events()[j]))/(std::abs(m_A.getValNoCache(m_integratorAC.events()[j])) * std::abs(m_C.getValNoCache(m_integratorAC.events()[j])));
+    auto pval3 = m_A.getValNoCache(m_integratorAC.events()[j]) * std::conj(m_C.getValNoCache(m_integratorAC.events()[j])) * exp(i() * correction(m_integratorAC.events()[j]));
+
+    auto val5 = correction(m_integratorAC.events()[j]);
+    auto cdd = std::real(rval3);
+    auto dd = std::imag(log(val3/std::abs(val3)));
+    auto cddp = std::real(rpval3);
+    auto ddp = std::imag(log(pval3/std::abs(pval3)));
+    auto diffdd = ddp - dd;
+    n_slow += (double)val2/(double)nEvents;
+    auto frac = 100*(double)j/(double)nEvents;
+    if (m_debug){
+      INFO("At "<<j <<" of "<<nEvents<<" events");
+      INFO("ABC*D* = "<<val);
+      INFO("|AB-CD|^2 = "<<val2);
+      INFO("AC* = "<<val3);
+      INFO("AC*e^(if) = "<<pval3);
+      INFO("cos(dd) = "<<cdd); 
+      INFO("dd = "<<dd); 
+      INFO("cos(dd + f) = "<<cddp);
+      INFO("dd + f = "<<ddp);
+      INFO("dd + f - dd = "<<diffdd);
+      INFO("n_slow = "<<n_slow);
+
+      INFO("exp(i f(s+,s-)="<<val5);
     }
   }
-  std::vector<FitFraction> interferenceFractions = iCalc(m_evtType.mother()+"_interference",linProp);
-  for(auto& f : interferenceFractions) outputFractions.push_back(f); 
-  for(auto& p : outputFractions) INFO(p);
-  return outputFractions;
-}
-
-void pCoherentSum::generateSourceCode(const std::string& fname, const double& normalisation, bool add_mt)
-{
-  std::ofstream stream( fname );
-  transferParameters();
-  stream << std::setprecision( 10 );
-  stream << "#include <complex>\n";
-  stream << "#include <vector>\n";
-  stream << "#include <math.h>\n";
-  if ( add_mt ) stream << "#include <thread>\n";
-  bool includePythonBindings = NamedParameter<bool>("pCoherentSum::IncludePythonBindings",false);
-
-  if (includePythonBindings) INFO("Including Python bindings");
+  auto integrate = []( const EventList& events, const CoherentSum& A, const CoherentSum& B, bool debug=false) -> double
+  {
+   auto r = 0.0; 
+   auto N = events.size(); 
+    for( int i=0 ; i < N; i++ ) {
+     auto ab = A.getValNoCache(events[i]) * std::conj(B.getValNoCache(events[i]));
 
 
+     auto rab = std::real(ab)/N;
 
-  for ( auto& p : m_matrixElements ){
-    stream << p.amp << std::endl;
-    p.amp.compileWithParameters( stream );
-    if( includePythonBindings ) p.amp.compileDetails( stream );
-  }
-  Expression event = Parameter("x0",0,true);
-  Expression pa    = Parameter("double(x1)",0,true);
-  Expression amplitude;
-  for( unsigned int i = 0 ; i < size(); ++i ){
-    auto& p = m_matrixElements[i];
-    Expression this_amplitude = p.coupling() * Function( programatic_name( p.amp.name() ) + "_wParams", {event} ); 
-    amplitude = amplitude + ( p.decayTree.finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
-  }
-  stream << CompiledExpression< std::complex<double>, const double*, const int&>( amplitude  , "AMP" ) << std::endl; 
-  stream << CompiledExpression< double, const double*, const int&>(fcn::norm(amplitude) / normalisation, "FCN" ) << std::endl; 
-  if( includePythonBindings ){
-    stream << CompiledExpression< unsigned int >( m_matrixElements.size(), "matrix_elements_n" ) << std::endl;
-    stream << CompiledExpression< double >      ( normalisation, "normalization") << std::endl;
 
-    stream << "extern \"C\" const char* matrix_elements(int n) {\n";
-    for ( size_t i = 0; i < m_matrixElements.size(); i++ ) {
-      stream << "  if(n ==" << i << ") return \"" << m_matrixElements.at(i).amp.progName() << "\" ;\n";
+  long double L=events.size();
+    
+    
+     r = r + rab;
+
+   if (std::abs(rab)<L )  r = r + rab;
+
     }
-    stream << "  return 0;\n}\n";
-    stream << "extern \"C\" void FCN_all(double* out, double* events, unsigned int size, int parity, double* amps){\n";
-    stream << "  double local_amps [] = {\n";
-    for ( unsigned int i = 0; i < size(); ++i ) {
-      auto& p = m_matrixElements[i];
-      stream << "    " << p.coupling().real() << ", " << p.coupling().imag() << ( i + 1 == size() ? "" : "," ) << "\n";
-    }
-    stream << "  };\n";
-    stream << "  if(amps == nullptr)\n";
-    stream << "    amps = local_amps;\n\n";
-    stream << "  for(unsigned int i=0; i<size; i++) {\n";
-    stream << "    double* E = events + i*" << ( *this->m_events )[0].size() << ";\n";
 
-    stream << "  std::complex<double> amplitude = \n";
-    for ( unsigned int i = 0; i < size(); ++i ) {
-      stream << "    ";
-      auto& p    = m_matrixElements[i];
-      int parity = p.decayTree.finalStateParity();
-      if ( parity == -1 ) stream << "double(parity) * ";
-      stream << "std::complex<double>(amps[" << i * 2 << "],amps[" << i * 2 + 1 << "]) * ";
-      stream << programatic_name( p.amp.name() )<< "_wParams( E )";
-      stream << ( i == size() - 1 ? ";" : " +" ) << "\n";
-    }
-    stream << "  out[i] =  std::norm(amplitude) / " << normalisation << ";\n  }\n}\n";
-    stream << "extern \"C\" void FCN_mt(double* out, double* events, unsigned int size, int parity, double* amps){\n";
-    stream << "  unsigned int n = std::thread::hardware_concurrency();\n";
-    stream << "  unsigned int batch_size = size / n;\n";
-    stream << "  std::vector<std::thread> threads;\n";
-    stream << "  for(size_t i=0; i<n; i++) {\n";
-    stream << "    size_t start = batch_size*i;\n";
-    stream << "    size_t len = i+1!=n ? batch_size : size-start;\n";
-    stream << "    threads.emplace_back(FCN_all, out+start"
-      << ", events+start*" 
-      << ( *this->m_events )[0].size() 
-      << ", len, parity, amps);\n";
-    stream << "  }\n";
-    stream << "  for(auto &thread : threads)\n";
-    stream << "    thread.join();\n";
-    stream << "}\n\n";
+    return r;
+  };
+  double nAA = std::real( integrate( m_integratorAC.events(), m_A, m_A, m_debug ) );
 
-    stream << "extern \"C\" double coefficients( int n, int which, int parity){\n";
-    for ( size_t i = 0; i < size(); i++ ) {
-      auto& p    = m_matrixElements[i];
-      int parity = p.decayTree.finalStateParity();
-      stream << "  if(n == " << i << ") return ";
-      if ( parity == -1 ) stream << "double(parity) * ";
-      stream << "(which==0 ? " << p.coupling().real() << " : " << p.coupling().imag() << ");\n";
-    }
-    stream << "  return 0;\n}\n";
-  }
-  INFO("Generating source-code for PDF: " << fname << " include MT symbols? " << add_mt << " normalisation = " << normalisation );
-  stream.close();
+  double nCC = std::real( integrate( m_integratorAC.events(), m_C, m_C, m_debug ) );
+
+  auto   nAC = ( integrate( m_integratorAC.events(), m_A, m_C, m_debug ) );
+
+  
+  INFO("integral |A|^2 = "<<nAA);
+  INFO("fast |A|^2 = "<<m_A.norm());
+
+
+  INFO("|C| = "<<nCC);
+  INFO("fast |C|^2 = "<<m_C.norm());
+
+
+  INFO("AC* = "<<-2*nAC);
+  double I = ( nAA  + nCC  - 2*std::real(nAC) );
+  double n_fast = m_norm;
+  auto n_slow2 = slowNorm();
+  double difference = std::abs(n_fast - I)/n_fast * 100.;
+  INFO("My value for n_fast = "<<n_fast);
+  INFO("My value for I = "<<I);
+  INFO("My value for n_slow = "<<n_slow2);
+  INFO("The difference = "<<difference<<"%");
 }
 
-complex_t pCoherentSum::getValNoCache( const Event& evt ) const
+
+void pCoherentSum::debug(const Event& evt1) const 
 {
-  return std::accumulate( m_matrixElements.begin(), 
-      m_matrixElements.end(), 
-      complex_t(0,0), 
-      [&evt]( auto& a, auto& b ){ return a + b.coefficient * b(evt);} );
+  INFO( "A[x, y] = " << getValNoCache(evt1) << " " << getValNoCache(evt1) << " " << m_norm << " " << prob(evt1) << " " << prob_unnormalised(evt1) );
+  INFO("|AB-CD|^2 = "<<prob(evt1));
+  INFO("|A|^2 = "<<m_A.prob(evt1));
+
+  INFO("|C|^2 = "<<m_C.prob(evt1));
+
+  INFO("Norm = "<<m_norm);
 }
 
-complex_t pCoherentSum::getValNoCache(const Event& evt, const size_t& offset) const
-{
-  return std::accumulate( m_matrixElements.begin(), 
-      m_matrixElements.end(), 
-      complex_t(0,0), 
-      [&evt,&offset]( auto& a, auto& b ){ return a + b.coefficient * b(evt, offset);} );
-}
-
-void pCoherentSum::reset( bool resetEvents )
-{
-  m_prepareCalls                                     = 0;
-  m_lastPrint                                        = 0;
-  for ( auto& mE : m_matrixElements ) mE.addressData = 999;
-  if ( resetEvents ){ 
-    m_events = nullptr;
-    m_integrator = integrator();
-  }
-}
-
-void pCoherentSum::setEvents( EventList& list )
-{
-  if ( m_verbosity ) INFO( "Setting event list with:" << list.size() << " events for " << this );
-  reset();
-  m_events = &list;
-}
-
-void pCoherentSum::setMC( EventList& sim )
-{
-  if ( m_verbosity ) INFO( "Setting norm. event list with:" << sim.size() << " events for " << this );
-  reset();
-  m_integrator = integrator(&sim);
-}
-
-real_t pCoherentSum::norm() const
-{
-  return norm(m_normalisations);
-}
-
-real_t pCoherentSum::norm(const Bilinears& norms) const
-{
-  complex_t acc(0, 0);
-  for ( size_t i = 0; i < size(); ++i ) {
-    for ( size_t j = 0; j < size(); ++j ) {
-      auto val = norms.get(i, j) 
-        * m_matrixElements[i].coefficient 
-        * std::conj(m_matrixElements[j].coefficient);
-      acc += val;
-    }
-  }
-  return acc.real();
-}
-
-complex_t pCoherentSum::norm(const size_t& x, const size_t& y) const
-{
-  return m_normalisations.get(x, y);
-}
-
-void pCoherentSum::transferParameters()
-{
-  for ( auto& mE : m_matrixElements ) mE.coefficient = mE.coupling();
-}
-
-void pCoherentSum::printVal(const Event& evt)
-{
-  for ( auto& mE : m_matrixElements ) {
-    unsigned int address = mE.addressData;
-    std::cout << mE.decayTree.decayDescriptor() << " = " << mE.coefficient << " x " << evt.getCache( address )
-      << " address = " << address << " " << mE( evt ) << std::endl;
-    if( mE.coupling.size() != 1 ){
-      std::cout << "CouplingConstants: " << std::endl;
-      mE.coupling.print();
-      std::cout << "================================" << std::endl;
-    }
-  }
-}
-
-std::vector<size_t> pCoherentSum::cacheAddresses( const EventList& evts ) const
-{
-  std::vector<size_t> addresses;
-  std::transform( m_matrixElements.begin(), m_matrixElements.end(), std::back_inserter(addresses),
-      [&evts](auto& it ){ return evts.getCacheIndex( it.amp ) ; } );
-  return addresses;
-}
-
-complex_t pCoherentSum::getVal( const Event& evt ) const
-{
-  complex_t value( 0., 0. );
-  for ( auto& mE : m_matrixElements ) {
-    value += mE.coefficient * evt.getCache( mE.addressData );
-  }
-  return value;
-}
-
-complex_t pCoherentSum::getVal( const Event& evt, const std::vector<size_t>& cacheAddresses ) const
-{
-  complex_t value( 0., 0. );
-  for ( size_t i = 0; i < m_matrixElements.size(); ++i )
-    value += m_matrixElements[i].coefficient * evt.getCache( cacheAddresses[i] );
-  return value;
+std::vector<std::vector<FitFraction> > pCoherentSum::fitFractions(const LinearErrorPropagator& linProp){
+    outputFractionsA = m_A.fitFractions(linProp);
+    
+    outputFractionsC = m_C.fitFractions(linProp);
+    
+    std::vector<std::vector<FitFraction> > outputFractions;   
+    outputFractions.push_back(outputFractionsA);
+    
+    outputFractions.push_back(outputFractionsC);
+    
+    return outputFractions;
 }

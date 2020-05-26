@@ -222,6 +222,7 @@ int main( int argc, char* argv[] )
     std::vector<EventList> TagInt;
     std::vector<EventType> SigType;
     std::vector<EventType> TagType;
+    std::vector<std::string> sumFactors;
     double LL_comb_sum = 0;
     std::vector<double> LL_tags;
     for (int i=0; i < tags.size(); i++){
@@ -250,6 +251,7 @@ int main( int argc, char* argv[] )
         TagInt.push_back(tagMCevents_tag);
         SigType.push_back(sigevents_tag.eventType());
         TagType.push_back(tagevents_tag.eventType());
+        sumFactors.push_back("Psi3770");
 
       auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), *MPS_tag);
       cs_tag.setEvents(sigevents_tag, tagevents_tag);
@@ -265,7 +267,7 @@ int main( int argc, char* argv[] )
       INFO("LL for "<<tagName<<" = "<<LL_tag);
     }
 
-    CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS);
+    CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS, sumFactors);
     INFO("Making Combined Minimiser object");
     Minimiser combMini = Minimiser(combLL, &MPS);
     combMini.prepare();

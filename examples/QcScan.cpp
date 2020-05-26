@@ -144,6 +144,7 @@ auto findParam = MPS.find(scanName);
  std::vector<EventList> TagInt;
  std::vector<EventType> SigType;
  std::vector<EventType> TagType;
+ std::vector<std::string> sumFactors;
 
   std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > totalLL;
  for( auto& tag : tags )
@@ -194,6 +195,7 @@ auto findParam = MPS.find(scanName);
    TagInt.push_back(tagMCEvents);
    SigType.push_back(signalType);
    TagType.push_back(tagType);
+   sumFactors.push_back("Psi3770");
    
     
     pCorrelatedSum cs(signalType, tagType, MPS);
@@ -246,7 +248,7 @@ auto findParam = MPS.find(scanName);
     scanfile.close();
  } 
 
-  CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS);
+  CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS, sumFactors);
 
   auto combLL2 = SumLL<CorrelatedLL<EventList, pCorrelatedSum&>>(totalLL);
   //INFO("CombLL2 = "<<combLL2.getVal());

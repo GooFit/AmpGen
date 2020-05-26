@@ -57,6 +57,90 @@ namespace AmpGen
             fillEventList( pdf, list, N, []( const Event& /*evt*/ ) { return 1; } );
           }
 
+
+        template <class PDF>
+          void fillEventList( PDF& pdf, EventList& list, const size_t& N , bool reset)
+          {
+            fillEventList( pdf, list, N, []( const Event& /*evt*/ ) { return 1; } , reset);
+          }
+
+        template <class PDF, class HARD_CUT>
+          void fillEventList( PDF& pdf, EventList& list, const size_t& N, HARD_CUT cut, bool reset )
+          {
+            if ( m_rnd == nullptr ) {
+              ERROR( "Random generator not set!" );
+              return;
+            }
+            double maxProb   = m_normalise ? 0 : 1;
+            auto size0       = list.size();
+            auto tStartTotal = std::chrono::high_resolution_clock::now();
+            if (reset){
+            pdf.reset( true );
+            }
+            ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__) );
+            ProfileClock t_phsp, t_eval, t_acceptReject;
+            std::vector<bool> efficiencyReport(m_generatorBlock,false); 
+            
+            while ( list.size() - size0 < N ) {
+              EventList mc( m_eventType );
+              t_phsp.start();
+              fillEventListPhaseSpace( mc, m_generatorBlock, pdf.size(), cut );
+              t_phsp.stop();
+              t_eval.start();
+              pdf.setEvents( mc );
+              
+              pdf.prepare();
+              t_eval.stop();
+              if ( maxProb == 0 ) {
+                double max = 0;
+                for ( auto& evt : mc ) {
+                  double value           = pdf.prob_unnormalised(evt) / evt.genPdf();
+                  if ( value > max ) max = value;
+                }
+                maxProb = max * 1.5;
+                INFO( "Setting normalisation constant = " << maxProb );
+              }
+              auto previousSize = list.size();
+              t_acceptReject.start();
+              #ifdef _OPENMP
+              #pragma omp parallel for
+              #endif
+              for ( size_t i=0; i < mc.size(); ++i ) 
+                mc[i].setGenPdf(pdf.prob_unnormalised(mc[i]) / mc[i].genPdf());
+
+              for( size_t i=0; i != mc.size(); ++i )
+              { 
+                auto& evt = mc[i];
+                if ( evt.genPdf() > maxProb ) {
+                  std::cout << std::endl; 
+                  WARNING( "PDF value exceeds norm value: " << evt.genPdf() << " > " << maxProb );
+                }
+                if ( evt.genPdf() > maxProb * m_rnd->Rndm() ){
+                  list.push_back(evt);
+                  efficiencyReport[i] = true; 
+                }
+                else efficiencyReport[i] = false; 
+                if ( list.size() - size0 == N ) break;
+              }
+              m_gps.provideEfficiencyReport( efficiencyReport );
+              t_acceptReject.stop();
+              double time = std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tStartTotal ).count();
+              double efficiency = 100. * ( list.size() - previousSize ) / (double)m_generatorBlock;
+              pb.print( double(list.size()) / double(N), " ε[gen] = " + mysprintf("%.4f",efficiency) + "% , " + std::to_string(int(time/1000.))  + " seconds" );
+              if ( list.size() == previousSize ) {
+                ERROR( "No events generated, PDF: " << typeof<PDF>() << " is likely to be malformed" );
+                break;
+              }
+//              maxProb = 0;
+            } 
+            pb.finish();
+            double time = std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - tStartTotal ).count();
+            INFO( "Generated " << N << " events in " << time     << " ms" );
+            INFO( "Generating phase space : " << t_phsp          << " ms"); 
+            INFO( "Evaluating PDF         : " << t_eval          << " ms"); 
+            INFO( "Doing accept/reject    : " << t_acceptReject  << " ms"); 
+          }
+
         template <class PDF, class HARD_CUT>
           void fillEventList( PDF& pdf, EventList& list, const size_t& N, HARD_CUT cut )
           {
@@ -79,6 +163,7 @@ namespace AmpGen
               t_phsp.stop();
               t_eval.start();
               pdf.setEvents( mc );
+              
               pdf.prepare();
               t_eval.stop();
               if ( maxProb == 0 ) {
