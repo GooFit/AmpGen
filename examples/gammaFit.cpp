@@ -8,6 +8,7 @@
 #include "AmpGen/SimPDF.h"
 #include "AmpGen/SumPDF.h"
 #include "AmpGen/CombCorrLL.h"
+#include "AmpGen/CombGamCorrLL.h"
 #include "AmpGen/CombLL.h"
 #include "AmpGen/MetaUtils.h"
 #include <typeinfo>
@@ -155,100 +156,6 @@ int main( int argc, char* argv[] )
 
 INFO("Doing loop of Fits");
 
- std::vector<EventList> SigData;
- std::vector<EventList> TagData;
- std::vector<EventList> SigInt;
- std::vector<EventList> TagInt;
- std::vector<EventType> SigType;
- std::vector<EventType> TagType;
- std::vector<std::string> sfList;
-
- std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > totalLL;
-// SimFit totalLL;
-
-
-  bool doCorrFit = NamedParameter<bool>("doCorrFit", false);
- if (doCorrFit){
-for (int i=0; i < tags.size(); i++){
-MinuitParameterSet * MPS_tag = new MinuitParameterSet();
-  MPS_tag->loadFromStream();
-  if (makeCPConj){
-    INFO("Making CP conjugate states");
-    add_CP_conjugate(*MPS_tag);
-  }
-    std::stringstream tag_log;
-    auto tagName = split(tags[i],' ')[0];
-    tag_log<<tagName<<"_fit.log";
-    std::stringstream tag_fit;
-    tag_fit<<tagName<<"_plots.root";
-    auto tag_plotName = tag_fit.str();
-    auto tag_logName = tag_log.str();
-
-    auto sigevents_tag = getEvents("signal", pNames, tags[i], dataFile, intFile);
-    auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
-    auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
-    auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
-
-    SigData.push_back(sigevents_tag);
-    TagData.push_back(tagevents_tag);
-    SigInt.push_back(sigMCevents_tag);
-    TagInt.push_back(tagMCevents_tag);
-    SigType.push_back(sigevents_tag.eventType());
-    TagType.push_back(tagevents_tag.eventType());
-    sfList.push_back("Psi3770");
-
-      auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), *MPS_tag, "Psi3770");
-      cs_tag.setEvents(sigevents_tag, tagevents_tag);
-      cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
-      cs_tag.prepare();
-      //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
-      auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag,cs_tag);
-      totalLL.push_back(LL_tag2);
-    if (doTagFit) { 
-      FitResult * fr = Fit(LL_tag2, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, MPS, tag_logName, inits, maxAttempts, repeatFits);
-      doPlots(tag_plotName, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, nBins);
-      fr->writeToFile(tag_logName);
-    }     
-  }
-
-
-
-  if (doCombFit){
-    CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS, sfList);
-    auto combLL2 = SumLL<CorrelatedLL<EventList, pCorrelatedSum&>>(totalLL);
-    INFO("CombCorrLL = "<<combLL.getVal());
-//    auto commLL2 = SumLL(_LLs);
-    INFO("Making Combined Minimiser object");
-//    INFO("totalLL = "<<totalLL.getVal());
-    Minimiser combMini = Minimiser(combLL, &MPS);
-    combMini.gradientTest();
-   // combMini.prepare();
-    INFO("Minimising now");
-    int attempt = 1;
-      combMini.doFit(); 
-      if (repeatFits){
-      if (combMini.status() != 0){
-        INFO("Didn't seem to get a minimum (returned "<<combMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
-      while (attempt < maxAttempts && combMini.status() != 0){
-        INFO("Didn't seem to get a minimum (returned "<<combMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
-        combMini.doFit();
-        attempt++;
-      }
-      }
-      }
-
-    FitResult * fr = new FitResult(combMini); 
-    fr->print();
-    fr->writeToFile(logFile);
-    std::map<std::string, std::vector<double> > fits = getParams(MPS);
-    std::map<std::string, double> pulls = getPulls(fits, inits);
-    for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
-      INFO("Pull = "<<it->first<<" "<<it->second);
-    }
-    writePulls(logFile, pulls);
-   fr->writeToFile(logFile);
- }
- }
 
   auto Btags           = NamedParameter<std::string>("BTagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();
   std::string BDataFile       = NamedParameter<std::string>("BDataFile", "", "Data file for BDecays");
@@ -268,8 +175,8 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
  std::vector<std::string> sfList_B;
  std::vector<int> gammaSigns;
   for (auto& BTag : Btags){
-  MinuitParameterSet * MPS_B = new MinuitParameterSet();
-  MPS_B->loadFromStream();
+ // MinuitParameterSet * MPS_B = new MinuitParameterSet();
+//  MPS_B->loadFromStream();
 
     std::stringstream B_log;
     auto B_Name = split(BTag,' ')[0];
@@ -310,13 +217,13 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
 
     
 
-    auto cs_B = pCoherentSum(BEventType,  *MPS_B, B_Pref , gammaSign);
+    auto cs_B = pCoherentSum(BEventType,  MPS, B_Pref , gammaSign);
     cs_B.setEvents(sigevents_B);
     cs_B.setMC(sigMCevents_B);
     cs_B.prepare();
     //auto LL_B2 = make_likelihood( events_B["signal"], events_B["tag"], false, cs_B);
     auto LL_B = make_likelihood( sigevents_B, cs_B);
-    Minimiser mini_B = Minimiser(LL_B, MPS_B);
+    Minimiser mini_B = Minimiser(LL_B, &MPS);
 
     if (doBScan){
     std::stringstream ss_B;
@@ -325,7 +232,7 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
 
     std::ofstream scanfile;
     scanfile.open(scanOutput_B, std::ios_base::app);
-    auto param = (*MPS_B)[scanName];
+    auto param = MPS[scanName];
     double minimum=param->minInit();
     double maximum=param->maxInit();
     double val = minimum;
@@ -356,26 +263,26 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     }    
 
 if (doBFit){
-   FitResult * fr_B = Fit(LL_B, cs_B, sigevents_B, sigMCevents_B, *MPS_B, B_logName, inits, maxAttempts, repeatFits);
+   FitResult * fr_B = Fit(LL_B, cs_B, sigevents_B, sigMCevents_B, MPS, B_logName, inits, maxAttempts, repeatFits);
 
       doPlots(B_plotName, cs_B, sigevents_B, sigMCevents_B,nBins);
  //   doPlots(B_plotName, cs_B, sigevents_B, tagevents_B, sigMCevents_B, tagMCevents_B, nBins);
   //  fr_B->writeToFile(B_logName);
 }
+MPS.resetToInit();
 
 
 
 
-  delete MPS_B;
   }      
-  MinuitParameterSet * MPS_B = new MinuitParameterSet();
-  MPS_B->loadFromStream();
+//  MinuitParameterSet * MPS_B = new MinuitParameterSet();
+  //MPS_B->loadFromStream();
 
 
   INFO("Doing combined fit for B");
-  CombLL combLL_B = CombLL(SigData_B, SigInt_B, SigType_B, *MPS_B, sfList_B, gammaSigns);
+  CombLL combLL_B = CombLL(SigData_B, SigInt_B, SigType_B, MPS, sfList_B, gammaSigns);
 
-  Minimiser combMini_B = Minimiser(combLL_B, MPS_B);
+  Minimiser combMini_B = Minimiser(combLL_B, &MPS);
     combMini_B.gradientTest();
 
 
@@ -388,7 +295,7 @@ if (doBFit){
 
     std::ofstream scanfile;
     scanfile.open(scanOutput_comb, std::ios_base::app);
-    auto param = (*MPS_B)[scanName];
+    auto param = MPS[scanName];
     double minimum=param->minInit();
     double maximum=param->maxInit();
     double val = minimum;
@@ -434,7 +341,7 @@ if (doBFit){
     FitResult * fr_B = new FitResult(combMini_B); 
     fr_B->print();
     fr_B->writeToFile(logFile);
-    std::map<std::string, std::vector<double> > fits_B = getParams(*MPS_B);
+    std::map<std::string, std::vector<double> > fits_B = getParams(MPS);
     std::map<std::string, double> pulls_B = getPulls(fits_B, inits);
     for(map<std::string, double >::iterator it = pulls_B.begin(); it != pulls_B.end(); ++it) {
       INFO("Pull = "<<it->first<<" "<<it->second);
@@ -442,6 +349,156 @@ if (doBFit){
     writePulls(BlogFile, pulls_B);
    fr_B->writeToFile(BlogFile);
     }
+
+MPS.resetToInit();
+ std::vector<EventList> SigData;
+ std::vector<EventList> TagData;
+ std::vector<EventList> SigInt;
+ std::vector<EventList> TagInt;
+ std::vector<EventType> SigType;
+ std::vector<EventType> TagType;
+ std::vector<std::string> sfList;
+
+ std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > totalLL;
+// SimFit totalLL;
+
+
+  bool doCorrFit = NamedParameter<bool>("doCorrFit", false);
+ if (doCorrFit){
+for (int i=0; i < tags.size(); i++){
+//MinuitParameterSet * MPS_tag = new MinuitParameterSet();
+ // MPS_tag->loadFromStream();
+  if (makeCPConj){
+    INFO("Making CP conjugate states");
+    add_CP_conjugate(MPS);
+  }
+    std::stringstream tag_log;
+    auto tagName = split(tags[i],' ')[0];
+    tag_log<<tagName<<"_fit.log";
+    std::stringstream tag_fit;
+    tag_fit<<tagName<<"_plots.root";
+    auto tag_plotName = tag_fit.str();
+    auto tag_logName = tag_log.str();
+
+    auto sigevents_tag = getEvents("signal", pNames, tags[i], dataFile, intFile);
+    auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
+    auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
+    auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
+
+    SigData.push_back(sigevents_tag);
+    TagData.push_back(tagevents_tag);
+    SigInt.push_back(sigMCevents_tag);
+    TagInt.push_back(tagMCevents_tag);
+    SigType.push_back(sigevents_tag.eventType());
+    TagType.push_back(tagevents_tag.eventType());
+    sfList.push_back("Psi3770");
+
+      auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), MPS, "Psi3770");
+      cs_tag.setEvents(sigevents_tag, tagevents_tag);
+      cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
+      cs_tag.prepare();
+      //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
+      auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag,cs_tag);
+      totalLL.push_back(LL_tag2);
+    if (doTagFit) { 
+      FitResult * fr = Fit(LL_tag2, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, MPS, tag_logName, inits, maxAttempts, repeatFits);
+      doPlots(tag_plotName, cs_tag, sigevents_tag, tagevents_tag, sigMCevents_tag, tagMCevents_tag, nBins);
+      fr->writeToFile(tag_logName);
+    }     
+
+MPS.resetToInit();
+  }
+
+
+
+MPS.resetToInit();
+  if (doCombFit){
+    CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS, sfList);
+    auto combLL2 = SumLL<CorrelatedLL<EventList, pCorrelatedSum&>>(totalLL);
+    INFO("CombCorrLL = "<<combLL.getVal());
+//    auto commLL2 = SumLL(_LLs);
+    INFO("Making Combined Minimiser object");
+//    INFO("totalLL = "<<totalLL.getVal());
+    Minimiser combMini = Minimiser(combLL, &MPS);
+    combMini.gradientTest();
+   // combMini.prepare();
+    INFO("Minimising now");
+    int attempt = 1;
+      combMini.doFit(); 
+      if (repeatFits){
+      if (combMini.status() != 0){
+        INFO("Didn't seem to get a minimum (returned "<<combMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
+      while (attempt < maxAttempts && combMini.status() != 0){
+        INFO("Didn't seem to get a minimum (returned "<<combMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
+        combMini.doFit();
+        attempt++;
+      }
+      }
+      }
+
+    FitResult * fr = new FitResult(combMini); 
+    fr->print();
+    fr->writeToFile(logFile);
+    std::map<std::string, std::vector<double> > fits = getParams(MPS);
+    std::map<std::string, double> pulls = getPulls(fits, inits);
+    for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
+      INFO("Pull = "<<it->first<<" "<<it->second);
+    }
+    writePulls(logFile, pulls);
+   fr->writeToFile(logFile);
+  }
+
+MPS.resetToInit();
+    bool doGamCorrFit = NamedParameter<bool>("doGamCorrFit", true);
+    
+    std::string logFileTot = NamedParameter<std::string>("logFileTot", "totalFit.log");
+    if (doGamCorrFit){
+
+  //  CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS, sfList);
+//    CombLL combLL_B = CombLL(SigData_B, SigInt_B, SigType_B, *MPS_B, sfList_B, gammaSigns);
+    CombGamCorrLL totLL = CombGamCorrLL(SigData, TagData, SigData_B, SigInt, TagInt, SigInt_B, SigType, TagType, SigType_B, MPS, sfList, gammaSigns);
+ INFO("CombGamCorrLL = "<<totLL.getVal());
+//    auto commLL2 = SumLL(_LLs);
+    INFO("Making Combined Minimiser object");
+//    INFO("totalLL = "<<totalLL.getVal());
+    Minimiser totMini = Minimiser(totLL, &MPS);
+    totMini.gradientTest();
+   // combMini.prepare();
+    INFO("Minimising now");
+    int attempt = 1;
+      totMini.doFit(); 
+      if (repeatFits){
+      if (totMini.status() != 0){
+        INFO("Didn't seem to get a minimum (returned "<<totMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
+      while (attempt < maxAttempts && totMini.status() != 0){
+        INFO("Didn't seem to get a minimum (returned "<<totMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
+        totMini.doFit();
+        attempt++;
+      }
+      }
+      }
+
+    FitResult * frTot = new FitResult(totMini); 
+    frTot->print();
+    frTot->writeToFile(logFileTot);
+    std::map<std::string, std::vector<double> > fitsTot = getParams(MPS);
+    std::map<std::string, double> pullsTot = getPulls(fitsTot, inits);
+    for(map<std::string, double >::iterator it = pullsTot.begin(); it != pullsTot.end(); ++it) {
+      INFO("Pull = "<<it->first<<" "<<it->second);
+    }
+    writePulls(logFileTot, pullsTot);
+
+   frTot->writeToFile(logFileTot);
+    INFO("Writing logfile to "<<logFileTot);
+
+    }
+
+
+ }
+ 
+
+
+
   return 0;
 }
 
