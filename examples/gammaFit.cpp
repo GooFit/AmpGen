@@ -274,7 +274,8 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     std::stringstream B_log;
     auto B_Name = split(BTag,' ')[0];
     auto B_Pref = split(BTag, ' ')[1];
-    int gammaSign = std::stoi(split(BTag,' ')[2]);
+    int B_Conj = std::stoi(split(BTag, ' ')[2]);
+    int gammaSign = std::stoi(split(BTag,' ')[3]);
     B_log<<B_Name<<"_fit.log";
     std::stringstream B_fit;
     B_fit<<B_Name<<"_plots.root";
@@ -294,6 +295,10 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
 
     EventType BEventType = EventType(pNames);
 
+    if (B_Conj == 1){
+      BEventType = BEventType.conj(true);
+    }
+
     EventList sigevents_B = EventList(BDataName, BEventType);
     EventList sigMCevents_B = EventList(BIntName, BEventType);
         
@@ -303,7 +308,9 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     sfList_B.push_back(B_Pref);
     gammaSigns.push_back(gammaSign);
 
-    auto cs_B = pCoherentSum(sigevents_B.eventType(),  *MPS_B, B_Pref , gammaSign);
+    
+
+    auto cs_B = pCoherentSum(BEventType,  *MPS_B, B_Pref , gammaSign);
     cs_B.setEvents(sigevents_B);
     cs_B.setMC(sigMCevents_B);
     cs_B.prepare();
