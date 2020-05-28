@@ -29,7 +29,6 @@ There is at the time of writing only a master branch (FIXME)
 ##### Build requirements:
 * cmake >= 3.11.0
 * C++ compiler with CXX standard >= 17 (gcc >= 8)
-  Defaults to Cxx17
 * ROOT >= 6 with MathMore
   To (re)configure root with these options, use the additional command line options `-Dcxx14 -Dmathmore=ON` when configuring the installation of ROOT.
 
@@ -39,6 +38,7 @@ There is at the time of writing only a master branch (FIXME)
 * OpenMP for multithreading
 * ROOT >= 6 with MathMore and Minuit2 enabled. The external version of Minuit2 provided as an external package of GooFit is used if the ROOT version is not unavailable.
   To (re)configure root with these options, use the additional command line options `-Dminuit2=ON -Dmathmore=ON` when configuring the installation of ROOT.
+* libmvec for vectorised math operations 
 
 #### Building
 The configuration of the AmpGen build is performed by cmake.
@@ -81,7 +81,16 @@ In order to build stand-alone on LXPLUS, you will need a valid development envir
 source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_94python3 x86_64-centos7-gcc8-opt
 ```
 The LCG versions and CMTCONFIG may need to be updated over time. 
-The ROOT versions installed on cvmfs generally require C++17 support when building, i.e. when running cmake add the option `-DCMAKE_CXX_STANDARD=17`.
+
+#### Using AVX 
+
+AmpGen (v > 2.0) can be setup to generate vectorised code for faster evaluation of amplitudes / computation of integrals on compatible hardware. 
+Such extensions can be enabled by setting the flag 
+```
+_DUSE_SIMD=AVX2d
+```  
+Which indicates that code should be generated using the AVX2 instruction set using double precision. 
+Single precision is also supported, but not recommended for fitting. 
 
 ### Options files and decay descriptors
 

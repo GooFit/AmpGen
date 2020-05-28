@@ -68,8 +68,10 @@ namespace AmpGen {
     }
     template <class simd_type, class value_type> bool all_of( const simd_type& obj, const value_type& v )
     {
-      if constexpr( ! is_vector_type<simd_type>::value ) return obj == v;
-      else return _mm256_movemask_pd( obj == v ) == 0xF;
+      if constexpr( size<simd_type>::value == 1 ) return obj == v;
+      if constexpr( size<simd_type>::value == 4 ) return _mm256_movemask_pd( obj == v ) == 0xF;
+      if constexpr( size<simd_type>::value == 8 ) return _mm256_movemask_ps( obj == v ) == 0xFF;
+      return false; 
     }
     template <class simd_type> bool all_of( const simd_type& obj)
     {

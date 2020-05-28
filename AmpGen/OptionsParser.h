@@ -28,7 +28,6 @@ namespace AmpGen
     iterator end();
     const_iterator begin() const;
     const_iterator end() const;
-  
   private:
     std::map<std::string,std::vector<std::string>>   m_parsedLines; 
     bool m_printHelp = {false};  

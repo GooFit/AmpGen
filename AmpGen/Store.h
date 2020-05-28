@@ -132,6 +132,8 @@ namespace AmpGen {
         //auto& [p0, s] = f->second; /// bug in the C++ standard. Such fun. 
         auto p0 = f->second.first;
         auto s  = f->second.second; 
+        DEBUG("Updating: " << fcn.name() << " index = " << p0 << " size_of = " << s << " on store: " << size() << " blocks = " << nBlocks() << " fields = " << nFields () ); 
+        
         if constexpr( std::is_same< typename functor_type::return_type, void >::value ) 
         {
           
@@ -165,9 +167,12 @@ namespace AmpGen {
       std::map<std::string, std::pair<unsigned, unsigned>> m_index; 
   };
 }
-// using aos_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::AoS>;
-// using soa_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::SoA>;
-// 
-// ENABLE_DEBUG(aos_store)
-// ENABLE_DEBUG(soa_store)
+#if DEBUG_LEVEL ==1 
+using aos_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::AoS>;
+using soa_store = AmpGen::Store<AmpGen::complex_v, AmpGen::Alignment::SoA>;
+
+ENABLE_DEBUG(aos_store)
+ENABLE_DEBUG(soa_store)
+#endif
+
 #endif

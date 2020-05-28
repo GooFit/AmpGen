@@ -54,7 +54,7 @@ void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, 
   std::ofstream output( filename );
   for ( auto& include : m_includes ) output << "#include <" << include << ">\n";
   if( expression.fcnSignature().find("AVX2d")        != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
-  else if( expression.fcnSignature().find("AVX2")    != std::string::npos )  output << "#include \"AmpGen/simd/avx2_types.h\"\n; using namespace AmpGen::AVX2;\n;" ;
+  else if( expression.fcnSignature().find("AVX2f")    != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
   else if( expression.fcnSignature().find("AVX512d") != std::string::npos )  output << "#include \"AmpGen/simd/avx512d_types.h\"\n; using namespace AmpGen::AVX512d;\n;" ;
   else if( expression.fcnSignature().find("AVX512")  != std::string::npos )  output << "#include \"AmpGen/simd/avx512_types.h\"\n; using namespace AmpGen::AVX512;\n;" ;
   output << expression << std::endl; 
