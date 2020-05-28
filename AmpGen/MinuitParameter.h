@@ -73,7 +73,7 @@ namespace AmpGen
     MinuitProxy(MinuitParameter* param = nullptr, const double& value=0) : m_parameter(param), m_value(value) { update(); }
     MinuitParameter* operator->() { return m_parameter; }
     const MinuitParameter* operator->() const { return m_parameter; }
-src/EventType.cpp  private:
+  private:
     MinuitParameter* m_parameter{nullptr};
     double m_value;
   };
