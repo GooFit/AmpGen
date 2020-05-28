@@ -35,7 +35,9 @@
 using namespace AmpGen;
 using namespace std::complex_literals; 
 
-// ENABLE_DEBUG( PolarisedSum )
+#if DEBUGLEVEL == 1  
+  ENABLE_DEBUG( PolarisedSum )
+#endif
 
 namespace AmpGen { make_enum(spaceType, spin, flavour) }
 
@@ -202,9 +204,10 @@ void   PolarisedSum::prepare()
   for_each_sequence(m_matrixElements.begin(), m_matrixElements.end(), flagUpdate, updateData, updateInteg); 
   if( m_integrator.isReady() ) updateNorms();
   std::for_each( m_matrixElements.begin(), m_matrixElements.end(), resetFlags );
-//  if( m_nCalls % 10000 == 0 ) debug_norm();
+  if constexpr( detail::debug_type<PolarisedSum>::value )
+  if( m_nCalls % 10000 == 0 ) debug_norm();
   m_pdfCache.update(m_cache, m_probExpression); 
-  DEBUG( "m_pdfCache[0] = " << m_pdfCache[0] << " w/o caching = " << (m_weight/m_norm) * getValNoCache(m_events->at(0)));
+  DEBUG( "m_pdfCache[0] = " << utils::at(m_pdfCache[0],0) << " w/o caching = " << getValNoCache(m_events->at(0)) << " w = " << m_weight << " N = " << m_norm );
   m_nCalls++; 
 }
 
@@ -223,6 +226,7 @@ double PolarisedSum::operator()( const double*, const unsigned index ) const
 
 void PolarisedSum::debug_norm()
 {
+  if( !m_integrator.isReady() ) return; 
   double norm_slow = 0;
   for( auto& evt : *m_integrator.events<EventList_type>() ) 
     norm_slow += evt.weight() * getValNoCache(evt) / evt.genPdf();
@@ -275,9 +279,8 @@ Tensor PolarisedSum::transitionMatrix()
 
 real_t PolarisedSum::operator()(const Event& evt) const 
 {   
-  return utils::at( m_pdfCache[ evt.index() / utils::size<float_v>::value ], evt.index() % utils::size<float_v>::value );
+  return (m_weight/m_norm) * utils::at( m_pdfCache[ evt.index() / utils::size<float_v>::value ], evt.index() % utils::size<float_v>::value );
 }
-
 
 double PolarisedSum::norm() const 
 {

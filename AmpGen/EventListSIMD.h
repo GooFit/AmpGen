@@ -67,7 +67,7 @@ namespace AmpGen
     float_v weight(const unsigned& p) const { return m_weights[p]; }
     float_v genPDF(const unsigned& p) const { return m_genPDF[p]; }
     
-    void setWeight( const unsigned& block, const float_v& w, const float_v& g=1)
+    void setWeight( const unsigned& block, const float_v& w, const float_v& g=1.f)
     {
       m_weights[block] = w;
       m_genPDF[block] = g;
@@ -75,8 +75,8 @@ namespace AmpGen
     void resize( const unsigned nEvents )
     {
       m_data = Store<float_v, Alignment::AoS>( nEvents, m_eventType.eventSize() );
-      m_weights.resize( aligned_size(), 1);
-      m_genPDF.resize( aligned_size(), 1 );
+      m_weights.resize( aligned_size(), 1.f);
+      m_genPDF.resize( aligned_size(), 1.f );
     }
     const Event operator[]( const size_t&) const;
     std::array<Event, utils::size<float_v>::value> scatter(unsigned) const;

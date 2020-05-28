@@ -7,7 +7,7 @@
 namespace utf = boost::unit_test;
 
 
-#if ENABLE_AVX
+#if ENABLE_AVX2d
 #include "AmpGen/simd/utils.h"
 
 using namespace AmpGen; 

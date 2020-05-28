@@ -20,12 +20,15 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Units.h"
 #include "AmpGen/Event.h"
+#include "AmpGen/OptionsParser.h"
 
 using namespace AmpGen;
 std::string convertTeXtoROOT(std::string input);
 
 EventType::EventType( const std::vector<std::string>& particleNames, const bool& isTD ) : m_timeDependent( isTD )
 {
+  if ( OptionsParser::printHelp() ) return; 
+
   if ( particleNames.size() < 3 ) { // Mother plus two daughters minimum required
     ERROR( "Not enough particles in event type: " << particleNames[0] << " size =  " << particleNames.size() );
     throw std::runtime_error( "Not enough particles listed in particle names! Was it defined?" );

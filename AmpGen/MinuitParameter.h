@@ -36,7 +36,7 @@ namespace AmpGen
     double errNeg() const;
     double* vp() { return &m_meanResult ; } 
     
-    void setInit( const double& init );
+    void setInit( const double& init, const double& step=-1 );
     void setStepInit( const double& si );
     void setFree() ;
     void scaleStep( const double& sf );
@@ -73,7 +73,7 @@ namespace AmpGen
     MinuitProxy(MinuitParameter* param = nullptr, const double& value=0) : m_parameter(param), m_value(value) { update(); }
     MinuitParameter* operator->() { return m_parameter; }
     const MinuitParameter* operator->() const { return m_parameter; }
-  private:
+src/EventType.cpp  private:
     MinuitParameter* m_parameter{nullptr};
     double m_value;
   };

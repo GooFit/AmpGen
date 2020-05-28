@@ -103,21 +103,21 @@ template <typename pdf_t> void generateEvents( EventList& events
   {
     Generator<PhaseSpace, EventList_t> signalGenerator(events.eventType(), rndm);
     signalGenerator.setBlockSize(blockSize);
-//    signalGenerator.setNormFlag(normalise);
+    signalGenerator.setNormFlag(normalise);
     signalGenerator.fillEventList(pdf, events, nEvents );
   }
   else if( phsp_type == phspTypes::RecursivePhaseSpace )
   {
     Generator<RecursivePhaseSpace, EventList_t> signalGenerator( getTopology(pdf), events.eventType(), rndm );
     signalGenerator.setBlockSize(blockSize);
-//    signalGenerator.setNormFlag(normalise);
+    signalGenerator.setNormFlag(normalise);
     signalGenerator.fillEventList(pdf, events, nEvents);
   }
   else if( phsp_type == phspTypes::TreePhaseSpace )
   {
     Generator<TreePhaseSpace, EventList_t> signalGenerator(getDecayChains(pdf), events.eventType(), rndm);
     signalGenerator.setBlockSize(blockSize);
-//    signalGenerator.setNormFlag(normalise);
+    signalGenerator.setNormFlag(normalise);
     signalGenerator.fillEventList(pdf, events, nEvents );
   }
   else {
@@ -134,26 +134,24 @@ int main( int argc, char** argv )
   size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 5000000, "Number of events to generate per block" );
   int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
   std::string outfile = NamedParameter<std::string>("Output"   , "Generate_Output.root" , "Name of output file" ); 
-  auto pdfType        = NamedParameter<pdfTypes>( "Type", pdfTypes::CoherentSum, optionalHelpString("Generator configuration to use:", 
-    { {"CoherentSum"     , "Full phase-space generator with (pseudo)scalar amplitude"}
-    , {"PolarisedSum"    , "Full phase-space generator with particles carrying spin in the initial/final states"}
-    , {"FixedLib"        , "Full phase-space generator with an amplitude from a precompiled library"}} ) ); 
+  auto pdfType        = NamedParameter<pdfTypes>( "Type", pdfTypes::CoherentSum, optionalHelpString("Type of PDF to use:", 
+    { {"CoherentSum"     , "Describes decays of a (pseudo)scalar particle to N pseudoscalars"}
+    , {"PolarisedSum"    , "Describes the decay of a particle with spin to N particles carrying spin."}
+    , {"FixedLib"        , "PDF to describe a decay from a precompiled library, such as those provided to GAUSS."}} ) ); 
   auto phspType        = NamedParameter<phspTypes>( "PhaseSpace", phspTypes::PhaseSpace, optionalHelpString("Phase-space generator to use:", 
-    { {"CoherentSum"     , "Full phase-space generator with (pseudo)scalar amplitude"}
-    , {"PolarisedSum"    , "Full phase-space generator with particles carrying spin in the initial/final states"}
-    , {"FixedLib"        , "Full phase-space generator with an amplitude from a precompiled library"}} ) ); 
+    { {"PhaseSpace"         , "Phase space generation based on Raubold-Lynchi algorithm (recommended)."}
+    , {"TreePhaseSpace"     , "Divides the phase-space into a series of quasi two-body phase-spaces for efficiently generating narrow states."}
+    , {"RecursivePhaseSpace", "Includes possible quasi-stable particles and the phase spaces of their decay products, such as Λ baryons."}} ) ); 
   std::string lib     = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
   size_t nBins        = NamedParameter<size_t>     ("nBins"     ,100, "Number of bins for monitoring plots." );
 
   #ifdef _OPENMP
     unsigned int concurentThreadsSupported = std::thread::hardware_concurrency();
     unsigned int nCores                    = NamedParameter<unsigned int>( "nCores", concurentThreadsSupported, "Number of cores to use (OpenMP only)" );
-    INFO("Using: " << nCores  << " / " << concurentThreadsSupported  << " threads" );
     omp_set_num_threads( nCores );
     omp_set_dynamic( 0 );
   #endif
 
-  INFO("Writing output: " << outfile );
   TRandom3 rand;
   rand.SetSeed( seed + 934534 );
 
@@ -171,12 +169,19 @@ int main( int argc, char** argv )
   } 
   else eventType = EventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
                   NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
-  
-  if ( NamedParameter<bool>( "conj", false ) == true ) {
+ 
+  bool conj = NamedParameter<bool>("Conj",false, "Flag to generate the CP conjugate amplitude under the assumption of CP conservation");
+  if ( conj == true ) {
     eventType = eventType.conj();
     INFO( eventType );
     AddCPConjugate(MPS);
   }
+  if( OptionsParser::printHelp() ) return 0; 
+  
+  INFO("Writing output: " << outfile );
+  #ifdef _OPENMP
+  INFO("Using: " << nCores  << " / " << concurentThreadsSupported  << " threads" );
+  #endif
 
   INFO("Generating time-dependence? " << eventType.isTimeDependent() );
   EventList accepted( eventType );

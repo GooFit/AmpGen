@@ -9,10 +9,6 @@
 #include <math.h>
 
 #if USE_MVEC
-// extern "C" __m256d _ZGVcN4v_cos(__m256d x);
-// extern "C" __m256d _ZGVcN4v_sin(__m256d x);
-// extern "C" __m256d _ZGVcN4v_exp(__m256d x);                    
-// extern "C" __m256d _ZGVcN4v_log(__m256d x);
 extern "C" void    _ZGVdN4vvv_sincos(__m256d x, __m256i ptrs, __m256i ptrc);
 #endif
 
@@ -188,8 +184,7 @@ namespace AmpGen {
     inline complex_v select(const real_v& mask, const complex_v& a, const real_v& b   ) { return complex_v( select(mask, a.re, b )  , select(mask, a.im, 0.f) ); }
     inline complex_v select(const bool& mask   , const complex_v& a, const complex_v& b ) { return mask ? a : b; }
     inline complex_v exp( const complex_v& v ){ 
-      real_v c, s; 
-      sincos( v.im, c, s );
+      auto [s,c] = sincos( v.im);
       return exp(v.re) * complex_v(c, s);
     }
     inline complex_v sqrt( const complex_v& v )

@@ -411,8 +411,7 @@ Expression Particle::getExpression( DebugSymbols* db, const std::vector<int>& st
       }
     }
     if ( includeSpin && m_spinFormalism == spinFormalism::Canonical ){
-      TransformSequence t = TransformSequence();
-      spinFactor = helicityAmplitude(*this, t, m_props->isBoson() ? polState() : double(polState())/2.0, db);
+      spinFactor = helicityAmplitude(*this, TransformSequence(), m_props->isBoson() ? polState() : double(polState())/2.0, db);
     }
     if( db != nullptr ){
       std::string finalStateString="";
@@ -549,18 +548,18 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
 std::pair<size_t, size_t> Particle::orbitalRange( const bool& conserveParity ) const
 {
   if( m_daughters.size() == 0 ) return {0, 0};
-  if( m_daughters.size() == 1 ) return {0,0};
+  if( m_daughters.size() == 1 ) return {0, 0};
   if( m_daughters.size() != 2 ) {
     ERROR( "L not well defined for nDaughters == " << m_daughters.size() );
     return {999, 998};
   }
   const int S  = m_props->twoSpin();
-  const int s1 = daughter( 0 )->props()->twoSpin();
-  const int s2 = daughter( 1 )->props()->twoSpin();
-  int min                                  = std::abs( S - s1 - s2 );
-  if ( std::abs( S + s1 - s2 ) < min ) min = std::abs( S + s1 - s2 );
-  if ( std::abs( S - s1 + s2 ) < min ) min = std::abs( S - s1 + s2 );
-  int max                                  = S + s1 + s2;
+  const int s1 = daughter(0)->props()->twoSpin();
+  const int s2 = daughter(1)->props()->twoSpin();
+  int min = std::abs( S - s1 - s2 );
+  min     = std::min(min, std::abs( S + s1 - s2 ));
+  min     = std::min(min, std::abs( S - s1 + s2 ));
+  int max = S + s1 + s2;
   min /= 2;
   max /= 2;
   DEBUG( "Range = " << min << " -> " << max << " conserving parity ? " << conserveParity << " J = " << S << " s1= " << s1 << " s2= " << s2 );
