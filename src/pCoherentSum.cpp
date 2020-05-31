@@ -11,7 +11,7 @@ using namespace AmpGen;
 
 pCoherentSum::pCoherentSum() = default; 
 
-pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType, int gamSign):
+pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType, int gamSign, bool useXY):
   m_A(type1, mps),
 
   m_C(type1.conj(NamedParameter<bool>("pCoherentSum::ConjHead", true, "Only Conjugate the head of the EventType")), mps),
@@ -25,6 +25,7 @@ pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps
   m_polyType(NamedParameter<std::string>("pCorrelatedSum::PolyType", "simple")),
   m_mps(mps),
   m_gamSign(gamSign),
+  m_useXY(useXY),
   m_flat(NamedParameter<bool>("pCoherentSum::flat", false, "Force Amplitude=1")),
   m_coherentIntegral(NamedParameter<bool>("pCoherentSum::coherentIntegral", false, "Do the super slow method to calculate normalisation")),
   m_coherentIntegralA(NamedParameter<bool>("pCoherentSum::coherentIntegralA", false, "Do the super slow method to calculate normalisation")),
@@ -409,26 +410,26 @@ real_t pCoherentSum::testnorm() const {
       nC = nCC.real(); 
   }
   
-
+//Note this part might crash - if so replace getVal with getValNoCache but I think its much slower!
 
     for( int i=0 ; i < eventsAC.size(); i++ ) {
 
       if (m_debug) INFO("Getting value for ab");
       if (m_debug) INFO("At "<<i<<" out of "<<eventsAC.size());
     if (m_debug) INFO("m_A matrixElements = "<<m_A.matrixElements().size()<<" long");
-    if (m_debug) INFO("A = "<<m_A.getValNoCache(eventsAC[i]));
-    if (m_debug) INFO("C = "<<m_C.getValNoCache(eventsAC[i]));
+    if (m_debug) INFO("A = "<<m_A.getVal(eventsAC[i]));
+    if (m_debug) INFO("C = "<<m_C.getVal(eventsAC[i]));
 
-      auto ab = m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
+      auto ab = m_A.getVal(eventsAC[i]) * std::conj(m_C.getVal(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
   //    if (std::abs(ab) > 1e3){
     if (m_debug) INFO("ab = "<<ab);
  
     if (m_debug) INFO("Getting value for |a|");
 
-    auto abA = abs(m_A.getValNoCache(eventsAC[i]));
+    auto abA = abs(m_A.getVal(eventsAC[i]));
     if (m_debug) INFO("|a| = "<<abA);
     if (m_debug) INFO("Getting value for |c|");
-    auto abC = abs(m_C.getValNoCache(eventsAC[i]));
+    auto abC = abs(m_C.getVal(eventsAC[i]));
 
     if (m_debug) INFO("|c| = "<<abC);
     
@@ -485,16 +486,16 @@ double pCoherentSum::slowNorm(){
    if (m_debug) INFO("Have "<<eventsAC.size()<< " integration events"); 
     for( int i=0 ; i < eventsAC.size(); i++ ) {
       if (m_debug) INFO("Getting value for ab");
-      auto ab = m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
+      auto ab = m_A.getVal(eventsAC[i]) * std::conj(m_C.getVal(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
   //    if (std::abs(ab) > 1e3){
     if (m_debug) INFO("ab = "<<ab);
  
       if (m_debug) INFO("Getting value for |a|");
 
-      auto abA = abs(m_A.getValNoCache(eventsAC[i]));
+      auto abA = abs(m_A.getVal(eventsAC[i]));
     if (m_debug) INFO("|a| = "<<abA);
       if (m_debug) INFO("Getting value for |c|");
-      auto abC = abs(m_C.getValNoCache(eventsAC[i]));
+      auto abC = abs(m_C.getVal(eventsAC[i]));
 
     if (m_debug) INFO("|c| = "<<abC);
     
@@ -571,9 +572,9 @@ void pCoherentSum::setMC(EventList& list1){
 }
 
 complex_t pCoherentSum::getVal(const Event& evt1) const {
-  complex_t A = m_A.getValNoCache(evt1);
+  complex_t A = m_A.getVal(evt1);
 
-  complex_t C = m_C.getValNoCache(evt1);
+  complex_t C = m_C.getVal(evt1);
 
   complex_t f = correction(evt1);
   

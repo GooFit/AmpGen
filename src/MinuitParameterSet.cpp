@@ -43,6 +43,7 @@ bool MinuitParameterSet::addToEnd( MinuitParameter* parPtr )
   m_parameters.push_back( parPtr );
   if ( m_keyAccess.find( parPtr->name() ) != m_keyAccess.end() ) {
     WARNING( "Parameter with name " << parPtr->name() << " already exists!" );
+    return success;
   }
   m_keyAccess[parPtr->name()] = parPtr;
   return success;

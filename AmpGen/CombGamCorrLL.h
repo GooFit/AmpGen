@@ -44,6 +44,7 @@ namespace AmpGen
         std::vector<pCoherentSum> m_A;
         std::vector<std::string> m_SumFactors;
         std::vector<int> m_gammaSigns;
+        std::vector<bool> m_useXYs;
         
 
 
@@ -64,7 +65,8 @@ namespace AmpGen
 
                    MinuitParameterSet mps,
                    std::vector<std::string> sumFactors,
-                   std::vector<int> gammaSigns):
+                   std::vector<int> gammaSigns,
+                   std::vector<bool> useXYs):
                         m_SigData(SigData),
                         m_TagData(TagData),
                         m_GamData(GamData),
@@ -80,11 +82,12 @@ namespace AmpGen
                         m_mps(mps),
                         m_SumFactors(sumFactors),
                         m_gammaSigns(gammaSigns),
-                        m_debug(NamedParameter<bool>("CombLL::Debug", false, "Debug CombLL"))
+                        m_useXYs(useXYs),
+                        m_debug(NamedParameter<bool>("CombGamCorrLL::Debug", false, "Debug CombLL"))
                         {
                             std::vector<pCoherentSum> pCS = {};
                             for (auto i=0; i < m_GamData.size() ; i++){
-                                pCoherentSum _pCS = pCoherentSum(m_GamType[i], m_mps, m_SumFactors[i], m_gammaSigns[i]);
+                                pCoherentSum _pCS = pCoherentSum(m_GamType[i], m_mps, m_SumFactors[i], m_gammaSigns[i], m_useXYs[i]);
                                 _pCS.setEvents(m_GamData[i]);
                                 _pCS.setMC(m_GamInt[i]);
                                 _pCS.prepare();
@@ -109,6 +112,9 @@ namespace AmpGen
                 auto _LL =  make_likelihood( m_SigData[i], m_TagData[i], m_Psi[i]);
             return _LL.getVal();
 
+        }
+        MinuitParameterSet getMPS(){
+            return m_mps;
         }
 
         double LL_Gam(int i){

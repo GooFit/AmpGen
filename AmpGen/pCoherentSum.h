@@ -113,7 +113,7 @@ class pCoherentSum {
     public:
       //Takes amplitudes - 
         pCoherentSum();
-        pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType="Psi3770", int gamSign=1);
+        pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType="Psi3770", int gamSign=1, bool useXY=false);
         virtual ~pCoherentSum()=default;
 
 
@@ -162,6 +162,47 @@ class pCoherentSum {
             return -1;
         }
         else{
+
+            if (m_useXY){
+        double x = 0;
+        double y = 0;
+
+        std::stringstream ss_key_x;
+        std::stringstream ss_key_y;
+       
+       if (m_gamSign == 1){
+
+        ss_key_x<<"pCoherentSum::"<<m_SFType<<"x+";
+        ss_key_y<<"pCoherentSum::"<<m_SFType<<"y+";
+       }
+       else{
+
+        ss_key_x<<"pCoherentSum::"<<m_SFType<<"x-";
+        ss_key_y<<"pCoherentSum::"<<m_SFType<<"y-";
+       }
+
+        std::string key_x = ss_key_x.str();
+        std::string key_y = ss_key_y.str();
+
+
+        if (m_debug) INFO("Key for x = "<<key_x);
+        if (m_debug) INFO("Key for y = "<<key_y);
+
+
+        auto mps_x = m_mps.find(key_x);
+        auto mps_y = m_mps.find(key_y);
+
+        x = mps_x->mean();
+        y = mps_y->mean();
+        complex_t sumFactor = x + Constant(0, 2)() * y;
+        return sumFactor;
+
+
+
+
+            }
+else{
+
         double r = 0;
         double d = 0;
         double g = 0;
@@ -205,6 +246,7 @@ class pCoherentSum {
 
         complex_t sumFactor = exp(Constant(0, 1)() * (g + d)) * r;
         return sumFactor;
+        }
         }
         
     }
@@ -406,6 +448,7 @@ class pCoherentSum {
 
         bool m_sameTag;
         bool m_flat;
+        bool m_useXY;
   };
 }
 #endif
