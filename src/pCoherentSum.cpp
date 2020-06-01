@@ -269,11 +269,11 @@ for (int i=0; i<eventsAC.size(); i++){
 
     
     for( int i=0 ; i < eventsAC.size(); i++ ) {
-      auto ab = m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
+      auto ab = m_A.getVal(eventsAC[i]) * std::conj(m_C.getVal(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
   //    if (std::abs(ab) > 1e3){
  
-      auto abA = abs(m_A.getValNoCache(eventsAC[i]));
-      auto abC = abs(m_C.getValNoCache(eventsAC[i]));
+      auto abA = abs(m_A.getVal(eventsAC[i]));
+      auto abC = abs(m_C.getVal(eventsAC[i]));
     
       if (abA>1e10 || abC>1e10){
   //      INFO("A or C too large?");

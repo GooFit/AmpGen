@@ -32,6 +32,7 @@ void corrFit();
 
 
 void Scan2D();
+void do_CGFit();
 
 CombGamCorrLL make_comb();
 
@@ -1184,11 +1185,34 @@ void Scan2D(){
     param1->setCurrentFitVal(min1 + i*step1);
     for (int j=0; j<n2; j++){
       param2->setCurrentFitVal(min2 + j*step2);
-    }
+
     os << param1->mean() << '\t' << param2->mean() << '\t' << comb.getVal() << '\n';
     INFO(param1->mean() << '\t' << param2->mean() << '\t' << comb.getVal());
+    }
   }
  
  os.close();
+
+}
+
+
+void do_CGFit()
+{
+  auto LL = make_comb();
+  auto mps = LL.getMPS();
+  auto mini = Minimiser(LL, &mps);
+  mini.gradientTest();
+  int attempt = 1;
+  int maxAttempts = NamedParameter<int>("maxAttempts", 5);
+  mini.doFit();
+  while (attempt < maxAttempts && mini.status() != 0)
+  {
+    mini.doFit();
+  }
+  auto fr = FitResult(mini);
+  std::string logFile = NamedParameter<std::string>("CGLogFile", "CorrGamCombFit.log");
+  fr.writeToFile(logFile);
+ 
+
 
 }
