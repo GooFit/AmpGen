@@ -1187,9 +1187,8 @@ void Scan2D(){
     for (int j=0; j<n2; j++){
       param2->setCurrentFitVal(min2 + j*step2);
 
-//    os << param1->mean() << '\t' << param2->mean() << '\t' << comb.getVal() << '\n';
-//    INFO(param1->mean() << '\t' << param2->mean() << '\t' << comb.getVal());
-    INFO(param1->mean() << '\t' << param2->mean());
+    os << param1->mean() << '\t' << param2->mean() << '\t' << comb.getVal() << '\n';
+    INFO(param1->mean() << '\t' << param2->mean() << '\t' << comb.getVal());
     }
   }
  
