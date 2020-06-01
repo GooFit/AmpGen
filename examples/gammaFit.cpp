@@ -114,7 +114,8 @@ int main( int argc, char* argv[] )
     bool doProjections = NamedParameter<bool>("doProjections", true);
     bool doPCorrSum = NamedParameter<bool>("doPCorrSum", false);
 //    bool doCombFit = NamedParameter<bool>("doCombFit", false, "Do a combined fit of 3 tags - at the moment this is hard coded for now");
-
+  bool doCGFit = NamedParameter<bool>("doCGFit", true);
+  bool doCGScan = NamedParameter<bool>("doCGScan", false);
 
   /* Parameters that have been parsed can be accessed anywhere in the program 
      using the NamedParameter<T> class. The name of the parameter is the first option,
@@ -125,15 +126,15 @@ int main( int argc, char* argv[] )
   omp_set_num_threads( nThreads );
   if (m_debug) INFO( "Setting " << nThreads << " fixed threads for OpenMP" );
   omp_set_dynamic( 0 );
-#endif
+  #endif
 
+  if (doCGFit){
+    do_CGFit();
+  }
+  if (doCGScan){
+    Scan2D();
+  }
 
-  //auto yc = DTYieldCalculator(crossSection);
-//auto fs = std::vector<std::function<double(void)> > {};
-
-//doBFit();
-//auto LL = make_comb();
-Scan2D();
 
 
   // SimFit totalLL;
