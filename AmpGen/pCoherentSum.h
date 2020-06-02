@@ -164,38 +164,66 @@ class pCoherentSum {
         else{
 
             if (m_useXY){
-        double x = 0;
-        double y = 0;
+        double xp = 0;
+        double yp = 0;
 
-        std::stringstream ss_key_x;
-        std::stringstream ss_key_y;
+        double xm = 0;
+        double ym = 0;
+
+
+
+        std::stringstream ss_key_xm;
+        std::stringstream ss_key_ym;
+        std::stringstream ss_key_xp;
+        std::stringstream ss_key_yp;
        
-       if (m_gamSign == 1){
-
-        ss_key_x<<"pCoherentSum::"<<m_SFType<<"x+";
-        ss_key_y<<"pCoherentSum::"<<m_SFType<<"y+";
-       }
-       else{
-
-        ss_key_x<<"pCoherentSum::"<<m_SFType<<"x-";
-        ss_key_y<<"pCoherentSum::"<<m_SFType<<"y-";
-       }
-
-        std::string key_x = ss_key_x.str();
-        std::string key_y = ss_key_y.str();
 
 
-        if (m_debug) INFO("Key for x = "<<key_x);
-        if (m_debug) INFO("Key for y = "<<key_y);
+        ss_key_xp<<"pCoherentSum::"<<m_SFType<<"x+";
+        ss_key_yp<<"pCoherentSum::"<<m_SFType<<"y+";
 
 
-        auto mps_x = m_mps.find(key_x);
-        auto mps_y = m_mps.find(key_y);
 
-        x = mps_x->mean();
-        y = mps_y->mean();
-        complex_t sumFactor = x + Constant(0, 2)() * y;
-        return sumFactor;
+        ss_key_xm<<"pCoherentSum::"<<m_SFType<<"x-";
+        ss_key_ym<<"pCoherentSum::"<<m_SFType<<"y-";
+
+
+        std::string key_xp = ss_key_xp.str();
+        std::string key_yp = ss_key_yp.str();
+
+        std::string key_xm = ss_key_xm.str();
+        std::string key_ym = ss_key_ym.str();
+
+
+        if (m_debug) INFO("Key for x = "<<key_xp);
+        if (m_debug) INFO("Key for y = "<<key_yp);
+        if (m_debug) INFO("Key for x = "<<key_xm);
+        if (m_debug) INFO("Key for y = "<<key_ym);
+
+
+
+
+        auto mps_xp = m_mps.find(key_xp);
+        auto mps_yp = m_mps.find(key_yp);
+
+        auto mps_xm = m_mps.find(key_xm);
+        auto mps_ym = m_mps.find(key_ym);
+
+
+        xp = mps_xp->mean();
+        yp = mps_yp->mean();
+
+        xm = mps_xm->mean();
+        ym = mps_ym->mean();
+        complex_t sumFactorP = xp + Constant(0, 1)() * yp;
+        complex_t sumFactorM = xm + Constant(0, 1)() * ym;
+        if (m_gamSign==1){
+            return sumFactorP;
+        }
+        else {
+            return sumFactorM;
+        }
+
 
 
 
