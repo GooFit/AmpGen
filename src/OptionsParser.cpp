@@ -12,6 +12,13 @@ using namespace AmpGen;
 
 OptionsParser* OptionsParser::gOptionsParser = nullptr; 
 
+OptionsParser::OptionsParser()
+{
+  m_keywords["Import"]             = [this](const auto& tokens){ if( tokens.size() != 2 ) return; this->import(expandGlobals(tokens[1] ) ) ; };
+  m_keywords["ParticleProperties"] = [](const auto& tokens){ ParticlePropertiesList::getMutable()->addParticle( tokens ); };
+  m_keywords["ParticlePropertiesList::Alias"] = [](const auto& tokens){ if( tokens.size() !=3 ) return; ParticlePropertiesList::getMutable()->makeAlias( tokens[1], tokens[2] ); };
+}
+
 OptionsParser* OptionsParser::getMe()
 {
   if( gOptionsParser == nullptr ) gOptionsParser = new OptionsParser();
@@ -25,9 +32,9 @@ void OptionsParser::setQuiet(){
 bool OptionsParser::ignoreThisLine( const std::string& line )
 {
   if ( line.empty() ) return true;
-  const char _ignoreLinesStartingWith[] = {'*', '#', '\0'};
-  for ( int i = 0; _ignoreLinesStartingWith[i] != '\0'; i++ ) {
-    if ( line[0] == _ignoreLinesStartingWith[i] ) return true;
+  const char ignoreLinesStartingWith[] = {'*', '#', '\0'};
+  for ( int i = 0; ignoreLinesStartingWith[i] != '\0'; i++ ) {
+    if ( line[0] == ignoreLinesStartingWith[i] ) return true;
   }
   return false;
 }
@@ -55,9 +62,8 @@ void OptionsParser::setCommandLineArgs( int argc, char** argv, const std::string
         x++;
       }
     }
-    int depth = 0 ;
     if( key == "help" ) m_printHelp = true; 
-    m_parsedLines[key] = makeParsedStrings( key + " " + val, depth ); 
+    addArg(key +" " + val); 
   }
   if( m_printHelp ){
     std::cout << bold_on << "Usage: " << bold_off << argv[0] << italic_on << " options_file1.opt options_file2.opt --key1=value1 --key2=value2 ..." << italic_off << std::endl; 
@@ -80,40 +86,30 @@ void OptionsParser::import( const std::string& fName )
     auto tokens = this->makeParsedStrings( line, braceDepth );
     for ( auto& token : tokens ) currentTokens.push_back( token );
     if ( tokens.size() == 0 ) return;
-    std::string name = currentTokens[0];
-    if ( name == "Import" && currentTokens.size() == 2 ) {
-      this->import( expandGlobals( tokens[1] ) );
-      currentTokens.clear();
-      return;
-    }
-    if ( name == "ParticlePropertiesList::Alias" && currentTokens.size() == 3 ) {
-      ParticlePropertiesList::getMutable()->makeAlias( tokens[1], tokens[2] );
-      currentTokens.clear();
-      return;
-    }
+    std::string key = currentTokens[0];
     if ( braceDepth != 0 ) return;
-    if ( this->m_parsedLines.find( name ) != this->m_parsedLines.end() ) {
-      WARNING( "Overwriting parameter: " << name );
+    if ( this->m_parsedLines.find( key ) != this->m_parsedLines.end() ) {
+      WARNING( "Overwriting parameter: " << key );
     }
-    currentTokens.erase( std::remove_if( currentTokens.begin(), currentTokens.end(),
-    []( const std::string& o ) { return o == "{" || o == "}"; } ),
-    currentTokens.end() );
-    this->m_parsedLines[name] = currentTokens;
+    auto isCurlyBrace = []( const std::string& o ) { return o == "{" || o == "}"; };
+    currentTokens.erase( std::remove_if( currentTokens.begin(), currentTokens.end(), isCurlyBrace), currentTokens.end() );
+    this->addArg( currentTokens );
     currentTokens.clear();
   } );
-
-
 }
 
 void OptionsParser::addArg( const std::string& arg )
 {
   int bc = 0 ; 
-  auto tokens = makeParsedStrings( arg, bc );
-  auto name = tokens[0];
-  if ( name == "ParticlePropertiesList::Alias" && tokens.size() == 3 ) {
-    ParticlePropertiesList::getMutable()->makeAlias( tokens[1], tokens[2] );
-  }
-  m_parsedLines[name] = tokens; 
+  addArg( makeParsedStrings( arg, bc ) );
+}
+
+void OptionsParser::addArg( const std::vector<std::string>& tokens )
+{
+  auto& key = tokens[0];
+  DEBUG("Adding arg with key: " << key );
+  if( m_keywords.count(key) != 0 ) m_keywords[key]( tokens );
+  else m_parsedLines[key] = tokens; 
 }
 
 std::vector<std::string> OptionsParser::makeParsedStrings( const std::string& line, int& braceDepth ) const

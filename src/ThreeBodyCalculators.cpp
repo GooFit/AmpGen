@@ -240,9 +240,9 @@ ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitPar
   auto evtFormat = evt.getEventFormat();
   for ( auto& p : unpacked ) {
     name += p.first.decayDescriptor();
-    partialWidths.emplace_back( spinAverageMatrixElement( {p}, &msym ), p.first.decayDescriptor(), evtFormat, DebugSymbols(), &mps );
+    partialWidths.emplace_back( spinAverageMatrixElement( {p}, &msym ), p.first.decayDescriptor(), &mps, evtFormat);
   }
-  totalWidth = CompiledExpression< complex_t(const real_t*, const real_t*) > ( matrixElementTotal, "width", evtFormat, {} , &mps );
+  totalWidth = CompiledExpression< complex_t(const real_t*, const real_t*) > ( matrixElementTotal, "width", &mps, evtFormat);
   CompilerWrapper(true).compile( totalWidth, "");
 }
 

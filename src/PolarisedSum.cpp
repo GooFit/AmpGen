@@ -61,35 +61,34 @@ PolarisedSum::PolarisedSum(const EventType& type,
 {
   std::string objCache = NamedParameter<std::string>("PolarisedSum::ObjectCache", ""    );
   spaceType stype      = NamedParameter<spaceType>(  "PolarisedSum::SpaceType"  , spaceType::spin);
+  ThreadPool tp(std::thread::hardware_concurrency() );
   if( stype == spaceType::spin )
   {
     auto prodPols        = polarisations(m_eventType.mother()); 
     std::vector<std::vector<int>> polStates; 
     for(const auto& pol : prodPols ) polStates.push_back({pol}); 
-    for(unsigned i = 0 ; i != type.size(); ++i ) polStates = indexProduct(polStates, polarisations( type[i] ) );
-    
+    for(unsigned i = 0 ; i != type.size(); ++i ) polStates = indexProduct(polStates, polarisations( type[i] ) ); 
     auto protoAmps       = m_rules.getMatchingRules(m_eventType);
     for(const auto& m : protoAmps ) INFO( m.first.uniqueString() ); 
     m_matrixElements.resize( protoAmps.size() );
-    ThreadPool tp(std::thread::hardware_concurrency() );
     for(unsigned i = 0; i < m_matrixElements.size(); ++i)
     {
-      tp.enqueue( [i, &protoAmps, &polStates, this]{
-      Tensor thisExpression( Tensor::dim(polStates.size()) );
-      auto& [p, coupling] = protoAmps[i];
-      DebugSymbols syms;  
-      for(unsigned j = 0; j != polStates.size(); ++j) thisExpression[j] = make_cse( p.getExpression(j == 0 ? &syms: nullptr, polStates[j] ) ); 
-      m_matrixElements[i] = TransitionMatrix<void>( 
-          p,
-          coupling, 
-          CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>(
-          TensorExpression(thisExpression), 
-          p.decayDescriptor(),
-          this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ,this->m_mps ) );
+      auto [p, c] = protoAmps[i];
+      tp.enqueue( [i, p, c, polStates, &mps, this] () mutable {
+        Tensor thisExpression( Tensor::dim(polStates.size()) );
+        DebugSymbols syms;      
+        for(unsigned j = 0; j != polStates.size(); ++j) 
+          thisExpression[j] = make_cse( p.getExpression(j == 0 ? &syms: nullptr, polStates[j] ) );         
+        
+        this->m_matrixElements[i] = TransitionMatrix<void>( 
+            p, c,
+            CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>(
+            TensorExpression(thisExpression), p.decayDescriptor(), &mps,
+            this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ) );
+        
         CompilerWrapper().compile( m_matrixElements[i] );
-      m_matrixElements[i].size = thisExpression.size();
-      }
-      );
+        m_matrixElements[i].size = thisExpression.size();
+      });
     }
   }
   if ( stype == spaceType::flavour )
@@ -98,24 +97,21 @@ PolarisedSum::PolarisedSum(const EventType& type,
     auto r1 = m_rules.getMatchingRules(m_eventType, m_prefix);
     auto r2 = m_rules.getMatchingRules(m_eventType.conj(true), m_prefix);  
     m_matrixElements.resize( r1.size() + r2.size() );
-    ThreadPool tp(8);
     for(unsigned i = 0 ; i != m_matrixElements.size(); ++i)
     {
-      tp.enqueue( [i, this, &r1, &r2]{
-      Tensor thisExpression( Tensor::dim(2) );
-      DebugSymbols syms;  
-      auto& tm = i < r1.size() ? r1[i] : r2[i-r1.size()];
-      thisExpression[0] = i < r1.size() ? make_cse( tm.first.getExpression(&syms) ) : 0;
-      thisExpression[1] = i < r1.size() ? 0 : make_cse( tm.first.getExpression(&syms) ); 
-      m_matrixElements[i] = TransitionMatrix<void>( 
-          tm.first,
-          tm.second, 
-          CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>(
-          TensorExpression(thisExpression), 
-          tm.first.decayDescriptor(),
-          this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ,this->m_mps ) ); 
-        CompilerWrapper().compile( m_matrixElements[i] );
-      });
+      tp.enqueue( [i, this, &r1, &r2] () mutable {
+        Tensor thisExpression( Tensor::dim(2) );
+        DebugSymbols syms;  
+        auto& [p,coupling] = i < r1.size() ? r1[i] : r2[i-r1.size()];
+        thisExpression[0] = i < r1.size() ? make_cse( p.getExpression(&syms) ) : 0;
+        thisExpression[1] = i < r1.size() ? 0 : make_cse( p.getExpression(&syms) ); 
+        this->m_matrixElements[i] = TransitionMatrix<void>( 
+            p, coupling, 
+            CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>(
+            TensorExpression(thisExpression), p.decayDescriptor(), this->m_mps,
+            this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ) );
+          CompilerWrapper().compile( m_matrixElements[i] );
+        });
     }
   }
   if( m_pVector.size() == 0 )
@@ -129,7 +125,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
   
   DebugSymbols db; 
   auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector,[](auto& p){ return Parameter(p->name());} ), m_debug ? &db : nullptr);
-  m_probExpression = make_expression<float_v, real_t, complex_v>( prob, "prob_unnormalised", *m_mps );
+  m_probExpression = make_expression<float_v, real_t, complex_v>( prob, "prob_unnormalised", m_mps );
 }
 
 std::vector<int> PolarisedSum::polarisations( const std::string& name ) const 
@@ -363,14 +359,14 @@ void PolarisedSum::generateSourceCode(const std::string& fname, const double& no
   auto amp_extPol = probExpression(T_matrix, {Parameter("x2",0,true), Parameter("x3",0,true), Parameter("x4",0,true)}); 
   stream << CompiledExpression<double(
                                const double*, 
-                               const int&)>( amp / normalisation, "FCN",{},{}, m_mps ) << std::endl ;
+                               const int&)>( amp / normalisation, "FCN", m_mps, disableBatch() ) << std::endl ;
 
   stream << CompiledExpression<double(
                                const double*, 
                                const int&, 
                                const double&, 
                                const double&, 
-                               const double&)>( amp_extPol / normalisation, "FCN_extPol",{},{},m_mps ) << std::endl;
+                               const double&)>(amp_extPol / normalisation, "FCN_extPol", m_mps, disableBatch() ) << std::endl;
   stream.close();
 }
 

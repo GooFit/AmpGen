@@ -162,12 +162,11 @@ void Particle::pdgLookup()
   } 
   else m_usesDefaultLineshape = false;
   m_parity                 = m_props->P();
-  if ( !isdigit( m_props->J()[0] ) ) ERROR( "Spin not recognised! : " << m_name << " J = " << m_props->J() );
+  // if ( !isdigit( m_props->J()[0] ) ) ERROR( "Spin not recognised! : " << m_name << " J = " << m_props->J() );
   if( m_defaultModifier != "" && m_lineshape.find(".") == std::string::npos ){
     m_lineshape = m_lineshape + "." + m_defaultModifier.getVal();
   }
   bool isStrong = quarks() == daughterQuarks();
-  DEBUG( m_name << " is decaying via " << ( isStrong ? "strong" : "electroweak" ) << " interactions; P = " << props()->P() );
   if ( m_name.find( "NonRes" ) != std::string::npos ) isStrong = true;
   m_minL = m_daughters.size() == 2 ? orbitalRange( isStrong ).first : 0;
   if ( m_daughters.size() == 2 ) {
@@ -176,6 +175,9 @@ void Particle::pdgLookup()
         << " d1     =  " << m_daughters[1]->name() );
   }
   if ( m_orbital == 0 ) m_orbital = m_minL; // define in ground state unless specified
+  if( m_daughters.size() != 0 ){
+    DEBUG( m_name << " is decaying via " << ( isStrong ? "strong" : "electroweak" ) << " interactions; P = " << props()->P() << "l = " << m_orbital );
+  }
   int charge = 0; 
   for ( auto& d : m_daughters ){
     d->setParent(this);
@@ -642,7 +644,7 @@ Particle Particle::conj( bool invertHead , bool reorder )
 
 QuarkContent Particle::quarks() const
 {
-  return m_name.find("NonRes") != std::string::npos ? daughterQuarks() : m_props->netQuarkContent();
+  return m_name.find("NonRes") != std::string::npos ? daughterQuarks() : m_props->quarkContent();
 }
 
 QuarkContent Particle::daughterQuarks() const
