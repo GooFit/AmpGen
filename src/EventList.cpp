@@ -124,8 +124,7 @@ void EventList::loadFromTree( TTree* tree, const ArgumentPack& args )
   auto automaticOrdering = m_eventType.automaticOrdering();
   for (const auto& evt : tr) {
     if( inputUnits != Units::GeV ) for( unsigned k = 0; k != eventFormat.size(); ++k ) temp[k] *= to_double(inputUnits); 
-    // if( idBranches.size() != 0 && !automaticOrdering(temp, ids) ) 
-    //   WARNING("Failed to order event: " << evt ); 
+    if( idBranches.size() != 0 && !automaticOrdering(temp, ids) ) WARNING("Failed to order event: " << evt ); 
     if( applySym ) symmetriser(temp); 
     if( ! hasEnergy ){ 
       for( unsigned int k = 0 ; k != m_eventType.size(); ++k ) 

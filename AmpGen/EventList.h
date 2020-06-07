@@ -75,6 +75,12 @@ namespace AmpGen
     const double* block(const unsigned pos) const { return m_data[pos].address(); }
     real_t weight( const size_t& pos)             const { return m_data[pos].weight(); }
     real_t genPDF( const size_t& pos)             const { return m_data[pos].genPdf(); }
+    unsigned key(const std::string& key)          const 
+    { 
+      auto it = m_extensions.find(key);
+      if( it == m_extensions.end() ) return m_data[0].size() - 1;
+      return it->second; 
+    }
     void reserve( const size_t& size );
     void resize ( const size_t& size );
     void push_back( const Event& evt );
@@ -134,7 +140,7 @@ namespace AmpGen
     {
       unsigned currentSize = size();
       m_data.erase( std::remove_if( m_data.begin(), m_data.end(), fcn ) , m_data.end() );
-      INFO("Filter removes: " << currentSize - size() << " / " << currentSize << " events");
+      INFO("Filter retains " << size() << " / " << currentSize << " events");
     }
 
     template <typename functor> unsigned count( functor&& fcn ) const 

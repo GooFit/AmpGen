@@ -2,6 +2,7 @@
 #define AMPGEN_FITRESULT_H
 
 #include "TMatrixD.h"
+#include "TClass.h"
 
 #include "AmpGen/FitFraction.h"
 #include "AmpGen/MinuitParameter.h"
@@ -15,6 +16,7 @@ namespace AmpGen
   class FitResult
   {
   public:
+    ~FitResult(){};
     FitResult(); 
     explicit FitResult( const FitResult& other );
     explicit FitResult( const std::string& filename );
@@ -56,7 +58,7 @@ namespace AmpGen
     LinearErrorPropagator getErrorPropagator( const bool& extended = false ) const;
 
   private:
-    MinuitParameterSet*                 m_mps;
+    MinuitParameterSet*                 m_mps    = {nullptr};
     double                              m_chi2   = {0};
     double                              m_LL     = {-999};
     double                              m_nBins  = {0};

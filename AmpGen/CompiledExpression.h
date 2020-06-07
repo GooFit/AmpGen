@@ -13,6 +13,8 @@
 #include <cxxabi.h>
 #include <dlfcn.h>
 #include <vector>
+#include <map>
+#include "ArgumentPack.h"
 
 namespace AmpGen
 {
@@ -21,11 +23,17 @@ namespace AmpGen
      usually this is a std::complex<double>,
      but in principal support also exists for computing coupled channel propagators
      (i.e. returning array types) */
+  
+  
+  
   namespace detail {
     template <typename T> struct size_of {       static constexpr unsigned value = sizeof(T); };
     template <>           struct size_of<void> { static constexpr unsigned value = 0; } ;
   }
+  DECLARE_ARGUMENT(disableBatch, bool);
+  
   template <class RETURN_TYPE, class... ARGS> class CompiledExpression; 
+  
 
   template <class RETURN_TYPE, class... ARGS>
     class CompiledExpression<RETURN_TYPE(ARGS...)> : public CompiledExpressionBase
@@ -37,18 +45,26 @@ namespace AmpGen
         DynamicFCN<std::vector<std::pair<std::string, complex_v>>(ARGS...)>      m_fdb;
         std::vector<real_t>  m_externals             = {};
         bool                 m_hasExternalsChanged   = {false};
-
+        
       public:
         typedef RETURN_TYPE return_type;
-
-        CompiledExpression( const Expression& expression, 
-            const std::string& name,
-            const std::map<std::string, unsigned>& evtMapping = 
-            std::map<std::string, unsigned>(),
-            const DebugSymbols& db = {},
-            const MinuitParameterSet* mps = nullptr )
-          : CompiledExpressionBase( expression, name, db, evtMapping ) 
+        
+        template <typename... namedArgs> 
+        CompiledExpression( const Expression& expression, const std::string& name, const namedArgs&... args ) : CompiledExpressionBase(expression, name) 
         {
+          const MinuitParameterSet* mps = nullptr; 
+          auto process_argument = [&]( const auto& arg )
+          {
+            if constexpr( std::is_convertible<decltype(arg), DebugSymbols>::value  ) this->m_db = arg;
+            else if constexpr( std::is_convertible<decltype(arg), std::map<std::string, unsigned>>::value ) this->m_evtMap = arg;
+            else if constexpr( std::is_convertible<decltype(arg), AmpGen::disableBatch>::value )  this->m_enableBatch = false; 
+            else if constexpr( std::is_convertible<decltype(arg), MinuitParameterSet*>::value ) mps = arg;
+            else if constexpr( std::is_convertible<decltype(arg), const MinuitParameterSet*>::value ) mps = arg;
+            else if constexpr( std::is_convertible<decltype(arg), MinuitParameterSet>::value ) mps = &arg;
+            else ERROR("Unrecognised argument: " << type_string(arg) ); 
+          }; 
+          for_each( std::tuple<const namedArgs&...>(args...), process_argument);
+          DEBUG("Made expression:  " << m_name << " " << progName() << " " << mps << " batch enabled ? " << this->m_enableBatch );
           resolve(mps);
         }
 
@@ -145,7 +161,8 @@ namespace AmpGen
           DEBUG( "Compiling " << name() << " = " << hash() );
           stream << "extern \"C\" " << returnTypename() << " " << progName() << "_wParams"
             << "( const double*__restrict__ E ){" << std::endl;
-          stream << "  double externalParameters [] = {" << (m_externals.size() == 0 ? "0" : vectorToString(m_externals,", ") ) <<"};\n" ;
+          stream << "  double externalParameters [] = {" << 
+            (m_externals.size() == 0 ? "0" : vectorToString(m_externals,", ", [](auto& line){ return std::to_string(line); }) ) <<"};\n" ;
           stream << "  return " << progName() << "( externalParameters, E ); // E is P \n}\n";
         }
 
@@ -213,8 +230,7 @@ namespace AmpGen
       return rt;
     }
 
-  template <class RT> 
-    CompiledExpression<RT(const double*, const double*)> 
+  template <class RT> CompiledExpression<RT(const double*, const double*)> 
     make_expression( const Expression& expression, const std::string& name , const bool& verbose=false)
     {
       CompiledExpression<RT(const double*, const double*)> rt(expression,name);
@@ -222,25 +238,13 @@ namespace AmpGen
       rt.prepare();
       return rt;
     }
-  template <class RT, class arg1 = double, class arg2 =double> 
+  template <typename RT, typename arg1 = double, typename arg2 =double, typename... arg_types> 
     CompiledExpression<RT(const arg1*, const arg2*)> 
     make_expression( const Expression& expression, 
         const std::string& name, 
-        const MinuitParameterSet& mps )
+        const arg_types&... args)
     {
-      CompiledExpression<RT(const arg1*, const arg2*)> rt(expression,name,{},{},&mps);
-      rt.compile();
-      rt.prepare();
-      return rt;
-    }
-  template <class RT> 
-    CompiledExpression<RT(const double*, const double*)> 
-    make_expression( const Expression& expression, 
-        const std::string& name,
-        const std::map<std::string, unsigned> & evtMap,
-        const MinuitParameterSet& mps )
-    {
-      CompiledExpression<RT(const double*, const double*)> rt(expression,name,evtMap,{},&mps);
+      CompiledExpression<RT(const arg1*, const arg2*)> rt(expression,name,args...);
       rt.compile();
       rt.prepare();
       return rt;

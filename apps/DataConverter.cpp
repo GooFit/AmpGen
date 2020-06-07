@@ -208,14 +208,10 @@ int main( int argc, char* argv[] )
   INFO("Closing file...");
   outputFile->Close();
   TFile* outputPlotFile = TFile::Open( plotsName.c_str(), "RECREATE" );
-  auto plots            = evts.makeDefaultProjections();
-  auto proj = Projection([](auto& event){ return sqrt(event.s({0,1,2,3})) ; }, "m_D", "m_D",100, 1.8, 1.9 );
-  for ( auto& plot : plots ) {
-    INFO( "Writing plot " << plot->GetName() << " to file" );
-    plot->Write();
+  auto projections = evtType.defaultProjections();
+  for ( auto& p : projections ) {
+    p( evts ) -> Write();
+    p( evts, WeightFunction([](auto& evt){ return 1; }), PlotOptions::Prefix("noweight") )->Write();
   }
-  proj( evts )->Write();
-  for( int i = 0 ;i != 4; ++i )
-  Projection([i](auto& event){ return sqrt(event.s(i)) ; }, "m_"+std::to_string(i), "m_D",100, 0, 1.0 )(evts)->Write();
   outputPlotFile->Close();
 }
