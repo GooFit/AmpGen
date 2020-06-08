@@ -73,8 +73,8 @@ PolarisedSum::PolarisedSum(const EventType& type,
     m_matrixElements.resize( protoAmps.size() );
     for(unsigned i = 0; i < m_matrixElements.size(); ++i)
     {
-      auto [p, c] = protoAmps[i];
-      tp.enqueue( [i, p, c, polStates, &mps, this] () mutable {
+      auto [lp, lc] = protoAmps[i];
+      tp.enqueue( [i, p=lp, c=lc, polStates, &mps, this] () mutable {
         Tensor thisExpression( Tensor::dim(polStates.size()) );
         DebugSymbols syms;      
         for(unsigned j = 0; j != polStates.size(); ++j) 
