@@ -59,7 +59,7 @@ Expression chebychevt(Expression x, unsigned int order){
         output = 2 * x * x - 1;
     }
     else {
-        output = 2 * x * chebychev2(x, order -1) - chebychev2(x, order - 2);
+        output = 2 * x * chebychevt(x, order -1) - chebychevt(x, order - 2);
     }
     return output;
 }
@@ -74,7 +74,7 @@ Expression legendret(Expression x, unsigned int order){
         output=x;
     }
     else {
-        output = (2 * order - 1)/order * x * legendre2(x, order - 1) - (order - 1)/order * legendre2(x, order - 2);
+        output = (2 * order - 1)/order * x * legendret(x, order - 1) - (order - 1)/order * legendret(x, order - 2);
     }
     return output;
 }
@@ -88,7 +88,7 @@ Expression besselt(Expression x, unsigned int order){
         output=x + 1;
     }
     else{
-        output = (2 * order - 1) * x * bessel2(x, order - 1) + bessel2(x, order - 2);
+        output = (2 * order - 1) * x * besselt(x, order - 1) + besselt(x, order - 2);
         
     }
     return output;
@@ -103,7 +103,7 @@ Expression laguerret(Expression x, unsigned int order){
         output= 1 - x;
     }
     else{
-        output = ( (2 * order  - 1 - x) * laguerre2(x, order - 1) - (order - 1) * laguerre2(x, order - 2))/order;
+        output = ( (2 * order  - 1 - x) * laguerret(x, order - 1) - (order - 1) * laguerret(x, order - 2))/order;
     }
     return output;
 }
