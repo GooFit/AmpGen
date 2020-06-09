@@ -130,7 +130,8 @@ std::pair<Expression, Expression> angCoordinates(const Tensor& P, DebugSymbols* 
   Expression px = P[0] / sqrt(pt2);
   Expression py = P[1] / sqrt(pt2);
   return {pz, make_cse(px + 1i*py)};
-}
+} /// spherical coordinates are paramterised as {z=cos(theta), e^(iphi)}, as this avoids any trigonometric functions
+
 Expression AmpGen::wigner_D(const std::pair<Expression, Expression>& P, 
     const double& J, 
     const double& lA, 
@@ -249,6 +250,8 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   {
     if( particle.props()->twoSpin() == 0 ) return Mz==0; // a scalar
     // polarisation spinor / vector etc. in the quantisation of the lab (i.e. along the z-axis or lab particle momentum)
+    if( particle.props()->isPhoton() && Mz == 0. ) ERROR("Photon polarisation state is wrong");
+    if( particle.polState() == 0 ) ERROR("Photon external state is wrong...");
     auto labPol = particle.externalSpinTensor(particle.polState(), db); 
     auto inverseMyTransform = myFrame.inverse();
     if( particle.props()->twoSpin() == 1 ) // so a fermion 
@@ -291,12 +294,12 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   } 
   Expression total = 0; 
   
-  std::pair<Expression, Expression> hco = angCoordinates( myFrame(d1.P()) , db);
+  auto hco = angCoordinates( myFrame(d1.P()) , db);
   for( auto& coupling : recoupling_constants )
   {          
     auto dm = coupling.m1 - coupling.m2;
-    if( (d1.name() == "gamma0" && coupling.m1 == 0) || 
-        (d2.name() == "gamma0" && coupling.m2 == 0) ) continue;
+    if( (d1.props()->isPhoton() && coupling.m1 == 0.) || 
+        (d2.props()->isPhoton() && coupling.m2 == 0.) ) continue;
     auto term = wigner_D(hco, particle.spin(), Mz, dm, db); 
     auto h1   = helicityAmplitude(d1, myFrame, coupling.m1, db, +1, cachePtr);
     auto h2   = helicityAmplitude(d2, myFrame, coupling.m2, db, -1, cachePtr);

@@ -131,12 +131,11 @@ PolarisedSum::PolarisedSum(const EventType& type,
 std::vector<int> PolarisedSum::polarisations( const std::string& name ) const 
 {
   auto props = *ParticlePropertiesList::get( name );
-  if( props.twoSpin() == 0 ) return {0};
-  if( props.twoSpin() == 1 ) return {1,-1};
-  if( props.twoSpin() == 4 ) return {-2,1,0,1,2};
-  if( name == "gamma0" && props.twoSpin() == 2 ) return {1,-1};
-  if( name != "gamma0" && props.twoSpin() == 2 ) return {1,0,-1};
-  
+  if( props.twoSpin() == 0 ) return {0};         // scalar 
+  if( props.isPhoton() )     return {1,-1};      // photon 
+  if( props.twoSpin() == 1 ) return {1,-1};      // fermion
+  if( props.twoSpin() == 4 ) return {-2,1,0,1,2};// tensor
+  if( props.twoSpin() == 2 ) return {1,0,-1};    // vector
   else { 
     WARNING("Particle with spin: " << props.twoSpin() << "/2" << " not implemented in initial/final state");
     return {0};
