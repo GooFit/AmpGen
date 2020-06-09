@@ -50,13 +50,18 @@ TreePhaseSpace::TreePhaseSpace(const std::vector<Particle>& decayChains, const E
 
 Event TreePhaseSpace::makeEvent()
 {
-  unsigned j = m_dice(m_gen); 
- // INFO("Producing event from tree: " << j );
-  if( j >= m_top.size() ) ERROR("Out of bounds: " << j << " / " << m_top.size() );
-  m_top[j].generate();
-  auto event = m_top[j].event(m_type.size());
-  double w = m_top[j].weight();
-  event.setGenPdf( w == 0 ? 0 : genPdf(event) / w );
+  unsigned j = 0;
+  double w = 0;
+  Event event; 
+  do {
+    // INFO("Producing event from tree: " << j );
+    j = m_dice(m_gen); 
+    if( j >= m_top.size() ) ERROR("Out of bounds: " << j << " / " << m_top.size() );
+    m_top[j].generate();
+    event = m_top[j].event(m_type.size());
+    w = m_top[j].weight();
+    event.setGenPdf( w == 0 ? 0 : genPdf(event) / w );
+  } while ( w == 0 );
   m_generatorRecord.push_back(j);
   return event; 
 }

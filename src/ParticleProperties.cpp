@@ -153,7 +153,7 @@ bool ParticleProperties::isFermion() const {
 
 bool ParticleProperties::isPhoton() const 
 {
-  return m_name == "gamma0";
+  return m_pdgID == 22;
 }
 
 bool ParticleProperties::isNeutrino() const 

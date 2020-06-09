@@ -94,7 +94,6 @@ namespace AmpGen
       int m_charge{0};                   ///< electrical charge
       int m_twoSpin{0};                  ///< twice the spin 
       std::string m_isospin{""};         ///< isospin
-      //std::string m_JtotalSpin{""};      ///< total spin
       std::string m_name{""};            ///< particle name
       std::string m_texName{""};         ///< latex label of particle
       std::string m_chargeString{""};    ///< string for particle charge

@@ -112,6 +112,8 @@ void CoherentSum::updateNorms()
 void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
 {
   prepare();
+  INFO("Weight = " << evt.weight() << " genPDF = " << evt.genPdf() );
+
   for ( auto& me : m_matrixElements ) {
     auto A = me(evt);
     INFO( std::setw(70) << me.decayTree.uniqueString() 
@@ -120,7 +122,7 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
         << m_cache( evt.index(), std::distance(&m_matrixElements[0], &me ) )
         << me.decayTree.CP() );
   }
-  if( m_dbThis ) for ( auto& me : m_matrixElements ) me.debug( m_events->block(0)  );
+  if( m_dbThis ) for ( auto& me : m_matrixElements ) me.debug( evt) ;
   INFO( "A(x) = " << getVal(evt) << " without cache: " << getValNoCache(evt) );
 }
 
