@@ -109,6 +109,7 @@ namespace AmpGen
               if ( event.genPdf() > maxProb ) {
                 std::cout << std::endl; 
                 WARNING( "PDF value exceeds norm value: " << event.genPdf() << " > " << maxProb );
+//                pdf.debug( event );
               }
               if ( accept_all || event.genPdf() > maxProb * m_rnd->Rndm() ){
                 list.push_back(event);
