@@ -341,14 +341,14 @@ else{
                 if (m_polyType=="CPSinPoly"){
                   double Cpij = getC(i,j,"P");
                   double Cmij = getC(i,j,"M");
-                  sum_i = sum_i + Cpij * CPSinPoly2(X(), Y(), i, j, 1) + Cmij * CPSinPoly2(X(), Y(), i, j, -1);
+                  sum_i = sum_i + Cpij * CPSinPolyt(X(), Y(), i, j, 1) + Cmij * CPSinPolyt(X(), Y(), i, j, -1);
                 }
                 else if (m_polyType=="CP_legendre"){
                    double Cpij = getC(i,j,"P");
                    double Cmij = getC(i,j,"M");
                    auto zp = 0.5 * (X() + Y());
                    auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i + Cpij* legendre2(zp, i) * legendre2(zm, 2*j) + Cmij * legendre2(zp, i) * legendre2(zm, 2*j+1);
+                  sum_i = sum_i + Cpij* legendret(zp, i) * legendret(zm, 2*j) + Cmij * legendret(zp, i) * legendret(zm, 2*j+1);
                    
 
                 }
@@ -357,7 +357,7 @@ else{
 
                    auto zp = 0.5 * (X() + Y());
                    auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i +  Cij * legendre2(zp, i) * legendre2(zm, 2*j+1);
+                  sum_i = sum_i +  Cij * legendret(zp, i) * legendret(zm, 2*j+1);
                    
 
                 }
@@ -373,7 +373,7 @@ else{
                    double Cij = getC(i,j);
                    auto zp = 0.5 * (X() + Y());
                    auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i +  Cij * chebychev2(zp, i) * chebychev2(zm, 2*j+1);
+                  sum_i = sum_i +  Cij * chebychevt(zp, i) * chebychevt(zm, 2*j+1);
                    
 
                 }
@@ -381,7 +381,7 @@ else{
                    double Cij = getC(i,j);
                    auto zp = 0.5 * (X() + Y());
                    auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i +  Cij * legendre2(zp, i) * legendre2(zm, 2*j);
+                  sum_i = sum_i +  Cij * legendret(zp, i) * legendret(zm, 2*j);
                    
 
                 }
@@ -400,16 +400,16 @@ else{
                     sum_i = sum_i +  Cij * pow(X(), i) * pow(Y(), j);
                 }
                 else if (m_polyType=="chebychev"){
-                sum_i = sum_i + Cij * chebychev2(X(), i) * chebychev2(Y(), j); 
+                sum_i = sum_i + Cij * chebychevt(X(), i) * chebychevt(Y(), j); 
                 }
                 else if (m_polyType=="legendre"){
-                    sum_i = sum_i + Cij * legendre2(X(), i) * legendre2(Y(), j);
+                    sum_i = sum_i + Cij * legendret(X(), i) * legendret(Y(), j);
                 }
                 else if (m_polyType=="laguerre"){
-                    sum_i = sum_i + Cij * laguerre2(X(), i) * laguerre2(Y(), j);
+                    sum_i = sum_i + Cij * laguerret(X(), i) * laguerret(Y(), j);
                 }
                 else if (m_polyType=="bessel"){
-                    sum_i = sum_i + Cij * bessel2(X(), i) * bessel2(Y(), j);
+                    sum_i = sum_i + Cij * besselt(X(), i) * besselt(Y(), j);
                 }
                 }
                
