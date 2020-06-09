@@ -16,5 +16,7 @@ DEFINE_GENERIC_SHAPE( TD )
   Expression tau = Parameter(p.name() +"_decayTime");   
   ADD_DEBUG( tau, dbexpressions );
   ADD_DEBUG( p.props()->lifetime(), dbexpressions );
+  INFO("tau = "<<tau());
+  INFO("lifetime = "<<p.props()->lifetime());
   return tau / ( 2 * p.props()->lifetime() ); 
 }

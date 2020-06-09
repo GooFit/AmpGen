@@ -582,6 +582,16 @@ complex_t pCoherentSum::getVal(const Event& evt1) const {
   auto corr = exp(i() * f);
   auto sumFactor = getSumFactor();
   complex_t val = A  *exp(i()*f/2.) + sumFactor* C  *exp(-i()*f/2.);
+  auto param_x = m_mps["tCoherentSum::x"];
+  auto param_y = m_mps["tCoherentSum::y"];
+  auto param_qpre = m_mps["tCoherentSum::qpre"];
+  auto param_qpim = m_mps["tCoherentSum::qpim"];
+  auto mix_x = param_x->mean();
+  auto mix_y = param_y->mean();
+  auto qpre = param_qpre->mean();
+  auto qpim = param_qpim->mean();
+  auto qp = qpre + i() * qpim;
+
   //INFO("Correction  = "<<f);
   if (m_debug) INFO("A2 = "<<std::norm(A));
 

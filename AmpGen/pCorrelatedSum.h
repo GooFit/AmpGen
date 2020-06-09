@@ -156,6 +156,15 @@ class pCorrelatedSum {
         val = m_mps[key]->mean(); 
         return val;
     }
+    double getdC2(int i, int j, std::string pref="")const {
+        std::string key = "pCorrelatedSum::C"+pref+std::to_string(i)+std::to_string(j);
+        double val=0;
+        //if (m_debug) INFO(m_mps[key]->name()<<" = "<<m_mps[key]->mean());
+        val = pow(m_mps[key]->err(), 2); 
+        return val;
+    }
+
+
 
     complex_t getSumFactor()const {
         if (m_SFType=="Psi3770"){
@@ -333,6 +342,121 @@ class pCorrelatedSum {
         if (m_pdebug) INFO("correction = "<<corr());
         return corr();
       }
+
+    complex_t errcorrection(const Event& event) const {
+        Expression corr = 0;
+        auto x = event.s(0,1);
+        auto y = event.s(0,2);
+        auto z = event.s(1,2);
+        auto mp = sqrt(event.s(1,1));
+        auto mm = sqrt(event.s(2,2));
+        auto mK = sqrt(event.s(0,0));
+        auto mD = sqrt(x + y + z - pow(mp,2) - pow(mm,2) - pow(mK,2) ) ;
+        Expression xmin = pow(mp + mK, 2);
+        Expression xmax = pow(mD - mm, 2);
+        Expression x0 = (xmax + xmin)/2;
+        Expression ymin = pow(mp + mK, 2);
+        Expression ymax = pow(mD - mp, 2);
+        Expression y0 = (ymax + ymin)/2;
+        Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
+        Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
+        
+        //INFO("Order = "<<m_order);
+        for (auto i=0; i < m_order+1; i++){
+            Expression sum_i=0;
+            for (auto j=0; j<m_order+1-i; j++){
+                if (m_polyType=="CPSinPoly"){
+                  double Cpij = getdC2(i,j,"P");
+                  double Cmij = getdC2(i,j,"M");
+                  sum_i = sum_i + Cpij * fcn::pow( CPSinPoly(X(), Y(), i, j, 1),2) + Cmij * fcn::pow(CPSinPoly(X(), Y(), i, j, -1), 2);
+                }
+                else if (m_polyType=="CP_legendre"){
+                   double Cpij = getdC2(i,j,"P");
+                   double Cmij = getdC2(i,j,"M");
+                   auto zp = 0.5 * (X() + Y());
+                   auto zm = 0.5 * (X() - Y());
+                  sum_i = sum_i + Cpij* fcn::pow( legendre(zp, i) * legendre(zm, 2*j), 2) + Cmij * fcn::pow( legendre(zp, i) * legendre(zm, 2*j+1), 2);
+                   
+
+                }
+                else if (m_polyType=="antiSym_legendre"){
+                   double Cij = getdC2(i,j);
+                   auto zp = 0.5 * (X() + Y());
+                   auto zm = 0.5 * (X() - Y());
+                  sum_i = sum_i +  Cij * fcn::pow(legendre(zp, i) * legendre(zm, 2*j+1),2 );
+                   
+
+                }
+                else if (m_polyType=="antiSym_simple"){
+
+                   double Cij = getdC2(i,j);
+                   auto zp = 0.5 * (X() + Y());
+                   auto zm = 0.5 * (X() - Y());
+                  sum_i = sum_i +  Cij * fcn::pow( std::pow(zp, i) * std::pow(zm, 2*j+1),2);
+                   
+
+                }
+                else if (m_polyType=="antiSym_chebyshev"){
+
+                   double Cij = getdC2(i,j);
+                   auto zp = 0.5 * (X() + Y());
+                   auto zm = 0.5 * (X() - Y());
+                  sum_i = sum_i +  Cij * fcn::pow( chebychev(zp, i) * chebychev(zm, 2*j+1), 2);
+                   
+
+                }
+                else if (m_polyType=="Sym_legendre"){
+                   
+                   double Cij = getdC2(i,j);
+                   auto zp = 0.5 * (X() + Y());
+                   auto zm = 0.5 * (X() - Y());
+                  sum_i = sum_i +   Cij * fcn::pow(legendre(zp, i) * legendre(zm, 2*j), 2);
+                   
+
+                }
+
+
+
+                else{
+                double Cij = getdC2(i,j);
+                if (m_pdebug){
+                    INFO("x = "<<x);
+                    INFO("y = "<<y);
+                    INFO("Type = "<<m_polyType) ;
+                    INFO("C"<<i<<j<<" = "<<Cij) ;
+                }
+                if (m_polyType=="simple"){
+                    sum_i = sum_i +  Cij * fcn::pow( pow(X(), i) * pow(Y(), j), 2);
+                }
+                else if (m_polyType=="chebychev"){
+                sum_i = sum_i + Cij * fcn::pow( chebychev(X(), i) * chebychev(Y(), j), 2); 
+                }
+                else if (m_polyType=="legendre"){
+                    sum_i = sum_i + Cij *  fcn::pow(legendre(X(), i) * legendre(Y(), j), 2);
+                }
+                else if (m_polyType=="laguerre"){
+                    sum_i = sum_i + Cij * fcn::pow( laguerre(X(), i) * laguerre(Y(), j), 2);
+                }
+                else if (m_polyType=="bessel"){
+                    sum_i = sum_i + Cij * fcn::pow( bessel(X(), i) * bessel(Y(), j), 2);
+                }
+                }
+               
+
+                if (m_pdebug){
+                    INFO("sum_"<<i<<" = "<<sum_i());
+                }
+
+            }
+            corr += sum_i;
+        }
+        //corr = Constant(0,1) * corr;
+        //complex_t val = exp(corr());
+        if (m_pdebug) INFO("err correction = "<<pow(corr(), 0.5));
+        return pow(corr(), 0.5);
+      }
+
+
       //real_t norm(const Bilinears& norms) const; 
       double m_inter = 0;
 

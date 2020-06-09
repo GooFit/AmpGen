@@ -136,6 +136,12 @@ int main( int argc, char** argv )
     CoherentSum sig( eventType, MPS );
     PhaseSpace phsp(eventType,&rand);
     GenerateEvents( accepted, sig, phsp , nEvents, blockSize, &rand );
+    auto eventSig = accepted[0];
+    eventSig.print();
+    auto time = eventSig[eventSig.size() - 1];
+    INFO("Time = "<<time);
+    auto val0 = sig.getVal(eventSig); 
+    INFO("Val0 = "<<val0);
   if (outputVals){
     std::ofstream out;
     out.open(ampFile.c_str());
@@ -147,6 +153,7 @@ int main( int argc, char** argv )
       auto sig01 = eventSig.s(0,1);
       auto sig02 = eventSig.s(0,2);
       auto sig12 = eventSig.s(1,2);
+
 
       out<<sig01<<"\t"<<sig02<<"\t"<<sig12<<"\t"
          <<A.real()<<"\t"<<A.imag()<<"\n";

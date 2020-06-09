@@ -1210,9 +1210,9 @@ void do_CGFit()
   {
     mini.doFit();
   }
-  auto fr = FitResult(mini);
+  FitResult * fr = new FitResult(mini);
   std::string logFile = NamedParameter<std::string>("CGLogFile", "CorrGamCombFit.log");
-  fr.writeToFile(logFile);
+  fr->writeToFile(logFile);
  
 
 

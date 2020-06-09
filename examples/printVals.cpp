@@ -274,6 +274,7 @@ for (int i=0; i < tags.size(); i++){
     auto ABCD = vals[4];
     auto corr = vals[5];
     auto ACst = A * std::conj(C);
+    auto dCorr = cs_tag.errcorrection(evt_sig);
 
     auto cosDD = -((fcn::pow(abs(ABCD), 2)() - fcn::pow(abs(A), 2)() * fcn::pow(abs(B), 2)() - fcn::pow(abs(C), 2)() * fcn::pow(abs(D), 2)())/(2 * abs(A) * abs(B) * abs(C) * abs(D) )).real();
 
@@ -285,16 +286,18 @@ for (int i=0; i < tags.size(); i++){
         << dd  << "\t" //3
         << cosDD << "\t" //4
         <<corr.real()<<"\t" //5
-        << std::arg(C) - std::arg(A)<<"\t" //6
-        <<std::norm(ABCD)<<"\t" //7
-        <<A.real()<<"\t" //8
-        <<A.imag()<<"\t" //9 
-        <<std::abs(A)<<"\t" //10
+        <<dCorr.real()<<"\t" //6
+        << std::arg(C) - std::arg(A)<<"\t" //7
+        <<std::norm(ABCD)<<"\t" //8
+        <<A.real()<<"\t" //9
+        <<A.imag()<<"\t" //10 
+        <<std::abs(A)<<"\t" //11
         <<std::arg(A)<<"\t"
         <<C.real()<<"\t"
         <<C.imag()<<"\t"
         <<std::abs(C)<<"\t"
         <<std::arg(C)<<"\t"
+
         <<"\n";
 
 }
