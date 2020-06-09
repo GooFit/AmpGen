@@ -1,4 +1,4 @@
-#include "AmpGen/pCoherentSum.h"
+#include "AmpGen/tCoherentSum.h"
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/NamedParameter.h"
 #include <limits>
@@ -9,35 +9,35 @@
 #endif
 using namespace AmpGen;
 
-pCoherentSum::pCoherentSum() = default; 
+tCoherentSum::tCoherentSum() = default; 
 
-pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType, int gamSign, bool useXY):
+tCoherentSum::tCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType, int gamSign, bool useXY):
   m_A(type1, mps),
 
-  m_C(type1.conj(NamedParameter<bool>("pCoherentSum::ConjHead", true, "Only Conjugate the head of the EventType")), mps),
+  m_C(type1.conj(NamedParameter<bool>("tCoherentSum::ConjHead", true, "Only Conjugate the head of the EventType")), mps),
 
-  m_debug(NamedParameter<bool>("pCoherentSum::debug", false, "Print Debug messages for pCoherentSum")),
-  m_debugFreq(NamedParameter<int>("pCoherentSum::debugFreq", 1000, "Print Debug messages for pCoherentSum")),
-  m_pdebug(NamedParameter<bool>("pCoherentSum::pdebug", false, "Print Debug messages for pCoherentSum")),
-  m_pNorm(NamedParameter<bool>("pCoherentSum::pNorm", true, "Perform the slower normalisation for polynomial")),
-  m_updateNorms(NamedParameter<bool>("pCoherentSum::updateNorms", true, "Update the individual norms for A,B,C,D")),
+  m_debug(NamedParameter<bool>("tCoherentSum::debug", false, "Print Debug messages for tCoherentSum")),
+  m_debugFreq(NamedParameter<int>("tCoherentSum::debugFreq", 1000, "Print Debug messages for tCoherentSum")),
+  m_pdebug(NamedParameter<bool>("tCoherentSum::pdebug", false, "Print Debug messages for tCoherentSum")),
+  m_pNorm(NamedParameter<bool>("tCoherentSum::pNorm", true, "Perform the slower normalisation for polynomial")),
+  m_updateNorms(NamedParameter<bool>("tCoherentSum::updateNorms", true, "Update the individual norms for A,B,C,D")),
   m_order(NamedParameter<unsigned int>( "pCorrelatedSum::Order" )),
   m_polyType(NamedParameter<std::string>("pCorrelatedSum::PolyType", "simple")),
   m_mps(mps),
   m_gamSign(gamSign),
   m_useXY(useXY),
-  m_flat(NamedParameter<bool>("pCoherentSum::flat", false, "Force Amplitude=1")),
-  m_coherentIntegral(NamedParameter<bool>("pCoherentSum::coherentIntegral", false, "Do the super slow method to calculate normalisation")),
-  m_coherentIntegralA(NamedParameter<bool>("pCoherentSum::coherentIntegralA", false, "Do the super slow method to calculate normalisation")),
+  m_flat(NamedParameter<bool>("tCoherentSum::flat", false, "Force Amplitude=1")),
+  m_coherentIntegral(NamedParameter<bool>("tCoherentSum::coherentIntegral", false, "Do the super slow method to calculate normalisation")),
+  m_coherentIntegralA(NamedParameter<bool>("tCoherentSum::coherentIntegralA", false, "Do the super slow method to calculate normalisation")),
 
-  m_coherentIntegralC(NamedParameter<bool>("pCoherentSum::coherentIntegralC", false, "Do the super slow method to calculate normalisation")),
+  m_coherentIntegralC(NamedParameter<bool>("tCoherentSum::coherentIntegralC", false, "Do the super slow method to calculate normalisation")),
 
   m_SFType(SFType)
 {
   m_normalisationsAC.resize( m_A.matrixElements().size(), m_C.matrixElements().size() ); 
 
   if (m_coherentIntegral){
-    INFO("Using Slow option - set pCoherentSum::coherentIntegral false to avoid this behaviour");
+    INFO("Using Slow option - set tCoherentSum::coherentIntegral false to avoid this behaviour");
     m_normalisationsAA.resize( m_A.matrixElements().size(), m_A.matrixElements().size() ); 
 
     m_normalisationsCC.resize( m_C.matrixElements().size(), m_C.matrixElements().size() ); 
@@ -56,7 +56,7 @@ pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps
   
   
 }
-void pCoherentSum::prepare(){
+void tCoherentSum::prepare(){
   if (m_debug) INFO("Preparing A");
   m_A.prepare();
   
@@ -67,7 +67,7 @@ void pCoherentSum::prepare(){
 
 
 
-  if (m_debug) INFO("Preparing pCoherentSum");
+  if (m_debug) INFO("Preparing tCoherentSum");
   std::vector<size_t> changedPdfIndicesA;
  
   std::vector<size_t> changedPdfIndicesC;
@@ -147,7 +147,7 @@ void pCoherentSum::prepare(){
   if (m_debug) INFO("CoherentSum is prepared!");
 }
 
-void pCoherentSum::updateNorms(const std::vector<size_t>& iA, const std::vector<size_t>& iC){
+void tCoherentSum::updateNorms(const std::vector<size_t>& iA, const std::vector<size_t>& iC){
   for (auto& i : iA ) m_integratorAC.prepareExpression(m_A.matrixElements()[i].amp);
 
 
@@ -232,7 +232,7 @@ void pCoherentSum::updateNorms(const std::vector<size_t>& iA, const std::vector<
 
 
 
-real_t pCoherentSum::norm() const {
+real_t tCoherentSum::norm() const {
   if (m_debug) INFO("Getting the value for the normalised pdf");
   if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
   complex_t sumFactor = getSumFactor();  
@@ -324,7 +324,7 @@ for (int i=0; i<eventsAC.size(); i++){
 
 
 /*
-real_t pCoherentSum::norm() const {
+real_t tCoherentSum::norm() const {
   if (m_debug) INFO("Getting the value for the normalised pdf");
   if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
   complex_t sumFactor = getSumFactor();  
@@ -371,7 +371,7 @@ real_t pCoherentSum::norm() const {
 */
 
 
-real_t pCoherentSum::testnorm() const {
+real_t tCoherentSum::testnorm() const {
   if (m_debug) INFO("Getting the value for the normalised pdf");
  
   if (m_debug) INFO("Getting SumFactor");
@@ -458,7 +458,7 @@ real_t pCoherentSum::testnorm() const {
   return N;
 }
 
-double pCoherentSum::slowNorm(){
+double tCoherentSum::slowNorm(){
   if (m_debug) INFO("Started slowNorm");
   if (m_debug) INFO("SumFactor prefix = "<<m_SFType);
   complex_t sumFactor = getSumFactor();  
@@ -531,7 +531,7 @@ double pCoherentSum::slowNorm(){
 return Norm;
 }
 
-void pCoherentSum::reset(bool resetEvents){
+void tCoherentSum::reset(bool resetEvents){
   if (resetEvents){
     m_events1 = nullptr;
 
@@ -548,7 +548,7 @@ void pCoherentSum::reset(bool resetEvents){
   }
 }
 
-void pCoherentSum::setEvents(EventList& list1){
+void tCoherentSum::setEvents(EventList& list1){
   m_events1 = &list1;
 
   m_A.setEvents(list1);
@@ -557,7 +557,7 @@ void pCoherentSum::setEvents(EventList& list1){
 
 }
 
-void pCoherentSum::setMC(EventList& list1){
+void tCoherentSum::setMC(EventList& list1){
   m_A.setMC(list1);
   
   m_C.setMC(list1);
@@ -571,7 +571,7 @@ void pCoherentSum::setMC(EventList& list1){
   
 }
 
-complex_t pCoherentSum::getVal(const Event& evt1) const {
+complex_t tCoherentSum::getVal(const Event& evt1) const {
   complex_t A = m_A.getValNoCache(evt1);
 
   complex_t C = m_C.getValNoCache(evt1);
@@ -608,7 +608,7 @@ complex_t pCoherentSum::getVal(const Event& evt1) const {
 
   return val;
 }
-complex_t pCoherentSum::getValNoCache(const Event& evt1) const {
+complex_t tCoherentSum::getValNoCache(const Event& evt1) const {
   complex_t A = m_A.getValNoCache(evt1);
   
   complex_t C = m_C.getValNoCache(evt1);
@@ -627,7 +627,7 @@ complex_t pCoherentSum::getValNoCache(const Event& evt1) const {
 }
 
 
-void pCoherentSum::debugNorm()
+void tCoherentSum::debugNorm()
 {
 auto i = Constant(0,1);
   auto n_slow = 0.0;
@@ -714,7 +714,7 @@ auto i = Constant(0,1);
 }
 
 
-void pCoherentSum::debug(const Event& evt1) const 
+void tCoherentSum::debug(const Event& evt1) const 
 {
   INFO( "A[x, y] = " << getValNoCache(evt1) << " " << getValNoCache(evt1) << " " << m_norm << " " << prob(evt1) << " " << prob_unnormalised(evt1) );
   INFO("|AB-CD|^2 = "<<prob(evt1));
@@ -725,7 +725,7 @@ void pCoherentSum::debug(const Event& evt1) const
   INFO("Norm = "<<m_norm);
 }
 
-std::vector<std::vector<FitFraction> > pCoherentSum::fitFractions(const LinearErrorPropagator& linProp){
+std::vector<std::vector<FitFraction> > tCoherentSum::fitFractions(const LinearErrorPropagator& linProp){
     outputFractionsA = m_A.fitFractions(linProp);
     
     outputFractionsC = m_C.fitFractions(linProp);
