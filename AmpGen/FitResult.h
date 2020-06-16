@@ -33,6 +33,8 @@ namespace AmpGen
 
     double chi2() const;
     double LL()   const;
+    double Edm()   const;
+    double NCalls()   const;
     double dof()  const;
     double cov(const size_t& x, const size_t& y ) const;
     double cov(const std::string& x, const std::string& y ) const; 
@@ -59,6 +61,8 @@ namespace AmpGen
     MinuitParameterSet*                 m_mps;
     double                              m_chi2   = {0};
     double                              m_LL     = {-999};
+    double                              m_Edm    = {-999};
+    double                              m_NCalls = {-999};
     double                              m_nBins  = {0};
     double                              m_nParam = {0};
     int                                 m_status = {-1};

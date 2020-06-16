@@ -10,6 +10,9 @@
 
 #include "TMatrixTSym.h"
 
+#include <Minuit2/MinimumState.h>
+#include <Minuit2/MnTraceObject.h>
+
 /** @cond PRIVATE */
 namespace ROOT
 {
@@ -28,7 +31,7 @@ namespace AmpGen
   class MinuitParameter;
   class MinuitParameterSet;
 
-  class Minimiser
+  class Minimiser : public ROOT::Minuit2::MnTraceObject
   {
   private:
   template <typename T>
@@ -71,12 +74,16 @@ namespace AmpGen
     void prepare();
     void gradientTest();
     bool doFit();
+    bool doMinosFit();
     TGraph* scan( MinuitParameter* param, const double& min, const double& max, const double& step );
     void addExtendedTerm( IExtendLikelihood* term );
     TMatrixTSym<double> covMatrix() const;
     TMatrixTSym<double> covMatrixFull() const;
     double operator()( const double* par );
+    void operator()(int i, const ROOT::Minuit2::MinimumState & state)  override;
     double FCN() const;
+    double Edm() const;
+    double NCalls() const;
     MinuitParameterSet* parSet() const;
     int status() const;
     ROOT::Minuit2::Minuit2Minimizer* minimiserInternal();
