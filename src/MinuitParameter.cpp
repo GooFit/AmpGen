@@ -10,7 +10,7 @@
 using namespace AmpGen;
 
 namespace AmpGen {
-  complete_enum( Flag, Free, Hide, Fix, CompileTimeConstant )
+  complete_enum( Flag, Free, Hide, Fix, CompileTimeConstant, Blind, BlindingOffset )
 }
 
 MinuitParameter::MinuitParameter( const std::string& name, const Flag& fix, const double& mean, const double& step,
@@ -39,6 +39,8 @@ double MinuitParameter::errNeg()           const { return m_errNegResult; }
 double MinuitParameter::err()              const { return m_errResult; }
 bool   MinuitParameter::isFixed()          const { return m_flag == Flag::Fix || m_flag == Flag::CompileTimeConstant; }
 bool   MinuitParameter::isFree()           const { return m_flag == Flag::Free; }
+bool   MinuitParameter::isBlind()          const { return m_flag == Flag::Blind; }
+bool   MinuitParameter::isBlindingOffset()    const { return m_flag == Flag::BlindingOffset; }
 const std::string& MinuitParameter::name() const { return m_name; }
 
 void MinuitParameter::fix() { m_flag = Flag::Fix; }

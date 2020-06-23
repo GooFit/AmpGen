@@ -29,6 +29,8 @@ FitResult::FitResult( const FitResult& other )
   : m_mps( other.mps()  )
   , m_chi2( other.chi2() )
   , m_LL( other.LL() )
+  , m_Edm( other.Edm() )
+  , m_NCalls( other.NCalls() )
   , m_nBins( other.nBins() )
   , m_nParam( other.nParam() )
   , m_status( other.status() )
@@ -47,11 +49,13 @@ FitResult::FitResult( const std::string& filename ) :
 FitResult::FitResult( const Minimiser& mini )
   : m_mps  ( mini.parSet() )
   , m_LL   ( mini.FCN() )
+  , m_Edm   ( mini.Edm() )
+  , m_NCalls (mini.NCalls() )
   , m_nParam( 0 )
   , m_status( mini.status() )
   , m_covarianceMatrix( mini.covMatrixFull() ) {
   for (size_t i = 0; i < m_mps->size(); ++i ) {
-    if ( m_mps->at(i)->isFree() ) m_nParam++;
+    if ( m_mps->at(i)->isFree() || m_mps->at(i)->isBlind() ) m_nParam++;
     m_covMapping[ m_mps->at(i)->name() ] = i;
   }
 }
@@ -64,7 +68,7 @@ FitResult::FitResult( MinuitParameterSet& mps, const TMatrixD& covMini ) : m_mps
   m_covarianceMatrix.ResizeTo( covMini.GetNcols(), covMini.GetNrows() );
   m_covarianceMatrix = covMini;
   for (size_t i = 0; i < m_mps->size(); ++i ) {
-    if ( m_mps->at(i)->isFree()) m_nParam++;
+    if ( m_mps->at(i)->isFree() || m_mps->at(i)->isBlind() ) m_nParam++;
   }
 }
 
@@ -123,13 +127,34 @@ void FitResult::addObservable( const std::string& name, const double& F ) { m_ob
 
 void FitResult::writeToFile( const std::string& fname )
 {
+  double blindingoffset = 0.;
+  for (size_t i = 0; i < (size_t)m_covarianceMatrix.GetNrows(); ++i ) {
+    auto param = m_mps->at(i);
+    if ( param->isBlindingOffset() ) {  
+      blindingoffset = param->mean();
+      break;
+    }
+  }
+
   std::ofstream outlog;
   outlog.open( fname );
   for (size_t i = 0; i < (size_t)m_covarianceMatrix.GetNrows(); ++i ) {
     auto param = m_mps->at(i);
-    outlog << "Parameter"
+    if ( param->isBlindingOffset() ) continue;
+    if ( param->isBlind() ){
+      if (!blindingoffset ){std::cout<<"      Attention:: attempting to print the unblind value of a blind parameter. Will skip the parameter.  Change this in FitResult.cpp"<<std::endl;
+	continue;
+      }
+   outlog << "BLIND_Parameter"
+	     << " " << param->name() << " " << to_string<Flag>(param->flag()) << " " << param->mean() + blindingoffset << " "
+	     <<  m_mps->at(i)->err() << " " << m_mps->at(i)->errNeg() << " " << m_mps->at(i)->errPos() << "      ";
+    }
+    else {
+      outlog << "Parameter"
       << " " << param->name() << " " << to_string<Flag>(param->flag()) << " " << param->mean() << " "
       << ( param->isFree() ? m_mps->at(i)->err() : 0 ) << " ";
+    }
+
     for (size_t j = 0; j < (size_t)m_covarianceMatrix.GetNcols(); ++j ) outlog << m_covarianceMatrix[i][j] << " ";
     outlog << std::endl;
   }
@@ -147,6 +172,34 @@ void FitResult::print() const
   INFO( "Chi2 per dof = " << m_chi2 / dof() );
   INFO( "-2LL         = " << m_LL );
   INFO( "Fit Status   = " << m_status );
+  INFO( "NCalls       = " << m_NCalls );
+  INFO( "Edm          = " << m_Edm );
+  std::cout<<"\n"<<std::endl;
+  double blindoffset = 0.;
+  for (size_t i = 0; i < (size_t)m_covarianceMatrix.GetNrows(); ++i ) {
+    auto param = m_mps->at(i);
+    if (param->isBlindingOffset() ){
+      blindoffset = param->mean();
+      break;
+    }
+  }
+  for (size_t i = 0; i < (size_t)m_covarianceMatrix.GetNrows(); ++i ) {
+    auto param = m_mps->at(i);
+    if (param->isBlindingOffset() ){continue;}
+    if ( param->isBlind() ) {
+      if (blindoffset == 0.) {
+        INFO("\n\n\n Attempting to print a blind result!!! \n\n\n Skipping parameter for now, change this in FitResult.cpp");
+        continue;
+      }
+      INFO( "Parameter"
+            << " " << param->name() << "     " << to_string<Flag>(param->flag()) << "        " << param->mean() + blindoffset << " +/- "<<  m_mps->at(i)->err() << "Pos err:" << m_mps->at(i)->errPos() << "Neg err:" << m_mps->at(i)->errNeg()  << "  (BLIND)");
+    }
+    else {
+      INFO( "Parameter"
+            << " " << param->name() << "     " << to_string<Flag>(param->flag()) << "        " << param->mean() << " +/- " << (param->isFree() ?  m_mps->at(i)->err() : 0) << "Pos err:" << (param->isFree() ? m_mps->at(i)->errPos() : 0) << "Neg err:" << (param->isFree() ? m_mps->at(i)->errNeg() : 0)  << " ");
+    }
+  }
+  std::cout<<"\n"<<std::endl;
 }
 
 std::vector<MinuitParameter*> FitResult::parameters() const
@@ -160,7 +213,7 @@ std::vector<MinuitParameter*> FitResult::floating( const bool& extended ) const
 {
   std::vector<MinuitParameter*> floating;
   for ( auto& param : *m_mps ) {
-    if ( ( param->isFree() || extended ) && param->err() > 1e-6 ) floating.push_back( param );
+    if ( ( param->isFree() || param->isBlind() || extended ) && param->err() > 1e-6 ) floating.push_back( param );
   }
   return floating;
 }
@@ -170,7 +223,7 @@ TMatrixD FitResult::getReducedCovariance( const bool& extended ) const
   std::vector<unsigned int> floating_indices;
   for (size_t i = 0; i < m_mps->size(); ++i ) {
     auto param = m_mps->at(i);
-    if ( ( param->isFree() || extended ) && param->err() > 1e-6 ) floating_indices.push_back( i );
+    if ( ( param->isFree() || param->isBlind() || extended ) && param->err() > 1e-6 ) floating_indices.push_back( i );
   }
   TMatrixD reducedCov( floating_indices.size(), floating_indices.size() );
   if ( int( floating_indices.size() ) > m_covarianceMatrix.GetNrows() ) {
@@ -204,6 +257,8 @@ void FitResult::addFractions( const std::vector<FitFraction>& fractions )
 
 double FitResult::chi2() const { return m_chi2; }
 double FitResult::LL() const { return m_LL; }
+double FitResult::Edm() const { return m_Edm; }
+double FitResult::NCalls() const { return m_NCalls; }
 int FitResult::status() const { return m_status; }
 int FitResult::nParam() const { return m_nParam; }
 int FitResult::nBins() const { return m_nBins; }
