@@ -107,7 +107,7 @@ void Minimiser::prepare()
   std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse");
   size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
   double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 1);
-  m_printLevel          = NamedParameter<size_t>( "Minimiser::PrintLevel", 4); //MUST be 0 for blind fits
+  m_printLevel          = NamedParameter<size_t>( "Minimiser::PrintLevel", 0); //MUST be 0 for blind fits
   m_normalise           = NamedParameter<bool>(   "Minimiser::Normalise",false);
   if ( m_minimiser != nullptr ) delete m_minimiser;
   m_minimiser = new Minuit2::Minuit2Minimizer(algorithm.c_str() );
@@ -118,7 +118,7 @@ void Minimiser::prepare()
   m_minimiser->SetPrintLevel( m_printLevel );
   m_mapping.clear();
   m_covMatrix.clear();
-  /*
+  
    // Redundant check
   if (m_printLevel){
     for (size_t i = 0 ; i< m_parSet->size(); ++i){
@@ -128,7 +128,7 @@ void Minimiser::prepare()
       }
     }
   }
-  */
+  
   for(size_t i = 0 ; i < m_parSet->size(); ++i) 
   {
     auto par = m_parSet->at(i);
