@@ -98,6 +98,7 @@ namespace AmpGen
       
   declare_enum( spinFormalism, Covariant, Canonical )
   declare_enum( spinBasis    , Dirac    , Weyl ) 
+  declare_enum( sfType       , Default  , Radiative ) 
 
   class Particle
   {
@@ -173,6 +174,10 @@ namespace AmpGen
 
       /// Return the particleProperties object for this particle
       const ParticleProperties* props() const;
+
+      /// Name of the vertex to use for radiative B->Kres gamma decays 
+      std::string radVertexName( unsigned int photonIndex,  unsigned int KresIndex ) const;
+
       
       QuarkContent quarks() const;          ///< Return the quarks of this particle
 
@@ -305,6 +310,11 @@ namespace AmpGen
       NamedParameter<spinBasis>     m_spinBasis      = {"Particle::SpinBasis", spinBasis::Dirac, optionalHelpString("Basis to use for calculating external polarisation tensors / spinors.", {
                       {"Dirac", "[default] Quantises along the z-axis"}
                     , {"Weyl" , "Quantises along the direction of motion"}} )};
+
+      NamedParameter<sfType>  m_sfType   = {"Particle::SFType", sfType::Default, optionalHelpString("Non-default option allowing use of special radiative spin-factors for B->Kresgamma decays, implemented for Covariant formalism only",  {
+                      {"Default", "[default] covariant spin formalism used for full decay chain"}
+                    , {"Radiative" , "custom spin factors for B -> Kres gamma, (default) covariant spin factors for subsequent cascade decays"}} )};
+
       NamedParameter<std::string> m_defaultModifier = {"Particle::DefaultModifier","", "Default modifier to use for lineshapes, for example to use normalised vs unnormalised Blatt-Weisskopf factors."};
   };
   std::ostream& operator<<( std::ostream& os, const Particle& particle );

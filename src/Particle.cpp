@@ -149,6 +149,40 @@ void Particle::parseModifier( const std::string& mod )
 double Particle::spin() const { return double( m_props->twoSpin() / 2. ) ; }
 double Particle::S() const { return m_spinConfigurationNumber ; }
 
+std::string Particle::radVertexName( unsigned int photonIndex,  unsigned int KresIndex ) const
+{
+  if ( m_daughters.size() != 2 ){
+    WARNING("Radiative vertices only well-defined for quasi two-body processes, check logic");
+    return "ERROR";
+  }
+  if ( photonIndex > 1 || KresIndex > 1 ){
+    WARNING("Seem to have more than two daughters here, check logic");
+    return "ERROR";
+  }
+
+  double kresSpin =  daughter(KresIndex)->spin();
+  int kresParity = daughter(KresIndex)->parity(); 
+  int photonPol = daughter(photonIndex)->polState();
+
+  std::string kresSP;
+  if( kresSpin == 1. &&  kresParity == 1 ) kresSP = "A";
+  else if( kresSpin == 1. &&  kresParity == -1 ) kresSP = "V";
+  else if( kresSpin == 2. &&  kresParity == 1 ) kresSP = "Tp";
+  else if( kresSpin == 2. &&  kresParity == -1 ) kresSP = "Tm";
+  else {
+    WARNING( "No spin parity found for kres with spin " << kresSpin << " and parity " << kresParity );
+    return "ERROR";
+  }
+
+  std::string pol;
+  if( photonPol == 1 ) 
+    pol = "_rad_p";
+  else pol = "_rad_m";
+    
+  auto vx=  "P_" + kresSP + "V0" + pol;
+  return vx;
+}
+
 void Particle::pdgLookup()
 {
   if ( m_props == nullptr ) {
@@ -448,11 +482,18 @@ Tensor Particle::spinTensor( DebugSymbols* db ) const
     return S;
   }
   else if ( m_daughters.size() == 2 ) {
+    Tensor value;
     auto vname = m_props->spinName() + "_" + m_daughters[0]->m_props->spinName() + m_daughters[1]->m_props->spinName() + "_" + orbitalString();
-    Tensor value = Vertex::Factory::getSpinFactor( P(), Q(), 
-        daughter(0)->spinTensor(db),
-        daughter(1)->spinTensor(db), vname, db );
-    DEBUG( "Returning spin tensor" );
+    if ( daughter(1)->name() == "gamma0" &&  m_sfType == sfType::Radiative ) {
+      value = Vertex::Factory::getSpinFactor( daughter(0)->P(), daughter(1)->P(), 
+					      daughter(1)->spinTensor( db ),
+					      daughter(0)->spinTensor( db ), radVertexName( 1 , 0 ) , db );
+    } else {
+      value = Vertex::Factory::getSpinFactor( P(), Q(), 
+					      daughter(0)->spinTensor(db),
+					      daughter(1)->spinTensor(db), vname, db );
+      DEBUG( "Returning spin tensor" );
+    }
     return value;
   } else if ( m_daughters.size() == 3 ) {
     return Vertex::Factory::getSpinFactorNBody( {
@@ -840,5 +881,6 @@ std::ostream& AmpGen::operator<<( std::ostream& os, const Particle& particle ){
 namespace AmpGen { 
   complete_enum( spinFormalism, Covariant, Canonical )
   complete_enum( spinBasis    , Dirac    , Weyl ) 
+  complete_enum( sfType       , Default  , Radiative )      
 }
 
