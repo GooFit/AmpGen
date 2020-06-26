@@ -5,6 +5,8 @@
 #include <memory>
 #include <ostream>
 #include <initializer_list>
+#include <cmath>
+#include <complex>
 
 #include "AmpGen/DiracMatrices.h"
 #include "AmpGen/NamedParameter.h"
@@ -12,6 +14,8 @@
 #include "AmpGen/Units.h"
 
 using namespace AmpGen;
+using namespace std::complex_literals;
+
 
 const Tensor::Index mu    = Tensor::Index();
 const Tensor::Index nu    = Tensor::Index();
@@ -434,3 +438,76 @@ DEFINE_VERTEX( V_ff_PR )
   Tensor proj = Spin1Projector(P);
   return proj(mu, nu) * Bar(V1)(a) * Gamma4Vec()(-nu,a,b) * ( Identity(4) + Gamma[4] )(b,c)* V2(c); 
 }
+
+DEFINE_VERTEX( P_AV0_rad_p ){
+  // P = Pres; Q = Pgamma, V1 = PolVector_gamma, V2 = polVector_Kres
+  Tensor dot1 = Tensor( {dot( V1, V2 )*dot(P,Q)});
+  Tensor dot2 = Tensor( {dot(V1,P)*dot(V2,Q)});
+  Tensor prod = Tensor( {LeviCivita()(-mu,-nu,-alpha,-beta)*V1(mu)*V2(nu)*P(alpha)*Q(beta)},{1});
+
+  return (-1*prod - 1i*(dot1-dot2))/( GeV * GeV );
+} 
+DEFINE_VERTEX( P_AV0_rad_m ){
+  // P = Pres; Q = Pgamma, V1 = PolVector_gamma, V2 = polVector_Kres
+  Tensor dot1 = Tensor( {dot( V1, V2 )*dot(P,Q)});
+  Tensor dot2 = Tensor( {dot(V1,P)*dot(V2,Q)});
+  Tensor prod = Tensor( {LeviCivita()(-mu,-nu,-alpha,-beta)*V1(mu)*V2(nu)*P(alpha)*Q(beta)},{1});
+
+  return (-1*prod + 1i*(dot1-dot2))/( GeV * GeV );
+} 
+
+
+
+DEFINE_VERTEX( P_VV0_rad_p ){
+  Tensor dot1 = Tensor( {dot( V1, V2 )*dot(P,Q)});
+  Tensor dot2 = Tensor( {dot(V1,P)*dot(V2,Q)});
+  Tensor prod = Tensor( {LeviCivita()(-mu,-nu,-alpha,-beta)*V1(mu)*V2(nu)*P(alpha)*Q(beta)},{1});
+
+  return (prod + 1i*(dot1-dot2))/( GeV * GeV );
+}
+
+DEFINE_VERTEX( P_VV0_rad_m ){
+  Tensor dot1 = Tensor( {dot( V1, V2 )*dot(P,Q)});
+  Tensor dot2 = Tensor( {dot(V1,P)*dot(V2,Q)});
+  Tensor prod = Tensor( {LeviCivita()(-mu,-nu,-alpha,-beta)*V1(mu)*V2(nu)*P(alpha)*Q(beta)},{1});
+
+  return (-1*prod + 1i*(dot1-dot2))/( GeV * GeV );
+}
+
+
+
+DEFINE_VERTEX( P_TpV0_rad_p ){
+  auto dot0 = make_cse(dot(P,Q));
+  Tensor res = V2(mu,nu)*P(-nu);
+
+  return (-1*LeviCivita()(-mu,-nu,-alpha,-beta)*V1(mu)*res(nu)*P(alpha)*Q(beta) 
+          - 1i * V1(mu)*(V2(-mu,-nu)*dot0-P(-mu)*res(-nu))*Q(nu))/ ( GeV * GeV * GeV );
+} 
+
+
+DEFINE_VERTEX( P_TpV0_rad_m ){
+  auto dot0 = make_cse(dot(P,Q));
+  Tensor res = V2(mu,nu)*P(-nu);
+
+  return (-1*LeviCivita()(-mu,-nu,-alpha,-beta)*V1(mu)*res(nu)*P(alpha)*Q(beta) 
+          + 1i * V1(mu)*(V2(-mu,-nu)*dot0-P(-mu)*res(-nu))*Q(nu))/ ( GeV * GeV *GeV );
+} 
+
+
+
+DEFINE_VERTEX( P_TmV0_rad_p ){
+  auto dot0 = make_cse(dot(P,Q));
+  Tensor res = V2(mu,nu)*P(-nu);
+
+  return (LeviCivita()(-mu,-nu,-alpha,-beta)*V1(mu)*res(nu)*P(alpha)*Q(beta) 
+          + 1i * V1(mu)*(V2(-mu,-nu)*dot0-P(-mu)*res(-nu))*Q(nu))/ ( GeV * GeV * GeV );
+} 
+
+
+DEFINE_VERTEX( P_TmV0_rad_m ){
+  auto dot0 = make_cse(dot(P,Q));
+  Tensor res = V2(mu,nu)*P(-nu);
+
+  return (-1*LeviCivita()(-mu,-nu,-alpha,-beta)*V1(mu)*res(nu)*P(alpha)*Q(beta) 
+          + 1i * V1(mu)*(V2(-mu,-nu)*dot0-P(-mu)*res(-nu))*Q(nu))/ ( GeV * GeV * GeV );
+} 
