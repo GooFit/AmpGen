@@ -222,7 +222,7 @@ add_subdirectory(test)
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(AmpGenVersion.cmake VERSION ${PACKAGE_VERSION} COMPATIBILITY AnyNewerVersion)
-configure_file(AmpGenConfig.cmake.in AmpGenConfig.cmake) #  @ONLY)
+configure_file(AmpGenConfig.cmake.in AmpGenConfig.cmake)
 
 export( TARGETS AmpGen NAMESPACE AmpGen:: FILE AmpGenTargets.cmake )
 set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
