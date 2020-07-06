@@ -29,7 +29,7 @@ pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps
   m_flat(NamedParameter<bool>("pCoherentSum::flat", false, "Force Amplitude=1")),
   m_coherentIntegral(NamedParameter<bool>("pCoherentSum::coherentIntegral", false, "Do the super slow method to calculate normalisation")),
   m_coherentIntegralA(NamedParameter<bool>("pCoherentSum::coherentIntegralA", false, "Do the super slow method to calculate normalisation")),
-
+  m_fastNorm(NamedParameter<bool>("pCoherentSum::fastNorm", false)),
   m_coherentIntegralC(NamedParameter<bool>("pCoherentSum::coherentIntegralC", false, "Do the super slow method to calculate normalisation")),
 
   m_SFType(SFType)
@@ -249,9 +249,27 @@ real_t pCoherentSum::norm() const {
 /*
 
     */
+  real_t nA = m_A.norm();
+
+  real_t nC = m_C.norm();
+
+
   complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
+  complex_t mix = nAC * std::conj(sumFactor);
+  real_t intTerm = 2 * mix.real();
 
 
+  double xp = m_mps["pCoherentSum::x+"]->mean();
+  double yp = m_mps["pCoherentSum::y+"]->mean();
+
+//  real_t N = nA + nC * std::abs(sumFactor) + intTerm;
+  real_t N = nA;// + nC * std::abs(sumFactor) + intTerm;
+
+  //real_t N = nA + nC * (pow(xp, 2) + pow(yp, 2)) +2 * nAC.real() * xp - 2 * nAC.imag() * yp; 
+   
+  if (m_fastNorm){
+    return N;
+  }
 
 
    std::complex<double> rAC = 0; 
@@ -269,11 +287,11 @@ for (int i=0; i<eventsAC.size(); i++){
 
     
     for( int i=0 ; i < eventsAC.size(); i++ ) {
-      auto ab = m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
+      auto ab = m_A.getVal(eventsAC[i]) * std::conj(m_C.getVal(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
   //    if (std::abs(ab) > 1e3){
  
-      auto abA = abs(m_A.getValNoCache(eventsAC[i]));
-      auto abC = abs(m_C.getValNoCache(eventsAC[i]));
+      auto abA = abs(m_A.getVal(eventsAC[i]));
+      auto abC = abs(m_C.getVal(eventsAC[i]));
     
       if (abA>1e10 || abC>1e10){
   //      INFO("A or C too large?");
@@ -294,10 +312,6 @@ for (int i=0; i<eventsAC.size(); i++){
 
 
 
-  real_t nA = m_A.norm();
-
-  real_t nC = m_C.norm();
-
 
   if (m_coherentIntegralA) {
       complex_t nAA = sum_amps( m_normalisationsAA, m_A.matrixElements(), m_A.matrixElements() );
@@ -309,13 +323,13 @@ for (int i=0; i<eventsAC.size(); i++){
       nC = nCC.real(); 
   }
 
-  complex_t mix = rAC * std::conj(sumFactor);
-  real_t intTerm = 2 * mix.real();
+  mix = rAC * std::conj(sumFactor);
+  intTerm = 2 * mix.real();
 
   
 
   if (m_debug) INFO("interference = "<<intTerm);
-  real_t N = nA  + std::norm(sumFactor) * nC  + intTerm;
+  N = nA  + std::norm(sumFactor) * nC  + intTerm;
 
   if (m_debug) INFO("Normalisation = "<<N);
   return N;
@@ -420,16 +434,16 @@ real_t pCoherentSum::testnorm() const {
     if (m_debug) INFO("A = "<<m_A.getVal(eventsAC[i]));
     if (m_debug) INFO("C = "<<m_C.getVal(eventsAC[i]));
 
-      auto ab = m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
+      auto ab = m_A.getVal(eventsAC[i]) * std::conj(m_C.getVal(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
   //    if (std::abs(ab) > 1e3){
     if (m_debug) INFO("ab = "<<ab);
  
     if (m_debug) INFO("Getting value for |a|");
 
-    auto abA = abs(m_A.getValNoCache(eventsAC[i]));
+    auto abA = abs(m_A.getVal(eventsAC[i]));
     if (m_debug) INFO("|a| = "<<abA);
     if (m_debug) INFO("Getting value for |c|");
-    auto abC = abs(m_C.getValNoCache(eventsAC[i]));
+    auto abC = abs(m_C.getVal(eventsAC[i]));
 
     if (m_debug) INFO("|c| = "<<abC);
     
@@ -486,16 +500,16 @@ double pCoherentSum::slowNorm(){
    if (m_debug) INFO("Have "<<eventsAC.size()<< " integration events"); 
     for( int i=0 ; i < eventsAC.size(); i++ ) {
       if (m_debug) INFO("Getting value for ab");
-      auto ab = m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
+      auto ab = m_A.getVal(eventsAC[i]) * std::conj(m_C.getVal(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
   //    if (std::abs(ab) > 1e3){
     if (m_debug) INFO("ab = "<<ab);
  
       if (m_debug) INFO("Getting value for |a|");
 
-      auto abA = abs(m_A.getValNoCache(eventsAC[i]));
+      auto abA = abs(m_A.getVal(eventsAC[i]));
     if (m_debug) INFO("|a| = "<<abA);
       if (m_debug) INFO("Getting value for |c|");
-      auto abC = abs(m_C.getValNoCache(eventsAC[i]));
+      auto abC = abs(m_C.getVal(eventsAC[i]));
 
     if (m_debug) INFO("|c| = "<<abC);
     
@@ -572,16 +586,22 @@ void pCoherentSum::setMC(EventList& list1){
 }
 
 complex_t pCoherentSum::getVal(const Event& evt1) const {
-  complex_t A = m_A.getValNoCache(evt1);
+  complex_t A = m_A.getVal(evt1);
 
-  complex_t C = m_C.getValNoCache(evt1);
+  complex_t C = m_C.getVal(evt1);
 
   complex_t f = correction(evt1);
   
   auto i = Constant(0,1);
   auto corr = exp(i() * f);
   auto sumFactor = getSumFactor();
-  complex_t val = A  *exp(i()*f/2.) + sumFactor* C  *exp(-i()*f/2.);
+  double xp = m_mps["pCoherentSum::x+"]->mean();
+  double yp = m_mps["pCoherentSum::y+"]->mean();
+
+
+//  complex_t val = A  *exp(i()*f/2.) + (xp + i() * yp)  * C  *exp(-i()*f/2.);
+  //complex_t val = A + sumFactor * C;
+  complex_t val = A;// + sumFactor * C;
   //INFO("Correction  = "<<f);
   if (m_debug) INFO("A2 = "<<std::norm(A));
 
@@ -660,7 +680,7 @@ auto i = Constant(0,1);
    auto r = 0.0; 
    auto N = events.size(); 
     for( int i=0 ; i < N; i++ ) {
-     auto ab = A.getValNoCache(events[i]) * std::conj(B.getValNoCache(events[i]));
+     auto ab = A.getVal(events[i]) * std::conj(B.getVal(events[i]));
 
 
      auto rab = std::real(ab)/N;

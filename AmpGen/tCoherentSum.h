@@ -161,6 +161,9 @@ class tCoherentSum {
         if (m_SFType=="Psi3770"){
             return -1;
         }
+        if (m_SFType=="noSum"){
+            return 1;
+        }
         else{
 
             if (m_useXY){
@@ -467,6 +470,7 @@ else{
         int m_debugFreq;
         bool m_pdebug;
         bool m_pNorm;
+        bool m_fastNorm;
         bool m_updateNorms;
         int m_order;
         std::string m_polyType;

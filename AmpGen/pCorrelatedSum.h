@@ -109,6 +109,86 @@ Expression laguerre(Expression x, unsigned int order){
 }
 
 
+Expression customPoly(Expression x, Expression y, unsigned int i, unsigned int j){
+    auto c00 = legendre(x, 0) * legendre(y, 1);
+    auto c01 = legendre(x, 0) * legendre(y, 3);
+    auto c10 = legendre(x, 1) * legendre(y, 1);
+    auto c11 = legendre(x, 1) * legendre(y, 3);
+    auto c02 = legendre(x, 0) * legendre(y, 5);
+    auto c20 = legendre(x, 2) * legendre(y, 1);
+
+    //real_t M [3][3] = {{1,0,0}, {0,1,0}, {0,0,1}};
+//    real_t M [3][3] = {{1,-1,1}, {-1,1,-1}, {1,-1,1}};
+   //   real_t M [3][3] = {{-1,1,1}, {0,1,1}, {1,0,1}};
+//    real_t M [3][3] = {{-1,1,1}, {0,1,-1}, {1,0,1}};
+    //real_t M [3][3] = {{-1/3,1/3,2/3}, {1/3,2/3,1/3}, {1/3,-1/3,1/3}};
+    //real_t M [3][3] = {{1/3,-1/3,1/3}, {1/3,2/3,1/3}, {-1/3,1/3,2/3}};
+
+//delta_3 = 1/8
+//S
+//    real_t M [3][3] = {{-1, 1, 1 }, {0, (1/16) * (7 + pow(561, 0.5)), (1/16)*(7 - pow(561, 0.5))}, {1, 1, 1}};
+//S^-1
+//    real_t M [3][3] = {{-1/2, 0, 1/2}, {1/4 - 7/(4 * pow(561, 0.5)), 8/pow(561, 0.5), 1/4 - 7/(4 * pow(561, 0.5)) }, {1/4 + 7/(4 * pow(561, 0.5)), -8/pow(561, 0.5), 1/4 + 7/(4 * pow(561, 0.5))}  };
+   
+//    real_t M [3][3] = {{1,0,1}, {0,1,-1}, {-1,1,1}};
+//    real_t M [3][3] = {{1/3,-1/3,1/3}, {1/3,2/3,1/3}, {-1/3,1/3,2/3}};
+
+
+//delta_3 = 1/4
+//    real_t M[3][3] = {{-1, 1, 1}, {0, (1/8) * (3 + pow(137, 0.5)), (1/8) * (3 - pow(137, 0.5))}, {1,1,1}};
+//S
+//S^-1
+    real_t M[3][3] = {{-1/2, 0, -1/2}, { 1/4 - 3/(4 * pow(137, 0.5)), 4/pow(137, 0.5), 1/4 - 3/(4 * pow(137, 0.5))  }, { 1/4 + 3/(4 * pow(137, 0.5)), -4/pow(137, 0.5), 1/4 + 3/(4 * pow(137, 0.5)) }};
+//aS^-1
+//    real_t M[3][3] = {{ 1/4 + 3/(4 * pow(137, 0.5)), -4/pow(137, 0.5), 1/4 + 3/(4 * pow(137, 0.5)) } , { 1/4 - 3/(4 * pow(137, 0.5)), 4/pow(137, 0.5), 1/4 - 3/(4 * pow(137, 0.5))  }, {-1/2, 0, 1/2}  };
+
+
+//Wrong S
+
+//    real_t M [3][3] = {{-1,1,-1}, {0,1,-1}, {1,0,1}};
+
+
+    if (i==0 && j ==0){
+        //return 1/3 * (-c00 + c01 + 2* c10);
+        //return c00;
+        return M[0][0] * c00 + M[0][1] * c01 + M[0][2] * c10;
+    }
+    else if (i==0 && j==1){
+        //return  (c01 - c10);
+        return M[1][0] * c00 + M[1][1] * c01 + M[1][2] * c10;
+    }
+    else if (i==1 && j==0){
+        //return 1/3 * (c00 - c01 + c10);
+        return M[2][0] * c00 + M[2][1] * c01 + M[2][2] * c10;
+        //return (c01 + c10);
+        //return c10;
+    }
+    if (i==2 && j ==0){
+        //return 1/3 * (-c00 + c01 + 2* c10);
+        //return c00;
+        return M[0][0] * c02 + M[0][1] * c11 + M[0][2] * c20;
+    }
+    else if (i==1 && j==1){
+        //return  (c01 - c10);
+        return M[1][0] * c02 + M[1][1] * c11 + M[1][2] * c20;
+    }
+    else if (i==0 && j==2){
+        //return 1/3 * (c00 - c01 + c10);
+        return M[2][0] * c02 + M[2][1] * c11 + M[2][2] * c20;
+        //return (c01 + c10);
+        //return c10;
+    }
+
+
+
+
+    else {
+        return 0;
+    }
+    }
+
+
+
 class pCorrelatedSum {
     public:
       //Takes amplitudes - 
@@ -233,6 +313,57 @@ class pCorrelatedSum {
         std::vector<complex_t> vals = {A,B,C,D,ABCD, corr};
         return vals;
     }
+
+
+    complex_t mag_correction(const Event& event) const {
+        Expression corr = 0;
+        auto x = event.s(0,1);
+        auto y = event.s(0,2);
+        auto z = event.s(1,2);
+        auto mp = sqrt(event.s(1,1));
+        auto mm = sqrt(event.s(2,2));
+        auto mK = sqrt(event.s(0,0));
+        auto mD = sqrt(x + y + z - pow(mp,2) - pow(mm,2) - pow(mK,2) ) ;
+        Expression xmin = pow(mp + mK, 2);
+        Expression xmax = pow(mD - mm, 2);
+        Expression x0 = (xmax + xmin)/2;
+        Expression ymin = pow(mp + mK, 2);
+        Expression ymax = pow(mD - mp, 2);
+        Expression y0 = (ymax + ymin)/2;
+        Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
+        Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
+        for (auto i=0; i < m_orderMag+1; i++){
+            Expression sum_i=0;
+            for (auto j=0; j<m_orderMag+1-i; j++){
+
+                double Cij = getC(i,j,"Mag");
+                if (m_polyTypeMag=="simple"){
+                        sum_i = sum_i +  Cij * pow(X(), i) * pow(Y(), j);
+                    }
+                    else if (m_polyTypeMag=="chebychev"){
+                    sum_i = sum_i + Cij * chebychev(X(), i) * chebychev(Y(), j); 
+                    }
+                    else if (m_polyTypeMag=="legendre"){
+                        sum_i = sum_i + Cij * legendre(X(), i) * legendre(Y(), j);
+                    }
+                    else if (m_polyTypeMag=="laguerre"){
+                        sum_i = sum_i + Cij * laguerre(X(), i) * laguerre(Y(), j);
+                    }
+                    else if (m_polyTypeMag=="bessel"){
+                        sum_i = sum_i + Cij * bessel(X(), i) * bessel(Y(), j);
+                    }
+                }
+                corr += sum_i;
+    }
+    //corr = Constant(0,1) * corr;
+    //complex_t val = exp(corr());
+    if (m_pdebug) INFO("correction = "<<corr());
+    return corr();
+
+ 
+    }
+
+
     complex_t correction(const Event& event) const {
         Expression corr = 0;
         auto x = event.s(0,1);
@@ -293,6 +424,26 @@ class pCorrelatedSum {
                    
 
                 }
+                else if (m_polyType=="antiSym_bessel"){
+                   double Cij = getC(i,j);
+                   auto zp = 0.5 * (X() + Y());
+                   auto zm = 0.5 * (X() - Y());
+                  sum_i = sum_i +  Cij * bessel(zp, i) * bessel(zm, 2*j+1);
+                   
+
+                }
+
+
+                else if (m_polyType=="antiSym_laguerre"){
+                   double Cij = getC(i,j);
+                   auto zp = 0.5 * (X() + Y());
+                   auto zm = 0.5 * (X() - Y());
+                  sum_i = sum_i +  Cij * laguerre(zp, i) * laguerre(zm, 2*j+1);
+                   
+
+                }
+
+
                 else if (m_polyType=="Sym_legendre"){
                    double Cij = getC(i,j);
                    auto zp = 0.5 * (X() + Y());
@@ -300,6 +451,12 @@ class pCorrelatedSum {
                   sum_i = sum_i +  Cij * legendre(zp, i) * legendre(zm, 2*j);
                    
 
+                }
+                else if (m_polyType=="customPoly"){
+                    double Cij = getC(i,j);
+                   auto zp = 0.5 * (X() + Y());
+                   auto zm = 0.5 * (X() - Y());                   
+                   sum_i = sum_i + Cij * customPoly(zp, zm, i, j);
                 }
 
 
@@ -509,7 +666,9 @@ class pCorrelatedSum {
         bool m_pNorm;
         bool m_updateNorms;
         int m_order;
+        int m_orderMag;
         std::string m_polyType;
+        std::string m_polyTypeMag;
         size_t m_prepareCalls = 0;
         double m_Anorm;
         double m_Bnorm;

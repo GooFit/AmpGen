@@ -164,64 +164,26 @@ class pCoherentSum {
         else{
 
             if (m_useXY){
-        double xp = 0;
-        double yp = 0;
-
-        double xm = 0;
-        double ym = 0;
-
-
-
-        std::stringstream ss_key_xm;
-        std::stringstream ss_key_ym;
-        std::stringstream ss_key_xp;
-        std::stringstream ss_key_yp;
+        if (m_gamSign==1){
+        double xp = m_mps["pCoherentSum::x+"]->mean();
+        double yp = m_mps["pCoherentSum::y+"]->mean();
        
 
+    
+ 
 
-        ss_key_xp<<"pCoherentSum::"<<m_SFType<<"x+";
-        ss_key_yp<<"pCoherentSum::"<<m_SFType<<"y+";
-
-
-
-        ss_key_xm<<"pCoherentSum::"<<m_SFType<<"x-";
-        ss_key_ym<<"pCoherentSum::"<<m_SFType<<"y-";
+        auto sumFactor =  xp + Constant(0, 1)() * yp;
+//        auto sumFactor = xp + std::complex<double>(0, 1)* yp ;//+ Constant(0, 1) * yp;
 
 
-        std::string key_xp = ss_key_xp.str();
-        std::string key_yp = ss_key_yp.str();
-
-        std::string key_xm = ss_key_xm.str();
-        std::string key_ym = ss_key_ym.str();
-
-
-        if (m_debug) INFO("Key for x = "<<key_xp);
-        if (m_debug) INFO("Key for y = "<<key_yp);
-        if (m_debug) INFO("Key for x = "<<key_xm);
-        if (m_debug) INFO("Key for y = "<<key_ym);
-
-
-
-
-        auto mps_xp = m_mps.find(key_xp);
-        auto mps_yp = m_mps.find(key_yp);
-
-        auto mps_xm = m_mps.find(key_xm);
-        auto mps_ym = m_mps.find(key_ym);
-
-
-        xp = mps_xp->mean();
-        yp = mps_yp->mean();
-
-        xm = mps_xm->mean();
-        ym = mps_ym->mean();
-        complex_t sumFactorP = xp + Constant(0, 1)() * yp;
-        complex_t sumFactorM = xm + Constant(0, 1)() * ym;
-        if (m_gamSign==1){
-            return sumFactorP;
+            return sumFactor;
         }
         else {
-            return sumFactorM;
+        double xm = m_mps["pCoherentSum::x-"]->mean();
+        double ym = m_mps["pCoherentSum::y-"]->mean();
+ 
+        complex_t sumFactor = xm + Constant(0, 1)() * ym;
+            return sumFactor;
         }
 
 
@@ -426,6 +388,12 @@ else{
       //real_t norm(const Bilinears& norms) const; 
       double m_inter = 0;
 
+      complex_t A(Event& evt){
+          return m_A.getVal(evt);
+      }
+      complex_t C(Event& evt){
+          return m_C.getVal(evt);
+      }
    
     protected:
         double  m_norm  =    {0};
@@ -464,6 +432,7 @@ else{
         int m_debugFreq;
         bool m_pdebug;
         bool m_pNorm;
+        bool m_fastNorm;
         bool m_updateNorms;
         int m_order;
         std::string m_polyType;

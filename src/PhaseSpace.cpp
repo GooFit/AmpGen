@@ -94,6 +94,8 @@ Event PhaseSpace::makeEvent(const size_t& cacheSize)
   }
   rt.setGenPdf( 1 );
   if ( m_type.isTimeDependent() ) rt.set( 4 * m_nt, m_rand->Exp( m_decayTime ) );
+//  if ( m_type.isTimeDependent() ) rt.set( 4 * m_nt, m_rand->Uniform( 10 * m_decayTime ) );
+//  if ( m_type.isTimeDependent() ) rt.set( 4 * m_nt, 1);
   return rt;
 }
 

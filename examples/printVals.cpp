@@ -259,6 +259,8 @@ for (int i=0; i < tags.size(); i++){
     tag_log<<tagName<<"_vals.csv"; 
     auto tag_ampFile = tag_log.str();
     out.open(tag_ampFile.c_str());
+    auto norm = cs_tag.norm();
+    auto rnorm = pow(norm, 0.5);
     for (int i=0; i < sigevents_tag.size(); i++){
 
     auto evt_sig = sigevents_tag[i];
@@ -267,13 +269,13 @@ for (int i=0; i < tags.size(); i++){
     auto s02 = evt_sig.s(0,2);
     auto s12 = evt_sig.s(1,2);
     auto vals = cs_tag.getVals(evt_sig, evt_tag);
-    auto A = vals[0];
-    auto B = vals[1];
-    auto C = vals[2];
-    auto D = vals[3];
+    auto A = vals[0]/rnorm;
+    auto B = vals[1]/rnorm;
+    auto C = vals[2]/rnorm;
+    auto D = vals[3]/rnorm;
     auto ABCD = vals[4];
     auto corr = vals[5];
-    auto ACst = A * std::conj(C);
+    auto ACst = A * std::conj(C)/norm;
     auto dCorr = cs_tag.errcorrection(evt_sig);
 
     auto cosDD = -((fcn::pow(abs(ABCD), 2)() - fcn::pow(abs(A), 2)() * fcn::pow(abs(B), 2)() - fcn::pow(abs(C), 2)() * fcn::pow(abs(D), 2)())/(2 * abs(A) * abs(B) * abs(C) * abs(D) )).real();

@@ -2,7 +2,7 @@
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/NamedParameter.h"
 #include <limits>
-
+#include "AmpGen/ParticleProperties.h"
 
 #ifdef _OPENMP
   #include <omp.h>
@@ -29,7 +29,7 @@ tCoherentSum::tCoherentSum(const EventType& type1, const MinuitParameterSet& mps
   m_flat(NamedParameter<bool>("tCoherentSum::flat", false, "Force Amplitude=1")),
   m_coherentIntegral(NamedParameter<bool>("tCoherentSum::coherentIntegral", false, "Do the super slow method to calculate normalisation")),
   m_coherentIntegralA(NamedParameter<bool>("tCoherentSum::coherentIntegralA", false, "Do the super slow method to calculate normalisation")),
-
+  m_fastNorm(NamedParameter<bool>("tCoherentSum::fastNorm", false)),
   m_coherentIntegralC(NamedParameter<bool>("tCoherentSum::coherentIntegralC", false, "Do the super slow method to calculate normalisation")),
 
   m_SFType(SFType)
@@ -234,8 +234,103 @@ void tCoherentSum::updateNorms(const std::vector<size_t>& iA, const std::vector<
 
 real_t tCoherentSum::norm() const {
   if (m_debug) INFO("Getting the value for the normalised pdf");
-  if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
+   auto eventsAC = m_integratorAC.events();
+  if (m_debug) INFO("Get sumFactor");
+ 
   complex_t sumFactor = getSumFactor();  
+  if (m_debug) INFO("sumFactor="<<sumFactor);
+
+  if (m_debug) INFO("Get TD params");
+  if (m_debug) INFO("Get x");
+   auto param_x = m_mps["tCoherentSum::x"];
+
+  if (m_debug) INFO("x = "<<param_x->mean());
+  auto param_y = m_mps["tCoherentSum::y"];
+  if (m_debug) INFO("y = "<<param_y->mean());
+  auto param_absqp = m_mps["tCoherentSum::absqp"];
+  if (m_debug) INFO("|q/p| = "<<param_absqp->mean());
+  auto param_phiqp = m_mps["tCoherentSum::phiqp"];
+  if (m_debug) INFO("phi(q/p) = "<<param_phiqp->mean());
+
+  auto evtType = eventsAC.eventType();
+  if (m_debug) INFO("eventType "<<evtType);
+  if (m_debug) INFO("Get mother "<<eventsAC.eventType().mother()<<" properties");
+
+  auto D0Props = ParticleProperties::get(eventsAC.eventType().mother());
+  auto D0Width = D0Props->width();
+  auto D0Lifetime = D0Props->lifetime();
+  if (m_debug) INFO(eventsAC.eventType().mother()<<" width = "<<D0Width);
+  
+  auto D0Mass = D0Props->mass();
+auto h = 6.62607015e-34;
+auto c = 299792458.0;
+D0Mass = D0Mass * pow(c, 2)/h;
+
+  if (m_debug) INFO(eventsAC.eventType().mother()<<" mass = "<<D0Mass);
+  auto mix_x = param_x->mean();
+  if (m_debug) INFO("x = "<<mix_x);
+  auto mix_y = param_y->mean();
+  if (m_debug) INFO("y = "<<mix_y);
+  auto absqp = param_absqp->mean();
+  auto phiqp = param_phiqp->mean();
+  auto qp = absqp * fcn::exp(Constant(0, 1)() * phiqp)(); 
+
+  if (m_debug) INFO("q/p = "<<qp);
+//  auto a = fcn::exp(-D0Width * t - mix_y * D0Width * t/2 - i() * D0Mass * t + i * mix_x * D0Width * t/2); 
+//  auto b = fcn::exp(-i() * mix_x * D0Width * t/2 + D0Width * mix_y * t);
+//  auto gplus = a * (1 + b);
+// auto  gminus = a * (1-b);  
+
+
+
+//  INFO("Int |g_+(t)|^2 dt = "<<int_gp2());
+  //auto int_gm2 = 1/(2/D0Lifetime + mix_y * D0Width) + 1/(-2 * D0Width + mix_y * D0Width)  - 4 * D0Width/(4*fcn::pow(D0Width, 2)() + fcn::pow(mix_x * D0Width, 2)/4 );
+
+
+//  INFO("Int |g_-(t)|^2 dt = "<<int_gp2());
+
+//  INFO("Int g_+(t)g_-^*(t) dt = "<<int_gpm());
+
+
+//  if (m_debug) INFO("Calculate TD parts of normalisation");
+//  auto int_gp2 = 1/(2 * D0Width + mix_y * D0Width) + 1/(-2 * D0Width + mix_y * D0Width)  + 4 * D0Width/(4*fcn::pow(D0Width, 2)() + fcn::pow(mix_x * D0Width, 2)/4 );
+//  auto int_gp2 = 1/(2/D0Lifetime + mix_y/D0Lifetime) + 1/(-2/D0Lifetime + mix_y/D0Lifetime)  + 4 * (1/D0Lifetime)/(4*fcn::pow(1/D0Lifetime, 2)() + fcn::pow(mix_x / D0Lifetime, 2)/4 );
+
+ // if (m_debug) INFO("Int |g_+(t)|^2 dt = "<<int_gp2());
+  //auto int_gm2 = 1/(2 * D0Width + mix_y * D0Width) + 1/(-2 * D0Width + mix_y * D0Width)  - 4 * D0Width/(4*fcn::pow(D0Width, 2)() + fcn::pow(mix_x * D0Width, 2)/4 );
+//  auto int_gm2 = 1/(2/D0Lifetime + mix_y/D0Lifetime) + 1/(-2/D0Lifetime + mix_y/D0Lifetime)  + 4 * (1/D0Lifetime)/(4*fcn::pow(1/D0Lifetime, 2)() + fcn::pow(mix_x / D0Lifetime, 2)/4 );
+//  if (m_debug) INFO("Int |g_-(t)|^2 dt = "<<int_gp2());
+//  auto int_gpm = 1/(2 * D0Width + mix_y * D0Width) + 1/(-2 * D0Width + mix_y * D0Width) - Constant(0,1)() * mix_x * D0Width/(4 * fcn::pow(D0Width, 2)() + fcn::pow(mix_x * D0Width, 2)()/4);
+//  auto int_gpm = 1/(2/D0Lifetime + mix_y/D0Lifetime) + 1/(-2/D0Lifetime + mix_y/D0Lifetime) - Constant(0,1)() * mix_x * (1/D0Lifetime)/(4 * fcn::pow(1/D0Lifetime, 2)() + fcn::pow(mix_x/D0Lifetime, 2)()/4);
+//  if (m_debug) INFO("Int g_+(t)g_-^*(t) dt = "<<int_gpm());
+
+  //auto int_gp2 = (1/2) * D0Lifetime * (1/(1 - fcn::pow(mix_y, 2)) + 1/(1 + fcn::pow(mix_x, 2)));
+  auto int_gp2 = (1/2)  * (1/(1 - fcn::pow(mix_y, 2)) + 1/(1 + fcn::pow(mix_x, 2)));
+  if (m_debug) INFO("int |g_+|^2 = "<<int_gp2());
+
+  //auto int_gm2 = 1/(2/D0Lifetime + mix_y * D0Width) + 1/(-2 * D0Width + mix_y * D0Width)  - 4 * D0Width/(4*fcn::pow(D0Width, 2)() + fcn::pow(mix_x * D0Width, 2)/4 );
+
+  //auto int_gm2 = 1/(2/D0Lifetime + mix_y/D0Lifetime) + 1/(-2/D0Lifetime + mix_y/D0Lifetime)  - 4 * (1/D0Lifetime)/(4*fcn::pow(1/D0Lifetime, 2)() + fcn::pow(mix_x / D0Lifetime, 2)/4 );
+  //auto int_gm2 = (1/2) * (D0Lifetime/(1 - fcn::pow(mix_y, 2)) - D0Lifetime/(1 + fcn::pow(mix_x, 2))); //  (2/D0Lifetime + mix_y/D0Lifetime) + 1/(-2/D0Lifetime + mix_y/D0Lifetime)  - 4 * (1/D0Lifetime)/(4*fcn::pow(1/D0Lifetime, 2)() + fcn::pow(mix_x / D0Lifetime, 2)/4 );
+  //auto int_gm2 = (1/2) * D0Lifetime * (1/(1 - fcn::pow(mix_y, 2)) - 1/(1 + fcn::pow(mix_x, 2)));
+  auto int_gm2 = (1/2) * (1/(1 - fcn::pow(mix_y, 2)) - 1/(1 + fcn::pow(mix_x, 2)));
+
+  if (m_debug) INFO("int |g_-|^2 = "<<int_gm2());
+
+  //auto int_gpm = D0Lifetime/(2 + mix_y) + D0Lifetime/(-2 + mix_y) - Constant(0,1)() * mix_x * D0Lifetime/(4 + fcn::pow(mix_x, 2)()/4);
+  auto int_gpm = 1/(2 + mix_y) + 1/(-2 + mix_y) - Constant(0,1)() * mix_x * 1/(4 + fcn::pow(mix_x, 2)()/4);
+
+  if (m_debug) INFO("int g_+g_-* = "<<int_gpm());
+
+ if (m_debug) INFO("Get norms for A,C");
+
+
+
+  real_t nA = m_A.norm();
+
+  real_t nC = m_C.norm();
+
+
   auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
   {
     complex_t v; 
@@ -249,14 +344,26 @@ real_t tCoherentSum::norm() const {
 /*
 
     */
+  if (m_debug) INFO("Get interference without corrections");
   complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
 
+  if (m_debug) INFO("interference = "<<nAC);
 
+  complex_t mix = nAC * std::conj(sumFactor) * int_gpm() * qp;
+  //complex_t mix = nAC * std::conj(sumFactor) * qp;
+  if (m_debug) INFO("Calculate uncorrected normalisation");
+  //real_t N = int_gp2().real() * nA + std::norm(sumFactor) * std::norm(qp) * int_gm2().real() * nC + 2 * std::real(int_gpm() * qp * mix);
+  auto N = int_gp2() * nA + std::norm(sumFactor) * std::norm(qp) * int_gm2() * nC + 2 * mix.real();
+  //auto N =  nA + std::norm(sumFactor) * nC + 2 * mix.real();
+  
+  if (m_fastNorm){
+    return N.real();    
+  }
 
 
    std::complex<double> rAC = 0; 
 
-   auto eventsAC = m_integratorAC.events();
+
 
 if (m_debug){
 for (int i=0; i<eventsAC.size(); i++){
@@ -267,13 +374,23 @@ for (int i=0; i<eventsAC.size(); i++){
 }
 }
 
-    
+   double N_slow = 0; 
     for( int i=0 ; i < eventsAC.size(); i++ ) {
-      auto ab = m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
+  auto t = eventsAC[i][4 * eventsAC.eventType().size()];
+  auto a = fcn::exp(- t/D0Lifetime - mix_y * t/(2*D0Lifetime) - Constant(0, 1) * D0Mass * t + Constant(0, 1) * mix_x * t/(2*D0Lifetime)); 
+  auto b = fcn::exp(-1 * Constant(0,1) * mix_x * t/(D0Lifetime) + mix_y * t/D0Lifetime);
+ auto gplus = a * (1 + b);
+auto  gminus = a * (1-b);
+
+    auto vi = std::norm(getValNoCache(eventsAC[i]));
+    N_slow += vi;
+      auto ab = std::conj(qp) * gplus() * std::conj(gminus()) * m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
   //    if (std::abs(ab) > 1e3){
  
-      auto abA = abs(m_A.getValNoCache(eventsAC[i]));
-      auto abC = abs(m_C.getValNoCache(eventsAC[i]));
+      //auto abA = abs(m_A.getValNoCache(eventsAC[i]));
+      auto abA = abs(m_A.getValNoCache(eventsAC[i]) * gplus());
+      //auto abC = abs(m_C.getValNoCache(eventsAC[i]));
+      auto abC = abs(m_C.getValNoCache(eventsAC[i]) * qp * gminus());
     
       if (abA>1e10 || abC>1e10){
   //      INFO("A or C too large?");
@@ -287,17 +404,7 @@ for (int i=0; i<eventsAC.size(); i++){
     }
     }
 
-   
-
-
-
-
-
-
-  real_t nA = m_A.norm();
-
-  real_t nC = m_C.norm();
-
+  N_slow = N_slow/(double)eventsAC.size();
 
   if (m_coherentIntegralA) {
       complex_t nAA = sum_amps( m_normalisationsAA, m_A.matrixElements(), m_A.matrixElements() );
@@ -309,16 +416,22 @@ for (int i=0; i<eventsAC.size(); i++){
       nC = nCC.real(); 
   }
 
-  complex_t mix = rAC * std::conj(sumFactor);
+  mix = rAC * std::conj(sumFactor);
+
+
+
+
   real_t intTerm = 2 * mix.real();
 
   
 
   if (m_debug) INFO("interference = "<<intTerm);
-  real_t N = nA  + std::norm(sumFactor) * nC  + intTerm;
+  N = nA  + std::norm(sumFactor) * nC  + intTerm;
+
+ // N = int_gp2().real() * nA + std::norm(sumFactor) * std::norm(qp) * int_gm2().real() * nC + 2 * std::real(int_gpm() * qp * mix);
 
   if (m_debug) INFO("Normalisation = "<<N);
-  return N;
+  return N_slow;
 }
 
 
@@ -584,13 +697,43 @@ complex_t tCoherentSum::getVal(const Event& evt1) const {
   complex_t val = A  *exp(i()*f/2.) + sumFactor* C  *exp(-i()*f/2.);
   auto param_x = m_mps["tCoherentSum::x"];
   auto param_y = m_mps["tCoherentSum::y"];
-  auto param_qpre = m_mps["tCoherentSum::qpre"];
-  auto param_qpim = m_mps["tCoherentSum::qpim"];
+
+
+
+  auto param_absqp = m_mps["tCoherentSum::absqp"];
+
+  auto param_phiqp = m_mps["tCoherentSum::phiqp"];
+
+
+
+
+  auto D0Props = ParticleProperties::get(m_events1->eventType().mother());
+  auto D0Width = D0Props->width();
+  auto D0Lifetime = D0Props->lifetime();
+  auto D0Mass = D0Props->mass();
   auto mix_x = param_x->mean();
   auto mix_y = param_y->mean();
-  auto qpre = param_qpre->mean();
-  auto qpim = param_qpim->mean();
-  auto qp = qpre + i() * qpim;
+  auto absqp = param_absqp->mean();
+  auto phiqp = param_phiqp->mean();
+
+
+  auto qp = absqp * fcn::exp(Constant(0, 1)() * phiqp)(); 
+//  auto t = evt1[4 * m_events1->eventType().size()];
+  auto t = evt1[4 * m_events1->eventType().size()];
+  auto a = fcn::exp(-t/D0Lifetime - mix_y * t/(2*D0Lifetime) - Constant(0, 1) * D0Mass * t + Constant(0, 1) * mix_x * t/(2*D0Lifetime)); 
+  auto b = fcn::exp(-1 * Constant(0,1) * mix_x * t/(2 * D0Lifetime) + mix_y * t/D0Lifetime);
+
+
+
+
+//  auto a = fcn::exp(-D0Width * t - mix_y * D0Width * t/2 - i() * D0Mass * t + i * mix_x * D0Width * t/2); 
+//  auto b = fcn::exp(-i() * mix_x * D0Width * t/2 + D0Width * mix_y * t);
+ auto gplus = a * (1 + b);
+auto  gminus = a * (1-b);
+
+auto expr = A  *exp(i()*f/2.) * gplus + C *exp(-i()*f/2.)* gminus * sumFactor * qp;// + sumFactor* gminus * qp *C  *exp(-i()*f/2);
+val = expr();
+  //auto gplus = fcn::exp(-i() * )
 
   //INFO("Correction  = "<<f);
   if (m_debug) INFO("A2 = "<<std::norm(A));
@@ -723,6 +866,172 @@ void tCoherentSum::debug(const Event& evt1) const
   INFO("|C|^2 = "<<m_C.prob(evt1));
 
   INFO("Norm = "<<m_norm);
+
+  if (m_debug) INFO("Getting the value for the normalised pdf");
+   auto eventsAC = m_integratorAC.events();
+  if (m_debug) INFO("Get sumFactor");
+ 
+  complex_t sumFactor = getSumFactor();  
+  INFO("sumFactor="<<sumFactor);
+
+  INFO("Get TD params");
+  INFO("Get x");
+   auto param_x = m_mps["tCoherentSum::x"];
+
+  INFO("x = "<<param_x->mean());
+  auto param_y = m_mps["tCoherentSum::y"];
+  INFO("y = "<<param_y->mean());
+  auto param_absqp = m_mps["tCoherentSum::absqp"];
+  INFO("|q/p| = "<<param_absqp->mean());
+  auto param_phiqp = m_mps["tCoherentSum::phiqp"];
+  INFO("phi(q/p) = "<<param_phiqp->mean());
+
+
+
+
+  auto evtType = eventsAC.eventType();
+  INFO("eventType "<<evtType);
+  INFO("Get mother "<<eventsAC.eventType().mother()<<" properties");
+
+  auto D0Props = ParticleProperties::get(eventsAC.eventType().mother());
+  auto D0Width = D0Props->width();
+  auto D0Lifetime = D0Props->lifetime();
+  INFO(eventsAC.eventType().mother()<<" width = "<<D0Width);
+  
+  auto D0Mass = D0Props->mass();
+
+auto h = 6.62607015e-34;
+auto c = 299792458.0;
+D0Mass = D0Mass * pow(c, 2)/h;
+  INFO(eventsAC.eventType().mother()<<" mass = "<<D0Mass);
+  auto mix_x = param_x->mean();
+  auto mix_y = param_y->mean();
+  auto absqp = param_absqp->mean();
+  auto phiqp = param_phiqp->mean();
+  auto qp = absqp * fcn::exp( Constant(0, 1)() * phiqp)(); 
+//  auto a = fcn::exp(-D0Width * t - mix_y * D0Width * t/2 - i() * D0Mass * t + i * mix_x * D0Width * t/2); 
+//  auto b = fcn::exp(-i() * mix_x * D0Width * t/2 + D0Width * mix_y * t);
+//  auto gplus = a * (1 + b);
+// auto  gminus = a * (1-b);  
+
+
+  INFO("Calculate TD parts of normalisation");
+//  auto int_gp2 = 1/(2/D0Lifetime + mix_y/D0Lifetime) + 1/(-2/D0Lifetime + mix_y/D0Lifetime)  + 4 * (1/D0Lifetime)/(4*fcn::pow(1/D0Lifetime, 2)() + fcn::pow(mix_x / D0Lifetime, 2)/4 );
+  //auto int_gp2 = (1/2) * D0Lifetime * (1/(1 - fcn::pow(mix_y, 2)) + 1/(1 + fcn::pow(mix_x, 2)));
+
+
+  //auto int_gm2 = 1/(2/D0Lifetime + mix_y * D0Width) + 1/(-2 * D0Width + mix_y * D0Width)  - 4 * D0Width/(4*fcn::pow(D0Width, 2)() + fcn::pow(mix_x * D0Width, 2)/4 );
+
+  //auto int_gm2 = 1/(2/D0Lifetime + mix_y/D0Lifetime) + 1/(-2/D0Lifetime + mix_y/D0Lifetime)  - 4 * (1/D0Lifetime)/(4*fcn::pow(1/D0Lifetime, 2)() + fcn::pow(mix_x / D0Lifetime, 2)/4 );
+  //auto int_gm2 = (1/2) * (D0Lifetime/(1 - fcn::pow(mix_y, 2)) - D0Lifetime/(1 + fcn::pow(mix_x, 2))); //  (2/D0Lifetime + mix_y/D0Lifetime) + 1/(-2/D0Lifetime + mix_y/D0Lifetime)  - 4 * (1/D0Lifetime)/(4*fcn::pow(1/D0Lifetime, 2)() + fcn::pow(mix_x / D0Lifetime, 2)/4 );
+  //auto int_gm2 = (1/2) * D0Lifetime * (1/(1 - fcn::pow(mix_y, 2)) - 1/(1 + fcn::pow(mix_x, 2)));
+
+  //auto int_gpm = 1/(2/D0Lifetime + mix_y/D0Lifetime) + 1/(-2/D0Lifetime + mix_y/D0Lifetime) - Constant(0,1)() * mix_x * (1/D0Lifetime)/(4 * fcn::pow(1/D0Lifetime, 2)() + fcn::pow(mix_x/D0Lifetime, 2)()/4);
+
+  //auto int_gp2 = (1/2) * D0Lifetime * (1/(1 - fcn::pow(mix_y, 2)) + 1/(1 + fcn::pow(mix_x, 2)));
+  auto int_gp2 = (1/2)  * (1/(1 - fcn::pow(mix_y, 2)) + 1/(1 + fcn::pow(mix_x, 2)));
+  INFO("Int |g_+(t)|^2 dt = "<<int_gp2());
+
+  //auto int_gm2 = 1/(2/D0Lifetime + mix_y * D0Width) + 1/(-2 * D0Width + mix_y * D0Width)  - 4 * D0Width/(4*fcn::pow(D0Width, 2)() + fcn::pow(mix_x * D0Width, 2)/4 );
+
+  //auto int_gm2 = 1/(2/D0Lifetime + mix_y/D0Lifetime) + 1/(-2/D0Lifetime + mix_y/D0Lifetime)  - 4 * (1/D0Lifetime)/(4*fcn::pow(1/D0Lifetime, 2)() + fcn::pow(mix_x / D0Lifetime, 2)/4 );
+  //auto int_gm2 = (1/2) * (D0Lifetime/(1 - fcn::pow(mix_y, 2)) - D0Lifetime/(1 + fcn::pow(mix_x, 2))); //  (2/D0Lifetime + mix_y/D0Lifetime) + 1/(-2/D0Lifetime + mix_y/D0Lifetime)  - 4 * (1/D0Lifetime)/(4*fcn::pow(1/D0Lifetime, 2)() + fcn::pow(mix_x / D0Lifetime, 2)/4 );
+  //auto int_gm2 = (1/2) * D0Lifetime * (1/(1 - fcn::pow(mix_y, 2)) - 1/(1 + fcn::pow(mix_x, 2)));
+  auto int_gm2 = (1/2) * (1/(1 - fcn::pow(mix_y, 2)) - 1/(1 + fcn::pow(mix_x, 2)));
+  INFO("Int |g_-(t)|^2 dt = "<<int_gp2());
+  //auto int_gpm = D0Lifetime/(2 + mix_y) + D0Lifetime/(-2 + mix_y) - Constant(0,1)() * mix_x * D0Lifetime/(4 + fcn::pow(mix_x, 2)()/4);
+  auto int_gpm = 1/(2 + mix_y) + 1/(-2 + mix_y) - Constant(0,1)() * mix_x * 1/(4 + fcn::pow(mix_x, 2)()/4);
+  INFO("Int g_+(t)g_-^*(t) dt = "<<int_gpm());
+
+
+
+ INFO("Get norms for A,C");
+
+
+
+  real_t nA = m_A.norm();
+
+  real_t nC = m_C.norm();
+
+
+  auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
+  {
+    complex_t v; 
+    for (size_t i=0; i< mA.size(); i++){
+      for (size_t j=0; j< mB.size(); j++){
+        v += bl.get(i, j) * mA[i].coefficient * std::conj(mB[j].coefficient);;
+      }
+    }
+    return v; 
+  };
+/*
+
+    */
+  INFO("Get interference without corrections");
+  complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
+
+  INFO("interference = "<<nAC);
+
+  complex_t mix = nAC * std::conj(sumFactor);
+  if (m_debug) INFO("Calculate uncorrected normalisation");
+  real_t N = int_gp2().real() * nA + std::norm(sumFactor) * std::norm(qp) * int_gm2().real() * nC + 2 * std::real(int_gpm() * qp * mix);
+
+  INFO("Norm = "<<N);
+
+  real_t NAC = nA + nC + 2*nAC.real();
+  INFO("nA = "<<nA);
+  INFO("nC = "<<nC);
+  INFO("N(A+C) = "<<NAC);
+
+  auto t0 = evt1[4 * m_events1->eventType().size()];
+  auto a0 = fcn::exp(- t0/D0Lifetime - mix_y * t0/(2*D0Lifetime) - Constant(0, 1) * D0Mass * t0 + Constant(0, 1) * mix_x * t0/(2*D0Lifetime)); 
+  auto b0 = fcn::exp(-1 * Constant(0,1) * mix_x * t0/(2 * D0Lifetime) + mix_y * t0/D0Lifetime);
+ auto gplus0 = a0 * (1 + b0);
+auto  gminus0 = a0 * (1-b0);
+
+auto slow_gp2_int = 0;
+auto slow_gm2_int = 0;
+complex_t slow_gpm_int = 0;
+double N_slow =0;
+for (int i=0 ; i<eventsAC.size() ; i++){
+  auto t = eventsAC[i][4 * m_events1->eventType().size()];
+  auto a = fcn::exp(- t/D0Lifetime - mix_y * t/(2*D0Lifetime) - Constant(0, 1) * D0Mass * t + Constant(0, 1) * mix_x * t/(2*D0Lifetime)); 
+  auto b = fcn::exp(-1 * Constant(0,1) * mix_x * t/(D0Lifetime) + mix_y * t/D0Lifetime);
+ auto gplus = a * (1 + b);
+auto  gminus = a * (1-b);
+
+  slow_gp2_int += std::norm(gplus());
+  slow_gm2_int += std::norm(gminus());
+  slow_gpm_int += gplus() * std::conj(gminus());
+    auto v = std::norm(getVal(eventsAC[i]));
+    N_slow += v;
+
+}
+
+
+
+INFO("time = "<<t0);
+INFO("a0 = "<<a0());
+INFO("b0 = "<<b0());
+INFO("g_+(t)0 = "<<gplus0());
+INFO("g_-(t)0 = "<<gminus0());
+
+INFO("Int |g_+|^2 dt = "<<slow_gp2_int);
+INFO("Int |g_-|^2 dt = "<<slow_gp2_int);
+INFO("Int g_+g_-^* dt = "<<slow_gpm_int);
+INFO("nEvents = "<<eventsAC.size());
+double nevents = eventsAC.size();
+INFO("Int |g_+|^2 dt = "<<slow_gp2_int/nevents);
+INFO("Int |g_-|^2 dt = "<<slow_gp2_int/nevents);
+INFO("Int g_+g_-^* dt = "<<slow_gpm_int/nevents);
+
+
+auto fast_gp2_int = (1/2.) * D0Lifetime * (1/(1-pow(mix_y, 2)) + 1/(1 - pow(mix_x, 2)));
+auto fast_gm2_int = std::norm(qp) * (1/2.) *  D0Lifetime * (1/(1-pow(mix_y, 2)) - 1/(1 - pow(mix_x, 2)));
+INFO("D0Lifetime = "<<D0Lifetime);
+INFO("Fast |g_+|^2 dt = "<<fast_gp2_int);
+INFO("Fast |g_-|^2 dt = "<<fast_gm2_int);
+INFO("N_slow = "<<N_slow);
 }
 
 std::vector<std::vector<FitFraction> > tCoherentSum::fitFractions(const LinearErrorPropagator& linProp){

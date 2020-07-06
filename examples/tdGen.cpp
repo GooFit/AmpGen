@@ -25,7 +25,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/CoherentSum.h"
-#include "AmpGen/gCoherentSum.h"
+#include "AmpGen/tCoherentSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/NamedParameter.h"
@@ -72,7 +72,7 @@ template <class PDF_TYPE, class PRIOR_TYPE>
 }
 
 template <class PDF_TYPE, class PRIOR_TYPE> 
-  void gammaGenerateEvents( EventList& events
+  void tdGenerateEvents( EventList& events
                        , PDF_TYPE& pdf 
                        , PRIOR_TYPE& prior
                        , const size_t& nEvents
@@ -141,7 +141,7 @@ int main( int argc, char** argv )
     MPS.add(p.decayDescriptor()+"_Im", Flag::Fix, 0., 0);
   } 
   else eventType = EventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
-                  NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+                  NamedParameter<bool>( "GenerateTimeDependent", true , "Flag to include possible time dependence of the amplitude") );
   
   if ( NamedParameter<bool>( "conj", false ) == true ) {
     eventType = eventType.conj();
@@ -162,28 +162,15 @@ int main( int argc, char** argv )
 //    sig.reset();
 
 //    GenerateEvents( accepted, sig, phsp , nEvents, blockSize, &rand );
+ 
   TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
-  for (auto& BTag : BTags){
-
-INFO("B DecayType = "<<BTag);
   EventList accepted( eventType );
     PhaseSpace phsp(eventType,&rand);
     
 
-    auto B_Name = split(BTag,' ')[0];
-    auto B_Pref = split(BTag,' ')[1];
-    int B_Conj = std::stoi(split(BTag,' ')[2]);
-    int gammaSign = std::stoi(split(BTag,' ')[3]);
-    bool useXY = std::stoi(split(BTag,' ')[4]);
-    int nEvents_B = nEvents;
-    if (split(BTag, ' ').size() >5){
-      nEvents_B = std::stod(split(BTag, ' ')[5]) * nEvents;
-    }
-    INFO("GammaSign = "<<gammaSign);
-    if (B_Conj == 1){
-      eventType = eventType.conj(true);
-    }
-    gCoherentSum sig2( eventType, MPS);
+     //pCoherentSum sig2( eventType, MPS, B_Pref, tdSign, useXY);
+     // tCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType="Psi3770", int gamSign=1, bool useXY=false);
+      tCoherentSum sig2(eventType, MPS , "noSum"); 
     EventList mc( eventType);
       Generator<PhaseSpace> signalGenerator( phsp );
 //      CoherentSum sig(eventType, MPS);
@@ -194,11 +181,12 @@ INFO("B DecayType = "<<BTag);
 
 //   sig2.setMC(mc);
 //   sig2.prepare();
-    gammaGenerateEvents(accepted, sig2, phsp, nEvents_B, blockSize, &rand);
+    tdGenerateEvents(accepted, sig2, phsp, nEvents, blockSize, &rand);
     INFO("Finished generating events");
 //  if( accepted.size() == 0 ) return -1;
 
-  accepted.tree( B_Name )->Write();
+  accepted.tree( "DalitzEventList" )->Write();
+
   bool doPlots = NamedParameter<bool>("doPlots", true);
   if(doPlots){
   auto plots = accepted.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
@@ -208,7 +196,7 @@ INFO("B DecayType = "<<BTag);
     for( size_t i = 0 ; i < proj.size(); ++i ){
       for( size_t j = i+1 ; j < proj.size(); ++j ){ 
         std::stringstream ss;
-        ss<<B_Name<<"_s"<<i<<j;
+        ss<<"s"<<i<<j;
         accepted.makeProjection( Projection2D(proj[i], proj[j]), LineColor(kBlack) )->Write(ss.str().c_str()); 
       }
     }
@@ -233,7 +221,7 @@ INFO("B DecayType = "<<BTag);
     }
     out.close();
   }
-  }
+  
 f->Write();
   f->Close();
   INFO("Wrote events to "<<outfile);
