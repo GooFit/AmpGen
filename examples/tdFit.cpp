@@ -741,6 +741,7 @@ void doBFit(){
  
  std::vector<std::string> sfList_B;
  std::vector<int> gammaSigns;
+ std::vector<int> useXYs;
   for (auto& BTag : Btags){
  // MinuitParameterSet * MPS_B = new MinuitParameterSet();
 //  MPS_B->loadFromStream();
@@ -782,6 +783,7 @@ void doBFit(){
     SigType_B.push_back(BEventType);
     sfList_B.push_back(B_Pref);
     gammaSigns.push_back(gammaSign);
+    useXYs.push_back(useXY);
 
     auto cs_B = pCoherentSum(BEventType,  MPS, B_Pref , gammaSign, useXY);
     cs_B.setEvents(sigevents_B);
@@ -835,7 +837,7 @@ if (doBFit){
   //MPS_B->loadFromStream();
 
   INFO("Doing combined fit for B");
-  CombLL combLL_B = CombLL(SigData_B, SigInt_B, SigType_B, MPS, sfList_B, gammaSigns);
+  CombLL combLL_B = CombLL(SigData_B, SigInt_B, SigType_B, MPS, sfList_B, gammaSigns, useXYs);
 
   Minimiser combMini_B = Minimiser(combLL_B, &MPS);
     combMini_B.gradientTest();

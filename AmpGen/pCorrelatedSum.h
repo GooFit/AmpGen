@@ -274,6 +274,7 @@ class pCorrelatedSum {
      g = mps_g->mean();
 
         complex_t sumFactor = exp(Constant(0, 1)() * (g + d)) * r;
+
         return sumFactor;
         }
         

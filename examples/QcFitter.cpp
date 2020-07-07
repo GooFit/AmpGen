@@ -176,7 +176,7 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     TagInt.push_back(tagMCevents_tag);
     SigType.push_back(sigevents_tag.eventType());
     TagType.push_back(tagevents_tag.eventType());
-    sumFactors.push_back("Psi3770");
+    sumFactors.push_back("Bp2Dhp");
 
     if (doTagFit) { 
       auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), *MPS_tag);

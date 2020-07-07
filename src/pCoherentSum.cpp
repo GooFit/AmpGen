@@ -263,7 +263,7 @@ real_t pCoherentSum::norm() const {
   double yp = m_mps["pCoherentSum::y+"]->mean();
 
 //  real_t N = nA + nC * std::abs(sumFactor) + intTerm;
-  real_t N = nA;// + nC * std::abs(sumFactor) + intTerm;
+  real_t N = nA + nC * std::abs(sumFactor) + intTerm;
 
   //real_t N = nA + nC * (pow(xp, 2) + pow(yp, 2)) +2 * nAC.real() * xp - 2 * nAC.imag() * yp; 
    
@@ -601,7 +601,7 @@ complex_t pCoherentSum::getVal(const Event& evt1) const {
 
 //  complex_t val = A  *exp(i()*f/2.) + (xp + i() * yp)  * C  *exp(-i()*f/2.);
   //complex_t val = A + sumFactor * C;
-  complex_t val = A;// + sumFactor * C;
+  complex_t val = A + sumFactor * C;
   //INFO("Correction  = "<<f);
   if (m_debug) INFO("A2 = "<<std::norm(A));
 

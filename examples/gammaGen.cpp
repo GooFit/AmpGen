@@ -25,7 +25,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/CoherentSum.h"
-#include "AmpGen/gCoherentSum.h"
+#include "AmpGen/pCoherentSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/NamedParameter.h"
@@ -85,6 +85,7 @@ template <class PDF_TYPE, class PRIOR_TYPE>
   EventList mc( events.eventType() );
   signalGenerator.fillEventListPhaseSpace( mc, blockSize, pdf.size());
   INFO("Have "<<mc.size()<<" integration events");
+  pdf.setEvents(mc);
   pdf.setMC(mc);
   
   pdf.prepare();
@@ -183,7 +184,7 @@ INFO("B DecayType = "<<BTag);
     if (B_Conj == 1){
       eventType = eventType.conj(true);
     }
-    gCoherentSum sig2( eventType, MPS);
+    pCoherentSum sig2( eventType, MPS, B_Pref, gammaSign, useXY);
     EventList mc( eventType);
       Generator<PhaseSpace> signalGenerator( phsp );
 //      CoherentSum sig(eventType, MPS);
@@ -194,6 +195,8 @@ INFO("B DecayType = "<<BTag);
 
 //   sig2.setMC(mc);
 //   sig2.prepare();
+ 
+
     gammaGenerateEvents(accepted, sig2, phsp, nEvents_B, blockSize, &rand);
     INFO("Finished generating events");
 //  if( accepted.size() == 0 ) return -1;

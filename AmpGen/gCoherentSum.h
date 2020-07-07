@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-#include "AmpGen/CoherentSum.h"
+
 #include "AmpGen/AmplitudeRules.h"
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/EventList.h"
@@ -25,105 +25,124 @@
 #include "AmpGen/MinuitParameterSet.h"
 //#include "AmpGen/functional/pdf.h"
 
+
+#include <memory.h>
+#include <stddef.h>
+#include <complex>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "AmpGen/AmplitudeRules.h"
+#include "AmpGen/CompiledExpression.h"
+#include "AmpGen/EventList.h"
+#include "AmpGen/EventType.h"
+#include "AmpGen/Integrator.h"
+#include "AmpGen/Integrator2.h"
+#include "AmpGen/Types.h"
+#include "AmpGen/Event.h"
+#include "AmpGen/Projection.h"
+#include "AmpGen/MinuitParameter.h"
+//#include "AmpGen/functional/pdf.h"
+
 namespace AmpGen
 {
+  class LinearErrorPropagator;
+  class MinuitParameterSet;
+  class FitFraction;
+  class Particle;
 
-class gCoherentSum // : public functional::pdf_base<CoherentSum>
+  /** @class gCoherentSum
+      @brief A coherent sum of amplitudes 
+
+      An coherent sum of resonant contributions, where at a position in phase-space @f$\psi@f$, 
+      the (unnormalised) probability density  is given by
+      @f[ 
+        \mathcal{P}(\psi) = \left| \sum_{i} g_i \mathcal{A}_i(\psi) \right|^2,    
+      @f]
+      where @f$\mathcal{P}(\psi)@f$ is the probability, @f$g_i@f$ is the coupling to an isobar channel, 
+      and @f$\mathcal{A}_i(\psi)@f$ is the amplitude of the ith channel.
+  */
+  class gCoherentSum // : public functional::pdf_base<gCoherentSum>
   {
   public:
     gCoherentSum();
-    gCoherentSum( const EventType& type, const AmpGen::MinuitParameterSet& mps);
-    
-
+    gCoherentSum( const EventType& type, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "" );
     virtual ~gCoherentSum() = default; 
-    double norm() const {
 
-
-      auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
-      {
-        complex_t v; 
-        for (size_t i=0; i< mA.size(); i++){
-          for (size_t j=0; j< mB.size(); j++){
-            v += bl.get(i, j) * mA[i].coefficient * std::conj(mB[j].coefficient);;
-          }
-        }
-        return v; 
-      };
-      
-      auto nAC = sum_amps(m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements()); 
-      auto inter = nAC * complex_t(m_x->mean(), -m_y->mean());
-      //return m_A.norm() + m_C.norm() + 2 * inter.real();
-      return m_A.norm() +  (pow(m_x->mean(), 2) + pow(m_y->mean(), 2)) * m_C.norm() + 2 * inter.real();
-      //return m_C.norm() +  (pow(m_x->mean(), 2) + pow(m_y->mean(), 2)) * m_C.norm() + 2 * inter.real();
-      //return m_A.norm() * (pow(m_x->mean(), 2) + pow(m_y->mean(), 2));// + m_C.norm();// + 2 * inter.real();
-
-    }
-    complex_t getVal(const Event& evt) const {
-      bool flat = NamedParameter<bool>("gCoherentSum::flat", false);
-      if (flat) return 1;
-      return m_A.getVal(evt) + complex_t(m_x->mean(), m_y->mean()) * m_C.getVal(evt);
-      //return m_A.getVal(evt) * complex_t(m_x->mean(), m_y->mean());// * m_C.getVal(evt);
-//      return m_A.getVal(evt);// + complex_t(m_x->mean(), m_y->mean()) * m_C.getVal(evt);
-    }
-
-    void setEvents(EventList& list){
-      m_A.setEvents(list); 
-      m_C.setEvents(list); 
-      m_events = &list;
-    }
-
-    void setMC(EventList& sim){
-      m_A.setMC(sim);
-      m_C.setMC(sim);
-      m_integrator = integrator(&sim);
-    }
-
-    real_t prob(const Event& evt) const { return std::norm(getVal(evt))/m_norm; }
-
-    real_t prob_unnormalised( const Event& evt ) const { return std::norm(getVal(evt)); }
-
-
-    size_t size() const { return m_A.matrixElements().size() + m_C.matrixElements().size(); }
-
-
-
-    real_t operator()( const Event& evt )        const { return std::norm(getVal(evt))/m_norm; }
-  void reset( bool resetEvents )
-  {
-
-  for ( auto& mE : m_A.matrixElements() ) mE.addressData = 999;
-  for ( auto& mE : m_C.matrixElements() ) mE.addressData = 999;
-  if ( resetEvents ){ 
-    m_events = nullptr;
-    m_integrator = integrator();
-  }
-}
-
-
-
-    void prepare(){
-      m_A.prepare(); 
-      m_C.prepare(); 
-      m_normalisationsAC.resize( m_A.matrixElements().size(), m_C.matrixElements().size() ); 
-      m_norm = norm();
-    }
-  protected:
-    double m_norm;
-
-    typedef Integrator<10> integrator;
-    CoherentSum m_A;
-    CoherentSum m_C;
-    //Real and imaginary part for complex sumFactor
-    MinuitParameter* m_x;
-    MinuitParameter* m_y;
-    //AmpGen::MinuitParameterSet m_mps;
-    EventType m_type;
-    EventType m_typeConj;
-
-    EventList * m_events;
-    integrator m_integrator;
-    Bilinears m_normalisationsAC;
+    AmplitudeRules protoAmplitudes() { return m_rules; }
+    std::string prefix() const { return m_prefix; }
     
+    TransitionMatrix<complex_t> operator[]( const size_t& index ) { return m_matrixElementsA[index]; }
+    const TransitionMatrix<complex_t> operator[]( const size_t& index ) const { return m_matrixElementsA[index]; }
+    size_t size() const { return m_matrixElementsA.size(); }
+    
+    real_t getWeight() const { return m_weight; }
+    real_t operator()( const Event& evt )        const { return m_weight*std::norm(getVal(evt))/m_norm; }
+    real_t prob( const Event& evt )              const { return m_weight*std::norm(getVal(evt))/m_norm; }
+    real_t prob_unnormalised( const Event& evt ) const { return std::norm(getVal(evt)); }
+    real_t norm( const Bilinears& norms ) const;
+    real_t norm() const;
+    real_t getNorm( const Bilinears& normalisations );
+
+    complex_t norm( const size_t& x, const size_t& y ) const;
+    complex_t getVal( const Event& evt ) const;
+    complex_t getVal( const Event& evt, const std::vector<size_t>& cacheAddresses ) const;
+    complex_t getValNoCache( const Event& evt ) const;
+    complex_t getValNoCache( const Event& evt, const size_t& offset ) const;
+    
+    void transferParameters();
+    void prepare();
+    void printVal( const Event& evt );
+    void updateNorms( const std::vector<size_t>& changedPdfIndices );
+    void setWeight( MinuitProxy param ) { m_weight = param; }
+    void makeTotalExpression();
+    void reset( bool resetEvents = false );
+    void setEvents( EventList& list );
+    void setMC( EventList& sim );
+    void debug( const Event& evt, const std::string& nameMustContain="");
+    void generateSourceCode( const std::string& fname, const double& normalisation = 1, bool add_mt = false );
+
+    std::vector<size_t> cacheAddresses( const EventList& evts ) const; 
+    std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
+    std::vector<TransitionMatrix<complex_t>> matrixElements() const { return m_matrixElementsA; }
+
+    std::map<std::string, std::vector<unsigned int>> getGroupedAmplitudes();
+    Bilinears norms() const { return m_normalisationsA ; }
+  
+  protected:
+    typedef Integrator<10> integrator;
+    std::vector<TransitionMatrix<complex_t>> m_matrixElementsA; ///< Vector of (expanded) matrix elements
+    std::vector<TransitionMatrix<complex_t>> m_matrixElementsC; ///< Vector of (expanded) matrix elements
+    Bilinears        m_normalisationsA;                         ///< Normalisation integrals
+    Bilinears        m_normalisationsC;                         ///< Normalisation integrals
+    Bilinears        m_normalisationsAC;                         ///< Normalisation integrals
+    AmplitudeRules   m_rules;                                  ///< Ruleset for the selected transition.
+    integrator       m_integratorA;                             ///< Integral dispatch tool (with default unroll = 10) 
+    TransitionMatrix<complex_t> m_totalA;                       ///< Total Matrix Element 
+    TransitionMatrix<complex_t> m_totalC;                       ///< Total Matrix Element 
+    EventList*       m_events       = {nullptr};               ///< Data events to evaluate PDF on
+    EventType        m_evtTypeA;                                ///< Final state for this amplitude
+    EventType        m_evtTypeC;                                ///< Final state for this amplitude
+    size_t           m_prepareCalls = {0};                     ///< Number of times prepare has been called
+    size_t           m_lastPrint    = {0};                     ///< Last time verbose PDF info was printed
+    size_t           m_printFreq    = {0};                     ///< Frequency to print verbose PDF info
+    MinuitProxy      m_weight       = {nullptr, 1};            ///< Weight (i.e. the normalised yield)
+    double           m_norm         = {0};                     ///< Normalisation integral
+    bool             m_isConstant   = {false};                 ///< Flag for a constant PDF
+    bool             m_dbThis       = {false};                 ///< Flag to generate amplitude level debugging
+    bool             m_verbosity    = {false};                 ///< Flag for verbose printing
+    std::string      m_objCache     = {""};                    ///< Directory that contains (cached) amplitude objects
+    std::string      m_prefix       = {""};                    ///< Prefix for matrix elements
+    void addMatrixElement( std::pair<Particle, TotalCoupling>& particleWithCoupling, const MinuitParameterSet& mps );
+    MinuitParameter * m_x;
+    MinuitParameter * m_y;
   };
-}
+} // namespace AmpGen
+
+
+
+
 #endif

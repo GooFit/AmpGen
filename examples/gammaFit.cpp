@@ -1,6 +1,6 @@
 #include "AmpGen/Psi3770.h"
 #include "AmpGen/pCorrelatedSum.h"
-#include "AmpGen/gCoherentSum.h"
+#include "AmpGen/pCoherentSum.h"
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/CorrelatedSum.h"
 #include "AmpGen/CorrelatedLL.h"
@@ -10,7 +10,7 @@
 #include "AmpGen/SumPDF.h"
 //#include "AmpGen/CombCorrLL.h"
 //#include "AmpGen/CombGamCorrLL.h"
-//#include "AmpGen/CombLL.h"
+#include "AmpGen/CombLL.h"
 #include "AmpGen/MetaUtils.h"
 #include <typeinfo>
 
@@ -61,9 +61,15 @@ int main( int argc, char* argv[] )
 
   EventType eventType = EventType(pNames);
 
+  std::vector<EventList> SigData;
+  std::vector<EventList> SigInt;
+  std::vector<EventType> SigType;
+  std::vector<std::string> sumFactors;
+  std::vector<int> gammaSigns;
+  std::vector<int> useXYs;
   for (auto& BTag : BTags){
 
-INFO("B DecayType = "<<BTag);
+    INFO("B DecayType = "<<BTag);
  
  
     
@@ -72,7 +78,7 @@ INFO("B DecayType = "<<BTag);
     auto B_Pref = split(BTag,' ')[1];
     int B_Conj = std::stoi(split(BTag,' ')[2]);
     int gammaSign = std::stoi(split(BTag,' ')[3]);
-   bool useXY = std::stoi(split(BTag,' ')[4]);
+    bool useXY = std::stoi(split(BTag,' ')[4]);
  
     
     INFO("GammaSign = "<<gammaSign);
@@ -80,43 +86,56 @@ INFO("B DecayType = "<<BTag);
       eventType = eventType.conj(true);
     }
 
-
-  
-
-  auto sig = gCoherentSum(eventType, MPS);
-
-  std::string DataFile = NamedParameter<std::string>("DataSample", "");
-  std::string IntFile = NamedParameter<std::string>("IntegrationSample", "");
-
-  std::stringstream DataSS;
-  DataSS<<DataFile<<":"<<B_Name;
-  std::string DataLoc = DataSS.str();
-
-
-  std::stringstream IntSS;
-  IntSS<<IntFile<<":"<<B_Name;
-  std::string IntLoc = IntSS.str();
+    auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY);
 
 
 
-  EventList Data = EventList(DataLoc, eventType);
-  EventList Int = EventList(IntLoc, eventType);
-  
-  sig.setEvents(Data);
-  sig.setMC(Int);
+    std::string DataFile = NamedParameter<std::string>("DataSample", "");
+    std::string IntFile = NamedParameter<std::string>("IntegrationSample", "");
 
-  auto ll = make_likelihood(Data, sig);
-  Minimiser mini = Minimiser(ll, &MPS);
-  mini.gradientTest();
-  mini.doFit();
+    std::stringstream DataSS;
+    DataSS<<DataFile<<":"<<B_Name;
+    std::string DataLoc = DataSS.str();
 
-  std::ofstream fitOut;
-  fitOut.open("fitB.csv");
-  fitOut<<"x+ "<<MPS["gCoherentSum::x"]->mean()<<" "<<MPS["gCoherentSum::x"]->err()<<"\n"<<"y+ "<<MPS["gCoherentSum::y"]->mean()<<" "<<MPS["gCoherentSum::y"]->err()<<"\n";
-  fitOut.close();
+
+    std::stringstream IntSS;
+    IntSS<<IntFile<<":"<<B_Name;
+    std::string IntLoc = IntSS.str();
+
+    EventList Data = EventList(DataLoc, eventType);
+    EventList Int = EventList(IntLoc, eventType);
+    
+    sig.setEvents(Data);
+    sig.setMC(Int);
+
+
+    SigData.push_back(Data);
+    SigInt.push_back(Int);
+    SigType.push_back(eventType);
+    sumFactors.push_back(B_Pref);
+    gammaSigns.push_back(gammaSign);
+    useXYs.push_back(useXY);
+
+
+    if (NamedParameter<bool>("FitEach", false)){
+    auto ll = make_likelihood(Data, sig);
+    Minimiser mini = Minimiser(ll, &MPS);
+    mini.gradientTest();
+    mini.doFit();
+
+    std::ofstream fitOut;
+    fitOut.open(NamedParameter<std::string>("fitOutput", "fit.csv"));
+    fitOut<<"x+ "<<MPS["pCoherentSum::x+"]->mean()<<" "<<MPS["pCoherentSum::x+"]->err()<<"\n"
+          <<"y+ "<<MPS["pCoherentSum::y+"]->mean()<<" "<<MPS["pCoherentSum::y+"]->err()<<"\n";
+    fitOut.close();
+    }
 
   }
 
+  auto LLC = CombLL(SigData, SigInt, SigType, MPS, sumFactors, gammaSigns, useXYs);
+  Minimiser mini(LLC, &MPS);
+  mini.gradientTest();
+  mini.doFit();
 
   return 0;
 }
