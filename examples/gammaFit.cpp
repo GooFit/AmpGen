@@ -130,12 +130,52 @@ int main( int argc, char* argv[] )
     fitOut.close();
     }
 
+    auto xp = MPS["pCoherentSum::x+"];
+    auto yp = MPS["pCoherentSum::y+"];
+
+    double stepxp = xp->err();
+    double stepyp = yp->err();
+
+    double xpMax = xp->mean() + 5*xp->err();
+    double xpMin = -xpMax;
+    double ypMax = yp->mean() + 5*yp->err();
+    double ypMin = -ypMax;
+
+    int Nxp = 10;
+    int Nyp = 10;
+    sig.prepare();
+    std::ofstream NOut;
+    NOut.open("norm.csv");
+    INFO("Running through "<<Nxp<<" normalisations");
+    INFO("Running through "<<Nyp<<" normalisations");
+    for (int i=0; i <Nxp; i++){
+      for (int j=0; j<Nyp; j++){
+        INFO("At "<<i<<j); 
+        MPS["pCoherentSum::x+"]->setCurrentFitVal(xpMin + i*stepxp);
+        INFO("x+ = "<<xpMin + i * stepxp);
+        MPS["pCoherentSum::y+"]->setCurrentFitVal(ypMin + j*stepyp);
+        INFO("y+ = "<<ypMin + j * stepyp);
+
+        double slowNorm = sig.norm();
+
+        INFO("slowNorm = "<<slowNorm);
+        double fastNorm = sig.getFastNorm();
+        INFO("FastNorm = "<<fastNorm);
+
+        INFO(xpMin + i * stepxp<<" "<<ypMin + j * stepyp<<" "<<slowNorm<<" "<<fastNorm);
+        NOut<<xpMin + i * stepxp<<" "<<ypMin + j * stepyp<<" "<<slowNorm<<" "<<fastNorm<<"\n";
+      }
+    }
+    NOut.close();
+
+
+
   }
 
-  auto LLC = CombLL(SigData, SigInt, SigType, MPS, sumFactors, gammaSigns, useXYs);
-  Minimiser mini(LLC, &MPS);
-  mini.gradientTest();
-  mini.doFit();
+//  auto LLC = CombLL(SigData, SigInt, SigType, MPS, sumFactors, gammaSigns, useXYs);
+//  Minimiser mini(LLC, &MPS);
+//  mini.gradientTest();
+//  mini.doFit();
 
   return 0;
 }

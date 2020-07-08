@@ -1255,7 +1255,7 @@ void tFit(){
   EventList sigevents = EventList(dataFile, sigType);
   EventList sigMCevents = EventList(intFile, sigType);
 
-  CoherentSum sig(sigType, MPS);
+  tCoherentSum sig(sigType, MPS);
   sig.setEvents(sigevents);
   sig.setMC(sigMCevents);
   sig.prepare();
@@ -1269,6 +1269,7 @@ void tFit(){
   sig.debug(event0);
   std::ofstream f;
   f.open("tdVals.csv");
+  double avgT = 0;
   for (int i=0; i<sigevents.size(); i++){
     auto evt = sigevents[i];
     auto time = evt[evt.size()-1];
@@ -1276,18 +1277,22 @@ void tFit(){
     auto s02 = evt.s(0,2);
     auto val = sig.getVal(evt);
     auto prob = sig.prob(evt);
+    avgT += time/sigevents.size();
 
     f<<s01<<" "<<s02<<" "<<time<<" "<<val.real()<<" "<<val.imag()<<" "<<prob<<"\n";
   }
 
   f.close();
+  INFO("<t> = "<<avgT);
 
   auto LL = make_likelihood( sigevents, sig);
   Minimiser mini = Minimiser(LL, &MPS);
-  //mini.gradientTest();
+  mini.gradientTest();
+  //mini.doFit();
   INFO("LL = "<<mini.FCN());
   std::vector<std::string> params = {"tCoherentSum::x", "tCoherentSum::y", "tCoherentSum::absqp", "tCoherentSum::phiqp", "D0{K*(892)bar-{K0S0,pi-},pi+}_Re"};
   std::vector<std::string> outputs = {"x", "y", "absqp", "phiqp", "K892plus"};
+
   for (int i=0; i<params.size();i++){
 
     auto m_param = MPS[params[i]];
@@ -1309,8 +1314,10 @@ void tFit(){
       outfile<<pVal<<" "<<LLVal<<"\n";
     }
     outfile.close();
+    m_param->setCurrentFitVal(mean);
 
   }
+
 //  mini_B.doFit();  
 
 

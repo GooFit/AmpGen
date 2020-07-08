@@ -394,6 +394,48 @@ else{
       complex_t C(Event& evt){
           return m_C.getVal(evt);
       }
+
+      real_t getFastNorm(){
+
+        if (m_debug) INFO("Getting the value for the normalised pdf");
+        if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
+        complex_t sumFactor = getSumFactor();  
+        auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
+        {
+            complex_t v; 
+            for (size_t i=0; i< mA.size(); i++){
+            for (size_t j=0; j< mB.size(); j++){
+                v += bl.get(i, j) * mA[i].coefficient * std::conj(mB[j].coefficient);;
+            }
+            }
+            return v; 
+        };
+        /*
+
+            */
+        real_t nA = m_A.norm();
+
+        real_t nC = m_C.norm();
+
+
+        complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
+        complex_t mix = nAC * std::conj(sumFactor);
+        real_t intTerm = 2 * mix.real();
+
+
+        double xp = m_mps["pCoherentSum::x+"]->mean();
+        double yp = m_mps["pCoherentSum::y+"]->mean();
+
+        
+        real_t N = nA + nC * std::abs(sumFactor) + intTerm;
+
+        
+        
+
+        return N;
+
+
+      }
    
     protected:
         double  m_norm  =    {0};

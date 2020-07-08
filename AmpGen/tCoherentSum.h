@@ -1,6 +1,7 @@
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/FitFraction.h"
 #include "AmpGen/NamedParameter.h"
+#include "AmpGen/ParticleProperties.h"
 #include "AmpGen/Lineshapes.h"
 #include "AmpGen/MinuitParameterSet.h"
 
@@ -317,7 +318,74 @@ else{
         return vals;
     }
 
+    complex_t gplus(const Event& event) const{
+        if (m_debug){
+            INFO("Can we get time?");
+            auto t = event[event.size() - 1]; //End of Event stores the time value.
+            INFO("t = "<<t);
 
+        }
+        auto t = event[event.size() - 1]; //End of Event stores the time value.
+        auto x = m_mps["tCoherentSum::x"]->mean(); //x mixing parameter
+        auto y = m_mps["tCoherentSum::y"]->mean();
+
+        //Mother properties
+        auto D0Props = ParticleProperties::get(m_integratorAC.events().eventType().mother());
+        auto D0Width = D0Props->width();
+        auto D0Lifetime = D0Props->lifetime();
+        auto D0Mass = D0Props->mass();
+
+        //Rescale t -> t/2tau
+        auto tp = t/(2 * D0Lifetime);
+
+        //cosh/sinhytp
+        auto _cosh = (fcn::exp(y * tp) + fcn::exp(-y * tp))/2.;
+        auto _sinh =  (fcn::exp(y * tp) - fcn::exp(-y * tp))/2.;
+
+        //cos/sin xtp
+
+        auto _cos = fcn::cos(x * tp);
+        auto _sin = fcn::sin(y * tp);
+
+        auto val = _cos * _cosh + complex_t(0, 1) * _sin * _sinh;
+        return val();
+    }
+
+    complex_t gminus(const Event& event) const{
+        auto t = event[event.size() - 1]; //End of Event stores the time value.
+        auto x = m_mps["tCoherentSum::x"]->mean(); //x mixing parameter
+        auto y = m_mps["tCoherentSum::y"]->mean();
+
+        //Mother properties
+        auto D0Props = ParticleProperties::get(m_integratorAC.events().eventType().mother());
+        auto D0Width = D0Props->width();
+        auto D0Lifetime = D0Props->lifetime();
+        auto D0Mass = D0Props->mass();
+
+        //Rescale t -> t/2tau
+        auto tp = t/(2 * D0Lifetime);
+
+        //cosh/sinhytp
+        auto _cosh = (fcn::exp(y * tp) + fcn::exp(-y * tp))/2.;
+        auto _sinh =  (fcn::exp(y * tp) - fcn::exp(-y * tp))/2.;
+
+        //cos/sin xtp
+
+        auto _cos = fcn::cos(x * tp);
+        auto _sin = fcn::sin(y * tp);
+
+        auto val = _cos * _sinh + complex_t(0, 1) * _sin * _cosh;
+        return val();
+    }
+
+    complex_t qp()const{
+        auto absqp = m_mps["tCoherentSum::absqp"]->mean();
+        auto phiqp =m_mps["tCoherentSum::phiqp"]->mean();
+        complex_t val =  absqp * fcn::exp(complex_t(0, 1) * phiqp)();
+        return val;
+
+
+    }
 
     complex_t correction(const Event& event) const {
         Expression corr = 0;
