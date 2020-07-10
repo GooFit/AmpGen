@@ -114,7 +114,7 @@ class tCoherentSum {
     public:
       //Takes amplitudes - 
         tCoherentSum();
-        tCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType="Psi3770", int gamSign=1, bool useXY=false);
+        tCoherentSum(const EventType& type1, const MinuitParameterSet& mps);
         virtual ~tCoherentSum()=default;
 
 
@@ -158,130 +158,7 @@ class tCoherentSum {
         return val;
     }
 
-    complex_t getSumFactor()const {
-        if (m_SFType=="Psi3770"){
-            return -1;
-        }
-        if (m_SFType=="noSum"){
-            return 1;
-        }
-        else{
 
-            if (m_useXY){
-        double xp = 0;
-        double yp = 0;
-
-        double xm = 0;
-        double ym = 0;
-
-
-
-        std::stringstream ss_key_xm;
-        std::stringstream ss_key_ym;
-        std::stringstream ss_key_xp;
-        std::stringstream ss_key_yp;
-       
-
-
-        ss_key_xp<<"tCoherentSum::"<<m_SFType<<"x+";
-        ss_key_yp<<"tCoherentSum::"<<m_SFType<<"y+";
-
-
-
-        ss_key_xm<<"tCoherentSum::"<<m_SFType<<"x-";
-        ss_key_ym<<"tCoherentSum::"<<m_SFType<<"y-";
-
-
-        std::string key_xp = ss_key_xp.str();
-        std::string key_yp = ss_key_yp.str();
-
-        std::string key_xm = ss_key_xm.str();
-        std::string key_ym = ss_key_ym.str();
-
-
-        if (m_debug) INFO("Key for x = "<<key_xp);
-        if (m_debug) INFO("Key for y = "<<key_yp);
-        if (m_debug) INFO("Key for x = "<<key_xm);
-        if (m_debug) INFO("Key for y = "<<key_ym);
-
-
-
-
-        auto mps_xp = m_mps.find(key_xp);
-        auto mps_yp = m_mps.find(key_yp);
-
-        auto mps_xm = m_mps.find(key_xm);
-        auto mps_ym = m_mps.find(key_ym);
-
-
-        xp = mps_xp->mean();
-        yp = mps_yp->mean();
-
-        xm = mps_xm->mean();
-        ym = mps_ym->mean();
-        complex_t sumFactorP = xp + Constant(0, 1)() * yp;
-        complex_t sumFactorM = xm + Constant(0, 1)() * ym;
-        if (m_gamSign==1){
-            return sumFactorP;
-        }
-        else {
-            return sumFactorM;
-        }
-
-
-
-
-
-            }
-else{
-
-        double r = 0;
-        double d = 0;
-        double g = 0;
-        std::stringstream ss_key_r;
-        std::stringstream ss_key_d;
-        std::stringstream ss_key_g;
-        ss_key_r<<"tCoherentSum::"<<m_SFType<<"r";
-        ss_key_d<<"tCoherentSum::"<<m_SFType<<"d";
-        ss_key_g<<"tCoherentSum::gamma";
-
-        std::string key_r = ss_key_r.str();
-        std::string key_d = ss_key_d.str();
-        std::string key_g = ss_key_g.str();
-
-        if (m_debug) INFO("Key for rB = "<<key_r);
-        if (m_debug) INFO("Key for deltaB = "<<key_d);
-        if (m_debug) INFO("Key for gamma = "<<key_g);
-
-        auto mps_r = m_mps.find(key_r);
-        auto mps_d = m_mps.find(key_d);
-        auto mps_g = m_mps.find(key_g);
-
-
-
-
-            r = mps_r->mean();
-        if (m_debug) INFO("rB = "<<r);
-
-
-
-
-            d = mps_d->mean();
-
-        if (m_debug) INFO("deltaB = "<<d);
-
-
-
-            g = mps_g->mean() * m_gamSign;
-
-        if (m_debug) INFO("gamma = "<<g);
-
-        complex_t sumFactor = exp(Constant(0, 1)() * (g + d)) * r;
-        return sumFactor;
-        }
-        }
-        
-    }
     
     
 
@@ -510,7 +387,7 @@ else{
         Bilinears m_normalisationsCC;
 
         MinuitParameterSet m_mps;
-        std::string m_SFType;
+
         CoherentSum  m_A;
 
         CoherentSum  m_C;
@@ -547,11 +424,11 @@ else{
 
         double m_Cnorm;
 
-        int m_gamSign;
+
 
         bool m_sameTag;
         bool m_flat;
-        bool m_useXY;
+
   };
 }
 #endif

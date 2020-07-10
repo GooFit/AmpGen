@@ -595,8 +595,8 @@ complex_t pCoherentSum::getVal(const Event& evt1) const {
   auto i = Constant(0,1);
   auto corr = exp(i() * f);
   auto sumFactor = getSumFactor();
-  double xp = m_mps["pCoherentSum::x+"]->mean();
-  double yp = m_mps["pCoherentSum::y+"]->mean();
+//  double xp = m_mps["pCoherentSum::x+"]->mean();
+//  double yp = m_mps["pCoherentSum::y+"]->mean();
 
 
 //  complex_t val = A  *exp(i()*f/2.) + (xp + i() * yp)  * C  *exp(-i()*f/2.);

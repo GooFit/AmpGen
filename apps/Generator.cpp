@@ -25,6 +25,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/CoherentSum.h"
+#include "AmpGen/gCoherentSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/NamedParameter.h"
@@ -160,7 +161,10 @@ int main( int argc, char** argv )
     }
     out.close();
   }
- 
+  sig.setEvents(accepted);
+  sig.setMC(accepted);
+  sig.prepare();
+  INFO("Norm = "<<sig.norm()); 
   } 
   else if ( genType == generatorType::PolarisedSum ){
     PolarisedSum sig( eventType, MPS ); 

@@ -1,5 +1,6 @@
 #include "AmpGen/Psi3770.h"
 #include "AmpGen/pCorrelatedSum.h"
+#include "AmpGen/pCoherentSum.h"
 #include "AmpGen/tCoherentSum.h"
 #include "AmpGen/CorrelatedSum.h"
 #include "AmpGen/CorrelatedLL.h"
@@ -88,6 +89,7 @@ struct Moment {
   double var() { return N == 0 ? 0 : xx; }
 };
 
+
 int main( int argc, char* argv[] )
 {
   /* The user specified options must be loaded at the beginning of the programme, 
@@ -97,31 +99,16 @@ int main( int argc, char* argv[] )
   /* */
   //auto time_wall = std::chrono::high_resolution_clock::now();
   //auto time      = std::clock();
-  size_t hwt = std::thread::hardware_concurrency();
-  size_t nThreads     = NamedParameter<size_t>("nCores"      , hwt         , "Number of threads to use");
-  //double luminosity   = NamedParameter<double>("Luminosity"  , 818.3       , "Luminosity to generate. Defaults to CLEO-c integrated luminosity.");
-  //size_t nEvents      = NamedParameter<size_t>("nEvents"     , 0           , "Can also generate a fixed number of events per tag, if unspecified use the CLEO-c integrated luminosity.");
-  size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Random seed to use.");
-    int nBins = NamedParameter<int>("nBins", 100, "number of bins for projection");
-  //bool   poissonYield = NamedParameter<bool  >("PoissonYield", true        , "Flag to include Poisson fluctuations in expected yields (only if nEvents is not specified)");
-  //bool   noQCFit      = NamedParameter<bool  >("noQCFit"     , false       , "Treat Signal and Tag as uncorrelated and fit the data individually");
-  double crossSection = NamedParameter<double>("CrossSection", 3.26 * 1000 , "Cross section for e⁺e⁻ → Ψ(3770) → DD'");
-  std::string output  = NamedParameter<std::string>("Output" , "ToyMC.root", "File containing output events"); 
-  bool m_debug        = NamedParameter<bool>("Debug", false, "Debug QcFitter output");
-    bool doDebugNorm  = NamedParameter<bool>("doDebugNorm", false, "Debug the normalisation of the pdf");
 
-    int nFits = NamedParameter<int>("nFits", 4, "number of repeats of mini.doFits() for debug purposes!");
-    bool doProjections = NamedParameter<bool>("doProjections", true);
-    bool doPCorrSum = NamedParameter<bool>("doPCorrSum", false);
-//    bool doCombFit = NamedParameter<bool>("doCombFit", false, "Do a combined fit of 3 tags - at the moment this is hard coded for now");
-  bool b_doBFit = NamedParameter<bool>("doBFit", false);
-  bool doCGFit = NamedParameter<bool>("doCGFit", false);
-  bool doCGScan = NamedParameter<bool>("doCGScan", false);
 
   /* Parameters that have been parsed can be accessed anywhere in the program 
      using the NamedParameter<T> class. The name of the parameter is the first option,
      then the default value, and then the help string that will be printed if --h is specified 
      as an option. */
+
+
+  bool m_debug = NamedParameter<bool>("debug", false);
+  int nThreads = NamedParameter<int>("nThreads", 12);
 
    #ifdef _OPENMP
   omp_set_num_threads( nThreads );
@@ -129,15 +116,189 @@ int main( int argc, char* argv[] )
   omp_set_dynamic( 0 );
   #endif
 
-   
-  tFit();
+
+   auto pNames = NamedParameter<std::string>("EventType" , ""    
+      , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
+ 
+  
+
+  auto BTags   = NamedParameter<std::string>("BTagTypes" , std::string(), "").getVector();
+ 
+
+  MinuitParameterSet MPS;
+  MPS.loadFromStream();
+
+  EventType eventType = EventType(pNames, true);
+
+  std::vector<EventList> SigData;
+  std::vector<EventList> SigInt;
+  std::vector<EventType> SigType;
+  std::vector<std::string> sumFactors;
+  std::vector<int> gammaSigns;
+  std::vector<int> useXYs;
+  for (auto& BTag : BTags){
+
+    INFO("B DecayType = "<<BTag);
+ 
+ 
+    
+
+    auto B_Name = split(BTag,' ')[0];
+    auto B_Pref = split(BTag,' ')[1];
+    int B_Conj = std::stoi(split(BTag,' ')[2]);
+    int gammaSign = std::stoi(split(BTag,' ')[3]);
+    bool useXY = std::stoi(split(BTag,' ')[4]);
+ 
+    
+    INFO("GammaSign = "<<gammaSign);
+    if (B_Conj == 1){
+      eventType = eventType.conj(true);
+    }
+
+    //auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY);
+    auto sig = tCoherentSum(eventType, MPS);// ,B_Pref, gammaSign, useXY);
 
 
-  // SimFit totalLL;
 
+    std::string DataFile = NamedParameter<std::string>("DataSample", "");
+    std::string IntFile = NamedParameter<std::string>("IntegrationSample", "");
+
+    std::stringstream DataSS;
+    DataSS<<DataFile<<":"<<B_Name;
+    std::string DataLoc = DataSS.str();
+
+
+    std::stringstream IntSS;
+    IntSS<<IntFile<<":"<<B_Name;
+    std::string IntLoc = IntSS.str();
+
+    //EventList Data = EventList(DataLoc, eventType);
+    EventList Data = EventList(DataFile, eventType);
+    //EventList Int = EventList(IntLoc, eventType);
+    EventList Int = EventList(IntFile, eventType);
+    
+    sig.setEvents(Data);
+    sig.setMC(Int);
+
+
+    SigData.push_back(Data);
+    SigInt.push_back(Int);
+    SigType.push_back(eventType);
+    sumFactors.push_back(B_Pref);
+    gammaSigns.push_back(gammaSign);
+    useXYs.push_back(useXY);
+
+
+    if (NamedParameter<bool>("FitEach", false)){
+    auto ll = make_likelihood(Data, sig);
+    Minimiser mini = Minimiser(ll, &MPS);
+
+    std::ofstream fTVals;
+    fTVals.open("tVals.csv");
+    double avgT = 0;
+    for (int i =0;i<Data.size();i++){
+      auto evt = Data[i];
+      double time =evt[evt.size() - 1];
+      auto gp = sig.gplus(evt);
+      auto gm = sig.gminus(evt);
+      avgT += time/(double)Data.size();
+      fTVals<<time<<" "<<gp.real()<<" "<<gp.imag()<<" "<<gm.real()<<" "<<gm.imag()<<"\n";
+      
+    }
+    fTVals.close();
+    INFO("<t> = "<<avgT);
+  std::vector<std::string> params = {"tCoherentSum::x", "tCoherentSum::y", "D0{K*(892)bar-{K0S0,pi-},pi+}_Re"};
+  std::vector<std::string> outputs = {"x", "y", "K892plus"};
+
+  for (int i=0; i<params.size();i++){
+
+    auto m_param = MPS[params[i]];
+    auto mean = m_param->mean();
+    auto err = m_param->err();
+    auto min = -5 * err + mean;
+    auto max = 5 * err + mean;
+    auto step = 0.5 * err;
+    int n = (max - min)/step;
+    std::stringstream ss_file;
+    ss_file<<outputs[i]<<".csv";
+    auto fileName = ss_file.str();
+    std::ofstream outfile;
+    outfile.open(fileName);
+    for (int i=0; i<n; i++){
+      auto pVal = i * step + min;
+      m_param->setCurrentFitVal(pVal);
+      auto LLVal = mini.FCN();
+      outfile<<pVal<<" "<<LLVal<<"\n";
+    }
+    outfile.close();
+    MPS[params[i]]->setCurrentFitVal(mean);
+
+  }
+ 
+
+
+    mini.gradientTest();
+    }
+  }
+ //   mini.doFit();
+/*
+    std::ofstream fitOut;
+    fitOut.open(NamedParameter<std::string>("fitOutput", "fit.csv"));
+    fitOut<<"x+ "<<MPS["pCoherentSum::x+"]->mean()<<" "<<MPS["pCoherentSum::x+"]->err()<<"\n"
+          <<"y+ "<<MPS["pCoherentSum::y+"]->mean()<<" "<<MPS["pCoherentSum::y+"]->err()<<"\n";
+    fitOut.close();
+    }
+
+    auto xp = MPS["pCoherentSum::x+"];
+    auto yp = MPS["pCoherentSum::y+"];
+
+    double stepxp = xp->err();
+    double stepyp = yp->err();
+
+    double xpMax = xp->mean() + 5*xp->err();
+    double xpMin = -xpMax;
+    double ypMax = yp->mean() + 5*yp->err();
+    double ypMin = -ypMax;
+
+    int Nxp = 10;
+    int Nyp = 10;
+    sig.prepare();
+    std::ofstream NOut;
+    NOut.open("norm.csv");
+    INFO("Running through "<<Nxp<<" normalisations");
+    INFO("Running through "<<Nyp<<" normalisations");
+    for (int i=0; i <Nxp; i++){
+      for (int j=0; j<Nyp; j++){
+        INFO("At "<<i<<j); 
+        MPS["pCoherentSum::x+"]->setCurrentFitVal(xpMin + i*stepxp);
+        INFO("x+ = "<<xpMin + i * stepxp);
+        MPS["pCoherentSum::y+"]->setCurrentFitVal(ypMin + j*stepyp);
+        INFO("y+ = "<<ypMin + j * stepyp);
+
+        double slowNorm = sig.norm();
+
+        INFO("slowNorm = "<<slowNorm);
+        double fastNorm = sig.getFastNorm();
+        INFO("FastNorm = "<<fastNorm);
+
+        INFO(xpMin + i * stepxp<<" "<<ypMin + j * stepyp<<" "<<slowNorm<<" "<<fastNorm);
+        NOut<<xpMin + i * stepxp<<" "<<ypMin + j * stepyp<<" "<<slowNorm<<" "<<fastNorm<<"\n";
+      }
+    }
+    NOut.close();
+
+
+
+  }
+*/
+//  auto LLC = CombLL(SigData, SigInt, SigType, MPS, sumFactors, gammaSigns, useXYs);
+//  Minimiser mini(LLC, &MPS);
+//  mini.gradientTest();
+//  mini.doFit();
 
   return 0;
 }
+
 
 
 
@@ -1255,7 +1416,7 @@ void tFit(){
   EventList sigevents = EventList(dataFile, sigType);
   EventList sigMCevents = EventList(intFile, sigType);
 
-  tCoherentSum sig(sigType, MPS);
+  pCoherentSum sig(sigType, MPS, "Bp2Dhp", 1, true);
   sig.setEvents(sigevents);
   sig.setMC(sigMCevents);
   sig.prepare();
@@ -1314,7 +1475,7 @@ void tFit(){
       outfile<<pVal<<" "<<LLVal<<"\n";
     }
     outfile.close();
-    m_param->setCurrentFitVal(mean);
+    MPS[params[i]]->setCurrentFitVal(mean);
 
   }
 

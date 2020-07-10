@@ -11,7 +11,7 @@ using namespace AmpGen;
 
 tCoherentSum::tCoherentSum() = default; 
 
-tCoherentSum::tCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType, int gamSign, bool useXY):
+tCoherentSum::tCoherentSum(const EventType& type1, const MinuitParameterSet& mps):
   m_A(type1, mps),
 
   m_C(type1.conj(NamedParameter<bool>("tCoherentSum::ConjHead", true, "Only Conjugate the head of the EventType")), mps),
@@ -24,15 +24,13 @@ tCoherentSum::tCoherentSum(const EventType& type1, const MinuitParameterSet& mps
   m_order(NamedParameter<unsigned int>( "pCorrelatedSum::Order" )),
   m_polyType(NamedParameter<std::string>("pCorrelatedSum::PolyType", "simple")),
   m_mps(mps),
-  m_gamSign(gamSign),
-  m_useXY(useXY),
+
   m_flat(NamedParameter<bool>("tCoherentSum::flat", false, "Force Amplitude=1")),
   m_coherentIntegral(NamedParameter<bool>("tCoherentSum::coherentIntegral", false, "Do the super slow method to calculate normalisation")),
   m_coherentIntegralA(NamedParameter<bool>("tCoherentSum::coherentIntegralA", false, "Do the super slow method to calculate normalisation")),
   m_fastNorm(NamedParameter<bool>("tCoherentSum::fastNorm", false)),
-  m_coherentIntegralC(NamedParameter<bool>("tCoherentSum::coherentIntegralC", false, "Do the super slow method to calculate normalisation")),
+  m_coherentIntegralC(NamedParameter<bool>("tCoherentSum::coherentIntegralC", false, "Do the super slow method to calculate normalisation"))
 
-  m_SFType(SFType)
 {
   m_normalisationsAC.resize( m_A.matrixElements().size(), m_C.matrixElements().size() ); 
 
@@ -236,10 +234,10 @@ real_t tCoherentSum::norm() const {
   if (m_flat) return 1;
   if (m_debug) INFO("Getting the value for the normalised pdf");
    auto eventsAC = m_integratorAC.events();
-  if (m_debug) INFO("Get sumFactor");
+
  
-  complex_t sumFactor = getSumFactor();  
-  if (m_debug) INFO("sumFactor="<<sumFactor);
+
+
 
   if (m_debug) INFO("Get TD params");
   if (m_debug) INFO("Get x");
@@ -321,11 +319,11 @@ D0Mass = D0Mass * pow(c, 2)/h;
 
   if (m_debug) INFO("interference = "<<nAC);
 
-  complex_t mix = nAC * std::conj(sumFactor) * int_gpm() * qp();
-  //complex_t mix = nAC * std::conj(sumFactor) * qp;
+  complex_t mix = nAC *  int_gpm() * qp();
+
   if (m_debug) INFO("Calculate uncorrected normalisation");
   //real_t N = int_gp2().real() * nA + std::norm(sumFactor) * std::norm(qp) * int_gm2().real() * nC + 2 * std::real(int_gpm() * qp * mix);
-  auto N = int_gp2() * nA + std::norm(sumFactor) * std::norm(qp()) * int_gm2() * nC + 2 * mix.real();
+  auto N = int_gp2() * nA +  std::norm(qp()) * int_gm2() * nC + 2 * mix.real();
   //auto N =  nA + std::norm(sumFactor) * nC + 2 * mix.real();
   
   if (m_fastNorm){
@@ -353,7 +351,7 @@ INFO("Can call all events in integrator :)");
     for( int i=0 ; i < eventsAC.size(); i++ ) {
   auto t = eventsAC[i][4 * eventsAC.eventType().size()];
 
-    auto vi = std::norm(getValNoCache(eventsAC[i]));
+    auto vi = std::norm(getVal(eventsAC[i]));
     N_slow += vi;
       //auto ab = std::conj(qp) * gplus() * std::conj(gminus()) * m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
       auto ab = gplus(eventsAC[i]) * std::conj(gminus(eventsAC[i])) * std::conj(qp())* m_A.getValNoCache(eventsAC[i]) * std::conj(m_C.getValNoCache(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
@@ -394,12 +392,12 @@ INFO("Can call all events in integrator :)");
       nC = nCC.real(); 
   }
 
-  mix = rAC * std::conj(sumFactor);
+  mix = rAC; 
 
 
 
 
-  real_t intTerm = 2 * mix.real();
+  real_t intTerm = 2 * rAC.real();
 
   
 
@@ -409,7 +407,7 @@ INFO("Can call all events in integrator :)");
  // N = int_gp2().real() * nA + std::norm(sumFactor) * std::norm(qp) * int_gm2().real() * nC + 2 * std::real(int_gpm() * qp * mix);
 
   if (m_debug) INFO("Normalisation = "<<N);
-  return N.real();
+  return N_slow;
 }
 
 
@@ -418,7 +416,7 @@ INFO("Can call all events in integrator :)");
 real_t tCoherentSum::norm() const {
   if (m_debug) INFO("Getting the value for the normalised pdf");
   if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
-  complex_t sumFactor = getSumFactor();  
+
   auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
   {
     complex_t v; 
@@ -466,8 +464,8 @@ real_t tCoherentSum::testnorm() const {
   if (m_debug) INFO("Getting the value for the normalised pdf");
  
   if (m_debug) INFO("Getting SumFactor");
-  complex_t sumFactor = getSumFactor();  
-  if (m_debug) INFO("SumFactor = "<<sumFactor);
+
+
  if (m_debug) INFO("Get Matrix Elements for A,C");
   auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
   {
@@ -537,13 +535,13 @@ real_t tCoherentSum::testnorm() const {
     }
 
 
-  complex_t mix = rAC  * std::conj(sumFactor);
+  complex_t mix = rAC;//
   real_t intTerm = 2 * mix.real();
 
   
 
   if (m_debug) INFO("interference = "<<intTerm);
-  real_t N = nA + std::norm(sumFactor) * nC  + intTerm;
+  real_t N = nA +  nC  + intTerm;
 
   if (m_debug) INFO("Normalisation = "<<N);
   return N;
@@ -551,9 +549,9 @@ real_t tCoherentSum::testnorm() const {
 
 double tCoherentSum::slowNorm(){
   if (m_debug) INFO("Started slowNorm");
-  if (m_debug) INFO("SumFactor prefix = "<<m_SFType);
-  complex_t sumFactor = getSumFactor();  
-  if (m_debug) INFO("sumFactor = "<<sumFactor);
+
+
+
   auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
   {
     complex_t v; 
@@ -614,7 +612,7 @@ double tCoherentSum::slowNorm(){
 //  double norm = m_A.norm() * m_B.norm() + m_C.norm() * m_D.norm();
 
 
-  auto inter = rAC  * std::conj(sumFactor);
+  auto inter = rAC;  
   auto Norm = m_Anorm  + m_Cnorm  ;
 
 
@@ -671,7 +669,7 @@ complex_t tCoherentSum::getVal(const Event& evt1) const {
   
   auto i = Constant(0,1);
   auto corr = exp(i() * f);
-  auto sumFactor = getSumFactor();
+
   
 
   complex_t val = A* gplus(evt1)  *exp(complex_t(0, 1)*f/2.)  + qp() * C *gminus(evt1)*exp(complex_t(0, -1)*f/2.);
@@ -727,9 +725,9 @@ val = expr;
 
   if (m_debug) INFO("C2 = "<<std::norm(C));
 
-  if (m_debug) INFO("ReAC* = "<<std::real(A*std::conj(C)* corr * std::conj(sumFactor) ) );
+  if (m_debug) INFO("ReAC* = "<<std::real(A*std::conj(C)* corr ) );
   if (m_debug) INFO("val2 = "<<std::norm(val));
-  if (m_debug) INFO("A2+C2-2ReAC* = "<<std::norm(A) + std::norm(C)*std::norm(sumFactor) - 2 *std::real(A*std::conj(C)*sumFactor*exp(i()*f)));
+  if (m_debug) INFO("A2+C2-2ReAC* = "<<std::norm(A) + std::norm(C) - 2 *std::real(A*std::conj(C)*exp(i()*f)));
 
   if (m_flat){
     val = 1;
@@ -763,7 +761,7 @@ complex_t tCoherentSum::getValNoCache(const Event& evt1) const {
   
   auto i = Constant(0,1);
 
-  auto sumFactor = getSumFactor();
+
 
   complex_t val = A* gplus(evt1)  *exp(complex_t(0, 1)*f/2.)  + qp() * C *gminus(evt1)*exp(complex_t(0, -1)*f/2.);
 
@@ -873,10 +871,10 @@ void tCoherentSum::debug(const Event& evt1) const
 
   if (m_debug) INFO("Getting the value for the normalised pdf");
    auto eventsAC = m_integratorAC.events();
-  if (m_debug) INFO("Get sumFactor");
+
  
-  complex_t sumFactor = getSumFactor();  
-  INFO("sumFactor="<<sumFactor);
+
+
 
   INFO("Get TD params");
   INFO("Get x");
@@ -976,9 +974,9 @@ D0Mass = D0Mass * pow(c, 2)/h;
 
   INFO("interference = "<<nAC);
 
-  complex_t mix = nAC * std::conj(sumFactor);
+  complex_t mix = nAC ;
   if (m_debug) INFO("Calculate uncorrected normalisation");
-  real_t N = int_gp2().real() * nA + std::norm(sumFactor) * std::norm(qp) * int_gm2().real() * nC + 2 * std::real(int_gpm() * qp * mix);
+  real_t N = int_gp2().real() * nA +  std::norm(qp) * int_gm2().real() * nC + 2 * std::real(int_gpm() * qp * mix);
 
   INFO("Norm = "<<N);
 

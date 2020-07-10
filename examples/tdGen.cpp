@@ -26,6 +26,7 @@
 #include "AmpGen/EventType.h"
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/tCoherentSum.h"
+#include "AmpGen/pCoherentSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/NamedParameter.h"
@@ -85,6 +86,7 @@ template <class PDF_TYPE, class PRIOR_TYPE>
   EventList mc( events.eventType() );
   signalGenerator.fillEventListPhaseSpace( mc, blockSize, pdf.size());
   INFO("Have "<<mc.size()<<" integration events");
+  pdf.setEvents(mc);
   pdf.setMC(mc);
   
   pdf.prepare();
@@ -170,7 +172,7 @@ int main( int argc, char** argv )
 
      //pCoherentSum sig2( eventType, MPS, B_Pref, tdSign, useXY);
      // tCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType="Psi3770", int gamSign=1, bool useXY=false);
-      tCoherentSum sig2(eventType, MPS , "noSum"); 
+      tCoherentSum sig2(eventType, MPS);
     EventList mc( eventType);
       Generator<PhaseSpace> signalGenerator( phsp );
 //      CoherentSum sig(eventType, MPS);
@@ -202,7 +204,18 @@ int main( int argc, char** argv )
     }
   } 
   }
-  
+  double avgt = 0;
+  for (int i=0;i<accepted.size();i++){
+    
+    auto evt = accepted[i];
+    double time = evt[evt.size() - 1];
+    avgt += time;
+
+  }
+  auto evt0 = accepted[0];
+  INFO("t0 = "<<evt0[evt0.size()- 1]);
+  evt0.print();
+  INFO("<t> = "<<avgt/(double)accepted.size());
 //    GenerateEvents( accepted, sig2, phsp , nEvents, blockSize, &rand );
   if (outputVals){
     std::ofstream out;

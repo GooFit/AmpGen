@@ -120,8 +120,43 @@ int main( int argc, char* argv[] )
     if (NamedParameter<bool>("FitEach", false)){
     auto ll = make_likelihood(Data, sig);
     Minimiser mini = Minimiser(ll, &MPS);
+
+
+ 
+  std::vector<std::string> params = {"pCoherentSum::x+", "pCoherentSum::y+", "D0{K*(892)bar-{K0S0,pi-},pi+}_Re"};
+  std::vector<std::string> outputs = {"xp", "yp", "K892plus"};
+
+  for (int i=0; i<params.size();i++){
+
+    auto m_param = MPS[params[i]];
+    auto mean = m_param->mean();
+    auto err = m_param->err();
+    auto min = -5 * err + mean;
+    auto max = 5 * err + mean;
+    auto step = 0.5 * err;
+    int n = (max - min)/step;
+    std::stringstream ss_file;
+    ss_file<<outputs[i]<<".csv";
+    auto fileName = ss_file.str();
+    std::ofstream outfile;
+    outfile.open(fileName);
+    for (int i=0; i<n; i++){
+      auto pVal = i * step + min;
+      m_param->setCurrentFitVal(pVal);
+      auto LLVal = mini.FCN();
+      outfile<<pVal<<" "<<LLVal<<"\n";
+    }
+    outfile.close();
+    MPS[params[i]]->setCurrentFitVal(mean);
+
+  }
+ 
+
+
     mini.gradientTest();
-    mini.doFit();
+
+
+   mini.doFit();
 
     std::ofstream fitOut;
     fitOut.open(NamedParameter<std::string>("fitOutput", "fit.csv"));
@@ -130,6 +165,8 @@ int main( int argc, char* argv[] )
     fitOut.close();
     }
 
+
+/*
     auto xp = MPS["pCoherentSum::x+"];
     auto yp = MPS["pCoherentSum::y+"];
 
@@ -167,15 +204,17 @@ int main( int argc, char* argv[] )
       }
     }
     NOut.close();
-
+*/
 
 
   }
 
-//  auto LLC = CombLL(SigData, SigInt, SigType, MPS, sumFactors, gammaSigns, useXYs);
-//  Minimiser mini(LLC, &MPS);
-//  mini.gradientTest();
-//  mini.doFit();
+  auto LLC = CombLL(SigData, SigInt, SigType, MPS, sumFactors, gammaSigns, useXYs);
+  Minimiser mini(LLC, &MPS);
+  mini.gradientTest();
+  mini.doFit();
+  FitResult * fr = new FitResult(mini);
+  fr->writeToFile("BFit.log");
 
   return 0;
 }
