@@ -599,9 +599,9 @@ complex_t pCoherentSum::getVal(const Event& evt1) const {
 //  double yp = m_mps["pCoherentSum::y+"]->mean();
 
 
-//  complex_t val = A  *exp(i()*f/2.) + (xp + i() * yp)  * C  *exp(-i()*f/2.);
+  complex_t val = A  *exp(i()*f/2.) + sumFactor  * C  *exp(-i()*f/2.);
   //complex_t val = A + sumFactor * C;
-  complex_t val = A + sumFactor * C;
+  //complex_t val = A + sumFactor * C;
   //INFO("Correction  = "<<f);
   if (m_debug) INFO("A2 = "<<std::norm(A));
 

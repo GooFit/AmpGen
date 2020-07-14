@@ -280,9 +280,9 @@ else{
         auto x = event.s(0,1);
         auto y = event.s(0,2);
         auto z = event.s(1,2);
-        auto mp = sqrt(event.s(1,1));
-        auto mm = sqrt(event.s(2,2));
-        auto mK = sqrt(event.s(0,0));
+        auto mp = sqrt(event.s(1,1))/2.;
+        auto mm = sqrt(event.s(2,2))/2.;
+        auto mK = sqrt(event.s(0,0))/2.;
         auto mD = sqrt(x + y + z - pow(mp,2) - pow(mm,2) - pow(mK,2) ) ;
         Expression xmin = pow(mp + mK, 2);
         Expression xmax = pow(mD - mm, 2);
