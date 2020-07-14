@@ -104,7 +104,8 @@ int main( int argc, char* argv[] )
 
     EventList Data = EventList(DataLoc, eventType);
     EventList Int = EventList(IntLoc, eventType);
-    
+
+
     sig.setEvents(Data);
     sig.setMC(Int);
 
@@ -115,6 +116,46 @@ int main( int argc, char* argv[] )
     sumFactors.push_back(B_Pref);
     gammaSigns.push_back(gammaSign);
     useXYs.push_back(useXY);
+
+    sig.prepare();
+
+    for (int i=0;i<Data.size();i++){
+      auto event = Data[i];
+      auto x = event.s(0,1);
+      auto y = event.s(0,2);
+      auto z = event.s(1,2);
+      auto mp = sqrt(event.s(1,1))/2.;
+      auto mm = sqrt(event.s(2,2))/2.;
+      auto mK = sqrt(event.s(0,0))/2.;
+      auto mD = sqrt(x + y + z - pow(mp,2) - pow(mm,2) - pow(mK,2) ) ;
+      Expression xmin = pow(mp + mK, 2);
+      Expression xmax = pow(mD - mm, 2);
+      Expression x0 = (xmax + xmin)/2;
+      Expression ymin = pow(mp + mK, 2);
+      Expression ymax = pow(mD - mp, 2);
+      Expression y0 = (ymax + ymin)/2;
+      Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
+      Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
+
+      if (std::abs(X()) > 1 || std::abs(Y()) > 1){
+
+      INFO("mp = "<<mp);
+      INFO("mm = "<<mm);
+      INFO("mK = "<<mK);
+      INFO("mD = "<<mD);
+
+      INFO("x = "<<x);
+      INFO("xmin = "<<xmin);
+      INFO("xmax = "<<xmax);
+      INFO("rescaled x = "<<X());
+
+      INFO("y = "<<y);
+      INFO("ymin = "<<ymin);
+      INFO("ymax = "<<ymax);
+      INFO("yescaled y = "<<Y());
+      }
+        
+    }
 
 
     if (NamedParameter<bool>("FitEach", false)){

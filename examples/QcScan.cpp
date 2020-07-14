@@ -220,8 +220,9 @@ auto findParam = MPS.find(scanName);
     std::ofstream scanfile;
     scanfile.open(scanOutput_tag, std::ios_base::app);
     auto param = MPS[scanName];
-    double minimum=param->minInit();
-    double maximum=param->maxInit();
+
+    double minimum=-5 * param->stepInit();
+    double maximum=5*param->stepInit();
     double val = minimum;
     double stepSize = param->stepInit();
 
@@ -266,8 +267,8 @@ auto findParam = MPS.find(scanName);
     std::ofstream scanfile;
     scanfile.open(scanOutput_comb, std::ios_base::app);
     auto param = MPS[scanName];
-    double minimum=param->minInit();
-    double maximum=param->maxInit();
+    double minimum=-5 * param->stepInit();
+    double maximum=5*param->stepInit();
     double val = minimum;
     double stepSize = param->stepInit();
 

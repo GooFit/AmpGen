@@ -309,7 +309,8 @@ void pCorrelatedSum::updateNorms(const std::vector<size_t>& iA, const std::vecto
 real_t pCorrelatedSum::norm() const {
   if (m_debug) INFO("Getting the value for the normalised pdf");
   if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
-  complex_t sumFactor = getSumFactor();  
+  //complex_t sumFactor = getSumFactor();  
+  double sumFactor = -1;
   auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
   {
     complex_t v; 
@@ -543,7 +544,8 @@ complex_t pCorrelatedSum::getVal(const Event& evt1, const Event& evt2) const {
     f -= correction(evt2);
   }
   auto i = Constant(0,1);
-  auto sumFactor = getSumFactor();
+  //auto sumFactor = getSumFactor();
+  double sumFactor = -1;
   complex_t val = A  *exp(i()*f/2.) * B + sumFactor* C * D  *exp(-i()*f/2.);
   //INFO("Correction  = "<<f);
   if (m_debug) INFO("A2 = "<<std::norm(A));
@@ -572,7 +574,8 @@ complex_t pCorrelatedSum::getValNoCache(const Event& evt1, const Event& evt2) co
   }
   auto i = Constant(0,1);
 
-  auto sumFactor = getSumFactor();
+  //auto sumFactor = getSumFactor();
+  double sumFactor = -1;
   complex_t val = A  *exp(i()*f/2.) * B + sumFactor * C * D  *exp(-i()*f/2.);
   //complex_t val = A *exp(i()*f)* B - C * D;
   if (m_flat){

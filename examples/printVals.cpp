@@ -281,15 +281,17 @@ for (int i=0; i < tags.size(); i++){
     auto cosDD = -((fcn::pow(abs(ABCD), 2)() - fcn::pow(abs(A), 2)() * fcn::pow(abs(B), 2)() - fcn::pow(abs(C), 2)() * fcn::pow(abs(D), 2)())/(2 * abs(A) * abs(B) * abs(C) * abs(D) )).real();
 
     auto dd = std::arg(ACst);
+    auto ACstCorr = A * std::conj(C) * fcn::exp(Constant(0, 1) * corr)();
+    auto ddCorr = std::arg(ACstCorr);
     
     out << s01 << "\t" //0
         << s02 << "\t" //1
         << s12 << "\t" //2
-        << dd  << "\t" //3
+        << ddCorr  << "\t" //3
         << cosDD << "\t" //4
         <<corr.real()<<"\t" //5
         <<dCorr.real()<<"\t" //6
-        << std::arg(C) - std::arg(A)<<"\t" //7
+        << dd<<"\t" //7
         <<std::norm(ABCD)<<"\t" //8
         <<A.real()<<"\t" //9
         <<A.imag()<<"\t" //10 
