@@ -53,6 +53,7 @@ struct FixedLibPDF
   void debug( const Event& event) {};
   void prepare(){};
   void setEvents( AmpGen::EventList& evts ){};
+  void setEvents( AmpGen::EventListSIMD& evts ){};
   double operator()( const AmpGen::Event& evt ) const { return PDF( evt, 1 ); }
   double operator()( const double* evt, const unsigned& index )
   {
@@ -99,6 +100,14 @@ template <typename pdf_t> void generateEvents( EventList& events
                        , TRandom* rndm
                        , const bool& normalise = true )
 {
+  if constexpr( std::is_same<pdf_t, FixedLibPDF>::value )
+  {
+    Generator<PhaseSpace, EventList> signalGenerator(events.eventType(), rndm);
+    signalGenerator.setBlockSize(blockSize);
+    signalGenerator.setNormFlag(normalise);
+    signalGenerator.fillEventList(pdf, events, nEvents );
+  }
+  else { 
   if( phsp_type == phspTypes::PhaseSpace )
   {
     Generator<PhaseSpace, EventList_t> signalGenerator(events.eventType(), rndm);
@@ -123,7 +132,9 @@ template <typename pdf_t> void generateEvents( EventList& events
   else {
     FATAL("Phase space configuration: " << phsp_type << " is not supported");
   }
+  }
 }
+
 
 
 int main( int argc, char** argv )
@@ -196,10 +207,10 @@ int main( int argc, char** argv )
     PolarisedSum pdf(eventType, MPS);
     generateEvents( accepted, pdf, phspType, nEvents, blockSize, &rand );
   }
- // else if ( pdfType == pdfTypes::FixedLib ){
- //   FixedLibPDF pdf(lib);
- //   generateEvents( accepted, pdf, phspType, nEvents, blockSize, &rand, false );
- // }
+  else if ( pdfType == pdfTypes::FixedLib ){
+    FixedLibPDF pdf(lib);
+    generateEvents( accepted, pdf, phspType, nEvents, blockSize, &rand, false );
+  }
   else {
     FATAL("Did not recognise configuration: " << pdfType );
   }

@@ -12,15 +12,21 @@ namespace utf = boost::unit_test;
 
 using namespace AmpGen; 
 using namespace AmpGen::AVX2d;
+using namespace std::complex_literals; 
+
+#define test_simd( avx_function, scalar_function, data, tv) \
+{ auto r = avx_function( data ).to_array(); auto vals = data.to_array(); \
+  for(int i =0;i!=4;++i) BOOST_TEST( r[i] == scalar_function(vals[i]), boost::test_tools::tolerance(tv) ); } 
 
 BOOST_AUTO_TEST_CASE( test_log )
 {
-  AVX2d::real_v p(0.3, 0.5, 10.0, 7.0);
-  auto logged = AVX2d::log( p ).to_array() ;
-  BOOST_TEST( logged[0] == std::log(0.3), boost::test_tools::tolerance(1e-12 ) );
-  BOOST_TEST( logged[1] == std::log(0.5), boost::test_tools::tolerance(1e-12 ) );
-  BOOST_TEST( logged[2] == std::log(10.0), boost::test_tools::tolerance(1e-12 ) );
-  BOOST_TEST( logged[3] == std::log(7.0), boost::test_tools::tolerance(1e-12 ) );
+  test_simd( AVX2d::log, std::log, AVX2d::real_v(0.3, 0.5, 10, 7.0), 1e-12 ); 
+}
+
+BOOST_AUTO_TEST_CASE( test_complex_log )
+{
+  std::array<std::complex<double>, 4> pr = {0.3 - 3.0*1i, 0.5 - 4.0*1i, 10.+3.*1i, -4.0 + 1.0*1i};
+  test_simd( AVX2d::log, std::log, AVX2d::complex_v( pr.data() ), 1e-8 );
 }
 
 BOOST_AUTO_TEST_CASE( test_fmod ) 
@@ -32,7 +38,6 @@ BOOST_AUTO_TEST_CASE( test_fmod )
   AVX2d::real_v bv( b.data() );
 
   auto modv = AVX2d::fmod(av,bv);
-  BOOST_TEST_MESSAGE( "fmod = " << modv );
   
   auto mod = modv.to_array();
   BOOST_TEST( mod[0] == 2.1  , boost::test_tools::tolerance(1e-15));
@@ -68,26 +73,10 @@ BOOST_AUTO_TEST_CASE( test_gather )
 BOOST_AUTO_TEST_CASE( test_trig )
 {
   auto data = AVX2d::real_v(0.1,0.4,-2.0,5.0);
-  auto cos = AVX2d::cos(data).to_array();
-  BOOST_TEST( cos[0] == std::cos( data.at(0 )) , boost::test_tools::tolerance(1e-15) );
-  BOOST_TEST( cos[1] == std::cos( data.at(1 )) , boost::test_tools::tolerance(1e-15) );
-  BOOST_TEST( cos[2] == std::cos( data.at(2))  , boost::test_tools::tolerance(1e-15) );
-  BOOST_TEST( cos[3] == std::cos( data.at(3 )) , boost::test_tools::tolerance(1e-15) );
-  
-  auto sin = AVX2d::sin(data).to_array();
-  BOOST_TEST( sin[0] == std::sin( data.at(0 )) , boost::test_tools::tolerance(1e-15) );
-  BOOST_TEST( sin[1] == std::sin( data.at(1 )) , boost::test_tools::tolerance(1e-15) );
-  BOOST_TEST( sin[2] == std::sin( data.at(2))  , boost::test_tools::tolerance(1e-15) );
-  BOOST_TEST( sin[3] == std::sin( data.at(3 )) , boost::test_tools::tolerance(1e-15) );
-  
-  auto tan = AVX2d::tan(data).to_array();
-
-  BOOST_TEST( tan[0] == std::tan( data.at(0 )) , boost::test_tools::tolerance(1e-15) );
-  BOOST_TEST( tan[1] == std::tan( data.at(1 )) , boost::test_tools::tolerance(1e-15) );
-  BOOST_TEST( tan[2] == std::tan( data.at(2))  , boost::test_tools::tolerance(1e-15) );
-  BOOST_TEST( tan[3] == std::tan( data.at(3 )) , boost::test_tools::tolerance(1e-15) );
+  test_simd( AVX2d::cos, std::cos, data, 1e-15);
+  test_simd( AVX2d::sin, std::sin, data, 1e-15);
+  test_simd( AVX2d::tan, std::tan, data, 1e-15);
 }
-
 
 #else 
 BOOST_AUTO_TEST_CASE( test_dummy )

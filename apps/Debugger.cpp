@@ -55,9 +55,11 @@ template < class FCN > void debug( FCN& sig, EventList& accepted, bool verbose, 
   sig.debug( accepted[eventToDebug] );
   accepted[eventToDebug].print();
 //  if( verbose ) print( accepted[0], sig.matrixElements(), verbose ); 
-  invertParity(accepted[eventToDebug], accepted.eventType().size() );
+  for( unsigned int i = 0 ; i != accepted.size(); ++i ) 
+  invertParity(accepted[i], accepted.eventType().size() );
   accepted[eventToDebug].print();
   sig.reset();
+  sig.setEvents(accepted);
   sig.prepare();
   sig.debug( accepted[eventToDebug] );
 }
