@@ -426,11 +426,15 @@ DEFINE_VERTEX( V_ff_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * Gamma4Vec()(mu,b,c
 DEFINE_VERTEX( V_ff_PL )
 { 
   Tensor proj = Spin1Projector(P);
+  auto pl = 0.5 * ( Identity(4) - Gamma[4] ); 
+  ADD_DEBUG_TENSOR( pl, db);
+  ADD_DEBUG_TENSOR( pl(b,c)* V2(c), db );
   return proj(mu, nu) * Bar(V1)(a) * Gamma4Vec()(-nu,a,b) * ( Identity(4) - Gamma[4] )(b,c)* V2(c); 
 }
 
 DEFINE_VERTEX( V_ff_PR )
 { 
   Tensor proj = Spin1Projector(P);
+  ADD_DEBUG_TENSOR( (Identity(4) + Gamma[4] )(b,c)* V2(c), db );
   return proj(mu, nu) * Bar(V1)(a) * Gamma4Vec()(-nu,a,b) * ( Identity(4) + Gamma[4] )(b,c)* V2(c); 
 }

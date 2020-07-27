@@ -63,7 +63,7 @@ Expression Spline::eval(DebugSymbols* db) const
   double spacing = ( m_max - m_min ) / ( (double)m_nKnots - 1. );
   Expression dx  = Fmod( x - m_min, spacing );
   Expression bin = ( x - m_min ) / spacing;
-  Expression continuedValue            = 0;
+  Expression continuedValue            = m_points[m_nKnots-1];
 
   Expression returnValue = Ternary( x > m_min && x < m_max,
       m_points[bin] + ( ( m_points[bin + 1] - m_points[bin] ) / spacing 
