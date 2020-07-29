@@ -82,8 +82,8 @@ PolarisedSum::PolarisedSum(const EventType& type,
         Tensor thisExpression( Tensor::dim(polStates.size()) );
         DebugSymbols syms;      
         for(unsigned j = 0; j != polStates.size(); ++j) 
-          //thisExpression[j] = make_cse( p.getExpression(j == 0 ? &syms: nullptr, polStates[j] ) );         
-          thisExpression[j] = make_cse( p.getExpression(&syms, polStates[j] ) );         
+          thisExpression[j] = make_cse( p.getExpression(j == 0 ? &syms: nullptr, polStates[j] ) );         
+          //thisExpression[j] = make_cse( p.getExpression(&syms, polStates[j] ) );         
         ptr->m_matrixElements[i] = TransitionMatrix<void>( 
             p, c,
             CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>(
@@ -327,16 +327,14 @@ void PolarisedSum::updateNorms()
 void PolarisedSum::debug(const Event& evt)
 {
   auto tsize = m_dim.first * m_dim.second;   
+  std::vector<complex_v> this_cache; 
   for(unsigned j = 0; j != m_matrixElements.size(); ++j)
   {
-    std::vector<complex_v> this_cache; 
     for(unsigned i = 0 ; i != tsize; ++i ) this_cache.emplace_back( m_cache(evt.index() / utils::size<float_v>::value, j*tsize + i) );
     INFO( m_matrixElements[j].decayDescriptor() << " " << vectorToString(this_cache, " ") );
-    if( m_debug ){
-      m_matrixElements[0].debug( evt ); 
-      m_probExpression.debug(this_cache.data() );
-    }
-  }
+    if( m_debug ) m_matrixElements[j].debug( evt ); 
+  }   
+  if( m_debug ) m_probExpression.debug(this_cache.data() );
   INFO("P(x) = " << getValNoCache(evt) << " " << operator()((const float_v*)nullptr, evt.index() / utils::size<float_v>::value ) );
   INFO("Prod = [" << vectorToString(m_pVector , ", ") <<"]");
 }
