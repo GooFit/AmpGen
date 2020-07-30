@@ -331,6 +331,7 @@ std::string AmpGen::expandGlobals( std::string path )
     } else {
       end_pos       = find_next_of( path, {".", "/"}, pos );
       variable_name = path.substr( pos + 1, end_pos - pos - 1 );
+      end_pos--;
     }
     const char* global_var = getenv( variable_name.c_str() );
     if ( global_var == nullptr ) {
