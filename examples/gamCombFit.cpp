@@ -386,7 +386,7 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     INFO("Minimising now");
     int attempt = 1;
       combMini.doFit(); 
-      if (combMini.status() != 0){
+      if (combMini.status() != 0 && maxAttempts>1){
         INFO("Didn't seem to get a minimum (returned "<<combMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
       while (attempt < maxAttempts && combMini.status() != 0){
         INFO("Didn't seem to get a minimum (returned "<<combMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
