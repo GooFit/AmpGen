@@ -33,7 +33,7 @@ namespace AmpGen {
       real_v(const double& f ) : data( _mm256_set1_pd( f )) {}
       real_v(const double& x0, const double& x1, const double& x2, const double& x3 )
       {
-        data = _mm256_set_pd(x0,x1,x2,x3); 
+        data = _mm256_set_pd(x3,x2,x1,x0); 
       }
       real_v(const double* f ) : data( _mm256_loadu_pd( f ) ) {}
       real_v(const std::array<double,4> f ) : data( _mm256_loadu_pd( f.data() ) ) {}
@@ -67,6 +67,7 @@ namespace AmpGen {
     libmvec_alias( cos )
     libmvec_alias( exp )
     libmvec_alias( log )
+    //inline real_v log( const real_v& v ){ auto arr = v.to_array(); return real_v( std::log(arr[0]), std::log(arr[1]), std::log(arr[2]), std::log(arr[3])) ; }
     inline void sincos( const real_v& v, real_v& s, real_v& c )
     {
 #if USE_MVEC
@@ -138,6 +139,9 @@ namespace AmpGen {
       complex_v( const float&   re, const float& im) : re(re), im(im) {}
       complex_v( const std::complex<double>& f ) : re( f.real() ), im( f.imag() ) {}
       complex_v( const std::complex<float>& f  ) : re( f.real() ), im( f.imag() ) {}
+      complex_v( const std::complex<double>* arr ) :
+        re ( arr[0].real(), arr[1].real(), arr[2].real(), arr[3].real() ),
+        im ( arr[0].imag(), arr[1].imag(), arr[2].imag(), arr[3].imag() ){}  
       explicit complex_v( const real_v& arg ) : re(arg) {};
       explicit complex_v( const double& arg ) : re(arg) {};
       const std::complex<double> at(const unsigned i) const { return std::complex<float>(re.to_array()[i], im.to_array()[i]) ; }       
@@ -194,7 +198,7 @@ namespace AmpGen {
     }
     inline complex_v log( const complex_v& v )
     {
-      return complex_v( log( v.re ) , atan2(v.im, v.re) );
+      return complex_v( 0.5 * log( v.norm() ) , atan2(v.im, v.re) );
     } 
 
     inline std::ostream& operator<<( std::ostream& os, const complex_v& obj ) { return os << "( "<< obj.re << ") (" << obj.im << ")"; }

@@ -61,6 +61,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
 {
   std::string objCache = NamedParameter<std::string>("PolarisedSum::ObjectCache", ""    );
   spaceType stype      = NamedParameter<spaceType>(  "PolarisedSum::SpaceType"  , spaceType::spin);
+  {
   ThreadPool tp(std::thread::hardware_concurrency() );
   if( stype == spaceType::spin )
   {
@@ -74,20 +75,23 @@ PolarisedSum::PolarisedSum(const EventType& type,
     for(unsigned i = 0; i < m_matrixElements.size(); ++i)
     {
       auto [lp, lc] = protoAmps[i];
-      tp.enqueue( [i, p=lp, c=lc, polStates, &mps, this] () mutable {
+      auto & p = lp;
+      auto & c = lc;
+      PolarisedSum* ptr = this; 
+      tp.enqueue( [i, p=lp, c=lc, polStates, &mps, ptr] () mutable {
         Tensor thisExpression( Tensor::dim(polStates.size()) );
         DebugSymbols syms;      
         for(unsigned j = 0; j != polStates.size(); ++j) 
           thisExpression[j] = make_cse( p.getExpression(j == 0 ? &syms: nullptr, polStates[j] ) );         
-        
-        this->m_matrixElements[i] = TransitionMatrix<void>( 
+          //thisExpression[j] = make_cse( p.getExpression(&syms, polStates[j] ) );         
+        ptr->m_matrixElements[i] = TransitionMatrix<void>( 
             p, c,
             CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>(
             TensorExpression(thisExpression), p.decayDescriptor(), &mps,
-            this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ) );
+            ptr->m_eventType.getEventFormat(), ptr->m_debug ? syms : DebugSymbols() ) );
         
-        CompilerWrapper().compile( m_matrixElements[i] );
-        m_matrixElements[i].size = thisExpression.size();
+        CompilerWrapper().compile( ptr->m_matrixElements[i] );
+        ptr->m_matrixElements[i].size = thisExpression.size();
       });
     }
   }
@@ -114,6 +118,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
         });
     }
   }
+  }
   if( m_pVector.size() == 0 )
   {
     auto p = [this](const std::string& name){ return this->m_mps->addOrGet(name, Flag::Fix, 0, 0); };
@@ -125,7 +130,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
   
   DebugSymbols db; 
   auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector,[](auto& p){ return Parameter(p->name());} ), m_debug ? &db : nullptr);
-  m_probExpression = make_expression<float_v, real_t, complex_v>( prob, "prob_unnormalised", m_mps );
+  m_probExpression = make_expression<float_v, real_t, complex_v>( prob, "prob_unnormalised", m_mps, this->m_debug ? db : DebugSymbols() );
 }
 
 std::vector<int> PolarisedSum::polarisations( const std::string& name ) const 
@@ -254,13 +259,14 @@ size_t PolarisedSum::size() const
 
 void   PolarisedSum::reset( const bool& flag ){ m_nCalls = 0 ; }
 
-Tensor PolarisedSum::transitionMatrix()
+Tensor PolarisedSum::transitionMatrix() const 
 { 
   auto size = m_dim.first * m_dim.second;
   std::vector<Expression> expressions(size, 0);
   unsigned totalSize = 0 ; 
-  for( auto& me : m_matrixElements ){
-    auto coupling   = me.coupling.to_expression() ;
+  for( const auto& me : m_matrixElements ){
+    auto coupling   = me.coupling.to_expression();
+    INFO( me.decayDescriptor() << " " << coupling );
     auto cacheIndex = totalSize; 
     for( size_t i = 0 ; i < size ; ++i ){
       expressions[i] = expressions[i] + coupling * Parameter( "x1["+std::to_string(cacheIndex+i)+"]",0,true); 
@@ -321,13 +327,14 @@ void PolarisedSum::updateNorms()
 void PolarisedSum::debug(const Event& evt)
 {
   auto tsize = m_dim.first * m_dim.second;   
+  std::vector<complex_v> this_cache; 
   for(unsigned j = 0; j != m_matrixElements.size(); ++j)
   {
-    std::vector<complex_v> this_cache; 
     for(unsigned i = 0 ; i != tsize; ++i ) this_cache.emplace_back( m_cache(evt.index() / utils::size<float_v>::value, j*tsize + i) );
-    INFO( m_matrixElements[j].decayDescriptor() << " " << vectorToString( this_cache, " ") );
-    if( m_debug ) m_matrixElements[0].debug( evt ); 
-  }
+    INFO( m_matrixElements[j].decayDescriptor() << " " << vectorToString(this_cache, " ") );
+    if( m_debug ) m_matrixElements[j].debug( evt ); 
+  }   
+  if( m_debug ) m_probExpression.debug(this_cache.data() );
   INFO("P(x) = " << getValNoCache(evt) << " " << operator()((const float_v*)nullptr, evt.index() / utils::size<float_v>::value ) );
   INFO("Prod = [" << vectorToString(m_pVector , ", ") <<"]");
 }
@@ -398,6 +405,7 @@ Expression PolarisedSum::probExpression(const Tensor& T_matrix, const std::vecto
     rho(2,2) = 1. - 1.5*pz + sqrt(1.5)*Tzz;
   }
   ADD_DEBUG_TENSOR(T_matrix, db);
+  ADD_DEBUG_TENSOR(T_conj, db);
   ADD_DEBUG_TENSOR(rho, db);
   ADD_DEBUG_TENSOR(TT , db);
   Expression rt = rho(a,b) * TT(b,a);
