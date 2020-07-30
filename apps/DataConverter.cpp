@@ -52,7 +52,7 @@ int main( int argc, char* argv[] )
   std::vector<std::string> idBranches      = NamedParameter<std::string>("IdBranches"    , std::vector<std::string>() ).getVector(); 
   bool usePIDCalib                         = NamedParameter<bool>("usePIDCalib"             , false);
   bool rejectMultipleCandidates            = NamedParameter<bool>("rejectMultipleCandidates", true );
-  std::string cuts                         = NamedParameter<std::string>("Cut",""); 
+  auto cuts                                = NamedParameter<std::string>("Cut","").getVector(); 
   EventType evtType( NamedParameter<std::string>( "EventType" ).getVector() );
   
   std::vector<std::string> branches; 
@@ -70,7 +70,6 @@ int main( int argc, char* argv[] )
     in_tree->AddFriend( tokens[1].c_str(), tokens[0].c_str() );
   }
 
-  INFO( "Using cut = " << cuts );
 
   if(inputFilename  == "") FATAL("No input specified in options" );
   if(treeName       == "") FATAL("No tree specified in options" );
@@ -79,8 +78,11 @@ int main( int argc, char* argv[] )
   if(in_tree == nullptr  ) FATAL(treeName + " not found" );
   
   INFO( "Got tree " << inputFilename << ":" << treeName );
-
-  in_tree->Draw( ">>elist", cuts.c_str() );
+  std::string cut = "";
+  for( auto& i : cuts ) cut += i;
+  INFO( "Using cut = " << cut );
+  
+  in_tree->Draw( ">>elist", cut.c_str() );
   TEventList* elist = (TEventList*)gDirectory->Get( "elist" );
   INFO( "Total efficiency = " << elist->GetN() / (double)in_tree->GetEntries() );
 
@@ -187,14 +189,9 @@ int main( int argc, char* argv[] )
   }
   if ( pdfLibrary != "" ) {
     INFO( "Setting generator level PDF from " << pdfLibrary );
-    void* handle = dlopen( pdfLibrary.c_str(), RTLD_NOW );
-    if ( handle == nullptr ) dlerror();
-
-    DynamicFCN<double( const double*, const int& )> fcn( handle, "FCN" );
+    DynamicFCN<double( const double*, const int& )> fcn( pdfLibrary, "FCN" );
     for ( unsigned int i = 0; i < evts.size(); ++i ) {
-      if ( i % 500000 == 0 ) {
-        INFO( "Set for " << i << " events" );
-      }
+      if ( i % 500000 == 0 ) INFO( "Set for " << i << " events" );
       evts[i].setGenPdf( fcn( (const real_t*)(evts[i]), 1 ) );
     }
   }
@@ -211,7 +208,12 @@ int main( int argc, char* argv[] )
   auto projections = evtType.defaultProjections();
   for ( auto& p : projections ) {
     p( evts ) -> Write();
-    p( evts, WeightFunction([](auto& evt){ return 1; }), PlotOptions::Prefix("noweight") )->Write();
+    // p( evts, WeightFunction([](auto& evt){ return 1; }), PlotOptions::Prefix("noweight") )->Write();
+  }
+  for( int i = 0 ; i != evtType.size(); ++i )
+  {
+    Projection p( [i](auto& event){ return sqrt( event.s(i) ); }, "m_"+std::to_string(i), "m_"+std::to_string(i), 100, 0, 2.5 );
+    p(evts)->Write();
   }
   outputPlotFile->Close();
 }

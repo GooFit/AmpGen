@@ -413,9 +413,6 @@ TensorProxy AmpGen::operator*( const TensorProxy& t1, const TensorProxy& t2 )
   Tensor value( finalTensorRank );
 
   unsigned nElem = value.nElements();
-  //DEBUG("Got " << t1_tensor.dims().size() << " x " << t2_tensor.dims().size() << " with " << contractions.size() << " contractions " << nElementsInSum);
-  //DEBUG(t1_tensor.dimString() << " x " << t2_tensor.dimString() << " -> " << value.dimString());
-  //DEBUG("Contraction matrix = " << "[" << vectorToString(contractionMatrix, ", ") << "]");
 
   for( unsigned elem = 0; elem < nElem; ++elem ) {
     auto coords = Tensor::index_to_coordinates( elem, finalTensorRank );

@@ -69,7 +69,7 @@ namespace AmpGen
       std::vector<FitFraction> fitFractions(const LinearErrorPropagator&);
       std::vector<TransitionMatrix<void>> matrixElements() const;
       void transferParameters(); 
-      Tensor transitionMatrix();
+      Tensor transitionMatrix() const;
       const TransitionMatrix<void>& operator[](const size_t& i) const { return m_matrixElements[i] ; } 
       std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
       KeyedFunctors<double, Event> componentEvaluator(const EventList_type* = nullptr) const;     

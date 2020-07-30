@@ -167,6 +167,7 @@ void Particle::pdgLookup()
     m_lineshape = m_lineshape + "." + m_defaultModifier.getVal();
   }
   bool isStrong = quarks() == daughterQuarks();
+  if( abs(m_props->pdgID()) == 24 || abs(m_props->pdgID()) == 23 ) isStrong = false; 
   if ( m_name.find( "NonRes" ) != std::string::npos ) isStrong = true;
   m_minL = m_daughters.size() == 2 ? orbitalRange( isStrong ).first : 0;
   if ( m_daughters.size() == 2 ) {
@@ -519,19 +520,18 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
   {
     if( m_spinBasis == spinBasis::Weyl )
     {
+      std::array<Tensor,2> xi;
       Expression n       = fcn::sqrt( 2 * pP*(pP+pZ) );
-      double isqrt_two   = 1./sqrt(2);
-      Expression fa      = m_props->isNeutrino() ? 2 : fcn::sqrt(pE/m + 1);
-      Expression fb      = m_props->isNeutrino() ? 0 : fcn::sqrt(pE/m - 1);
-      Expression aligned = make_cse( Abs(pP + pZ) < 10e-6 ) ;
-      Expression xi10    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
-      Expression xi11    = make_cse(Ternary( aligned,  0,  z/n ));
-      Expression xi00    = make_cse(Ternary( aligned,  0, -zb/n ));
-      Expression xi01    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
-      if(id > 0 && polState ==  1) return isqrt_two * Tensor({ fa*xi10,  fa*xi11,  fb*xi10,  fb*xi11 } );
-      if(id > 0 && polState == -1) return isqrt_two * Tensor({ fa*xi00,  fa*xi01, -fb*xi00, -fb*xi01 } );
-      if(id < 0 && polState ==  1) return isqrt_two * Tensor({ fb*xi00,  fb*xi01,  -fa*xi00,  -fa*xi01 } );
-      if(id < 0 && polState == -1) return isqrt_two * Tensor({ fb*xi10,  fb*xi11, -fa*xi01,  -fa*xi11 } );
+
+      xi[0] = Tensor( {-zb/n , (pP+pZ)/n});
+      xi[1] = Tensor( {(pP+pZ)/n, z/n });
+      
+      Expression fa = m_props->isNeutrino() ? polState * fcn::sqrt(pE) : polState * fcn::sqrt( pE/m-  1 );
+      Expression fb = m_props->isNeutrino() ? fcn::sqrt(pE)            : fcn::sqrt( pE/m + 1 );
+      int ind = (id>0 ? polState : -polState) == -1 ? 0 : 1;
+     
+      return id > 0 ?  Tensor({ - fa * xi[ind][0], - fa * xi[ind][1], fb * xi[ind][0], fb * xi[ind][1] })
+        :  -polState * Tensor({   fb * xi[ind][0],   fb * xi[ind][1], fa * xi[ind][0], fa * xi[ind][1] });
     } 
     if ( m_spinBasis == spinBasis::Dirac )
     {
@@ -716,7 +716,7 @@ std::string Particle::topologicalString() const
 
 const ParticleProperties* Particle::props() const { return m_props; }
 bool Particle::isHead() const { return m_parent == nullptr; }
-bool Particle::isWeakDecay() const { return quarks() == daughterQuarks(); }
+bool Particle::isWeakDecay() const { return quarks() != daughterQuarks(); }
 bool Particle::isStateGood() const { return m_isStateGood; }
 bool Particle::isStable() const { return m_daughters.size() == 0; }
 

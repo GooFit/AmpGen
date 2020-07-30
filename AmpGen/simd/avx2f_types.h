@@ -36,7 +36,7 @@ namespace AmpGen {
       real_v(const float& x0, const float& x1, const float& x2, const float& x3,
           const float& x4, const float& x5, const float& x6, const float& x7)
       {
-        data = _mm256_set_ps(x0,x1,x2,x3,x4,x5,x6,x7); 
+        data = _mm256_set_ps(x7,x6,x5,x4,x3,x2,x1,x0); 
       }
 
       void store( float* ptr ) const { _mm256_storeu_ps( ptr, data ); }
@@ -138,6 +138,7 @@ namespace AmpGen {
       complex_v( const float&   re, const float& im) : re(re), im(im) {}
       complex_v( const std::complex<double>& f ) : re( f.real() ), im( f.imag() ) {}
       complex_v( const std::complex<float>& f  ) : re( f.real() ), im( f.imag() ) {}
+      
       const std::complex<float> at(const unsigned i) const { return std::complex<float>(re.to_array()[i], im.to_array()[i]) ; }       
       void store( float* sre, float* sim ) const { re.store(sre); im.store(sim);  } 
       void store( std::complex<float>* r ) const { 
@@ -187,7 +188,7 @@ namespace AmpGen {
     }
     inline complex_v log( const complex_v& v )
     {
-      return complex_v( log( v.re ) , atan2(v.im, v.re) );
+      return complex_v( 0.5 * log( v.norm() ) , atan2(v.im, v.re) );
     } 
     inline std::ostream& operator<<( std::ostream& os, const complex_v& obj ) { return os << "( "<< obj.re << ") (" << obj.im << ")"; }
     #pragma omp declare reduction(+: real_v: \
