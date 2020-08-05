@@ -166,9 +166,9 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     #if __APPLE__
     argp.push_back("-lstdc++");
     #endif
-    #ifdef _OPENMP 
-     argp.push_back("-fopenmp=libiomp5");
-    #endif
+//    #ifdef _OPENMP 
+//     argp.push_back("-fopenmp=libiomp5");
+//    #endif
   }
 
   argp.push_back( fname.c_str() );
