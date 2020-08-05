@@ -52,9 +52,8 @@ bool isZero( const complex_t& A ){
 
 std::string Constant::to_string(const ASTResolver* resolver) const {  
   auto rounded_string = [](const double& val ){
-    std::string str = std::to_string (val);
-    str.erase ( str.find_last_not_of('0') + 1, std::string::npos );  
-    return str; 
+    std::string str = mysprintf("%g", val);
+    return  str.find(".") != std::string::npos or str.find("e") != std::string::npos ? str : str + ".";
   };
   std::string complex_type = type_string<complex_t>();
   std::string literalSuffix = "";
