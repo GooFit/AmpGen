@@ -100,6 +100,7 @@ endif()
 target_link_libraries(AmpGen PUBLIC ROOT::Minuit2 )
 
 if( USE_OPENMP )
+  target_compile_definitions(AmpGen PUBLIC "USE_OPENMP=1")
   if(OpenMP_FOUND OR OpenMP_CXX_FOUND)
     if(NOT TARGET OpenMP::OpenMP_CXX)
       add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
@@ -116,6 +117,8 @@ if( USE_OPENMP )
   else()
     message(STATUS "OpenMP not found for CXX, you might have forgotten lb-run ROOT bash or CXX=`which g++` in CERN stack")
   endif()
+else()
+  target_compile_definitions(AmpGen PUBLIC "USE_OPENMP=0")
 endif()
 
 set(RAPIDSIM_DATA "")
@@ -154,7 +157,6 @@ target_compile_definitions(AmpGen PRIVATE
   "AMPGENROOT_CMAKE=\"${CMAKE_BINARY_DIR}/bin\""
   "AMPGENROOT=\"${PROJECT_SOURCE_DIR}\""
   "AMPGEN_CXX=\"${AMPGEN_CXX}\""
-  "USE_OPENMP=\"${USE_OPENMP}\""
   $<$<BOOL:${AMPGEN_DEBUG}>:DEBUGLEVEL=1>
   $<$<BOOL:${AMPGEN_TRACE}>:TRACELEVEL=1>)
 

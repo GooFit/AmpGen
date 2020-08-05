@@ -210,7 +210,7 @@ int main( int argc, char* argv[] )
     p( evts ) -> Write();
     // p( evts, WeightFunction([](auto& evt){ return 1; }), PlotOptions::Prefix("noweight") )->Write();
   }
-  for( int i = 0 ; i != evtType.size(); ++i )
+  for( unsigned i = 0 ; i != evtType.size(); ++i )
   {
     Projection p( [i](auto& event){ return sqrt( event.s(i) ); }, "m_"+std::to_string(i), "m_"+std::to_string(i), 100, 0, 2.5 );
     p(evts)->Write();
