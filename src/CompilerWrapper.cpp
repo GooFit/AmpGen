@@ -131,12 +131,14 @@ bool CompilerWrapper::isClang() const
   return m_cxx.find("clang") != std::string::npos || m_cxx.find("llvm-g++") != std::string::npos;
 }
 
-std::string get_cpp_version(){
+std::string get_cpp_version()
+{
   if( __cplusplus >= 201703L ) return "c++17";
   if( __cplusplus >= 201402L ) return "c++14";
   if( __cplusplus >= 201103L ) return "c++11";
   else return "";
 }
+
 void CompilerWrapper::compileSource( const std::string& fname, const std::string& oname )
 {
   using namespace std::chrono_literals;
@@ -151,7 +153,7 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     compile_flags.push_back("-mavx2");
     compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
   #endif
-  #ifdef _OPENMP
+  #if USE_OPENMP
     compile_flags.push_back("-fopenmp");
   #endif
 
@@ -166,9 +168,9 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     #if __APPLE__
     argp.push_back("-lstdc++");
     #endif
-//    #ifdef _OPENMP 
-//     argp.push_back("-fopenmp=libiomp5");
-//    #endif
+    #if USE_OPENMP 
+    argp.push_back("-fopenmp=libiomp5");
+    #endif
   }
 
   argp.push_back( fname.c_str() );
