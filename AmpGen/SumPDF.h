@@ -64,7 +64,8 @@ namespace AmpGen
         #pragma omp parallel for reduction( +: LL )
         for ( unsigned int i = 0; i < m_events->size(); ++i ) {
           auto prob = ((*this))(( *m_events)[i] );
-          LL += log(prob);
+          auto w = (*m_events)[i].weight();
+          LL += w*log(prob);
         }
         return -2 * LL;
       }
