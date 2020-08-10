@@ -74,12 +74,12 @@ void Minimiser::prepare()
   m_minimiser->SetPrintLevel( m_printLevel );
   m_mapping.clear();
   m_covMatrix.clear();
-  for(size_t i = 0 ; i < m_parSet->size(); ++i) 
+  for(size_t i = 0 ; i < m_parSet->size(); ++i)
   {
     auto par = m_parSet->at(i);
     if ( ! par->isFree() ) continue;
     m_minimiser->SetVariable(m_mapping.size(), par->name(), par->mean(), par->stepInit());
-    if ( par->minInit() != 0 || par->maxInit() != 0 ) 
+    if ( par->minInit() != 0 || par->maxInit() != 0 )
       m_minimiser->SetVariableLimits( m_mapping.size(), par->minInit(), par->maxInit() );
     m_mapping.push_back(i);
     if ( m_printLevel != 0 ) INFO( *par );
@@ -107,23 +107,23 @@ bool Minimiser::doFit()
     for ( unsigned int j = 0; j < m_nParams; ++j ) {
       m_covMatrix[i + m_nParams * j] = m_minimiser->CovMatrix( i, j );
     }
-  } 
+  }
   m_status = m_minimiser->Status();
-  /*
-  for( unsigned i = 0 ; i != m_nParams; ++i ){
-    double low  = 0;
-    double high = 0; 
-    int status  = 0; 
-    m_minimiser->GetMinosError(i, low, high, status); 
-    auto param = m_parSet->at( m_mapping[i] ); 
-    param->setResult( *param, param->err(), low, high  );
+  if(NamedParameter<bool>("Minimiser::RunMinos",false)){
+    for( unsigned i = 0 ; i != m_nParams; ++i ){
+      double low  = 0;
+      double high = 0;
+      int status  = 0;
+      m_minimiser->GetMinosError(i, low, high, status);
+      auto param = m_parSet->at( m_mapping[i] );
+      param->setResult( *param, param->err(), low, high  );
+    }
+    for( unsigned i = 0 ; i != m_nParams; ++i )
+    {
+      auto param = m_parSet->at( m_mapping[i] );
+      INFO( param->name() << " " << param->mean() << " " << param->errPos() << " " << param->errNeg() );
+    }
   }
-  for( unsigned i = 0 ; i != m_nParams; ++i )
-  {
-    auto param = m_parSet->at( m_mapping[i] ); 
-    INFO( param->name() << " " << param->mean() << " " << param->errPos() << " " << param->errNeg() );
-  }
-  */
   return 1;
 }
 
@@ -168,8 +168,8 @@ TMatrixTSym<double> Minimiser::covMatrixFull() const
 MinuitParameterSet* Minimiser::parSet() const { return m_parSet; }
 
 void Minimiser::addExtendedTerm( IExtendLikelihood* m_term )
-{ 
-  m_extendedTerms.push_back( m_term ); 
+{
+  m_extendedTerms.push_back( m_term );
 }
 
 ROOT::Minuit2::Minuit2Minimizer* Minimiser::minimiserInternal() { return m_minimiser; }

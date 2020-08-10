@@ -135,6 +135,13 @@ int main( int argc, char* argv[] )
   auto pNames = NamedParameter<std::string>("EventType" , ""
               , "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector();
 
+#if ENABLE_AVX
+  if(!idbranch.empty() || !weight_branch.empty() || !mcidbranch.empty() || !mc_weight_branch.empty()){
+    ERROR("Vectorized version currently not supported when adding extra branches");
+    return 1;
+  }
+#endif
+
 #ifdef _OPENMP
   unsigned int concurentThreadsSupported = std::thread::hardware_concurrency();
   unsigned int nThreads                  = NamedParameter<unsigned int>( "nCores", concurentThreadsSupported );
