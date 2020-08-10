@@ -370,24 +370,33 @@ std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type*
   return arrayToFunctor<double, typename EventList_type::value_type>(values);
 }
 
-KeyedFunctors<double, Event> CoherentSum::componentEvaluator(const EventList_type* ievents) const 
+KeyedFunctors<double(Event)> CoherentSum::componentEvaluator(const EventList_type* ievents) const 
 {
-  auto& cache = m_integrator.cache();
-  KeyedFunctors<double, Event> rt; 
+  using store_t = Store<complex_v, Alignment::SoA>; 
+  auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
+  KeyedFunctors<double(Event)> rt; 
+  std::shared_ptr<const store_t> cache;
+  if( events != m_integrator.events<EventList_type>() )
+  {
+    cache = std::make_shared<const store_t>(events->size(), m_matrixElements);
+    for( auto& me : m_matrixElements ) const_cast<store_t*>(cache.get())->update(events->store(), me);
+  }
+  else cache = std::shared_ptr<const store_t>( & m_integrator.cache(), [](const store_t* t){} ); 
+  /// this little slice of weirdness allows either a new cache to be instantiated, or one to just get a pointer to the one used for the integration. 
+
   for( unsigned i = 0 ; i != m_matrixElements.size(); ++i )
   {
-    for( unsigned j = i ; j != m_matrixElements.size(); ++j ){
+    for( unsigned j = i ; j != m_matrixElements.size(); ++j )
+    {
       auto mi = m_matrixElements[i]; 
       auto mj = m_matrixElements[j]; 
       auto ci = this->m_matrixElements[i].coefficient;
       auto cj = this->m_matrixElements[j].coefficient;
       double s = (i==j) ? 1 : 2 ;
       auto name = programatic_name(mi.decayTree.decayDescriptor()) + "_" + programatic_name( mj.decayTree.decayDescriptor() );
-      INFO("Adding evaluator for: " << name  );
-      auto functor = [ci,cj,i,j,s, &cache](const Event& event){ return s * std::real( ci * cache.get<complex_t>( event.index(), i ) *  std::conj( cj * cache.get<complex_t>( event.index(), j ) ) ) ;};
+      auto functor = [ci,cj,i,j,s, cache](const Event& event){ return s * std::real( ci * cache->get<complex_t>( event.index(), i ) *  std::conj( cj * cache->get<complex_t>( event.index(), j ) ) ) ;};
       rt.add(functor, name, "");
     }
   }
-  INFO(" Returning: " << rt.keys.size() << " functors" );
   return rt; 
 }

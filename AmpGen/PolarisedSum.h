@@ -72,7 +72,7 @@ namespace AmpGen
       Tensor transitionMatrix() const;
       const TransitionMatrix<void>& operator[](const size_t& i) const { return m_matrixElements[i] ; } 
       std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
-      KeyedFunctors<double, Event> componentEvaluator(const EventList_type* = nullptr) const;     
+      KeyedFunctors<double(Event)> componentEvaluator(const EventList_type* = nullptr) const;     
     private: 
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};

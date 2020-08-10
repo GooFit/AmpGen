@@ -5,7 +5,7 @@
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/ProfileClock.h"
-#include "AmpGen/LiteSpan.h"
+#include "AmpGen/KeyedFunctors.h"
 #include <tuple>
 
 #if ENABLE_AVX
@@ -119,9 +119,9 @@ namespace AmpGen
       } );
       return arrayToFunctor<double, typename eventListType::value_type>(values);
     }
-    KeyedFunctors<double, eventValueType> componentEvaluator(const eventListType* events) const
+    KeyedFunctors<double(eventValueType)> componentEvaluator(const eventListType* events) const
     { 
-      KeyedFunctors<double, eventValueType> view;
+      KeyedFunctors<double(eventValueType)> view;
       for_each( this->m_pdfs, [&view, &events]( const auto& pdf) mutable { 
         auto eval = pdf.evaluator(events);
         view.add([eval](const auto& event){ return eval(event) ; } , type_string(pdf), "" ); 

@@ -10,7 +10,7 @@
 using namespace AmpGen;
 
 namespace AmpGen {
-  complete_enum( Flag, Free, Hide, Fix, CompileTimeConstant )
+  complete_enum( Flag, Free, Hide, Fix, CompileTimeConstant, Invalid )
 }
 
 MinuitParameter::MinuitParameter( const std::string& name, const Flag& fix, const double& mean, const double& step,
