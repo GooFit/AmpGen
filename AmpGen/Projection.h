@@ -12,7 +12,7 @@
 
 #include "AmpGen/ArgumentPack.h"
 #include "AmpGen/Types.h"
-#include "AmpGen/LiteSpan.h"
+#include "AmpGen/KeyedFunctors.h"
 
 namespace AmpGen
 {
@@ -22,7 +22,7 @@ namespace AmpGen
 
   class Projection
   {
-    using keyedFunctors = KeyedFunctors<double, Event>; 
+    using keyedFunctors = KeyedFunctors<double(Event)>; 
     public:
       Projection();
       template <class FCN>

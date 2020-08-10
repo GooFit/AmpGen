@@ -522,9 +522,9 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
     {
       std::array<Tensor,2> xi;
       Expression n       = fcn::sqrt( 2 * pP*(pP+pZ) );
-
-      xi[0] = Tensor( {-zb/n , (pP+pZ)/n});
-      xi[1] = Tensor( {(pP+pZ)/n, z/n });
+      Expression aligned = make_cse( Abs(pP + pZ) < 10e-6 ) ;
+      xi[0] = Tensor( {make_cse( Ternary(aligned, 1, -zb/n)) , make_cse( Ternary(aligned, 0, (pP+pZ)/n ) ) });
+      xi[1] = Tensor( {make_cse( Ternary(aligned, 0, (pP+pZ)/n)), make_cse(Ternary(aligned,1, z/n) )  });
       
       Expression fa = m_props->isNeutrino() ? polState * fcn::sqrt(pE) : polState * fcn::sqrt( pE/m-  1 );
       Expression fb = m_props->isNeutrino() ? fcn::sqrt(pE)            : fcn::sqrt( pE/m + 1 );

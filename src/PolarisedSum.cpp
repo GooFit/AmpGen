@@ -266,7 +266,7 @@ Tensor PolarisedSum::transitionMatrix() const
   unsigned totalSize = 0 ; 
   for( const auto& me : m_matrixElements ){
     auto coupling   = me.coupling.to_expression();
-    INFO( me.decayDescriptor() << " " << coupling );
+    // INFO( me.decayDescriptor() << " " << coupling );
     auto cacheIndex = totalSize; 
     for( size_t i = 0 ; i < size ; ++i ){
       expressions[i] = expressions[i] + coupling * Parameter( "x1["+std::to_string(cacheIndex+i)+"]",0,true); 
@@ -498,15 +498,23 @@ std::function<real_t(const Event&)> PolarisedSum::evaluator(const EventList_type
   {
     utils::store(values.data() + utils::size<float_v>::value * block, (m_weight/m_norm) * m_probExpression(&store(block,0)) ); 
   }
-  for( unsigned int i = 0 ; i != 10; ++i )
-    DEBUG(values[i] << " " << getValNoCache( events->at(i) )  * ( m_weight / m_norm ) ); 
   return arrayToFunctor<double, Event>(values);
 }
 
-KeyedFunctors<double, Event> PolarisedSum::componentEvaluator(const EventList_type* events) const 
+
+KeyedFunctors<double(Event)> PolarisedSum::componentEvaluator(const EventList_type* ievents) const 
 {
-  auto& cache = m_integrator.cache();
-  KeyedFunctors<double, Event> rt;
+  using store_t = Store<complex_v, Alignment::SoA>; 
+  auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;
+  std::shared_ptr<const store_t> cache;
+  if( events != m_integrator.events<EventList_type>() )
+  {
+    cache = std::make_shared<const store_t>(events->size(), m_matrixElements, m_dim.first*m_dim.second);
+    for( auto& me : m_matrixElements ) const_cast<store_t*>(cache.get())->update(events->store(), me);
+  }
+  else cache = std::shared_ptr<const store_t>( & m_integrator.cache(), [](const store_t* t){} ); 
+
+  KeyedFunctors<double(Event)> rt;
   for( unsigned i = 0 ; i != m_matrixElements.size(); ++i )
   {
     for( unsigned j = i ; j != m_matrixElements.size(); ++j ){
@@ -516,23 +524,21 @@ KeyedFunctors<double, Event> PolarisedSum::componentEvaluator(const EventList_ty
       auto cj = this->m_matrixElements[j].coefficient;
       double s = (i==j) ? 1 : 2 ;
       auto name = programatic_name(mi.decayTree.decayDescriptor()) + "_" + programatic_name( mj.decayTree.decayDescriptor() );
-      INFO("Adding evaluator for: " << name  );
-      auto functor = [ci,cj,i,j,s, &cache, this](const Event& event){  
-      auto [s1,s2] = this->m_dim;
-      auto R = s1 * s2; 
-      complex_t total = 0;
-      for( unsigned x = 0; x != this->m_norms.size(); ++x )
-      {
-        auto f         = x % s2;
-        auto psiIndex  = (x-f) / s2;
-        auto m2        = psiIndex % s1;
-        auto m1        = (psiIndex-m2)/s1;
-        total          += this->m_rho[psiIndex] * ci * cache.get<complex_t>(event.index(),R * i + m1 * s2 + f) 
-                                     * std::conj( cj * cache.get<complex_t>(event.index(),R * j + m2 * s2 + f) );
-      }
-      return s * std::real(total);
-      };
-      rt.add(functor, name, "");
+      rt.add( [ci,cj,i,j,s, cache, this](const Event& event){  
+        auto [s1,s2] = this->m_dim;
+        auto R = s1 * s2; 
+        complex_t total = 0;
+        for( unsigned x = 0; x != this->m_norms.size(); ++x )
+        {
+          auto f         = x % s2;
+          auto psiIndex  = (x-f) / s2;
+          auto m2        = psiIndex % s1;
+          auto m1        = (psiIndex-m2)/s1;
+          total          += this->m_rho[psiIndex] * ci * cache->get<complex_t>(event.index(),R * i + m1 * s2 + f) 
+                                       * std::conj( cj * cache->get<complex_t>(event.index(),R * j + m2 * s2 + f) );
+        }
+        return s * std::real(total);
+      }, name, "");
     }
   }
   return rt; 

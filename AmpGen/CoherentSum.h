@@ -21,7 +21,7 @@
 #include "AmpGen/Projection.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/Store.h"
-#include "AmpGen/LiteSpan.h"
+#include "AmpGen/KeyedFunctors.h"
 namespace AmpGen
 {
   class LinearErrorPropagator;
@@ -99,7 +99,7 @@ namespace AmpGen
     Bilinears norms() const { return m_normalisations ; }
       
     std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
-    KeyedFunctors<double, Event> componentEvaluator(const EventList_type* = nullptr) const; 
+    KeyedFunctors<double(Event)> componentEvaluator(const EventList_type* = nullptr) const; 
 
   protected:
     std::vector<TransitionMatrix<complex_v>> m_matrixElements; ///< Vector of matrix elements
