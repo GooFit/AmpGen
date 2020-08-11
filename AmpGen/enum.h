@@ -48,7 +48,7 @@ namespace AmpGen {
         counter++;
         if( args[end] == '\0' ) break;
       }
-      if( args[begin] == '\0' ) return T(counter-1);
+      if( args[end] == '\0' ) return T(counter-1);
       return T(counter);                                       
     }
     template <class T> std::string to_string(const T& enumItem, const char* args)
