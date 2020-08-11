@@ -39,13 +39,14 @@ namespace AmpGen {
         for( size_t x = 0; x != nChar ; ++x) if( word[x] != otherWord[x] ) return false;
         return true;
       };
-      for( ; args[begin] != '\0' ; begin++ )
+      while( args[begin] != '\0' )
       {
         while( args[begin] == ' ' ) begin++;
         for( end=begin; args[end] != '\0'; end++ ) if( args[end] == ',' ) break;
-        if( compare( word.c_str(), args + begin , end-begin ) ) break; 
-        begin = end;
-        counter++; 
+        if( compare( word.c_str(), args + begin , end-begin ) ) break;
+        begin = end+1;
+        counter++;
+        if( args[end] == '\0' ) break;
       }
       if( args[begin] == '\0' ) return T(counter-1);
       return T(counter);                                       
