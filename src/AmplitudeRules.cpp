@@ -34,14 +34,17 @@ Coupling::Coupling(MinuitParameter* re, MinuitParameter* im) :
   }
   m_particle = Particle(m_name);
   coordinateType coord = NamedParameter<coordinateType>("CouplingConstant::Coordinates", coordinateType::cartesian);
-  angType degOrRad     = NamedParameter<angType>("CouplingConstant::AngularUnits", angType::rad);
+  angType degOrRad     = NamedParameter<angType>("CouplingConstant::AngularUnits"      , angType::rad);
   m_isCartesian = true; 
+  
   if( coord == coordinateType::polar ) m_isCartesian = false; 
-  else if ( coord != coordinateType::cartesian){
+  
+  if ( coord == coordinateType::Invalid){
     FATAL("Coordinates for coupling constants must be either cartesian or polar");
   } 
   if ( degOrRad == angType::deg) m_sf = M_PI / 180; 
-  else if ( degOrRad != angType::rad){
+  
+  if ( degOrRad == angType::Invalid ){
     FATAL("TotalCoupling::AngularUnits must be either rad or deg");
   } 
 }
