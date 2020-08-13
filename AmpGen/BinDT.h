@@ -15,9 +15,9 @@
 #include <vector>
 
 #include "AmpGen/ArgumentPack.h"
-#include "AmpGen/EventList.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Types.h"
+#include "AmpGen/EventList.h"
 
 namespace AmpGen
 {
@@ -69,7 +69,9 @@ namespace AmpGen
         void serialize( std::ostream& stream ) const override;
         void setChildren( std::shared_ptr<INode> l, std::shared_ptr<INode> r );
         void visit( const std::function<void(INode*)>& visit_function ) override;
+      
         friend class BinDT;
+      
       private :
         std::shared_ptr<INode> m_left;
         std::shared_ptr<INode> m_right;
@@ -87,22 +89,18 @@ namespace AmpGen
       {
         m_top = makeNodes( addr );
       }
-      template <class... ARGS>
-        BinDT( const EventList& events, const ARGS&... args ) : BinDT( ArgumentPack( args... ) )
+      template <class... ARGS> BinDT( const EventList& events, const ARGS&... args ) : BinDT(ArgumentPack(args...) )
+    {
+      m_top = makeNodes( events.begin(), events.end() ); 
+    }
+      template <class iterator_type, 
+                class... ARGS> BinDT( const iterator_type& begin,
+                                      const iterator_type& end, const ARGS&... args ) : BinDT(ArgumentPack( args... ) )
       {
-        std::vector<double> data( m_dim * events.size() );
-        std::vector<double*> addresses( events.size() );
-        size_t counter = 0;
-        for ( auto& evt : events ) {
-          auto val = m_functors( evt );
-          for ( unsigned int i = 0; i < m_dim; ++i ) data[m_dim * counter + i] = val[i];
-          addresses[counter]                                                   = &( data[m_dim * counter] );
-          counter++;
-        }
-        INFO( "Making nodes" );
-        m_top = makeNodes( addresses );
+        m_top = makeNodes(begin, end );
       }
       explicit BinDT( const ArgumentPack& args );
+      BinDT( const EventList& events, const ArgumentPack& args );
       BinDT() = default;
 
       std::shared_ptr<INode> top() { return m_top; }
@@ -122,19 +120,33 @@ namespace AmpGen
 
       std::function<std::vector<double>( const Event& )> makeDefaultFunctors();
       void refreshQueue(const std::vector<double*>&, std::queue<unsigned>&, const unsigned&);
+      template <class iterator_type> 
+      std::shared_ptr<INode> makeNodes(const iterator_type& begin, const iterator_type& end)
+      {    
+        std::vector<double> data( m_dim * (end-begin) );
+        std::vector<double*> addresses( end-begin );
+        size_t counter = 0;
+        for ( auto evt = begin; evt != end; ++evt ) 
+        {
+          auto val = m_functors( *evt );
+          for ( unsigned int i = 0; i < m_dim; ++i ) data[m_dim * counter + i] = val[i];
+          addresses[counter]                                                   = &( data[m_dim * counter] );
+          counter++;
+        }
+        return makeNodes( addresses );
+      } 
       std::shared_ptr<INode> makeNodes(const std::vector<double*>&, std::queue<unsigned>, const unsigned&);
       std::shared_ptr<INode> makeNodes(const std::vector<double*>&);
       std::shared_ptr<INode> makeNodes(const std::vector<double*>&, const std::vector<double*>&);
       std::shared_ptr<INode> makeNodes(std::vector<double*>, std::vector<double*>, std::queue<unsigned>, const unsigned&);
       void setFunctor(const std::function<std::vector<double>( const Event& )>& functors) { m_functors = functors; }
-    
     private:
       std::shared_ptr<INode> m_top                     = {nullptr};
       unsigned m_dim                                   = {0};
       unsigned m_minEvents                             = {0};
       unsigned m_maxDepth                              = {0};
-      std::vector<unsigned> m_queueOrdering            = {}; 
-      std::vector<std::shared_ptr<EndNode>> m_endNodes = {};
+      std::vector<unsigned>                            m_queueOrdering = {}; 
+      std::vector<std::shared_ptr<EndNode>>            m_endNodes = {};
       std::function<std::vector<double>(const Event&)> m_functors = {};
       double getBestPost(const std::vector<double*>& source, const std::vector<double*>& target, int index, bool verbose = false );
   };

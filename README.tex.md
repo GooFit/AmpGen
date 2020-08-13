@@ -84,6 +84,17 @@ All standalone programs can accept both options files and command line arguments
 They also support `--help` to print help for key arguments to the program.
 This will also run the program, as arguments can be defined throughout each of the programs rather than all defined at the beginning.
 
+#### Using SIMD instructions.  
+
+AmpGen (v > 2.0) can be setup to generate vectorised code for faster evaluation of amplitudes / computation of integrals on compatible hardware. 
+Such extensions can be enabled by setting the flag 
+```
+_DUSE_SIMD=AVX2d
+```  
+Which indicates that code should be generated using the AVX2 instruction set using double precision. 
+Single precision is also supported, but not recommended for fitting. 
+
+
 ### Options files and decay descriptors
 
 Options files will generally contain the description of one or more particle decays,
@@ -166,6 +177,12 @@ Several models for different @f$D^0@f$ decays published by the LHCb collaboratio
 ```
 ./Generator options/D02Kpipipi.opt --EventType "D0 K- pi+ pi+ pi-" --nEvents 1000000
 ```
+
+#### Phase space generators
+
+Generating events consists of two phases. Firstly, the kinematics of candidates are generated according to some distribution, typically flat in the phase space. 
+The target distribution is then obtained using the accept-reject method, that is, for a candidate at position @$f
+
 
 ### Debugger
 
@@ -277,7 +294,7 @@ AmpGen implements both the covariant tensor (or Rarita-Schwinger) and canonical 
 Both formalisms refer to states of well-defined orbital angular momentum, as opposed to the helicity states, as the states with well-defined orbital angular momentum have a straightforward parity and momentum dependences.
 The default formalism is the covariant tensor formalism, but this can be switched to the canonical formalism changing the flag
 ```
-Particle::SpinFormalism Canonical ## default = Covariant
+Particle::SpinFormalism Canonical
 ```
 in the options file.
 The spin formalism for an individual decay chain can be specified by changing the attribute SpinFormalism in the decay descriptor. For example,

@@ -28,11 +28,18 @@
 #include "AmpGen/ThreeBodyCalculators.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Generator.h"
-#include "AmpGen/Plots.h"
 
 #ifdef _OPENMP
 #include <omp.h>
 #include <thread>
+#endif
+
+#if ENABLE_AVX2
+  #include "AmpGen/EventListSIMD.h"
+  using EventList_type = AmpGen::EventListSIMD;
+#else
+  #include "AmpGen/EventList.h"
+  using EventList_type = AmpGen::EventList; 
 #endif
 
 #include "TFile.h"
@@ -60,15 +67,6 @@ void randomizeStartingPoint( MinuitParameterSet& MPS, TRandom3& rand, bool Splin
   }
 }
 
-unsigned int count_amplitudes( const AmpGen::MinuitParameterSet& mps )
-{
-  unsigned int counter = 0;
-  for ( auto param = mps.cbegin(); param != mps.cend(); ++param ) {
-    if ( ( *param )->name().find( "_Re" ) != std::string::npos ) counter++;
-  }
-  return counter;
-}
-
 template <typename SIGPDF>
 void addExtendedTerms( Minimiser& mini, SIGPDF& pdf, MinuitParameterSet& mps )
 {
@@ -89,7 +87,7 @@ void addExtendedTerms( Minimiser& mini, SIGPDF& pdf, MinuitParameterSet& mps )
 template <typename PDF>
 FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS )
 {
-  INFO( "Type = " << typeof<PDF>() );
+  INFO( "Type = " << type_string<PDF>() );
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time      = std::clock();
   pdf.setEvents( data );
@@ -129,12 +127,11 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
 
   if ( makePlots ) {
     auto ep = fr->getErrorPropagator();
-//    const size_t      NBins    = NamedParameter<size_t>     ("nBins"     , 100         , "Number of bins used for plotting.");
 
     unsigned int counter = 1;
     for_each( pdf.pdfs(), [&]( auto& f ) {
         auto tStartIntegral2 = std::chrono::high_resolution_clock::now();
-        auto mc_plot3 = mc.makeProjections( mc.eventType().defaultProjections(100), WeightFunction(f), Prefix("tMC_Category"+std::to_string(counter) ) );
+        auto mc_plot3 = mc.makeProjections( mc.eventType().defaultProjections(100), WeightFunction(f), PlotOptions::Prefix("tMC_Category"+std::to_string(counter) ) );
         auto tEndIntegral2   = std::chrono::high_resolution_clock::now();
         double t2            = std::chrono::duration<double, std::milli>( tEndIntegral2 - tStartIntegral2 ).count();
         INFO( "Time for plots = " << t2 );
@@ -146,7 +143,7 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
         counter++;
         } );
   }
-  Chi2Estimator chi2( data, mc, pdf, 15 );
+  Chi2Estimator chi2( data, mc, pdf, MinEvents(15) );
   fr->addChi2( chi2.chi2(), chi2.nBins() );
 
   auto twall_end  = std::chrono::high_resolution_clock::now();
@@ -220,10 +217,9 @@ int main( int argc, char* argv[] )
   const std::string cut         = NamedParameter<std::string>( "Cut", "1" );
   const std::string simCut      = NamedParameter<std::string>( "SimCut", "1" );
   bool BAR                      = NamedParameter<bool>("Bar",false);
-  size_t defaultCacheSize       = count_amplitudes( MPS );
 
-  EventList events( dataFile, !BAR ? evtType : evtType.conj() , CacheSize(defaultCacheSize), Filter(cut) );
-  EventList eventsMC = mcFile == "" ? EventList( evtType) : EventList( mcFile, !BAR ? evtType : evtType.conj() , CacheSize(defaultCacheSize), Filter(simCut) ) ;
+  EventList events( dataFile, !BAR ? evtType : evtType.conj() , Filter(cut) );
+  EventList eventsMC = mcFile == "" ? EventList( evtType) : EventList( mcFile, !BAR ? evtType : evtType.conj(), Filter(simCut) ) ;
   
     auto scale_transform = [](auto& event){ for( size_t x = 0 ; x < event.size(); ++x ) event[x] /= 1000.; };
   if( NamedParameter<std::string>("Units", "GeV").getVal()  == "MeV") {
@@ -279,7 +275,7 @@ int main( int argc, char* argv[] )
 
   fr->writeToFile( logFile );
   output->cd();
-  auto plots = events.makeDefaultProjections( Prefix( "Data_" ), Bins( NBins ) );
+  auto plots = events.makeDefaultProjections( PlotOptions::Prefix( "Data_" ), PlotOptions::Bins( NBins ) );
   for ( auto& plot : plots ) plot->Write();
 
   output->Write();

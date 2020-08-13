@@ -12,6 +12,7 @@
 #include <vector>
 #include <iomanip>
 #include <map>
+#include <cstring>
 
 #include "AmpGen/MsgService.h"
 #include "AmpGen/OptionsParser.h"
@@ -74,9 +75,8 @@ namespace AmpGen
       setFromOptionsParser();
       if ( OptionsParser::printHelp() ) help( defVec.size() > 0 ? defVec[0] : T() );
     }
-    
     void help(const T& def){
-      std::string type = typeof<T>();
+      std::string type = type_string<T>();
       if( type == "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >" ) type = "string";
       std::cout << " " << bold_on << std::left << std::setw(27) << m_name << bold_off 
        << std::setw(20) << "[" + type + "]" ;
@@ -148,9 +148,8 @@ namespace AmpGen
       return return_container;
     }
   };
-  template <class T> std::ostream& operator<<( std::ostream& os, const NamedParameter<T>& np );
-  
-  std::string optionalHelpString(const std::string& header, const std::vector<std::pair<std::string, std::string>>& args);
+  template <typename T> std::ostream& operator<<( std::ostream& os, const NamedParameter<T>& np );
+  template <typename ...T>  std::string optionalHelpString(const std::string& header, const T&... args);
 }
 
 template <typename T>
@@ -163,6 +162,16 @@ std::ostream& AmpGen::operator<<( std::ostream& os, const AmpGen::NamedParameter
     if ( i != np.size() ) os << " ";
   }
   return os;
+}
+
+template <typename ...T> std::string AmpGen::optionalHelpString(const std::string& header, const T&... args )
+{
+  std::stringstream rt;
+  rt << header;
+  for_each( std::make_tuple(args...), [&rt](const auto& f) mutable {
+    rt << "\n\033[3m "  << f.first << "\033[0m: " << f.second; 
+  });
+  return rt.str();
 }
 
 #endif

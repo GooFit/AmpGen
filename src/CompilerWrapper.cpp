@@ -23,6 +23,8 @@
 using namespace AmpGen;
 #ifdef AMPGEN_CXX
 #pragma message "Using c++ compiler: " AMPGEN_CXX " for JIT"
+#pragma message "Using AMPGENROOT: "       AMPGENROOT
+#pragma message "Using AMPGENROOT_CMAKE: " AMPGENROOT_CMAKE 
 #else
 #pragma warning "No AMPGEN_CXX for JIT set"
 #endif 
@@ -51,6 +53,10 @@ void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, 
 {
   std::ofstream output( filename );
   for ( auto& include : m_includes ) output << "#include <" << include << ">\n";
+  if( expression.fcnSignature().find("AVX2d")        != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
+  else if( expression.fcnSignature().find("AVX2f")    != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
+  else if( expression.fcnSignature().find("AVX512d") != std::string::npos )  output << "#include \"AmpGen/simd/avx512d_types.h\"\n; using namespace AmpGen::AVX512d;\n;" ;
+  else if( expression.fcnSignature().find("AVX512")  != std::string::npos )  output << "#include \"AmpGen/simd/avx512_types.h\"\n; using namespace AmpGen::AVX512;\n;" ;
   output << expression << std::endl; 
   output.close();
 }
@@ -120,28 +126,50 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
   return true;
 }
 
-std::string get_cpp_version(){
+bool CompilerWrapper::isClang() const 
+{
+  return m_cxx.find("clang") != std::string::npos || m_cxx.find("llvm-g++") != std::string::npos;
+}
+
+std::string get_cpp_version()
+{
   if( __cplusplus >= 201703L ) return "c++17";
   if( __cplusplus >= 201402L ) return "c++14";
   if( __cplusplus >= 201103L ) return "c++11";
   else return "";
 }
+
 void CompilerWrapper::compileSource( const std::string& fname, const std::string& oname )
 {
   using namespace std::chrono_literals;
   std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", 
-   {"-Ofast", "--std="+get_cpp_version(),"-march=native"} ); 
+   {"-Ofast", "--std="+get_cpp_version()}); 
+  
+  #if ENABLE_AVX 
+    compile_flags.push_back("-march=native");
+    compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
+  #endif
+  #if ENABLE_AVX2d 
+    compile_flags.push_back("-mavx2");
+    compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
+  #endif
+  #if USE_OPENMP
+    compile_flags.push_back("-fopenmp");
+  #endif
 
   std::vector<const char*> argp = { m_cxx.c_str(), 
     "-shared", 
     "-rdynamic", 
     "-fPIC"};
   std::transform( compile_flags.begin(), compile_flags.end(), std::back_inserter(argp), [](const auto& flag ){return flag.c_str() ; } );
-  if( m_cxx.find("clang") != std::string::npos || m_cxx.find("llvm-g++") != std::string::npos)
+  if(isClang())
   {
     argp.push_back( "-Wno-return-type-c-linkage");
     #if __APPLE__
     argp.push_back("-lstdc++");
+    #endif
+    #if USE_OPENMP 
+    argp.push_back("-fopenmp=libiomp5");
     #endif
   }
 

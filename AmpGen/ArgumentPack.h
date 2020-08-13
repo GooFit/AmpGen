@@ -12,7 +12,7 @@ namespace AmpGen
   #define DECLARE_ARGUMENT(X, Y)                          \
   struct X : public AmpGen::Argument<Y> {                 \
     template<class Z>                                     \
-    explicit X(Z val) : AmpGen::Argument<Y>(val){}        \
+    explicit X(Z val = Z()) : AmpGen::Argument<Y>(val){}  \
     X() : AmpGen::Argument<Y>(){}                         \
   }
   /** @class IArgument 
@@ -76,14 +76,20 @@ namespace AmpGen
           std::tuple<ARGS...> argTuple( args... );
           for_each(argTuple, [this](const auto& f){ this->addArgument(f) ; } );
         }
-      template <typename ARG, typename DEFAULT_TYPE=ARG> 
-        ARG getArg( const DEFAULT_TYPE& default_argument = DEFAULT_TYPE() ) const
+      template <typename arg_type> arg_type* get() const 
       {
-        for ( auto param : m_parameters ) {
-          auto ptr = dynamic_cast<ARG*>( param.get() );
-          if ( ptr != nullptr ) return *ptr;
+        for( const auto& param : m_parameters )
+        {
+          auto ptr = dynamic_cast<arg_type*>(param.get());
+          if( ptr != nullptr ) return ptr;
         }
-        return ARG(default_argument);
+        return nullptr;
+      }
+      template <typename arg_type, typename default_arg_type=arg_type> 
+        arg_type getArg( const default_arg_type& default_argument = default_arg_type() ) const
+      {
+        auto p = get<arg_type>();
+        return p == nullptr ? arg_type(default_argument) : *p;
       }
     private:
       std::vector<std::shared_ptr<IArgument>> m_parameters;

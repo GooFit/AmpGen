@@ -18,12 +18,12 @@ namespace AmpGen
     struct PartialWidth {
       CoherentSum fcs;
       DalitzIntegrator integrator;
-      CompiledExpression< std::complex<double>, const real_t*, const real_t* > totalWidth;
+      CompiledExpression<complex_t(const real_t*, const real_t*) > totalWidth;
       EventType type;
-      std::vector<CompiledExpression< std::complex<double>, const real_t*, const real_t*>> partialWidths; 
+      std::vector<CompiledExpression< complex_t(const real_t*, const real_t*)>> partialWidths; 
       double getWidth( const double& m );
       PartialWidth( const EventType& type, MinuitParameterSet& mps );
-      Expression spinAverageMatrixElement( const std::vector<TransitionMatrix<std::complex<double>>>& elements,
+      Expression spinAverageMatrixElement( const std::vector<std::pair<Particle, TotalCoupling> >& elements,
                                            DebugSymbols* msym );
     };
     Expression calculateSAME( const std::string& particle );

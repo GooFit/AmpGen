@@ -21,11 +21,14 @@ namespace AmpGen
     void compileSource(const std::string& fname, const std::string& oname );
     void setVerbose() { m_verbose = true ; } 
     void preamble(std::ostream& os ) const ; 
+    void addHeader(const std::string& include ) { m_includes.push_back(include); } 
+  
   private:
     std::vector<std::string> m_includes = {"array","complex","math.h","vector"}; 
     bool                     m_verbose;
     std::string              m_cxx;
     std::string generateFilename();
+    bool isClang() const; 
   };
 } // namespace AmpGen
 #endif

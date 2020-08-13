@@ -50,7 +50,7 @@ struct DTEvent
   AmpGen::Event signal;
   AmpGen::Event    tag;
   double prob;
-  DTEvent() : signal(0,0,0), tag(0,0,0) {};
+  DTEvent() : signal(0,0), tag(0,0) {};
   DTEvent( const AmpGen::Event& signal, const AmpGen::Event& tag ) : signal(signal), tag(tag) {};
   void set( const AmpGen::Event& s1, const AmpGen::Event& s2 ) { signal.set(s1); tag.set(s2); };
   void invertParity(){
@@ -102,7 +102,7 @@ template <class PDF> struct normalised_pdf {
     norm = sqrt(yc.bf(type)/n);
     if( it != nullptr ) norm *= exp( 1i * it->mean() * M_PI/180. );
     pc.stop();
-    INFO(type << " Time to construct: " << pc << "[ms], norm = " << norm  << " " << typeof<PDF>() );
+    INFO(type << " Time to construct: " << pc << "[ms], norm = " << norm  << " " << type_string<PDF>() );
   }
   complex_t operator()(const Event& event){ return norm * pdf.getValNoCache(event); }
 };
@@ -143,7 +143,7 @@ template <class T1, class T2> class Psi3770 {
       {
         double n1(0), n2(0), zR(0), zI(0);
         auto normEvents = Generator<PhaseSpace>(type).generate(m_blockSize);
-#pragma omp parallel for reduction(+:zR,zI,n1,n2)
+        #pragma omp parallel for reduction(+:zR,zI,n1,n2)
         for(size_t i = 0; i < m_blockSize; ++i){
           auto p1 = t1(normEvents[i]);
           auto p2 = t2(normEvents[i]);
@@ -184,7 +184,7 @@ template <class T1, class T2> class Psi3770 {
     DTEventList generate( const size_t& N )
     {
       DTEventList output( m_signalType, m_tagType );
-      ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__));
+      ProgressBar pb(60, detail::trimmedString(__PRETTY_FUNCTION__));
       auto tStartTotal = std::chrono::high_resolution_clock::now();
       int currentSize  = 0;
       double norm      = -1;

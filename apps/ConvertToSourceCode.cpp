@@ -16,11 +16,12 @@
 #include "AmpGen/Particle.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/AddCPConjugate.h"
-
+#include "AmpGen/simd/utils.h"
 #include "TRandom3.h"
 
 using namespace AmpGen;
 
+/*
 template <class T>
 void create_integration_tests(T& pdf, 
     const EventType& type,
@@ -62,38 +63,51 @@ void create_integration_tests(T& pdf,
     unit_tests << "};" << std::endl; 
     unit_tests << "  auto expr = make_expression<complex_t>(p.getExpression(), p.decayDescriptor(), type.getEventFormat(), mps);" << std::endl; 
     unit_tests << "  auto eval = expr(event);" << std::endl;
-    unit_tests << "  BOOST_TEST( std::real(eval) == " << std::real(value)<< ", boost::test_tools::tolerance(1e-6)) ;" << std::endl;
-    unit_tests << "  BOOST_TEST( std::imag(eval) == " << std::imag(value)<< ", boost::test_tools::tolerance(1e-6)) ;" << std::endl;
+    unit_tests << "  BOOST_TEST( std::real(eval) == " << std::real(utils::get<0>(value))<< ", boost::test_tools::tolerance(1e-6)) ;" << std::endl;
+    unit_tests << "  BOOST_TEST( std::imag(eval) == " << std::imag(utils::get<0>(value))<< ", boost::test_tools::tolerance(1e-6)) ;" << std::endl;
     unit_tests << "}\n\n";
   }
   unit_tests.close();
 }
+*/
 
-template <class T> void generate_source(T& pdf, EventList& normEvents, const std::string& sourceFile, MinuitParameterSet& mps, const double& sf)
+template <class T> void generate_source(T& pdf, const std::string& sourceFile, MinuitParameterSet& mps, const double& sf)
 {
-  bool normalise                      = NamedParameter<bool>("Normalise",true);
-  std::string type                    = NamedParameter<std::string>( "Type", "CoherentSum" );
+  bool normalise    = NamedParameter<bool>("Normalise",true);
+  double safetyFactor = NamedParameter<double>( "SafetyFactor", 3 );
+  int seed            = NamedParameter<int>("Seed", 1);
+  size_t nEvents      = NamedParameter<size_t>( "NormEvents", 1000000 );
+  auto oEventType     = NamedParameter<std::string>("EventType").getVector();
+  
+  TRandom3 rnd(seed);
+
+  EventType eventType( oEventType ); 
+  Generator<PhaseSpace> phsp(eventType);
+  phsp.setRandom(&rnd);
+  EventList normEvents = phsp.generate(nEvents);
+  if constexpr( std::is_same<T, CoherentSum>::value ) pdf.prepare();
 
   double norm = 1; 
   if( normalise ){
-    double pMax = 0 ;
-    pdf.setEvents( normEvents );
-    pdf.prepare();
-    pdf.debug( normEvents[0] );
-    for ( auto& evt : normEvents ) {
-      if( type == "PolarisedSum" ){ 
+    double pMax = 0;
+    for ( auto& evt : normEvents ) 
+    {
+      if constexpr ( std::is_same<T, PolarisedSum>::value )
+      {
         double px, py, pz; 
-        gRandom->Sphere(px,py,pz, gRandom->Uniform(0,1));
+        rnd.Sphere(px,py,pz, rnd.Uniform(0,1));
         mps["Px"]->setCurrentFitVal(px);
         mps["Py"]->setCurrentFitVal(py);
         mps["Pz"]->setCurrentFitVal(pz);
         pdf.transferParameters();
       }
-      double n = pdf.prob_unnormalised( evt );
+      double n = 0;
+      if constexpr ( std::is_same<T, CoherentSum>::value ) n = std::norm( pdf.getValNoCache(evt) );
+      if constexpr ( std::is_same<T, PolarisedSum>::value ) n = pdf.getValNoCache(evt);
       if ( n > pMax ) pMax = n;
     }
     norm = pMax * sf ; 
-  INFO( "Making binary with " << pMax << " x safety factor = " << sf );
+    INFO( "Making binary with " << pMax << " x safety factor = " << sf );
   }
   mps.resetToInit(); 
   pdf.generateSourceCode( sourceFile, norm, true );
@@ -108,7 +122,7 @@ int main( int argc, char** argv )
   std::string outputPS                = NamedParameter<std::string>( "OutputEvents", "" );
   unsigned int NormEvents             = NamedParameter<unsigned int>( "NormEvents", 1000000 );
   double safetyFactor                 = NamedParameter<double>( "SafefyFactor", 3 );
-
+  unsigned seed                       = NamedParameter<unsigned>("Seed", 0);
   EventType eventType( oEventType );
 
   AmpGen::MinuitParameterSet MPS; //
@@ -120,28 +134,16 @@ int main( int argc, char** argv )
   }
   Generator<PhaseSpace> phsp( eventType );
   TRandom3 rnd;
-
+  rnd.SetSeed( seed  );
   gRandom = &rnd;
   phsp.setRandom( &rnd );
 
-  EventList phspEvents( oEventType );
-  phsp.fillEventListPhaseSpace( phspEvents, NormEvents );
-
   if( type == "CoherentSum" ){
     CoherentSum sig( eventType, MPS, "" );
-    generate_source( sig, phspEvents, sourceFile, MPS, safetyFactor );
-    create_integration_tests(sig, eventType, MPS, {phspEvents[15]}, sourceFile );
+    generate_source( sig, sourceFile, MPS, safetyFactor );
   }
   if( type == "PolarisedSum" ){
     PolarisedSum sig( eventType, MPS );
-    generate_source( sig, phspEvents, sourceFile, MPS, safetyFactor );
-  }
-  if ( outputPS != "" ) {
-    std::ofstream ofile( outputPS );
-    ofile << "0x,0y,0z,0t,1x,1y,1z,1t,2x,2y,2z,2t,3x,3y,3z,3t\n";
-    for ( auto& event : phspEvents ) {
-      for ( size_t i = 0; i < event.size(); i++ ) ofile << ( i == 0 ? "" : "," ) << event[i];
-      ofile << "\n";
-    }
+    generate_source( sig, sourceFile, MPS, safetyFactor );
   }
 }

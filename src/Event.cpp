@@ -1,4 +1,4 @@
-#include <math.h>
+
 #include <stddef.h>
 #include <complex>
 #include <ostream>
@@ -10,15 +10,11 @@
 
 using namespace AmpGen; 
 
-Event::Event( const unsigned& N, const unsigned& cacheSize) : 
-  m_event(N), 
-  m_cache(cacheSize) {
-  }
+Event::Event( const unsigned& N) :
+  m_event(N) {}
 
-Event::Event( const real_t* data, const unsigned& N, const unsigned& cacheSize) :
-  m_event(data, data+N),
-  m_cache(cacheSize) {
-  }
+Event::Event( const real_t* data, const unsigned& N) :
+  m_event(data, data+N) {}
 
 void Event::print() const {
   unsigned nParticles = m_event.size()/4;
@@ -73,11 +69,6 @@ real_t Event::s( const std::vector<unsigned>& indices ) const {
   }
   return E*E -px*px - py*py - pz*pz;
 }
-void Event::printCache() const {
-  for( unsigned int i = 0 ; i < m_cache.size(); ++i){
-    INFO("Cache adddress [" << i << "] = " << m_cache[i] );
-  }
-}
 
 void Event::set( const unsigned& i, const std::vector<real_t>& p ){
   for( unsigned j = 0 ; j < 4; ++j) m_event[4*i + j ] = p[j];
@@ -98,10 +89,8 @@ void Event::swap( const unsigned& i , const unsigned& j )
   std::memmove( &m_event[4*i], &tmp,sizeof(tmp));
 }
 
-void Event::setCache(const complex_t& value, const unsigned& pos){ m_cache[pos] = value; }
-void Event::setCache( const std::vector<complex_t>& value, const unsigned& pos )
+void Event::reorder( const std::vector<unsigned>& addresses )
 {
-  std::memmove( m_cache.data() + pos, value.data(), sizeof(complex_t) * value.size() );
+  auto copy = m_event;
+  for( unsigned i = 0; i != addresses.size(); ++i ) set( addresses[i], copy.data() + 4 *i );  
 }
-
-void Event::resizeCache( const unsigned int& new_size ){ m_cache.resize(new_size); }

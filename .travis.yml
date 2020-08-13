@@ -10,17 +10,17 @@ matrix:
           packages:
             - libomp
     - os: linux
-      addons:
-       apt:
-         sources:
-           - ubuntu-toolchain-r-test
-         packages:
-           - g++-8
-           - doxygen
-           - doxygen-doc
-           - doxygen-gui
-           - graphviz
-           - libtbb-dev
+      #      addons:
+      #       apt:
+      #         sources:
+      #           - ubuntu-toolchain-r-test
+      #         packages:
+      #           - g++-8
+      #           - doxygen
+      #           - doxygen-doc
+      #           - doxygen-gui
+      #           - graphviz
+      #           - libtbb-dev
       env:
         - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
   
@@ -48,8 +48,8 @@ env:
 
 before_install:
   - eval "${MATRIX_EVAL}"
-  - chmod +x .ci/build_root_${TRAVIS_OS_NAME}.sh
-  - source .ci/build_root_${TRAVIS_OS_NAME}.sh 
+  - chmod +x .ci/build_root.sh 
+  - source .ci/build_root.sh ${TRAVIS_OS_NAME} 
 
 # Build your code e.g. by calling make
 script:

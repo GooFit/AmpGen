@@ -10,8 +10,7 @@
 namespace AmpGen
 {
   class MinuitParameterSet;
-  declare_enum( Flag, Free, Hide, Fix, CompileTimeConstant )
-
+  declare_enum( Flag, Free, Hide, Fix, CompileTimeConstant)
   class MinuitParameter
   {
   public: 
@@ -36,7 +35,7 @@ namespace AmpGen
     double errNeg() const;
     double* vp() { return &m_meanResult ; } 
     
-    void setInit( const double& init );
+    void setInit( const double& init, const double& step=-1 );
     void setStepInit( const double& si );
     void setFree() ;
     void scaleStep( const double& sf );

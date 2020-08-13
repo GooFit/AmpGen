@@ -10,7 +10,7 @@
 using namespace AmpGen;
 
 namespace AmpGen {
-  complete_enum( Flag, Free, Hide, Fix, CompileTimeConstant )
+  complete_enum( Flag, Free, Hide, Fix, CompileTimeConstant, Invalid )
 }
 
 MinuitParameter::MinuitParameter( const std::string& name, const Flag& fix, const double& mean, const double& step,
@@ -57,7 +57,12 @@ void MinuitParameter::setFree() { INFO("Setting parameter: " << m_name << " free
 
 void MinuitParameter::setCurrentFitVal( double cfv ) { m_meanResult = cfv; }
 
-void MinuitParameter::setInit( const double& val ) { m_meanInit = val; }
+void MinuitParameter::setInit( const double& val, const double& step ) 
+{ 
+  m_meanInit   = val; 
+  m_meanResult = val; 
+  if( step != -1 ) m_stepInit = step;
+}
 
 void MinuitParameter::setResult( double fitMean, double fitErr, double fitErrPos, double fitErrNeg )
 {

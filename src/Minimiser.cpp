@@ -17,6 +17,7 @@
 #include "Math/Factory.h"
 #include "Math/Functor.h"
 #include "Math/Minimizer.h"
+#include "AmpGen/ProfileClock.h"
 
 using namespace AmpGen;
 using namespace ROOT;
@@ -25,13 +26,13 @@ unsigned int Minimiser::nPars() const { return m_nParams; }
 
 double Minimiser::operator()( const double* xx )
 {
+  ProfileClock callTime;
   for(size_t i = 0; i < m_mapping.size(); ++i ) {
     m_parSet->at( m_mapping[i] )->setCurrentFitVal( xx[i] );
   }
   double LL = m_theFunction() ;
-  for ( auto& extendTerm : m_extendedTerms ) {
-    LL -= 2 * extendTerm->getVal();
-  }
+  for ( auto& extendTerm : m_extendedTerms ) LL -= 2 * extendTerm->getVal();
+  callTime.stop();
   return LL - m_ll_zero;
 }
 
@@ -59,7 +60,7 @@ void Minimiser::prepare()
 {
   std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse");
   size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
-  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 1);
+  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 1.0);
   m_printLevel          = NamedParameter<size_t>( "Minimiser::PrintLevel", 4);
   m_normalise           = NamedParameter<bool>(   "Minimiser::Normalise",false);
   if ( m_minimiser != nullptr ) delete m_minimiser;
@@ -68,15 +69,17 @@ void Minimiser::prepare()
   m_minimiser->SetMaxFunctionCalls( maxCalls );
   m_minimiser->SetMaxIterations( 100000 );
   m_minimiser->SetTolerance( tolerance );
+//  m_minimiser->SetStrategy( 3 );
+  //  m_minimiser->SetPrecision(std::numeric_limits<double>::epsilon());
   m_minimiser->SetPrintLevel( m_printLevel );
   m_mapping.clear();
   m_covMatrix.clear();
-  for(size_t i = 0 ; i < m_parSet->size(); ++i) 
+  for(size_t i = 0 ; i < m_parSet->size(); ++i)
   {
     auto par = m_parSet->at(i);
     if ( ! par->isFree() ) continue;
     m_minimiser->SetVariable(m_mapping.size(), par->name(), par->mean(), par->stepInit());
-    if ( par->minInit() != 0 || par->maxInit() != 0 ) 
+    if ( par->minInit() != 0 || par->maxInit() != 0 )
       m_minimiser->SetVariableLimits( m_mapping.size(), par->minInit(), par->maxInit() );
     m_mapping.push_back(i);
     if ( m_printLevel != 0 ) INFO( *par );
@@ -104,23 +107,23 @@ bool Minimiser::doFit()
     for ( unsigned int j = 0; j < m_nParams; ++j ) {
       m_covMatrix[i + m_nParams * j] = m_minimiser->CovMatrix( i, j );
     }
-  } 
+  }
   m_status = m_minimiser->Status();
-  /*
-  for( unsigned i = 0 ; i != m_nParams; ++i ){
-    double low  = 0;
-    double high = 0; 
-    int status  = 0; 
-    m_minimiser->GetMinosError(i, low, high, status); 
-    auto param = m_parSet->at( m_mapping[i] ); 
-    param->setResult( *param, param->err(), low, high  );
+  if(NamedParameter<bool>("Minimiser::RunMinos",false)){
+    for( unsigned i = 0 ; i != m_nParams; ++i ){
+      double low  = 0;
+      double high = 0;
+      int status  = 0;
+      m_minimiser->GetMinosError(i, low, high, status);
+      auto param = m_parSet->at( m_mapping[i] );
+      param->setResult( *param, param->err(), low, high  );
+    }
+    for( unsigned i = 0 ; i != m_nParams; ++i )
+    {
+      auto param = m_parSet->at( m_mapping[i] );
+      INFO( param->name() << " " << param->mean() << " " << param->errPos() << " " << param->errNeg() );
+    }
   }
-  for( unsigned i = 0 ; i != m_nParams; ++i )
-  {
-    auto param = m_parSet->at( m_mapping[i] ); 
-    INFO( param->name() << " " << param->mean() << " " << param->errPos() << " " << param->errNeg() );
-  }
-  */
   return 1;
 }
 
@@ -165,8 +168,8 @@ TMatrixTSym<double> Minimiser::covMatrixFull() const
 MinuitParameterSet* Minimiser::parSet() const { return m_parSet; }
 
 void Minimiser::addExtendedTerm( IExtendLikelihood* m_term )
-{ 
-  m_extendedTerms.push_back( m_term ); 
+{
+  m_extendedTerms.push_back( m_term );
 }
 
 ROOT::Minuit2::Minuit2Minimizer* Minimiser::minimiserInternal() { return m_minimiser; }

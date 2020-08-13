@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <functional>
 
 namespace AmpGen
 {
@@ -28,17 +29,18 @@ namespace AmpGen
     iterator end();
     const_iterator begin() const;
     const_iterator end() const;
-  
   private:
     std::map<std::string,std::vector<std::string>>   m_parsedLines; 
+    std::map<std::string, std::function<void(std::vector<std::string>)> > m_keywords;
     bool m_printHelp = {false};  
     bool m_quiet     = {false}; 
     static OptionsParser* gOptionsParser;
     
-    OptionsParser() = default;
+    OptionsParser();
     bool ignoreThisLine( const std::string& line );
     void readStream( std::istream& is );
     std::vector<std::string> makeParsedStrings( const std::string& line, int& braceDepth ) const;
+    void addArg(const std::vector<std::string>& tokens );
   };
 } // namespace AmpGen
 #endif

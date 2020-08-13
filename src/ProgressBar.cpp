@@ -21,8 +21,10 @@ void ProgressBar::print(const double& percentage, const std::string& message)
   int val  = int(percentage * 100);
   if( val == m_lastPercent ) return; 
   m_lastPercent = val;
-  std::cout << "\r\033[2;34m" << std::left << std::setw( FCNNAMELENGTH ) << m_context << "  INFO         "       << "\033[0m";
+  std::cout << "\r\033[2;34m" << std::left << std::setw( detail::FCNNAMELENGTH ) << m_context << "  INFO         "       << "\033[0m";
   std::cout << "Completed: "  << std::right << std::setw(3) << val << "% " << "[";
+
+  //  detail::labelled_stream(m_context) << "Completed: "  << std::right << std::setw(3) << val << "% " << "[";
   std::fill_n(std::ostream_iterator<char>(std::cout), lpad, '|');
   std::fill_n(std::ostream_iterator<char>(std::cout), m_width-lpad, ' ');
   std::cout << "]";

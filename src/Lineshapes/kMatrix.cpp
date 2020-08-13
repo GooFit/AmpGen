@@ -102,11 +102,11 @@ DEFINE_LINESHAPE( kMatrix )
 
   std::vector<Parameter> fScatt = paramVector( "f_scatt", nChannels );
   std::vector<poleConfig> poleConfigs; 
-
+  bool addImaginaryMass = NamedParameter<bool>("kMatrix::fp", true );
   for ( unsigned int pole = 1; pole <= nPoles; ++pole ) {
     std::string stub = "IS_p" + std::to_string( pole ) + "_";
     Expression mass  = Parameter( stub + "mass" );
-    poleConfig p( mass * mass );
+    poleConfig p( mass * mass  + addImaginaryMass * (1i)*(1.e-6) ); /// add a tiny imaginary part to the mass to avoid floating point errors // 
     for ( unsigned int ch = 0; ch < nChannels; ++ch ) p.add( Parameter( stub + channels[ch] ) );
     poleConfigs.push_back( p );
   }

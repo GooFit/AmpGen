@@ -31,11 +31,11 @@ namespace AmpGen
       complex_t operator()() const override;
       Expression operator[]( const Expression& address ) const;
       Expression top() const { return m_top ; } 
-
+      unsigned size() const { return m_size; }
     private:
       Expression m_top; 
       Expression m_address;
-      size_t     m_size; 
+      unsigned   m_size; 
   };
 } // namespace AmpGen
 
