@@ -146,13 +146,13 @@ int main( int argc, char** argv )
   int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
   std::string outfile = NamedParameter<std::string>("Output"   , "Generate_Output.root" , "Name of output file" ); 
   auto pdfType        = NamedParameter<pdfTypes>( "Type", pdfTypes::CoherentSum, optionalHelpString("Type of PDF to use:", 
-    { {"CoherentSum"     , "Describes decays of a (pseudo)scalar particle to N pseudoscalars"}
-    , {"PolarisedSum"    , "Describes the decay of a particle with spin to N particles carrying spin."}
-    , {"FixedLib"        , "PDF to describe a decay from a precompiled library, such as those provided to GAUSS."}} ) ); 
+      std::make_pair(pdfTypes::CoherentSum , "Describes decays of a (pseudo)scalar particle to N pseudoscalars")
+    , std::make_pair(pdfTypes::PolarisedSum, "Describes the decay of a particle with spin to N particles carrying spin.")
+    , std::make_pair(pdfTypes::FixedLib    , "PDF to describe a decay from a precompiled library, such as those provided to GAUSS.") ) ); 
   auto phspType        = NamedParameter<phspTypes>( "PhaseSpace", phspTypes::PhaseSpace, optionalHelpString("Phase-space generator to use:", 
-    { {"PhaseSpace"         , "Phase space generation based on Raubold-Lynchi algorithm (recommended)."}
-    , {"TreePhaseSpace"     , "Divides the phase-space into a series of quasi two-body phase-spaces for efficiently generating narrow states."}
-    , {"RecursivePhaseSpace", "Includes possible quasi-stable particles and the phase spaces of their decay products, such as Λ baryons."}} ) ); 
+      std::make_pair(phspTypes::PhaseSpace         , "Phase space generation based on Raubold-Lynch algorithm (recommended).\0")
+    , std::make_pair(phspTypes::TreePhaseSpace     , "Divides the phase-space into a series of quasi two-body phase-spaces for efficiently generating narrow states.\0")
+    , std::make_pair(phspTypes::RecursivePhaseSpace, "Includes possible quasi-stable particles and the phase spaces of their decay products, such as Λ baryons.\0") ) ); 
   std::string lib     = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
   size_t nBins        = NamedParameter<size_t>     ("nBins"     ,100, "Number of bins for monitoring plots." );
 
