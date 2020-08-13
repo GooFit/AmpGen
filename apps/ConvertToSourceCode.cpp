@@ -80,7 +80,6 @@ template <class T> void generate_source(T& pdf, const std::string& sourceFile, M
   auto oEventType     = NamedParameter<std::string>("EventType").getVector();
   
   TRandom3 rnd(seed);
-  INFO("First random number = " << rnd.Uniform() );
 
   EventType eventType( oEventType ); 
   Generator<PhaseSpace> phsp(eventType);

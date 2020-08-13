@@ -8,6 +8,7 @@
  - Support for AVX2 for amplitude evaluation / integration single/double precision.
  - Updated plotting for making component amplitude plots. 
  - Better thread safety of integration should improve fit stability. 
+ - Add GenericKmatrix lineshape for handling ... Generic K-matrices (L=0 only)  
 !=================== AmpGen v1r2 2019-11-12 ==================
  - New phase space Generator TreePhaseSpace for producing narrow resonances. 
  - Improved handling of CP conjugated amplitudes.
