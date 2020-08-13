@@ -24,20 +24,18 @@ Spline::Spline(const std::string& name,
   m_min(min),
   m_max(max) {}
 
-Spline::Spline(const Spline& spline, 
-    const Expression& x )
-  : 
+Spline::Spline(const Spline& spline, const Expression& x, DebugSymbols* db ) : 
     m_points( spline.m_points ),
     m_name(   spline.m_name),
     m_nKnots( spline.m_nKnots),
     m_min(    spline.m_min ),
     m_max(    spline.m_max ),
     m_x  ( x ),
-    m_eval( eval() )  {
-    }
-Expression Spline::operator()( const Expression& x )
+    m_eval( eval(db) )  {}
+
+Expression Spline::operator()( const Expression& x, DebugSymbols* db )
 {
-  return Spline(*this,x); 
+  return Spline(*this,x, db); 
 }
 
 Expression AmpGen::getSpline( const std::string& name, const Expression& x, const std::string& arrayName,
@@ -56,16 +54,16 @@ Expression AmpGen::getSpline( const std::string& name, const Expression& x, cons
     max   = NamedParameter<double>( name + "::Spline::Max", 0. );
   }
   std::string spline_name = name + "::Spline::"+arrayName;
-  return Spline( spline_name, nBins, min,max )(x);
+  return Spline(spline_name, nBins, min, max)(x, dbexpressions);
 }
 
-Expression Spline::eval() const 
+Expression Spline::eval(DebugSymbols* db) const 
 {
   Expression x   = make_cse(m_x);
   double spacing = ( m_max - m_min ) / ( (double)m_nKnots - 1. );
   Expression dx  = Fmod( x - m_min, spacing );
   Expression bin = ( x - m_min ) / spacing;
-  Expression continuedValue            = 0;
+  Expression continuedValue            = m_points[m_nKnots-1];
 
   Expression returnValue = Ternary( x > m_min && x < m_max,
       m_points[bin] + ( ( m_points[bin + 1] - m_points[bin] ) / spacing 
@@ -73,6 +71,13 @@ Expression Spline::eval() const
       + m_points[bin+m_nKnots] * dx * dx / 2. 
       + dx * dx * dx * ( m_points[bin+1+m_nKnots] - m_points[bin+m_nKnots] ) / ( 6. * spacing ),
       continuedValue );
+  ADD_DEBUG(x, db );
+  ADD_DEBUG(dx, db );
+  ADD_DEBUG(bin, db );
+  ADD_DEBUG(returnValue, db );
+  ADD_DEBUG( m_points[bin], db );
+  for( int i = 0 ; i != m_points.size(); ++i )
+  ADD_DEBUG( m_points[Constant(i) + 0.1], db );
   return make_cse(returnValue);
 }
 
@@ -80,7 +85,7 @@ void SplineTransfer::print() const { INFO( "Source: " << m_parameters[0]->name()
 SplineTransfer::SplineTransfer() = default;
 
 SplineTransfer::SplineTransfer( const SplineTransfer& other )
-  : CacheTransfer(other.m_address, other.m_value, other.m_size)
+  : CacheTransfer(other.m_address, other.m_name, other.m_value, other.m_size)
   , m_transferMatrix( other.m_transferMatrix )
   , m_parameters( other.m_parameters )
   , m_nKnots( other.m_nKnots )
@@ -89,8 +94,8 @@ SplineTransfer::SplineTransfer( const SplineTransfer& other )
 {
 }
 
-SplineTransfer::SplineTransfer( const size_t& address, const unsigned int& N, const double& min, const double& max )
-  : CacheTransfer(address)
+SplineTransfer::SplineTransfer( const size_t& address, const std::string& name, const unsigned int& N, const double& min, const double& max )
+  : CacheTransfer(address, name)
   , m_transferMatrix( TMatrixD( N - 2, N - 2 ) )
   , m_parameters( N, nullptr )
   , m_nKnots(N)

@@ -57,6 +57,11 @@
   complex_t X::operator()() const { return F( m_expression() ); } \
   std::string X::to_string(const ASTResolver* resolver) const { return std::string(#F)+"("+ m_expression.to_string(resolver)+")";}
 
+#define DEFINE_UNARY_OPERATOR_NO_RESOLVER( X, F ) \
+  X::X( const AmpGen::Expression& expression) : IUnaryExpression(expression) {} \
+  X::operator Expression() const { return Expression( std::make_shared<X>(*this) ) ; } \
+  complex_t X::operator()() const { return F( m_expression() ); }  
+
 /// @ingroup ExpressionEngine macro DECLARE_UNARY_OPERATOR
 /// Macro to declare a unary operator, \ref ExpressionEngine "see IUnaryExpression"
 #define DECLARE_UNARY_OPERATOR( X )                         \
@@ -189,6 +194,17 @@ namespace AmpGen
     double       m_defaultValue;
     bool         m_resolved; 
   };
+  class ComplexParameter : public IExpression {
+    public:
+    ComplexParameter( const Parameter& real, const Parameter& imag );
+    std::string to_string(const ASTResolver* resolver = nullptr ) const override;
+    void resolve( ASTResolver& resolver ) const override;
+    operator Expression() const ;
+    complex_t operator()() const override;  
+    private:
+    Parameter m_real;
+    Parameter m_imag;
+  };
 
   /** @ingroup ExpressionEngine class Ternary 
       @brief Evaluates the ternary operator.
@@ -217,6 +233,7 @@ namespace AmpGen
     complex_t operator()() const override { return m_expression(); }
     uint64_t key() const;
     void setKey( const size_t& new_key ); 
+    Expression expression() const { return m_expression; }
     Expression  m_expression;
     uint64_t    m_key; 
   };

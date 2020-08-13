@@ -13,6 +13,7 @@
 #include "AmpGen/ASTResolver.h"
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/Tensor.h"
+#include "AmpGen/simd/utils.h"
 using namespace AmpGen;
 
 CompiledExpressionBase::CompiledExpressionBase() = default; 
@@ -48,6 +49,10 @@ std::string AmpGen::programatic_name( std::string s )
 void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
 {
   if( m_resolver == nullptr ) m_resolver = std::make_shared<ASTResolver>( m_evtMap, mps );
+  if( fcnSignature().find("AVX") != std::string::npos ) {
+    m_resolver->setEnableAVX();   
+    enableBatch();
+  }
   m_dependentSubexpressions = m_resolver->getOrderedSubExpressions( m_obj ); 
   for ( auto& sym : m_db ){
     auto expressions_for_this = m_resolver->getOrderedSubExpressions( sym.second); 
@@ -87,7 +92,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   stream << "extern \"C\" const char* " << progName() << "_name() {  return \"" << m_name << "\"; } \n";
   bool enable_cuda = NamedParameter<bool>("UseCUDA",false);
   size_t sizeOfStream = 0;
-  if( m_rto )
+  if( use_rto() )
   {
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );
@@ -98,12 +103,11 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     else {
       auto as_tensor = cast<TensorExpression>(m_obj).tensor();
       for(unsigned j=0; j != as_tensor.size(); ++j )
-        stream << "r["<<j<<"] = " << as_tensor[j].to_string(m_resolver.get()) << ";\n";
+        stream << "r[s * "<< j<<"] = " << as_tensor[j].to_string(m_resolver.get()) << ";\n";
       stream << "}\n";  
     }
   }
   else if( !enable_cuda ){
-//    stream << "#pragma clang diagnostic push\n#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );
     stream << "return " << m_obj.to_string(m_resolver.get()) << ";\n}\n";
@@ -116,7 +120,6 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   }
 
   if( NamedParameter<bool>("IncludePythonBindings", false) == true && returnTypename().find("complex") != std::string::npos ){
-//    stream << "#pragma clang diagnostic pop\n\n";
     stream << "extern \"C\" void " <<  progName() << "_c" << "(double *real, double *imag, " << fcnSignature() << "){\n";
     stream << "  auto val = " << progName() << "(" << args() << ") ;\n"; 
     stream << "  *real = val.real();\n";
@@ -124,6 +127,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     stream << "}\n";
   }
   if ( m_db.size() != 0 ) addDebug( stream );
+  if( m_enableBatch ) compileBatch(stream);    
 }
 
 std::ostream& AmpGen::operator<<( std::ostream& os, const CompiledExpressionBase& expression )
@@ -140,7 +144,7 @@ void CompiledExpressionBase::compile(const std::string& fname)
 void CompiledExpressionBase::addDebug( std::ostream& stream ) const
 {
   stream << "#include<string>\n";
-  stream << "extern \"C\" std::vector<std::pair< std::string, std::complex<double>>> " 
+  stream << "extern \"C\" std::vector<std::pair< std::string, " << type_string<complex_v>() << " >> " 
          << m_progName << "_DB(" << fcnSignature() << "){\n";
   for ( auto& dep : m_debugSubexpressions ) {
     std::string rt = "auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver.get()) +";"; 
@@ -152,15 +156,15 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
     const auto expression = m_db[i].second; 
     stream << std::endl << "{\"" << m_db[i].first << "\",";
     if ( expression.to_string(m_resolver.get()) != "NULL" )
-      stream << expression.to_string(m_resolver.get()) << "}" << comma;
-    else stream << "-999}" << comma ;
+      stream << type_string<complex_v>() << "("<< expression.to_string(m_resolver.get()) << ")}" << comma;
+    else stream << type_string<complex_v>() << "(-999.,0.)}" << comma ;
   }
 }
 
-std::string CompiledExpressionBase::fcnSignature(const std::vector<std::string>& argList, bool rto=false)
+std::string CompiledExpressionBase::fcnSignature(const std::vector<std::string>& argList, bool rto, bool includeStagger)
 {
   unsigned counter=0;
   auto fcn = [counter](const auto& str) mutable {return str + " x"+std::to_string(counter++); }; 
-  if( rto ) return argList[0] + " r, " + vectorToString( argList.begin()+1, argList.end(), ", ", fcn );
+  if( rto ) return argList[0] + " r, " + argList[1] + " s, " + vectorToString( argList.begin()+2, argList.end(), ", ", fcn );
   return vectorToString( argList.begin(), argList.end(), ", ", fcn);
 }

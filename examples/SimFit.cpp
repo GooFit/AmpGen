@@ -84,12 +84,12 @@ int main(int argc , char* argv[] ){
   for( size_t i = 0 ; i < data.size(); ++i )
   {
     INFO("Making figures for sample: " << i << " ...");
-    auto dataPlots = data[i].makeDefaultProjections( Prefix("Data_"+std::to_string(i)));
+    auto dataPlots = data[i].makeDefaultProjections( PlotOptions::Prefix("Data_"+std::to_string(i)));
     for( auto& p : dataPlots ) p->Write();
     size_t counter = 0;
     for_each(pdfs[i].pdfs(), [&]( auto& f ){
       auto mc_plots = mcs[i].makeDefaultProjections(WeightFunction(f),
-        Prefix("Model_sample_"+std::to_string(i)+"_cat"+std::to_string(counter)));
+        PlotOptions::Prefix("Model_sample_"+std::to_string(i)+"_cat"+std::to_string(counter)));
       for( auto& plot : mc_plots )
       {
         plot->Scale( ( data[i].integral() * f.getWeight() ) / plot->Integral() );

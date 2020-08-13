@@ -154,11 +154,9 @@ Expression ExpressionParser::processEndPoint( const std::string& name, const Min
   bool status  = true;
   double value = lexical_cast<double>( name, status );
   if ( status == true ) return value;
-  if ( name == "PI" ) return M_PI;
-  if ( name == "pi" ) return M_PI;
+  if ( name == "PI" || name == "pi" || name == "M_PI" ) return M_PI;
   if ( name == "e" ) return std::exp(1);
-  if ( name == "I" ) return complex_t( 0, 1 );
-  if ( name == "i" ) return complex_t( 0, 1 );
+  if ( name == "I" || name == "i" ) return complex_t( 0, 1 );
   if ( mps != nullptr ) {
     auto it = mps->find(name);
     if ( it != nullptr ) return MinuitParameterLink( it );
@@ -174,9 +172,13 @@ Expression ExpressionParser::processEndPoint( const std::string& name, const Min
 }
 
 MinuitParameterLink::MinuitParameterLink( MinuitParameter* param ) : m_parameter( param ) {}
+
 std::string MinuitParameterLink::to_string(const ASTResolver* resolver) const
 {
-  return resolver == nullptr ? m_parameter->name() : resolver->resolvedParameter(this);
+  if( resolver == nullptr ) return m_parameter->name();
+  if( resolver->enableCompileConstants() && m_parameter != nullptr && m_parameter->flag () == Flag::CompileTimeConstant )
+   return std::to_string( m_parameter->mean() ); 
+  return resolver->resolvedParameter(this);
 }
 
 std::string MinuitParameterLink::name() const {
@@ -185,7 +187,7 @@ std::string MinuitParameterLink::name() const {
 
 void MinuitParameterLink::resolve( ASTResolver& resolver ) const
 {
-  resolver.resolve(*this);
+  if( m_parameter->flag() != Flag::CompileTimeConstant ) resolver.resolve(*this);
 }
 
 complex_t MinuitParameterLink::operator()() const 

@@ -15,14 +15,17 @@
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Types.h"
-
+#include "AmpGen/simd/utils.h"
 using namespace AmpGen;
+using namespace AmpGen::fcn;
+using namespace std::complex_literals;
 
 DEFINE_CAST(Constant )
 DEFINE_CAST(Parameter )
 DEFINE_CAST(SubTree )
 DEFINE_CAST(Ternary )
 DEFINE_CAST(Function )
+DEFINE_CAST(ComplexParameter);
 
 Expression::Expression( const std::shared_ptr<IExpression>& expression ) : m_expression( expression ) {}
 
@@ -49,14 +52,18 @@ bool isZero( const complex_t& A ){
 
 std::string Constant::to_string(const ASTResolver* resolver) const {  
   auto rounded_string = [](const double& val ){
-    std::string str = std::to_string (val);
-    str.erase ( str.find_last_not_of('0') + 1, std::string::npos );  
-    return str; 
+    std::string str = mysprintf("%g", val);
+    return  str.find(".") != std::string::npos or str.find("e") != std::string::npos ? str : str + ".";
   };
-  std::string complex_type_string = resolver != nullptr && resolver->enableCuda() ? "ampgen_cuda::complex_t" : typeof<complex_t>() ;
-  std::string literalSuffix = resolver != nullptr && resolver->enableCuda() ? "f" : ""; 
+  std::string complex_type = type_string<complex_t>();
+  std::string literalSuffix = "";
+  if( resolver != nullptr && (resolver->enableCuda() || resolver->enableAVX()) )
+  { 
+    literalSuffix = "f";
+    complex_type = type_string<complex_v>();
+  }
   return std::imag(m_value) == 0 ? "(" + rounded_string(std::real(m_value)) +literalSuffix + ")" : 
-      complex_type_string +"("+rounded_string(std::real(m_value))+literalSuffix+","+rounded_string(std::imag(m_value))+literalSuffix+")";
+      complex_type +"("+rounded_string(std::real(m_value))+literalSuffix+","+rounded_string(std::imag(m_value))+literalSuffix+")";
 }
 
 Expression simplify_constant_addition( const Constant& constant, const Expression& expression )
@@ -149,7 +156,7 @@ Expression AmpGen::operator/( const Expression& A, const Expression& B )
     if( is<Constant>( as_prod.r() ) ) return ( Constant( 1./as_prod.r()() ) * A )/ as_prod.l();
   }
   else if( is<Divide>(B) ) return ( A * cast<Divide>(B).r() ) / cast<Divide>(B).l();
-  else if( is<Sqrt>(B) ) return ( A * fcn::isqrt( cast<Sqrt>(B).arg() ) ); 
+//   else if( is<Sqrt>(B) ) return ( A / fcn::sqrt( cast<Sqrt>(B).arg() ) ); 
   return Expression( Divide( A, B ) );
 }
 Expression AmpGen::operator&&( const Expression& A, const Expression& B ) { return Expression( And( A, B ) ); }
@@ -203,7 +210,9 @@ Ternary::Ternary( const Expression& cond, const Expression& v1, const Expression
 }
 std::string Ternary::to_string(const ASTResolver* resolver) const
 {
-  return "(" + m_cond.to_string(resolver) + "?" + m_v1.to_string(resolver) + ":" + m_v2.to_string(resolver) + ")";
+  return resolver != nullptr && resolver->enableAVX() ? "select(" + m_cond.to_string(resolver) + ", " +
+    m_v1.to_string(resolver) + ", " + m_v2.to_string(resolver) +")"
+    : "(" + m_cond.to_string(resolver) + "?" + m_v1.to_string(resolver) + ":" + m_v2.to_string(resolver) + ")";
 }
 
 void Ternary::resolve( ASTResolver& resolver ) const
@@ -239,7 +248,7 @@ std::string SubTree::to_string(const ASTResolver* /*resolver*/) const
 void SubTree::resolve( ASTResolver& resolver ) const  
 { 
   resolver.resolve( *this );
-  m_expression.resolve( resolver );
+  // m_expression.resolve( resolver );
 }
 
 Expression AmpGen::make_cse( const Expression& A , bool simplify )
@@ -295,7 +304,7 @@ Expression AmpGen::fcn::complex_sqrt( const Expression& expression )
 {
   if( is<Constant>(expression ) ) return sqrt( expression() );
   auto st = make_cse(expression);
-  return Ternary( st > 0, Sqrt(st), Constant(0,1)*Sqrt(-st) );
+  return Ternary( st > 0, Sqrt(st), 1i*Sqrt(-st) );
 }
 
 Expression AmpGen::fcn::isqrt( const Expression& expression )
@@ -309,4 +318,25 @@ Expression AmpGen::fcn::fpow( const Expression& x, const int& n){
   Expression rt = 1;
   for( int y=0;y<n;++y) rt = rt * x;
   return rt;
+}
+
+ComplexParameter::ComplexParameter( const Parameter& real, const Parameter& imag ) 
+ : m_real(real), m_imag(imag) {}
+
+std::string ComplexParameter::to_string(const ASTResolver* resolver) const
+{
+  std::string complex_type = type_string<complex_t>();
+  if( resolver != nullptr && (resolver->enableCuda() || resolver->enableAVX()) ) complex_type = type_string<complex_v>();
+  return complex_type + "(" + m_real.to_string(resolver) + ", " + m_imag.to_string(resolver) +")";
+}
+
+void ComplexParameter::resolve( ASTResolver& resolver ) const
+{
+  m_real.resolve(resolver);
+  m_imag.resolve(resolver);
+}
+
+complex_t ComplexParameter::operator()() const
+{
+  return m_real() + 1i * m_imag();
 }

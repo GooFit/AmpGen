@@ -12,6 +12,7 @@ namespace AmpGen
   extern const Expression Z;
   extern const std::array<Tensor,5> Gamma;
   extern const std::array<Tensor,3> Sigma;
+  extern const std::array<Tensor,3> Sigma4;
   extern const std::array<Tensor,3> S03;
   extern const std::array<Tensor,8> SU3;
 } // namespace AmpGen

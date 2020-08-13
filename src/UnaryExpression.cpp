@@ -17,28 +17,18 @@ T rsqrt( const T& arg ){ return 1. / sqrt(arg) ; }
 DEFINE_UNARY_OPERATOR( Log , log )
 DEFINE_UNARY_OPERATOR( Sqrt, sqrt )
 DEFINE_UNARY_OPERATOR( Exp , exp )
-DEFINE_UNARY_OPERATOR( Abs , std::abs )
 DEFINE_UNARY_OPERATOR( Sin , sin )
 DEFINE_UNARY_OPERATOR( Cos , cos )
 DEFINE_UNARY_OPERATOR( Tan , tan )
 DEFINE_UNARY_OPERATOR( ASin, asin )
 DEFINE_UNARY_OPERATOR( ACos, acos )
 DEFINE_UNARY_OPERATOR( ATan, atan )
-DEFINE_UNARY_OPERATOR( Norm, std::norm )
-DEFINE_UNARY_OPERATOR( Conj, std::conj )
-DEFINE_UNARY_OPERATOR( Real, std::real )
-DEFINE_UNARY_OPERATOR( Imag, std::imag )
-//DEFINE_UNARY_OPERATOR( LGamma, std::lgamma );
-  //DEFINE_UNARY_OPERATOR( ISqrt, rsqrt )
-
-ISqrt::ISqrt( const Expression& expression) : IUnaryExpression(expression) {} 
-ISqrt::operator Expression() const { return Expression( std::make_shared<ISqrt>(*this) ) ; } 
-complex_t ISqrt::operator()() const { return 1./sqrt( m_expression() ); } 
-std::string ISqrt::to_string(const ASTResolver* resolver) const {   
-  return resolver != nullptr && resolver->enableCuda()  ?
-      "rsqrt("+m_expression.to_string(resolver)+")" :
-    "1./sqrt("+m_expression.to_string(resolver)+")" ;
-}
+DEFINE_UNARY_OPERATOR_NO_RESOLVER( Norm, std::norm )
+DEFINE_UNARY_OPERATOR_NO_RESOLVER( Real, std::real )
+DEFINE_UNARY_OPERATOR_NO_RESOLVER( Imag, std::imag )
+DEFINE_UNARY_OPERATOR_NO_RESOLVER( ISqrt, rsqrt )
+DEFINE_UNARY_OPERATOR_NO_RESOLVER( Conj, std::conj )
+DEFINE_UNARY_OPERATOR_NO_RESOLVER( Abs , std::abs )
 
 LGamma::LGamma( const Expression& expression) : IUnaryExpression(expression) {} 
 LGamma::operator Expression() const { return Expression( std::make_shared<LGamma>(*this) ) ; }
@@ -46,6 +36,48 @@ complex_t LGamma::operator()() const { return std::lgamma( std::abs( m_expressio
 std::string LGamma::to_string(const ASTResolver* resolver) const {   
   return "std::lgamma(" + m_expression.to_string(resolver) + ")"; 
 }
+
+std::string ISqrt::to_string(const ASTResolver* resolver) const {   
+  return resolver != nullptr && resolver->enableCuda()  ?
+    "rsqrt("+m_expression.to_string(resolver)+")" :
+    "1./sqrt("+m_expression.to_string(resolver)+")" ;
+}
+
+std::string Abs::to_string( const ASTResolver* resolver ) const
+{
+  return resolver != nullptr && resolver->enableAVX() ? 
+    "abs(" + m_expression.to_string(resolver) +")" :
+    "std::abs("+m_expression.to_string(resolver) +")";
+}
+
+std::string Conj::to_string( const ASTResolver* resolver ) const
+{
+  return resolver != nullptr && resolver->enableAVX() ? 
+    "conj(" + m_expression.to_string(resolver) +")" :
+    "std::conj("+m_expression.to_string(resolver) +")";
+}
+
+std::string Norm::to_string( const ASTResolver* resolver ) const
+{
+  return resolver != nullptr && resolver->enableAVX() ? 
+    "norm(" + m_expression.to_string(resolver) +")" :
+    "std::norm("+m_expression.to_string(resolver) +")";
+}
+
+std::string Real::to_string( const ASTResolver* resolver ) const
+{
+  return resolver != nullptr && resolver->enableAVX() ? 
+    "real(" + m_expression.to_string(resolver) +")" :
+    "std::real("+m_expression.to_string(resolver) +")";
+}
+
+std::string Imag::to_string( const ASTResolver* resolver ) const
+{
+  return resolver != nullptr && resolver->enableAVX() ? 
+    "imag(" + m_expression.to_string(resolver) +")" :
+    "std::imag("+m_expression.to_string(resolver) +")";
+}
+
 
 Expression Log::d()  const { return 1. / arg(); }
 Expression Sqrt::d() const { return 1. / ( 2 * fcn::sqrt( arg() ) ); }

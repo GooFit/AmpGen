@@ -80,7 +80,7 @@ std::function<std::vector<double>( const Event& )> BinDT::makeDefaultFunctors()
     DEBUG( "Problem has 2 d.o.f.s -> using Dalitz coordinates" );
     return []( const Event& evt ) -> std::vector<double> { return {evt.s( 0, 1 ), evt.s( 1, 2 )}; };
   }
-  ERROR( "No functors found for dim = " << m_dim );
+  ERROR( "No default functors found for dim = " << m_dim );
   return nullptr;
 }
 
@@ -95,6 +95,11 @@ BinDT::BinDT( const ArgumentPack& args )
     auto stream = std::ifstream(fname);
     readFromStream(stream);
   }
+}
+
+BinDT::BinDT( const EventList& events, const ArgumentPack& args ) : BinDT(args) 
+{
+  makeNodes( events.begin(), events.end() );
 }
 
 void BinDT::readFromStream( std::istream& stream )
@@ -363,3 +368,4 @@ void BinDT::Decision::visit( const std::function<void(BinDT::INode*)>& visit_fun
   m_left->visit( visit_function );
   m_right->visit( visit_function );
 }
+

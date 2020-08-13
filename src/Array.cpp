@@ -19,16 +19,10 @@ Array::Array( const Expression& top,
 
 std::string Array::to_string(const ASTResolver* resolver) const {
   auto head   = m_top.to_string(resolver);
-  if( is<Constant>(m_address) ) 
-    return head+"["+ std::to_string(int(std::real(m_address()))) +"]";
   auto offset = m_address.to_string(resolver);
-  auto pos = head.find_last_of("]");
-  if( pos != std::string::npos ){
-    auto st1 = head.substr(0,pos);
-    auto st2 = head.substr(pos,head.size() - pos );
-    return st1 + "+int("+offset+")" + st2;
-  }
-  else return head +"[ int("+offset+")]";
+  if( resolver != nullptr && resolver->enableAVX() ) return " gather( &(" + head + "), " + offset + ")";  
+  if( head.find("[") == std::string::npos ) return head + "[int("+offset+")]";
+  else return " * ( & (" + head + ") + int("+offset+") )";
 }
 
 void Array::resolve( ASTResolver& resolver ) const

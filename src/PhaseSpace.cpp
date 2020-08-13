@@ -35,12 +35,12 @@ double PhaseSpace::q( double m, double m1, double m2 ) const
   return 0.5 * sqrt( m*m - 2*m1*m1 - 2*m2*m2 + (m1*m1-m2*m2)*(m1*m1-m2*m2)/(m*m) );
 }
 
-Event PhaseSpace::makeEvent(const size_t& cacheSize) 
+Event PhaseSpace::makeEvent()
 {
   std::array<double, kMAXP> rno;
   std::array<double, kMAXP> pd;
   std::array<double, kMAXP> invMas; 
-  Event rt(4*m_nt + m_type.isTimeDependent(), cacheSize);
+  Event rt(4*m_nt + m_type.isTimeDependent());
 
   rno[0] = 0;
   size_t n;
@@ -63,8 +63,10 @@ Event PhaseSpace::makeEvent(const size_t& cacheSize)
     }
   } while ( wt < m_rand->Rndm() );
   
-  rt.set(0, { 0, pd[0], 0, sqrt( pd[0] * pd[0] + m_mass[0] * m_mass[0] )} );
-
+  rt[0] = 0;
+  rt[1] = pd[0];
+  rt[2] = 0;
+  rt[3] = sqrt( pd[0] * pd[0] + m_mass[0] * m_mass[0] );
   for(size_t i = 1 ; i != m_nt ; ++i ){  
     rt.set( i, { 0, -pd[i-1], 0, sqrt( pd[i-1] * pd[i-1] + m_mass[i] * m_mass[i] ) } );
     double cZ   = 2 * m_rand->Rndm() - 1;
@@ -72,24 +74,17 @@ Event PhaseSpace::makeEvent(const size_t& cacheSize)
     double angY = 2 * M_PI * m_rand->Rndm();
     double cY   = cos(angY);
     double sY   = sin(angY);
+    double beta  = (i == m_nt-1) ? 0 : pd[i] / sqrt( pd[i] * pd[i] + invMas[i] * invMas[i] );
+    double gamma = (i == m_nt-1) ? 1 : 1./sqrt( 1 - beta*beta);    
     for (size_t j = 0; j <= i; j++ ) {
       double x          = rt[4*j+0];
       double y          = rt[4*j+1];
       double z          = rt[4*j+2];
-      rt[4*j+0] = cZ * x - sZ * y;
-      rt[4*j+1] = sZ * x + cZ * y;
-      x         = rt[4*j+0];
-      rt[4*j+0] = cY * x - sY * z;
-      rt[4*j+2] = sY * x + cY * z;
-    }
-    if ( i == ( m_nt - 1 ) ) break;
-    double beta = pd[i] / sqrt( pd[i] * pd[i] + invMas[i] * invMas[i] );
-    double gamma = 1./sqrt( 1 - beta*beta);
-    for (size_t j = 0; j <= i; j++ ){
-      double E  = rt[4*j+3];
-      double py = rt[4*j+1];
-      rt[4*j+1] = gamma*( py + beta * E );
-      rt[4*j+3] = gamma*( E + beta * py );
+      double E          = rt[4*j+3];
+      rt[4*j+0] = cY * (cZ * x - sZ * y ) - sY * z;
+      rt[4*j+1] = gamma*( sZ * x + cZ * y + beta * E );
+      rt[4*j+2] = sY * (cZ * x - sZ * y )  + cY * z;
+      rt[4*j+3] = gamma*( E + beta * (sZ *x + cZ*y) );
     }
   }
   rt.setGenPdf( 1 );

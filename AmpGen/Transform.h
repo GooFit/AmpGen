@@ -41,13 +41,16 @@ namespace AmpGen {
   class TransformSequence
   {
     public:
-      TransformSequence() = default; 
+      TransformSequence(); 
+      TransformSequence( const Transform& transform );
+      TransformSequence( const TransformSequence& t1, const TransformSequence& t2);
+      TransformSequence( const Transform& t1, const Transform& t2); 
       TransformSequence inverse() const;
-      Tensor operator()( const Transform::Representation& repr );
+      Tensor operator()( const Transform::Representation& repr ) const ;
       Tensor operator()( const Tensor& tensor, 
-          const Transform::Representation& repr=Transform::Representation::Vector );
-      void add( const Transform& transform );
-      void add( const TransformSequence& transform );
+          const Transform::Representation& repr=Transform::Representation::Vector ) const;
+      void push_back( const Transform& transform );
+      void push_back( const TransformSequence& transform );
       void stepThrough( const Tensor& tensor, 
                         const Transform::Representation& repr = Transform::Representation::Vector );
       
@@ -58,7 +61,10 @@ namespace AmpGen {
       std::vector<Transform>::const_iterator   end()    const { return m_transforms.cend(); }
       std::vector<Transform>::iterator         begin()        { return m_transforms.begin(); }
       std::vector<Transform>::iterator         end()          { return m_transforms.end(); }
+      unsigned size() const { return m_transforms.size(); }
+    
     private:
+      void buildCache();
       std::vector<Transform> m_transforms;
       std::array<Tensor,3>   m_cache; 
   };

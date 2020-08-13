@@ -19,7 +19,7 @@ void ParticleProperties::print( std::ostream& out ) const
   out << "Mass  " << mass() << " +" << mErrPlus() << " -" << mErrMinus() << "\nWidth " << width() << " +" << wErrPlus()
     << " -" << wErrMinus() << "\n I=" << I() << ", G=" << G() << "\n J=" << J() << ", C=" << C() << ", P=" << P()
     << "\n Q = " << charge() << "\n pdgID " << pdgID() << "\n name " << name()
-    << "\n net-quark-content " << netQuarkContent() << "\n is its own antiparticle? "
+    << "\n quark-content " << quarkContent() << "\n is its own antiparticle? "
     << ( hasDistinctAnti() ? "no" : "yes" ) << "\n radius " << radius() * GeV << " /GeV"
     << "\n";
 }
@@ -36,7 +36,15 @@ int ParticleProperties::chargeFromString( const std::string& ch, bool& status ) 
   return 0;
 }
 
-ParticleProperties::ParticleProperties( const std::string& pdg_string ) : m_netQuarkContent()
+std::string ParticleProperties::J() const 
+{
+  if( m_twoSpin == -1 ) return "?";
+  if( m_twoSpin % 2 == 0 ) return std::to_string( int(m_twoSpin/2) );
+  if( m_twoSpin % 2 == 1 ) return std::to_string( int(m_twoSpin/2) ) + "/2";
+  return "";
+}
+
+ParticleProperties::ParticleProperties( const std::string& pdg_string )
 {
   m_isValid = false;
   if ( pdg_string == "" || pdg_string.empty() ) return;
@@ -61,21 +69,19 @@ ParticleProperties::ParticleProperties( const std::string& pdg_string ) : m_netQ
   m_Cparity      = chargeFromString( s[10], status );
   m_charge       = chargeFromString( s[13], status );
   m_isospin      = s[6];
-  m_JtotalSpin   = s[8];
   m_status       = s[15][0];
   m_name         = s[16];
-  m_quarks       = s[17];
   m_Aformat      = s[11].size() == 1 ? s[11][0] : ' ';
   m_chargeString = s[13];
-  m_netQuarkContent = QuarkContent( m_quarks );
+  m_quarkContent = QuarkContent( s[17] );
   bool spin_status = 1;
-  if( m_JtotalSpin == "?" ) m_twoSpin = 0;
-  else if( m_JtotalSpin.find("/") != std::string::npos ){
-    m_twoSpin = lexical_cast<int>( m_JtotalSpin.substr(0, m_JtotalSpin.find("/") ) , spin_status );
+  if( s[8] == "?" ) m_twoSpin = -1;
+  else if( s[8].find("/") != std::string::npos ){
+    m_twoSpin = lexical_cast<int>( s[8].substr(0, s[8].find("/") ) , spin_status );
   }
-  else m_twoSpin = 2 * lexical_cast<int>( m_JtotalSpin, spin_status );
+  else m_twoSpin = 2 * lexical_cast<int>( s[8], spin_status );
   if( spin_status == 0 ){
-    DEBUG("Spin of particle: " << name() << " could not be interpretted (J=" << m_JtotalSpin << ")"  );
+    DEBUG("Spin of particle: " << name() << " could not be interpretted (J=" << s[8] << ")"  );
   }
   m_radius = 1.5 / GeV; 
   bool isCharm = ( abs(pdgID()) == 421 || 
@@ -94,6 +100,7 @@ bool ParticleProperties::antiThis()
   swapChars( m_chargeString, '+', '-');
   m_charge *= -1;
   if( isFermion() ) m_parity *= -1;
+  /*
   if ( !m_quarks.empty() ){
     swapChars(m_quarks, 'U', 'u');
     swapChars(m_quarks, 'D', 'd');
@@ -106,7 +113,8 @@ bool ParticleProperties::antiThis()
       m_quarks.replace( pos, 4, "sqrt" );
     }
   }
-  m_netQuarkContent.antiThis();
+  */
+  m_quarkContent.antiThis();
   m_pdgID *= -1;
   return true;
 }
@@ -145,7 +153,7 @@ bool ParticleProperties::isFermion() const {
 
 bool ParticleProperties::isPhoton() const 
 {
-  return m_name == "gamma0";
+  return m_pdgID == 22;
 }
 
 bool ParticleProperties::isNeutrino() const 
@@ -176,7 +184,7 @@ std::string ParticleProperties::spinName() const {
     if( m_twoSpin == 5 ) return "e";
     if( m_twoSpin == 7 ) return "c";
   }
-  WARNING("Spin name not implemented for " << m_JtotalSpin );
+  WARNING("Spin name not implemented for " << m_twoSpin );
   return "?";
 }
 
@@ -205,3 +213,30 @@ bool ParticleProperties::operator>( const ParticleProperties& rhs ) const { retu
 bool ParticleProperties::operator<=( const ParticleProperties& rhs ) const { return ( *this < rhs || *this == rhs ); }
 bool ParticleProperties::operator>=( const ParticleProperties& rhs ) const { return ( *this > rhs || *this == rhs ); }
 
+
+void ParticleProperties::setProperty(const std::string& key, const std::string& value)
+{
+  DEBUG("Setting property: " << key << " " << value );
+  bool status = true; 
+  if( key == "mass" )  m_mass  = stod(value) / MeV;
+  else if( key == "name" )  m_name = value; 
+  else if( key == "width" ) m_width = stod(value) / MeV;
+  else if( key == "spin"  ) 
+  {
+    bool spin_status = 1;
+    if( value == "?" ) m_twoSpin = 0;
+    else if( value.find("/") != std::string::npos ){
+      m_twoSpin = lexical_cast<int>( value.substr(0, value.find("/") ) , spin_status );
+    }
+    else m_twoSpin = 2 * lexical_cast<int>( value, spin_status );
+    if( spin_status == 0 ){
+      ERROR("Spin of particle: " << name() << " could not be interpretted (J=" << value << ")"  );
+    }
+  }
+  else if( key == "parity" ) m_parity = chargeFromString( value, status );
+  else if( key == "charge" ) m_charge = chargeFromString( value, status );
+  else if( key == "quarks" ) m_quarkContent = QuarkContent(value);
+  else {
+    ERROR("Unrecognised key: " << key );
+  }
+}

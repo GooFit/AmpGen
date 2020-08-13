@@ -4,7 +4,7 @@
 
 # Support standalone build
 if(COMMAND gaudi_subdir)
-    gaudi_subdir(AmpGen v1r2)
+    gaudi_subdir(AmpGen v2r0)
 
     find_package(ROOT COMPONENTS RIO Hist Matrix Graf Minuit2 Tree MathMore MathCore Physics)
     find_package(TBB REQUIRED)
@@ -12,8 +12,8 @@ if(COMMAND gaudi_subdir)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -Wno-unused-parameter -ldl")
-    set(AmpGen_VERSION_MAJOR "1")
-    set(AmpGen_VERSION_MINOR "1")
+    set(AmpGen_VERSION_MAJOR "2")
+    set(AmpGen_VERSION_MINOR "0")
     set(AMPGEN_CXX ${CMAKE_CXX_COMPILER}  CACHE FILEPATH "This should be the path to compiler (use which c++ for macOS)" )
     configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/AmpGen/Version.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/AmpGen/Version.h")
     gaudi_add_library(AmpGen
@@ -28,7 +28,7 @@ if(COMMAND gaudi_subdir)
                            LINK_LIBRARIES AmpGen)
     endforeach()
 else()
-    cmake_minimum_required(VERSION 3.12)
-    project(AmpGen LANGUAGES CXX VERSION 1.2)
+    cmake_minimum_required(VERSION 3.11.1)
+    project(AmpGen LANGUAGES CXX VERSION 2.0)
     include(Standalone.cmake)
 endif()
