@@ -62,7 +62,8 @@ namespace AmpGen
       void updateNorms(); 
       void generateSourceCode(const std::string&, const double& = 1, bool = false);
       Expression probExpression(const Tensor&, const std::vector<Expression>&, DebugSymbols* = nullptr) const; 
-      size_t size() const;  
+      size_t size() const;
+      size_t numAmps() const { return m_matrixElements.size(); }
       real_t norm() const;
       complex_t norm(const size_t&, const size_t&, Integrator* = nullptr); 
       real_t getValNoCache(const Event&) const;
@@ -73,6 +74,9 @@ namespace AmpGen
       const TransitionMatrix<void>& operator[](const size_t& i) const { return m_matrixElements[i] ; } 
       std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
       KeyedFunctors<double(Event)> componentEvaluator(const EventList_type* = nullptr) const;     
+      void scaleCoupling(int i, double scale){ m_matrixElements[i].scaleCoupling(scale);}
+      void normalizeAmps();
+      
     private: 
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};
