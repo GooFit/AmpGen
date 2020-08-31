@@ -178,6 +178,40 @@ DEFINE_VERTEX( V_VS_D )
   return ( Sv( mu, nu ) * L_2_V0( -nu, -alpha ) * V1( alpha ) ) * V2[0];
 }
 
+DEFINE_VERTEX( V_VV_P )
+{
+  Tensor L = Orbital_PWave( P, Q )/GeV;
+  return L(mu) * dot(V1,V2);
+}
+
+DEFINE_VERTEX( V_VV_P1 )
+{
+   Tensor L = Orbital_PWave( P, Q )/GeV;
+   Tensor Sv  = Spin1Projector( P );
+   Tensor term = LeviCivita()( -mu, -nu, -alpha, -beta ) * P( nu )/GeV * V1( alpha ) * V2( beta );
+   Tensor phi_1 = term(-mu) * Sv(mu,nu);
+      
+   return LeviCivita()( -mu, -nu, -alpha, -beta ) * P( mu )/GeV * L(nu) * phi_1(alpha);
+}
+
+DEFINE_VERTEX( V_VV_P2 )
+{
+    Tensor L = Orbital_PWave( P, Q )/GeV;
+    Tensor Sv  = Spin2Projector( P );
+    Tensor phi_2 = Sv(-mu,-nu,alpha,beta) * V1(mu) * V2(nu);
+        
+    return L(-mu) * phi_2(mu,nu);
+}
+
+DEFINE_VERTEX( V_VV_S )
+{
+    Tensor Sv  = Spin1Projector( P );
+    Tensor term = LeviCivita()( -mu, -nu, -alpha, -beta ) * P( nu )/GeV * V1( alpha ) * V2( beta );
+        
+    return term( -mu ) * Sv(mu, nu);
+}
+
+
 DEFINE_VERTEX( T_VS_D )
 {
   Tensor G = LeviCivita()( -mu, -nu, -alpha, -beta ) * P( nu ) * Q( alpha ) * V1( beta );
