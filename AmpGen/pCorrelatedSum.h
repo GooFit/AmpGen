@@ -280,7 +280,21 @@ class pCorrelatedSum {
         
     }
     
-    
+    CoherentSum getA(){
+        return m_A;
+    } 
+
+    CoherentSum getB(){
+        return m_B;
+    } 
+
+    CoherentSum getC(){
+        return m_C;
+    } 
+
+    CoherentSum getD(){
+        return m_D;
+    } 
 
     real_t prob_unnormalised(const Event& event1, const Event& event2) const {return std::norm(getVal(event1, event2));}
     void prepare();
@@ -305,11 +319,11 @@ class pCorrelatedSum {
         return prob;
     }
     std::vector<complex_t> getVals(const Event& event1, const Event& event2) const {
-        complex_t A = m_A.getVal(event1);
-        complex_t B = m_B.getVal(event2);
-        complex_t C = m_C.getVal(event1);
-        complex_t D = m_D.getVal(event2);
-        complex_t ABCD = getVal(event1, event2);
+        complex_t A = m_A.getVal(event1)/std::sqrt(m_A.norm());
+        complex_t B = m_B.getVal(event2)/std::sqrt(m_B.norm());
+        complex_t C = m_C.getVal(event1)/std::sqrt(m_C.norm());
+        complex_t D = m_D.getVal(event2)/std::sqrt(m_D.norm());
+        complex_t ABCD = getVal(event1, event2);///std::sqrt(m_norm);
         complex_t corr = correction(event1);
         std::vector<complex_t> vals = {A,B,C,D,ABCD, corr};
         return vals;
