@@ -26,6 +26,7 @@ DEFINE_CAST(SubTree )
 DEFINE_CAST(Ternary )
 DEFINE_CAST(Function )
 DEFINE_CAST(ComplexParameter);
+DEFINE_CAST(LambdaExpression);
 
 Expression::Expression( const std::shared_ptr<IExpression>& expression ) : m_expression( expression ) {}
 
@@ -248,7 +249,6 @@ std::string SubTree::to_string(const ASTResolver* /*resolver*/) const
 void SubTree::resolve( ASTResolver& resolver ) const  
 { 
   resolver.resolve( *this );
-  // m_expression.resolve( resolver );
 }
 
 Expression AmpGen::make_cse( const Expression& A , bool simplify )
@@ -340,3 +340,20 @@ complex_t ComplexParameter::operator()() const
 {
   return m_real() + 1i * m_imag();
 }
+
+std::string LambdaExpression::to_string(const ASTResolver* resolver) const 
+{
+  if( resolver == nullptr ){ WARNING("Not clear what is is you're trying to do here"); return "";}     return resolver->resolvedParameter(this);
+}
+
+complex_t LambdaExpression::operator()() const 
+{
+  return m_function();
+}
+
+void LambdaExpression::resolve(ASTResolver& resolver) const {
+  resolver.resolve(*this);
+}
+
+
+

@@ -131,7 +131,13 @@ template <> void ASTResolver::resolve<MinuitParameterLink>(const MinuitParameter
   if( m_mps == nullptr ) return; 
   auto it = m_mps->find(parameter.name());
   if( it == nullptr ) return;
-  addResolvedParameter(&parameter, addCacheFunction<ParameterTransfer>( parameter.name(),it));
+  addResolvedParameter(&parameter, addCacheFunction<ParameterTransfer>(parameter.name(), it));
+}
+
+template <> void ASTResolver::resolve<LambdaExpression>( const LambdaExpression& obj)
+{
+  if( m_resolvedParameters.count(&obj) != 0 ) return;
+  addResolvedParameter(&obj, addCacheFunction<LambdaTransfer>( "lxpr_" + std::to_string(m_nParameters), &obj));
 }
 
 std::map<std::string, std::shared_ptr<CacheTransfer>> ASTResolver::cacheFunctions() const 

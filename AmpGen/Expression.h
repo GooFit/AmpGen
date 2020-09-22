@@ -194,6 +194,7 @@ namespace AmpGen
     double       m_defaultValue;
     bool         m_resolved; 
   };
+
   class ComplexParameter : public IExpression {
     public:
     ComplexParameter( const Parameter& real, const Parameter& imag );
@@ -205,6 +206,19 @@ namespace AmpGen
     Parameter m_real;
     Parameter m_imag;
   };
+  /** @ingroup ExpressionEngine class LambdaExpression
+      @brief Parameter that the value of which is given by some arbitrary C++ function 
+  */
+  class LambdaExpression : public IExpression {
+    public: 
+      template <typename function_type>
+      LambdaExpression( const function_type& function) : m_function(function) {}
+      std::string to_string(const ASTResolver* resolver = nullptr) const override; 
+      void resolve( ASTResolver& resolver) const override;
+      operator Expression() const; 
+      complex_t operator()() const override; 
+      std::function<double(void)> m_function; 
+  }; 
 
   /** @ingroup ExpressionEngine class Ternary 
       @brief Evaluates the ternary operator.
@@ -213,12 +227,14 @@ namespace AmpGen
       \code{.cpp}
       return a ? b : c 
       \endcode */
-  struct Ternary : public IExpression {
+  class Ternary : public IExpression {
+    public:
     Ternary( const Expression& cond, const Expression& v1, const Expression& v2 );
     std::string to_string(const ASTResolver* resolver = nullptr ) const override;
     void resolve( ASTResolver& resolver ) const override;
     operator Expression() const ;
     complex_t operator()() const override { return std::real(m_cond()) ? m_v1() : m_v2(); }
+    private: 
     Expression m_cond;
     Expression m_v1;
     Expression m_v2;
