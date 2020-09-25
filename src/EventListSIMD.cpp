@@ -178,26 +178,14 @@ TTree* EventListSIMD::tree( const std::string& name, const std::vector<std::stri
 std::vector<TH1D*> EventListSIMD::makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args )
 {
   std::vector<TH1D*> plots;
-  for ( const auto& proj : projections ) plots.push_back( makeProjection(proj, args) );
+  for ( const auto& proj : projections ) plots.push_back( proj(*this,args) );
   return plots;
 }
 
 TH1D* EventListSIMD::makeProjection( const Projection& projection, const ArgumentPack& args ) const 
 {
-  auto selection      = args.getArg<PlotOptions::Selection>().val;
-  auto weightFunction = args.getArg<WeightFunction>().val;
-  std::string prefix  = args.getArg<PlotOptions::Prefix>(std::string(""));
-  auto plot = projection.plot(prefix);
-  plot->SetLineColor(args.getArg<PlotOptions::LineColor>(kBlack).val); 
-  plot->SetMarkerSize(0);
-  for( const auto evt : *this )
-  {
-    if( selection != nullptr && !selection(evt) ) continue;
-    auto pos = projection(evt);
-    plot->Fill( pos, evt.weight() * ( weightFunction == nullptr ? 1 : weightFunction(evt) / evt.genPdf() ) );
-  }
-  if( selection != nullptr ) INFO("Filter efficiency = " << plot->GetEntries() << " / " << size() );
-  return plot;
+  return projection(*this, args);
+
 }
 TH2D* EventListSIMD::makeProjection( const Projection2D& projection, const ArgumentPack& args ) const
 {

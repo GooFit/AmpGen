@@ -80,6 +80,7 @@ template <> TH1D* Projection::projInternal( const EventList& events, const Argum
 { 
   auto selection      = args.getArg<PlotOptions::Selection>().val;
   auto weightFunction = args.getArg<WeightFunction>().val;
+  bool autowrite     = args.get<PlotOptions::AutoWrite>() != nullptr;
   std::string prefix  = args.getArg<PlotOptions::Prefix>(std::string(""));
   auto axis           = plot(prefix);
   axis->SetLineColor(args.getArg<PlotOptions::LineColor>(kBlack).val); 
@@ -91,6 +92,7 @@ template <> TH1D* Projection::projInternal( const EventList& events, const Argum
     axis->Fill( pos, evt.weight() * ( weightFunction == nullptr ? 1 : weightFunction(evt) / evt.genPdf() ) );
   }
   if( selection != nullptr ) INFO("Filter efficiency = " << axis->GetEntries() << " / " << events.size() );
+  if( autowrite ) axis->Write();
   return axis;
 }
 
@@ -127,7 +129,21 @@ template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(co
 #if ENABLE_AVX
 template <> TH1D* Projection::projInternal( const EventListSIMD& events, const ArgumentPack& args) const 
 { 
-  return events.makeProjection(*this, args); 
+  auto selection      = args.getArg<PlotOptions::Selection>().val;
+  auto weightFunction = args.getArg<WeightFunction>().val;
+  bool autowrite     = args.get<PlotOptions::AutoWrite>() != nullptr;
+  std::string prefix  = args.getArg<PlotOptions::Prefix>(std::string(""));
+  auto plt = plot(prefix);
+  plt->SetLineColor(args.getArg<PlotOptions::LineColor>(kBlack).val); 
+  plt->SetMarkerSize(0);
+  for( const auto evt : events )
+  {
+    if( selection != nullptr && !selection(evt) ) continue;
+    auto pos = operator()(evt);
+    plt->Fill( pos, evt.weight() * ( weightFunction == nullptr ? 1 : weightFunction(evt) / evt.genPdf() ) );
+  }
+  if( autowrite ) plt->Write();
+  return plt;
 }
 
 template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventListSIMD& events, const Projection::keyedFunctors& weightFunction, const ArgumentPack& args) const

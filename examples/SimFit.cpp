@@ -13,7 +13,14 @@
 #include "AmpGen/Generator.h"
 #include "AmpGen/PolarisedSum.h"
 #ifdef _OPENMP
-#include <omp.h>
+  #include <omp.h>
+#endif
+#if ENABLE_AVX
+  #include "AmpGen/EventListSIMD.h"
+  using EventList_type = AmpGen::EventListSIMD;
+#else
+  #include "AmpGen/EventList.h"
+  using EventList_type = AmpGen::EventList; 
 #endif
 
 #include "TRandom3.h"
@@ -38,8 +45,8 @@ int main(int argc , char* argv[] ){
   const std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root",
       "Name of the output plot file");
 
-  std::vector<EventList>             data;
-  std::vector<EventList>              mcs;
+  std::vector<EventList_type>             data;
+  std::vector<EventList_type>              mcs;
 
   #ifdef _OPENMP
     size_t hwThreads = std::thread::hardware_concurrency();
@@ -62,7 +69,7 @@ int main(int argc , char* argv[] ){
   }
 
   std::vector<PolarisedSum>           fcs(data.size());
-  std::vector<SumPDF<EventList, PolarisedSum&>> pdfs;
+  std::vector<SumPDF<EventList_type, PolarisedSum&>> pdfs;
 
   pdfs.reserve(data.size());
 
@@ -71,7 +78,7 @@ int main(int argc , char* argv[] ){
   mps.loadFromStream();
   for(size_t i = 0; i < data.size(); ++i){
     fcs[i] = PolarisedSum(eventType, mps);
-    pdfs.emplace_back( make_pdf(fcs[i]) );
+    pdfs.emplace_back( make_pdf<EventList_type>(fcs[i]) );
     pdfs[i].setEvents(data[i]);
     auto& mc = mcs[i];
     for_each( pdfs[i].pdfs(), [&mc](auto& pdf){pdf.setMC(mc);});
@@ -84,19 +91,11 @@ int main(int argc , char* argv[] ){
   for( size_t i = 0 ; i < data.size(); ++i )
   {
     INFO("Making figures for sample: " << i << " ...");
-    auto dataPlots = data[i].makeDefaultProjections( PlotOptions::Prefix("Data_"+std::to_string(i)));
-    for( auto& p : dataPlots ) p->Write();
-    size_t counter = 0;
-    for_each(pdfs[i].pdfs(), [&]( auto& f ){
-      auto mc_plots = mcs[i].makeDefaultProjections(WeightFunction(f),
-        PlotOptions::Prefix("Model_sample_"+std::to_string(i)+"_cat"+std::to_string(counter)));
-      for( auto& plot : mc_plots )
-      {
-        plot->Scale( ( data[i].integral() * f.getWeight() ) / plot->Integral() );
-        plot->Write();
-      }
-      counter++;
-    } );
+    for( auto proj : eventType.defaultProjections() )
+    {
+      proj(data[i], PlotOptions::Prefix("Data"+std::to_string(i)), PlotOptions::AutoWrite() );
+      proj(mcs[i]  , pdfs[i].componentEvaluator(&mcs[i]), PlotOptions::Prefix("pdf"+std::to_string(i)), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
+    }    
   }
   output_plots->Close();
 }
