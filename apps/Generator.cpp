@@ -182,11 +182,10 @@ int main( int argc, char** argv )
                   NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
  
   bool conj = NamedParameter<bool>("Conj",false, "Flag to generate the CP conjugate amplitude under the assumption of CP conservation");
-  if ( conj == true ) {
-    eventType = eventType.conj();
-    INFO( eventType );
-    AddCPConjugate(MPS);
-  }
+  bool add_cp_conjugate = NamedParameter<bool>("AddConj",false, "Flag to add all of the CP conjugate amplitudes, under the assumption of CP conservation");
+  if ( conj ) eventType = eventType.conj();
+  if( conj || add_cp_conjugate )  AddCPConjugate(MPS);
+
   if( OptionsParser::printHelp() ) return 0; 
   
   INFO("Writing output: " << outfile );
