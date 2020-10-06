@@ -94,16 +94,20 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   size_t sizeOfStream = 0;
   if( use_rto() )
   {
+    
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
-    addDependentExpressions( stream , sizeOfStream );
+    addDependentExpressions( stream , sizeOfStream );\
+    std::string return_type = arg_type(0);
+    return_type = return_type.substr(0,return_type.size()-1);
     if( is<TensorExpression>(m_obj) == false ){
-      stream << "*r = " << m_obj.to_string(m_resolver.get()) << ";\n";
+      stream << "*r = " << return_type << "(" << m_obj.to_string(m_resolver.get()) << ");\n";
      stream << "}\n";
     }
     else {
       auto as_tensor = cast<TensorExpression>(m_obj).tensor();
+      
       for(unsigned j=0; j != as_tensor.size(); ++j )
-        stream << "r[s * "<< j<<"] = " << as_tensor[j].to_string(m_resolver.get()) << ";\n";
+        stream << "r[s * "<< j<<"] = " << return_type << "(" << as_tensor[j].to_string(m_resolver.get()) << ");\n";
       stream << "}\n";  
     }
   }

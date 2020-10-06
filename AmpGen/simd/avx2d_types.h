@@ -60,6 +60,8 @@ namespace AmpGen {
     inline real_v operator!( const real_v& x ) { return x ^ _mm256_castsi256_pd( _mm256_set1_epi32( -1 ) ); }
     inline real_v operator<( const real_v& lhs, const real_v& rhs ) { return _mm256_cmp_pd( lhs, rhs, _CMP_LT_OS ); }
     inline real_v operator>( const real_v& lhs, const real_v& rhs ) { return _mm256_cmp_pd( lhs, rhs, _CMP_GT_OS ); }
+    inline real_v operator<=( const real_v& lhs, const real_v& rhs ) { return _mm256_cmp_pd( lhs, rhs, _CMP_LE_OS ); }
+    inline real_v operator>=( const real_v& lhs, const real_v& rhs ) { return _mm256_cmp_pd( lhs, rhs, _CMP_GE_OS ); }
     inline real_v operator==( const real_v& lhs, const real_v& rhs ){ return _mm256_cmp_pd( lhs, rhs, _CMP_EQ_OS ); }
     inline real_v sqrt( const real_v& v ) { return _mm256_sqrt_pd(v); } 
     inline real_v abs ( const real_v& v ) { return _mm256_andnot_pd(_mm256_set1_pd(-0.), v);  }

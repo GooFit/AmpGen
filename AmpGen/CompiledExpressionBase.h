@@ -61,6 +61,7 @@ namespace AmpGen
     virtual bool use_rto() const     = 0;
     Expression expression() const { return m_obj; }
     void enableBatch() { m_enableBatch  = true ; }
+    virtual std::string arg_type( const unsigned& counter) const =0; 
   protected:
     Expression                                      m_obj;
     std::string                                     m_name;
