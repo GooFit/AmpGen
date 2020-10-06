@@ -218,6 +218,10 @@ namespace AmpGen
         {
           return link( dlopen( handle.c_str(), RTLD_NOW ) );
         };
+        std::string arg_type(const unsigned& i ) const override
+        {
+          return typelist<ARGS...>()[i];
+        }
     };
 
   template <class RT> 
@@ -249,6 +253,7 @@ namespace AmpGen
       rt.prepare();
       return rt;
     }
+
 } // namespace AmpGen
 
 

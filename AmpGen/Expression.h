@@ -212,12 +212,13 @@ namespace AmpGen
   class LambdaExpression : public IExpression {
     public: 
       template <typename function_type>
-      LambdaExpression( const function_type& function) : m_function(function) {}
+      LambdaExpression( const function_type& function) : m_function(function), m_name(type_string<function_type>()) {}
       std::string to_string(const ASTResolver* resolver = nullptr) const override; 
       void resolve( ASTResolver& resolver) const override;
       operator Expression() const; 
       complex_t operator()() const override; 
       std::function<double(void)> m_function; 
+      std::string m_name; 
   }; 
 
   /** @ingroup ExpressionEngine class Ternary 
@@ -309,10 +310,22 @@ namespace AmpGen
   /// @ingroup ExpressionEngine class GreaterThan
   /// @brief Binary expression that returns \f$l > r\f$
   DECLARE_BINARY_OPERATOR( GreaterThan );
+
+  /// @ingroup ExpressionEngine class LessThanEqualTo
+  /// @brief Binary expression that returns \f$l < r\f$
+  DECLARE_BINARY_OPERATOR( LessThanEqualTo );
   
+  /// @ingroup ExpressionEngine class GreaterThanEqualTo
+  /// @brief Binary expression that returns \f$l > r\f$
+  DECLARE_BINARY_OPERATOR( GreaterThanEqualTo );
+
   /// @ingroup ExpressionEngine class And
   /// @brief Binary expression that returns \f$l \wedge r\f$
   DECLARE_BINARY_OPERATOR( And );
+  
+  /// @ingroup ExpressionEngine class Or
+  /// @brief Binary expression that returns \f$l \wedge r\f$
+  DECLARE_BINARY_OPERATOR( Or );
   DECLARE_BINARY_OPERATOR( Equal );
 
   DECLARE_BINARY_OPERATOR( ATan2 );
@@ -393,6 +406,8 @@ namespace AmpGen
 
   Expression operator<( const Expression& A, const Expression& B );
   Expression operator>( const Expression& A, const Expression& B );
+  Expression operator<=( const Expression& A, const Expression& B );
+  Expression operator>=( const Expression& A, const Expression& B );
 
   Expression operator+( const Expression& A, const Expression& B );
   Expression operator-( const Expression& A, const Expression& B );
@@ -418,6 +433,7 @@ namespace AmpGen
   Expression operator/( const T& A, const Expression& B ){ return Constant(A) / B; }
 
   Expression operator&&( const Expression& A, const Expression& B );
+  Expression operator||( const Expression& A, const Expression& B );
   Expression operator==( const Expression& A, const Expression& B );
   Expression operator==( const Expression& A, const double& B );
   Expression operator==( const double& A, const Expression& B );

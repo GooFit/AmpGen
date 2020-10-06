@@ -18,6 +18,9 @@ DEFINE_BINARY_OPERATOR( Equal )
 DEFINE_BINARY_OPERATOR( Pow )
 DEFINE_BINARY_OPERATOR( Fmod )
 DEFINE_BINARY_OPERATOR( ATan2 )
+DEFINE_BINARY_OPERATOR( GreaterThanEqualTo )
+DEFINE_BINARY_OPERATOR( LessThanEqualTo )
+DEFINE_BINARY_OPERATOR( Or )
 
 template < class condition > 
 std::string bracketed( const Expression& expression, condition&& use_brackets, const ASTResolver* resolver=nullptr ){
@@ -31,9 +34,12 @@ complex_t Divide::operator()()      const { return lval() / rval(); }
 complex_t And::operator()()         const { return complex_t(std::real(lval()) && std::real(rval()),0); }
 complex_t GreaterThan::operator()() const { return complex_t(std::real(lval()) > std::real(rval()) ,0); }
 complex_t LessThan::operator()()    const { return complex_t(std::real(lval()) < std::real(rval()) ,0); }
+complex_t GreaterThanEqualTo::operator()() const { return complex_t(std::real(lval()) >= std::real(rval()) ,0); }
+complex_t LessThanEqualTo::operator()()    const { return complex_t(std::real(lval()) <= std::real(rval()) ,0); }
 complex_t Pow::operator()()         const { return pow( lval(), rval() ); }
 complex_t Fmod::operator()()        const { return 0; }
 complex_t Equal::operator()()       const { return lval() == rval() ; } 
+complex_t Or::operator()()          const { return std::real(lval()) || std::real(rval()) ; }
 complex_t ATan2::operator()()       const { return atan2( std::real(lval() ), std::real(rval() ) ); }
 
 std::string Sum::to_string(const ASTResolver* resolver)         const 
@@ -63,6 +69,9 @@ std::string Divide::to_string(const ASTResolver* resolver)      const {
 std::string LessThan::to_string(const ASTResolver* resolver)    const { return "("     + lval.to_string(resolver) + "<"   + rval.to_string(resolver) +")"; }
 std::string GreaterThan::to_string(const ASTResolver* resolver) const { return "("     + lval.to_string(resolver) + ">"   + rval.to_string(resolver) +")"; }
 std::string And::to_string(const ASTResolver* resolver)         const { return "("     + lval.to_string(resolver) + "&&"  + rval.to_string(resolver) +")"; }
+std::string LessThanEqualTo::to_string(const ASTResolver* resolver)    const { return "("     + lval.to_string(resolver) + "<="   + rval.to_string(resolver) +")"; }
+std::string GreaterThanEqualTo::to_string(const ASTResolver* resolver) const { return "("     + lval.to_string(resolver) + ">="   + rval.to_string(resolver) +")"; }
+std::string Or::to_string(const ASTResolver* resolver)          const { return "("     + lval.to_string(resolver) + "||"  + rval.to_string(resolver) +")"; }
 std::string Pow::to_string(const ASTResolver* resolver)         const { return "pow("  + lval.to_string(resolver) + ", "  + rval.to_string(resolver) +")"; }
 std::string Fmod::to_string(const ASTResolver* resolver)        const { return "fmod(" + lval.to_string(resolver) + ","   + rval.to_string(resolver) +")"; }
 std::string ATan2::to_string( const ASTResolver* resolver)      const { return "atan2("+ lval.to_string(resolver) + ","   + rval.to_string(resolver) +")"; }

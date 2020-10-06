@@ -16,6 +16,7 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Types.h"
 #include "AmpGen/simd/utils.h"
+#include "AmpGen/CompiledExpressionBase.h"
 using namespace AmpGen;
 using namespace AmpGen::fcn;
 using namespace std::complex_literals;
@@ -165,6 +166,10 @@ Expression AmpGen::operator&&( const Expression& A, const Expression& B ) { retu
 Expression AmpGen::operator==( const Expression& A, const Expression& B ){ return Equal(A,B) ; } 
 Expression AmpGen::operator==( const double& A, const Expression& B ){ return Constant(A) == B ; } 
 Expression AmpGen::operator==( const Expression& A, const double& B ){ return A == Constant(B) ; } 
+
+Expression AmpGen::operator||( const Expression& A, const Expression& B){ return Expression( Or(A,B)) ; }
+Expression AmpGen::operator<=( const Expression& A, const Expression& B ){ return LessThanEqualTo(A,B) ; } 
+Expression AmpGen::operator>=( const Expression& A, const Expression& B ){ return GreaterThanEqualTo(A,B) ; } 
 
 Parameter::Parameter( const std::string& name, const double& defaultValue, const bool& resolved)
   : m_name( name )
@@ -343,7 +348,7 @@ complex_t ComplexParameter::operator()() const
 
 std::string LambdaExpression::to_string(const ASTResolver* resolver) const 
 {
-  if( resolver == nullptr ){ WARNING("Not clear what is is you're trying to do here"); return "";}     return resolver->resolvedParameter(this);
+  return resolver == nullptr ?programatic_name(m_name) : resolver->resolvedParameter(this);
 }
 
 complex_t LambdaExpression::operator()() const 
