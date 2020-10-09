@@ -183,14 +183,14 @@ int main( int argc, char* argv[] )
 
         }
         else{
-          outBinnedM << x <<"\t"
-          << y << "\t"
-          << dd << "\t"
-          << psi.real()<<"\t"
+          outBinnedM << x <<"\t"//0
+          << y << "\t"//1
+          << dd << "\t"//2
+          << psi.real()<<"\t"//3
           << psi.imag()<<"\t"
-          << A.real()<<"\t"
+          << A.real()<<"\t"//5
           << A.imag()<<"\t"
-          << C.real()<<"\t"
+          << C.real()<<"\t"//7
           << C.imag()<<"\t"
           <<"\n";          
 

@@ -185,149 +185,41 @@ EventList getEvents(std::string type, std::vector<std::string> sigName, std::str
 }
 
 
+void printOut(EventList eventsSig, EventList eventsTag, pCorrelatedSum cs_tag, std::string output){
+  std::ofstream out;
+  out.open(output.c_str()); 
+  for (int i=0; i < eventsSig.size(); i++){
 
-int main( int argc, char** argv )
-{
-  OptionsParser::setArgs( argc, argv );
+    auto evt_sig = eventsSig[i];
+    auto evt_tag = eventsTag[i];
 
-  size_t nEvents      = NamedParameter<size_t>     ("nEvents"  , 100, "Total number of events to generate" );
-  size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
-  int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
+    auto s01 = evt_sig.s(0,1);
+    auto s02 = evt_sig.s(0,2);
+    auto s12 = evt_sig.s(1,2);
+    auto vals = cs_tag.getVals(evt_sig, evt_tag);
 
-
-   bool makeCPConj      = NamedParameter<bool>("makeCPConj", false, "Make CP Conjugates");
-
-  std::string lib     = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
-  auto pNames = NamedParameter<std::string>("EventType" , ""    
-      , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
-  #ifdef _OPENMP
-    unsigned int concurentThreadsSupported = std::thread::hardware_concurrency();
-    unsigned int nCores                    = NamedParameter<unsigned int>( "nCores", concurentThreadsSupported, "Number of cores to use (OpenMP only)" );
-    INFO("Using: " << nCores  << " / " << concurentThreadsSupported  << " threads" );
-    omp_set_num_threads( nCores );
-    omp_set_dynamic( 0 );
-  #endif 
-  EventType sigType( pNames );
-
-  bool outputVals = NamedParameter<bool>("outputVals", false, "Whether to print out values for amplitude in a csv file");
-  std::string ampFile = NamedParameter<std::string>("ampFile", "corr.csv", "Output file for correlated amplitude");
-  EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
-                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
-  bool doBoost  = NamedParameter<bool>("doBoost", true, "Boost to psi(3770) frame");
-  bool doQC  = NamedParameter<bool>("doQC", true, "Boost to psi(3770) frame");
-  auto tags           = NamedParameter<std::string>("TagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();
-
-
-  std::string dataFile = NamedParameter<std::string>("DataSample", ""          , "Name of file containing data sample to fit." );
-  std::string intFile = NamedParameter<std::string>("IntegrationSample", ""          , "Name of file containing flat sample." );
-
-
-
-
-  TRandom3 rndm;
-  rndm.SetSeed( seed );
-  gRandom = &rndm;
-
-if (doQC){
-for (int i=0; i < tags.size(); i++){
-   MinuitParameterSet *  MPS = new MinuitParameterSet(); 
-  MPS->loadFromStream();
-  if (makeCPConj){
-    INFO("Making CP conjugate states");
-    add_CP_conjugate(*MPS);
-  }
-    auto sigevents_tag = getEvents("signal", pNames, tags[i], dataFile, intFile);
-    auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
-    auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
-    auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
-
-    auto sigEventType = sigevents_tag.eventType();
-    auto tagEventType = tagevents_tag.eventType();
-    CoherentSum sig(sigEventType, *MPS);
-    pCorrelatedSum cs_tag (sigevents_tag.eventType(), tagevents_tag.eventType(), *MPS);
-
-     
-    
-
-    cs_tag.setEvents(sigevents_tag, tagevents_tag);
-    cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
-    cs_tag.prepare();
- std::ofstream out;
-
-
-
- 
-    
-    std::stringstream tag_log;
-    auto tagName = split(tags[i],' ')[0];
-    tag_log<<tagName<<"_vals.csv"; 
-    auto tag_ampFile = tag_log.str();
-    out.open(tag_ampFile.c_str());
-    auto norm = cs_tag.norm();
     auto aA = cs_tag.getA();
     auto aB = cs_tag.getB();
     auto aC = cs_tag.getC();
     auto aD = cs_tag.getD();
 
-    double slowNorm = 0;
-    double testA = 0;
-    double testC = 0;
-    for (int i=0;i<sigMCevents_tag.size();i++){
-      slowNorm += std::norm(cs_tag.getVal(sigMCevents_tag[i], tagMCevents_tag[i]))/norm;
-      testA += aA(sigMCevents_tag[i])/sigMCevents_tag.size();
-      testC += aC(sigMCevents_tag[i])/sigMCevents_tag.size();
-    }
-    double testData = 0;
-    double testDataA = 0;
-    double testDataC = 0;
-
-    for (int i=0; i < sigevents_tag.size(); i++){
-    auto evt_sig = sigevents_tag[i];
-    auto evt_tag = tagevents_tag[i];
-    testData += std::norm(cs_tag.getVal(evt_sig, evt_tag));
-    testDataA += std::norm(aA.getVal(evt_sig));
-    testDataC += std::norm(aC.getVal(evt_sig));
-    }
-INFO("testData = "<<testData);
-INFO("testDataA = "<<testDataA);
-INFO("testDataC = "<<testDataC);
-    INFO("Norm = "<<norm);
-    INFO("ANorm = "<<aA.norm());
-    INFO("CNorm = "<<aC.norm());
-    INFO("testA = "<<testA);
-    INFO("testC = "<<testC);
-    INFO("slowNorm = "<<slowNorm/sigMCevents_tag.size());
-    INFO("normData? = "<<testData*norm/sigevents_tag.size());
-    double normDat = (double)sigMCevents_tag.size()/(double)sigevents_tag.size();
-
-    INFO("normData = "<<normDat);
-        auto rnorm = pow(norm, 0.5);
-    for (int i=0; i < sigevents_tag.size(); i++){
-
-    auto evt_sig = sigevents_tag[i];
-    auto evt_tag = tagevents_tag[i];
-    testData += cs_tag.prob(evt_sig, evt_tag);
-    auto s01 = evt_sig.s(0,1);
-    auto s02 = evt_sig.s(0,2);
-    auto s12 = evt_sig.s(1,2);
-    auto vals = cs_tag.getVals(evt_sig, evt_tag);
     auto A = aA.getVal(evt_sig);
     auto B = aB.getVal(evt_tag);
     auto C = aC.getVal(evt_sig);
     auto D = aD.getVal(evt_tag);
 
-  auto A2 = aA(evt_sig)/sigevents_tag.size();
-    auto B2 = aB(evt_tag)/sigevents_tag.size();
-    auto C2 = aC(evt_sig)/sigevents_tag.size();
-    auto D2 = aD(evt_tag)/sigevents_tag.size();
+    auto A2 = aA(evt_sig)/eventsSig.size();
+    auto B2 = aB(evt_tag)/eventsSig.size();
+    auto C2 = aC(evt_sig)/eventsSig.size();
+    auto D2 = aD(evt_tag)/eventsSig.size();
 
 
     auto ABCD = cs_tag.getVal(evt_sig, evt_tag);
     auto corr = vals[5];
-    auto ACst = A * std::conj(C)/norm;
+    auto ACst = A * std::conj(C);
     auto dCorr = cs_tag.errcorrection(evt_sig);
 
-    auto prob = cs_tag.prob(evt_sig, evt_tag)/sigevents_tag.size();
+    auto prob = cs_tag.prob(evt_sig, evt_tag)/eventsSig.size();
     auto cosDD = -((fcn::pow(abs(ABCD), 2)() - fcn::pow(abs(A), 2)() * fcn::pow(abs(B), 2)() - fcn::pow(abs(C), 2)() * fcn::pow(abs(D), 2)())/(2 * abs(A) * abs(B) * abs(C) * abs(D) )).real();
 
     auto dd = std::arg(ACst);
@@ -365,12 +257,14 @@ INFO("testDataC = "<<testDataC);
 
       //Binning
 }
-  out.close();
+out.close();
+}
 
-  
 
 
-for (int j=1;j<9;j++){
+void printPerBin(int nBins, pCorrelatedSum cs_tag, EventList sigevents_tag, EventList tagevents_tag, std::string tagName){
+
+for (int j=1;j<nBins + 1;j++){
   auto eLow = 2 * M_PI * j/8. - 5 * M_PI/4.;
   auto eHigh = 2 * M_PI * (j+1)/8. - 5 * M_PI/4.;
   std::ofstream outBinned;
@@ -413,7 +307,7 @@ for (int j=1;j<9;j++){
     auto corr = vals[5];
     auto prob = cs_tag.prob(evt_sig, evt_tag);
 //    INFO("prob = "<<prob<<" Aprob = "<<aA(evt_sig)<<" Cprob = "<<aC(evt_sig));
-    auto ACst = A * std::conj(C)/norm;
+    auto ACst = A * std::conj(C);
     auto dCorr = cs_tag.errcorrection(evt_sig);
   auto A2 = aA(evt_sig);
     auto B2 = aB(evt_tag);
@@ -521,12 +415,213 @@ outcisi<<ci/(Np+Nm)<<"\t"<<si/(Np+Nm)<<"\n";
 outcisi.close();
 outBinned.close();
 outBinnedM.close();
+}
+}
 
+
+void printDT(int i, int j, EventList sigEvents, EventList tagEvents, pCorrelatedSum cs_tag, std::string pref=""){
+  std::ofstream out;
+  std::stringstream outName;
+  outName << "Kspipi"<<pref<<i<<j<<".csv";
+  out.open(outName.str().c_str());
+
+
+  std::ofstream outPM;
+  std::stringstream outNamePM;
+  outNamePM << "Kspipi"<<pref<<i<<-j<<".csv";
+  outPM.open(outNamePM.str().c_str());
+
+
+  std::ofstream outMP;
+  std::stringstream outNameMP;
+  outNameMP << "Kspipi"<<pref<<-i<<j<<".csv";
+  outMP.open(outNameMP.str().c_str());
+ 
+ 
+
+  std::ofstream outMM;
+  std::stringstream outNameMM;
+  outNameMM << "Kspipi"<<pref<<-i<<-j<<".csv";
+  outMM.open(outNameMM.str().c_str());
+  
+
+  auto dd_Low_i = 2 * M_PI * i/8. - 5 * M_PI/4.;
+  auto dd_Low_j = 2 * M_PI * j/8. - 5 * M_PI/4.;
+  auto dd_High_i = 2 * M_PI * (i+1)/8. - 5 * M_PI/4.;
+  auto dd_High_j = 2 * M_PI * (j+1)/8. - 5 * M_PI/4.;
+
+  for (int evtNum=0; evtNum<sigEvents.size(); evtNum++){
+    auto evt_sig = sigEvents[evtNum];
+    auto evt_tag = tagEvents[evtNum];
+    auto sig01 = evt_sig.s(0,1);
+    auto sig02 = evt_sig.s(0,2);
+    auto sig12 = evt_sig.s(1,2);
+
+    auto tag01 = evt_tag.s(0,1);
+    auto tag02 = evt_tag.s(0,2);
+    auto tag12 = evt_tag.s(1,2);
+ 
+
+    auto vals = cs_tag.getVals(evt_sig, evt_tag);
+
+    auto aA = cs_tag.getA();
+    auto aB = cs_tag.getB();
+    auto aC = cs_tag.getC();
+    auto aD = cs_tag.getD();
+
+    auto A = aA.getVal(evt_sig);
+    auto B = aB.getVal(evt_tag);
+    auto C = aC.getVal(evt_sig);
+    auto D = aD.getVal(evt_tag);
+
+
+    auto ABCD = cs_tag.getVal(evt_sig, evt_tag);
+    auto corr = vals[5];
+    auto prob = cs_tag.prob(evt_sig, evt_tag);
+
+    auto ACst = A * std::conj(C);
+    auto DBst = D * std::conj(B);
+    auto dCorr = cs_tag.errcorrection(evt_sig);
+    auto A2 = aA(evt_sig);
+    auto B2 = aB(evt_tag);
+    auto C2 = aC(evt_sig);
+    auto D2 = aD(evt_tag);
+
+
+
+    auto cosDD = -((fcn::pow(abs(ABCD), 2)() - fcn::pow(abs(A), 2)() * fcn::pow(abs(B), 2)() - fcn::pow(abs(C), 2)() * fcn::pow(abs(D), 2)())/(2 * abs(A) * abs(B) * abs(C) * abs(D) )).real();
+
+    auto dd_sig = std::arg(ACst);
+    auto dd_tag = std::arg(DBst);
+    auto ACstCorr = A * std::conj(C) * fcn::exp(Constant(0, 1) * corr)();
+    auto ddCorr = std::arg(ACstCorr);
+ 
+    bool cond_sig = (dd_sig > dd_Low_i) && (dd_sig < dd_High_i);
+    bool cond_tag = (dd_tag > dd_Low_j) && (dd_tag < dd_High_j);
+
+    if (cond_sig && cond_tag){
+      bool PP = (sig01 > sig02) && (tag01>tag02);
+      bool PM = (sig01 > sig02) && (tag01<tag02);
+      bool MP = (sig01 < sig02) && (tag01>tag02);
+      bool MM = (sig01 < sig02) && (tag01<tag02);
+      if (PP) out << sig01 << "\t" << sig02 << "\t"<< tag01 << "\t" <<tag02 << "\t" << dd_sig << "\t"<<dd_tag<<"\t"<<ABCD.real()<<"\t"<<ABCD.imag()<<"\t"<<A.real()<<"\t"<<A.imag()<<"\t"<<B.real()<<"\t"<<B.imag()<<"\t"<<C.real()<<"\t"<<C.imag()<<"\t"<<D.real()<<"\t"<<D.imag()<<"\n";
+      if (PM) outPM << sig01 << "\t" << sig02 << "\t"<< tag01 << "\t" <<tag02 << "\t" << dd_sig << "\t"<<dd_tag<<"\t"<<ABCD.real()<<"\t"<<ABCD.imag()<<"\t"<<A.real()<<"\t"<<A.imag()<<"\t"<<B.real()<<"\t"<<B.imag()<<"\t"<<C.real()<<"\t"<<C.imag()<<"\t"<<D.real()<<"\t"<<D.imag()<<"\n";
+      if (MP) outMP << sig01 << "\t" << sig02 << "\t"<< tag01 << "\t" <<tag02 << "\t" << dd_sig << "\t"<<dd_tag<<"\t"<<ABCD.real()<<"\t"<<ABCD.imag()<<"\t"<<A.real()<<"\t"<<A.imag()<<"\t"<<B.real()<<"\t"<<B.imag()<<"\t"<<C.real()<<"\t"<<C.imag()<<"\t"<<D.real()<<"\t"<<D.imag()<<"\n";
+      if (MM) outMM << sig01 << "\t" << sig02 << "\t"<< tag01 << "\t" <<tag02 << "\t" << dd_sig << "\t"<<dd_tag<<"\t"<<ABCD.real()<<"\t"<<ABCD.imag()<<"\t"<<A.real()<<"\t"<<A.imag()<<"\t"<<B.real()<<"\t"<<B.imag()<<"\t"<<C.real()<<"\t"<<C.imag()<<"\t"<<D.real()<<"\t"<<D.imag()<<"\n";
+    }
+  }
+  out.close();
+  outPM.close();
+  outMP.close();
+  outMM.close();
+}
+
+
+int main( int argc, char** argv )
+{
+  OptionsParser::setArgs( argc, argv );
+
+  size_t nEvents      = NamedParameter<size_t>     ("nEvents"  , 100, "Total number of events to generate" );
+  size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
+  int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
+
+
+   bool makeCPConj      = NamedParameter<bool>("makeCPConj", false, "Make CP Conjugates");
+
+  std::string lib     = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
+  auto pNames = NamedParameter<std::string>("EventType" , ""    
+      , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
+  #ifdef _OPENMP
+    unsigned int concurentThreadsSupported = std::thread::hardware_concurrency();
+    unsigned int nCores                    = NamedParameter<unsigned int>( "nCores", concurentThreadsSupported, "Number of cores to use (OpenMP only)" );
+    INFO("Using: " << nCores  << " / " << concurentThreadsSupported  << " threads" );
+    omp_set_num_threads( nCores );
+    omp_set_dynamic( 0 );
+  #endif 
+  EventType sigType( pNames );
+
+  bool outputVals = NamedParameter<bool>("outputVals", false, "Whether to print out values for amplitude in a csv file");
+  std::string ampFile = NamedParameter<std::string>("ampFile", "corr.csv", "Output file for correlated amplitude");
+  EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
+                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+  bool doBoost  = NamedParameter<bool>("doBoost", true, "Boost to psi(3770) frame");
+  bool doQC  = NamedParameter<bool>("doQC", true, "Boost to psi(3770) frame");
+  auto tags           = NamedParameter<std::string>("TagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();
+
+
+  std::string dataFile = NamedParameter<std::string>("DataSample", ""          , "Name of file containing data sample to fit." );
+  std::string intFile = NamedParameter<std::string>("IntegrationSample", ""          , "Name of file containing flat sample." );
+
+
+
+
+  TRandom3 rndm;
+  rndm.SetSeed( seed );
+  gRandom = &rndm;
+
+if (doQC){
+for (int i=0; i < tags.size(); i++){
+   MinuitParameterSet *  MPS = new MinuitParameterSet(); 
+  MPS->loadFromStream();
+  if (makeCPConj){
+    INFO("Making CP conjugate states");
+    add_CP_conjugate(*MPS);
+  }
+    auto sigevents_tag = getEvents("signal", pNames, tags[i], dataFile, intFile);
+    auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
+    auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
+    auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
+
+    auto sigEventType = sigevents_tag.eventType();
+    auto tagEventType = tagevents_tag.eventType();
+    CoherentSum sig(sigEventType, *MPS);
+    pCorrelatedSum cs_tag (sigevents_tag.eventType(), tagevents_tag.eventType(), *MPS);
+
+     
+    
+
+    cs_tag.setEvents(sigevents_tag, tagevents_tag);
+    cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
+    cs_tag.prepare();
+ std::ofstream out; 
+    
+    std::stringstream tag_log;
+    auto tagName = split(tags[i],' ')[0];
+    tag_log<<tagName<<"_vals.csv"; 
+    auto tag_ampFile = tag_log.str();
+    out.open(tag_ampFile.c_str());
+    auto norm = cs_tag.norm();
+    auto aA = cs_tag.getA();
+    auto aB = cs_tag.getB();
+    auto aC = cs_tag.getC();
+    auto aD = cs_tag.getD();
+    std::stringstream tag_logMC;
+    tag_logMC<<tagName<<"MC_vals.csv";
+
+    std::ofstream outMC;
+    outMC.open(tag_logMC.str().c_str()); 
+
+  printOut(sigevents_tag, tagevents_tag, cs_tag, tag_log.str());
+  //printOut(sigMCevents_tag, tagMCevents_tag, cs_tag, tag_logMC.str());
+
+  std::stringstream tagNameMC;
+  tagNameMC<<tagName<<"MC";
+  
+  printPerBin(8, cs_tag, sigevents_tag, tagevents_tag, tagName);
+  //printPerBin(8, cs_tag, sigMCevents_tag, tagMCevents_tag, tagNameMC.str());
+  if (tagName=="Kspipi"){
+    for (int i=1;i<9;i++){
+      for (int j=1;j<9;j++){
+        printDT(i, j, sigevents_tag, tagevents_tag, cs_tag);
+        //printDT(i,j, sigMCevents_tag, tagMCevents_tag, cs_tag, "MC");
+      }
+    }
+  }
 
 
 }
 }
-}
+
 else{
    MinuitParameterSet *  MPS = new MinuitParameterSet(); 
   MPS->loadFromStream();
