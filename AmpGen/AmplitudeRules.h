@@ -65,8 +65,12 @@ namespace AmpGen
       size_t size() const { return couplings.size(); }
       std::vector<Coupling>::const_iterator begin() const { return couplings.begin() ; }
       std::vector<Coupling>::const_iterator   end() const { return couplings.end() ; }
+      void scaleCoupling(double scale){
+          m_scale = scale;
+      }  
     private:
       std::vector<Coupling> couplings;
+      double            m_scale          = {1};
   };
   
   class AmplitudeRules
@@ -192,7 +196,9 @@ namespace AmpGen
     void debug( const Event& event ) const { amp_type::debug(event.address()) ; }
     #endif 
     const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
-
+      
+    void scaleCoupling(double scale){ coupling.scaleCoupling(scale);}
+      
     Particle                                            decayTree;
     TotalCoupling                                       coupling;
     complex_t                                           coefficient;
