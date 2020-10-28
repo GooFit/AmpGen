@@ -177,7 +177,7 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
     auto expr = CompiledExpression<complex_t(const real_t*, const real_t*)>(
           p.expression(), 
           p.decayDescriptor(),
-          m_evtType.getEventFormat(), DebugSymbols() , m_mps );
+          m_evtType.getEventFormat(), DebugSymbols(), disableBatch(), m_mps );
     expr.prepare();
     stream << expr << std::endl;
     expr.compileWithParameters( stream );
@@ -191,8 +191,8 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
     Expression this_amplitude = p.coupling() * Function( programatic_name( p.name() ) + "_wParams", {event} ); 
     amplitude = amplitude + ( p.decayTree.finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
   }
-  stream << CompiledExpression<std::complex<double>(const double*, const int&)>( amplitude  , "AMP" ) << std::endl; 
-  stream << CompiledExpression<double(const double*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN" ) << std::endl; 
+  stream << CompiledExpression<std::complex<double>(const double*, const int&)>( amplitude  , "AMP", disableBatch() ) << std::endl; 
+  stream << CompiledExpression<double(const double*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN", disableBatch() ) << std::endl; 
   if( includePythonBindings ){
     stream << CompiledExpression<unsigned int(void)>( m_matrixElements.size(), "matrix_elements_n" ) << std::endl;
     stream << CompiledExpression<double      (void)>( normalisation, "normalization") << std::endl;

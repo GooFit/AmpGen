@@ -80,7 +80,7 @@ template <> void ASTResolver::resolve<Spline>( const Spline& spline )
   addResolvedParameter( &spline, address );
   addResolvedParameter( spline.m_points.top().get(), address );  
   auto splineTransfer = dynamic_cast<SplineTransfer*>( m_cacheFunctions[spline.m_name].get() );
-  if( m_mps == nullptr ) ERROR("Fix me!");
+  if( m_mps == nullptr ) ERROR("Fix me: Spline parameters must come from a ParameterSet");
   for( unsigned int i = 0 ; i < spline.m_nKnots; ++i ) 
     splineTransfer->set(i, m_mps->find(spline.m_name+"::"+std::to_string(i)) );
 }
