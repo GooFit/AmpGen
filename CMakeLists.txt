@@ -19,7 +19,7 @@ set(USE_SIMD           "AVX2d" CACHE STRING "USE_SIMD")       # AVX instruction 
 set(USE_OPENMP         TRUE    CACHE BOOL   "USE_OPENMP")     # flag to use openmp for threading 
 set(USE_MVEC           TRUE    CACHE BOOL   "USE_MVEC")       # flag to use vector math library mvec 
 set(ENABLE_FITTING     TRUE    CACHE BOOL   "ENABLE_FITTING") # flag to enable fitting (requires Minuit2) 
-
+set(BUILTIN_GSL        TRUE    CACHE BOOL   "BUILTIN_GSL")    # flag to use ROOT's builtin GSL 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY         "${CMAKE_BINARY_DIR}/lib")
@@ -48,18 +48,20 @@ if(NOT DEFINED ROOT_LIBRARIES)
   if(DEFINED ENV{ROOTSYS})
     list(APPEND CMAKE_MODULE_PATH "$ENV{ROOTSYS}/etc/cmake/")
   endif()
-  find_package(ROOT CONFIG REQUIRED COMPONENTS Matrix MathMore MathCore Gpad Tree Graf)
+  find_package(ROOT COMPONENTS Matrix MathMore MathCore Gpad Tree Graf)
 else()
   string( REPLACE ":" " " ROOT_LIBRARIES ${ROOT_LIBRARIES})
   separate_arguments(ROOT_LIBRARIES)
 endif()
 
-# if( NOT DEFINED GSL_LIBRARIES )
-#   find_package(GSL)
-# else()
-#   string( REPLACE ":" " " GSL_LIBRARIES ${GSL_LIBRARIES})
-#   separate_arguments(GSL_LIBRARIES)
-# endif()
+if( NOT BUILTIN_GSL )
+  if( NOT DEFINED GSL_LIBRARIES )
+    find_package(GSL)
+  else()
+    string( REPLACE ":" " " GSL_LIBRARIES ${GSL_LIBRARIES})
+    separate_arguments(GSL_LIBRARIES)
+  endif()
+endif()
 
 if( USE_OPENMP )
   find_package(OpenMP)
@@ -78,10 +80,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-target_include_directories(AmpGen PUBLIC $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}>
-  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}> )
+target_include_directories(AmpGen PUBLIC $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}> $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}> )
 
-target_include_directories(AmpGen SYSTEM PUBLIC "${ROOT_INCLUDE_DIRS}")
+target_include_directories(AmpGen PUBLIC ${ROOT_INCLUDE_DIRS})
 
 target_link_libraries(AmpGen PUBLIC -lm "${ROOT_LIBRARIES}" ${CMAKE_DL_LIBS} "${GSL_LIBRARIES}" )
 
@@ -217,6 +218,7 @@ foreach( file ${applications} )
   add_executable(${Executable}.exe ${file})
   target_compile_options(${Executable}.exe PUBLIC -g3 -Ofast)
   target_link_libraries(${Executable}.exe PUBLIC AmpGen  )
+  target_include_directories(${Executable}.exe PRIVATE ${ROOT_INCLUDE_DIRS})
 endforeach()
 
 file(GLOB_RECURSE options_files options/*.*)

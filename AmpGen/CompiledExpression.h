@@ -65,6 +65,9 @@ namespace AmpGen
           }; 
           for_each( std::tuple<const namedArgs&...>(args...), process_argument);
           DEBUG("Made expression:  " << m_name << " " << progName() << " " << mps << " batch enabled ? " << this->m_enableBatch );
+          #ifndef  _OPENMP
+            this->m_enableBatch = false;
+          #endif
           resolve(mps);
         }
 
