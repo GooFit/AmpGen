@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="5.151pt" height="8.856pt" viewBox="0 0 5.151 8.856" version="1.2">
+<defs>
+<g>
+<symbol overflow="visible" id="glyph0-0">
+<path style="stroke:none;" d=""/>
+</symbol>
+<symbol overflow="visible" id="glyph0-1">
+<path style="stroke:none;" d="M 2.140625 -5.9375 L 0.984375 -4.765625 L 1.140625 -4.609375 L 2.140625 -5.484375 L 3.125 -4.609375 L 3.265625 -4.765625 Z M 2.140625 -5.9375 "/>
+</symbol>
+<symbol overflow="visible" id="glyph1-0">
+<path style="stroke:none;" d=""/>
+</symbol>
+<symbol overflow="visible" id="glyph1-1">
+<path style="stroke:none;" d="M 0.28125 1.484375 C 0.25 1.578125 0.25 1.59375 0.25 1.609375 C 0.25 1.75 0.34375 1.84375 0.5 1.84375 C 0.671875 1.84375 0.78125 1.6875 0.796875 1.671875 C 0.84375 1.59375 1.109375 0.4375 1.34375 -0.484375 C 1.515625 -0.140625 1.78125 0.09375 2.1875 0.09375 C 3.1875 0.09375 4.296875 -1.109375 4.296875 -2.390625 C 4.296875 -3.296875 3.71875 -3.78125 3.109375 -3.78125 C 2.28125 -3.78125 1.375 -2.921875 1.125 -1.875 Z M 2.171875 -0.09375 C 1.578125 -0.09375 1.4375 -0.78125 1.4375 -0.859375 C 1.4375 -0.890625 1.484375 -1.0625 1.515625 -1.171875 C 1.75 -2.125 1.84375 -2.4375 2.03125 -2.78125 C 2.390625 -3.40625 2.828125 -3.59375 3.078125 -3.59375 C 3.40625 -3.59375 3.671875 -3.34375 3.671875 -2.75 C 3.671875 -2.28125 3.421875 -1.328125 3.203125 -0.90625 C 2.921875 -0.375 2.5 -0.09375 2.171875 -0.09375 Z M 2.171875 -0.09375 "/>
+</symbol>
+</g>
+<clipPath id="clip1">
+  <path d="M 1 0.566406 L 4.421875 0.566406 L 4.421875 2 L 1 2 Z M 1 0.566406 "/>
+</clipPath>
+<clipPath id="clip2">
+  <path d="M 0 2 L 4.421875 2 L 4.421875 8.167969 L 0 8.167969 Z M 0 2 "/>
+</clipPath>
+</defs>
+<g id="surface1">
+<g clip-path="url(#clip1)" clip-rule="nonzero">
+<g style="fill:rgb(0%,0%,0%);fill-opacity:1;">
+  <use xlink:href="#glyph0-1" x="0.785527" y="6.504712"/>
+</g>
+</g>
+<g clip-path="url(#clip2)" clip-rule="nonzero">
+<g style="fill:rgb(0%,0%,0%);fill-opacity:1;">
+  <use xlink:href="#glyph1-1" x="0" y="6.504712"/>
+</g>
+</g>
+</g>
+</svg>

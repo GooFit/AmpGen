@@ -353,7 +353,7 @@ void PolarisedSum::generateSourceCode(const std::string& fname, const double& no
     auto expr = CompiledExpression<std::vector<complex_t>(const real_t*, const real_t*)>(
           p.expression(), 
           p.decayDescriptor(),
-          m_eventType.getEventFormat(), DebugSymbols() ,m_mps ) ;
+          m_eventType.getEventFormat(), DebugSymbols(), m_mps, disableBatch() ) ;
     expr.prepare();
     expr.to_stream( stream );
     expr.compileWithParameters( stream );

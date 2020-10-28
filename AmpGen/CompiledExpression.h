@@ -53,11 +53,11 @@ namespace AmpGen
         CompiledExpression( const Expression& expression, const std::string& name, const namedArgs&... args ) : CompiledExpressionBase(expression, name) 
         {
           const MinuitParameterSet* mps = nullptr; 
-          auto process_argument = [&]( const auto& arg )
+          auto process_argument = [this, &mps]( const auto& arg ) mutable
           {
             if constexpr( std::is_convertible<decltype(arg), DebugSymbols>::value  ) this->m_db = arg;
             else if constexpr( std::is_convertible<decltype(arg), std::map<std::string, unsigned>>::value ) this->m_evtMap = arg;
-            else if constexpr( std::is_convertible<decltype(arg), AmpGen::disableBatch>::value )  this->m_enableBatch = false; 
+            else if constexpr( std::is_convertible<decltype(arg), AmpGen::disableBatch>::value ) this->m_enableBatch = false;  
             else if constexpr( std::is_convertible<decltype(arg), MinuitParameterSet*>::value ) mps = arg;
             else if constexpr( std::is_convertible<decltype(arg), const MinuitParameterSet*>::value ) mps = arg;
             else if constexpr( std::is_convertible<decltype(arg), MinuitParameterSet>::value ) mps = &arg;

@@ -69,6 +69,46 @@ struct FixedLibPDF
   void reset( const bool& flag = false ){};
 };
 
+template <class T> void generateSource(T& pdf, const std::string& sourceFile, MinuitParameterSet& mps)
+{
+  bool normalise      = NamedParameter<bool>("Normalise",true);
+  double safetyFactor = NamedParameter<double>( "SafetyFactor", 3 );
+  int seed            = NamedParameter<int>("Seed", 1);
+  size_t nEvents      = NamedParameter<size_t>( "NormEvents", 1000000 );
+  
+  TRandom3 rnd(seed);
+
+  Generator<PhaseSpace> phsp(pdf.eventType());
+  phsp.setRandom(&rnd);
+  EventList normEvents = phsp.generate(nEvents);
+  if constexpr( std::is_same<T, CoherentSum>::value ) pdf.prepare();
+
+  double norm = 1; 
+  if( normalise ){
+    double pMax = 0;
+    for ( auto& evt : normEvents ) 
+    {
+      if constexpr ( std::is_same<T, PolarisedSum>::value )
+      {
+        double px, py, pz; 
+        rnd.Sphere(px,py,pz, rnd.Uniform(0,1));
+        mps["Px"]->setCurrentFitVal(px);
+        mps["Py"]->setCurrentFitVal(py);
+        mps["Pz"]->setCurrentFitVal(pz);
+        pdf.transferParameters();
+      }
+      double n = 0;
+      if constexpr ( std::is_same<T, CoherentSum>::value ) n = std::norm( pdf.getValNoCache(evt) );
+      if constexpr ( std::is_same<T, PolarisedSum>::value ) n = pdf.getValNoCache(evt);
+      if ( n > pMax ) pMax = n;
+    }
+    norm = pMax * safetyFactor ; 
+    INFO( "Making binary with " << pMax << " x safety factor = " << safetyFactor );
+  }
+  mps.resetToInit(); 
+  pdf.generateSourceCode( sourceFile, norm, true );
+}
+
 
 template <typename pdf_t> Particle getTopology(const pdf_t& pdf)
 {
@@ -91,6 +131,7 @@ template <typename pdf_t> std::vector<Particle> getDecayChains( const pdf_t& pdf
     return channels;
   }
 }
+
 
 template <typename pdf_t> void generateEvents( EventList& events
                        , pdf_t& pdf 
@@ -155,7 +196,7 @@ int main( int argc, char** argv )
     , std::make_pair(phspTypes::RecursivePhaseSpace, "Includes possible quasi-stable particles and the phase spaces of their decay products, such as Λ baryons.\0") ) ); 
   std::string lib     = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
   size_t nBins        = NamedParameter<size_t>     ("nBins"     ,100, "Number of bins for monitoring plots." );
-
+  bool   sourceOnly   = NamedParameter<bool>       ("SourceOnly",false, "Flag to only generate the source code, but not produce any events");
   #ifdef _OPENMP
     unsigned int concurentThreadsSupported = std::thread::hardware_concurrency();
     unsigned int nCores                    = NamedParameter<unsigned int>( "nCores", concurentThreadsSupported, "Number of cores to use (OpenMP only)" );
@@ -193,6 +234,20 @@ int main( int argc, char** argv )
   INFO("Using: " << nCores  << " / " << concurentThreadsSupported  << " threads" );
   #endif
 
+  if( sourceOnly )
+  {
+    if ( pdfType == pdfTypes::CoherentSum )
+    {
+      CoherentSum pdf( eventType, MPS);
+      generateSource(pdf, outfile, MPS);
+    }
+    else if ( pdfType == pdfTypes::PolarisedSum )
+    {
+      PolarisedSum pdf(eventType, MPS);
+      generateSource(pdf, outfile, MPS);
+    }
+    return 0;
+  }
   INFO("Generating time-dependence? " << eventType.isTimeDependent() );
   EventList accepted( eventType );
 

@@ -13,14 +13,14 @@
 
 using namespace AmpGen;
 
-const Tensor::Index mu    = Tensor::Index();
-const Tensor::Index nu    = Tensor::Index();
-const Tensor::Index alpha = Tensor::Index();
-const Tensor::Index beta  = Tensor::Index();
-const Tensor::Index a     = Tensor::Index();
-const Tensor::Index b     = Tensor::Index(); 
-const Tensor::Index c     = Tensor::Index(); 
-const Tensor::Index d     = Tensor::Index(); 
+static const Tensor::Index mu    = Tensor::Index();
+static const Tensor::Index nu    = Tensor::Index();
+static const Tensor::Index alpha = Tensor::Index();
+static const Tensor::Index beta  = Tensor::Index();
+static const Tensor::Index a     = Tensor::Index();
+static const Tensor::Index b     = Tensor::Index(); 
+static const Tensor::Index c     = Tensor::Index(); 
+static const Tensor::Index d     = Tensor::Index(); 
 
 template <> Factory<AmpGen::Vertex::Base>* Factory<AmpGen::Vertex::Base>::gImpl = nullptr;
 

@@ -19,5 +19,5 @@ set +evx
 
 cd ..
 
-./build.conda/bin/Generator options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 10000
+./build.conda/bin/AmpGen.exe options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 10000
 

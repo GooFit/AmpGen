@@ -3,7 +3,10 @@
 ! Responsible : Tim Evans
 ! Purpose     : 
 !-----------------------------------------------------------------------------
-!=================== AmpGen v2r0 2020-25-04
+!=================== AmpGen v2r1 2020-28-10 ==================
+ - Improved cmake configuration to allow installation
+ - Consolidation of Generator and ConvertToSourceCode to single executable 'AmpGen'
+!=================== AmpGen v2r0 2020-25-04 ==================
  - Refactored caching logic away from being computations being stored with event data.
  - Support for AVX2 for amplitude evaluation / integration single/double precision.
  - Updated plotting for making component amplitude plots. 
