@@ -82,7 +82,8 @@ endif()
 
 target_include_directories(AmpGen PUBLIC $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}> $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}> )
 
-target_include_directories(AmpGen PUBLIC ${ROOT_INCLUDE_DIRS})
+# target_include_directories(AmpGen PUBLIC $<BUILD_INTERFACE:${${ROOT_INCLUDE_DIRS}} )
+target_include_directories(AmpGen PUBLIC ${ROOT_INCLUDE_DIRS}) 
 
 target_link_libraries(AmpGen PUBLIC -lm "${ROOT_LIBRARIES}" ${CMAKE_DL_LIBS} "${GSL_LIBRARIES}" )
 
@@ -260,7 +261,7 @@ install(
   TARGETS ${PROJECT_NAME}
   EXPORT AmpGenTargets
   LIBRARY DESTINATION lib
-  PUBLIC_HEADER DESTINATION AmpGen
+  #   PUBLIC_HEADER DESTINATION AmpGen
 )
 
 install(
