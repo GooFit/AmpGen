@@ -100,20 +100,6 @@ bool ParticleProperties::antiThis()
   swapChars( m_chargeString, '+', '-');
   m_charge *= -1;
   if( isFermion() ) m_parity *= -1;
-  /*
-  if ( !m_quarks.empty() ){
-    swapChars(m_quarks, 'U', 'u');
-    swapChars(m_quarks, 'D', 'd');
-    swapChars(m_quarks, 'C', 'c');
-    swapChars(m_quarks, 'S', 's');
-    swapChars(m_quarks, 'T', 't');
-    swapChars(m_quarks, 'B', 'b');
-    unsigned int pos = m_quarks.find( "SqrT" );
-    if ( pos < m_quarks.size() ) {
-      m_quarks.replace( pos, 4, "sqrt" );
-    }
-  }
-  */
   m_quarkContent.antiThis();
   m_pdgID *= -1;
   return true;

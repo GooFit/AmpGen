@@ -1,7 +1,6 @@
 ################################################################################
 # Package: AmpGen
 ################################################################################
-# cmake_minimum_required(VERSION 3.11.1)
 
 cmake_minimum_required(VERSION 3.9...3.15)
 
@@ -26,6 +25,7 @@ set(USE_SIMD           "AVX2d" CACHE STRING "USE_SIMD")       # AVX instruction 
 set(USE_OPENMP         TRUE    CACHE BOOL   "USE_OPENMP")     # flag to use openmp for threading 
 set(USE_MVEC           TRUE    CACHE BOOL   "USE_MVEC")       # flag to use vector math library mvec 
 set(ENABLE_FITTING     TRUE    CACHE BOOL   "ENABLE_FITTING") # flag to enable fitting (requires Minuit2) 
+set(ENABLE_TESTS       TRUE    CACHE BOOL   "ENABLE_TESTS")   # flag to build unit tests
 set(BUILTIN_GSL        TRUE    CACHE BOOL   "BUILTIN_GSL")    # flag to use ROOT's builtin GSL 
 set(ENABLE_INSTALL     TRUE    CACHE BOOL   "ENABLE_INSTALL") # flag to enable installs (switched off to make Travis happier) 
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -74,8 +74,6 @@ endif()
 if( USE_OPENMP )
   find_package(OpenMP)
 endif()
-
-cmake_print_variables(CMAKE_SOURCE_DIR)
 
 # Default build type from the Kitware Blog
 set(default_build_type "Release")
@@ -153,8 +151,6 @@ if( DEFINED TBB_LIBRARIES )
   target_link_libraries(AmpGen PUBLIC ${TBB_LIBRARIES})
 endif()
 
-set(RAPIDSIM_DATA "")
-
 # Default to XROOTD only if on CMT system. Can be overridden with -DAMPGEN_XROOTD=ON
 if(DEFINED ENV{CMTCONFIG})
   set(AMPGEN_XROOTD_DEFAULT ON)
@@ -219,8 +215,9 @@ else()
   target_compile_options(AmpGen PUBLIC -Wno-suggest-override)
 endif()
 
-file(GLOB_RECURSE applications apps/*.cpp examples/*.cpp )
+# build the applications and examples 
 
+file(GLOB_RECURSE applications apps/*.cpp examples/*.cpp )
 foreach( file ${applications} )
   get_filename_component( Executable ${file} NAME_WE )
   add_executable(${Executable}.exe ${file})
@@ -229,26 +226,26 @@ foreach( file ${applications} )
   target_include_directories(${Executable}.exe PRIVATE ${ROOT_INCLUDE_DIRS})
 endforeach()
 
+# symlink the options files (so as there is the mass_width etc.) to the build directory, and also the release notes 
 file(GLOB_RECURSE options_files options/*.*)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/bin")
 foreach(file ${options_files})
   get_filename_component(OptionFile "${file}" NAME)
   execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${file}" "${CMAKE_BINARY_DIR}/bin/${OptionFile}")
 endforeach()
+execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${CMAKE_SOURCE_DIR}/doc/release.notes" "${CMAKE_BINARY_DIR}/bin/release.notes")
 
-enable_testing()
-set(Boost_NO_BOOST_CMAKE ON)
-add_subdirectory(test)
+if( ENABLE_TESTS )
+  enable_testing()
+  set(Boost_NO_BOOST_CMAKE ON)
+  add_subdirectory(test)
+endif()
+
+
+# stuff related to export, install and version tagging
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/AmpGenVersion.cmake VERSION ${PACKAGE_VERSION} COMPATIBILITY AnyNewerVersion)
-
-set(exported_targets_name "${PROJECT_NAME}Targets")
-set(exported_targets_filename "${exported_targets_name}.cmake")
-set(export_dirpath "lib/cmake/cppuuid")
-set(config_basename "${PROJECT_NAME}Config")
-set(config_filename "${config_basename}.cmake")
-set(version_filename "${config_basename}Version.cmake")
 
 set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR})
 set(LIB_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
