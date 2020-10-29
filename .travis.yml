@@ -10,17 +10,6 @@ matrix:
           packages:
             - libomp
     - os: linux
-      #      addons:
-      #       apt:
-      #         sources:
-      #           - ubuntu-toolchain-r-test
-      #         packages:
-      #           - g++-8
-      #           - doxygen
-      #           - doxygen-doc
-      #           - doxygen-gui
-      #           - graphviz
-      #           - libtbb-dev
       env:
         - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
   

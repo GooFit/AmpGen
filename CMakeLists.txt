@@ -1,7 +1,14 @@
 ################################################################################
 # Package: AmpGen
 ################################################################################
-cmake_minimum_required(VERSION 3.11.1)
+# cmake_minimum_required(VERSION 3.11.1)
+
+cmake_minimum_required(VERSION 3.9...3.15)
+
+if(${CMAKE_VERSION} VERSION_LESS 3.12)
+  cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+endif()
+
 project(AmpGen LANGUAGES CXX VERSION 2.1)
 
 set(AMPGEN_CXX ${CMAKE_CXX_COMPILER} CACHE FILEPATH "This should be the path to compiler (use which c++ for macOS)" )
@@ -82,8 +89,7 @@ endif()
 
 target_include_directories(AmpGen PUBLIC $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}> $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}> )
 
-# target_include_directories(AmpGen PUBLIC $<BUILD_INTERFACE:${${ROOT_INCLUDE_DIRS}} )
-target_include_directories(AmpGen PUBLIC ${ROOT_INCLUDE_DIRS}) 
+target_include_directories(AmpGen PUBLIC ${ROOT_INCLUDE_DIRS} ) 
 
 target_link_libraries(AmpGen PUBLIC -lm "${ROOT_LIBRARIES}" ${CMAKE_DL_LIBS} "${GSL_LIBRARIES}" )
 
@@ -261,7 +267,7 @@ install(
   TARGETS ${PROJECT_NAME}
   EXPORT AmpGenTargets
   LIBRARY DESTINATION lib
-  #   PUBLIC_HEADER DESTINATION AmpGen
+  PUBLIC_HEADER DESTINATION AmpGen
 )
 
 install(

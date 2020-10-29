@@ -9,7 +9,7 @@ conda activate env_${TRAVIS_OS_NAME}
 echo -en 'travis_fold:start:script.build\\r'
 echo "Building..."
 echo "Building under OS: $TRAVIS_OS_NAME, CXX =$CXX"
-
+echo "Directories: DEPS_DIR=$DEPS_DIR; TRAVIS_BUILD_DIR=$TRAVIS_BUILD_DIR"
 mkdir -p build.conda
 cd build.conda
 cmake .. 
