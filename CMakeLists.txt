@@ -49,8 +49,8 @@ configure_file ("${PROJECT_SOURCE_DIR}/AmpGen/Version.h.in" "${CMAKE_BINARY_DIR}
 add_library(${PROJECT_NAME} SHARED ${AMPGEN_SRC} ${AMPGEN_HDR})
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-message( STATUS "ROOT_LIBRARIES: ${ROOT_LIBRARIES}")
-message( STATUS "GSL_LIBRARIES: ${GSL_LIBRARIES}")
+# message( STATUS "ROOT_LIBRARIES: ${ROOT_LIBRARIES}")
+# message( STATUS "GSL_LIBRARIES: ${GSL_LIBRARIES}")
 
 if(NOT DEFINED ROOT_LIBRARIES)
   if(DEFINED ENV{ROOTSYS})
@@ -62,7 +62,7 @@ else()
   separate_arguments(ROOT_LIBRARIES)
 endif()
 
-if( NOT BUILTIN_GSL )
+if( NOT BUILTIN_GSL OR DEFINED GSL_LIBRARIES )
   if( NOT DEFINED GSL_LIBRARIES )
     find_package(GSL)
   else()
@@ -200,7 +200,7 @@ elseif ( ${USE_SIMD} MATCHES "AVX512d" )
 else()
   target_compile_definitions(AmpGen PUBLIC "ENABLE_AVX=0")
   target_compile_options(AmpGen PUBLIC -march=x86-64)
-  message("SIMD disabled, resorting to scalar build : ${USE_SIMD}")
+  message(STATUS "SIMD disabled, resorting to scalar build : ${USE_SIMD}")
 endif()
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "AppleClang" OR 
