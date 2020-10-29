@@ -27,6 +27,7 @@ set(USE_OPENMP         TRUE    CACHE BOOL   "USE_OPENMP")     # flag to use open
 set(USE_MVEC           TRUE    CACHE BOOL   "USE_MVEC")       # flag to use vector math library mvec 
 set(ENABLE_FITTING     TRUE    CACHE BOOL   "ENABLE_FITTING") # flag to enable fitting (requires Minuit2) 
 set(BUILTIN_GSL        TRUE    CACHE BOOL   "BUILTIN_GSL")    # flag to use ROOT's builtin GSL 
+set(ENABLE_INSTALL     TRUE    CACHE BOOL   "ENABLE_INSTALL") # flag to enable installs (switched off to make Travis happier) 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY         "${CMAKE_BINARY_DIR}/lib")
@@ -259,27 +260,29 @@ configure_package_config_file(AmpGenConfig.cmake.in
     PATH_VARS INCLUDE_INSTALL_DIR LIB_INSTALL_DIR DATA_INSTALL_DIR
     )
 
-install( FILES ${CMAKE_CURRENT_BINARY_DIR}/AmpGenConfig.cmake
-               ${CMAKE_CURRENT_BINARY_DIR}/AmpGenVersion.cmake
-               DESTINATION ${CMAKE_INSTALL_DATADIR}/AmpGen/cmake)
-
-install(
-  TARGETS ${PROJECT_NAME}
-  EXPORT AmpGenTargets
-  LIBRARY DESTINATION lib
-  PUBLIC_HEADER DESTINATION AmpGen
-)
-
-install(
-  TARGETS AmpGen.exe
-  DESTINATION bin
-)
-
-install(EXPORT "AmpGenTargets"
-        NAMESPACE "AmpGen::"
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/AmpGen/cmake
-)
-
-export( TARGETS AmpGen NAMESPACE AmpGen:: FILE AmpGenTargets.cmake )
-set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
-export(PACKAGE AmpGen)
+if( ENABLE_INSTALL ) 
+  install( FILES ${CMAKE_CURRENT_BINARY_DIR}/AmpGenConfig.cmake
+                 ${CMAKE_CURRENT_BINARY_DIR}/AmpGenVersion.cmake
+                 DESTINATION ${CMAKE_INSTALL_DATADIR}/AmpGen/cmake)
+  
+  install(
+    TARGETS ${PROJECT_NAME}
+    EXPORT AmpGenTargets
+    LIBRARY DESTINATION lib
+    PUBLIC_HEADER DESTINATION AmpGen
+  )
+  
+  install(
+    TARGETS AmpGen.exe
+    DESTINATION bin
+  )
+  
+  install(EXPORT "AmpGenTargets"
+          NAMESPACE "AmpGen::"
+          DESTINATION ${CMAKE_INSTALL_DATADIR}/AmpGen/cmake
+  )
+  
+  export( TARGETS AmpGen NAMESPACE AmpGen:: FILE AmpGenTargets.cmake )
+  set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
+  export(PACKAGE AmpGen)
+endif()
