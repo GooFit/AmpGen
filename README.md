@@ -145,7 +145,7 @@ AmpGen supports several different types of probability density functions (PDFs),
 
 #####  CoherentSum 
 
-The most common type of PDF is the CoherentSum. In this case, the total amplitude is given by the sum of amplitudes, weighted by complex coefficients. At a position in the phase space  <img src="doc/figs/tex/fig2.svg" style="height:2ex;margin-bottom:+1ex" /> , the transition amplitude  <img src="doc/figs/tex/fig3.svg" style="height:2ex;margin-bottom:+1ex" />   is given by:
+The most common type of PDF is the CoherentSum. In this case, the total amplitude is given by the sum of amplitudes, weighted by complex coefficients. At a position in the phase space  <img src="doc/figs/tex/fig2.svg" height=2ex margin-bottom=1ex /> , the transition amplitude  <img src="doc/figs/tex/fig3.svg" style="height:2ex;margin-bottom:+1ex" />   is given by:
 
  <img src="doc/figs/tex/fig4.svg" style="height:2ex;margin-bottom:+1ex" /> 
 
