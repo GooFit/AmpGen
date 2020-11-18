@@ -606,7 +606,8 @@ for (int i=0; i < tags.size(); i++){
 
   std::stringstream tagNameMC;
   tagNameMC<<tagName<<"MC";
-  
+
+  if (NamedParameter<bool>("BinPrint", false)){ 
   printPerBin(8, cs_tag, sigevents_tag, tagevents_tag, tagName);
   //printPerBin(8, cs_tag, sigMCevents_tag, tagMCevents_tag, tagNameMC.str());
   if (tagName=="Kspipi"){
@@ -616,6 +617,7 @@ for (int i=0; i < tags.size(); i++){
         //printDT(i,j, sigMCevents_tag, tagMCevents_tag, cs_tag, "MC");
       }
     }
+  }
   }
 
 
