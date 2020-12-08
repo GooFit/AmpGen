@@ -727,7 +727,9 @@ class pCorrelatedSum {
         double m_Cnorm;
         double m_Dnorm;
         bool m_sameTag;
+        bool m_slowNorm;
         bool m_flat;
+
   };
 }
 #endif

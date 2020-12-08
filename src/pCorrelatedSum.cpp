@@ -20,6 +20,7 @@ pCorrelatedSum::pCorrelatedSum(const EventType& type1, const EventType& type2, c
   m_debugFreq(NamedParameter<int>("pCorrelatedSum::debugFreq", 1000, "Print Debug messages for pCorrelatedSum")),
   m_pdebug(NamedParameter<bool>("pCorrelatedSum::pdebug", false, "Print Debug messages for pCorrelatedSum")),
   m_pNorm(NamedParameter<bool>("pCorrelatedSum::pNorm", true, "Perform the slower normalisation for polynomial")),
+  m_slowNorm(NamedParameter<bool>("pCorrelatedSum::slowNorm", true, "Perform the slower normalisation for polynomial")),
   m_updateNorms(NamedParameter<bool>("pCorrelatedSum::updateNorms", true, "Update the individual norms for A,B,C,D")),
   m_order(NamedParameter<unsigned int>( "pCorrelatedSum::Order" )),
   m_orderMag(NamedParameter<unsigned int>( "pCorrelatedSum::OrderMag" )),
@@ -311,6 +312,18 @@ real_t pCorrelatedSum::norm() const {
   if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
   //complex_t sumFactor = getSumFactor();  
   double sumFactor = -1;
+  
+   auto eventsAC = m_integratorAC.events();
+   auto eventsBD = m_integratorBD.events();
+
+  if (m_slowNorm){
+    double slowNorm = 0;
+    #pragma omp parallel for reduction( +: slowNorm )
+    for (size_t i=0; i < eventsAC.size(); i++){
+      slowNorm += std::norm(getVal(eventsAC[i], eventsBD[i]))/eventsAC.size();
+    }
+    return slowNorm;
+  }
   auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
   {
     complex_t v; 
@@ -329,7 +342,7 @@ real_t pCorrelatedSum::norm() const {
 
    std::complex<double> rAC = 0; 
 
-   auto eventsAC = m_integratorAC.events();
+
     
     for( int i=0 ; i < eventsAC.size(); i++ ) {
       auto ab = m_A.getVal(eventsAC[i]) * std::conj(m_C.getVal(eventsAC[i])) * exp(Constant(0,1)() * correction(eventsAC[i]))/(double)eventsAC.size();
@@ -351,7 +364,7 @@ real_t pCorrelatedSum::norm() const {
     }
 
 
-   auto eventsBD = m_integratorBD.events();
+   
    if (m_sameTag) {
    std::complex<double> rBD = 0; 
     for( int i=0 ; i < eventsBD.size(); i++ ) {

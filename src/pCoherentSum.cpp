@@ -236,8 +236,11 @@ void pCoherentSum::updateNorms(const std::vector<size_t>& iA, const std::vector<
 
 real_t pCoherentSum::norm() const {
    auto eventsAC = m_integratorAC.events();
+
+
   if (m_slowNorm){
     double slowNorm = 0;
+    #pragma omp parallel for reduction( +: slowNorm )
     for (auto& evt : eventsAC){
       slowNorm += std::norm(getVal(evt))/eventsAC.size();
     }
