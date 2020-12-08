@@ -11,7 +11,7 @@ using namespace AmpGen;
 
 pCoherentSum::pCoherentSum() = default; 
 
-pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType, int gamSign, bool useXY):
+pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType, int gamSign, bool useXY, bool conj):
   m_A(type1, mps),
 
   m_C(type1.conj(NamedParameter<bool>("pCoherentSum::ConjHead", true, "Only Conjugate the head of the EventType")), mps),
@@ -19,11 +19,12 @@ pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps
   m_debug(NamedParameter<bool>("pCoherentSum::debug", false, "Print Debug messages for pCoherentSum")),
   m_debugFreq(NamedParameter<int>("pCoherentSum::debugFreq", 1000, "Print Debug messages for pCoherentSum")),
   m_pdebug(NamedParameter<bool>("pCoherentSum::pdebug", false, "Print Debug messages for pCoherentSum")),
-  m_pNorm(NamedParameter<bool>("pCoherentSum::pNorm", true, "Perform the slower normalisation for polynomial")),
+  m_slowNorm(NamedParameter<bool>("pCoherentSum::slowNorm", true)),
   m_updateNorms(NamedParameter<bool>("pCoherentSum::updateNorms", true, "Update the individual norms for A,B,C,D")),
   m_order(NamedParameter<unsigned int>( "pCorrelatedSum::Order" )),
   m_polyType(NamedParameter<std::string>("pCorrelatedSum::PolyType", "simple")),
   m_mps(mps),
+  m_conj(conj),
   m_gamSign(gamSign),
   m_useXY(useXY),
   m_flat(NamedParameter<bool>("pCoherentSum::flat", false, "Force Amplitude=1")),
@@ -53,6 +54,7 @@ pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps
       m_normalisationsCC.resize( m_C.matrixElements().size(), m_C.matrixElements().size() ); 
   }
   INFO("Type 1 "<<type1);
+  if (m_slowNorm) INFO("Using slow normalisation for pCoherentSum");
   
   
 }
@@ -233,6 +235,16 @@ void pCoherentSum::updateNorms(const std::vector<size_t>& iA, const std::vector<
 
 
 real_t pCoherentSum::norm() const {
+   auto eventsAC = m_integratorAC.events();
+  if (m_slowNorm){
+    double slowNorm = 0;
+    for (auto& evt : eventsAC){
+      slowNorm += std::norm(getVal(evt))/eventsAC.size();
+    }
+    return slowNorm;
+  }
+
+
   if (m_debug) INFO("Getting the value for the normalised pdf");
   if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
   complex_t sumFactor = getSumFactor();  
@@ -273,8 +285,6 @@ real_t pCoherentSum::norm() const {
 
 
    std::complex<double> rAC = 0; 
-
-   auto eventsAC = m_integratorAC.events();
 
 if (m_debug){
 for (int i=0; i<eventsAC.size(); i++){
@@ -386,6 +396,17 @@ real_t pCoherentSum::norm() const {
 
 
 real_t pCoherentSum::testnorm() const {
+
+   auto eventsAC = m_integratorAC.events();
+
+    double slowNorm = 0;
+    for (auto& evt : eventsAC){
+      slowNorm += std::norm(getVal(evt))/eventsAC.size();
+    }
+    INFO("slowNorm = "<<slowNorm);
+
+
+
   if (m_debug) INFO("Getting the value for the normalised pdf");
  
   if (m_debug) INFO("Getting SumFactor");
@@ -405,7 +426,7 @@ real_t pCoherentSum::testnorm() const {
 /*
     */
     std::complex<double> rAC = 0; 
-   auto eventsAC = m_integratorAC.events();
+   
 
     complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
   real_t nA = m_A.norm();
@@ -468,7 +489,7 @@ real_t pCoherentSum::testnorm() const {
   if (m_debug) INFO("interference = "<<intTerm);
   real_t N = nA + std::norm(sumFactor) * nC  + intTerm;
 
-  if (m_debug) INFO("Normalisation = "<<N);
+  INFO("Calculated Normalisation = "<<N);
   return N;
 }
 
@@ -600,6 +621,11 @@ complex_t pCoherentSum::getVal(const Event& evt1) const {
 
 
   complex_t val = A  *exp(i()*f/2.) + sumFactor  * C  *exp(-i()*f/2.);
+  if (m_conj){
+    
+    val = A  *exp(i()*f/2.) * sumFactor + C  *exp(-i()*f/2.);
+
+  }
   //complex_t val = A + sumFactor * C;
   //complex_t val = A + sumFactor * C;
   //INFO("Correction  = "<<f);
@@ -629,6 +655,10 @@ complex_t pCoherentSum::getValNoCache(const Event& evt1) const {
 
   auto sumFactor = getSumFactor();
   complex_t val = A  *exp(i()*f/2.)  + sumFactor * C   *exp(-i()*f/2.);
+  if (m_conj){
+      
+   val = A  *exp(i()*f/2.)  * sumFactor + C   *exp(-i()*f/2.);
+    }
   //complex_t val = A *exp(i()*f)* B - C * D;
   if (m_flat){
     val = 1;

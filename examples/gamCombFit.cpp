@@ -298,9 +298,20 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     auto tag_logName = tag_log.str();
 
     auto sigevents_tag = getEvents("signal", pNames, tags[i], dataFile, intFile);
-    auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
+//    auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
     auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
-    auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
+//    auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
+
+
+    auto types = makeEventTypes(pNames, tags[i]);
+
+    auto signalType = types["signal"];
+    auto tagType = types["tag"];
+ 
+    EventList sigMCevents_tag = Generator<>(signalType, &rndm).generate(1e7);
+    EventList tagMCevents_tag = Generator<>(tagType, &rndm).generate(1e7);
+
+
 
     SigData.push_back(sigevents_tag);
     TagData.push_back(tagevents_tag);
@@ -322,11 +333,11 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     bool useXY = std::stoi(split(BTag,' ')[4]);
     
     INFO("GammaSign = "<<gammaSign);
-    if (B_Conj == 1){
-      eventType = eventType.conj(true);
-    }
+    //if (B_Conj == 1){
+    //  eventType = eventType.conj(true);
+    //}
 
-    auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY);
+    auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY, B_Conj);
 
     std::string DataFile = NamedParameter<std::string>("BDataSample", "");
     std::string IntFile = NamedParameter<std::string>("BIntegrationSample", "");
@@ -341,7 +352,9 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     std::string IntLoc = IntSS.str();
 
     EventList Data = EventList(DataLoc, eventType);
-    EventList Int = EventList(IntLoc, eventType);
+//    EventList Int = EventList(IntLoc, eventType);
+
+    EventList Int = Generator<>(eventType, &rndm).generate(1e7);
 
 
     sig.setEvents(Data);

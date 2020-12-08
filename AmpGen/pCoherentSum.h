@@ -113,7 +113,7 @@ class pCoherentSum {
     public:
       //Takes amplitudes - 
         pCoherentSum();
-        pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType="Psi3770", int gamSign=1, bool useXY=false);
+        pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType="Psi3770", int gamSign=1, bool useXY=false, bool conj=false);
         virtual ~pCoherentSum()=default;
 
 
@@ -199,8 +199,8 @@ else{
         std::stringstream ss_key_r;
         std::stringstream ss_key_d;
         std::stringstream ss_key_g;
-        ss_key_r<<"pCoherentSum::"<<m_SFType<<"r";
-        ss_key_d<<"pCoherentSum::"<<m_SFType<<"d";
+        ss_key_r<<"pCoherentSum::r";
+        ss_key_d<<"pCoherentSum::d";
         ss_key_g<<"pCoherentSum::gamma";
 
         std::string key_r = ss_key_r.str();
@@ -447,6 +447,7 @@ else{
 
         MinuitParameterSet m_mps;
         std::string m_SFType;
+        bool m_conj;
         CoherentSum  m_A;
 
         CoherentSum  m_C;
@@ -475,6 +476,7 @@ else{
         bool m_pdebug;
         bool m_pNorm;
         bool m_fastNorm;
+        bool m_slowNorm;
         bool m_updateNorms;
         int m_order;
         std::string m_polyType;

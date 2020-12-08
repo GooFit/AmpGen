@@ -2,7 +2,6 @@
 #include "AmpGen/pCorrelatedSum.h"
 #include "AmpGen/pCoherentSum.h"
 #include "AmpGen/CoherentSum.h"
-#include "AmpGen/PolarisedSum.h"
 #include "AmpGen/CorrelatedSum.h"
 #include "AmpGen/CorrelatedLL.h"
 #include "AmpGen/corrEventList.h"
@@ -48,11 +47,7 @@ int main( int argc, char* argv[] )
   omp_set_dynamic( 0 );
   #endif
 
-  size_t      seed     = NamedParameter<size_t>     ("Seed"      , 0           , "Random seed used" );
-  
-  TRandom3 rndm;
-  rndm.SetSeed( seed );
-  gRandom = &rndm;
+
    auto pNames = NamedParameter<std::string>("EventType" , ""    
       , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
  
@@ -72,19 +67,13 @@ int main( int argc, char* argv[] )
   std::vector<std::string> sumFactors;
   std::vector<int> gammaSigns;
   std::vector<int> useXYs;
-  bool fitEach = NamedParameter<bool>("FitEach", true);
-  SimFit simfit;
-  std::vector<SumPDF<EventList, pCoherentSum&>> pdfs;
-
-int NInt = NamedParameter<int>("NInt", 1e7);
-
-    
-    INFO("Using "<<NInt<<" integration events");
-
-  EventList mc =  Generator<>(eventType, &rndm).generate(NInt);
   for (auto& BTag : BTags){
 
     INFO("B DecayType = "<<BTag);
+ 
+ 
+    
+
     auto B_Name = split(BTag,' ')[0];
     auto B_Pref = split(BTag,' ')[1];
     int B_Conj = std::stoi(split(BTag,' ')[2]);
@@ -93,15 +82,11 @@ int NInt = NamedParameter<int>("NInt", 1e7);
  
     
     INFO("GammaSign = "<<gammaSign);
-    if (B_Conj == 1){
-      //eventType = eventType.conj();
-    }
+    ///if (B_Conj == 1){
+    ///  eventType = eventType.conj(true);
+   // }
 
-
-    //auto sig = CoherentSum(eventType, MPS );//,B_Pref, gammaSign, useXY, false);
-    //auto sig = PolarisedSum(eventType, MPS );//,B_Pref, gammaSign, useXY, false);
-
-
+    auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY, B_Conj);
 
 
 
@@ -118,69 +103,113 @@ int NInt = NamedParameter<int>("NInt", 1e7);
     std::string IntLoc = IntSS.str();
 
     EventList Data = EventList(DataLoc, eventType);
-//    EventList Int = EventList(IntLoc, eventType);
+    EventList Int = EventList(IntLoc, eventType);
 
 
-    
-    if (fitEach){
-      auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY, false);
-      sig.setEvents(Data);
-      sig.setMC(mc);
+    sig.setEvents(Data);
+    sig.setMC(Int);
 
 
-      sig.prepare();
+    SigData.push_back(Data);
+    SigInt.push_back(Int);
+    SigType.push_back(eventType);
+    sumFactors.push_back(B_Pref);
+    gammaSigns.push_back(gammaSign);
+    useXYs.push_back(useXY);
 
+    sig.prepare();
+    auto evt = Data[0];
+    auto testNorm = sig.testnorm();
+    auto vals = sig.getVals(evt);
+    auto sumFactor = sig.getSumFactor();
+    INFO("A = "<<vals[0]);
+    INFO("C = "<<vals[1]);
+    INFO("psi = "<<vals[2]);
+    INFO("sumfactor = "<<sumFactor);
+    for (int i=0;i<Data.size();i++){
+      auto event = Data[i];
+      auto x = event.s(0,1);
+      auto y = event.s(0,2);
+      auto z = event.s(1,2);
+      auto mp = sqrt(event.s(1,1))/2.;
+      auto mm = sqrt(event.s(2,2))/2.;
+      auto mK = sqrt(event.s(0,0))/2.;
+      auto mD = sqrt(x + y + z - pow(mp,2) - pow(mm,2) - pow(mK,2) ) ;
+      Expression xmin = pow(mp + mK, 2);
+      Expression xmax = pow(mD - mm, 2);
+      Expression x0 = (xmax + xmin)/2;
+      Expression ymin = pow(mp + mK, 2);
+      Expression ymax = pow(mD - mp, 2);
+      Expression y0 = (ymax + ymin)/2;
+      Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
+      Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
 
+      if (std::abs(X()) > 1 || std::abs(Y()) > 1){
 
-      auto ll = make_likelihood(Data, sig);
-      Minimiser mini = Minimiser(ll, &MPS);
-      mini.gradientTest();
-      mini.doFit();
-      FitResult * fr = new FitResult(mini);
-      fr->writeToFile(NamedParameter<std::string>("LogFile_i", "BFit_minus.log"));
+      INFO("mp = "<<mp);
+      INFO("mm = "<<mm);
+      INFO("mK = "<<mK);
+      INFO("mD = "<<mD);
+
+      INFO("x = "<<x);
+      INFO("xmin = "<<xmin);
+      INFO("xmax = "<<xmax);
+      INFO("rescaled x = "<<X());
+
+      INFO("y = "<<y);
+      INFO("ymin = "<<ymin);
+      INFO("ymax = "<<ymax);
+      INFO("yescaled y = "<<Y());
+      }
+        
     }
-    else {
 
 
-    
-    SigData.emplace_back(Data);
-//    SigInt.emplace_back(mc);
-    SigType.emplace_back(eventType);
-    sumFactors.emplace_back(B_Pref);
-    gammaSigns.emplace_back(gammaSign);
-    useXYs.emplace_back(useXY);
-    
 
 
+
+/*
+    auto xp = MPS["pCoherentSum::x+"];
+    auto yp = MPS["pCoherentSum::y+"];
+
+    double stepxp = xp->err();
+    double stepyp = yp->err();
+
+    double xpMax = xp->mean() + 5*xp->err();
+    double xpMin = -xpMax;
+    double ypMax = yp->mean() + 5*yp->err();
+    double ypMin = -ypMax;
+
+    int Nxp = 10;
+    int Nyp = 10;
+    sig.prepare();
+    std::ofstream NOut;
+    NOut.open("norm.csv");
+    INFO("Running through "<<Nxp<<" normalisations");
+    INFO("Running through "<<Nyp<<" normalisations");
+    for (int i=0; i <Nxp; i++){
+      for (int j=0; j<Nyp; j++){
+        INFO("At "<<i<<j); 
+        MPS["pCoherentSum::x+"]->setCurrentFitVal(xpMin + i*stepxp);
+        INFO("x+ = "<<xpMin + i * stepxp);
+        MPS["pCoherentSum::y+"]->setCurrentFitVal(ypMin + j*stepyp);
+        INFO("y+ = "<<ypMin + j * stepyp);
+
+        double slowNorm = sig.norm();
+
+        INFO("slowNorm = "<<slowNorm);
+        double fastNorm = sig.getFastNorm();
+        INFO("FastNorm = "<<fastNorm);
+
+        INFO(xpMin + i * stepxp<<" "<<ypMin + j * stepyp<<" "<<slowNorm<<" "<<fastNorm);
+        NOut<<xpMin + i * stepxp<<" "<<ypMin + j * stepyp<<" "<<slowNorm<<" "<<fastNorm<<"\n";
+      }
     }
+    NOut.close();
+*/
 
 
   }
-
-
-if (!fitEach){
-//  auto LLC = CombLL(SigData, SigInt, SigType, MPS, sumFactors, gammaSigns, useXYs);
-//
-  pdfs.reserve(SigData.size());
-  std::vector<pCoherentSum> fcs(SigData.size());
-  for (size_t i=0;i<SigData.size(); i++){
-   fcs[i] = pCoherentSum(eventType, MPS, sumFactors[i], gammaSigns[i], useXYs[i], false);
-   pdfs.emplace_back( make_pdf(fcs[i])); 
-   pdfs[i].setEvents(SigData[i]);
-//   auto& mc  = SigInt[i];
-   for_each(pdfs[i].pdfs(), [&mc](auto& pdf){pdf.setMC(mc);});
-   simfit.add(pdfs[i]);
-    
-    }
-   
-  Minimiser mini(simfit, &MPS);
-mini.prepare();
-INFO("Mini = "<<mini.FCN());
-  mini.gradientTest();
-  mini.doFit();
-  FitResult * fr = new FitResult(mini);
-  fr->writeToFile(NamedParameter<std::string>("Logfile", "BFit.log"));
-}
   return 0;
 }
 

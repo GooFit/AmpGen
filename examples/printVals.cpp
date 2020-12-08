@@ -217,7 +217,7 @@ void printOut(EventList eventsSig, EventList eventsTag, pCorrelatedSum cs_tag, s
     auto ABCD = cs_tag.getVal(evt_sig, evt_tag);
     auto corr = vals[5];
     auto ACst = A * std::conj(C);
-    auto dCorr = cs_tag.errcorrection(evt_sig);
+    auto dCorr = cs_tag.errcorrection(evt_sig, NamedParameter<std::string>("pCorrelatedSum::CovFile", ""));
 
     auto prob = cs_tag.prob(evt_sig, evt_tag)/eventsSig.size();
     auto cosDD = -((fcn::pow(abs(ABCD), 2)() - fcn::pow(abs(A), 2)() * fcn::pow(abs(B), 2)() - fcn::pow(abs(C), 2)() * fcn::pow(abs(D), 2)())/(2 * abs(A) * abs(B) * abs(C) * abs(D) )).real();

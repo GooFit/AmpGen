@@ -3,6 +3,8 @@
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Lineshapes.h"
 #include "AmpGen/MinuitParameterSet.h"
+#include "TMatrixD.h"
+#include "TFile.h"
 
 #ifndef PCORRELATEDSUM
 #define PCORRELATEDSUM
@@ -515,7 +517,10 @@ class pCorrelatedSum {
         return corr();
       }
 
-    complex_t errcorrection(const Event& event) const {
+
+
+    //Need CovFile!
+    complex_t errcorrection(const Event& event, std::string covFile="") const {
         Expression corr = 0;
         auto x = event.s(0,1);
         auto y = event.s(0,2);
@@ -532,7 +537,26 @@ class pCorrelatedSum {
         Expression y0 = (ymax + ymin)/2;
         Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
         Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
+
+        int nElements = 0.5*(m_order+1)*(m_order+2);
         
+        TMatrixD * cov = new TMatrixD(nElements, nElements);
+
+        if (covFile==""){
+          INFO("No Covariance matrix - will get wrong answer for df!");
+        }
+       
+        else{
+          TFile * file = TFile::Open(covFile.c_str());
+          TMatrixD * V = (TMatrixD*)file->Get("V");
+          cov = V;
+          if (NamedParameter<bool>("pCorrelatedSum::printCov", false)){
+          V->Print();
+          }
+          file->Close();
+        }
+
+        int cov_ij = 0;
         //INFO("Order = "<<m_order);
         for (auto i=0; i < m_order+1; i++){
             Expression sum_i=0;
@@ -555,7 +579,19 @@ class pCorrelatedSum {
                    double Cij = getdC2(i,j);
                    auto zp = 0.5 * (X() + Y());
                    auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i +  Cij * fcn::pow(legendre(zp, i) * legendre(zm, 2*j+1),2 );
+
+                  sum_i = sum_i +  Cij * fcn::pow(legendre(zp, i) * legendre(zm, 2*j+1),2 )  ;
+              int cov_kl=0;
+              for (int k=0;k<m_order+1;k++){
+                for (int l=0;l<m_order+1 - k;l++){
+                   double Ckl = getdC2(k,l);
+                   sum_i+= 2* (*cov)[cov_ij][cov_kl] *  fcn::pow(Cij * Ckl, 0.5) * legendre(zp, i) * legendre(zm, 2*j+1)*legendre(zp,k)*legendre(zm, 2*l+1);
+                   
+                }
+              }
+            cov_ij++;
+
+                
                    
 
                 }
@@ -626,6 +662,7 @@ class pCorrelatedSum {
         //complex_t val = exp(corr());
         if (m_pdebug) INFO("err correction = "<<pow(corr(), 0.5));
         return pow(corr(), 0.5);
+
       }
 
 
