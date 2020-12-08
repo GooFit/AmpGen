@@ -180,6 +180,12 @@ INFO("Mini = "<<mini.FCN());
   mini.doFit();
   FitResult * fr = new FitResult(mini);
   fr->writeToFile(NamedParameter<std::string>("Logfile", "BFit.log"));
+  auto covMatrix = mini.covMatrix();
+  std::string covMatrixFile = NamedParameter<std::string>("CovOutput", "BCov.root");
+  TFile * fCov = new TFile(covMatrixFile.c_str(), "recreate");
+  fCov->cd();
+  covMatrix.Write("CovMatrix");
+  delete fCov;
 }
   return 0;
 }

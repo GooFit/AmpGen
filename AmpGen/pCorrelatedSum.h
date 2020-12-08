@@ -304,6 +304,8 @@ class pCorrelatedSum {
     double slowNorm();
     void setEvents(EventList& list1, EventList& list2);
     void setMC(EventList& list1, EventList& list2);
+    void setMC1(EventList& list1);
+    void setMC2(EventList& list2);
 
     void updateNorms(const std::vector<size_t>& iA, const std::vector<size_t>& iB,
         const std::vector<size_t>& iC, const std::vector<size_t>& iD);

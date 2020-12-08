@@ -107,7 +107,7 @@ namespace AmpGen
 
 
 
-    double operator() (const Event& event1, const Event& event2){
+    double operator() (const eventValueType& event1, const eventValueType& event2){
         double prob=0;
         //double prob_norm=0;
         for_each( this->m_pdfs, [&prob, &event1, &event2]( auto& f ) { prob += f.prob( event1, event2 ); } );
@@ -126,6 +126,10 @@ namespace AmpGen
         m_events1 = &events1;
         m_events2 = &events2;
         for_each( m_pdfs, [&events1, &events2]( auto& f ) { f.setEvents( events1, events2 ); } );
+
+    }
+void setMC(eventListType& events1, eventListType& events2){  
+        for_each( m_pdfs, [&events1, &events2]( auto& f ) { f.setMC( events1, events2 ); } );
 
     }
     std::tuple<pdfTypes...> pdfs() const { return m_pdfs; }

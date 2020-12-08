@@ -131,7 +131,7 @@ void writePulls(std::string fileName, std::map<std::string, double> pulls){
 }
 
 
-EventList getEvents(std::string type, std::vector<std::string> sigName, std::string tagName, std::string dataFile, std::string intFile){
+EventList getEvents(std::string type, std::vector<std::string> sigName, std::string tagName, std::string dataFile){
    
 
 
@@ -147,8 +147,8 @@ EventList getEvents(std::string type, std::vector<std::string> sigName, std::str
 
     EventList sigEvents;
     EventList tagEvents;
-    EventList sigMCEvents;
-    EventList tagMCEvents;
+
+
     EventList null;
 
 
@@ -161,20 +161,14 @@ EventList getEvents(std::string type, std::vector<std::string> sigName, std::str
     tagname<<tokens[0];
     sigEvents = EventList(dataFile + signame.str() , signalType);
     tagEvents = EventList(dataFile + tagname.str() , tagType);
-    sigMCEvents = EventList(intFile + signame.str() , signalType);
-    tagMCEvents = EventList(intFile + tagname.str() , tagType);
+
+
     
     if (type=="signal"){
      return sigEvents;
     }
     else if (type=="tag"){ 
         return tagEvents;
-    }
-    else if (type=="sigMC"){
-        return sigMCEvents;
-    }
-    else if (type=="tagMC") {
-        return tagMCEvents;
     }
     else {
         return null;
@@ -271,6 +265,51 @@ INFO("Doing loop of Fits");
  std::vector<EventType> SigType;
  std::vector<EventType> TagType;
  std::vector<std::string> sumFactors;
+ SimFit simfit;
+
+ int NInt = NamedParameter<int>("NInt", 1e7);
+  INFO("Using "<<NInt<<" integration events");
+  EventType eventType(pNames);
+  EventList mc =  Generator<>(eventType, &rndm).generate(NInt);
+  std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > pdfs;
+
+for (int i=0; i < tags.size(); i++){
+   std::stringstream tag_log;
+    auto tagName = split(tags[i],' ')[0];
+    tag_log<<tagName<<"_fit.log";
+    std::stringstream tag_fit;
+    tag_fit<<tagName<<"_plots.root";
+    auto tag_plotName = tag_fit.str();
+    auto tag_logName = tag_log.str();
+
+    auto sigevents_tag = getEvents("signal", pNames, tags[i], dataFile);
+
+    auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile);
+
+
+    auto types = makeEventTypes(pNames, tags[i]);
+
+    auto signalType = types["signal"];
+    auto tagType = types["tag"];
+ 
+
+    EventList tagMCevents_tag = Generator<>(tagType, &rndm).generate(NInt);
+
+
+    SigData.emplace_back(sigevents_tag);
+    TagData.emplace_back(tagevents_tag);
+    SigInt.emplace_back(mc);
+    TagInt.emplace_back(tagMCevents_tag);
+    SigType.emplace_back(sigevents_tag.eventType());
+    TagType.emplace_back(tagevents_tag.eventType());
+    sumFactors.emplace_back("Psi(3770)");
+} 
+
+    CombCorrLL corrLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS, sumFactors);
+      simfit.add(corrLL);
+     
+    
+
 
  
   std::vector<EventList> BSigData;
@@ -279,49 +318,9 @@ INFO("Doing loop of Fits");
   std::vector<std::string> BsumFactors;
   std::vector<int> BgammaSigns;
   std::vector<bool> BuseXYs;
-
- std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > totalLL;
-// SimFit totalLL;
-for (int i=0; i < tags.size(); i++){
-MinuitParameterSet * MPS_tag = new MinuitParameterSet();
-  MPS_tag->loadFromStream();
-  if (makeCPConj){
-    INFO("Making CP conjugate states");
-    add_CP_conjugate(*MPS_tag);
-  }
-    std::stringstream tag_log;
-    auto tagName = split(tags[i],' ')[0];
-    tag_log<<tagName<<"_fit.log";
-    std::stringstream tag_fit;
-    tag_fit<<tagName<<"_plots.root";
-    auto tag_plotName = tag_fit.str();
-    auto tag_logName = tag_log.str();
-
-    auto sigevents_tag = getEvents("signal", pNames, tags[i], dataFile, intFile);
-//    auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
-    auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
-//    auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
+  std::vector<bool> BConj;
 
 
-    auto types = makeEventTypes(pNames, tags[i]);
-
-    auto signalType = types["signal"];
-    auto tagType = types["tag"];
- 
-    EventList sigMCevents_tag = Generator<>(signalType, &rndm).generate(1e7);
-    EventList tagMCevents_tag = Generator<>(tagType, &rndm).generate(1e7);
-
-
-
-    SigData.push_back(sigevents_tag);
-    TagData.push_back(tagevents_tag);
-    SigInt.push_back(sigMCevents_tag);
-    TagInt.push_back(tagMCevents_tag);
-    SigType.push_back(sigevents_tag.eventType());
-    TagType.push_back(tagevents_tag.eventType());
-    sumFactors.push_back("Psi3770");
-     
-  }
 
   for (auto& BTag : BTags){
     INFO("B DecayType = "<<BTag); 
@@ -333,10 +332,6 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     bool useXY = std::stoi(split(BTag,' ')[4]);
     
     INFO("GammaSign = "<<gammaSign);
-    //if (B_Conj == 1){
-    //  eventType = eventType.conj(true);
-    //}
-
     auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY, B_Conj);
 
     std::string DataFile = NamedParameter<std::string>("BDataSample", "");
@@ -361,39 +356,35 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     sig.setMC(Int);
 
 
-    BSigData.push_back(Data);
-    BSigInt.push_back(Int);
-    BSigType.push_back(eventType);
-    BsumFactors.push_back(B_Pref);
-    BgammaSigns.push_back(gammaSign);
-    BuseXYs.push_back(useXY);
+    BSigData.emplace_back(Data);
+    BSigInt.emplace_back(Int);
+    BSigType.emplace_back(eventType);
+    BsumFactors.emplace_back(B_Pref);
+    BgammaSigns.emplace_back(gammaSign);
+    BuseXYs.emplace_back(useXY);
+    BConj.emplace_back(B_Conj);
     
   }
 
 
-  if (doCombFit){
-    
-    //auto combLL = CombGamCorrLL(SigData, TagData, BSigData, SigInt, TagInt, BSigInt, SigType, TagType, BSigType, MPS, BsumFactors, BgammaSigns, BuseXYs);
-   auto combLL =  CombGamCorrLL(
-        SigData, 
-        TagData, 
-        BSigData, 
-        SigInt, 
-        TagInt, 
-        BSigInt, 
-        SigType,
-        TagType,
-        BSigType,
-        MPS,
-        BsumFactors,
-        BgammaSigns,
-        BuseXYs);
 
-    INFO("CombCorrLL = "<<combLL.getVal());
-//    auto commLL2 = SumLL(_LLs);
+
     INFO("Making Combined Minimiser object");
-//    INFO("totalLL = "<<totalLL.getVal());
-    Minimiser combMini = Minimiser(combLL, &MPS);
+    std::vector<SumPDF<EventList, pCoherentSum&>> pdfsB;
+
+pdfsB.reserve(BSigData.size());
+  std::vector<pCoherentSum> fcsB(BSigData.size());
+  for (size_t i=0;i<BSigData.size(); i++){
+   fcsB[i] = pCoherentSum(eventType, MPS, BsumFactors[i], BgammaSigns[i], BuseXYs[i], BConj[i]);
+   pdfsB.emplace_back( make_pdf(fcsB[i])); 
+   pdfsB[i].setEvents(BSigData[i]);
+//   auto& mc  = SigInt[i];
+   for_each(pdfsB[i].pdfs(), [&mc](auto& pdf){pdf.setMC(mc);});
+   simfit.add(pdfsB[i]);
+}
+    
+
+    Minimiser combMini = Minimiser(simfit, &MPS);
     combMini.gradientTest();
    // combMini.prepare();
     INFO("Minimising now");
@@ -418,7 +409,12 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     }
     writePulls(logFile, pulls);
    fr->writeToFile(logFile);
- }
+ std::string covMatrixFile = NamedParameter<std::string>("CovOutput", "gammaCombCorrCov.root");
+  auto  covMatrix = combMini.covMatrix();
+  TFile * fCov = new TFile(covMatrixFile.c_str(), "recreate");
+  fCov->cd();
+  covMatrix.Write("CovMatrix"); 
+  fCov->Close();
 
 
   return 0;

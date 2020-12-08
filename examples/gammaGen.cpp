@@ -182,9 +182,9 @@ INFO("B DecayType = "<<BTag);
     }
     INFO("GammaSign = "<<gammaSign);
     if (B_Conj == 1){
-      eventType = eventType.conj(true);
-    }
-    pCoherentSum sig2( eventType, MPS, B_Pref, gammaSign, useXY);
+      //eventType = eventType.conj(true);
+   }
+    pCoherentSum sig2( eventType, MPS, B_Pref, gammaSign, useXY, false);
     EventList mc( eventType);
       Generator<PhaseSpace> signalGenerator( phsp );
 //      CoherentSum sig(eventType, MPS);

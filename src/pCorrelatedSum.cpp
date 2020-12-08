@@ -74,6 +74,11 @@ pCorrelatedSum::pCorrelatedSum(const EventType& type1, const EventType& type2, c
   }
 }
 void pCorrelatedSum::prepare(){
+  if (m_debug){
+    INFO("Have "<<m_integratorAC.events().size()<<" AC events");
+    INFO("Have "<<m_integratorBD.events().size()<<" BD events");
+  }
+
   if (m_debug) INFO("Preparing A");
   m_A.prepare();
   if (m_debug) INFO("Preparing B");
@@ -546,6 +551,31 @@ void pCorrelatedSum::setMC(EventList& list1, EventList& list2){
   m_C.setMC(list1);
   m_D.setMC(list2);
 }
+void pCorrelatedSum::setMC1(EventList& list1){
+  m_integratorAC = Integrator<10>(&list1);
+
+  m_integratorAA = Integrator<10>(&list1);
+
+  m_integratorCC = Integrator<10>(&list1);
+
+  m_A.setMC(list1);
+
+  m_C.setMC(list1);
+
+}
+void pCorrelatedSum::setMC2(EventList& list2){
+
+  m_integratorBD = Integrator<10>(&list2);
+
+  m_integratorBB = Integrator<10>(&list2);
+
+  m_integratorDD = Integrator<10>(&list2);
+
+  m_B.setMC(list2);
+
+  m_D.setMC(list2);
+}
+
 
 complex_t pCorrelatedSum::getVal(const Event& evt1, const Event& evt2) const {
   complex_t A = m_A.getVal(evt1);
