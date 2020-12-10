@@ -20,6 +20,7 @@ template <typename PDF>
 FitResult* Fit( PDF&& ll, pCorrelatedSum& cs, EventList data1, EventList data2, EventList mc1, EventList mc2, MinuitParameterSet& MPS , std::string logFile,   std::map<std::string, std::vector<double> > inits );
 
 
+
 MinuitParameterSet *  copyMPS(MinuitParameterSet& mps);
 
 std::map<std::string, double>  getPulls(std::map<std::string, std::vector<double> > fit, std::map<std::string, std::vector<double> > init);
@@ -66,6 +67,145 @@ struct Moment {
   double val() { return x; }
   double var() { return N == 0 ? 0 : xx; }
 };
+
+
+void FitFractions(int minEvents, EventList sigevents_tag, EventList sigMCevents_tag, EventList tagMCevents_tag, FitResult* fr, pCorrelatedSum cs_tag){
+//   int minEvents=15;
+      auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.eventType().dof() ) );
+
+      std::vector<Moment> data( binning.size() );
+      std::vector<Moment> mc( binning.size() );
+
+      INFO( "Splitting: " << sigevents_tag.size() << " data " << sigMCevents_tag.size() << " amongst " << binning.size()
+      << " bins" );
+      unsigned int j           = 0;
+      double total_data_weight = 0;
+      double total_int_weight  = 0;
+      for ( auto& d : sigevents_tag ) {
+        if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " data events" );
+        double w = d.weight();
+        data[binning.getBinNumber( d )].add( d.weight() );
+        total_data_weight += w;
+        j++;
+      }
+      j = 0;
+      for ( int i=0; i < sigMCevents_tag.size(); i++ ) {
+        auto evt1 = sigMCevents_tag[i];
+        auto evt2 = tagMCevents_tag[i];
+        if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " sim. events" );
+        double w = cs_tag.prob( evt1, evt2 ) * (evt1.weight() / evt1.genPdf()) * (evt2.weight() / evt2.genPdf());
+        mc[binning.getBinNumber( evt1 )].add( w );
+        total_int_weight += w;
+        j++;
+      }
+      double chi2 = 0;
+      for ( unsigned int i = 0; i < binning.size(); ++i ) {
+        mc[i].rescale( total_data_weight / total_int_weight );
+        double delta = data[i].val() - mc[i].val();
+        double tChi2 = delta * delta / ( data[i].val() + mc[i].var() );
+        chi2 += tChi2;
+      }
+      auto Bins = binning.size();
+      auto fitFractionss = cs_tag.fitFractions( fr->getErrorPropagator() ); 
+      std::vector<FitFraction> ffs;
+      for (auto fitFractions : fitFractionss){
+        for (auto fitFraction : fitFractions){
+          ffs.push_back(fitFraction);
+        }
+      }
+      fr->addFractions( ffs );
+      fr->addChi2( chi2, Bins );
+      fr->print();
+}
+
+
+void makeProjection(pCorrelatedSum cs_tag, std::string tag_plotName, int nBins, EventList sigevents_tag, EventList tagevents_Tag, EventList sigMCevents_tag, EventList tagMCevents_tag){
+        INFO( "norm[1] = " << cs_tag.norm() );
+        TFile* f = TFile::Open(tag_plotName.c_str(),"RECREATE");
+        auto projections = sigevents_tag.eventType().defaultProjections(nBins);
+        for( auto& projection : projections ){
+          auto data_plot = projection(sigevents_tag);
+          auto hist = projection.plot();
+          for(unsigned i = 0 ; i != sigMCevents_tag.size(); ++i)
+          {
+            hist->Fill( projection( sigMCevents_tag[i] ), cs_tag.prob( sigMCevents_tag[i], tagMCevents_tag[i] ) );
+          }
+          hist->Scale( data_plot->Integral() / hist->Integral() );
+          hist->SetName( (std::string("MC_")+hist->GetName()).c_str() );
+          hist->Write();
+          data_plot->Write();
+          auto pull = (TH1D*) hist->Clone();
+          pull->Add(data_plot, -1);
+          pull->SetName( (std::string("Pull_") + data_plot->GetName()).c_str() );
+          pull->Write();
+        }
+        auto p2 = sigMCevents_tag.eventType().defaultProjections(nBins);
+        for( unsigned i = 0 ; i != p2.size() -1; ++i )
+        {
+          for( unsigned j=i+1; j < p2.size(); ++j )
+          {
+            auto dalitz = Projection2D( p2[i], p2[j] );
+            auto hdalitz = dalitz.plot();
+            auto data_plot = sigevents_tag.makeProjection(dalitz);
+            for( unsigned event = 0 ; event != sigMCevents_tag.size(); ++event )
+            {
+              auto pos = dalitz(sigMCevents_tag[event]);
+              hdalitz->Fill( pos.first, pos.second, cs_tag.prob( sigMCevents_tag[event], tagMCevents_tag[event] ) );
+            }
+            hdalitz->Scale( data_plot->Integral() / hdalitz->Integral() );
+            hdalitz->SetName( ( std::string("MC_") + hdalitz->GetName() ).c_str() );
+            hdalitz->Write();
+            data_plot->Write(); 
+            auto pull2D = (TH2D*) hdalitz->Clone();
+            pull2D->Add(data_plot, -1);
+            pull2D->SetName( (std::string("Pull_") + data_plot->GetName()).c_str() );
+            pull2D->Write();
+          }
+        }
+        f->Close();
+      }
+    
+void TagFit(EventList sigevents_tag, EventList tagevents_tag, MinuitParameterSet MPS_tag, EventList mc, EventList tagMCevents_tag, std::map<std::string, std::vector<double> > inits, std::string tag_logName, std::string tag_plotName, int nBins, int maxAttempts){
+  auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), MPS_tag);
+      cs_tag.setEvents(sigevents_tag, tagevents_tag);
+      cs_tag.setMC(mc, tagMCevents_tag);
+      cs_tag.prepare();
+      //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
+      auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag,cs_tag);
+      auto mini_tag = Minimiser(LL_tag2, &MPS_tag);
+      
+      //_LLs.push_back(LL_tag2);
+
+      mini_tag.prepare();
+      //INFO("Fitting "<<i<<" out of "<<tags.size()  );
+
+      int attempt = 1;
+        mini_tag.gradientTest();
+      mini_tag.doFit();
+      if (mini_tag.status()!=0){
+
+        INFO("Didn't seem to get a minimum (returned "<<mini_tag.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
+      while (attempt < maxAttempts && mini_tag.status() != 0){
+        INFO("Didn't seem to get a minimum (returned "<<mini_tag.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
+
+        mini_tag.doFit();
+        attempt++;
+      }
+      }
+//      totalLL.add(LL_tag2);
+      FitResult * fr = new FitResult(mini_tag); 
+
+      FitFractions(15, sigevents_tag, mc,tagMCevents_tag, fr, cs_tag );
+
+      std::map<std::string, std::vector<double> > fits = getParams(MPS_tag);
+      std::map<std::string, double> pulls = getPulls(fits, inits);
+      for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
+        INFO("Pull = "<<it->first<<" "<<it->second);
+      }
+      writePulls(tag_logName, pulls);
+      makeProjection(cs_tag, tag_plotName, nBins, sigevents_tag, tagevents_tag, mc, tagMCevents_tag);
+      fr->writeToFile(tag_logName);
+    }
 
 int main( int argc, char* argv[] )
 {
@@ -148,14 +288,21 @@ INFO("Doing loop of Fits");
  std::vector<EventType> TagType;
  std::vector<std::string> sumFactors;
 
- std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > totalLL;
+
+  SimFit simfit;
+
+  int NInt = NamedParameter<int>("NInt", 1e7);
+  INFO("Using "<<NInt<<" integration events");
+  EventType eventType(pNames);
+  EventList mc =  Generator<>(eventType, &rndm).generate(NInt);
+  std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > pdfs;
 // SimFit totalLL;
 for (int i=0; i < tags.size(); i++){
-MinuitParameterSet * MPS_tag = new MinuitParameterSet();
-  MPS_tag->loadFromStream();
+MinuitParameterSet  MPS_tag;// = new MinuitParameterSet();
+  MPS_tag.loadFromStream();
   if (makeCPConj){
     INFO("Making CP conjugate states");
-    add_CP_conjugate(*MPS_tag);
+    add_CP_conjugate(MPS_tag);
   }
     std::stringstream tag_log;
     auto tagName = split(tags[i],' ')[0];
@@ -175,158 +322,62 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     auto signalType = types["signal"];
     auto tagType = types["tag"];
  
-    EventList sigMCevents_tag = Generator<>(signalType, &rndm).generate(1e7);
-    EventList tagMCevents_tag = Generator<>(tagType, &rndm).generate(1e7);
+ //   EventList sigMCevents_tag = Generator<>(signalType, &rndm).generate(1e7);
+    EventList tagMCevents_tag = Generator<>(tagType, &rndm).generate(NInt);
 
 
-    SigData.push_back(sigevents_tag);
-    TagData.push_back(tagevents_tag);
-    SigInt.push_back(sigMCevents_tag);
-    TagInt.push_back(tagMCevents_tag);
-    SigType.push_back(sigevents_tag.eventType());
-    TagType.push_back(tagevents_tag.eventType());
-    sumFactors.push_back("Bp2Dhp");
+    SigData.emplace_back(sigevents_tag);
+    TagData.emplace_back(tagevents_tag);
+    SigInt.emplace_back(mc);
+    TagInt.emplace_back(tagMCevents_tag);
+    SigType.emplace_back(sigevents_tag.eventType());
+    TagType.emplace_back(tagevents_tag.eventType());
+    sumFactors.emplace_back("Psi(3770)");
 
-    if (doTagFit) { 
-      auto cs_tag = pCorrelatedSum(sigevents_tag.eventType(), tagevents_tag.eventType(), *MPS_tag);
-      cs_tag.setEvents(sigevents_tag, tagevents_tag);
-      cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
-      cs_tag.prepare();
-      //auto LL_tag2 = make_likelihood( events_tag["signal"], events_tag["tag"], false, cs_tag);
-      auto LL_tag2 = make_likelihood( sigevents_tag, tagevents_tag,cs_tag);
-      auto mini_tag = Minimiser(LL_tag2, MPS_tag);
-      totalLL.push_back(LL_tag2);
-      //_LLs.push_back(LL_tag2);
+    if (doTagFit) TagFit(sigevents_tag, tagevents_tag, MPS_tag, mc, tagMCevents_tag, inits, tag_logName, tag_plotName, 15, maxAttempts);
 
-      mini_tag.prepare();
-      //INFO("Fitting "<<i<<" out of "<<tags.size()  );
+}
 
-      int attempt = 1;
-        mini_tag.gradientTest();
-      mini_tag.doFit();
-      if (mini_tag.status()!=0){
-
-        INFO("Didn't seem to get a minimum (returned "<<mini_tag.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
-      while (attempt < maxAttempts && mini_tag.status() != 0){
-        INFO("Didn't seem to get a minimum (returned "<<mini_tag.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
-
-        mini_tag.doFit();
-        attempt++;
-      }
-      }
-//      totalLL.add(LL_tag2);
-      FitResult * fr = new FitResult(mini_tag); 
-      int minEvents=15;
-      auto binning = BinDT( sigevents_tag, MinEvents( minEvents ), Dim( sigevents_tag.eventType().dof() ) );
-
-      std::vector<Moment> data( binning.size() );
-      std::vector<Moment> mc( binning.size() );
-
-      INFO( "Splitting: " << sigevents_tag.size() << " data " << sigMCevents_tag.size() << " amongst " << binning.size()
-      << " bins" );
-      unsigned int j           = 0;
-      double total_data_weight = 0;
-      double total_int_weight  = 0;
-      for ( auto& d : sigevents_tag ) {
-        if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " data events" );
-        double w = d.weight();
-        data[binning.getBinNumber( d )].add( d.weight() );
-        total_data_weight += w;
-        j++;
-      }
-      j = 0;
-      for ( int i=0; i < sigMCevents_tag.size(); i++ ) {
-        auto evt1 = sigMCevents_tag[i];
-        auto evt2 = tagMCevents_tag[i];
-        if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " sim. events" );
-        double w = cs_tag.prob( evt1, evt2 ) * (evt1.weight() / evt1.genPdf()) * (evt2.weight() / evt2.genPdf());
-        mc[binning.getBinNumber( evt1 )].add( w );
-        total_int_weight += w;
-        j++;
-      }
-      double chi2 = 0;
-      for ( unsigned int i = 0; i < binning.size(); ++i ) {
-        mc[i].rescale( total_data_weight / total_int_weight );
-        double delta = data[i].val() - mc[i].val();
-        double tChi2 = delta * delta / ( data[i].val() + mc[i].var() );
-        chi2 += tChi2;
-      }
-      auto Bins = binning.size();
-      auto fitFractionss = cs_tag.fitFractions( fr->getErrorPropagator() ); 
-      std::vector<FitFraction> ffs;
-      for (auto fitFractions : fitFractionss){
-        for (auto fitFraction : fitFractions){
-          ffs.push_back(fitFraction);
-        }
-      }
-      fr->addFractions( ffs );
-      fr->addChi2( chi2, Bins );
-      fr->print();
-      std::map<std::string, std::vector<double> > fits = getParams(*MPS_tag);
-      std::map<std::string, double> pulls = getPulls(fits, inits);
-      for(map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
-        INFO("Pull = "<<it->first<<" "<<it->second);
-      }
-      writePulls(tag_logName, pulls);
-      if (doProjections){
-        INFO( "norm[1] = " << cs_tag.norm() );
-        TFile* f = TFile::Open(tag_plotName.c_str(),"RECREATE");
-        auto projections = sigevents_tag.eventType().defaultProjections(nBins);
-        for( auto& projection : projections ){
-          auto data_plot = projection(sigevents_tag);
-          auto hist = projection.plot();
-          for(unsigned i = 0 ; i != sigMCevents_tag.size(); ++i)
-          {
-            hist->Fill( projection( sigMCevents_tag[i] ), cs_tag.prob( sigMCevents_tag[i], tagMCevents_tag[i] ) );
-          }
-          hist->Scale( data_plot->Integral() / hist->Integral() );
-          hist->SetName( (std::string("MC_")+hist->GetName()).c_str() );
-          hist->Write();
-          data_plot->Write();
-          auto pull = (TH1D*) hist->Clone();
-          pull->Add(data_plot, -1);
-          pull->SetName( (std::string("Pull_") + data_plot->GetName()).c_str() );
-          pull->Write();
-        }
-        auto p2 = sigMCevents_tag.eventType().defaultProjections(nBins);
-        for( unsigned i = 0 ; i != p2.size() -1; ++i )
-        {
-          for( unsigned j=i+1; j < p2.size(); ++j )
-          {
-            auto dalitz = Projection2D( p2[i], p2[j] );
-            auto hdalitz = dalitz.plot();
-            auto data_plot = sigevents_tag.makeProjection(dalitz);
-            for( unsigned event = 0 ; event != sigMCevents_tag.size(); ++event )
-            {
-              auto pos = dalitz(sigMCevents_tag[event]);
-              hdalitz->Fill( pos.first, pos.second, cs_tag.prob( sigMCevents_tag[event], tagMCevents_tag[event] ) );
-            }
-            hdalitz->Scale( data_plot->Integral() / hdalitz->Integral() );
-            hdalitz->SetName( ( std::string("MC_") + hdalitz->GetName() ).c_str() );
-            hdalitz->Write();
-            data_plot->Write(); 
-            auto pull2D = (TH2D*) hdalitz->Clone();
-            pull2D->Add(data_plot, -1);
-            pull2D->SetName( (std::string("Pull_") + data_plot->GetName()).c_str() );
-            pull2D->Write();
-          }
-        }
-        f->Close();
-      }
-      fr->writeToFile(tag_logName);
-    }     
-  }
-
+      std::vector<std::function<double( void )>> testpdfs;
 
 
   if (doCombFit){
+    
     CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS, sumFactors);
-    auto combLL2 = SumLL<CorrelatedLL<EventList, pCorrelatedSum&>>(totalLL);
+    pdfs.reserve(SigData.size());
+    std::vector<pCorrelatedSum> fcs(SigData.size());
+    for (size_t i=0; i < SigData.size(); i++){
+      EventList tagMC = TagInt[i];
+      fcs[i] = pCorrelatedSum(SigType[i], TagType[i], MPS);
+      fcs[i].setMC(mc, tagMC);
+      INFO("Have "<<tagMC.size()<<" int events");
+      fcs[i].prepare();
+      auto cLL = make_likelihood(SigData[i], TagData[i], fcs[i]);
+//      cLL.setMC(mc, tagMC);
+      pdfs.emplace_back(cLL);
+      
+     for_each(pdfs[i].pdfs(), [&mc](auto& pdf){pdf.setMC1(mc);});
+     for_each(pdfs[i].pdfs(), [&tagMC](auto& pdf){pdf.setMC2(tagMC);});
+ //     auto pdf = std::get<i>(pdfs);
+//     testpdfs.emplace_back( [&pdf]() -> double { return pdf.getVal(); } );
+
+      INFO("pdfs["<<i<<"] = "<<pdfs[i].getVal());
+//      INFO("pdf() = "<<pdfs[i]());
+
+
+
+
+//    simfit.add(pdfs[i]);
+    INFO("SimFit = "<<simfit.getVal());
+     
+    }
+    //auto combLL2 = SumLL<CorrelatedLL<EventList, pCorrelatedSum&>>(totalLL);
     INFO("CombCorrLL = "<<combLL.getVal());
 //    auto commLL2 = SumLL(_LLs);
     INFO("Making Combined Minimiser object");
 //    INFO("totalLL = "<<totalLL.getVal());
-    Minimiser combMini = Minimiser(combLL, &MPS);
+    simfit.add(combLL);
+    Minimiser combMini = Minimiser(simfit, &MPS);
     combMini.gradientTest();
    // combMini.prepare();
     INFO("Minimising now");
@@ -351,6 +402,12 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     }
     writePulls(logFile, pulls);
    fr->writeToFile(logFile);
+    auto covMatrix = combMini.covMatrix();
+    std::string covCombOutput = NamedParameter<std::string>("CovOutput", "QcFitCov.root");
+    TFile * fCov = new TFile(covCombOutput.c_str(), "recreate");
+    fCov->cd();
+    covMatrix.Write("CovMatrix");
+    delete fCov;
  }
 
 
@@ -711,8 +768,8 @@ EventList getEvents(std::string type, std::vector<std::string> sigName, std::str
     tagname<<tokens[0];
     sigEvents = EventList(dataFile + signame.str() , signalType);
     tagEvents = EventList(dataFile + tagname.str() , tagType);
-    sigMCEvents = EventList(intFile + signame.str() , signalType);
-    tagMCEvents = EventList(intFile + tagname.str() , tagType);
+
+
     
     if (type=="signal"){
      return sigEvents;
