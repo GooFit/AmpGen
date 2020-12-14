@@ -123,7 +123,7 @@ std::map<std::string, EventType> makeEventTypes(std::vector<std::string> sigName
 
 
   
-EventList getEvents(std::string type, std::vector<std::string> sigName, std::string tagName, std::string dataFile, std::string intFile){
+EventList getEvents(std::string type, std::vector<std::string> sigName, std::string tagName, std::string dataFile){
    
     /*
     EventType signalType( sigName );
@@ -147,8 +147,8 @@ EventList getEvents(std::string type, std::vector<std::string> sigName, std::str
 
     EventList sigEvents;
     EventList tagEvents;
-    EventList sigMCEvents;
-    EventList tagMCEvents;
+
+
     EventList null;
 
 
@@ -161,20 +161,14 @@ EventList getEvents(std::string type, std::vector<std::string> sigName, std::str
     tagname<<tokens[0];
     sigEvents = EventList(dataFile + signame.str() , signalType);
     tagEvents = EventList(dataFile + tagname.str() , tagType);
-    sigMCEvents = EventList(intFile + signame.str() , signalType);
-    tagMCEvents = EventList(intFile + tagname.str() , tagType);
+
+
     
     if (type=="signal"){
      return sigEvents;
     }
     else if (type=="tag"){ 
         return tagEvents;
-    }
-    else if (type=="sigMC"){
-        return sigMCEvents;
-    }
-    else if (type=="tagMC") {
-        return tagMCEvents;
     }
     else {
         return null;
@@ -188,7 +182,37 @@ EventList getEvents(std::string type, std::vector<std::string> sigName, std::str
 void printOut(EventList eventsSig, EventList eventsTag, pCorrelatedSum cs_tag, std::string output){
   std::ofstream out;
   out.open(output.c_str()); 
+  int nElements = 6;
+
+  TMatrixD * cov = new TMatrixD(nElements, nElements);
+  std::string covFile = NamedParameter<std::string>("CovFile", "");
+
+  if (covFile==""){
+    for (int i=0;i<nElements;i++){
+      for (int j =0;j<nElements;j++){
+        (*cov)[i][j] = 0;
+      }
+    }
+  }
+ 
+  else{
+    TFile * file = TFile::Open(covFile.c_str());
+    TMatrixD * V = (TMatrixD*)file->Get("CovMatrix");
+    cov = V;
+    if (NamedParameter<bool>("pCorrelatedSum::printCov", false)){
+    V->Print();
+    }
+    file->Close();
+  }
+
+
+  int printFreq = NamedParameter<int>("printFreq", 1000, "Print every n events");
   for (int i=0; i < eventsSig.size(); i++){
+    //double percentage = (double)i/(double)eventsSig.size();
+    //if (percentage != 0 && std::fmod(percentage, 0.01)==0)
+    if(i%printFreq==0)INFO ("At "<<i<<"/"<<eventsSig.size());
+
+
 
     auto evt_sig = eventsSig[i];
     auto evt_tag = eventsTag[i];
@@ -217,7 +241,7 @@ void printOut(EventList eventsSig, EventList eventsTag, pCorrelatedSum cs_tag, s
     auto ABCD = cs_tag.getVal(evt_sig, evt_tag);
     auto corr = vals[5];
     auto ACst = A * std::conj(C);
-    auto dCorr = cs_tag.errcorrection(evt_sig, NamedParameter<std::string>("pCorrelatedSum::CovFile", ""));
+    auto dCorr = cs_tag.errcorrection(evt_sig, cov);
 
     auto prob = cs_tag.prob(evt_sig, evt_tag)/eventsSig.size();
     auto cosDD = -((fcn::pow(abs(ABCD), 2)() - fcn::pow(abs(A), 2)() * fcn::pow(abs(B), 2)() - fcn::pow(abs(C), 2)() * fcn::pow(abs(D), 2)())/(2 * abs(A) * abs(B) * abs(C) * abs(D) )).real();
@@ -263,6 +287,30 @@ out.close();
 
 
 void printPerBin(int nBins, pCorrelatedSum cs_tag, EventList sigevents_tag, EventList tagevents_tag, std::string tagName){
+  int nElements = 6;
+
+  TMatrixD * cov = new TMatrixD(nElements, nElements);
+  std::string covFile = NamedParameter<std::string>("CovFile", "");
+
+  if (covFile==""){
+    for (int i=0;i<nElements;i++){
+      for (int j =0;j<nElements;j++){
+        (*cov)[i][j] = 0;
+      }
+    }
+  }
+ 
+  else{
+    TFile * file = TFile::Open(covFile.c_str());
+    TMatrixD * V = (TMatrixD*)file->Get("CovMatrix");
+    cov = V;
+    if (NamedParameter<bool>("pCorrelatedSum::printCov", false)){
+    V->Print();
+    }
+    file->Close();
+  }
+
+
 
 for (int j=1;j<nBins + 1;j++){
   auto eLow = 2 * M_PI * j/8. - 5 * M_PI/4.;
@@ -308,7 +356,7 @@ for (int j=1;j<nBins + 1;j++){
     auto prob = cs_tag.prob(evt_sig, evt_tag);
 //    INFO("prob = "<<prob<<" Aprob = "<<aA(evt_sig)<<" Cprob = "<<aC(evt_sig));
     auto ACst = A * std::conj(C);
-    auto dCorr = cs_tag.errcorrection(evt_sig);
+    auto dCorr = cs_tag.errcorrection(evt_sig, cov);
   auto A2 = aA(evt_sig);
     auto B2 = aB(evt_tag);
     auto C2 = aC(evt_sig);
@@ -443,6 +491,30 @@ void printDT(int i, int j, EventList sigEvents, EventList tagEvents, pCorrelated
   std::stringstream outNameMM;
   outNameMM << "Kspipi"<<pref<<-i<<-j<<".csv";
   outMM.open(outNameMM.str().c_str());
+  int nElements = 6;
+
+  TMatrixD * cov = new TMatrixD(nElements, nElements);
+  std::string covFile = NamedParameter<std::string>("CovFile", "");
+
+  if (covFile==""){
+    for (int i=0;i<nElements;i++){
+      for (int j =0;j<nElements;j++){
+        (*cov)[i][j] = 0;
+      }
+    }
+  }
+ 
+  else{
+    TFile * file = TFile::Open(covFile.c_str());
+    TMatrixD * V = (TMatrixD*)file->Get("CovMatrix");
+    cov = V;
+    if (NamedParameter<bool>("pCorrelatedSum::printCov", false)){
+    V->Print();
+    }
+    file->Close();
+  }
+
+
   
 
   auto dd_Low_i = 2 * M_PI * i/8. - 5 * M_PI/4.;
@@ -481,7 +553,7 @@ void printDT(int i, int j, EventList sigEvents, EventList tagEvents, pCorrelated
 
     auto ACst = A * std::conj(C);
     auto DBst = D * std::conj(B);
-    auto dCorr = cs_tag.errcorrection(evt_sig);
+    auto dCorr = cs_tag.errcorrection(evt_sig, cov);
     auto A2 = aA(evt_sig);
     auto B2 = aB(evt_tag);
     auto C2 = aC(evt_sig);
@@ -545,8 +617,10 @@ int main( int argc, char** argv )
   EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
                        NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
   bool doBoost  = NamedParameter<bool>("doBoost", true, "Boost to psi(3770) frame");
-  bool doQC  = NamedParameter<bool>("doQC", true, "Boost to psi(3770) frame");
+  bool doQC  = NamedParameter<bool>("doQC", true, "Use QC");
   auto tags           = NamedParameter<std::string>("TagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();
+  int NInt = NamedParameter<int>("NInt", 10000000);
+  int NPoints = NamedParameter<int>("NPoints", 10000);
 
 
   std::string dataFile = NamedParameter<std::string>("DataSample", ""          , "Name of file containing data sample to fit." );
@@ -560,22 +634,43 @@ int main( int argc, char** argv )
   gRandom = &rndm;
 
 if (doQC){
-for (int i=0; i < tags.size(); i++){
-   MinuitParameterSet *  MPS = new MinuitParameterSet(); 
-  MPS->loadFromStream();
+  MinuitParameterSet MPS;
+  MPS.loadFromStream();
   if (makeCPConj){
     INFO("Making CP conjugate states");
-    add_CP_conjugate(*MPS);
+    add_CP_conjugate(MPS);
   }
-    auto sigevents_tag = getEvents("signal", pNames, tags[i], dataFile, intFile);
-    auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
-    auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
-    auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
+  for (int i=0; i < tags.size(); i++){
 
-    auto sigEventType = sigevents_tag.eventType();
-    auto tagEventType = tagevents_tag.eventType();
-    CoherentSum sig(sigEventType, *MPS);
-    pCorrelatedSum cs_tag (sigevents_tag.eventType(), tagevents_tag.eventType(), *MPS);
+
+
+    INFO("Getting Tag name split "<<tags[i]);
+    auto tokens       = split(tags[i], ' ');
+    INFO("Building Tag particle"<<tokens[1]);
+    auto types = makeEventTypes(pNames, tags[i]);
+    INFO("Build EventType");
+    auto signalType = types["signal"];
+    auto tagType = types["tag"];
+
+
+    EventList sigevents_tag = Generator<>(signalType, &rndm).generate(NPoints);
+    EventList tagevents_tag = Generator<>(tagType, &rndm).generate(NPoints);
+
+
+    if (dataFile != ""){
+      sigevents_tag = getEvents("signal", pNames, tags[i], dataFile);
+      tagevents_tag = getEvents("tag", pNames, tags[i], dataFile);
+    }
+
+
+ 
+
+
+    EventList sigMCevents_tag = Generator<>(sigType, &rndm).generate(NInt);
+    EventList tagMCevents_tag = Generator<>(tagType, &rndm).generate(NInt);
+ 
+    CoherentSum sig(signalType, MPS);
+    pCorrelatedSum cs_tag (signalType, tagType, MPS);
 
      
     
@@ -583,7 +678,7 @@ for (int i=0; i < tags.size(); i++){
     cs_tag.setEvents(sigevents_tag, tagevents_tag);
     cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
     cs_tag.prepare();
- std::ofstream out; 
+    std::ofstream out; 
     
     std::stringstream tag_log;
     auto tagName = split(tags[i],' ')[0];
@@ -601,40 +696,40 @@ for (int i=0; i < tags.size(); i++){
     std::ofstream outMC;
     outMC.open(tag_logMC.str().c_str()); 
 
-  printOut(sigevents_tag, tagevents_tag, cs_tag, tag_log.str());
-  //printOut(sigMCevents_tag, tagMCevents_tag, cs_tag, tag_logMC.str());
+    printOut(sigevents_tag, tagevents_tag, cs_tag, tag_log.str());
+    //printOut(sigMCevents_tag, tagMCevents_tag, cs_tag, tag_logMC.str());
 
-  std::stringstream tagNameMC;
-  tagNameMC<<tagName<<"MC";
+    std::stringstream tagNameMC;
+    tagNameMC<<tagName<<"MC";
 
-  if (NamedParameter<bool>("BinPrint", false)){ 
-  printPerBin(8, cs_tag, sigevents_tag, tagevents_tag, tagName);
-  //printPerBin(8, cs_tag, sigMCevents_tag, tagMCevents_tag, tagNameMC.str());
-  if (tagName=="Kspipi"){
-    for (int i=1;i<9;i++){
-      for (int j=1;j<9;j++){
+    if (NamedParameter<bool>("BinPrint", false)){ 
+    printPerBin(8, cs_tag, sigevents_tag, tagevents_tag, tagName);
+    //printPerBin(8, cs_tag, sigMCevents_tag, tagMCevents_tag, tagNameMC.str());
+    if (tagName=="Kspipi"){
+      for (int i=1;i<9;i++){
+        for (int j=1;j<9;j++){
         printDT(i, j, sigevents_tag, tagevents_tag, cs_tag);
         //printDT(i,j, sigMCevents_tag, tagMCevents_tag, cs_tag, "MC");
+        }
       }
     }
   }
+
+
   }
-
-
-}
 }
 
 else{
-   MinuitParameterSet *  MPS = new MinuitParameterSet(); 
-  MPS->loadFromStream();
+   MinuitParameterSet MPS;
+  MPS.loadFromStream();
   if (makeCPConj){
     INFO("Making CP conjugate states");
-    add_CP_conjugate(*MPS);
+    add_CP_conjugate(MPS);
   }
    EventList events(dataFile, eventType);
 
-  EventList eventsMC =  Generator<>(eventType, &rndm).generate(2e6);
-  CoherentSum sig(eventType, *MPS);
+  EventList eventsMC =  Generator<>(eventType, &rndm).generate(NInt);
+  CoherentSum sig(eventType, MPS);
   sig.setEvents(events);
   sig.setMC( eventsMC );
   sig.prepare();

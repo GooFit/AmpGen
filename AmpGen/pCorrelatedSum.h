@@ -522,7 +522,7 @@ class pCorrelatedSum {
 
 
     //Need CovFile!
-    complex_t errcorrection(const Event& event, std::string covFile="") const {
+    complex_t errcorrection(const Event& event, TMatrixD * cov) const {
         Expression corr = 0;
         auto x = event.s(0,1);
         auto y = event.s(0,2);
@@ -541,22 +541,7 @@ class pCorrelatedSum {
         Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
 
         int nElements = 0.5*(m_order+1)*(m_order+2);
-        
-        TMatrixD * cov = new TMatrixD(nElements, nElements);
-
-        if (covFile==""){
-          INFO("No Covariance matrix - will get wrong answer for df!");
-        }
        
-        else{
-          TFile * file = TFile::Open(covFile.c_str());
-          TMatrixD * V = (TMatrixD*)file->Get("V");
-          cov = V;
-          if (NamedParameter<bool>("pCorrelatedSum::printCov", false)){
-          V->Print();
-          }
-          file->Close();
-        }
 
         int cov_ij = 0;
         //INFO("Order = "<<m_order);
