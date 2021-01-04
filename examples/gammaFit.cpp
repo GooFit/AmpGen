@@ -72,6 +72,7 @@ int main( int argc, char* argv[] )
   std::vector<std::string> sumFactors;
   std::vector<int> gammaSigns;
   std::vector<int> useXYs;
+  std::vector<int> B_Conjs;
   bool fitEach = NamedParameter<bool>("FitEach", true);
   SimFit simfit;
   std::vector<SumPDF<EventList, pCoherentSum&>> pdfs;
@@ -149,6 +150,7 @@ int NInt = NamedParameter<int>("NInt", 1e7);
     sumFactors.emplace_back(B_Pref);
     gammaSigns.emplace_back(gammaSign);
     useXYs.emplace_back(useXY);
+    B_Conjs.emplace_back(B_Conj);
     
 
 
@@ -164,7 +166,7 @@ if (!fitEach){
   pdfs.reserve(SigData.size());
   std::vector<pCoherentSum> fcs(SigData.size());
   for (size_t i=0;i<SigData.size(); i++){
-   fcs[i] = pCoherentSum(eventType, MPS, sumFactors[i], gammaSigns[i], useXYs[i], false);
+   fcs[i] = pCoherentSum(eventType, MPS, sumFactors[i], gammaSigns[i], useXYs[i], B_Conjs[i]);
    pdfs.emplace_back( make_pdf(fcs[i])); 
    pdfs[i].setEvents(SigData[i]);
 //   auto& mc  = SigInt[i];
