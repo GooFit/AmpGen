@@ -57,16 +57,19 @@ Coupling::Coupling(MinuitExpression* expression) :
 AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
 {
   for ( auto& it_re : mps ) {
-    if ( it_re->name().find("_Re") != std::string::npos ){
-      auto it_im = mps.find(replaceAll( it_re->name(), "_Re","_Im") );
+    auto& name = it_re->name(); 
+    DEBUG("Attempting to parse: " << it_re->name() );
+    if ( name.find("_Re") != std::string::npos ){
+      auto it_im = mps.find(replaceAll( name, "_Re","_Im") );
       if( it_im == nullptr ){
         ERROR("Cannot find matching imaginary part / phase for: " <<  it_re->name() );
         continue; 
       }
+      if( ! Particle::isValidDecayDescriptor( name.substr(0, name.find("_Re") ) ) ) continue; 
       Coupling p(it_re, it_im);
       m_rules[p.head()].emplace_back(p);
     }
-    else if( it_re->name().find("_Im") == std::string::npos ){
+    else if( name.find("_Im") == std::string::npos ){
       bool isCoupling = Particle::isValidDecayDescriptor( it_re->name() );
       if( isCoupling ){
         MinuitExpression* expression = dynamic_cast<MinuitExpression*>( it_re );

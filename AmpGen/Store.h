@@ -23,40 +23,40 @@ namespace AmpGen {
         m_store(m_nBlocks * m_nFields) {}
       
       template <typename functor_type> 
-      void addFunctor( const functor_type& functor, unsigned fieldsPerFunctor=0 )
+      void addFunctor( const functor_type& functor )
       {
         if( m_index.count(functor.name()) == 0 )
         {
-          auto vsize = fieldsPerFunctor == 0 ? functor.returnTypeSize() / sizeof(stored_type) : fieldsPerFunctor;
-          DEBUG("Registering: " << functor.name() << " field = " << m_nFields ); 
+          auto vsize = functor.returnTypeSize() / sizeof(stored_type);
+          DEBUG("Registering: " << functor.name() << " field = " << m_nFields << " " << functor.returnTypeSize() << " / " << sizeof(stored_type)  ); 
           m_index[ functor.name() ] = std::make_pair(m_nFields, vsize);
           m_nFields += vsize;
         }
       }
-      template <typename functor_type> void allocate( const size_t& nEntries, const std::vector<functor_type>& functors, const size_t& fieldsPerFunctor = 0)
+      template <typename functor_type> void allocate( const size_t& nEntries, const std::vector<functor_type>& functors)
       {
-        for(const auto& functor : functors) addFunctor( functor, fieldsPerFunctor);
+        for(const auto& functor : functors) addFunctor( functor );
         m_nEntries = nEntries;
         m_nBlocks  = utils::aligned_size<stored_type>(nEntries)/utils::size<stored_type>::value;
         m_store.resize(m_nBlocks * m_nFields); 
       }
       template <typename functor_type, typename = typename std::enable_if<!std::is_integral<functor_type>::value>::type > 
-        void allocate( const size_t& nEntries, const functor_type& functor, const size_t& fieldsPerFunctor = 0)
+        void allocate( const size_t& nEntries, const functor_type& functor)
       {
-        addFunctor(functor, fieldsPerFunctor);
+        addFunctor(functor);
         m_nEntries = nEntries;
         m_nBlocks  = utils::aligned_size<stored_type>(nEntries)/utils::size<stored_type>::value;
         m_store.resize(m_nBlocks * m_nFields); 
       }
        
-      template <typename functor_type> Store( const size_t& nEntries, const std::vector<functor_type>& functors, const size_t& fieldsPerFunctor = 0)
+      template <typename functor_type> Store( const size_t& nEntries, const std::vector<functor_type>& functors)
       {
-        allocate(nEntries, functors, fieldsPerFunctor);
+        allocate(nEntries, functors);
       }
       template <typename functor_type, typename = typename std::enable_if<!std::is_integral<functor_type>::value>::type>
-      Store( const size_t& nEntries, const functor_type& functor, const size_t& fieldsPerFunctor=0 )
+      Store( const size_t& nEntries, const functor_type& functor)
       {
-        allocate( nEntries, {functor}, fieldsPerFunctor);
+        allocate( nEntries, {functor});
       }
 
       inline stored_type operator[]( const size_t& index ) const { return m_store[index]; }

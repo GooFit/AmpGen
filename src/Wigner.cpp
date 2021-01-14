@@ -246,6 +246,7 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   }
   const TransformSequence& myFrame = (*cachePtr)[key];
 
+
   if( particle.isStable() )
   {
     if( particle.props()->twoSpin() == 0 ) return Mz==0; // a scalar

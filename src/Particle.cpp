@@ -107,14 +107,21 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
 
 bool Particle::isValidDecayDescriptor( const std::string& decayDescriptor )
 {
-  size_t firstOpen = decayDescriptor.find("{");
-  size_t open  = std::count(decayDescriptor.begin(), decayDescriptor.end(), '{'); 
-  size_t close = std::count(decayDescriptor.begin(), decayDescriptor.end(), '}'); 
-  if( open == 0 || open != close || firstOpen == std::string::npos) return false; 
-  std::string firstState = decayDescriptor.substr(0, firstOpen);
-  auto firstSquare = firstState.find("[");
-  if( firstSquare == std::string::npos ) return ParticleProperties::get( firstState, true ) != nullptr;
-  return ParticleProperties::get( firstState.substr(0, firstSquare), true ) != nullptr; 
+  auto first = decayDescriptor.find("{");
+  auto open  = std::count(decayDescriptor.begin(), decayDescriptor.end(), '{'); 
+  auto close = std::count(decayDescriptor.begin(), decayDescriptor.end(), '}'); 
+  if( open == 0 || open != close || first == std::string::npos){
+    if( open !=0 && open != close ) WARNING("Unmatched braces in possible decay descriptor: " << decayDescriptor);
+    return false; 
+  }
+  auto tokens = split(decayDescriptor, {'{','}',',','_'} );
+  bool valid = true; 
+  for( auto token : tokens )
+  {
+    auto particle_name = token.substr(0, token.find("[") );
+    valid &= ParticleProperties::get( particle_name, true) != nullptr; 
+  }
+  return valid; 
 }
 
 void Particle::parseModifier( const std::string& mod )

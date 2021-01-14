@@ -241,7 +241,7 @@ void   PolarisedSum::setEvents( EventList_type& events )
   reset();
   if( m_events != nullptr && m_ownEvents ) delete m_events; 
   m_events = &events;
-  m_cache    . allocate( m_events->size(), m_matrixElements, m_dim.first * m_dim.second );
+  m_cache    . allocate( m_events->size(), m_matrixElements);
   m_pdfCache . allocate( m_events->size(), m_probExpression);
 }
 
@@ -489,7 +489,7 @@ double PolarisedSum::getWeight() const { return m_weight ; }
 std::function<real_t(const Event&)> PolarisedSum::evaluator(const EventList_type* ievents) const 
 {
   auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
-  Store<complex_v, Alignment::AoS> store(events->size(), m_matrixElements, m_dim.first * m_dim.second);
+  Store<complex_v, Alignment::AoS> store(events->size(), m_matrixElements);
   for( auto& me : m_matrixElements ) store.update(events->store(), me );
 
   std::vector<double> values( events->aligned_size() );
@@ -511,7 +511,7 @@ KeyedFunctors<double(Event)> PolarisedSum::componentEvaluator(const EventList_ty
   std::shared_ptr<const store_t> cache;
   if( events != m_integrator.events<EventList_type>() )
   {
-    cache = std::make_shared<const store_t>(events->size(), m_matrixElements, m_dim.first*m_dim.second);
+    cache = std::make_shared<const store_t>(events->size(), m_matrixElements);
     for( auto& me : m_matrixElements ) const_cast<store_t*>(cache.get())->update(events->store(), me);
   }
   else cache = std::shared_ptr<const store_t>( & m_integrator.cache(), [](const store_t* t){} ); 

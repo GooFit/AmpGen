@@ -119,13 +119,13 @@ TreePhaseSpace::Vertex::Vertex(const Particle& particle, const double& min, cons
     , max(max)
     , s(bwMass*bwMass)
 {
+  INFO( particle << " [" << min << ", " << max << "]");
   if( particle.isStable() ) type = Type::Stable; 
   else if( particle.isQuasiStable() ) type = Type::QuasiStable; 
   else if( particle.lineshape().find("BW") != std::string::npos ){
     type = Type::BW; 
     phiMin = atan((min*min - bwMass*bwMass)/(bwMass*bwWidth));
     phiMax = atan((max*max - bwMass*bwMass)/(bwMass*bwWidth));
-    INFO( particle << " [" << min << ", " << max << "] Φ = " << phiMin << ", " << phiMax );
   }
   else type = Type::Flat;
   if( index != 999 ) indices = {index};
@@ -222,7 +222,8 @@ void TreePhaseSpace::Vertex::generateFullEvent()
   double pf = p();
   if( std::isnan(pf) || std::isnan(s) )
   {
-    ERROR("Generating nan: " << pf << " " << s << " " << min << " " << max );
+    auto p2 = ( s - 2 * (left->s+right->s) + (left->s-right->s)*(left->s-right->s)/s ); 
+    ERROR("Generating nan: " << pf << " " << s << " " << min << " " << max << " " << p2 << " " << left->s << " " << right->s );
   }
   left  -> mom.SetXYZT(  pf*sinTheta*cosPhi,  pf*sinTheta*sinPhi,  pf*cosTheta, sqrt(left->s + pf*pf) );
   left  -> mom.Boost( mom.BoostVector() );
