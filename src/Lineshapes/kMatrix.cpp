@@ -184,6 +184,6 @@ DEFINE_LINESHAPE( kMatrix )
     DEBUG( "Returning bkg term" );
     return F[{1, pTerm}] * ( 1 - s0_prod ) / ( sInGeV - s0_prod );
   }
-  ERROR( "Lineshape not found: " << lineshapeModifier );
+  ERROR( "Modifier not found: " << lineshapeModifier << ", expecting one of {scatt, pole, poleKK, prod, prodKK}" );
   return Expression( 0 );
 }

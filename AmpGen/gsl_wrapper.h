@@ -14,6 +14,21 @@ namespace AmpGen {
     if( ws == nullptr ) gsl_integration_workspace_free (w);
     return result;
   }
+  template <typename function_type> double integrate_1d_inf( const function_type& fcn, gsl_integration_workspace* ws = nullptr)
+  {
+    gsl_integration_workspace* w = (ws == nullptr) ? gsl_integration_workspace_alloc (1000) : ws;
+    double result = 0;
+    double error  = 0;
+    gsl_function F;
+    F.function = [](double x, void* p) -> double { return (*static_cast<function_type*>(p))(x); };
+    F.params   = const_cast<function_type*>(&fcn);
+    gsl_integration_qagi(&F, 0, 1e-5, 1000, w, &result, &error);
+    if( ws == nullptr ) gsl_integration_workspace_free (w);
+    std::cout << result << " +/- " << error << std::endl; 
+    return result;
+  }
+
+
   template <typename function_type> double integrate_2d( const function_type& fcn, const double& x1, const double& x2, const double& y1, const double& y2)
   {
     gsl_integration_workspace* w1 = gsl_integration_workspace_alloc (1000); 

@@ -10,16 +10,17 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Types.h"
 #include "AmpGen/simd/utils.h"
+#include "AmpGen/Tensor.h"
+#include "AmpGen/ArgumentPack.h"
 #include <cxxabi.h>
 #include <dlfcn.h>
 #include <vector>
 #include <map>
-#include "ArgumentPack.h"
 
 namespace AmpGen
 {
   /* @class CompiledExpression
-     @tparam RETURN_TYPE The type that is returned this compiled expression,
+     @tparam ret_type The type that is returned this compiled expression,
      usually this is a std::complex<double>,
      but in principal support also exists for computing coupled channel propagators
      (i.e. returning array types) */
@@ -32,23 +33,24 @@ namespace AmpGen
   }
   DECLARE_ARGUMENT(disableBatch, bool);
   
-  template <class RETURN_TYPE, class... ARGS> class CompiledExpression; 
+  template <typename ret_type, typename... arg_types> class CompiledExpression; 
   
 
-  template <class RETURN_TYPE, class... ARGS>
-    class CompiledExpression<RETURN_TYPE(ARGS...)> : public CompiledExpressionBase
+  template <typename ret_type, typename... arg_types>
+    class CompiledExpression<ret_type(arg_types...)> : public CompiledExpressionBase
     {
 
       private:
-        DynamicFCN<RETURN_TYPE( ARGS... )>                                       m_fcn;
-        DynamicFCN<void( const size_t&, const size_t&, const size_t&, RETURN_TYPE*, ARGS... )> m_batchFcn;
-        DynamicFCN<std::vector<std::pair<std::string, complex_v>>(ARGS...)>      m_fdb;
+        DynamicFCN<ret_type( arg_types... )>                                  m_fcn;
+        DynamicFCN<void( const size_t&, const size_t&, const size_t&, ret_type*, arg_types... )> m_batchFcn;
+        DynamicFCN<std::vector<std::pair<std::string, complex_v>>(arg_types...)>      m_fdb;
         std::vector<real_t>  m_externals             = {};
         bool                 m_hasExternalsChanged   = {false};
         
       public:
-        typedef RETURN_TYPE return_type;
-        
+        typedef ret_type return_type;
+        unsigned m_outputSize = {0};
+
         template <typename... namedArgs> 
         CompiledExpression( const Expression& expression, const std::string& name, const namedArgs&... args ) : CompiledExpressionBase(expression, name) 
         {
@@ -69,22 +71,30 @@ namespace AmpGen
             this->m_enableBatch = false;
           #endif
           resolve(mps);
+          if constexpr(std::is_same<ret_type,void>::value ) 
+          {
+            typedef typename std::remove_pointer<zeroType<arg_types...>>::type zt; 
+            m_outputSize = detail::size_of<zt>::value;
+            DEBUG( "one element: " << m_outputSize << type_string<zt>() );
+            if( is<TensorExpression>(expression) ) m_outputSize *= cast<TensorExpression>(expression).tensor().size();
+          }
+          else m_outputSize = detail::size_of<ret_type>::value; 
         }
 
-        CompiledExpression( const std::string& name = "" ) : CompiledExpressionBase( name ) {};
+        CompiledExpression( const std::string& name = "" ) : CompiledExpressionBase( name ) { m_outputSize = detail::size_of<ret_type>::value; };
         std::vector<real_t> externBuffer() const { return m_externals ; } 
-        std::string returnTypename() const override { return type_string<RETURN_TYPE>(); }
+        std::string returnTypename() const override { return type_string<ret_type>(); }
         std::string fcnSignature() const override
         {
-          return CompiledExpressionBase::fcnSignature(typelist<ARGS...>(), use_rto());
+          return CompiledExpressionBase::fcnSignature(typelist<arg_types...>(), use_rto());
         }
         bool use_rto() const override {
-          return std::is_same<RETURN_TYPE, void>::value;   
+          return std::is_same<ret_type, void>::value;   
         }
         std::string args() const override 
         {
           std::string signature; 
-          auto argTypes = typelist<ARGS...>();
+          auto argTypes = typelist<arg_types...>();
           for( unsigned int i = 0 ; i < argTypes.size(); ++i )
           {
             signature += " x"+std::to_string(i) ;
@@ -150,8 +160,8 @@ namespace AmpGen
           stream << " const size_t& N, " 
                  << " const size_t& eventSize, " 
                  << " const size_t& cacheSize, ";
-          stream <<  type_string<return_type>() << " * rt, ";
-          stream << CompiledExpressionBase::fcnSignature(typelist<ARGS...>(), use_rto(), false) << ") {\n";
+          stream <<  type_string<ret_type>() << " * rt, ";
+          stream << CompiledExpressionBase::fcnSignature(typelist<arg_types...>(), use_rto(), false) << ") {\n";
           stream << "#pragma omp parallel for\n";
           stream << "for( size_t i = 0; i < N/" << utils::size<float_v>::value << "; ++i ){\n";
           if( use_rto() ) stream << progName() + "( r + cacheSize * i, s, x0, x1 +  i * eventSize);";
@@ -172,22 +182,22 @@ namespace AmpGen
         bool isReady()          const override { return m_fcn.isLinked(); }
         bool isLinked()         const { return m_fcn.isLinked() ; } 
 
-        unsigned returnTypeSize() const override { return detail::size_of<RETURN_TYPE>::value; }
+        unsigned returnTypeSize() const override { return m_outputSize; }
 
-        template < class T > 
-          RETURN_TYPE operator()( const T* event ) const
+        template < typename T > 
+          ret_type operator()( const T* event ) const
           {
             return m_fcn( m_externals.data(), event );
           }
-        RETURN_TYPE operator()( const ARGS&... args ) const 
+        ret_type operator()( const arg_types&... args ) const 
         {
           return m_fcn( args... );
         }
-        template <class... arg_types> void batch( arg_types... args ) const { 
+        template <typename... batch_arg_types> void batch( batch_arg_types... args ) const { 
           m_batchFcn(args...); 
         }
 
-        template < class T> void debug( const T* event ) const
+        template < typename T> void debug( const T* event ) const
         {
           if ( !m_fcn.isLinked() ) {
             FATAL( "Function " << name() << " not linked" );
@@ -196,7 +206,7 @@ namespace AmpGen
             FATAL( "Function" << name() << " debugging symbols not linked" );
           }
           std::vector<std::pair<std::string, complex_v>> debug_results;
-          if constexpr(std::is_same<void, RETURN_TYPE>::value) debug_results = m_fdb( nullptr, 0, &( m_externals[0] ), event );
+          if constexpr(std::is_same<void, ret_type>::value) debug_results = m_fdb( nullptr, 0, &( m_externals[0] ), event );
           else debug_results = m_fdb( &(m_externals[0]), event);
           for( auto& debug_result : debug_results ){ 
             auto val = debug_result.second;  
@@ -223,35 +233,35 @@ namespace AmpGen
         };
         std::string arg_type(const unsigned& i ) const override
         {
-          return typelist<ARGS...>()[i];
+          return typelist<arg_types...>()[i];
         }
     };
 
-  template <class RT> 
-    CompiledExpression<void(RT*, const double*, const double*)> 
+  template <typename return_type> 
+    CompiledExpression<void(return_type*, const double*, const double*)> 
     make_rto_expression( const Expression& expression, const std::string& name , const bool& verbose=false)
     {
-      CompiledExpression<void(RT*, const double*, const double*)> rt(expression,name);
+      CompiledExpression<void(return_type*, const double*, const double*)> rt(expression,name);
       rt.compile();
       rt.prepare();
       return rt;
     }
 
-  template <class RT> CompiledExpression<RT(const double*, const double*)> 
+  template <typename return_type> CompiledExpression<return_type(const double*, const double*)> 
     make_expression( const Expression& expression, const std::string& name , const bool& verbose=false)
     {
-      CompiledExpression<RT(const double*, const double*)> rt(expression,name);
+      CompiledExpression<return_type(const double*, const double*)> rt(expression,name);
       rt.compile();
       rt.prepare();
       return rt;
     }
-  template <typename RT, typename arg1 = double, typename arg2 =double, typename... arg_types> 
-    CompiledExpression<RT(const arg1*, const arg2*)> 
+  template <typename return_type, typename arg1 = double, typename arg2 =double, typename... arg_types> 
+    CompiledExpression<return_type(const arg1*, const arg2*)> 
     make_expression( const Expression& expression, 
         const std::string& name, 
         const arg_types&... args)
     {
-      CompiledExpression<RT(const arg1*, const arg2*)> rt(expression,name,args...);
+      CompiledExpression<return_type(const arg1*, const arg2*)> rt(expression,name,args...);
       rt.compile();
       rt.prepare();
       return rt;
