@@ -145,7 +145,7 @@ AmpGen supports several different types of probability density functions (PDFs),
 
 #####  CoherentSum 
 
-The most common type of PDF is the CoherentSum. In this case, the total amplitude is given by the sum of amplitudes, weighted by complex coefficients. At a position in the phase space  <img src="doc/figs/tex/fig2.svg" style="height:2ex;margin-bottom:+1ex" /> , the transition amplitude  <img src="doc/figs/tex/fig3.svg" style="height:2ex;margin-bottom:+1ex" />   is given by:
+The most common type of PDF is the CoherentSum. In this case, the total amplitude is given by the sum of amplitudes, weighted by complex coefficients. At a position in the phase space  <img src="doc/figs/tex/fig2.svg" height=2ex margin-bottom=1ex /> , the transition amplitude  <img src="doc/figs/tex/fig3.svg" style="height:2ex;margin-bottom:+1ex" />   is given by:
 
  <img src="doc/figs/tex/fig4.svg" style="height:2ex;margin-bottom:+1ex" /> 
 
@@ -204,7 +204,7 @@ AmpGen.exe --help
 The output includes a tree (DalitzEventList) of candidates with the full four-vectors, as well as one- and two-dimensional projections, an example of which is shown below:
 
 <p align="center">
-  <img src="doc/figs/k3pi_s01.svg" style="zoom:50%;" >
+  <img src="doc/figs/k3pi_s01.svg" width=300 >
 </p>
 
 Several models for different  <img src="doc/figs/tex/fig19.svg" style="height:2ex;margin-bottom:+1ex" />  decays published by the LHCb collaboration are included in the options directory, in addition to several other decay modes to demonstrate different features. These options often do not include EventTypes so as they can be included as part of a larger decay chain if required. For example, to generate  <img src="doc/figs/tex/fig20.svg" style="height:2ex;margin-bottom:+1ex" />  toy  <img src="doc/figs/tex/fig21.svg" style="height:2ex;margin-bottom:+1ex" />  decays, the type of the events requested must also be specified: 
@@ -228,8 +228,8 @@ The flag `Type` is used to specify that the initial and/or final states includes
 
 <p align="center">
 <div>
-<img src="doc/figs/lb2pKpi_s01.svg" style="zoom:50%;" />
-<img src="doc/figs/lb2pKpi_s02.svg" style="zoom:50%;" />
+<img src="doc/figs/lb2pKpi_s01.svg" width=300/>
+<img src="doc/figs/lb2pKpi_s02.svg" width=300 />
 </div>
 </p>
 
@@ -251,8 +251,8 @@ Two example projections are shown below, of the dimuon invariant mass with essen
 
 <p align="center">
 <div>
-<img src="doc/figs/lb2jspiL_s01.svg" style="zoom:50%;" />
-<img src="doc/figs/lb2jspiL_s012.svg" style="zoom:50%;" />
+<img src="doc/figs/lb2jspiL_s01.svg" width=300 />
+<img src="doc/figs/lb2jspiL_s012.svg" width=300 />
 </div>
 </p>
 
