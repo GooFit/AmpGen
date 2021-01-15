@@ -54,14 +54,13 @@ Event TreePhaseSpace::makeEvent()
   double w = 0;
   Event event; 
   do {
-    // INFO("Producing event from tree: " << j );
     j = m_dice(m_gen); 
     if( j >= m_top.size() ) ERROR("Out of bounds: " << j << " / " << m_top.size() );
     m_top[j].generate();
-    event = m_top[j].event(m_type.size());
     w = m_top[j].weight();
-    event.setGenPdf( w == 0 ? 0 : genPdf(event) / w );
   } while ( w == 0 );
+  event = m_top[j].event(m_type.size());
+  event.setGenPdf( genPdf(event) / w );
   m_generatorRecord.push_back(j);
   return event; 
 }
@@ -223,7 +222,7 @@ void TreePhaseSpace::Vertex::generateFullEvent()
   if( std::isnan(pf) || std::isnan(s) )
   {
     auto p2 = ( s - 2 * (left->s+right->s) + (left->s-right->s)*(left->s-right->s)/s ); 
-    ERROR("Generating nan: " << pf << " " << s << " " << min << " " << max << " " << p2 << " " << left->s << " " << right->s );
+    ERROR("Generating nan: " << pf << " " << s << " " << min << " " << max << " " << p2 << " " << left->s << " " << right->s << " w = " << weight() );
   }
   left  -> mom.SetXYZT(  pf*sinTheta*cosPhi,  pf*sinTheta*sinPhi,  pf*cosTheta, sqrt(left->s + pf*pf) );
   left  -> mom.Boost( mom.BoostVector() );
