@@ -328,7 +328,7 @@ DEFINE_VERTEX( T_VV_D1 ){
     return Sv2(mu,nu,alpha,beta) * term3(-alpha,-beta); 
 }
 */
-
+/*
 DEFINE_VERTEX( T_VV_D2 ){ 
     // Doesnt seem to work
     Tensor Sv2  = Spin2Projector( P );
@@ -339,7 +339,7 @@ DEFINE_VERTEX( T_VV_D2 ){
     
     return Sv2(mu,nu,alpha,beta) * term(-alpha,-beta) ; 
 }
-
+*/
 
 DEFINE_VERTEX( S_TV_P )
 {
