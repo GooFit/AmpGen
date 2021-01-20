@@ -288,6 +288,7 @@ DEFINE_VERTEX( T_VV_P )
     return Sv2(mu,nu,alpha,beta) * L(-alpha) * phi_1(-beta); 
 }
 
+/*
 DEFINE_VERTEX( T_VV_P2 )
 {     
     // Doesnt seem to work
@@ -301,6 +302,7 @@ DEFINE_VERTEX( T_VV_P2 )
     
     return Sv2(mu,nu,alpha,beta) * term2(-alpha,-beta); 
 }
+*/
 
 DEFINE_VERTEX( T_VV_D ){ 
     
@@ -310,6 +312,7 @@ DEFINE_VERTEX( T_VV_D ){
     return Sv2(mu,nu,alpha,beta) * L(-alpha,-beta) * dot(V1,V2); 
 }
 
+/*
 DEFINE_VERTEX( T_VV_D1 ){ 
     // Doesnt seem to work
     Tensor Sv1  = Spin1Projector( P );
@@ -324,6 +327,7 @@ DEFINE_VERTEX( T_VV_D1 ){
     
     return Sv2(mu,nu,alpha,beta) * term3(-alpha,-beta); 
 }
+*/
 
 DEFINE_VERTEX( T_VV_D2 ){ 
     // Doesnt seem to work

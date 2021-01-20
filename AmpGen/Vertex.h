@@ -136,9 +136,9 @@ namespace AmpGen
       
     DECLARE_VERTEX( T_VV_S );      
     DECLARE_VERTEX( T_VV_P );      
-    DECLARE_VERTEX( T_VV_P2 );      
+    //DECLARE_VERTEX( T_VV_P2 );      
     DECLARE_VERTEX( T_VV_D );      
-    DECLARE_VERTEX( T_VV_D1 );      
+    //DECLARE_VERTEX( T_VV_D1 );      
     DECLARE_VERTEX( T_VV_D2 );      
       
     DECLARE_VERTEX( S_HS_F );
