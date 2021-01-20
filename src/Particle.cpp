@@ -518,8 +518,8 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
     }
     if( m_spinBasis == spinBasis::Dirac ){
       Expression N = make_cse(1./(m*(pE + m)));
-      if( polState ==  1 ) return -Tensor({1.+ z *pX*N,  1i +  z*pY*N,  z*pZ*N    ,  z*m })/sqrt(2);
-      if( polState == -1 ) return  Tensor({1.+ zb*pX*N, -1i + zb*pY*N, zb*pZ*N    , zb*m })/sqrt(2);
+      if( polState ==  1 ) return -Tensor({1.+ z *pX*N,  1i +  z*pY*N,  z*pZ*N    ,  z/m })/sqrt(2);
+      if( polState == -1 ) return  Tensor({1.+ zb*pX*N, -1i + zb*pY*N, zb*pZ*N    , zb/m })/sqrt(2);
       if( polState ==  0 ) return  Tensor({pX*pZ*N    ,       pY*pZ*N, 1 + pZ*pZ*N, pZ/m });
     } 
   }
