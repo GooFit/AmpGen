@@ -346,6 +346,7 @@ MinuitParameterSet  MPS_tag;// = new MinuitParameterSet();
     CombCorrLL combLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS, sumFactors);
     pdfs.reserve(SigData.size());
     std::vector<pCorrelatedSum> fcs(SigData.size());
+    /*
     for (size_t i=0; i < SigData.size(); i++){
       EventList tagMC = TagInt[i];
       fcs[i] = pCorrelatedSum(SigType[i], TagType[i], MPS);
@@ -371,6 +372,7 @@ MinuitParameterSet  MPS_tag;// = new MinuitParameterSet();
     INFO("SimFit = "<<simfit.getVal());
      
     }
+    */
     //auto combLL2 = SumLL<CorrelatedLL<EventList, pCorrelatedSum&>>(totalLL);
     INFO("CombCorrLL = "<<combLL.getVal());
 //    auto commLL2 = SumLL(_LLs);
@@ -383,15 +385,6 @@ MinuitParameterSet  MPS_tag;// = new MinuitParameterSet();
     INFO("Minimising now");
     int attempt = 1;
       combMini.doFit(); 
-      if (combMini.status() != 0){
-        INFO("Didn't seem to get a minimum (returned "<<combMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
-      while (attempt < maxAttempts && combMini.status() != 0){
-        INFO("Didn't seem to get a minimum (returned "<<combMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
-        combMini.doFit();
-        attempt++;
-      }
-      }
-
     FitResult * fr = new FitResult(combMini); 
     fr->print();
     fr->writeToFile(logFile);

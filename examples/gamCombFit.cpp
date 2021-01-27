@@ -305,9 +305,7 @@ for (int i=0; i < tags.size(); i++){
     sumFactors.emplace_back("Psi(3770)");
 } 
 
-    CombCorrLL corrLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS, sumFactors);
-      simfit.add(corrLL);
-     
+    
     
 
 
@@ -349,7 +347,7 @@ for (int i=0; i < tags.size(); i++){
     EventList Data = EventList(DataLoc, eventType);
 //    EventList Int = EventList(IntLoc, eventType);
 
-    EventList Int = Generator<>(eventType, &rndm).generate(1e7);
+    EventList Int = Generator<>(eventType, &rndm).generate(NInt);
 
 
     sig.setEvents(Data);
@@ -369,10 +367,15 @@ for (int i=0; i < tags.size(); i++){
 
 
 
+/*
     INFO("Making Combined Minimiser object");
     std::vector<SumPDF<EventList, pCoherentSum&>> pdfsB;
 
-pdfsB.reserve(BSigData.size());
+
+ CombCorrLL corrLL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS, sumFactors);
+    simfit.add(corrLL);
+    
+  pdfsB.reserve(BSigData.size());
   std::vector<pCoherentSum> fcsB(BSigData.size());
   for (size_t i=0;i<BSigData.size(); i++){
    fcsB[i] = pCoherentSum(eventType, MPS, BsumFactors[i], BgammaSigns[i], BuseXYs[i], BConj[i]);
@@ -382,22 +385,36 @@ pdfsB.reserve(BSigData.size());
    for_each(pdfsB[i].pdfs(), [&mc](auto& pdf){pdf.setMC(mc);});
    simfit.add(pdfsB[i]);
 }
-    
+*/
+ auto combLL =  CombGamCorrLL(
+        SigData, 
+        TagData, 
+        BSigData, 
+        SigInt, 
+        TagInt, 
+        BSigInt, 
+        SigType,
+        TagType,
+        BSigType,
+        MPS,
+        BsumFactors,
+        BgammaSigns,
+        BuseXYs);
+
+    INFO("CombCorrLL = "<<combLL.getVal());
+//    auto commLL2 = SumLL(_LLs);
+    simfit.add(combLL);
+    INFO("Making Combined Minimiser object");
+//    INFO("totalLL = "<<totalLL.getVal());  
 
     Minimiser combMini = Minimiser(simfit, &MPS);
     combMini.gradientTest();
    // combMini.prepare();
     INFO("Minimising now");
-    int attempt = 1;
+   
       combMini.doFit(); 
-      if (combMini.status() != 0 && maxAttempts>1){
-        INFO("Didn't seem to get a minimum (returned "<<combMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
-      while (attempt < maxAttempts && combMini.status() != 0){
-        INFO("Didn't seem to get a minimum (returned "<<combMini.status()<<" , trying "<<attempt<<"/"<<maxAttempts);
-        combMini.doFit();
-        attempt++;
-      }
-      }
+
+
 
     FitResult * fr = new FitResult(combMini); 
     fr->print();

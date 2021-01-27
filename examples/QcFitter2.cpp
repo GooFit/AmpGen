@@ -92,6 +92,7 @@ int main( int argc, char* argv[] )
     bool doDebugNorm  = NamedParameter<bool>("doDebugNorm", false, "Debug the normalisation of the pdf");
     int nBins = NamedParameter<int>("nBins", 100, "number of bins for projection");
     int nFits = NamedParameter<int>("nFits", 4, "number of repeats of mini.doFits() for debug purposes!");
+    int NInt  = NamedParameter<int>("NInt", 1000000, "NInt");
     bool doProjections = NamedParameter<bool>("doProjections", true);
     bool doPCorrSum = NamedParameter<bool>("doPCorrSum", false);
 //    bool doCombFit = NamedParameter<bool>("doCombFit", false, "Do a combined fit of 3 tags - at the moment this is hard coded for now");
@@ -147,7 +148,7 @@ INFO("Doing loop of Fits");
  std::vector<EventType> SigType;
  std::vector<EventType> TagType;
  std::vector<std::string> sumFactors;
-
+ auto sigMCevents_tag = Generator<>(EventType(pNames), &rndm).generate(NInt);
  std::vector<CorrelatedLL<EventList, CorrelatedSum&> > totalLL;
 // SimFit totalLL;
 for (int i=0; i < tags.size(); i++){
@@ -164,11 +165,16 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     tag_fit<<tagName<<"_plots.root";
     auto tag_plotName = tag_fit.str();
     auto tag_logName = tag_log.str();
+    auto types = makeEventTypes(pNames, tags[i]);
+    auto tagType = types["tag"];
 
     auto sigevents_tag = getEvents("signal", pNames, tags[i], dataFile, intFile);
-    auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
+//    auto sigMCevents_tag = getEvents("sigMC", pNames, tags[i], dataFile, intFile);
+
     auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile, intFile);
-    auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
+    //auto tagMCevents_tag = getEvents("tagMC", pNames, tags[i], dataFile, intFile);
+
+    auto tagMCevents_tag = Generator<>(tagType, &rndm).generate(NInt);
 
     SigData.push_back(sigevents_tag);
     TagData.push_back(tagevents_tag);
@@ -702,8 +708,8 @@ EventList getEvents(std::string type, std::vector<std::string> sigName, std::str
     tagname<<tokens[0];
     sigEvents = EventList(dataFile + signame.str() , signalType);
     tagEvents = EventList(dataFile + tagname.str() , tagType);
-    sigMCEvents = EventList(intFile + signame.str() , signalType);
-    tagMCEvents = EventList(intFile + tagname.str() , tagType);
+//    sigMCEvents = EventList(intFile + signame.str() , signalType);
+//    tagMCEvents = EventList(intFile + tagname.str() , tagType);
     
     if (type=="signal"){
      return sigEvents;

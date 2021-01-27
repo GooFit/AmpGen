@@ -192,7 +192,7 @@ void pCorrelatedSum::prepare(){
   if (m_debug) INFO("Got Normalisation for m_C");
   m_Dnorm = m_D.norm();
   if (m_debug) INFO("Got Normalisation for m_D");
-  m_norm = slowNorm();
+  m_norm = norm();
   if (m_debug) INFO("Got Normalisation from full integral");
 
 
@@ -339,10 +339,23 @@ real_t pCorrelatedSum::norm() const {
     }
     return v; 
   };
-
   complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
  std::complex<double> nBD = sum_amps( m_normalisationsBD, m_B.matrixElements(), m_D.matrixElements() );
 
+
+  if (! m_slowNorm){
+
+  real_t intTerm = -2 * (nAC * nBD).real();
+
+ 
+   real_t nA = m_A.norm();
+  real_t nB = m_B.norm();
+  real_t nC = m_C.norm();
+  real_t nD = m_D.norm();
+  real_t N = nA * nB + nC * nD + intTerm;
+  return N;
+ 
+  }
 
 
    std::complex<double> rAC = 0; 
@@ -584,6 +597,7 @@ complex_t pCorrelatedSum::getVal(const Event& evt1, const Event& evt2) const {
   complex_t D = m_D.getVal(evt2);
   complex_t f = correction(evt1);
   if (m_sameTag){
+    if (m_debug) INFO("Using same tag");
     f -= correction(evt2);
   }
   auto i = Constant(0,1);

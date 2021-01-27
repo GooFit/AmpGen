@@ -109,8 +109,22 @@ namespace AmpGen
                         }
         double LL_Corr(int i){
 
-                auto _LL =  make_likelihood( m_SigData[i], m_TagData[i], m_Psi[i]);
-            return _LL.getVal();
+                //auto _LL =  make_likelihood( m_SigData[i], m_TagData[i], m_Psi[i]);
+                auto psi = m_Psi[i];
+                auto sigDat = m_SigData[i];
+                auto tagDat = m_TagData[i];
+                auto norm = psi.norm();
+                real_t _LL = 0;
+                #pragma omp parallel for reduction( +: _LL )
+                for (int j=0;j<sigDat.size();j++){
+                    auto evt1 = sigDat[j];
+                    auto evt2 = tagDat[j];
+                    auto prob = std::norm(psi.getVal(evt1,evt2))/norm;
+                    _LL += -2 * log(prob);
+
+
+                }
+            return _LL;
 
         }
         MinuitParameterSet getMPS(){
@@ -118,9 +132,18 @@ namespace AmpGen
         }
 
         double LL_Gam(int i){
+            auto psi = m_A[i];
+            auto sigDat = m_GamData[i];
+            auto norm = psi.norm();
+            real_t _LL=0;
+            #pragma omp parallel for reduction( +: _LL )
+            for (int j=0;j<sigDat.size();j++){
+                    auto evt1 = sigDat[j];
+                    auto prob = std::norm(psi.getVal(evt1))/norm;
+                    _LL += -2 * log(prob);
+            }
 
-                auto _LL =  make_likelihood( m_GamData[i], m_A[i]);
-            return _LL.getVal();
+            return _LL;
 
         }
 

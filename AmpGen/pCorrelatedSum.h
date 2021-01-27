@@ -200,6 +200,8 @@ class pCorrelatedSum {
         real_t operator()( const Event& event1, const Event& event2) const { return prob(event1, event2); }
         real_t prob(const Event& event1, const Event& event2) const {
         double P = std::norm(getVal(event1, event2))/m_norm;  
+    
+    if (m_debug){
         double A2 = std::norm(m_A.getVal(event1))/m_norm;
         double B2 = std::norm(m_B.getVal(event2));
         double C2 = std::norm(m_C.getVal(event1))/m_norm;
@@ -213,7 +215,7 @@ class pCorrelatedSum {
         }
         double inter = -2*std::real(AC * BD);
         double corrected_inter = -2*std::real(AC * BD * eif);
-        if (m_debug){
+
             INFO("|AB-CD|^2 = "<<P);
             INFO("A^2 B^2 + C^2 D^2 - 2Re(AC*BD) = "<<A2 *B2+C2*D2+inter);
             INFO("A^3 B^2 + C^2 D^2 - 2Re(AC*BD*eif) = "<<A2 *B2+C2*D2+corrected_inter);
@@ -227,8 +229,10 @@ class pCorrelatedSum {
             INFO("Corrected Strong phase (AC) = "<<std::imag(std::log(AC*eif/std::abs(AC))));
             INFO("Norm = "<<m_norm);
 
-        }
-        return P;
+        
+
+    }
+    return P;
         }
 
     double getC(int i, int j, std::string pref="")const {

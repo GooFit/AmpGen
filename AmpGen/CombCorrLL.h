@@ -61,7 +61,9 @@ namespace AmpGen
                                 pCorrelatedSum _pCS = pCorrelatedSum(m_SigType[i], m_TagType[i], m_mps, m_SumFactors[i]);
                                 _pCS.setEvents(m_SigData[i], m_TagData[i]);
                                 _pCS.setMC(m_SigInt[i], m_TagInt[i]);
+                                if (m_debug) INFO("Preparing "<<i+1<<"/"<<m_SigData.size());
                                 _pCS.prepare();
+                                if (m_debug) INFO("Prepared "<<i+1<<"/"<<m_SigData.size());
                                 m_Psi.push_back(_pCS);
                             }
 
@@ -71,14 +73,31 @@ namespace AmpGen
                         }
         double LL(int i){
 
-                auto _LL =  make_likelihood( m_SigData[i], m_TagData[i] , m_Psi[i]);
-            return _LL.getVal();
+                //auto _LL =  make_likelihood( m_SigData[i], m_TagData[i] , m_Psi[i]);
+                auto psi = m_Psi[i];
+                real_t norm = psi.norm();
+                real_t ll = 0;
+                #pragma omp parallel for reduction( +: ll )
+                for ( unsigned int j = 0; j < m_SigData[i].size(); ++j ) {
+                  auto evt1 = m_SigData[i][j];
+                  auto evt2 = m_TagData[i][j];
+                  auto prob = std::norm(psi.getVal(evt1,evt2))/norm;
+                  ll += -2* log(prob);
+
+                }
+            if (m_debug) INFO("LL = "<<ll);
+            if (m_debug){
+              auto norm = psi.norm();
+              INFO("norm = "<<norm);
+            }
+            return ll;
 
         }
 
         double getVal(){
             double ll =0 ;
 
+            #pragma omp parallel for reduction( +: ll )
             for (auto i=0; i < m_SigData.size(); i++){
                 if (m_debug) INFO("LL_"<<i<<" = "<<LL(i));
                 ll += LL(i);
