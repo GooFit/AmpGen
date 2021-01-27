@@ -399,7 +399,8 @@ for (int i=0; i < tags.size(); i++){
         MPS,
         BsumFactors,
         BgammaSigns,
-        BuseXYs);
+        BuseXYs,
+        BConj);
 
     INFO("CombCorrLL = "<<combLL.getVal());
 //    auto commLL2 = SumLL(_LLs);

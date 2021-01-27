@@ -279,6 +279,7 @@ INFO("Doing loop of Fits");
   std::vector<std::string> BsumFactors;
   std::vector<int> BgammaSigns;
   std::vector<bool> BuseXYs;
+  std::vector<bool> BConjs;
 
  std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > totalLL;
 // SimFit totalLL;
@@ -354,6 +355,7 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     BsumFactors.push_back(B_Pref);
     BgammaSigns.push_back(gammaSign);
     BuseXYs.push_back(useXY);
+    BConjs.push_back(B_Conj);
     
   }
 
@@ -374,7 +376,8 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
         MPS,
         BsumFactors,
         BgammaSigns,
-        BuseXYs);
+        BuseXYs,
+        BConjs);
 
     INFO("CombCorrLL = "<<combLL.getVal());
 //    auto commLL2 = SumLL(_LLs);

@@ -45,6 +45,7 @@ namespace AmpGen
         std::vector<std::string> m_SumFactors;
         std::vector<int> m_gammaSigns;
         std::vector<bool> m_useXYs;
+        std::vector<bool> m_BConj;
         
 
 
@@ -66,7 +67,8 @@ namespace AmpGen
                    MinuitParameterSet mps,
                    std::vector<std::string> sumFactors,
                    std::vector<int> gammaSigns,
-                   std::vector<bool> useXYs):
+                   std::vector<bool> useXYs,
+                   std::vector<bool> BConj):
                         m_SigData(SigData),
                         m_TagData(TagData),
                         m_GamData(GamData),
@@ -83,11 +85,12 @@ namespace AmpGen
                         m_SumFactors(sumFactors),
                         m_gammaSigns(gammaSigns),
                         m_useXYs(useXYs),
+                        m_BConj(BConj),
                         m_debug(NamedParameter<bool>("CombGamCorrLL::Debug", false, "Debug CombLL"))
                         {
                             std::vector<pCoherentSum> pCS = {};
                             for (auto i=0; i < m_GamData.size() ; i++){
-                                pCoherentSum _pCS = pCoherentSum(m_GamType[i], m_mps, m_SumFactors[i], m_gammaSigns[i], m_useXYs[i]);
+                                pCoherentSum _pCS = pCoherentSum(m_GamType[i], m_mps, m_SumFactors[i], m_gammaSigns[i], m_useXYs[i], m_BConj[i]);
                                 _pCS.setEvents(m_GamData[i]);
                                 _pCS.setMC(m_GamInt[i]);
                                 _pCS.prepare();

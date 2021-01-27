@@ -1271,6 +1271,7 @@ for (int i=0; i < tags.size(); i++){
  std::vector<std::string> sfList_B;
  std::vector<int> gammaSigns;
  std::vector<bool> useXYs;
+ std::vector<bool> BConjs;
 
   for (auto& BTag : Btags){
 
@@ -1293,9 +1294,6 @@ for (int i=0; i < tags.size(); i++){
 
     EventType BEventType = EventType(pNames);
 
-    if (B_Conj == 1){
-      BEventType = BEventType.conj(true);
-    }
 
     EventList sigevents_B = EventList(BDataName, BEventType);
     EventList sigMCevents_B = EventList(BIntName, BEventType);
@@ -1306,10 +1304,11 @@ for (int i=0; i < tags.size(); i++){
     sfList_B.push_back(B_Pref);
     gammaSigns.push_back(gammaSign);
     useXYs.push_back(useXY);
+    BConjs.push_back(B_Conj);
 
   }
 
-  CombGamCorrLL comb = CombGamCorrLL(SigData, TagData, SigData_B, SigInt, TagInt, SigInt_B, SigType, TagType, SigType_B, MPS, sfList_B, gammaSigns, useXYs);
+  CombGamCorrLL comb = CombGamCorrLL(SigData, TagData, SigData_B, SigInt, TagInt, SigInt_B, SigType, TagType, SigType_B, MPS, sfList_B, gammaSigns, useXYs,BConjs);
 
   INFO("Built Combined Fit object");
   return comb;
