@@ -248,6 +248,7 @@ real_t pCoherentSum::norm() const {
   }
 
 
+
   if (m_debug) INFO("Getting the value for the normalised pdf");
   if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
   complex_t sumFactor = getSumFactor();  
@@ -263,7 +264,19 @@ real_t pCoherentSum::norm() const {
   };
 /*
 
+
     */
+
+  if (m_fastNorm){
+    double nA = m_A.norm();
+    double nC = m_C.norm();
+    complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
+    complex_t sumFactor = getSumFactor();  
+    real_t N = nA + std::norm(sumFactor) * nC + 2 * (nAC * std::conj(sumFactor)).real();
+    return N;
+  }
+
+
   real_t nA = m_A.norm();
 
   real_t nC = m_C.norm();
@@ -282,10 +295,6 @@ real_t pCoherentSum::norm() const {
 
   //real_t N = nA + nC * (pow(xp, 2) + pow(yp, 2)) +2 * nAC.real() * xp - 2 * nAC.imag() * yp; 
    
-  if (m_fastNorm){
-    return N;
-  }
-
 
    std::complex<double> rAC = 0; 
 

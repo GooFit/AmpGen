@@ -91,13 +91,13 @@ namespace AmpGen
       //      INFO("size0 = "<<size0);
     //        INFO("N = "<<N);
   //          INFO("listSig.size() = "<<listSig.size());
-            while ( listSig.size() - size0 < N ) {
+
               EventList mcSig( m_sigType );
               EventList mcTag( m_tagType );
               EventList mcSig100( m_sigType );
               EventList mcTag100( m_tagType );
               t_phsp.start();
-//              INFO("Filling Phase Space");
+              INFO("Filling Phase Space");
               fillEventListPhaseSpace( mcSig, mcTag, m_generatorBlock, pdf.size(), cut );
               //fillEventListPhaseSpace( mcSig100, mcTag100, 100 * m_generatorBlock, pdf.size(), cut );
               t_phsp.stop();
@@ -107,7 +107,7 @@ namespace AmpGen
               pdf.setMC( mcSig, mcTag );
               pdf.prepare();
 
-//              INFO("Prepared CorrelatedSum");
+              INFO("Prepared CorrelatedSum");
               t_eval.stop();
               if ( normalisationConstant == 0 ) {
                 double max = 0;
@@ -120,6 +120,7 @@ namespace AmpGen
                 normalisationConstant = max * 1.5;
                 INFO( "Setting normalisation constant = " << normalisationConstant );
               }
+            while ( listSig.size() - size0 < N ) {
               auto previousSize = listSig.size();
               t_acceptReject.start();
 #ifdef _OPENMP

@@ -404,6 +404,9 @@ class pCorrelatedSum {
         Expression y0 = (ymax + ymin)/2;
         Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
         Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
+        auto zp = 0.5 * (X + Y);
+        auto zm = 0.5 * (X - Y);
+
         
         //INFO("Order = "<<m_order);
         for (auto i=0; i < m_order+1; i++){
@@ -412,45 +415,45 @@ class pCorrelatedSum {
                 if (m_polyType=="CPSinPoly"){
                   double Cpij = getC(i,j,"P");
                   double Cmij = getC(i,j,"M");
-                  sum_i = sum_i + Cpij * CPSinPoly(X(), Y(), i, j, 1) + Cmij * CPSinPoly(X(), Y(), i, j, -1);
+                  sum_i = sum_i + Cpij * CPSinPoly(X, Y, i, j, 1) + Cmij * CPSinPoly(X, Y, i, j, -1);
                 }
                 else if (m_polyType=="CP_legendre"){
                    double Cpij = getC(i,j,"P");
                    double Cmij = getC(i,j,"M");
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
+        
+        
                   sum_i = sum_i + Cpij* legendre(zp, i) * legendre(zm, 2*j) + Cmij * legendre(zp, i) * legendre(zm, 2*j+1);
                    
 
                 }
                 else if (m_polyType=="antiSym_legendre"){
                    double Cij = getC(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
+        
+        
                   sum_i = sum_i +  Cij * legendre(zp, i) * legendre(zm, 2*j+1);
                    
 
                 }
                 else if (m_polyType=="antiSym_simple"){
                    double Cij = getC(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i +  Cij * std::pow(zp, i) * std::pow(zm, 2*j+1);
+        
+        
+                  sum_i = sum_i +  Cij * std::pow(zp(), i) * std::pow(zm(), 2*j+1);
                    
 
                 }
                 else if (m_polyType=="antiSym_chebyshev"){
                    double Cij = getC(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
+        
+        
                   sum_i = sum_i +  Cij * chebychev(zp, i) * chebychev(zm, 2*j+1);
                    
 
                 }
                 else if (m_polyType=="antiSym_bessel"){
                    double Cij = getC(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
+        
+        
                   sum_i = sum_i +  Cij * bessel(zp, i) * bessel(zm, 2*j+1);
                    
 
@@ -459,8 +462,6 @@ class pCorrelatedSum {
 
                 else if (m_polyType=="antiSym_laguerre"){
                    double Cij = getC(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
                   sum_i = sum_i +  Cij * laguerre(zp, i) * laguerre(zm, 2*j+1);
                    
 
@@ -469,16 +470,16 @@ class pCorrelatedSum {
 
                 else if (m_polyType=="Sym_legendre"){
                    double Cij = getC(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
+                   auto zp = 0.5 * (X + Y);
+                   auto zm = 0.5 * (X - Y);
                   sum_i = sum_i +  Cij * legendre(zp, i) * legendre(zm, 2*j);
                    
 
                 }
                 else if (m_polyType=="customPoly"){
                     double Cij = getC(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());                   
+        
+        
                    sum_i = sum_i + Cij * customPoly(zp, zm, i, j);
                 }
 
