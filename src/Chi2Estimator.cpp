@@ -69,7 +69,7 @@ void   Chi2Estimator::doChi2( const EventList_type& dataEvents, const EventList_
   for ( unsigned int i = 0; i < m_binning.size(); ++i ) {
     mc[i].rescale( total_data_weight / total_int_weight );
     double delta = data[i].val() - mc[i].val();
-    double tChi2 = delta * delta / ( data[i].val() + mc[i].var() );
+    double tChi2 = delta * delta / ( data[i].var() + mc[i].var() );
     chi2 += tChi2;
   }
   m_chi2  = chi2;
