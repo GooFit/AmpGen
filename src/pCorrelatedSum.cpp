@@ -88,8 +88,8 @@ void pCorrelatedSum::prepare(){
   if (m_debug) INFO("Preparing D");
   m_D.prepare();
 
-
-
+  bool lPrep=false;
+  if (lPrep){
   if (m_debug) INFO("Preparing pCorrelatedSum");
   std::vector<size_t> changedPdfIndicesA;
   std::vector<size_t> changedPdfIndicesB;
@@ -198,6 +198,7 @@ void pCorrelatedSum::prepare(){
 
   m_prepareCalls++;
   if (m_debug) INFO("CorrelatedSum is prepared!");
+  }
 }
 
 void pCorrelatedSum::updateNorms(const std::vector<size_t>& iA, const std::vector<size_t>& iB,

@@ -310,3 +310,11 @@ Expression AmpGen::fcn::fpow( const Expression& x, const int& n){
   for( int y=0;y<n;++y) rt = rt * x;
   return rt;
 }
+
+Expression AmpGen::fcn::legendre(const Expression& x, const int& n){
+  if ( n == 0) return 1;
+  if ( n==1) return x;
+  else {
+    return (2 * n - 1)/n * x * AmpGen::fcn::legendre(x, n - 1) - (n - 1)/n * AmpGen::fcn::legendre(x, n - 2);
+  }
+}

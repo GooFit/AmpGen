@@ -61,12 +61,12 @@ pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps
 void pCoherentSum::prepare(){
   if (m_debug) INFO("Preparing A");
   m_A.prepare();
-  
+ 
   if (m_debug) INFO("Preparing C");
   m_C.prepare();
  
- 
-
+  bool lPrep=false; 
+  if (lPrep){
 
 
   if (m_debug) INFO("Preparing pCoherentSum");
@@ -85,6 +85,7 @@ void pCoherentSum::prepare(){
  
   m_C.transferParameters();
  
+  
   if (m_debug) INFO("Get changedPdfIndiciesA for "<<matrixElementsA.size()<<" Elements");
   for ( size_t i = 0; i < matrixElementsA.size(); ++i ) {
     auto& amp = matrixElementsA[i].amp;
@@ -147,6 +148,7 @@ void pCoherentSum::prepare(){
 
   m_prepareCalls++;
   if (m_debug) INFO("CoherentSum is prepared!");
+  }
 }
 
 void pCoherentSum::updateNorms(const std::vector<size_t>& iA, const std::vector<size_t>& iC){

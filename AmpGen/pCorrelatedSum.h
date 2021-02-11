@@ -1,14 +1,17 @@
+
+#ifndef PCORRELATEDSUM
+#define PCORRELATEDSUM
+
+
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/FitFraction.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Lineshapes.h"
 #include "AmpGen/MinuitParameterSet.h"
+//#include "AmpGen/Polynomials.h"
+#include "AmpGen/PhaseCorrection.h"
 #include "TMatrixD.h"
 #include "TFile.h"
-
-#ifndef PCORRELATEDSUM
-#define PCORRELATEDSUM
-
 /* 
    pCorrelatedSum is the Quantum Correlated sum, designed as an input for the QcFitter program. 
    This object is designed to take the correlated decays:
@@ -40,155 +43,6 @@
 
 
 namespace AmpGen { 
-
-Expression CPSinPoly(Expression x, Expression y, unsigned int mu, unsigned int lambda, int CP){
-  auto M00 = fcn::sin(M_PI * lambda * x);
-  auto M01 = fcn::sin(M_PI * lambda * y);
-  auto M10 = fcn::sin(M_PI * mu * x);
-  auto M11 = fcn::sin(M_PI * mu * y);
-  return M00 * M11 + CP*M10*M01;
-}
-
-Expression chebychev(Expression x, unsigned int order){
-    Expression output = 0;
-    if (order == 0){
-        output = 1;
-    }
-    else if (order == 1){
-        output = x;
-    }
-    else if (order == 2){
-        output = 2 * x * x - 1;
-    }
-    else {
-        output = 2 * x * chebychev(x, order -1) - chebychev(x, order - 2);
-    }
-    return output;
-}
-
-
-Expression legendre(Expression x, unsigned int order){
-    Expression output =0;
-    if (order==0){
-        output=1;
-    }
-    else if (order==1){
-        output=x;
-    }
-    else {
-        output = (2 * order - 1)/order * x * legendre(x, order - 1) - (order - 1)/order * legendre(x, order - 2);
-    }
-    return output;
-}
-    
-Expression bessel(Expression x, unsigned int order){
-    Expression output =0;
-    if (order==0){
-        output=1;
-    }
-    else if (order==1){
-        output=x + 1;
-    }
-    else{
-        output = (2 * order - 1) * x * bessel(x, order - 1) + bessel(x, order - 2);
-        
-    }
-    return output;
-}
-
-Expression laguerre(Expression x, unsigned int order){
-    Expression output =0;
-    if (order==0){
-        output=1;
-    }
-    else if (order==1){
-        output= 1 - x;
-    }
-    else{
-        output = ( (2 * order  - 1 - x) * laguerre(x, order - 1) - (order - 1) * laguerre(x, order - 2))/order;
-    }
-    return output;
-}
-
-
-Expression customPoly(Expression x, Expression y, unsigned int i, unsigned int j){
-    auto c00 = legendre(x, 0) * legendre(y, 1);
-    auto c01 = legendre(x, 0) * legendre(y, 3);
-    auto c10 = legendre(x, 1) * legendre(y, 1);
-    auto c11 = legendre(x, 1) * legendre(y, 3);
-    auto c02 = legendre(x, 0) * legendre(y, 5);
-    auto c20 = legendre(x, 2) * legendre(y, 1);
-
-    //real_t M [3][3] = {{1,0,0}, {0,1,0}, {0,0,1}};
-//    real_t M [3][3] = {{1,-1,1}, {-1,1,-1}, {1,-1,1}};
-   //   real_t M [3][3] = {{-1,1,1}, {0,1,1}, {1,0,1}};
-//    real_t M [3][3] = {{-1,1,1}, {0,1,-1}, {1,0,1}};
-    //real_t M [3][3] = {{-1/3,1/3,2/3}, {1/3,2/3,1/3}, {1/3,-1/3,1/3}};
-    //real_t M [3][3] = {{1/3,-1/3,1/3}, {1/3,2/3,1/3}, {-1/3,1/3,2/3}};
-
-//delta_3 = 1/8
-//S
-//    real_t M [3][3] = {{-1, 1, 1 }, {0, (1/16) * (7 + pow(561, 0.5)), (1/16)*(7 - pow(561, 0.5))}, {1, 1, 1}};
-//S^-1
-//    real_t M [3][3] = {{-1/2, 0, 1/2}, {1/4 - 7/(4 * pow(561, 0.5)), 8/pow(561, 0.5), 1/4 - 7/(4 * pow(561, 0.5)) }, {1/4 + 7/(4 * pow(561, 0.5)), -8/pow(561, 0.5), 1/4 + 7/(4 * pow(561, 0.5))}  };
-   
-//    real_t M [3][3] = {{1,0,1}, {0,1,-1}, {-1,1,1}};
-//    real_t M [3][3] = {{1/3,-1/3,1/3}, {1/3,2/3,1/3}, {-1/3,1/3,2/3}};
-
-
-//delta_3 = 1/4
-//    real_t M[3][3] = {{-1, 1, 1}, {0, (1/8) * (3 + pow(137, 0.5)), (1/8) * (3 - pow(137, 0.5))}, {1,1,1}};
-//S
-//S^-1
-    real_t M[3][3] = {{-1/2, 0, -1/2}, { 1/4 - 3/(4 * pow(137, 0.5)), 4/pow(137, 0.5), 1/4 - 3/(4 * pow(137, 0.5))  }, { 1/4 + 3/(4 * pow(137, 0.5)), -4/pow(137, 0.5), 1/4 + 3/(4 * pow(137, 0.5)) }};
-//aS^-1
-//    real_t M[3][3] = {{ 1/4 + 3/(4 * pow(137, 0.5)), -4/pow(137, 0.5), 1/4 + 3/(4 * pow(137, 0.5)) } , { 1/4 - 3/(4 * pow(137, 0.5)), 4/pow(137, 0.5), 1/4 - 3/(4 * pow(137, 0.5))  }, {-1/2, 0, 1/2}  };
-
-
-//Wrong S
-
-//    real_t M [3][3] = {{-1,1,-1}, {0,1,-1}, {1,0,1}};
-
-
-    if (i==0 && j ==0){
-        //return 1/3 * (-c00 + c01 + 2* c10);
-        //return c00;
-        return M[0][0] * c00 + M[0][1] * c01 + M[0][2] * c10;
-    }
-    else if (i==0 && j==1){
-        //return  (c01 - c10);
-        return M[1][0] * c00 + M[1][1] * c01 + M[1][2] * c10;
-    }
-    else if (i==1 && j==0){
-        //return 1/3 * (c00 - c01 + c10);
-        return M[2][0] * c00 + M[2][1] * c01 + M[2][2] * c10;
-        //return (c01 + c10);
-        //return c10;
-    }
-    if (i==2 && j ==0){
-        //return 1/3 * (-c00 + c01 + 2* c10);
-        //return c00;
-        return M[0][0] * c02 + M[0][1] * c11 + M[0][2] * c20;
-    }
-    else if (i==1 && j==1){
-        //return  (c01 - c10);
-        return M[1][0] * c02 + M[1][1] * c11 + M[1][2] * c20;
-    }
-    else if (i==0 && j==2){
-        //return 1/3 * (c00 - c01 + c10);
-        return M[2][0] * c02 + M[2][1] * c11 + M[2][2] * c20;
-        //return (c01 + c10);
-        //return c10;
-    }
-
-
-
-
-    else {
-        return 0;
-    }
-    }
-
 
 
 class pCorrelatedSum {
@@ -355,26 +209,14 @@ class pCorrelatedSum {
         Expression y0 = (ymax + ymin)/2;
         Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
         Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
+        auto zp = (X+Y)/2;
+        auto zm = (X-Y)/2;
         for (auto i=0; i < m_orderMag+1; i++){
             Expression sum_i=0;
             for (auto j=0; j<m_orderMag+1-i; j++){
-
-                double Cij = getC(i,j,"Mag");
-                if (m_polyTypeMag=="simple"){
-                        sum_i = sum_i +  Cij * pow(X(), i) * pow(Y(), j);
-                    }
-                    else if (m_polyTypeMag=="chebychev"){
-                    sum_i = sum_i + Cij * chebychev(X(), i) * chebychev(Y(), j); 
-                    }
-                    else if (m_polyTypeMag=="legendre"){
-                        sum_i = sum_i + Cij * legendre(X(), i) * legendre(Y(), j);
-                    }
-                    else if (m_polyTypeMag=="laguerre"){
-                        sum_i = sum_i + Cij * laguerre(X(), i) * laguerre(Y(), j);
-                    }
-                    else if (m_polyTypeMag=="bessel"){
-                        sum_i = sum_i + Cij * bessel(X(), i) * bessel(Y(), j);
-                    }
+                real_t Cij = m_mps["pCorrelatedSum::C"+std::to_string(i) + std::to_string(j)]->mean();
+                sum_i += Cij*fcn::legendre(zp,i) * fcn::legendre(zm,2*j+1);
+               
                 }
                 corr += sum_i;
     }
@@ -389,6 +231,8 @@ class pCorrelatedSum {
 
     complex_t correction(const Event& event) const {
         Expression corr = 0;
+        PhaseCorrection pC(m_mps);
+        return pC.calcCorr(event);
         auto x = event.s(0,1);
         auto y = event.s(0,2);
         auto z = event.s(1,2);
@@ -406,109 +250,15 @@ class pCorrelatedSum {
         Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
         auto zp = 0.5 * (X + Y);
         auto zm = 0.5 * (X - Y);
+        
 
         
         //INFO("Order = "<<m_order);
         for (auto i=0; i < m_order+1; i++){
             Expression sum_i=0;
             for (auto j=0; j<m_order+1-i; j++){
-                if (m_polyType=="CPSinPoly"){
-                  double Cpij = getC(i,j,"P");
-                  double Cmij = getC(i,j,"M");
-                  sum_i = sum_i + Cpij * CPSinPoly(X, Y, i, j, 1) + Cmij * CPSinPoly(X, Y, i, j, -1);
-                }
-                else if (m_polyType=="CP_legendre"){
-                   double Cpij = getC(i,j,"P");
-                   double Cmij = getC(i,j,"M");
-        
-        
-                  sum_i = sum_i + Cpij* legendre(zp, i) * legendre(zm, 2*j) + Cmij * legendre(zp, i) * legendre(zm, 2*j+1);
-                   
-
-                }
-                else if (m_polyType=="antiSym_legendre"){
-                   double Cij = getC(i,j);
-        
-        
-                  sum_i = sum_i +  Cij * legendre(zp, i) * legendre(zm, 2*j+1);
-                   
-
-                }
-                else if (m_polyType=="antiSym_simple"){
-                   double Cij = getC(i,j);
-        
-        
-                  sum_i = sum_i +  Cij * std::pow(zp(), i) * std::pow(zm(), 2*j+1);
-                   
-
-                }
-                else if (m_polyType=="antiSym_chebyshev"){
-                   double Cij = getC(i,j);
-        
-        
-                  sum_i = sum_i +  Cij * chebychev(zp, i) * chebychev(zm, 2*j+1);
-                   
-
-                }
-                else if (m_polyType=="antiSym_bessel"){
-                   double Cij = getC(i,j);
-        
-        
-                  sum_i = sum_i +  Cij * bessel(zp, i) * bessel(zm, 2*j+1);
-                   
-
-                }
-
-
-                else if (m_polyType=="antiSym_laguerre"){
-                   double Cij = getC(i,j);
-                  sum_i = sum_i +  Cij * laguerre(zp, i) * laguerre(zm, 2*j+1);
-                   
-
-                }
-
-
-                else if (m_polyType=="Sym_legendre"){
-                   double Cij = getC(i,j);
-                   auto zp = 0.5 * (X + Y);
-                   auto zm = 0.5 * (X - Y);
-                  sum_i = sum_i +  Cij * legendre(zp, i) * legendre(zm, 2*j);
-                   
-
-                }
-                else if (m_polyType=="customPoly"){
-                    double Cij = getC(i,j);
-        
-        
-                   sum_i = sum_i + Cij * customPoly(zp, zm, i, j);
-                }
-
-
-
-                else{
-                double Cij = getC(i,j);
-                if (m_pdebug){
-                    INFO("x = "<<x);
-                    INFO("y = "<<y);
-                    INFO("Type = "<<m_polyType) ;
-                    INFO("C"<<i<<j<<" = "<<Cij) ;
-                }
-                if (m_polyType=="simple"){
-                    sum_i = sum_i +  Cij * pow(X(), i) * pow(Y(), j);
-                }
-                else if (m_polyType=="chebychev"){
-                sum_i = sum_i + Cij * chebychev(X(), i) * chebychev(Y(), j); 
-                }
-                else if (m_polyType=="legendre"){
-                    sum_i = sum_i + Cij * legendre(X(), i) * legendre(Y(), j);
-                }
-                else if (m_polyType=="laguerre"){
-                    sum_i = sum_i + Cij * laguerre(X(), i) * laguerre(Y(), j);
-                }
-                else if (m_polyType=="bessel"){
-                    sum_i = sum_i + Cij * bessel(X(), i) * bessel(Y(), j);
-                }
-                }
+                real_t Cij = m_mps["pCorrelatedSum::C"+std::to_string(i) + std::to_string(j)]->mean();
+                sum_i += Cij*fcn::legendre(zp,i) * fcn::legendre(zm,2*j+1);
                
 
                 if (m_pdebug){
@@ -553,96 +303,27 @@ class pCorrelatedSum {
         for (auto i=0; i < m_order+1; i++){
             Expression sum_i=0;
             for (auto j=0; j<m_order+1-i; j++){
-                if (m_polyType=="CPSinPoly"){
-                  double Cpij = getdC2(i,j,"P");
-                  double Cmij = getdC2(i,j,"M");
-                  sum_i = sum_i + Cpij * fcn::pow( CPSinPoly(X(), Y(), i, j, 1),2) + Cmij * fcn::pow(CPSinPoly(X(), Y(), i, j, -1), 2);
-                }
-                else if (m_polyType=="CP_legendre"){
-                   double Cpij = getdC2(i,j,"P");
-                   double Cmij = getdC2(i,j,"M");
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i + Cpij* fcn::pow( legendre(zp, i) * legendre(zm, 2*j), 2) + Cmij * fcn::pow( legendre(zp, i) * legendre(zm, 2*j+1), 2);
-                   
+                
+                double Cij = getdC2(i,j);
+                auto zp = 0.5 * (X() + Y());
+                auto zm = 0.5 * (X() - Y());
 
+                sum_i = sum_i +  Cij * fcn::pow(fcn::legendre(zp, i) * fcn::legendre(zm, 2*j+1),2 )  ;
+                int cov_kl=0;
+                for (int k=0;k<m_order+1;k++){
+                    for (int l=0;l<m_order+1 - k;l++){
+                        double Ckl = getdC2(k,l);
+                        sum_i+= 2* (*cov)[cov_ij][cov_kl] *  fcn::pow(Cij * Ckl, 0.5) * fcn::legendre(zp, i) * fcn::legendre(zm, 2*j+1)*fcn::legendre(zp,k)*fcn::legendre(zm, 2*l+1);
+                
+                    }
                 }
-                else if (m_polyType=="antiSym_legendre"){
-                   double Cij = getdC2(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
-
-                  sum_i = sum_i +  Cij * fcn::pow(legendre(zp, i) * legendre(zm, 2*j+1),2 )  ;
-              int cov_kl=0;
-              for (int k=0;k<m_order+1;k++){
-                for (int l=0;l<m_order+1 - k;l++){
-                   double Ckl = getdC2(k,l);
-                   sum_i+= 2* (*cov)[cov_ij][cov_kl] *  fcn::pow(Cij * Ckl, 0.5) * legendre(zp, i) * legendre(zm, 2*j+1)*legendre(zp,k)*legendre(zm, 2*l+1);
-                   
-                }
-              }
-            cov_ij++;
+                cov_ij++;
 
                 
                    
 
-                }
-                else if (m_polyType=="antiSym_simple"){
-
-                   double Cij = getdC2(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i +  Cij * fcn::pow( std::pow(zp, i) * std::pow(zm, 2*j+1),2);
-                   
-
-                }
-                else if (m_polyType=="antiSym_chebyshev"){
-
-                   double Cij = getdC2(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i +  Cij * fcn::pow( chebychev(zp, i) * chebychev(zm, 2*j+1), 2);
-                   
-
-                }
-                else if (m_polyType=="Sym_legendre"){
-                   
-                   double Cij = getdC2(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i +   Cij * fcn::pow(legendre(zp, i) * legendre(zm, 2*j), 2);
-                   
-
-                }
-
-
-
-                else{
-                double Cij = getdC2(i,j);
-                if (m_pdebug){
-                    INFO("x = "<<x);
-                    INFO("y = "<<y);
-                    INFO("Type = "<<m_polyType) ;
-                    INFO("C"<<i<<j<<" = "<<Cij) ;
-                }
-                if (m_polyType=="simple"){
-                    sum_i = sum_i +  Cij * fcn::pow( pow(X(), i) * pow(Y(), j), 2);
-                }
-                else if (m_polyType=="chebychev"){
-                sum_i = sum_i + Cij * fcn::pow( chebychev(X(), i) * chebychev(Y(), j), 2); 
-                }
-                else if (m_polyType=="legendre"){
-                    sum_i = sum_i + Cij *  fcn::pow(legendre(X(), i) * legendre(Y(), j), 2);
-                }
-                else if (m_polyType=="laguerre"){
-                    sum_i = sum_i + Cij * fcn::pow( laguerre(X(), i) * laguerre(Y(), j), 2);
-                }
-                else if (m_polyType=="bessel"){
-                    sum_i = sum_i + Cij * fcn::pow( bessel(X(), i) * bessel(Y(), j), 2);
-                }
-                }
-               
-
+                
+                
                 if (m_pdebug){
                     INFO("sum_"<<i<<" = "<<sum_i());
                 }

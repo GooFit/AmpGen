@@ -116,8 +116,15 @@ namespace AmpGen
                 auto psi = m_Psi[i];
                 auto sigDat = m_SigData[i];
                 auto tagDat = m_TagData[i];
+                ProfileClock pcN;
+                pcN.start();
                 auto norm = psi.norm();
+                pcN.stop();
+                if (m_debug) INFO("LL "<<i<<" norm = "<<norm<<" took "<<pcN.t_duration<<" for "<<m_SigInt[i].size()<<" integration events");
                 real_t _LL = 0;
+                ProfileClock pc;
+                pc.start();
+
                 #pragma omp parallel for reduction( +: _LL )
                 for (int j=0;j<sigDat.size();j++){
                     auto evt1 = sigDat[j];
@@ -127,6 +134,9 @@ namespace AmpGen
 
 
                 }
+                pc.stop();
+
+            if (m_debug) INFO("LL "<<i<<" = "<<_LL<<" took "<<pc.t_duration<<" for "<<m_SigData[i].size()<<" events");
             return _LL;
 
         }
@@ -137,14 +147,23 @@ namespace AmpGen
         double LL_Gam(int i){
             auto psi = m_A[i];
             auto sigDat = m_GamData[i];
+            ProfileClock pcN;
+            pcN.start();
             auto norm = psi.norm();
+            pcN.stop();
+            if (m_debug) INFO("LL "<<i<<" norm = "<<norm<<" took "<<pcN.t_duration<<" for "<<m_GamInt[i].size()<<" integration events");
             real_t _LL=0;
+            ProfileClock pc;
+            pc.start();
             #pragma omp parallel for reduction( +: _LL )
             for (int j=0;j<sigDat.size();j++){
                     auto evt1 = sigDat[j];
                     auto prob = std::norm(psi.getVal(evt1))/norm;
                     _LL += -2 * log(prob);
             }
+            pc.stop();
+            if (m_debug) INFO("LL "<<i<<" = "<<_LL<<" took "<<pc.t_duration<<" for "<<m_GamData[i].size()<<" events");
+            
 
             return _LL;
 
@@ -155,12 +174,14 @@ namespace AmpGen
             double ll =0 ;
 
             for (auto i=0; i < m_SigData.size(); i++){
-                if (m_debug) INFO("LL_"<<i<<" = "<<LL_Corr(i));
+                if (m_debug) INFO("Calculating "<<i+1<<"/"<<m_SigData.size()<<" LL corr");
                 ll += LL_Corr(i);
             }
             
             for (auto i=0; i < m_GamData.size(); i++){
-                if (m_debug) INFO("LL_"<<i<<" = "<<LL_Gam(i));
+              
+                if (m_debug) INFO("Calculating "<<i+1<<"/"<<m_GamData.size()<<" LL gamma");
+
                 ll += LL_Gam(i);
             }
             if (m_debug) INFO("LL = "<<ll);

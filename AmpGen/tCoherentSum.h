@@ -1,13 +1,15 @@
+
+#ifndef TCOHERENTSUM
+#define TCOHERENTSUM
+
+
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/FitFraction.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/Lineshapes.h"
 #include "AmpGen/MinuitParameterSet.h"
-
-#ifndef TCOHERENTSUM
-#define TCOHERENTSUM
-
+//#include "AmpGen/Polynomials.h"
 /* 
    tCoherentSum is the Quantum Correlated sum, designed as an input for the QcFitter program. 
    This object is designed to take the correlated decays:
@@ -39,76 +41,6 @@
 
 
 namespace AmpGen { 
-
-Expression CPSinPolyt(Expression x, Expression y, unsigned int mu, unsigned int lambda, int CP){
-  auto M00 = fcn::sin(M_PI * lambda * x);
-  auto M01 = fcn::sin(M_PI * lambda * y);
-  auto M10 = fcn::sin(M_PI * mu * x);
-  auto M11 = fcn::sin(M_PI * mu * y);
-  return M00 * M11 + CP*M10*M01;
-}
-
-Expression chebychevt(Expression x, unsigned int order){
-    Expression output = 0;
-    if (order == 0){
-        output = 1;
-    }
-    else if (order == 1){
-        output = x;
-    }
-    else if (order == 2){
-        output = 2 * x * x - 1;
-    }
-    else {
-        output = 2 * x * chebychevt(x, order -1) - chebychevt(x, order - 2);
-    }
-    return output;
-}
-
-
-Expression legendret(Expression x, unsigned int order){
-    Expression output =0;
-    if (order==0){
-        output=1;
-    }
-    else if (order==1){
-        output=x;
-    }
-    else {
-        output = (2 * order - 1)/order * x * legendret(x, order - 1) - (order - 1)/order * legendret(x, order - 2);
-    }
-    return output;
-}
-    
-Expression besselt(Expression x, unsigned int order){
-    Expression output =0;
-    if (order==0){
-        output=1;
-    }
-    else if (order==1){
-        output=x + 1;
-    }
-    else{
-        output = (2 * order - 1) * x * besselt(x, order - 1) + besselt(x, order - 2);
-        
-    }
-    return output;
-}
-
-Expression laguerret(Expression x, unsigned int order){
-    Expression output =0;
-    if (order==0){
-        output=1;
-    }
-    else if (order==1){
-        output= 1 - x;
-    }
-    else{
-        output = ( (2 * order  - 1 - x) * laguerret(x, order - 1) - (order - 1) * laguerret(x, order - 2))/order;
-    }
-    return output;
-}
-
 
 class tCoherentSum {
     public:
@@ -281,86 +213,15 @@ class tCoherentSum {
         Expression y0 = (ymax + ymin)/2;
         Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
         Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
-        
+        auto zp = 0.5 *(X + Y);
+        auto zm = 0.5 * (X - Y); 
         //INFO("Order = "<<m_order);
         for (auto i=0; i < m_order+1; i++){
             Expression sum_i=0;
             for (auto j=0; j<m_order+1-i; j++){
-                if (m_polyType=="CPSinPoly"){
-                  double Cpij = getC(i,j,"P");
-                  double Cmij = getC(i,j,"M");
-                  sum_i = sum_i + Cpij * CPSinPolyt(X(), Y(), i, j, 1) + Cmij * CPSinPolyt(X(), Y(), i, j, -1);
-                }
-                else if (m_polyType=="CP_legendre"){
-                   double Cpij = getC(i,j,"P");
-                   double Cmij = getC(i,j,"M");
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i + Cpij* legendret(zp, i) * legendret(zm, 2*j) + Cmij * legendret(zp, i) * legendret(zm, 2*j+1);
-                   
-
-                }
-                else if (m_polyType=="antiSym_legendre"){
-                   double Cij = getC(i,j);
-
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i +  Cij * legendret(zp, i) * legendret(zm, 2*j+1);
-                   
-
-                }
-                else if (m_polyType=="antiSym_simple"){
-                   double Cij = getC(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i +  Cij * std::pow(zp, i) * std::pow(zm, 2*j+1);
-                   
-
-                }
-                else if (m_polyType=="antiSym_chebyshev"){
-                   double Cij = getC(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i +  Cij * chebychevt(zp, i) * chebychevt(zm, 2*j+1);
-                   
-
-                }
-                else if (m_polyType=="Sym_legendre"){
-                   double Cij = getC(i,j);
-                   auto zp = 0.5 * (X() + Y());
-                   auto zm = 0.5 * (X() - Y());
-                  sum_i = sum_i +  Cij * legendret(zp, i) * legendret(zm, 2*j);
-                   
-
-                }
-
-
-
-                else{
-                double Cij = getC(i,j);
-                if (m_pdebug){
-                    INFO("x = "<<x);
-                    INFO("y = "<<y);
-                    INFO("Type = "<<m_polyType) ;
-                    INFO("C"<<i<<j<<" = "<<Cij) ;
-                }
-                if (m_polyType=="simple"){
-                    sum_i = sum_i +  Cij * pow(X(), i) * pow(Y(), j);
-                }
-                else if (m_polyType=="chebychev"){
-                sum_i = sum_i + Cij * chebychevt(X(), i) * chebychevt(Y(), j); 
-                }
-                else if (m_polyType=="legendre"){
-                    sum_i = sum_i + Cij * legendret(X(), i) * legendret(Y(), j);
-                }
-                else if (m_polyType=="laguerre"){
-                    sum_i = sum_i + Cij * laguerret(X(), i) * laguerret(Y(), j);
-                }
-                else if (m_polyType=="bessel"){
-                    sum_i = sum_i + Cij * besselt(X(), i) * besselt(Y(), j);
-                }
-                }
-               
+                real_t Cij = m_mps["pCorrelatedSum::C"+std::to_string(i) + std::to_string(j)]->mean();
+                sum_i += Cij*fcn::legendre(zp,i) * fcn::legendre(zm,2*j+1);
+                
 
                 if (m_pdebug){
                     INFO("sum_"<<i<<" = "<<sum_i());

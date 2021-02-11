@@ -9,6 +9,13 @@
 #include "AmpGen/CombCorrLL.h"
 #include "AmpGen/CombGamCorrLL.h"
 #include "AmpGen/MetaUtils.h"
+#include "AmpGen/polyLASSO.h"
+#include "AmpGen/ProfileClock.h"
+#include <TMath.h>
+
+//#include <Math/IFunction.h>
+#include <Math/Functor.h>
+#include "AmpGen/PhaseCorrection.h"
 #include <typeinfo>
 
 //#include <boost/algorithm/string.hpp>
@@ -135,6 +142,7 @@ EventList getEvents(std::string type, std::vector<std::string> sigName, std::str
    
 
 
+    INFO("From "<<dataFile);
     INFO("Getting Tag name split "<<tagName);
     auto tokens       = split(tagName, ' ');
     INFO("Building Tag particle"<<tokens[1]);
@@ -273,6 +281,56 @@ INFO("Doing loop of Fits");
   EventList mc =  Generator<>(eventType, &rndm).generate(NInt);
   std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > pdfs;
 
+  if (NamedParameter<bool>("testPhaseCorr", true)){
+    auto event = mc[0];
+    PhaseCorrection phaseCorr(MPS);
+    Expression corr = phaseCorr.calcCorr(event);
+    auto corrF = phaseCorr.makefunc();
+    size_t order = NamedParameter<size_t>("pCorrelatedSum::Order");
+    auto x = event.s(0,1);
+    auto y = event.s(0,2);
+    auto z = event.s(1,2);
+    auto mp = sqrt(event.s(1,1))/2;
+    auto mm = sqrt(event.s(2,2))/2;
+    auto mK = sqrt(event.s(0,0))/2;
+    auto mD = sqrt(x + y + z - pow(mp,2) - pow(mm,2) - pow(mK,2) ) ;
+    Expression xmin = pow(mp + mK, 2);
+    Expression xmax = pow(mD - mm, 2);
+    Expression x0 = (xmax + xmin)/2;
+    Expression ymin = pow(mp + mK, 2);
+    Expression ymax = pow(mD - mp, 2);
+    Expression y0 = (ymax + ymin)/2;
+    Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
+    Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
+    auto zp = (X+Y)/2;
+    auto zm = (X-Y)/2;
+    ProfileClock pcF;
+    pcF.start();
+    auto F = corrF(zp,zm,order,MPS);
+    pcF.stop();
+    INFO("stored f("<<zp<<", "<<zm<<") = "<<F<<" took "<<pcF.t_duration);
+
+    ProfileClock pcNormCorr;
+    pcNormCorr.start();
+    auto normF = phaseCorr.calcCorr(event);
+    pcNormCorr.stop();
+
+    INFO("normal f("<<zp<<", "<<zm<<") = "<<normF<<" took "<<pcNormCorr.t_duration);
+
+    ProfileClock pcFastCorr;
+    pcFastCorr.start();
+    auto fastF = phaseCorr.fastCorr(event);
+    pcFastCorr.stop();
+    INFO("explicit f("<<zp<<", "<<zm<<") = "<<fastF<<" = "<<fastF()<<" took "<<pcFastCorr.t_duration);
+   
+    
+
+
+
+    return 0;
+  }
+
+
 for (int i=0; i < tags.size(); i++){
    std::stringstream tag_log;
     auto tagName = split(tags[i],' ')[0];
@@ -283,9 +341,11 @@ for (int i=0; i < tags.size(); i++){
     auto tag_logName = tag_log.str();
 
     auto sigevents_tag = getEvents("signal", pNames, tags[i], dataFile);
+    INFO("Have signal events for "<<i);
 
     auto tagevents_tag = getEvents("tag", pNames, tags[i], dataFile);
 
+    INFO("Have tag events for "<<i);
 
     auto types = makeEventTypes(pNames, tags[i]);
 
@@ -293,6 +353,7 @@ for (int i=0; i < tags.size(); i++){
     auto tagType = types["tag"];
  
 
+    INFO("Generating MC for norm for tag "<<i);
     EventList tagMCevents_tag = Generator<>(tagType, &rndm).generate(NInt);
 
 
@@ -330,7 +391,7 @@ for (int i=0; i < tags.size(); i++){
     bool useXY = std::stoi(split(BTag,' ')[4]);
     
     INFO("GammaSign = "<<gammaSign);
-    auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY, B_Conj);
+
 
     std::string DataFile = NamedParameter<std::string>("BDataSample", "");
     std::string IntFile = NamedParameter<std::string>("BIntegrationSample", "");
@@ -349,9 +410,9 @@ for (int i=0; i < tags.size(); i++){
 
     EventList Int = Generator<>(eventType, &rndm).generate(NInt);
 
-
-    sig.setEvents(Data);
-    sig.setMC(Int);
+//    auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY, B_Conj);
+//    sig.setEvents(Data);
+//    sig.setMC(Int);
 
 
     BSigData.emplace_back(Data);
@@ -386,6 +447,7 @@ for (int i=0; i < tags.size(); i++){
    simfit.add(pdfsB[i]);
 }
 */
+INFO("Making Combined LL");
  auto combLL =  CombGamCorrLL(
         SigData, 
         TagData, 
@@ -408,6 +470,36 @@ for (int i=0; i < tags.size(); i++){
     INFO("Making Combined Minimiser object");
 //    INFO("totalLL = "<<totalLL.getVal());  
 
+
+    if (NamedParameter<bool>("testLasso", true)){
+      INFO("Making LASSO");
+//    LASSO lasso(MPS);
+
+      ProfileClock pc;
+      pc.start();
+
+
+      INFO("LL = "<<simfit.getVal());
+      pc.stop();
+      INFO("time to calc LL = "<<pc.t_duration);
+      polyLASSO lasso(simfit, MPS);
+      double penTerm = lasso.penalty();
+      double lassoVal = lasso.getVal();
+
+      INFO("penalty = "<<penTerm);
+      INFO("LL + pen = "<<lassoVal);
+      Minimiser lassoMini = Minimiser(lasso, &MPS);
+
+
+
+      lassoMini.doFit();
+      FitResult * frLasso = new FitResult(lassoMini);
+      frLasso->print();
+      frLasso->writeToFile(logFile);
+
+      return 0;
+    }
+    
     Minimiser combMini = Minimiser(simfit, &MPS);
     combMini.gradientTest();
    // combMini.prepare();
