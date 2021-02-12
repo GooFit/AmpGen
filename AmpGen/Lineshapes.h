@@ -296,6 +296,9 @@ namespace AmpGen
      */
     DECLARE_LINESHAPE( Flatte );
     DECLARE_LINESHAPE( Bugg );
+    DECLARE_LINESHAPE( Kappa );
+    DECLARE_LINESHAPE( Dabba );
+
     DECLARE_LINESHAPE( Isotensor );
 
     /// Exponential form-factor of type \f$ e^{ - q^2 R^2 } \f$
@@ -322,6 +325,7 @@ namespace AmpGen
     /** @ingroup Lineshapes class Poly
      *  @brief Polynominal shape \f$ \mathcal{A}(s) = \sum^n_i c_i s^{i} \f$ where the sum is to lineshapeModifier::Degree, and the free parameters of the shape are lineshapeModifier_ci 
      */
+    DECLARE_LINESHAPE( EXPNR );
     DECLARE_LINESHAPE( PolyNR );
     
     /** @ingroup Lineshapes class PolyNR

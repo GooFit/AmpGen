@@ -43,7 +43,7 @@ Expression Gamma_4pi( const Expression& s, const Expression& m0, const Expressio
 
 DEFINE_LINESHAPE( Bugg )
 {
-  Expression M      = Parameter( "Bugg::M", 0.935 );
+  Expression M      = Parameter( "Bugg::M", 0.953 );
   Expression b1     = Parameter( "Bugg::b1", 1.302 );
   Expression b2     = Parameter( "Bugg::b2", 0.340 );
   Expression A      = Parameter( "Bugg::A", 2.426 );
@@ -97,3 +97,56 @@ DEFINE_LINESHAPE( Bugg )
   ADD_DEBUG( rho_4pi( s, lambda_4pi, s0_4pi ), dbexpressions ); 
   return lineshapeModifier == "Az" ? BW * ( s - sA ) * g1sg : BW;
 }
+
+DEFINE_LINESHAPE( Kappa )
+{
+    Expression M      = Parameter( "Kappa::M", 3.3 );
+    Expression b1     = Parameter( "Kappa::b1", 24.49 );
+    Expression b2     = Parameter( "Kappa::b2", 0. );
+    Expression A      = Parameter( "Kappa::A", 2.5 );
+    Constant mPiPlus( 0.139570 );
+    Constant mKPlus( 0.493677  );
+    Expression J = Constant(0,1);    
+    Expression sA     = Parameter( "Kappa::sA", 1.) * (mKPlus*mKPlus - 0.5 * mPiPlus * mPiPlus);
+
+    Expression g1sg      = M * ( b1 + b2 * s ) * Exp( -( s - M * M ) / A );
+    Expression adlerZero = ( s - sA ) / ( M * M - sA );
+    Expression Gamma_tot = g1sg * adlerZero * rho_2(s,(mPiPlus+mKPlus)*(mPiPlus+mKPlus)/4.);
+    
+    Expression iBW = M * M - s - J * Gamma_tot;
+    
+    Expression BW = 1. / iBW;
+    ADD_DEBUG( M, dbexpressions );
+    ADD_DEBUG( g1sg, dbexpressions );
+    ADD_DEBUG( sA, dbexpressions );
+    ADD_DEBUG( adlerZero, dbexpressions );
+    ADD_DEBUG( Gamma_tot, dbexpressions );
+    ADD_DEBUG( s, dbexpressions );
+    ADD_DEBUG( iBW, dbexpressions );
+    return lineshapeModifier == "Az" ? BW * ( s - sA ) * g1sg : BW;
+}
+
+DEFINE_LINESHAPE( Dabba )
+{
+    Expression b     = Parameter( "Dabba::b", 24.49 );
+    Expression alpha     = Parameter( "Dabba::alpha", 0.1 );
+    Expression beta      = Parameter( "Dabba::beta", 0.1 );
+    Constant mPiPlus( 0.139570 );
+    Constant mDPlus( 1.86965  );
+    Expression J = Constant(0,1);    
+    Expression sA     = Parameter( "Dabba::sA", 1.) * (mDPlus*mDPlus - 0.5 * mPiPlus * mPiPlus);
+    
+    Expression s0 = (mDPlus+mPiPlus)*(mDPlus+mPiPlus);
+    Expression term1 = beta * (s-s0);
+    Expression term2 = b * rho_2(s,s0/4.) * (s-sA) * Exp( - alpha * ( s - s0) );
+    
+    Expression iBW = 1 - term1 - J * term2;
+    
+    Expression BW = 1. / iBW;
+    ADD_DEBUG( s0, dbexpressions );
+    ADD_DEBUG( term1, dbexpressions );
+    ADD_DEBUG( term2, dbexpressions );
+    ADD_DEBUG( iBW, dbexpressions );
+    return BW;
+}
+

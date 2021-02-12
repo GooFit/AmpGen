@@ -38,3 +38,15 @@ DEFINE_GENERIC_SHAPE( PolyNR )
   }
   return rt;
 }
+
+DEFINE_LINESHAPE( EXPNR )
+{
+    Expression alpha     = Parameter( particleName + "_alpha", 0 );
+    Expression beta    = Parameter( particleName + "_beta", 0 );
+        
+    const Expression BW = Exp(-alpha * s - Constant(0,1) * beta * s);
+    
+    ADD_DEBUG( BW, dbexpressions );
+    return BW;
+}
+
