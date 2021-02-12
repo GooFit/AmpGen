@@ -1,6 +1,5 @@
 #include "AmpGen/PhaseSpace.h"
 
-#include <RtypesCore.h>
 #include <algorithm>
 #include <array>
 #include <cmath>
