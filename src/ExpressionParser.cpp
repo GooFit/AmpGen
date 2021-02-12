@@ -74,7 +74,7 @@ template <char open= '(', char close = ')' > iterator findMatchingBracket(iterat
 std::vector< std::pair<iterator, iterator> > split_it( iterator begin, iterator end, const std::string& delimiter)
 {
   std::vector<std::pair<iterator, iterator>> rt; 
-  rt.emplace_back(begin, nullptr);
+  rt.emplace_back(begin, begin);
   int b1l = 0;
   int b2l = 0;
   for( auto it = begin; it != end-1; ++it )
@@ -85,7 +85,7 @@ std::vector< std::pair<iterator, iterator> > split_it( iterator begin, iterator 
     {
       rt.rbegin()->second = it; 
       // INFO( *it << " " << std::distance( begin, rt.rbegin()->first) << " " << std::distance( begin, rt.rbegin()->second) );
-      rt.emplace_back( it+1, nullptr );
+      rt.emplace_back( it+1, it+1);
     }
   }
   rt.rbegin()->second = end; 
