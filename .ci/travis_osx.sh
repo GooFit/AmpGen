@@ -15,6 +15,7 @@ echo "CMake-ing, CXX = $CXX"
 cmake .. -DCMAKE_CXX_COMPILER=clang -DUSE_SIMD=0 -DUSE_OPENMP=0 -DUSE_MVEC=0 -DENABLE_INSTALL=0
 echo "Building ..."
 cmake --build . -- -j2 
+make test
 cd ..
 echo "Running test job ..."
 ./build/bin/AmpGen.exe options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 10000
