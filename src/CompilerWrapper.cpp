@@ -157,10 +157,7 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
 
   if(useOpenMP) compile_flags.push_back("-fopenmp");
 
-  std::vector<const char*> argp = { m_cxx.c_str(), 
-    "-shared", 
-    "-rdynamic", 
-    "-fPIC"};
+  std::vector<const char*> argp = { m_cxx.c_str(), "-shared", "-rdynamic", "-fPIC"};
   
   std::transform( compile_flags.begin(), compile_flags.end(), std::back_inserter(argp), [](const auto& flag ){return flag.c_str() ; } );
   
