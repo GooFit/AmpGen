@@ -142,9 +142,10 @@ std::string get_cpp_version()
 void CompilerWrapper::compileSource( const std::string& fname, const std::string& oname )
 {
   using namespace std::chrono_literals;
-  std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", 
-   {"-Ofast", "--std="+get_cpp_version()}); 
-  
+  std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", {"-Ofast", "--std="+get_cpp_version()}); 
+ 
+  bool useOpenMP = USE_OPENMP; 
+
   #if ENABLE_AVX 
     compile_flags.push_back("-march=native");
     compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
@@ -153,24 +154,24 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     compile_flags.push_back("-mavx2");
     compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
   #endif
-  #if USE_OPENMP
-    compile_flags.push_back("-fopenmp");
-  #endif
+
+  if(useOpenMP) compile_flags.push_back("-fopenmp");
 
   std::vector<const char*> argp = { m_cxx.c_str(), 
     "-shared", 
     "-rdynamic", 
     "-fPIC"};
+  
   std::transform( compile_flags.begin(), compile_flags.end(), std::back_inserter(argp), [](const auto& flag ){return flag.c_str() ; } );
+  
   if(isClang())
   {
     argp.push_back( "-Wno-return-type-c-linkage");
     #if __APPLE__
     argp.push_back("-lstdc++");
     #endif
-    #if USE_OPENMP 
-    argp.push_back("-fopenmp=libiomp5");
-    #endif
+    if( useOpenMP ) argp.push_back("-fopenmp=libiomp5");
+    argp.push_back( "-march=native");
   }
 
   argp.push_back( fname.c_str() );
