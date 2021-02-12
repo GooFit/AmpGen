@@ -15,4 +15,4 @@ echo "Building ..."
 cmake --build . -- -j2 
 cd ..
 echo "Running test job ..."
-./build/bin/Generator options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 10000
+./build/bin/AmpGen.exe options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 10000
