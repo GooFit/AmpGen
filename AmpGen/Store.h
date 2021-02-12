@@ -113,9 +113,9 @@ namespace AmpGen {
         if constexpr( align == Alignment::AoS )
         {
           if constexpr( std::is_same< typename functor_type::return_type, void >::value )
-          fcn.batch(aligned_size(), is.nFields(), m_nFields, nullptr,  m_store.data() + p0, 1, fcn.externBuffer().data(), is.data());  
+            fcn.batch(aligned_size(), is.nFields(), m_nFields, nullptr,  m_store.data() + p0, 1, fcn.externBuffer().data(), is.data());  
           if constexpr( ! std::is_same< typename functor_type::return_type, void >::value )
-          fcn.batch(aligned_size(), is.nFields(), m_nFields         , m_store.data()  + p0   , fcn.externBuffer().data(), is.data());
+            fcn.batch(aligned_size(), is.nFields(), m_nFields         , m_store.data()  + p0   , fcn.externBuffer().data(), is.data());
         }
         else 
         {

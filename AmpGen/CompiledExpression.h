@@ -59,17 +59,12 @@ namespace AmpGen
           {
             if constexpr( std::is_convertible<decltype(arg), DebugSymbols>::value  ) this->m_db = arg;
             else if constexpr( std::is_convertible<decltype(arg), std::map<std::string, unsigned>>::value ) this->m_evtMap = arg;
-            else if constexpr( std::is_convertible<decltype(arg), AmpGen::disableBatch>::value ) this->m_enableBatch = false;  
             else if constexpr( std::is_convertible<decltype(arg), MinuitParameterSet*>::value ) mps = arg;
             else if constexpr( std::is_convertible<decltype(arg), const MinuitParameterSet*>::value ) mps = arg;
             else if constexpr( std::is_convertible<decltype(arg), MinuitParameterSet>::value ) mps = &arg;
             else ERROR("Unrecognised argument: " << type_string(arg) ); 
           }; 
           for_each( std::tuple<const namedArgs&...>(args...), process_argument);
-          DEBUG("Made expression:  " << m_name << " " << progName() << " " << mps << " batch enabled ? " << this->m_enableBatch );
-          #ifndef  _OPENMP
-            this->m_enableBatch = false;
-          #endif
           resolve(mps);
           if constexpr(std::is_same<ret_type,void>::value ) 
           {
@@ -162,7 +157,9 @@ namespace AmpGen
                  << " const size_t& cacheSize, ";
           stream <<  type_string<ret_type>() << " * rt, ";
           stream << CompiledExpressionBase::fcnSignature(typelist<arg_types...>(), use_rto(), false) << ") {\n";
+          #if USE_OPENMP
           stream << "#pragma omp parallel for\n";
+          #endif
           stream << "for( size_t i = 0; i < N/" << utils::size<float_v>::value << "; ++i ){\n";
           if( use_rto() ) stream << progName() + "( r + cacheSize * i, s, x0, x1 +  i * eventSize);";
           else            stream << " rt[cacheSize*i] = " << progName() + "( x0, x1 +  i * eventSize);";
@@ -224,7 +221,7 @@ namespace AmpGen
           bool status = true;
           status &= m_fcn.set(handle, symbol, true);
           status &= m_db.size() == 0 || m_fdb.set(handle, symbol + "_DB");
-          status &= !m_enableBatch   || m_batchFcn.set(handle, symbol + "_batch");
+          status &= m_batchFcn.set(handle, symbol + "_batch");
           return status;
         }
         bool link( const std::string& handle ) override

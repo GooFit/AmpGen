@@ -51,7 +51,6 @@ void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
   if( m_resolver == nullptr ) m_resolver = std::make_shared<ASTResolver>( m_evtMap, mps );
   if( fcnSignature().find("AVX") != std::string::npos ) {
     m_resolver->setEnableAVX();   
-    enableBatch();
   }
   m_dependentSubexpressions = m_resolver->getOrderedSubExpressions( m_obj ); 
   for ( auto& sym : m_db ){
@@ -131,7 +130,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     stream << "}\n";
   }
   if ( m_db.size() != 0 ) addDebug( stream );
-  if( m_enableBatch ) compileBatch(stream);    
+  compileBatch(stream);    
 }
 
 std::ostream& AmpGen::operator<<( std::ostream& os, const CompiledExpressionBase& expression )
