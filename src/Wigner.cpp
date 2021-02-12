@@ -228,7 +228,10 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
                                      TransformCache* cachePtr )
 {  
   if( cachePtr == nullptr ) cachePtr = new TransformCache();
-  if( particle.daughters().size() > 2 ) return 1; 
+  if( particle.daughters().size() > 2 ) {
+    WARNING( particle << " has more than two decay products: helicity amplitude is ill-defined - setting spin matrix element to 1" );
+    return 1; 
+  } 
   if( particle.daughters().size() == 1 ) 
     return helicityAmplitude( *particle.daughter(0), parentFrame, Mz, db, sgn, cachePtr);
   Tensor::Index a,b,c; 
