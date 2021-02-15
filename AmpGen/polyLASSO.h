@@ -8,7 +8,7 @@ namespace AmpGen
   class polyLASSO
   {
     public:
-      polyLASSO(SimFit ll, const MinuitParameterSet mps) : m_mps(mps), m_ll(ll), m_order(NamedParameter<size_t>( "pCorrelatedSum::Order") ), m_lambda(NamedParameter<real_t>("LASSO::Lambda")), m_debug(NamedParameter<bool>("LASSO::debug", false)) {}
+      polyLASSO(SimFit ll, const MinuitParameterSet mps) : m_mps(mps), m_ll(ll), m_order(NamedParameter<size_t>( "pCorrelatedSum::Order") ), m_debug(NamedParameter<bool>("LASSO::debug", false)), m_start(NamedParameter<size_t>("pCorrelatedSum::Start", 0)) {}
       double getVal()
       {
         double LL = m_ll.getVal();
@@ -17,17 +17,24 @@ namespace AmpGen
         return LL + pen;
       }
 
-      double penalty(){
-
-        if (m_debug) INFO("lambda = "<<m_lambda);
-
-        double pen = 0;
-        for (size_t i=0;i<m_order;i++){
-            for (size_t j=0; j<m_order - i; j++){
-                pen += std::abs(m_mps["pCorrelatedSum::C" + std::to_string(i) + std::to_string(j)]->mean());
-            }
+      real_t penaltyPerOrder(size_t order){
+        real_t penalty=0;
+        for (size_t i=0;i<order+1;i++){
+            size_t i1 = i;
+            size_t i2 = order - i;
+            penalty += std::abs(m_mps["pCorrelatedSum::C" + std::to_string(i1) + std::to_string(i2)]->mean());
         }
-        return m_lambda * pen;
+        return penalty;
+      }
+
+      double penalty(){
+        real_t lambda = m_mps["LASSO::lambda"]->mean() ;
+        if (m_debug) INFO("lambda = "<<lambda);
+        double pen = 0;
+        for (size_t i=m_start;i<m_order;i++){
+          pen += penaltyPerOrder(i);
+        }
+        return  lambda * pen;
 
       }
 
@@ -36,7 +43,7 @@ namespace AmpGen
         SimFit m_ll;
         MinuitParameterSet m_mps;
         size_t m_order;
-        real_t m_lambda;
+        size_t m_start;
         bool m_debug;
 
 

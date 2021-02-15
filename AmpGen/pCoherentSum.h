@@ -211,7 +211,10 @@ else{
     complex_t correction(const Event& event) const {
         Expression corr = 0;
         PhaseCorrection pC(m_mps);
-        return pC.calcCorr(event);
+        //return pC.calcCorr(event);
+        //return pC.fastCorr(event)().real();
+
+        return pC.calcCorrL(event);
 
         auto x = event.s(0,1);
         auto y = event.s(0,2);

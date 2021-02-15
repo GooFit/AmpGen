@@ -241,7 +241,7 @@ void printOut(EventList eventsSig, EventList eventsTag, pCorrelatedSum cs_tag, s
     auto ABCD = cs_tag.getVal(evt_sig, evt_tag);
     auto corr = vals[5];
     auto ACst = A * std::conj(C);
-    auto dCorr = cs_tag.errcorrection(evt_sig, cov);
+    auto dCorr = std::complex<real_t>(0,0);//cs_tag.errcorrection(evt_sig, cov);
 
     auto prob = cs_tag.prob(evt_sig, evt_tag)/eventsSig.size();
     auto cosDD = -((fcn::pow(abs(ABCD), 2)() - fcn::pow(abs(A), 2)() * fcn::pow(abs(B), 2)() - fcn::pow(abs(C), 2)() * fcn::pow(abs(D), 2)())/(2 * abs(A) * abs(B) * abs(C) * abs(D) )).real();
@@ -356,7 +356,7 @@ for (int j=1;j<nBins + 1;j++){
     auto prob = cs_tag.prob(evt_sig, evt_tag);
 //    INFO("prob = "<<prob<<" Aprob = "<<aA(evt_sig)<<" Cprob = "<<aC(evt_sig));
     auto ACst = A * std::conj(C);
-    auto dCorr = cs_tag.errcorrection(evt_sig, cov);
+    auto dCorr =  std::complex<real_t>(0,0);//cs_tag.errcorrection(evt_sig, cov);
   auto A2 = aA(evt_sig);
     auto B2 = aB(evt_tag);
     auto C2 = aC(evt_sig);
@@ -553,7 +553,7 @@ void printDT(int i, int j, EventList sigEvents, EventList tagEvents, pCorrelated
 
     auto ACst = A * std::conj(C);
     auto DBst = D * std::conj(B);
-    auto dCorr = cs_tag.errcorrection(evt_sig, cov);
+    auto dCorr =  std::complex<real_t>(0,0);//cs_tag.errcorrection(evt_sig, cov);
     auto A2 = aA(evt_sig);
     auto B2 = aB(evt_tag);
     auto C2 = aC(evt_sig);

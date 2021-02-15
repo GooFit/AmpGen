@@ -264,27 +264,17 @@ int main( int argc, char* argv[] )
   std::map<std::string, std::vector<double> > inits = getParams(MPS);
 //auto fs = std::vector<std::function<double(void)> > {};
 
-INFO("Doing loop of Fits");
-
- std::vector<EventList> SigData;
- std::vector<EventList> TagData;
- std::vector<EventList> SigInt;
- std::vector<EventList> TagInt;
- std::vector<EventType> SigType;
- std::vector<EventType> TagType;
- std::vector<std::string> sumFactors;
- SimFit simfit;
-
- int NInt = NamedParameter<int>("NInt", 1e7);
+  int NInt = NamedParameter<int>("NInt", 1e7);
   INFO("Using "<<NInt<<" integration events");
   EventType eventType(pNames);
   EventList mc =  Generator<>(eventType, &rndm).generate(NInt);
-  std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > pdfs;
+  INFO("Generated Integration events");
 
   if (NamedParameter<bool>("testPhaseCorr", true)){
     auto event = mc[0];
+    INFO("Making phase correction");
     PhaseCorrection phaseCorr(MPS);
-    Expression corr = phaseCorr.calcCorr(event);
+    //Expression corr = phaseCorr.calcCorr(event);
     auto corrF = phaseCorr.makefunc();
     size_t order = NamedParameter<size_t>("pCorrelatedSum::Order");
     auto x = event.s(0,1);
@@ -294,16 +284,22 @@ INFO("Doing loop of Fits");
     auto mm = sqrt(event.s(2,2))/2;
     auto mK = sqrt(event.s(0,0))/2;
     auto mD = sqrt(x + y + z - pow(mp,2) - pow(mm,2) - pow(mK,2) ) ;
-    Expression xmin = pow(mp + mK, 2);
-    Expression xmax = pow(mD - mm, 2);
-    Expression x0 = (xmax + xmin)/2;
-    Expression ymin = pow(mp + mK, 2);
-    Expression ymax = pow(mD - mp, 2);
-    Expression y0 = (ymax + ymin)/2;
-    Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
-    Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
-    auto zp = (X+Y)/2;
-    auto zm = (X-Y)/2;
+    real_t xmin = pow(mp + mK, 2);
+    real_t xmax = pow(mD - mm, 2);
+    real_t x0 = (xmax + xmin)/2;
+    real_t ymin = pow(mp + mK, 2);
+    real_t ymax = pow(mD - mp, 2);
+    real_t y0 = (ymax + ymin)/2;
+    real_t X = (2 * x - xmax - xmin)/(xmax - xmin);
+    real_t Y = (2 * y - ymax - ymin)/(ymax - ymin);
+    real_t zp = (X+Y)/2;
+    real_t zm = (X-Y)/2;
+    INFO("xmin = "<<xmin);
+    INFO("xmax = "<<xmax);
+    INFO("ymin = "<<ymin);
+    INFO("ymax = "<<ymax);
+
+/*
     ProfileClock pcF;
     pcF.start();
     auto F = corrF(zp,zm,order,MPS);
@@ -322,13 +318,32 @@ INFO("Doing loop of Fits");
     auto fastF = phaseCorr.fastCorr(event);
     pcFastCorr.stop();
     INFO("explicit f("<<zp<<", "<<zm<<") = "<<fastF<<" = "<<fastF()<<" took "<<pcFastCorr.t_duration);
+    */
    
-    
+    ProfileClock pcCalcCorr;
+    pcCalcCorr.start();
+    auto corr = phaseCorr.calcCorrL(event);
+    pcCalcCorr.stop();
+    INFO("calc corr f("<<zp<<", "<<zm<<" ) = "<<corr<<" took "<<pcCalcCorr.t_duration); 
 
 
 
     return 0;
   }
+
+
+INFO("Doing loop of Fits");
+
+ std::vector<EventList> SigData;
+ std::vector<EventList> TagData;
+ std::vector<EventList> SigInt;
+ std::vector<EventList> TagInt;
+ std::vector<EventType> SigType;
+ std::vector<EventType> TagType;
+ std::vector<std::string> sumFactors;
+ SimFit simfit;
+
+std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > pdfs;
 
 
 for (int i=0; i < tags.size(); i++){
