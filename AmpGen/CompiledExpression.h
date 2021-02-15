@@ -62,6 +62,7 @@ namespace AmpGen
             else if constexpr( std::is_convertible<decltype(arg), MinuitParameterSet*>::value ) mps = arg;
             else if constexpr( std::is_convertible<decltype(arg), const MinuitParameterSet*>::value ) mps = arg;
             else if constexpr( std::is_convertible<decltype(arg), MinuitParameterSet>::value ) mps = &arg;
+            else if constexpr( std::is_convertible<decltype(arg), disableBatch>::value ) m_disableBatch = true; 
             else ERROR("Unrecognised argument: " << type_string(arg) ); 
           }; 
           for_each( std::tuple<const namedArgs&...>(args...), process_argument);
@@ -221,7 +222,7 @@ namespace AmpGen
           bool status = true;
           status &= m_fcn.set(handle, symbol, true);
           status &= m_db.size() == 0 || m_fdb.set(handle, symbol + "_DB");
-          status &= m_batchFcn.set(handle, symbol + "_batch");
+          if( !m_disableBatch ) status &= m_batchFcn.set(handle, symbol + "_batch");
           return status;
         }
         bool link( const std::string& handle ) override
