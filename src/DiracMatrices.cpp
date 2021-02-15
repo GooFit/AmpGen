@@ -37,7 +37,7 @@ extern const std::array<AmpGen::Tensor,3> AmpGen::Sigma4( {
              0, 0, 1, 0,
              0, 0, 0, -1 }, Tensor::dim(4,4))} );
 
-extern const std::array<AmpGen::Tensor,3>     AmpGen::S03  ( { 
+extern const std::array<AmpGen::Tensor,3>     AmpGen::SO3  ( { 
     Tensor({ 0, 0, 0, 0, 0, 0,-1, 0, 0, 1, 0, 0, 0, 0, 0, 0 }, Tensor::dim(4,4) ),
     Tensor({ 0, 0, 1, 0, 0, 0, 0, 0,-1, 0, 0, 0, 0, 0, 0, 0 }, Tensor::dim(4,4) ),
     Tensor({ 0,-1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, Tensor::dim(4,4)  ) } );

@@ -46,7 +46,7 @@ Tensor Vertex::Factory::getSpinFactorNBody( const std::vector<std::pair<Tensor, 
   }
   if ( mL == 1 )
     return LeviCivita()( -mu, -nu, -alpha, -beta ) *
-      tensors[0].first( nu ) * tensors[1].first( alpha ) * tensors[2].first( beta ) / ( GeV * GeV * GeV );
+      tensors[0].first( nu ) * tensors[1].first( alpha ) * tensors[2].first( beta ); 
   else if ( mL == 0 )
     return Tensor( std::vector<double>( {1} ), {1} );
   else
@@ -149,22 +149,22 @@ DEFINE_VERTEX( S_VV_P )
 {
   Tensor L        = Orbital_PWave( P, Q );
   Tensor coupling = LeviCivita()( -mu, -nu, -alpha, -beta ) * L( alpha ) * P( beta );
-  return V1( mu ) * coupling( -mu, -nu ) * V2( nu ) / ( GeV * GeV );
+  return V1( mu ) * coupling( -mu, -nu ) * V2( nu ); 
 }
 
 DEFINE_VERTEX( S_VS_P )
 {
   Tensor p_wave = Orbital_PWave( P, Q );
   Tensor p_v1   = V1( mu ) * p_wave( -mu );
-  return p_v1 * V2[0] / GeV;
+  return p_v1 * V2[0];
 }
 
-DEFINE_VERTEX( V_SS_P ){ return Orbital_PWave(P,Q) * V1[0] * V2[0] / GeV;}
+DEFINE_VERTEX( V_SS_P ){ return Orbital_PWave(P,Q) * V1[0] * V2[0];}
 
 DEFINE_VERTEX( V_VS_P )
 {
-  Tensor  L        = Orbital_PWave( P, Q ) / GeV; 
-  Tensor coupling = LeviCivita()( -mu, -nu, -alpha, -beta ) * L( alpha ) * P( beta ) / GeV;
+  Tensor  L        = Orbital_PWave( P, Q ); 
+  Tensor coupling = LeviCivita()( -mu, -nu, -alpha, -beta ) * L( alpha ) * P( beta );
   return ( coupling(mu,nu) * V1( -nu ) ) * V2[0];
 }
 
@@ -173,30 +173,30 @@ DEFINE_VERTEX( V_VS_S ){ auto S = Spin1Projector(P)(mu,nu) * V1(-nu) * V2[0]; AD
 
 DEFINE_VERTEX( V_VS_D )
 {
-  Tensor L_2_V0 = Orbital_DWave( P, Q ) / ( GeV * GeV );
+  Tensor L_2_V0 = Orbital_DWave( P, Q ); 
   Tensor Sv     = Spin1Projector( P );
   return ( Sv( mu, nu ) * L_2_V0( -nu, -alpha ) * V1( alpha ) ) * V2[0];
 }
 
 DEFINE_VERTEX( V_VV_P )
 {
-  Tensor L = Orbital_PWave( P, Q )/GeV;
+  Tensor L = Orbital_PWave( P, Q );
   return L(mu) * dot(V1,V2);
 }
 
 DEFINE_VERTEX( V_VV_P1 )
 {
-   Tensor L = Orbital_PWave( P, Q )/GeV;
+   Tensor L = Orbital_PWave( P, Q );
    Tensor Sv  = Spin1Projector( P );
-   Tensor term = LeviCivita()( -mu, -nu, -alpha, -beta ) * P( nu )/GeV * V1( alpha ) * V2( beta );
+   Tensor term = LeviCivita()( -mu, -nu, -alpha, -beta ) * P( nu )  * V1( alpha ) * V2( beta );
    Tensor phi_1 = term(-mu) * Sv(mu,nu);
       
-   return LeviCivita()( -mu, -nu, -alpha, -beta ) * P( mu )/GeV * L(nu) * phi_1(alpha);
+   return LeviCivita()( -mu, -nu, -alpha, -beta ) * P( mu ) * L(nu) * phi_1(alpha);
 }
 
 DEFINE_VERTEX( V_VV_P2 )
 {
-    Tensor L = Orbital_PWave( P, Q )/GeV;
+    Tensor L = Orbital_PWave( P, Q ); 
     Tensor Sv  = Spin2Projector( P );
     Tensor phi_2 = Sv(-mu,-nu,alpha,beta) * V1(mu) * V2(nu);
         
@@ -206,7 +206,7 @@ DEFINE_VERTEX( V_VV_P2 )
 DEFINE_VERTEX( V_VV_S )
 {
     Tensor Sv  = Spin1Projector( P );
-    Tensor term = LeviCivita()( -mu, -nu, -alpha, -beta ) * P( nu )/GeV * V1( alpha ) * V2( beta );
+    Tensor term = LeviCivita()( -mu, -nu, -alpha, -beta ) * P(nu) * V1( alpha ) * V2( beta );
         
     return term( -mu ) * Sv(mu, nu);
 }
@@ -216,7 +216,7 @@ DEFINE_VERTEX( T_VS_D )
 {
   Tensor G = LeviCivita()( -mu, -nu, -alpha, -beta ) * P( nu ) * Q( alpha ) * V1( beta );
   Tensor L = Orbital_PWave( P, Q );
-  return ( G( mu ) * L( nu ) + L( mu ) * G( nu ) ) * V2[0] / Constant( -2 * GeV * GeV * GeV );
+  return -0.5 * ( G( mu ) * L( nu ) + L( mu ) * G( nu ) ) * V2[0];
 }
 
 DEFINE_VERTEX( T_TS_S )
@@ -229,31 +229,31 @@ DEFINE_VERTEX( T_TS_S )
 
 DEFINE_VERTEX( T_VS_P )
 {
-  Tensor L  = Orbital_PWave( P, Q ) / GeV;
+  Tensor L  = Orbital_PWave( P, Q );
   Tensor S  = Spin1Projector( P );
   Tensor Vp = S( -mu, -nu ) * V1( nu );
   return V2[0] * ( ( L( alpha ) * Vp( beta ) + L( beta ) * Vp( alpha ) ) / 2. - S( alpha, beta ) * dot( L, V1 ) / 3. );
 }
 
-DEFINE_VERTEX( T_SS_D ) { return Orbital_DWave( P, Q )  * V1[0] * V2[0] / ( GeV * GeV ); }
+DEFINE_VERTEX( T_SS_D ) { return Orbital_DWave( P, Q )  * V1[0] * V2[0]; }
 
 DEFINE_VERTEX( S_TV_P )
 {
-  Tensor L = Orbital_PWave( P, Q ) / GeV;
+  Tensor L = Orbital_PWave( P, Q );
   return ( V1( mu, nu ) * L( -mu ) ) * V2( -nu );
 }
 
 DEFINE_VERTEX( S_TS_D )
 {
   Tensor orbital = Orbital_DWave( P, Q );
-  return V2[0] * Tensor( {dot( orbital, V1 ) / ( GeV * GeV )}, {1} );
+  return V2[0] * Tensor( {dot( orbital, V1 )}, {1} );
 }
 
 DEFINE_VERTEX( S_TV_D )
 {
   Tensor term1 = V1( alpha, beta ) * Orbital_DWave( P, Q )( -beta, -nu );
-  Tensor term2 = LeviCivita()( -mu, -nu, -alpha, -beta ) * P( alpha ) * V2( beta ); // Antisymmetric( P, V2 );
-  return Tensor( {dot( term1, term2 )} ) / ( GeV * GeV * GeV );
+  Tensor term2 = LeviCivita()( -mu, -nu, -alpha, -beta ) * P( alpha ) * V2( beta );
+  return Tensor( {dot( term1, term2 )} );
 }
 
 DEFINE_VERTEX( S_TT_S ) { return Tensor( {dot( V1, V2 )} ); }
@@ -261,7 +261,7 @@ DEFINE_VERTEX( S_TT_S ) { return Tensor( {dot( V1, V2 )} ); }
 DEFINE_VERTEX( V_TS_P )
 {
   Tensor S = Spin1Projector( P );
-  Tensor L = Orbital_PWave( P, Q ) / ( GeV );
+  Tensor L = Orbital_PWave( P, Q );
   return ( S( -mu, -nu ) * L( -alpha ) * V1( nu, alpha ) ) * V2[0];
 }
 
@@ -269,7 +269,7 @@ DEFINE_VERTEX( V_TS_D )
 {
   Tensor L        = ( -1 ) * Orbital_PWave( P, Q );
   Tensor coupling = LeviCivita()( -mu, -nu, -alpha, -beta ) * P( nu ) * Q( alpha );
-  return coupling( -mu, -nu ) * V1( nu, alpha ) * L( -alpha ) / ( GeV * GeV * GeV );
+  return coupling( -mu, -nu ) * V1( nu, alpha ) * L( -alpha );
 }
 
 DEFINE_VERTEX( f_fS_S )
@@ -300,7 +300,7 @@ DEFINE_VERTEX( f_Vf_P ) /// = A3
 {
   Tensor proj   = Spin1hProjector(P);
   auto L = Orbital_PWave(P,Q);
-  return proj( alpha, beta ) * V2(beta) * dot( V1, L ) / GeV ;
+  return proj( alpha, beta ) * V2(beta) * dot( V1, L );
 }
 
 DEFINE_VERTEX( f_Vf_P1 ) //// = A6
@@ -316,7 +316,7 @@ DEFINE_VERTEX( f_Vf_D ) //// = A8
 {
   Tensor proj   = Spin1hProjector(P);
   Tensor gt     = gamma_twiddle(P);
-  Tensor L      = Orbital_DWave(P,Q)(-mu,-nu) * V1(nu) / (GeV*GeV);
+  Tensor L      = Orbital_DWave(P,Q)(-mu,-nu) * V1(nu); 
   return proj( a, b ) * Gamma[4](b,c) * gt(mu,c,d) * V2(d) * L(-mu);
 }
 
@@ -356,7 +356,7 @@ DEFINE_VERTEX( f_fS_S1 ){ return Spin1hProjector(P)(a,b) * Gamma[4](b,c) * V1(c)
 
 DEFINE_VERTEX( f_fS_P1 )
 {
-  return Spin1hProjector(P)(a, b) * slash(Orbital_PWave(P,Q))(b,c) * V1(c) * V2[0] / GeV;
+  return Spin1hProjector(P)(a, b) * slash(Orbital_PWave(P,Q))(b,c) * V1(c) * V2[0];
 }
 
 DEFINE_VERTEX( f_Tf_P )
@@ -365,13 +365,13 @@ DEFINE_VERTEX( f_Tf_P )
   Tensor T = V1;
   T.imposeSymmetry(0,1);
   T.st();
-  return proj( a, b ) * gamma_twiddle(P)(mu,b,c) * V2(c) * T(-mu,-nu) * Orbital_PWave(P,Q)(nu) / GeV;
+  return proj( a, b ) * gamma_twiddle(P)(mu,b,c) * V2(c) * T(-mu,-nu) * Orbital_PWave(P,Q)(nu);
 }
 
 DEFINE_VERTEX( f_Vf_P2 )
 {
   Tensor proj   = Spin1hProjector(P);
-  return proj( alpha, beta ) * Gamma[4](beta,nu) * V2(nu) * dot( V1, Orbital_PWave( P, Q ) ) / GeV;
+  return proj( alpha, beta ) * Gamma[4](beta,nu) * V2(nu) * dot( V1, Orbital_PWave( P, Q ) );
 }
 
 DEFINE_VERTEX( f_Vf_P3 )
@@ -388,7 +388,7 @@ DEFINE_VERTEX( f_Vf_D1 )
 {
   Tensor proj   = Spin1hProjector(P);
   Tensor gt     = gamma_twiddle(P);
-  Tensor L      = Orbital_DWave(P,Q)(-mu,-nu) * V1(nu) / (GeV*GeV);
+  Tensor L      = Orbital_DWave(P,Q)(-mu,-nu) * V1(nu); 
   return proj( a, b ) * gt(mu,b,c) * L(-mu) * V2(c) ;
 }
 
@@ -398,7 +398,7 @@ DEFINE_VERTEX( r_fS_P )
   Tensor L = Orbital_PWave(P,Q);
   L.st();
   Tensor F = Spin1hProjector(P);
-  Tensor V = ( (-1) * L(nu) * F(a,d) + (1./3.) * F(a,b) * gamma_twiddle(P)(nu,b,c) * slash(L)(c,d) ) * V1(d) / GeV; 
+  Tensor V = ( (-1) * L(nu) * F(a,d) + (1./3.) * F(a,b) * gamma_twiddle(P)(nu,b,c) * slash(L)(c,d) ) * V1(d); 
   V.st();
   return V;
 }
@@ -412,7 +412,7 @@ DEFINE_VERTEX( r_fS_D )
   L.st(true);
   Expression L2 = make_cse(dot(L,L));
   Tensor gt = gamma_twiddle(P);
-  Tensor rt =  ( L(mu) * F(a,b) * slash(L)(b,c) - (L2/3.) * F(a,b) * gt(mu,b,c) ) * Gamma[4](c,d) * V1(d) / (GeV*GeV); 
+  Tensor rt =  ( L(mu) * F(a,b) * slash(L)(b,c) - (L2/3.) * F(a,b) * gt(mu,b,c) ) * Gamma[4](c,d) * V1(d); 
   rt.st();
   return rt;
 }
@@ -425,7 +425,7 @@ DEFINE_VERTEX( f_rS_D )
     * gamma_twiddle(P)(mu,d,c)
     * V1(alpha,c) 
     * Orbital_DWave(P,Q)(-mu,-alpha) 
-    * V2[0] / GeV;
+    * V2[0];
   F.st();
   return F;
 }
@@ -433,7 +433,7 @@ DEFINE_VERTEX( f_rS_D )
 DEFINE_VERTEX( f_rS_P )
 {
   auto L = Orbital_PWave(P,Q);
-  Tensor F = Spin1hProjector(P)(a,b)                 * V1(-mu,b) * L(mu) * V2[0] / GeV;
+  Tensor F = Spin1hProjector(P)(a,b)                 * V1(-mu,b) * L(mu) * V2[0];
   ADD_DEBUG_TENSOR( V1, db );
   ADD_DEBUG_TENSOR( L , db );
   ADD_DEBUG_TENSOR( F , db );
@@ -444,7 +444,7 @@ DEFINE_VERTEX( f_rS_P )
 DEFINE_VERTEX( f_rS_P1 )
 {
   auto L = Orbital_PWave(P,Q);
-  Tensor F = Spin1hProjector(P)(a,b) * Gamma[4](b,c) * V1(-mu,c) * L(mu) * V2[0]/ GeV;
+  Tensor F = Spin1hProjector(P)(a,b) * Gamma[4](b,c) * V1(-mu,c) * L(mu) * V2[0]; 
   F.st();
   return F;
 }
