@@ -72,6 +72,7 @@ namespace AmpGen
     std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;
     std::shared_ptr<ASTResolver>                    m_resolver;
     std::vector<std::string>                        m_additionalHeaders;
+    bool                                            m_disableBatch = {false}; 
   private:
     void addDebug( std::ostream& stream ) const;
     void addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const;

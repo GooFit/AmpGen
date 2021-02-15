@@ -130,7 +130,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     stream << "}\n";
   }
   if ( m_db.size() != 0 ) addDebug( stream );
-  compileBatch(stream);    
+  if( !m_disableBatch ) compileBatch(stream);    
 }
 
 std::ostream& AmpGen::operator<<( std::ostream& os, const CompiledExpressionBase& expression )
