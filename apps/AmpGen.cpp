@@ -184,7 +184,7 @@ int main( int argc, char** argv )
 
   size_t nEvents      = NamedParameter<size_t>     ("nEvents"  , 1, "Total number of events to generate" );
   size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 5000000, "Number of events to generate per block" );
-  int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
+  int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation. Should always be set for pseudoexperiment generation." );
   std::string outfile = NamedParameter<std::string>("Output"   , "Generate_Output.root" , "Name of output file" ); 
   auto pdfType        = NamedParameter<pdfTypes>( "Type", pdfTypes::CoherentSum, optionalHelpString("Type of PDF to use:", 
       std::make_pair(pdfTypes::CoherentSum , "Describes decays of a (pseudo)scalar particle to N pseudoscalars")
