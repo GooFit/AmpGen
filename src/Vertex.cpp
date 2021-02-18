@@ -368,13 +368,13 @@ DEFINE_VERTEX( f_Tf_P )
   return proj( a, b ) * gamma_twiddle(P)(mu,b,c) * V2(c) * T(-mu,-nu) * Orbital_PWave(P,Q)(nu);
 }
 
-DEFINE_VERTEX( f_Vf_P2 )
+DEFINE_VERTEX( f_Vf_P2 ) //A4 
 {
   Tensor proj   = Spin1hProjector(P);
   return proj( alpha, beta ) * Gamma[4](beta,nu) * V2(nu) * dot( V1, Orbital_PWave( P, Q ) );
 }
 
-DEFINE_VERTEX( f_Vf_P3 )
+DEFINE_VERTEX( f_Vf_P3 ) //A5
 {
   Tensor proj   = Spin1hProjector(P);
   Tensor L = Orbital_PWave(P,Q);
