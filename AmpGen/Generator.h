@@ -26,7 +26,7 @@ namespace AmpGen
         template <typename... ARGS> explicit Generator( const ARGS&... args ) : m_gps(args...)
         {
           m_eventType = m_gps.eventType();
-          setRandom( m_rnd );
+          if( m_rnd != gRandom ) setRandom( m_rnd );
           DEBUG("Creating generator, using: " << type_string<phaseSpace_t>() << " and internal store type: " << type_string<eventListInternal_t>() ); 
         }
   

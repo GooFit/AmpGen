@@ -209,6 +209,10 @@ std::vector<LS> userHelicityCouplings( const std::string& key ){
     coupling.m2     = things[i+2];
     couplings.push_back(coupling);
   }
+  if( couplings.size() == 0 )
+  {
+    FATAL("No helicity amplitude specified by: " << key );
+  }
   return couplings;
 }
 
@@ -249,7 +253,6 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   }
   const TransformSequence& myFrame = (*cachePtr)[key];
 
-
   if( particle.isStable() )
   {
     if( particle.props()->twoSpin() == 0 ) return Mz==0; // a scalar
@@ -287,7 +290,13 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   else S = particle.S()/2.;
   auto recoupling_constants = calculate_recoupling_constants( particle.spin(), Mz, L, S, d1.spin(), d2.spin() );
   auto mod = particle.attribute("helAmp");
-  if( mod != stdx::nullopt ) recoupling_constants = userHelicityCouplings( *mod );
+  if( mod != stdx::nullopt ){
+    if( particle.props()->twoSpin() != 0 )
+    {
+      WARNING("User helicity couplings only implemented for scalar initial states, using: " << *mod << " will result in unexpected behaviour.");
+    }
+    recoupling_constants = userHelicityCouplings( *mod );
+  }
 
   if( recoupling_constants.size() == 0 ){    
     WARNING( particle.uniqueString() << " " << particle.spin() << " " << 
