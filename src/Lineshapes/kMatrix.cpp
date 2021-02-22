@@ -22,11 +22,6 @@ Expression AmpGen::phsp_twoBody( const Expression& s, const double& m0, const do
   return fcn::complex_sqrt( 1.0 - ( m0 + m1 ) * ( m0 + m1 ) / s );
 }
 
-Expression AmpGen::phsp_threeBody( const Expression& s, const double& m0, const double& m1, const double& gamma0 )
-{
-  return fcn::complex_sqrt( 1.0 - ( m0 + m1 ) * ( m0 + m1 ) / s );
-}
-
 Expression AmpGen::phsp_fourPi( const Expression& s )
 {
   // Parameterisation of the 4pi phase-space taken from Laura++ (https://laura.hepforge.org/  or Ref. https://arxiv.org/abs/1711.09854) 
@@ -74,7 +69,7 @@ Tensor AmpGen::constructKMatrix(const Expression& this_s, const unsigned& nChann
     for ( unsigned j = 0; j < nChannels; ++j ) {
       Expression sumOverPoles = 0;
       for ( auto& pole : poleConfigs ) {
-        Expression term = ( pole.couplings[i] * pole.couplings[j] ) / ( pole.s - this_s - 1i* pole.s * pole.gamma );
+        Expression term = ( pole.couplings[i] * pole.couplings[j] ) / ( pole.pole(this_s) );
         sumOverPoles = sumOverPoles + term;
       }
       kMatrix[{i, j}] = sumOverPoles;

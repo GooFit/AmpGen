@@ -54,7 +54,6 @@ namespace AmpGen
                           const std::vector<poleConfig>& poleConfigs);
   
   Expression phsp_twoBody( const Expression& s, const double& m0, const double& m1 );
-  Expression phsp_threeBody( const Expression& s, const double& m0, const double& m1, const double& gamma0 );
   Expression phsp_fourPi( const Expression& s );
   Expression phsp_FOCUS( const Expression& s, const double& m0, const double& m1 );
   Expression gFromGamma( const Expression& m, const Expression& gamma, const Expression& rho );
