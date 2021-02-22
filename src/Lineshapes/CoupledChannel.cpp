@@ -64,17 +64,41 @@ Expression rho_threeBody( const Expression& s,
       ) / (16.*M_PI*M_PI*s) , 0 );
 }
 
+//Taken from arXiv:1111.6307v1 Eq.(41)
+Expression rho_threeBodyWollyCusp( const Expression& s,
+                          const Particle& resonance,
+                          const Particle& bachelor )
+{
+  const ParticleProperties& p1 = *resonance.props();
+  const ParticleProperties& p2 = *bachelor.props();
+
+  Expression m1 = p1.mass();
+  Expression m2 = p2.mass();
+
+  Expression i = Constant(0,1);
+  Expression g1 = p1.width();
+    
+  auto q2  = make_cse(abs(Q2(s, m1*m1, m2*m2)));
+  Expression delta = m1 * m2 * g1 / (m1+m2);
+  Expression delta2 =  delta * delta;
+  
+  Expression rho = complex_sqrt( sqrt(q2*q2+delta2*delta2) + q2 ) + i * sqrt( sqrt(q2*q2+delta2*delta2) - q2 );
+  return rho / (8.*M_PI*sqrt(2.*s));
+}
+
 Expression AmpGen::phaseSpace(const Expression& s, const Particle& p, const size_t& l)
 {
   auto fs = p.getFinalStateParticles();
-  if( fs.size() == 2 ){ 
-    auto s1 = p.daughter(0)->massSq();
-    auto s2 = p.daughter(1)->massSq();
-    auto k2 = make_cse( Q2(s,s1,s2) );
-    const Expression k2p  = Ternary( k2 > 0, k2, 0 );
-    auto phsp_parameterisation = p.attribute("phsp"); 
-    if( !phsp_parameterisation ){
+  auto phsp_parameterisation = p.attribute("phsp");
+
+  if( fs.size() == 2 ){
+      auto s1 = p.daughter(0)->massSq();
+      auto s2 = p.daughter(1)->massSq();
+      auto k2 = make_cse( Q2(s,s1,s2) );
+      const Expression k2p  = Ternary( k2 > 0, k2, 0 );
       const Expression radius       = Parameter(p.name()  + "_radius", p.props()->radius());
+
+    if( !phsp_parameterisation ){
       return rho_twoBody(s, s1, s2) * BlattWeisskopf(k2p*radius*radius, l);
     }
     else if( phsp_parameterisation == std::string("arXiv.0707.3596") ){
@@ -100,8 +124,16 @@ Expression AmpGen::phaseSpace(const Expression& s, const Particle& p, const size
       FATAL("Parametrisation: " << *phsp_parameterisation << " not found");
     }
   }
-  if( fs.size() == 3 && ! p.daughter(0)->isStable() ) return rho_threeBody( s, *p.daughter(0), *p.daughter(1) );
-  if( fs.size() == 3 && ! p.daughter(1)->isStable() ) return rho_threeBody( s, *p.daughter(1), *p.daughter(0) );
+  if( fs.size() == 3 ){
+      if(phsp_parameterisation == std::string("WollyCusp")){
+          if( ! p.daughter(0)->isStable() ) return rho_threeBodyWollyCusp( s, *p.daughter(0), *p.daughter(1) ) ;
+          if( ! p.daughter(1)->isStable() ) return rho_threeBodyWollyCusp( s, *p.daughter(1), *p.daughter(0) ) ;
+      }
+      else{
+          if( ! p.daughter(0)->isStable() ) return rho_threeBody( s, *p.daughter(0), *p.daughter(1) );
+          if( ! p.daughter(1)->isStable() ) return rho_threeBody( s, *p.daughter(1), *p.daughter(0) );
+      }
+  }
   ERROR("Phase space only implemented for two and three body decays");
   return 0;
 }

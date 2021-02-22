@@ -27,10 +27,12 @@ namespace AmpGen
 
   struct poleConfig {
     Expression s;
+    Expression gamma;
+    std::string type;
     std::vector<Expression> couplings;
     std::vector<Expression> bl_factors;
-    poleConfig(const Expression& s, const std::vector<Expression>& c = {})
-        : s(s), couplings(c), bl_factors(c.size(), 1){};
+    poleConfig(const Expression& s, const std::vector<Expression>& c = {}, const Expression& g = 0, const std::string& type = "")
+        : s(s), gamma(g), couplings(c), bl_factors(c.size(), 1), type(type){};
 
     void add(const Expression& coupling, const Expression& bl_factor = 1)
     {
@@ -39,12 +41,20 @@ namespace AmpGen
     }
     const Expression coupling(const unsigned& i) const { return couplings[i] * bl_factors[i]; }
     const Expression g(const unsigned& i) const { return couplings[i]; }
+      
+    const Expression pole(const Expression& this_s) const {
+        Expression I = Constant(0,1);
+        if(type=="ACCMOR") return fcn::sqrt(s) - fcn::sqrt(this_s); //Implements K-Matrix definition from https://arxiv.org/pdf/0909.2171v1.pdf
+        return s - this_s - I * s * gamma;
+    }
+      
   };
 
   Tensor constructKMatrix(const Expression& s, const unsigned& nChannels,
                           const std::vector<poleConfig>& poleConfigs);
   
   Expression phsp_twoBody( const Expression& s, const double& m0, const double& m1 );
+  Expression phsp_threeBody( const Expression& s, const double& m0, const double& m1, const double& gamma0 );
   Expression phsp_fourPi( const Expression& s );
   Expression phsp_FOCUS( const Expression& s, const double& m0, const double& m1 );
   Expression gFromGamma( const Expression& m, const Expression& gamma, const Expression& rho );
