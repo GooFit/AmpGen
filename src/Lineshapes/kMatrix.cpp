@@ -69,7 +69,7 @@ Tensor AmpGen::constructKMatrix(const Expression& this_s, const unsigned& nChann
     for ( unsigned j = 0; j < nChannels; ++j ) {
       Expression sumOverPoles = 0;
       for ( auto& pole : poleConfigs ) {
-        Expression term = ( pole.couplings[i] * pole.couplings[j] ) / ( pole.s - this_s );
+        Expression term = ( pole.couplings[i] * pole.couplings[j] ) / ( pole.pole(this_s) );
         sumOverPoles = sumOverPoles + term;
       }
       kMatrix[{i, j}] = sumOverPoles;
