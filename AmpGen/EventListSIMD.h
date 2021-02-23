@@ -72,6 +72,10 @@ namespace AmpGen
       m_weights[block] = w;
       m_genPDF[block] = g;
     } 
+    void setGenPDF( const unsigned& block, const float_v& g)
+    {
+      m_genPDF[block] = g;
+    } 
     void resize( const unsigned nEvents )
     {
       m_data = Store<float_v, Alignment::AoS>( nEvents, m_eventType.eventSize() );

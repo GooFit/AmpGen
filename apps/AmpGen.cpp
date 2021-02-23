@@ -236,6 +236,14 @@ int main( int argc, char** argv )
   INFO("Using: " << nCores  << " / " << concurentThreadsSupported  << " threads" );
   #endif
 
+  auto [dim_i, dim_f] = eventType.dim(); 
+  if( (dim_i != 1 || dim_f != 1) && pdfType == pdfTypes::CoherentSum )
+  {
+    WARNING("Either the initial or final state involves a particle that carries spin, switching to use PolarisedSum");
+    pdfType = pdfTypes::PolarisedSum; 
+  }
+
+
   if( sourceOnly )
   {
     if ( pdfType == pdfTypes::CoherentSum )

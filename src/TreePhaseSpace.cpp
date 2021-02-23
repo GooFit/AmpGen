@@ -22,7 +22,9 @@ TreePhaseSpace::TreePhaseSpace(const Particle& decayChain, const EventType& type
     m_top.push_back( Vertex::make( p) );
     m_weights.push_back(1);
   }
+  double sum_of_weights = std::accumulate( m_weights.begin(), m_weights.end(), 0 );
   m_dice = std::discrete_distribution<>(m_weights.begin(), m_weights.end()); 
+  for( auto& w : m_weights ) w /= sum_of_weights; 
   setRandom(m_rand);
 }
 
@@ -50,18 +52,15 @@ TreePhaseSpace::TreePhaseSpace(const std::vector<Particle>& decayChains, const E
 
 Event TreePhaseSpace::makeEvent()
 {
-  unsigned j = 0;
-  double w = 0;
-  Event event; 
+  unsigned j = 0; 
+  double w = 0; 
   do {
     j = m_dice(m_gen); 
-    if( j >= m_top.size() ) ERROR("Out of bounds: " << j << " / " << m_top.size() );
     m_top[j].generate();
     w = m_top[j].weight();
   } while ( w == 0 );
-  event = m_top[j].event(m_type.size());
-  event.setGenPdf( genPdf(event) / w );
-  m_generatorRecord.push_back(j);
+  auto event = m_top[j].event(m_type.size());
+  event.setGenPdf( genPdf(event)/w );
   return event; 
 }
 
@@ -118,7 +117,7 @@ TreePhaseSpace::Vertex::Vertex(const Particle& particle, const double& min, cons
     , max(max)
     , s(bwMass*bwMass)
 {
-  INFO( particle << " [" << min << ", " << max << "]");
+  //INFO( particle << " [" << min << ", " << max << "]");
   if( particle.isStable() ) type = Type::Stable; 
   else if( particle.isQuasiStable() ) type = Type::QuasiStable; 
   else if( particle.lineshape().find("BW") != std::string::npos ){
@@ -169,7 +168,7 @@ void TreePhaseSpace::Vertex::generate()
       s = bwMass * bwMass + bwMass * bwWidth * tan( (phiMax - phiMin ) * rand->Rndm() +  phiMin );
       break;
     case Type::Flat : 
-      s = (max*max-min*min)*rand->Rndm() + min;
+      s = (max*max-min*min)*rand->Rndm() + min * min;
       break;
   };
   if(  left != nullptr )  left->generate();
