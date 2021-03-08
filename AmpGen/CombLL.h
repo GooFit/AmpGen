@@ -35,6 +35,7 @@ namespace AmpGen
         std::vector<std::string> m_SumFactors;
         std::vector<int> m_gammaSigns;
         std::vector<int> m_useXYs;
+        std::vector<int> m_conj;
         
 
 
@@ -49,7 +50,8 @@ namespace AmpGen
                    MinuitParameterSet mps,
                    std::vector<std::string> sumFactors,
                    std::vector<int> gammaSigns,
-                   std::vector<int> useXYs
+                   std::vector<int> useXYs,
+                   std::vector<int> conjs
                    ):
                         m_SigData(SigData),
 
@@ -61,11 +63,12 @@ namespace AmpGen
                         m_SumFactors(sumFactors),
                         m_gammaSigns(gammaSigns),
                         m_useXYs(useXYs),
+                        m_conj(conjs),
                         m_debug(NamedParameter<bool>("CombLL::Debug", false, "Debug CombLL"))
                         {
                             std::vector<pCoherentSum> pCS = {};
                             for (auto i=0; i < m_SigData.size() ; i++){
-                                pCoherentSum _pCS = pCoherentSum(m_SigType[i], m_mps, m_SumFactors[i], m_gammaSigns[i], m_useXYs[i]);
+                                pCoherentSum _pCS = pCoherentSum(m_SigType[i], m_mps, m_SumFactors[i], m_gammaSigns[i], m_useXYs[i], m_conj[i]);
                                 _pCS.setEvents(m_SigData[i]);
                                 _pCS.setMC(m_SigInt[i]);
                                 _pCS.prepare();
@@ -77,9 +80,33 @@ namespace AmpGen
 
                         }
         double LL(int i){
+            auto psi = m_Psi[i];
+            auto sigDat = m_SigData[i];
+            ProfileClock pcN;
+            psi.prepare();
+            pcN.start();
+            auto norm = psi.norm();
+            pcN.stop();
+            if (m_debug) INFO("LL "<<i<<" norm = "<<norm<<" took "<<pcN.t_duration<<" for "<<m_SigInt[i].size()<<" integration events");
+            real_t _LL=0;
+            ProfileClock pc;
+            pc.start();
+            #pragma omp parallel for reduction( +: _LL )
+            for (int j=0;j<sigDat.size();j++){
+                    auto evt1 = sigDat[j];
+                    auto prob = std::norm(psi.getVal(evt1))/norm;
+                    _LL += -2 * log(prob);
+            }
+            pc.stop();
+            if (m_debug) INFO("LL "<<i<<" = "<<_LL<<" took "<<pc.t_duration<<" for "<<m_SigData[i].size()<<" events");
+            
 
-                auto _LL =  make_likelihood( m_SigData[i], m_Psi[i]);
-            return _LL.getVal();
+            return _LL;
+
+
+
+
+
 
         }
 

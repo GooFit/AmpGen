@@ -34,7 +34,7 @@
 #include "AmpGen/PolarisedSum.h"
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/enum.h"
-
+#include "AmpGen/AddCPConjugate.h"
 #include "AmpGen/Psi3770.h"
 
 
@@ -638,7 +638,8 @@ if (doQC){
   MPS.loadFromStream();
   if (makeCPConj){
     INFO("Making CP conjugate states");
-    add_CP_conjugate(MPS);
+    //add_CP_conjugate(MPS);
+    AddCPConjugate(MPS);
   }
   for (int i=0; i < tags.size(); i++){
 
@@ -673,13 +674,22 @@ if (doQC){
     pCorrelatedSum cs_tag (signalType, tagType, MPS);
 
      
-    
-
     cs_tag.setEvents(sigevents_tag, tagevents_tag);
     cs_tag.setMC(sigMCevents_tag, tagMCevents_tag);
     cs_tag.prepare();
     std::ofstream out; 
     
+    sig.setEvents(sigevents_tag);
+    sig.setMC(sigMCevents_tag);
+    sig.prepare();
+    auto evt = sigevents_tag[0];
+    auto evtT = evt; evtT.swap(1,2);
+    auto v = sig.getValNoCache(evt);
+    auto vT =  sig.getValNoCache(evtT);
+    INFO("psi("<<evt.s(0,1)<<", "<<evt.s(0,2)<<") = "<<v);
+    INFO("psi("<<evtT.s(0,1)<<", "<<evtT.s(0,2)<<") = "<<vT);
+
+
     std::stringstream tag_log;
     auto tagName = split(tags[i],' ')[0];
     tag_log<<tagName<<"_vals.csv"; 

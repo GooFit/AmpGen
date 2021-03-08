@@ -150,6 +150,8 @@ int main( int argc, char** argv )
     AddCPConjugate(MPS);
   }
 
+  if (NamedParameter<bool>("makeCPConj", false)) AddCPConjugate(MPS);
+
   INFO("Generating time-dependence? " << eventType.isTimeDependent() );
 
 

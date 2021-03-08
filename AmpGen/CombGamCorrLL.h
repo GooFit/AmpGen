@@ -117,6 +117,7 @@ namespace AmpGen
                 auto sigDat = m_SigData[i];
                 auto tagDat = m_TagData[i];
                 ProfileClock pcN;
+                psi.prepare();
                 pcN.start();
                 auto norm = psi.norm();
                 pcN.stop();
@@ -148,6 +149,7 @@ namespace AmpGen
             auto psi = m_A[i];
             auto sigDat = m_GamData[i];
             ProfileClock pcN;
+            psi.prepare();
             pcN.start();
             auto norm = psi.norm();
             pcN.stop();

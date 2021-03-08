@@ -16,7 +16,7 @@
 #include <omp.h>
 #include <thread>
 #endif
-
+#include "AmpGen/AddCPConjugate.h"
 #include "AmpGen/DynamicFCN.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/MsgService.h"
@@ -180,7 +180,8 @@ for( auto& tag : tags ){
   INFO("makeCPConj = "<<makeCPConj);
   if (makeCPConj){
     INFO("Making CP conjugate states");
-    add_CP_conjugate(*MPS);
+    //add_CP_conjugate(*MPS);
+    AddCPConjugate(*MPS);
   }
 
   Particle p;
@@ -334,8 +335,12 @@ void add_CP_conjugate( MinuitParameterSet& mps )
     }
     else { 
       auto tokens=split(name,'_');
+      
       std::string reOrIm = *tokens.rbegin();
       std::string name   = tokens[0];
+      
+
+
       if ( reOrIm == "Re" || reOrIm == "Im" ){
         auto p = Particle( name ).conj();
         sgn = reOrIm == "Re" ? p.CP() : 1; 

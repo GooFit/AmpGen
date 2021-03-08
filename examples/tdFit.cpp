@@ -12,6 +12,7 @@
 #include "AmpGen/CombGamCorrLL.h"
 #include "AmpGen/CombLL.h"
 #include "AmpGen/MetaUtils.h"
+#include "AmpGen/AddCPConjugate.h"
 #include <typeinfo>
 
 //#include <boost/algorithm/string.hpp>
@@ -903,6 +904,7 @@ void doBFit(){
  std::vector<std::string> sfList_B;
  std::vector<int> gammaSigns;
  std::vector<int> useXYs;
+   std::vector<int> B_Conjs;
   for (auto& BTag : Btags){
  // MinuitParameterSet * MPS_B = new MinuitParameterSet();
 //  MPS_B->loadFromStream();
@@ -945,7 +947,7 @@ void doBFit(){
     sfList_B.push_back(B_Pref);
     gammaSigns.push_back(gammaSign);
     useXYs.push_back(useXY);
-
+    B_Conjs.emplace_back(B_Conj);
     auto cs_B = pCoherentSum(BEventType,  MPS, B_Pref , gammaSign, useXY);
     cs_B.setEvents(sigevents_B);
     cs_B.setMC(sigMCevents_B);
@@ -998,7 +1000,7 @@ if (doBFit){
   //MPS_B->loadFromStream();
 
   INFO("Doing combined fit for B");
-  CombLL combLL_B = CombLL(SigData_B, SigInt_B, SigType_B, MPS, sfList_B, gammaSigns, useXYs);
+  CombLL combLL_B = CombLL(SigData_B, SigInt_B, SigType_B, MPS, sfList_B, gammaSigns, useXYs, B_Conjs);
 
   Minimiser combMini_B = Minimiser(combLL_B, &MPS);
     combMini_B.gradientTest();
@@ -1410,6 +1412,7 @@ void tFit(){
   if (m_debug) INFO("LogFile: " << logFile << "; Plots: " << plotFile );
   MinuitParameterSet MPS;
   MPS.loadFromStream();
+    if (makeCPConj)       AddCPConjugate(MPS);
   std::map<std::string, std::vector<double> > inits = getParams(MPS);
   auto sigType = EventType(pNames, true);
   EventList sigevents = EventList(dataFile, sigType);

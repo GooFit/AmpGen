@@ -14,7 +14,7 @@
 #include "AmpGen/CombLL.h"
 #include "AmpGen/MetaUtils.h"
 #include <typeinfo>
-
+#include "AmpGen/AddCPConjugate.h"
 //#include <boost/algorithm/string.hpp>
 using namespace AmpGen;
 using namespace std::complex_literals;
@@ -61,8 +61,10 @@ int main( int argc, char* argv[] )
   auto BTags   = NamedParameter<std::string>("BTagTypes" , std::string(), "").getVector();
  
 
+  bool makeCPConj      = NamedParameter<bool>("makeCPConj", false, "Make CP Conjugates");
   MinuitParameterSet MPS;
   MPS.loadFromStream();
+  if (makeCPConj)       AddCPConjugate(MPS);
 
   EventType eventType = EventType(pNames);
 
@@ -145,7 +147,7 @@ int NInt = NamedParameter<int>("NInt", 1e7);
 
     
     SigData.emplace_back(Data);
-//    SigInt.emplace_back(mc);
+    SigInt.emplace_back(mc);
     SigType.emplace_back(eventType);
     sumFactors.emplace_back(B_Pref);
     gammaSigns.emplace_back(gammaSign);
@@ -161,8 +163,9 @@ int NInt = NamedParameter<int>("NInt", 1e7);
 
 
 if (!fitEach){
-//  auto LLC = CombLL(SigData, SigInt, SigType, MPS, sumFactors, gammaSigns, useXYs);
+ auto LLC = CombLL(SigData, SigInt, SigType, MPS, sumFactors, gammaSigns, useXYs, B_Conjs);
 //
+/*
   pdfs.reserve(SigData.size());
   std::vector<pCoherentSum> fcs(SigData.size());
   for (size_t i=0;i<SigData.size(); i++){
@@ -171,11 +174,13 @@ if (!fitEach){
    pdfs[i].setEvents(SigData[i]);
 //   auto& mc  = SigInt[i];
    for_each(pdfs[i].pdfs(), [&mc](auto& pdf){pdf.setMC(mc);});
+
    simfit.add(pdfs[i]);
-    
+
+
     }
-   
-  Minimiser mini(simfit, &MPS);
+*/   
+  Minimiser mini(LLC, &MPS);
 mini.prepare();
 INFO("Mini = "<<mini.FCN());
   mini.gradientTest();

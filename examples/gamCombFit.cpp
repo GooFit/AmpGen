@@ -12,6 +12,7 @@
 #include "AmpGen/polyLASSO.h"
 #include "AmpGen/ProfileClock.h"
 #include <TMath.h>
+#include "AmpGen/AddCPConjugate.h"
 
 //#include <Math/IFunction.h>
 #include <Math/Functor.h>
@@ -259,7 +260,8 @@ int main( int argc, char* argv[] )
   MPS.loadFromStream();
   if (makeCPConj){
     INFO("Making CP conjugate states");
-    add_CP_conjugate(MPS);
+//    add_CP_conjugate(MPS);
+      AddCPConjugate(MPS);
   }
   std::map<std::string, std::vector<double> > inits = getParams(MPS);
 //auto fs = std::vector<std::function<double(void)> > {};
