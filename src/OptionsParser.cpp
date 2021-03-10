@@ -81,7 +81,7 @@ void OptionsParser::import( const std::string& fName )
   }
   int braceDepth = 0 ; 
   std::vector<std::string> currentTokens; 
-  processFile( fName, [this, &currentTokens, &braceDepth]( auto& line ) {
+  processFile( fName, [this, &currentTokens, &braceDepth]( const auto& line ) mutable {
     if ( this->ignoreThisLine( line ) ) return;
     auto tokens = this->makeParsedStrings( line, braceDepth );
     for ( auto& token : tokens ) currentTokens.push_back( token );
@@ -106,7 +106,7 @@ void OptionsParser::addArg( const std::string& arg )
 
 void OptionsParser::addArg( const std::vector<std::string>& tokens )
 {
-  auto& key = tokens[0];
+  const auto& key = tokens[0];
   DEBUG("Adding arg with key: " << key );
   if( m_keywords.count(key) != 0 ) m_keywords[key]( tokens );
   else m_parsedLines[key] = tokens; 

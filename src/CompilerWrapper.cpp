@@ -190,7 +190,7 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
   if(NamedParameter<bool>("CompilerWrapper::Verbose", false)) {
     std::string result = std::accumulate(std::begin(argp), std::end(argp),
       std::string(),
-      [](std::string a, const char* b){return a + " " + b;});
+      [](const std::string& a, const char* b){return a + " " + b;});
     INFO("Compiling: " << result);
   }
   argp.push_back( NULL );

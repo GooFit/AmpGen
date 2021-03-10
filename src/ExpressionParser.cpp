@@ -159,15 +159,15 @@ ExpressionParser::ExpressionParser()
   add_unary<Imag>("imag");
   add_unary<Abs>("abs");
 
-  add_binary( "^" , [](auto& A, auto& B ) { return fcn::pow(A,B); } );
-  add_binary( "/" , [](auto& A, auto& B ) { return A / B; } ); 
-  add_binary( "*" , [](auto& A, auto& B ) { return A * B; } );
-  add_binary( "-" , [](auto& A, auto& B ) { return A - B; } );
-  add_binary( "+" , [](auto& A, auto& B ) { return A + B; } );
-  add_binary( ">" , [](auto& A, auto& B ) { return A > B; } );
-  add_binary( "<" , [](auto& A, auto& B ) { return A < B; } );
-  add_binary( "&&", [](auto& A, auto& B ) { return A && B; } );
-  add_binary( "," , [](auto& A, auto& B ) { return ExpressionPack( A, B ); } );
+  add_binary( "^" , [](const auto& A, const auto& B ) { return fcn::pow(A,B); } );
+  add_binary( "/" , [](const auto& A, const auto& B ) { return A / B; } ); 
+  add_binary( "*" , [](const auto& A, const auto& B ) { return A * B; } );
+  add_binary( "-" , [](const auto& A, const auto& B ) { return A - B; } );
+  add_binary( "+" , [](const auto& A, const auto& B ) { return A + B; } );
+  add_binary( ">" , [](const auto& A, const auto& B ) { return A > B; } );
+  add_binary( "<" , [](const auto& A, const auto& B ) { return A < B; } );
+  add_binary( "&&", [](const auto& A, const auto& B ) { return A && B; } );
+  add_binary( "," , [](const auto& A, const auto& B ) { return ExpressionPack( A, B ); } );
  
   coordinateType coord = NamedParameter<coordinateType>("CouplingConstant::Coordinates", coordinateType::cartesian);
   angType degOrRad     = NamedParameter<angType>("CouplingConstant::AngularUnits", angType::rad);

@@ -39,7 +39,7 @@ NormalOrderedExpression::Term::Term( const Expression& expression ) :
   addExpression(expression);
   std::sort( m_terms.begin(), 
              m_terms.end(), 
-             [](auto& t1, auto& t2 ){ return t1.second > t2.second; } ) ;
+             [](const auto& t1, const auto& t2 ){ return t1.second > t2.second; } ) ;
   Expression t = std::accumulate( m_terms.begin(), m_terms.end(), Expression(1), [](auto& A, auto& B){ return A * B.first ; } ); 
  // std::multiplies<Expression>() );
   //Expression t = 1;

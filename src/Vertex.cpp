@@ -406,7 +406,6 @@ DEFINE_VERTEX( r_fS_P )
 DEFINE_VERTEX( r_fS_D )
 {
   Tensor::Index e;
-  Tensor sp = Spin3hProjector(P); 
   Tensor L = Orbital_PWave(P,Q);
   Tensor F = Spin1hProjector(P);
   L.st(true);

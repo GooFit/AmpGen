@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stddef.h>
 #include <algorithm>
+#include <numeric>
 #include <complex>
 #include <memory>
 #include <ostream>
@@ -219,9 +220,7 @@ std::vector<LS> userHelicityCouplings( const std::string& key ){
 std::string index_string(const Particle& particle)
 {
   if( particle.isStable() ) return std::to_string(particle.index()); 
-  std::string f = "{";
-  for( const auto& i : particle.daughters() ) f += index_string( *i );
-  return f+ "}";
+  return "{" + vectorToString( particle.daughters() , "", [](const auto& p){ return index_string(*p); } ) + "}";
 }
 
 Expression AmpGen::helicityAmplitude(const Particle& particle, 

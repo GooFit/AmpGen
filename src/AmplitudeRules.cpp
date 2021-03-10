@@ -114,8 +114,8 @@ EventType Coupling::eventType() const
   Particle particle( m_name );
   std::vector<std::string> particleNames = { particle.name() };
   std::vector<std::shared_ptr<Particle>> fs = particle.getFinalStateParticles();
-  std::stable_sort( fs.begin(), fs.end(), []( auto& A, auto& B ) { return *A < *B; } );
-  std::transform( fs.begin(), fs.end(), std::back_inserter(particleNames), [](auto& p ) -> std::string { return p->name() ; } );
+  std::stable_sort( fs.begin(), fs.end(), []( const auto& A, const auto& B ) { return *A < *B; } );
+  std::transform( fs.begin(), fs.end(), std::back_inserter(particleNames), [](const auto& p) -> std::string { return p->name() ; } );
   return EventType( particleNames );
 }
 
@@ -136,12 +136,12 @@ Expression Coupling::to_expression() const
 
 std::complex<double> TotalCoupling::operator()() const
 {
-  return std::accumulate( couplings.begin(), couplings.end(), complex_t(1,0), [](auto& prod, auto& coupling ){ return prod * coupling() ; } );
+  return std::accumulate( couplings.begin(), couplings.end(), complex_t(1,0), [](const auto& prod, const auto& coupling ){ return prod * coupling() ; } );
 }
 
 Expression TotalCoupling::to_expression() const
 {
-  return std::accumulate( couplings.begin(), couplings.end(), Expression(1), [](auto& prod, auto& coupling ){ return prod * coupling.to_expression(); } );
+  return std::accumulate( couplings.begin(), couplings.end(), Expression(1), [](const auto& prod, const auto& coupling ){ return prod * coupling.to_expression(); } );
 }
 
 void TotalCoupling::print() const
