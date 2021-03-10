@@ -281,6 +281,7 @@ namespace AmpGen
       std::string m_name                     = {""};         ///< Name of the particle
       const ParticleProperties* m_props      = {nullptr};    ///< Particle Properties from the PDG
       std::string m_lineshape                = {"BW"};       ///< Propagator to use
+      std::string m_vertexName               = {""};         ///< Name of vertex to use
       std::string m_uniqueString             = {""};         ///< Unique string of particle tree
       int m_parity                           = {0};          ///< Intrinsic parity of particle
       int m_polState                         = {0};          ///< Projection of the spin along the quantisation axis, i.e. 'z'

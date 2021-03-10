@@ -35,10 +35,10 @@ std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpression
     {
       uint64_t key = s->key(); 
       if( subTrees.count( key ) == 0 ) subTrees[ key ] = s->expression();
-      // else if( m_check_hashes && t.first->m_expression.to_string() != subTrees[key].to_string() )
-      // {
-      //   WARNING("Hash collision between in key = " << key << " other key = " << FNV1a_hash( subTrees[key].to_string() ) );
-      // }
+      else if( m_check_hashes && t->to_string() != subTrees[key].to_string() )
+      {
+        WARNING("Hash collision between in key = " << key << " other key = " << FNV1a_hash( subTrees[key].to_string() ) );
+      }
     }
     m_tempTrees.clear(); 
     for( auto& [key,expression] : subTrees ){

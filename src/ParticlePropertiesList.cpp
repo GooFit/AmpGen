@@ -70,9 +70,9 @@ ParticlePropertiesList::ParticlePropertiesList( const std::string& fname_in )
 {
   auto dl = dirList();
   bool status = true; 
-  status &= std::any_of( dl.begin(), dl.end(), [this](auto& d){ return this->readLatexLabels(d +"pdgID_to_latex.dat") ; } );
-  status &= std::any_of( dl.begin(), dl.end(), [this](auto& d){ return this->readFile(d +"mass_width.csv") ; } );
-  status &= std::any_of( dl.begin(), dl.end(), [this](auto& d){ return this->readFile(d +"MintDalitzSpecialParticles.csv") ; } );
+  status &= std::any_of( dl.begin(), dl.end(), [this](const auto& d){ return this->readLatexLabels(d +"pdgID_to_latex.dat") ; } );
+  status &= std::any_of( dl.begin(), dl.end(), [this](const auto& d){ return this->readFile(d +"mass_width.csv") ; } );
+  status &= std::any_of( dl.begin(), dl.end(), [this](const auto& d){ return this->readFile(d +"MintDalitzSpecialParticles.csv") ; } );
   if( !status ){
     WARNING("Failed to load full PDG configuration, beware of unexpected behaviour");
   }

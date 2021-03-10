@@ -137,7 +137,7 @@ double TreePhaseSpace::Vertex::p() const
 double TreePhaseSpace::Vertex::weight() const 
 {
   if( left == nullptr || right == nullptr ) return 1.0;
-  double w = sqrt(s) - sqrt(left->s) - sqrt(right->s) > 0; 
+  double w = double( sqrt(s) - sqrt(left->s) - sqrt(right->s) > 0 ); 
   if( w == 0 ) return 0;
   w *= rho(s, left->s, right->s);
   w *= left  -> weight();
