@@ -24,9 +24,6 @@ namespace AmpGen
      usually this is a std::complex<double>,
      but in principal support also exists for computing coupled channel propagators
      (i.e. returning array types) */
-  
-  
-  
   namespace detail {
     template <typename T> struct size_of {       static constexpr unsigned value = sizeof(T); };
     template <>           struct size_of<void> { static constexpr unsigned value = 0; } ;
@@ -153,7 +150,9 @@ namespace AmpGen
         }
         void compileBatch( std::ostream& stream ) const override  
         {
+          #if USE_OPENMP
           stream << "#include <omp.h>\n";
+          #endif
           stream << "extern \"C\" void " << progName() 
                  << "_batch(";
           stream << " const size_t& N, " 

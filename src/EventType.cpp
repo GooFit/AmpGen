@@ -165,7 +165,7 @@ EventType EventType::conj( const bool& headOnly, const bool& dontConjHead ) cons
   type.push_back( dontConjHead ? m_mother : ParticlePropertiesList::get( m_mother )->anti().name() );
   std::transform( m_particleNames.begin(), m_particleNames.end(), std::back_inserter(type),
       [&](auto& x){ return headOnly ? x : ParticlePropertiesList::get(x)->anti().name() ; } );
-  return EventType( type );
+  return EventType( type, m_timeDependent );
 }
 
 std::vector<Projection> EventType::defaultProjections(const unsigned& nBins) const
