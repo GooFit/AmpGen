@@ -29,7 +29,7 @@ namespace AmpGen {
       for(unsigned i = 0; i <  N; ++i ) co_g[i] = r[i+(N+1)];
       range = 1./(max-min);
     }
-      T operator()(const T& s)
+      T operator()(const T& s) const 
       {
         T x = (s-min)*range;
         T f = 0;
