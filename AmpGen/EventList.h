@@ -95,6 +95,10 @@ namespace AmpGen
       m_data[pos].setWeight(w);
       m_data[pos].setGenPdf(g);
     }
+    void setGenPDF( const unsigned int& pos, const double& g)
+    {
+      m_data[pos].setGenPdf(g);
+    }
     void erase( const std::vector<Event>::iterator& begin, const std::vector<Event>::iterator& end );
 
     TTree* tree( const std::string& name, const std::vector<std::string>& extraBranches = {} ) const;

@@ -22,7 +22,9 @@ TreePhaseSpace::TreePhaseSpace(const Particle& decayChain, const EventType& type
     m_top.push_back( Vertex::make( p) );
     m_weights.push_back(1);
   }
+  double sum_of_weights = std::accumulate( m_weights.begin(), m_weights.end(), 0 );
   m_dice = std::discrete_distribution<>(m_weights.begin(), m_weights.end()); 
+  for( auto& w : m_weights ) w /= sum_of_weights; 
   setRandom(m_rand);
 }
 
@@ -50,19 +52,15 @@ TreePhaseSpace::TreePhaseSpace(const std::vector<Particle>& decayChains, const E
 
 Event TreePhaseSpace::makeEvent()
 {
-  unsigned j = 0;
-  double w = 0;
-  Event event; 
+  unsigned j = 0; 
+  double w = 0; 
   do {
-    // INFO("Producing event from tree: " << j );
     j = m_dice(m_gen); 
-    if( j >= m_top.size() ) ERROR("Out of bounds: " << j << " / " << m_top.size() );
     m_top[j].generate();
-    event = m_top[j].event(m_type.size());
     w = m_top[j].weight();
-    event.setGenPdf( w == 0 ? 0 : genPdf(event) / w );
   } while ( w == 0 );
-  m_generatorRecord.push_back(j);
+  auto event = m_top[j].event(m_type.size());
+  event.setGenPdf( genPdf(event)/w );
   return event; 
 }
 
@@ -119,13 +117,13 @@ TreePhaseSpace::Vertex::Vertex(const Particle& particle, const double& min, cons
     , max(max)
     , s(bwMass*bwMass)
 {
+  //INFO( particle << " [" << min << ", " << max << "]");
   if( particle.isStable() ) type = Type::Stable; 
   else if( particle.isQuasiStable() ) type = Type::QuasiStable; 
   else if( particle.lineshape().find("BW") != std::string::npos ){
     type = Type::BW; 
     phiMin = atan((min*min - bwMass*bwMass)/(bwMass*bwWidth));
     phiMax = atan((max*max - bwMass*bwMass)/(bwMass*bwWidth));
-    INFO( particle << " [" << min << ", " << max << "] Φ = " << phiMin << ", " << phiMax );
   }
   else type = Type::Flat;
   if( index != 999 ) indices = {index};
@@ -139,7 +137,7 @@ double TreePhaseSpace::Vertex::p() const
 double TreePhaseSpace::Vertex::weight() const 
 {
   if( left == nullptr || right == nullptr ) return 1.0;
-  double w = sqrt(s) - sqrt(left->s) - sqrt(right->s) > 0; 
+  double w = double( sqrt(s) - sqrt(left->s) - sqrt(right->s) > 0 ); 
   if( w == 0 ) return 0;
   w *= rho(s, left->s, right->s);
   w *= left  -> weight();
@@ -170,7 +168,7 @@ void TreePhaseSpace::Vertex::generate()
       s = bwMass * bwMass + bwMass * bwWidth * tan( (phiMax - phiMin ) * rand->Rndm() +  phiMin );
       break;
     case Type::Flat : 
-      s = (max*max-min*min)*rand->Rndm() + min;
+      s = (max*max-min*min)*rand->Rndm() + min * min;
       break;
   };
   if(  left != nullptr )  left->generate();
@@ -222,7 +220,8 @@ void TreePhaseSpace::Vertex::generateFullEvent()
   double pf = p();
   if( std::isnan(pf) || std::isnan(s) )
   {
-    ERROR("Generating nan: " << pf << " " << s << " " << min << " " << max );
+    auto p2 = ( s - 2 * (left->s+right->s) + (left->s-right->s)*(left->s-right->s)/s ); 
+    ERROR("Generating nan: " << pf << " " << s << " " << min << " " << max << " " << p2 << " " << left->s << " " << right->s << " w = " << weight() );
   }
   left  -> mom.SetXYZT(  pf*sinTheta*cosPhi,  pf*sinTheta*sinPhi,  pf*cosTheta, sqrt(left->s + pf*pf) );
   left  -> mom.Boost( mom.BoostVector() );

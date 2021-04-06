@@ -25,6 +25,7 @@ ASTResolver::ASTResolver(const std::map<std::string, unsigned>& evtMap,
 
 std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpressions( const Expression& expression )
 {
+  DEBUG("Calling solver on: " << expression );
   std::vector<std::pair<uint64_t, Expression>> subexpressions; 
   expression.resolve( *this );
   std::map<uint64_t, size_t> used_functions; 
@@ -35,10 +36,10 @@ std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpression
     {
       uint64_t key = s->key(); 
       if( subTrees.count( key ) == 0 ) subTrees[ key ] = s->expression();
-      // else if( m_check_hashes && t.first->m_expression.to_string() != subTrees[key].to_string() )
-      // {
-      //   WARNING("Hash collision between in key = " << key << " other key = " << FNV1a_hash( subTrees[key].to_string() ) );
-      // }
+      else if( m_check_hashes && t->to_string() != subTrees[key].to_string() )
+      {
+        WARNING("Hash collision between in key = " << key << " other key = " << FNV1a_hash( subTrees[key].to_string() ) );
+      }
     }
     m_tempTrees.clear(); 
     for( auto& [key,expression] : subTrees ){
@@ -80,13 +81,14 @@ template <> void ASTResolver::resolve<Spline>( const Spline& spline )
   addResolvedParameter( &spline, address );
   addResolvedParameter( spline.m_points.top().get(), address );  
   auto splineTransfer = dynamic_cast<SplineTransfer*>( m_cacheFunctions[spline.m_name].get() );
-  if( m_mps == nullptr ) ERROR("Fix me!");
+  if( m_mps == nullptr ) ERROR("Fix me: Spline parameters must come from a ParameterSet");
   for( unsigned int i = 0 ; i < spline.m_nKnots; ++i ) 
     splineTransfer->set(i, m_mps->find(spline.m_name+"::"+std::to_string(i)) );
 }
 
 template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
 {
+  DEBUG( "Resolving: " << parameter.name() << " " << parameter.isResolved() );
   if( m_resolvedParameters.count(&parameter) != 0 || parameter.isResolved() ) return; 
   auto res = m_evtMap.find(parameter.name());
   if( res != m_evtMap.end() ){
@@ -116,6 +118,7 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
       else addResolvedParameter( &parameter, addCacheFunction<ParameterTransfer>( parameter.name(), it )  );
       return;
     }
+    WARNING("Could not find parameter: " << parameter.name() << " amongst the MPS ");
   }
   else if( m_enable_compileTimeConstants ){
     addResolvedParameter( &parameter, std::to_string( parameter.defaultValue() ) );
@@ -127,11 +130,18 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
 
 template <> void ASTResolver::resolve<MinuitParameterLink>(const MinuitParameterLink& parameter)
 {
+  DEBUG( "Resolving: " << parameter.name() << " " << m_resolvedParameters.count(&parameter) );
   if( m_resolvedParameters.count(&parameter) != 0 ) return; 
   if( m_mps == nullptr ) return; 
   auto it = m_mps->find(parameter.name());
   if( it == nullptr ) return;
-  addResolvedParameter(&parameter, addCacheFunction<ParameterTransfer>( parameter.name(),it));
+  addResolvedParameter(&parameter, addCacheFunction<ParameterTransfer>(parameter.name(), it));
+}
+
+template <> void ASTResolver::resolve<LambdaExpression>( const LambdaExpression& obj)
+{
+  if( m_resolvedParameters.count(&obj) != 0 ) return;
+  addResolvedParameter(&obj, addCacheFunction<LambdaTransfer>( "lxpr_" + std::to_string(m_nParameters), &obj));
 }
 
 std::map<std::string, std::shared_ptr<CacheTransfer>> ASTResolver::cacheFunctions() const 

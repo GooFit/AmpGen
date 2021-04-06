@@ -64,7 +64,7 @@ unsigned Tensor::rank() const { return m_dim.size(); }
 int Tensor::metricSgn( const std::vector<unsigned>& coordinates ) const
 {
   return std::accumulate( coordinates.begin(), coordinates.end(), 1, 
-      [](auto& prod, auto& co){ return prod * ( ( co == 3) ? 1 : -1 ) ;} ); 
+      [](const auto& prod, const auto& co){ return prod * ( ( co == 3) ? 1 : -1 ) ;} ); 
 }
 
 int Tensor::metricSgn( const unsigned& index ) const { return metricSgn( coords( index ) ); }

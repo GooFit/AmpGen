@@ -4,7 +4,6 @@
 // status:  Mon 9 Feb 2009 19:18:04 GMT
 
 #include <iostream>
-#include <list>
 #include <map>
 #include <string>
 #include <utility>

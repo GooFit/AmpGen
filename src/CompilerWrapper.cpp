@@ -100,6 +100,12 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();
   if( print_all ) INFO( expression.name() << " " << cname << " Compile time = " << tWall / 1000. << " [size = " << fileSize(cname)/1024 << ", " << fileSize(oname)/1024 << "] kB" );
+  if( print_all && isClang() )
+  {
+    auto lines = vectorFromFile( cname );
+    for (const auto& line : lines ) 
+      std::cout << line << std::endl; 
+  }
   return true;
 }
 
@@ -123,6 +129,12 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();
   if( print_all ) INFO( cname << " Compile time = " << tWall / 1000. << " [size = " << fileSize(cname)/1024 << ", " << fileSize(oname)/1024 << "] kB" );
+  if( print_all && isClang() )
+  {
+    auto lines = vectorFromFile( cname );
+    for (const auto& line : lines ) 
+      std::cout << line << std::endl; 
+  }
   return true;
 }
 
@@ -142,9 +154,10 @@ std::string get_cpp_version()
 void CompilerWrapper::compileSource( const std::string& fname, const std::string& oname )
 {
   using namespace std::chrono_literals;
-  std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", 
-   {"-Ofast", "--std="+get_cpp_version()}); 
-  
+  std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", {"-Ofast", "--std="+get_cpp_version()}); 
+ 
+  bool useOpenMP = USE_OPENMP; 
+
   #if ENABLE_AVX 
     compile_flags.push_back("-march=native");
     compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
@@ -153,24 +166,21 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     compile_flags.push_back("-mavx2");
     compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
   #endif
-  #if USE_OPENMP
-    compile_flags.push_back("-fopenmp");
-  #endif
 
-  std::vector<const char*> argp = { m_cxx.c_str(), 
-    "-shared", 
-    "-rdynamic", 
-    "-fPIC"};
+  if(useOpenMP) compile_flags.push_back("-fopenmp");
+
+  std::vector<const char*> argp = { m_cxx.c_str(), "-shared", "-rdynamic", "-fPIC"};
+  
   std::transform( compile_flags.begin(), compile_flags.end(), std::back_inserter(argp), [](const auto& flag ){return flag.c_str() ; } );
+  
   if(isClang())
   {
     argp.push_back( "-Wno-return-type-c-linkage");
     #if __APPLE__
     argp.push_back("-lstdc++");
     #endif
-    #if USE_OPENMP 
-    argp.push_back("-fopenmp=libiomp5");
-    #endif
+    if( useOpenMP ) argp.push_back("-fopenmp=libiomp5");
+    argp.push_back( "-march=native");
   }
 
   argp.push_back( fname.c_str() );
@@ -180,7 +190,7 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
   if(NamedParameter<bool>("CompilerWrapper::Verbose", false)) {
     std::string result = std::accumulate(std::begin(argp), std::end(argp),
       std::string(),
-      [](std::string a, const char* b){return a + " " + b;});
+      [](const std::string& a, const char* b){return a + " " + b;});
     INFO("Compiling: " << result);
   }
   argp.push_back( NULL );

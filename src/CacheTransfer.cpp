@@ -44,3 +44,22 @@ void ParameterTransfer::print() const
 { 
   INFO( "Source: " << m_source->name() << " address = " << m_address << " value = " << m_source->mean() ); 
 }
+
+std::string ParameterTransfer::name() const { return m_source->name(); } 
+
+LambdaTransfer::LambdaTransfer(const size_t& address, const std::string& name, const LambdaExpression* source )
+  : CacheTransfer(address, name, source->m_function(), 1), 
+    m_function(source->m_function)
+{
+}
+
+void LambdaTransfer::transfer( CompiledExpressionBase* destination )
+{
+  destination->setExternal( m_function(), m_address ); 
+}
+
+void LambdaTransfer::print() const 
+{
+  INFO( m_name << " = " << m_function() << " address = " << m_address );
+}
+

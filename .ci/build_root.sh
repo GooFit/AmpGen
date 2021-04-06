@@ -12,7 +12,6 @@ bash miniconda_${os}.sh -b -p $DEPS_DIR/miniconda
 export PATH="$DEPS_DIR/miniconda/bin:$PATH"
 hash -r
 conda config --add channels conda-forge
-# conda config --set channel_priority strict
 
 conda create --yes -n env_${os} root doxygen -c conda-forge
 

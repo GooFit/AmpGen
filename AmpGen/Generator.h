@@ -26,7 +26,7 @@ namespace AmpGen
         template <typename... ARGS> explicit Generator( const ARGS&... args ) : m_gps(args...)
         {
           m_eventType = m_gps.eventType();
-          setRandom( m_rnd );
+          if( m_rnd != gRandom ) setRandom( m_rnd );
           DEBUG("Creating generator, using: " << type_string<phaseSpace_t>() << " and internal store type: " << type_string<eventListInternal_t>() ); 
         }
   
@@ -61,13 +61,13 @@ namespace AmpGen
         }
         template <typename pdf_t> double getMax(const pdf_t& pdf, const eventListInternal_t& events) const 
         {
-          auto max = 0.;
+          double max = 0.;
           for ( const auto& evt : events ) 
           {
-            auto value           = pdf(evt) / evt.genPdf();
+            auto value             = evt.genPdf() ; // pdf(evt) / evt.genPdf();
             if ( value > max ) max = value;
           }
-          DEBUG( "Returning normalisation constant = " << max * 1.5 );
+          DEBUG( "Returning normalisation constant = " << max ); 
           return max;
         }
 
@@ -85,7 +85,6 @@ namespace AmpGen
           ProgressBar pb(60, detail::trimmedString(__PRETTY_FUNCTION__) );
           ProfileClock t_phsp, t_eval, t_acceptReject, t_total;
           std::vector<bool> efficiencyReport(m_generatorBlock,false); 
-          bool accept_all = NamedParameter<bool>("AcceptAll",false); 
           eventListInternal_t mc( m_eventType );
           while ( list.size() - size0 < N ) {
             t_phsp.start();
@@ -94,25 +93,28 @@ namespace AmpGen
             t_eval.start();
             pdf.setEvents( mc );
             pdf.prepare();
-            maxProb = maxProb == 0 ? 1.5 * getMax(pdf, mc) : maxProb; 
             auto previousSize = list.size();
             #ifdef _OPENMP
             #pragma omp parallel for
             #endif
-            for ( size_t block=0; block < mc.nBlocks(); ++block ) 
-              mc.setWeight(block, 1.0, pdf(mc.block(block), block) / mc.genPDF(block));
+            for ( size_t block=0; block < mc.nBlocks(); ++block )
+            { 
+              mc.setGenPDF(block, pdf(mc.block(block), block) / mc.genPDF(block) );
+            }
+            maxProb = maxProb == 0 ? 1.5 * getMax(pdf, mc) : maxProb; 
+
             t_eval.stop();
             t_acceptReject.start(); 
             totalGenerated += mc.size();
             for(const auto& event : mc)
             { 
-              if ( event.genPdf() > maxProb ) {
+              if ( event.genPdf()  > maxProb ) {
                 std::cout << std::endl; 
                 WARNING( "PDF value exceeds norm value: " << event.genPdf() << " > " << maxProb );
-//                pdf.debug( event );
               }
-              if ( accept_all || event.genPdf() > maxProb * m_rnd->Rndm() ){
+              if ( event.genPdf() > maxProb * m_rnd->Rndm() ){
                 list.push_back(event);
+                list.rbegin()->setGenPdf( pdf(event) );
                 efficiencyReport[event.index()] = true; 
               }
               else efficiencyReport[event.index()] = false; 

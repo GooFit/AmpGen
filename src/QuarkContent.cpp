@@ -180,7 +180,7 @@ QuarkContent QuarkContent::operator-( const QuarkContent& rhs ) const
 bool QuarkContent::operator==( const QuarkContent& rhs ) const
 {
    for ( auto& qsl : m_quarks ) {
-     bool isSame = std::any_of( rhs.quarks().begin(), rhs.quarks().end(), [&qsl](auto& qsr){ return qsl == qsr; } );
+     bool isSame = std::any_of( rhs.quarks().begin(), rhs.quarks().end(), [&qsl](const auto& qsr){ return qsl == qsr; } );
      if( isSame ) return true; 
    }
   return false; 

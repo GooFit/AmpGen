@@ -146,8 +146,11 @@ Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(
       particle.setOrdering(p);
       particle.setLineshape( "FormFactor" );
       Expression prop = make_cse( c.to_expression() ) * make_cse( particle.propagator( msym ) );
-      if ( msym != nullptr ) msym->emplace_back( s.name() + "_g", c.to_expression() );
-      if ( msym != nullptr ) msym->emplace_back( s.name() + "_p", particle.propagator() );
+      if ( msym != nullptr )
+      { 
+        msym->emplace_back( s.name() + "_g", c.to_expression() );
+        msym->emplace_back( s.name() + "_p", particle.propagator() );
+      }
       Tensor zt = particle.spinTensor(msym);
       zt.st() ;
       currents.push_back( zt * prop );
@@ -236,10 +239,8 @@ ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitPar
   for( auto& p : fcs.matrixElements() ) unpacked.emplace_back( p.decayTree, p.coupling );
 
   Expression matrixElementTotal = spinAverageMatrixElement(unpacked, &msym );
-  std::string name              = "";
   auto evtFormat = evt.getEventFormat();
   for ( auto& p : unpacked ) {
-    name += p.first.decayDescriptor();
     partialWidths.emplace_back( spinAverageMatrixElement( {p}, &msym ), p.first.decayDescriptor(), &mps, evtFormat);
   }
   totalWidth = CompiledExpression< complex_t(const real_t*, const real_t*) > ( matrixElementTotal, "width", &mps, evtFormat);

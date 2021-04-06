@@ -64,7 +64,7 @@ void MinuitParameter::setInit( const double& val, const double& step )
   if( step != -1 ) m_stepInit = step;
 }
 
-void MinuitParameter::setResult( double fitMean, double fitErr, double fitErrPos, double fitErrNeg )
+void MinuitParameter::setResult( double fitMean, double fitErr, double fitErrNeg, double fitErrPos )
 {
   m_meanResult   = fitMean;
   m_errResult    = fitErr;

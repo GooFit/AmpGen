@@ -280,7 +280,7 @@ std::shared_ptr<BinDT::INode> BinDT::makeNodes( std::vector<double*> source, std
     m_endNodes.push_back( node );
     return node;
   }
-  auto sorter = [&index]( auto& a, auto& b ) { return *( a + index ) < *( b + index ); };
+  auto sorter = [&index]( const auto& a, const auto& b ) { return *( a + index ) < *( b + index ); };
   parallel_sort(source.begin(), source.end(), sorter, std::max(256ul, source.size() / 4) );
   parallel_sort(target.begin(), target.end(), sorter, std::max(256ul, target.size() / 4) );
   double optPos = bestCut_lineSearch(source, target, index, m_dim, m_minEvents);
@@ -318,8 +318,8 @@ void BinDT::refreshQueue( const std::vector<double*>& evts, std::queue<unsigned 
     std::vector<std::pair<unsigned int, double>> indices;
     for ( unsigned int i = 0; i < m_dim; ++i ) indices.emplace_back( i, nearestNeighbourVariance( evts, i ) );
     std::sort( indices.begin(), indices.end(),
-        []( auto& it1, auto& it2 ) { return it1.second > it2.second;} );
-    for ( auto& item : indices ) indexQueue.push( item.first );
+        []( const auto& it1, const auto& it2 ) { return it1.second > it2.second;} );
+    for ( const auto& item : indices ) indexQueue.push( item.first );
   }
 }
 

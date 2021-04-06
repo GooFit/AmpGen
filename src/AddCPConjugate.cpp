@@ -17,20 +17,19 @@ void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
   std::string cartOrPolar = NamedParameter<std::string>("CouplingConstant::Coordinates" ,"cartesian");
   for( auto& param : mps ){
     const std::string name = param->name();
-    size_t pos=0;
     std::string new_name = name; 
     int sgn=1;
     if( name.find("::") != std::string::npos ){
-      pos = name.find("::");
+      auto pos = name.find("::");
       auto props = AmpGen::ParticlePropertiesList::get( name.substr(0,pos), true );
       if( props != 0 ) new_name = props->anti().name() + name.substr(pos); 
     }
     else { 
       auto tokens=split(name,'_');
       std::string reOrIm = *tokens.rbegin();
-      std::string name   = tokens[0];
+      std::string pname   = tokens[0];
       if ( reOrIm == "Re" || reOrIm == "Im" ){
-        Particle test = Particle(name).conj();
+        Particle test = Particle(pname).conj();
         if( cartOrPolar == "polar" )     sgn = reOrIm == "Re" ? test.CP() : 1; 
         if( cartOrPolar == "cartesian" ) sgn = test.CP();
         new_name = test.uniqueString() +"_"+reOrIm;

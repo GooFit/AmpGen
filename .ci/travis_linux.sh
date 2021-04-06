@@ -9,15 +9,15 @@ conda activate env_${TRAVIS_OS_NAME}
 echo -en 'travis_fold:start:script.build\\r'
 echo "Building..."
 echo "Building under OS: $TRAVIS_OS_NAME, CXX =$CXX"
-
-mkdir -p build.conda
-cd build.conda
-cmake .. 
+echo "Directories: DEPS_DIR=$DEPS_DIR; TRAVIS_BUILD_DIR=$TRAVIS_BUILD_DIR"
+mkdir -p build
+cd build
+cmake .. -DENABLE_INSTALL=0
 cmake --build . -- -j2
 
 set +evx
 
 cd ..
 
-./build.conda/bin/Generator options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 10000
+./build/bin/AmpGen.exe options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 10000
 
