@@ -24,7 +24,6 @@
 #include "AmpGen/Factory.h"
 #include "AmpGen/RecursivePhaseSpace.h"
 #include "AmpGen/FitResult.h"
-#include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/Minimiser.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MinuitParameterSet.h"

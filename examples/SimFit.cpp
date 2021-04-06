@@ -3,7 +3,6 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/SumPDF.h"
 #include "AmpGen/FitResult.h"
-#include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/Minimiser.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Utilities.h"

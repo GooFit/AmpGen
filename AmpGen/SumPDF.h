@@ -1,7 +1,6 @@
 #ifndef AMPGEN_SUMPDF_H
 #define AMPGEN_SUMPDF_H
 
-#include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/ProfileClock.h"
