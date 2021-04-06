@@ -11,6 +11,7 @@
 #include "AmpGen/ASTResolver.h"
 #include "AmpGen/enum.h"
 #include "AmpGen/NamedParameter.h"
+#include "AmpGen/Tensor.h"
 
 using namespace AmpGen;
 using namespace std::complex_literals; 
@@ -49,20 +50,53 @@ void ExpressionParser::processUnaryOperators( std::vector<std::string>& opCodes,
   }
 }
 
-std::vector<std::string>::const_iterator findMatchingBracket( 
-   std::vector<std::string>::const_iterator begin, 
-   std::vector<std::string>::const_iterator end )
+using iterator = std::vector<std::string>::const_iterator; 
+
+template <char open= '(', char close = ')' > iterator findMatchingBracket(iterator begin, iterator end )
 {
   int openedBrackets = 1;
   if( begin + 1 >= end ) return end; 
   for( auto it = begin+1; it != end; ++it )
   {
-    if( *it == "(")  openedBrackets++;
-    if( *it == ")" ) openedBrackets--;
+    openedBrackets += ( it->at(0) == open) -( it->at(0) == close );
     if( openedBrackets == 0 ) return it;
   }
-  ERROR("Unmatched brace in expression");
+  for( auto it = begin; it != end; ++it )
+  {
+    std::cout << *it << " ";
+  }
+  std::cout << std::endl; 
+  FATAL("Unmatched brace in expression, " << open << " " << close);
   return end; 
+}
+
+/// divides strings by a delimiter, allowing for bracketing rules 
+std::vector< std::pair<iterator, iterator> > split_it( iterator begin, iterator end, const std::string& delimiter)
+{
+  std::vector<std::pair<iterator, iterator>> rt; 
+  rt.emplace_back(begin, begin);
+  int b1l = 0;
+  int b2l = 0;
+  for( auto it = begin; it != end-1; ++it )
+  {
+    b1l += ( it->at(0) == '(') - (it->at(0) == ')');
+    b2l += ( it->at(0) == '{') - (it->at(0) == '}');
+    if( *it == delimiter && b1l == 0 && b2l == 0 ) 
+    {
+      rt.rbegin()->second = it; 
+      // INFO( *it << " " << std::distance( begin, rt.rbegin()->first) << " " << std::distance( begin, rt.rbegin()->second) );
+      rt.emplace_back( it+1, it+1);
+    }
+  }
+  rt.rbegin()->second = end; 
+  return rt; 
+} 
+
+std::string merge( iterator begin, iterator end)
+{
+  std::string total = "";
+  for( auto it = begin; it != end; ++it ) total += *it + " ";
+  return total;
 }
 
 Expression ExpressionParser::parseTokens(std::vector<std::string>::const_iterator begin,
@@ -73,10 +107,24 @@ Expression ExpressionParser::parseTokens(std::vector<std::string>::const_iterato
   std::vector<Expression> expressions; 
   for( auto it = begin; it != end; ++it )
   {
-    if( *it == "(" ){
+    if( it->at(0) == '(' ){
       auto begin_2 = it;
-      auto end_2   = findMatchingBracket(it, end);
+      auto end_2   = findMatchingBracket<'(',')'>(it, end);
       expressions.emplace_back( parseTokens(begin_2+1, end_2, mps) );
+      it = end_2;
+    }
+    else if ( it->at(0) == '{' )
+    {
+      auto begin_2 = it; 
+      auto end_2   = findMatchingBracket<'{','}'>(it, end);
+      auto divided = split_it( begin_2+1, end_2, ",");
+      Tensor v( std::vector<unsigned>{static_cast<unsigned>(divided.size())} );
+      for( unsigned int i = 0 ; i != divided.size(); ++i )
+      {
+        v[i] = parseTokens( divided[i].first, divided[i].second, mps); 
+      }
+      DEBUG( "Adding tensor: " << v.to_string() );
+      expressions.emplace_back(TensorExpression(v));
       it = end_2;
     }
     else {
@@ -85,10 +133,11 @@ Expression ExpressionParser::parseTokens(std::vector<std::string>::const_iterato
       else expressions.push_back( processEndPoint( *it , mps ) );
     }
   }
+  DEBUG( "nExpressions = " << expressions.size() << " nOpCodes = " << opCodes.size() << " " << vectorToString( opCodes, " " ) );
   processUnaryOperators( opCodes, expressions );
   processBinaryOperators( opCodes, expressions );
   if( expressions.size() != 1 ){
-    ERROR("Could not process expression!");
+    ERROR("Could not process expression: n = " << expressions.size() << " " << merge(begin, end) );
   }
   return expressions[0];
 }
@@ -110,15 +159,15 @@ ExpressionParser::ExpressionParser()
   add_unary<Imag>("imag");
   add_unary<Abs>("abs");
 
-  add_binary( "^" , [](auto& A, auto& B ) { return fcn::pow(A,B); } );
-  add_binary( "/" , [](auto& A, auto& B ) { return A / B; } ); 
-  add_binary( "*" , [](auto& A, auto& B ) { return A * B; } );
-  add_binary( "-" , [](auto& A, auto& B ) { return A - B; } );
-  add_binary( "+" , [](auto& A, auto& B ) { return A + B; } );
-  add_binary( ">" , [](auto& A, auto& B ) { return A > B; } );
-  add_binary( "<" , [](auto& A, auto& B ) { return A < B; } );
-  add_binary( "&&", [](auto& A, auto& B ) { return A && B; } );
-  add_binary( "," , [](auto& A, auto& B ) { return ExpressionPack( A, B ); } );
+  add_binary( "^" , [](const auto& A, const auto& B ) { return fcn::pow(A,B); } );
+  add_binary( "/" , [](const auto& A, const auto& B ) { return A / B; } ); 
+  add_binary( "*" , [](const auto& A, const auto& B ) { return A * B; } );
+  add_binary( "-" , [](const auto& A, const auto& B ) { return A - B; } );
+  add_binary( "+" , [](const auto& A, const auto& B ) { return A + B; } );
+  add_binary( ">" , [](const auto& A, const auto& B ) { return A > B; } );
+  add_binary( "<" , [](const auto& A, const auto& B ) { return A < B; } );
+  add_binary( "&&", [](const auto& A, const auto& B ) { return A && B; } );
+  add_binary( "," , [](const auto& A, const auto& B ) { return ExpressionPack( A, B ); } );
  
   coordinateType coord = NamedParameter<coordinateType>("CouplingConstant::Coordinates", coordinateType::cartesian);
   angType degOrRad     = NamedParameter<angType>("CouplingConstant::AngularUnits", angType::rad);

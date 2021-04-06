@@ -53,8 +53,8 @@ void EventListSIMD::loadFromFile( const std::string& fname, const ArgumentPack& 
   else {
     gFile = TFile::Open( fname.c_str(), "READ");
     if( gFile == nullptr ) FATAL("Failed to load file: " << tokens[0] );
-    if( tree == nullptr ) tree = (TTree*)gFile->Get("EventList");
     tree = (TTree*)gFile->Get("DalitzEventList");
+    if( tree == nullptr ) tree = (TTree*)gFile->Get("EventList");
   }
   if( tree == nullptr ) FATAL( "Failed to load tree from file: " << fname );
   loadFromTree( tree, args );
@@ -139,9 +139,9 @@ EventListSIMD::EventListSIMD( const EventList& other ) : EventListSIMD( other.ev
   for( unsigned block = 0 ; block != m_data.nBlocks(); block++ )
   {
     for( unsigned j = 0 ; j != m_data.nFields(); ++j ) 
-      m_data(block, j) = utils::gather<float_v>(other, [j](auto& event){ return event[j]; } , block * float_v::size );
-    m_weights[block] = utils::gather<float_v>(other,  [](auto& event){ return event.weight(); }, block * float_v::size, 0);
-    m_genPDF [block] = utils::gather<float_v>(other,  [](auto& event){ return event.genPdf(); }, block * float_v::size, 1);
+      m_data(block, j) = utils::gather<float_v>(other, [j](const auto& event){ return event[j]; } , block * float_v::size );
+    m_weights[block] = utils::gather<float_v>(other,  [](const auto& event){ return event.weight(); }, block * float_v::size, 0);
+    m_genPDF [block] = utils::gather<float_v>(other,  [](const auto& event){ return event.genPdf(); }, block * float_v::size, 1);
   }
 } 
 
@@ -178,26 +178,14 @@ TTree* EventListSIMD::tree( const std::string& name, const std::vector<std::stri
 std::vector<TH1D*> EventListSIMD::makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args )
 {
   std::vector<TH1D*> plots;
-  for ( const auto& proj : projections ) plots.push_back( makeProjection(proj, args) );
+  for ( const auto& proj : projections ) plots.push_back( proj(*this,args) );
   return plots;
 }
 
 TH1D* EventListSIMD::makeProjection( const Projection& projection, const ArgumentPack& args ) const 
 {
-  auto selection      = args.getArg<PlotOptions::Selection>().val;
-  auto weightFunction = args.getArg<WeightFunction>().val;
-  std::string prefix  = args.getArg<PlotOptions::Prefix>(std::string(""));
-  auto plot = projection.plot(prefix);
-  plot->SetLineColor(args.getArg<PlotOptions::LineColor>(kBlack).val); 
-  plot->SetMarkerSize(0);
-  for( const auto evt : *this )
-  {
-    if( selection != nullptr && !selection(evt) ) continue;
-    auto pos = projection(evt);
-    plot->Fill( pos, evt.weight() * ( weightFunction == nullptr ? 1 : weightFunction(evt) / evt.genPdf() ) );
-  }
-  if( selection != nullptr ) INFO("Filter efficiency = " << plot->GetEntries() << " / " << size() );
-  return plot;
+  return projection(*this, args);
+
 }
 TH2D* EventListSIMD::makeProjection( const Projection2D& projection, const ArgumentPack& args ) const
 {
@@ -221,7 +209,6 @@ void EventListSIMD::clear()
 
 const Event EventListSIMD::operator[]( const size_t& pos ) const 
 { 
-  unsigned nEvents = size();
   unsigned p = pos / float_v::size; 
   unsigned q = pos % float_v::size; 
   Event tempEvent( eventSize() );

@@ -107,19 +107,31 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
 
 bool Particle::isValidDecayDescriptor( const std::string& decayDescriptor )
 {
-  size_t firstOpen = decayDescriptor.find("{");
-  size_t open  = std::count(decayDescriptor.begin(), decayDescriptor.end(), '{'); 
-  size_t close = std::count(decayDescriptor.begin(), decayDescriptor.end(), '}'); 
-  if( open == 0 || open != close || firstOpen == std::string::npos) return false; 
-  std::string firstState = decayDescriptor.substr(0, firstOpen);
-  auto firstSquare = firstState.find("[");
-  if( firstSquare == std::string::npos ) return ParticleProperties::get( firstState, true ) != nullptr;
-  return ParticleProperties::get( firstState.substr(0, firstSquare), true ) != nullptr; 
+  auto first = decayDescriptor.find("{");
+  auto open  = std::count(decayDescriptor.begin(), decayDescriptor.end(), '{'); 
+  auto close = std::count(decayDescriptor.begin(), decayDescriptor.end(), '}'); 
+  if( open == 0 || open != close || first == std::string::npos){
+    if( open !=0 && open != close ) WARNING("Unmatched braces in possible decay descriptor: " << decayDescriptor);
+    return false; 
+  }
+  auto tokens = split(decayDescriptor, {'{','}',',','_'} );
+  bool valid = true; 
+  for( auto token : tokens )
+  {
+    auto particle_name = token.substr(0, token.find("[") );
+    valid &= ParticleProperties::get( particle_name, true) != nullptr; 
+  }
+  return valid; 
 }
 
 void Particle::parseModifier( const std::string& mod )
 {
-  if ( Lineshape::Factory::isLineshape(mod) ) m_lineshape = mod;
+  auto tokens = split(mod, '=');
+  if ( tokens.size() == 2 && tokens[0] == "vertex" )
+  {
+    m_vertexName = tokens[1];
+  }
+  else if ( Lineshape::Factory::isLineshape(mod) ) m_lineshape = mod;
   else if( mod.size() == 1 )
   {
     DEBUG( "Modifier = " << mod );
@@ -273,6 +285,7 @@ std::shared_ptr<Particle> Particle::daughter( const std::string& name, const int
 
 std::string Particle::orbitalString() const
 {
+  if( m_vertexName != "" ) return m_vertexName; 
   constexpr std::array<char, 7> orbitals = {'S','P','D','F','G','H','I'};
   std::string rt = std::string(1, orbitals[m_orbital] ); 
   if( m_spinConfigurationNumber != 0 ){ 
@@ -552,8 +565,8 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
     }
     if( m_spinBasis == spinBasis::Dirac ){
       Expression N = make_cse(1./(m*(pE + m)));
-      if( polState ==  1 ) return -Tensor({1.+ z *pX*N,  1i +  z*pY*N,  z*pZ*N    ,  z*m })/sqrt(2);
-      if( polState == -1 ) return  Tensor({1.+ zb*pX*N, -1i + zb*pY*N, zb*pZ*N    , zb*m })/sqrt(2);
+      if( polState ==  1 ) return -Tensor({1.+ z *pX*N,  1i +  z*pY*N,  z*pZ*N    ,  z/m })/sqrt(2);
+      if( polState == -1 ) return  Tensor({1.+ zb*pX*N, -1i + zb*pY*N, zb*pZ*N    , zb/m })/sqrt(2);
       if( polState ==  0 ) return  Tensor({pX*pZ*N    ,       pY*pZ*N, 1 + pZ*pZ*N, pZ/m });
     } 
   }

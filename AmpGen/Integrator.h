@@ -32,7 +32,7 @@ namespace AmpGen
         WARNING("No events specified, returning");
         return; 
       }
-      m_cache = Store<complex_v, Alignment::SoA>(events->size(), expressions, size_of );
+      m_cache = Store<complex_v, Alignment::SoA>(events->size(), expressions);
       m_weight.resize( events->nBlocks() );
       float_v norm_acc = 0.;
       for( size_t i = 0 ; i < events->nBlocks(); ++i )

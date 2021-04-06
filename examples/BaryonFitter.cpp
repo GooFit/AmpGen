@@ -24,7 +24,6 @@
 #include "AmpGen/Factory.h"
 #include "AmpGen/RecursivePhaseSpace.h"
 #include "AmpGen/FitResult.h"
-#include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/Minimiser.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MinuitParameterSet.h"
@@ -186,7 +185,7 @@ int main( int argc, char* argv[] )
   auto const n_final_state_particles = evtType.size();
   std::vector<unsigned> daughters_as_ints(n_final_state_particles);
   std::iota (daughters_as_ints.begin(), daughters_as_ints.end(), 0u);
-  auto frame_transform = [&evtType, &daughters_as_ints, &n_final_state_particles](auto& event){
+  auto frame_transform = [&daughters_as_ints, &n_final_state_particles](auto& event){
     TVector3 pBeam(0,0,1);
     if( event[event.size()-1] < 0 ){
       invertParity( event, n_final_state_particles);

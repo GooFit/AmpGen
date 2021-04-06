@@ -72,4 +72,5 @@ namespace AmpGen {
   template <> void ASTResolver::resolve<SubTree>  ( const SubTree  & obj );
   template <> void ASTResolver::resolve<Spline>   ( const Spline   & obj );
   template <> void ASTResolver::resolve<MinuitParameterLink>( const MinuitParameterLink& obj );  
+  template <> void ASTResolver::resolve<LambdaExpression>( const LambdaExpression& obj);
 }

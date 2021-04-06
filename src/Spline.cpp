@@ -76,8 +76,6 @@ Expression Spline::eval(DebugSymbols* db) const
   ADD_DEBUG(bin, db );
   ADD_DEBUG(returnValue, db );
   ADD_DEBUG( m_points[bin], db );
-  for( int i = 0 ; i != m_points.size(); ++i )
-  ADD_DEBUG( m_points[Constant(i) + 0.1], db );
   return make_cse(returnValue);
 }
 

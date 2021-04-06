@@ -290,9 +290,9 @@ void AmpGen::printSplash()
   #endif
     
   std::cout << "  " << __DATE__ << " " << __TIME__ << bold_off << "\n\n";
-
-  char* AmpGenRoot = getenv("AMPGENROOT");
-  if( AmpGenRoot != nullptr ) printReleaseNotes( std::string(AmpGenRoot) + "/doc/release.notes"); 
+  #ifdef AMPGENROOT_CMAKE
+    printReleaseNotes( std::string(AMPGENROOT_CMAKE) + "/release.notes"); 
+  #endif
 }
 
 bool AmpGen::fileExists( const std::string& name )
@@ -334,7 +334,11 @@ std::string AmpGen::expandGlobals( std::string path )
       end_pos--;
     }
     const char* global_var = getenv( variable_name.c_str() );
-    if ( global_var == nullptr ) {
+    if ( variable_name == "AMPGENROOT" && global_var == nullptr )
+    {
+      global_var = AMPGENROOT; 
+    }
+    else if ( global_var == nullptr ) {
       ERROR( "variable " << variable_name << " not found" );
       break;
     }

@@ -70,9 +70,9 @@ ParticlePropertiesList::ParticlePropertiesList( const std::string& fname_in )
 {
   auto dl = dirList();
   bool status = true; 
-  status &= std::any_of( dl.begin(), dl.end(), [this](auto& d){ return this->readLatexLabels(d +"pdgID_to_latex.dat") ; } );
-  status &= std::any_of( dl.begin(), dl.end(), [this](auto& d){ return this->readFile(d +"mass_width.csv") ; } );
-  status &= std::any_of( dl.begin(), dl.end(), [this](auto& d){ return this->readFile(d +"MintDalitzSpecialParticles.csv") ; } );
+  status &= std::any_of( dl.begin(), dl.end(), [this](const auto& d){ return this->readLatexLabels(d +"pdgID_to_latex.dat") ; } );
+  status &= std::any_of( dl.begin(), dl.end(), [this](const auto& d){ return this->readFile(d +"mass_width.csv") ; } );
+  status &= std::any_of( dl.begin(), dl.end(), [this](const auto& d){ return this->readFile(d +"MintDalitzSpecialParticles.csv") ; } );
   if( !status ){
     WARNING("Failed to load full PDG configuration, beware of unexpected behaviour");
   }
@@ -145,18 +145,9 @@ const ParticleProperties* ParticlePropertiesList::find( const std::string& name,
   auto it = m_byName.find( name );
   if ( it != m_byName.end() ) return it->second;
   if ( !quiet ) {
-    auto particleNames = ParticlePropertiesList::getMe()->getParticleNames();
-
-    unsigned int minDistance = 9999;
-    std::string suggestion   = "";
-    for ( auto& particle : particleNames ) {
-      unsigned int distance = editDistance( particle, name );
-      if ( distance < minDistance ) {
-        suggestion  = particle;
-        minDistance = distance;
-      }
-    }
-    ERROR( "Particle: " << name << " not in PDG. Did you mean " << suggestion << "?" );
+    auto suggestion = std::min_element( std::begin(m_byName), std::end(m_byName),
+        [&name](const auto& p1, const auto& p2 ){ return editDistance(p1.first, name) < editDistance(p2.first,name);  }  );
+    ERROR( "Particle: " << name << " not in PDG. Did you mean " << suggestion->first << "?" );
   }
   return nullptr;
 }

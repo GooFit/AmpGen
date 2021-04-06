@@ -60,7 +60,8 @@ namespace AmpGen
     static std::string fcnSignature(const std::vector<std::string>&, bool=false, bool=true); 
     virtual bool use_rto() const     = 0;
     Expression expression() const { return m_obj; }
-    void enableBatch() { m_enableBatch  = true ; }
+    virtual std::string arg_type( const unsigned& counter) const =0; 
+    std::vector<const CacheTransfer*> orderedCacheFunctors() const;
   protected:
     Expression                                      m_obj;
     std::string                                     m_name;
@@ -70,9 +71,9 @@ namespace AmpGen
     std::vector<std::pair<uint64_t, Expression>>    m_dependentSubexpressions;
     std::vector<std::pair<uint64_t, Expression>>    m_debugSubexpressions; 
     std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;
-    std::shared_ptr<ASTResolver>                    m_resolver;
+    std::shared_ptr<ASTResolver>                    m_resolver = {nullptr};
     std::vector<std::string>                        m_additionalHeaders;
-    bool                                            m_enableBatch = {true}; 
+    bool                                            m_disableBatch = {false}; 
   private:
     void addDebug( std::ostream& stream ) const;
     void addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const;

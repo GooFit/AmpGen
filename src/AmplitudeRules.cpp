@@ -57,16 +57,19 @@ Coupling::Coupling(MinuitExpression* expression) :
 AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
 {
   for ( auto& it_re : mps ) {
-    if ( it_re->name().find("_Re") != std::string::npos ){
-      auto it_im = mps.find(replaceAll( it_re->name(), "_Re","_Im") );
+    auto& name = it_re->name(); 
+    DEBUG("Attempting to parse: " << it_re->name() );
+    if ( name.find("_Re") != std::string::npos ){
+      auto it_im = mps.find(replaceAll( name, "_Re","_Im") );
       if( it_im == nullptr ){
         ERROR("Cannot find matching imaginary part / phase for: " <<  it_re->name() );
         continue; 
       }
+      if( ! Particle::isValidDecayDescriptor( name.substr(0, name.find("_Re") ) ) ) continue; 
       Coupling p(it_re, it_im);
       m_rules[p.head()].emplace_back(p);
     }
-    else if( it_re->name().find("_Im") == std::string::npos ){
+    else if( name.find("_Im") == std::string::npos ){
       bool isCoupling = Particle::isValidDecayDescriptor( it_re->name() );
       if( isCoupling ){
         MinuitExpression* expression = dynamic_cast<MinuitExpression*>( it_re );
@@ -111,8 +114,8 @@ EventType Coupling::eventType() const
   Particle particle( m_name );
   std::vector<std::string> particleNames = { particle.name() };
   std::vector<std::shared_ptr<Particle>> fs = particle.getFinalStateParticles();
-  std::stable_sort( fs.begin(), fs.end(), []( auto& A, auto& B ) { return *A < *B; } );
-  std::transform( fs.begin(), fs.end(), std::back_inserter(particleNames), [](auto& p ) -> std::string { return p->name() ; } );
+  std::stable_sort( fs.begin(), fs.end(), []( const auto& A, const auto& B ) { return *A < *B; } );
+  std::transform( fs.begin(), fs.end(), std::back_inserter(particleNames), [](const auto& p) -> std::string { return p->name() ; } );
   return EventType( particleNames );
 }
 
@@ -133,12 +136,12 @@ Expression Coupling::to_expression() const
 
 std::complex<double> TotalCoupling::operator()() const
 {
-  return std::accumulate( couplings.begin(), couplings.end(), complex_t(1,0), [](auto& prod, auto& coupling ){ return prod * coupling() ; } );
+  return std::accumulate( couplings.begin(), couplings.end(), complex_t(1,0), [](const auto& prod, const auto& coupling ){ return prod * coupling() ; } );
 }
 
 Expression TotalCoupling::to_expression() const
 {
-  return std::accumulate( couplings.begin(), couplings.end(), Expression(1), [](auto& prod, auto& coupling ){ return prod * coupling.to_expression(); } );
+  return std::accumulate( couplings.begin(), couplings.end(), Expression(1), [](const auto& prod, const auto& coupling ){ return prod * coupling.to_expression(); } );
 }
 
 void TotalCoupling::print() const

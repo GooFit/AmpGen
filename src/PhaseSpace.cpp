@@ -1,6 +1,5 @@
 #include "AmpGen/PhaseSpace.h"
 
-#include <RtypesCore.h>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -62,7 +61,6 @@ Event PhaseSpace::makeEvent()
       wt *= pd[n];
     }
   } while ( wt < m_rand->Rndm() );
-  
   rt[0] = 0;
   rt[1] = pd[0];
   rt[2] = 0;

@@ -100,7 +100,7 @@ namespace AmpGen
       
     std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
     KeyedFunctors<double(Event)> componentEvaluator(const EventList_type* = nullptr) const; 
-
+    EventType eventType() const { return m_evtType; } 
   protected:
     std::vector<TransitionMatrix<complex_v>> m_matrixElements; ///< Vector of matrix elements
     Bilinears        m_normalisations;                         ///< Normalisation integrals
