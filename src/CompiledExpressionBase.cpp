@@ -49,9 +49,7 @@ std::string AmpGen::programatic_name( std::string s )
 void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
 {
   if( m_resolver == nullptr ) m_resolver = std::make_shared<ASTResolver>( m_evtMap, mps );
-  if( fcnSignature().find("AVX") != std::string::npos ) {
-    m_resolver->setEnableAVX();   
-  }
+  if( fcnSignature().find("AVX") != std::string::npos ) m_resolver->setEnableAVX();   
   m_dependentSubexpressions = m_resolver->getOrderedSubExpressions( m_obj ); 
   for ( auto& sym : m_db ){
     auto expressions_for_this = m_resolver->getOrderedSubExpressions( sym.second); 
@@ -61,8 +59,9 @@ void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
     }
   }
   m_cacheTransfers.clear();
-  for( auto& expression : m_resolver->cacheFunctions() ) 
-    m_cacheTransfers.emplace_back( expression.second ); 
+  for( auto& [expr, fcache] : m_resolver->cacheFunctions() ) 
+    m_cacheTransfers.emplace_back( fcache );
+  DEBUG("Resizing cache to: " << m_resolver->nParams() ); 
   resizeExternalCache( m_resolver->nParams() ); 
   prepare(); 
 }
@@ -170,4 +169,14 @@ std::string CompiledExpressionBase::fcnSignature(const std::vector<std::string>&
   auto fcn = [counter](const auto& str) mutable {return str + " x"+std::to_string(counter++); }; 
   if( rto ) return argList[0] + " r, " + argList[1] + " s, " + vectorToString( argList.begin()+2, argList.end(), ", ", fcn );
   return vectorToString( argList.begin(), argList.end(), ", ", fcn);
+}
+
+std::vector<const CacheTransfer*> CompiledExpressionBase::orderedCacheFunctors() const 
+{ 
+  std::vector<const CacheTransfer*> ordered_cache_functors; 
+  for( const auto& c : m_cacheTransfers ) ordered_cache_functors.push_back( c.get() );
+  std::sort( ordered_cache_functors.begin(),
+                     ordered_cache_functors.end(),
+                     [](auto& c1, auto& c2 ) { return c1->address() < c2->address() ; } );
+  return ordered_cache_functors; 
 }

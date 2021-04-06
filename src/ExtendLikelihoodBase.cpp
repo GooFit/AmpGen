@@ -1,4 +1,4 @@
-#include "AmpGen/IExtendLikelihood.h"
+#include "AmpGen/ExtendLikelihoodBase.h"
 
 #include <ostream>
 
@@ -12,13 +12,12 @@
 
 using namespace AmpGen;
 
-double GaussianConstraint::getVal() const
+double GaussianConstraint::operator()() const
 {
   return -( m_param->mean() - m_mean ) * ( m_param->mean() - m_mean ) / ( 2 * m_sigma * m_sigma );
 }
 
 void GaussianConstraint::configure( const std::string& configString, 
-                                    const CoherentSum& pdf,
                                     const MinuitParameterSet& mps )
 {
   auto tokens            = split( configString, ' ' );
@@ -47,4 +46,4 @@ void GaussianConstraint::configure( const std::string& configString,
   }
 }
 
-REGISTER( IExtendLikelihood, GaussianConstraint );
+REGISTER( ExtendLikelihoodBase, GaussianConstraint );

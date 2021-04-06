@@ -25,6 +25,7 @@ ASTResolver::ASTResolver(const std::map<std::string, unsigned>& evtMap,
 
 std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpressions( const Expression& expression )
 {
+  DEBUG("Calling solver on: " << expression );
   std::vector<std::pair<uint64_t, Expression>> subexpressions; 
   expression.resolve( *this );
   std::map<uint64_t, size_t> used_functions; 
@@ -87,6 +88,7 @@ template <> void ASTResolver::resolve<Spline>( const Spline& spline )
 
 template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
 {
+  DEBUG( "Resolving: " << parameter.name() << " " << parameter.isResolved() );
   if( m_resolvedParameters.count(&parameter) != 0 || parameter.isResolved() ) return; 
   auto res = m_evtMap.find(parameter.name());
   if( res != m_evtMap.end() ){
@@ -116,6 +118,7 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
       else addResolvedParameter( &parameter, addCacheFunction<ParameterTransfer>( parameter.name(), it )  );
       return;
     }
+    WARNING("Could not find parameter: " << parameter.name() << " amongst the MPS ");
   }
   else if( m_enable_compileTimeConstants ){
     addResolvedParameter( &parameter, std::to_string( parameter.defaultValue() ) );
@@ -127,6 +130,7 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
 
 template <> void ASTResolver::resolve<MinuitParameterLink>(const MinuitParameterLink& parameter)
 {
+  DEBUG( "Resolving: " << parameter.name() << " " << m_resolvedParameters.count(&parameter) );
   if( m_resolvedParameters.count(&parameter) != 0 ) return; 
   if( m_mps == nullptr ) return; 
   auto it = m_mps->find(parameter.name());

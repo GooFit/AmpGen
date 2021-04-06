@@ -24,7 +24,7 @@ namespace AmpGen
       virtual void transfer( CompiledExpressionBase* destination ); 
       virtual void print()     const;
       virtual size_t size()    const { return m_size ; }  
-
+      virtual std::string name() const { return m_name; } 
     protected: 
       size_t       m_address = {0};
       size_t       m_size    = {0}; 
@@ -42,6 +42,7 @@ namespace AmpGen
 
       void transfer( CompiledExpressionBase* destination ) override;
       void print()     const override;
+      virtual std::string name() const override; 
 
     protected:
       MinuitParameter* m_source = {nullptr};

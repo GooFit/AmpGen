@@ -53,12 +53,16 @@ namespace AmpGen
         {
           const MinuitParameterSet* mps = nullptr; 
           auto process_argument = [this, &mps]( const auto& arg ) mutable
-          {
+          { 
             if constexpr( std::is_convertible<decltype(arg), DebugSymbols>::value  ) this->m_db = arg;
             else if constexpr( std::is_convertible<decltype(arg), std::map<std::string, unsigned>>::value ) this->m_evtMap = arg;
-            else if constexpr( std::is_convertible<decltype(arg), MinuitParameterSet*>::value ) mps = arg;
-            else if constexpr( std::is_convertible<decltype(arg), const MinuitParameterSet*>::value ) mps = arg;
+            else if constexpr( std::is_convertible<decltype(arg), const MinuitParameterSet*>::value or 
+                               std::is_convertible<decltype(arg), const AmpGen::MinuitParameterSet*>::value or
+                               std::is_convertible<decltype(arg), MinuitParameterSet*>::value ){
+              mps = arg;
+            }
             else if constexpr( std::is_convertible<decltype(arg), MinuitParameterSet>::value ) mps = &arg;
+            
             else if constexpr( std::is_convertible<decltype(arg), disableBatch>::value ) {
               WARNING("Disabling bulk evaluation: did you do this on purpose?");
               m_disableBatch = true; 
@@ -66,6 +70,7 @@ namespace AmpGen
             else ERROR("Unrecognised argument: " << type_string(arg) ); 
           }; 
           for_each( std::tuple<const namedArgs&...>(args...), process_argument);
+          if( mps == nullptr ) WARNING("No minuit parameterset linked.");
           resolve(mps);
           if constexpr(std::is_same<ret_type,void>::value ) 
           {
@@ -113,12 +118,8 @@ namespace AmpGen
           INFO( "Hash     = " << hash() );
           INFO( "IsReady? = " << isReady() << " IsLinked? " << (m_fcn.isLinked() ) );
           INFO( "args     = ["<< vectorToString( m_externals, ", ") <<"]");
-          std::vector<const CacheTransfer*> ordered_cache_functors; 
-          for( const auto& c : m_cacheTransfers ) ordered_cache_functors.push_back( c.get() );
-          std::sort( ordered_cache_functors.begin(),
-                     ordered_cache_functors.end(),
-                     [](auto& c1, auto& c2 ) { return c1->address() < c2->address() ; } );
-          for( auto& c : ordered_cache_functors ) c->print() ;
+          auto func = orderedCacheFunctors();
+          for( auto& c : func ) c->print() ;
         }
 
         void setExternal( const double& value, const unsigned int& address ) override

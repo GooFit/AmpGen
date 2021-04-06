@@ -4,13 +4,13 @@
 
 #include "AmpGen/Factory.h"
 #include "AmpGen/CoherentSum.h"
-#include "AmpGen/IExtendLikelihood.h"
+#include "AmpGen/ExtendLikelihoodBase.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Types.h"
 
 using namespace AmpGen;
 
-double LASSO::getVal() const
+double LASSO::operator()() const
 {
   double sum( 0 );
   for ( unsigned int i = 0; i < m_pdf->size(); ++i ) {
@@ -21,12 +21,10 @@ double LASSO::getVal() const
 }
 
 void LASSO::configure( const std::string& configString, 
-                       const CoherentSum& pdf,
                        const MinuitParameterSet& mps )
 {
-  m_pdf       = &pdf;
   auto tokens = split( configString, ' ' );
   m_lambda    = stod( tokens[1] );
 }
 
-REGISTER( IExtendLikelihood, LASSO );
+REGISTER( ExtendLikelihoodBase, LASSO );

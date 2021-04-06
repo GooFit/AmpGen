@@ -17,7 +17,7 @@
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/IncoherentSum.h"
 #include "AmpGen/FitResult.h"
-#include "AmpGen/IExtendLikelihood.h"
+#include "AmpGen/ExtendLikelihoodBase.h"
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/Minimiser.h"
 #include "AmpGen/MinuitParameter.h"
@@ -55,7 +55,7 @@ std::vector<ThreeBodyCalculator> threeBodyCalculators( MinuitParameterSet& mps )
   return calculators;
 }
 
-void randomizeStartingPoint( MinuitParameterSet& MPS, TRandom3& rand, bool SplineOnly = false )
+void randomiseStartingPoint( MinuitParameterSet& MPS, TRandom3& rand, bool SplineOnly = false )
 {
   double range = 5;
   for (auto& param : MPS) {
@@ -72,9 +72,10 @@ void addExtendedTerms( Minimiser& mini, SIGPDF& pdf, MinuitParameterSet& mps )
 {
   std::vector<std::string> llConfigs = NamedParameter<std::string>( "LLExtend" ).getVector();
 
-  for ( auto& ll_config : llConfigs ) {
+  for ( const auto& ll_config : llConfigs ) 
+  {
     auto ll_name = split( ll_config, ' ' )[0];
-    auto ll_term = Factory<IExtendLikelihood>::get( ll_name );
+    auto ll_term = Factory<ExtendLikelihoodBase>::get( ll_name );
     if ( ll_term != nullptr ) {
       ll_term->configure( ll_config, pdf, mps );
       mini.addExtendedTerm( ll_term );
