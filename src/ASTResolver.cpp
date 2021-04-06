@@ -20,6 +20,7 @@ ASTResolver::ASTResolver(const std::map<std::string, unsigned>& evtMap,
 {
   m_enable_cuda                 = NamedParameter<bool>("UseCUDA",false);
   m_enable_compileTimeConstants = NamedParameter<bool>("ASTResolver::CompileTimeConstants", false);
+  m_check_hashes                = NamedParameter<bool>("ASTResolver::CheckHashes", false );
 }
 
 std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpressions( const Expression& expression )
@@ -30,19 +31,22 @@ std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpression
   std::map<uint64_t, Expression> subTrees;
   do { 
     subTrees.clear();
-    for( auto& t : m_tempTrees )
+    for( auto& [t, s] : m_tempTrees )
     {
-      auto expr = t.first->m_expression;
-      uint64_t key = t.first->key(); 
-      if( subTrees.count( key ) == 0 ) subTrees[ key ] = t.first->m_expression ;
+      uint64_t key = s->key(); 
+      if( subTrees.count( key ) == 0 ) subTrees[ key ] = s->expression();
+      // else if( m_check_hashes && t.first->m_expression.to_string() != subTrees[key].to_string() )
+      // {
+      //   WARNING("Hash collision between in key = " << key << " other key = " << FNV1a_hash( subTrees[key].to_string() ) );
+      // }
     }
     m_tempTrees.clear(); 
-    for( auto& st : subTrees ){
-      st.second.resolve( *this );
-      auto stack_pos = used_functions.find( st.first );
+    for( auto& [key,expression] : subTrees ){
+      expression.resolve( *this );
+      auto stack_pos = used_functions.find(key);
       if ( stack_pos == used_functions.end() ) {
-        subexpressions.emplace_back( st.first , st.second );
-        used_functions[st.first] = subexpressions.size() - 1;
+        subexpressions.emplace_back(key , expression );
+        used_functions[key] = subexpressions.size() - 1;
         continue;
       }
       auto oldPos = stack_pos->second;
@@ -52,7 +56,7 @@ std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpression
       for ( auto uf = used_functions.begin(); uf != used_functions.end(); ++uf ) {
         if ( uf->second >= oldPos ) uf->second = uf->second - 1;
       }
-      used_functions[st.first] = subexpressions.size() - 1;
+      used_functions[key] = subexpressions.size() - 1;
     }
   } while ( subTrees.size() !=0 );
   std::reverse( subexpressions.begin(), subexpressions.end() );
@@ -61,14 +65,18 @@ std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpression
 
 template <> void ASTResolver::resolve<SubTree>( const SubTree& subTree )
 {
-  if( m_tempTrees.count( &subTree ) != 0 ) return;
-  m_tempTrees[&subTree] = 1;
+  auto ptr = subTree.expression().get();
+  if( m_tempTrees.count(ptr) != 0 ) return;
+  else {
+    ptr->resolve( *this );
+    m_tempTrees[ptr] = &subTree;
+  }
 }
 
 template <> void ASTResolver::resolve<Spline>( const Spline& spline )
 { 
   if( m_resolvedParameters.count( &spline) != 0  ) return ; 
-  auto address = addCacheFunction<SplineTransfer>(spline.m_name,spline.m_nKnots,spline.m_min,spline.m_max);
+  auto address = addCacheFunction<SplineTransfer>(spline.m_name, spline.m_nKnots, spline.m_min, spline.m_max);
   addResolvedParameter( &spline, address );
   addResolvedParameter( spline.m_points.top().get(), address );  
   auto splineTransfer = dynamic_cast<SplineTransfer*>( m_cacheFunctions[spline.m_name].get() );

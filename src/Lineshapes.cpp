@@ -23,8 +23,10 @@ Expression AmpGen::kFactor( const Expression& mass, const Expression& width, Deb
   return sqrt(k);
 }
 
-Expression AmpGen::BlattWeisskopf_Norm( const Expression& z, const Expression& z0, unsigned int L )
+Expression AmpGen::BlattWeisskopf_Norm( const Expression& ze, const Expression& z0e, unsigned int L )
 {
+  auto z   = make_cse(ze);
+  auto z0  = make_cse(z0e);
   switch( L ) {
     case 0: return 1;
     case 1: return (1+z0) / (1+z);
@@ -37,8 +39,9 @@ Expression AmpGen::BlattWeisskopf_Norm( const Expression& z, const Expression& z
   }
 }
 
-Expression AmpGen::BlattWeisskopf( const Expression& z, unsigned int L )
+Expression AmpGen::BlattWeisskopf( const Expression& ze, unsigned int L )
 {
+  auto z = make_cse(ze);
   switch( L ) {
     case 0: return 1;
     case 1: return 2    *fpow(z,1) / (1+z);
@@ -75,27 +78,19 @@ Expression AmpGen::width( const Expression& s, const Expression& s1, const Expre
                           const Expression& width, const Expression& radius, unsigned int L,
                           DebugSymbols* dbexpressions )
 {
-  auto q2v = make_cse( Q2(s,s1,s2) );
+  auto q2v              = make_cse( Q2(s,s1,s2) );
   const Expression q2  = Ternary( q2v > 0, q2v, 0 );
-  const Expression q20 = Abs( Q2( mass * mass, s1, s2 ) );
+  const Expression q20 = abs( Q2( mass * mass, s1, s2 ) );
   Expression BF        = BlattWeisskopf_Norm( q2 * radius * radius, q20 * radius * radius, L );
-  Expression qr        = sqrt( q2 / q20 ) * fpow( q2/q20, L );
-
-  const Expression mreco = isqrt( s );
-  const Expression mr    = mass * mreco;
+  auto q2r             = make_cse(q2 / q20);
 
   ADD_DEBUG(q2            , dbexpressions);
   ADD_DEBUG(q20           , dbexpressions);
   ADD_DEBUG(sqrt(q2/q20)  , dbexpressions);
   ADD_DEBUG(BF            , dbexpressions);
-  ADD_DEBUG(qr            , dbexpressions);
-  ADD_DEBUG(mr            , dbexpressions);
-  ADD_DEBUG(qr*mr         , dbexpressions);
-  ADD_DEBUG(sqrt(q2)/mreco, dbexpressions);
-  ADD_DEBUG(sqrt(q20)/mass, dbexpressions);
-  ADD_DEBUG(width*BF*qr*mr, dbexpressions);
-
-  return width * BF * qr * mr;
+  const auto rt = make_cse( width * BF * mass * sqrt( q2r / s ) * fpow( q2r, L ) );
+  ADD_DEBUG(rt, dbexpressions);
+  return rt; 
 }
 
 bool Lineshape::Factory::isLineshape( const std::string& lineshape )
@@ -142,8 +137,8 @@ Expression AmpGen::pol( const Expression& X, const std::vector<Expression>& p )
   Expression F = 0;
   Expression L = 1;
   for ( auto& ip : p ) {
-    F = F + ip * L;
-    L = L * X;
+    F += ip * L;
+    L *= X;
   }
   return F;
 }

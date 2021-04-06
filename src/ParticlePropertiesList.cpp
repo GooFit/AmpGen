@@ -202,4 +202,26 @@ void ParticlePropertiesList::makeAlias( const std::string& name, const std::stri
   m_byName[alias] = pp;
 }
 
+void ParticlePropertiesList::addParticle( const std::vector<std::string>& tokens )
+{
+  INFO( vectorToString(tokens, " ") );
+  auto name = tokens[1];
+  if( tokens.size() % 2 != 0 ) ERROR("Expecting properties as set of key value pairs"); 
+  ParticleProperties* pp = nullptr; 
+  if( m_byName.find( name ) != m_byName.end() )
+  {
+    WARNING("Overwriting properties of existing particle");
+    pp = m_byName[name];
+  }
+  else {
+    pp = new ParticleProperties();
+    pp->setProperty("name", name );
+  }
+  for( int i = 2; i != tokens.size(); i+=2 )
+  {
+    pp->setProperty( tokens[i], tokens[i+1] );
+  } 
+  m_byName[name] = pp;
+}
+
 double ParticlePropertiesList::quasiStableThreshold() const { return m_quasiStableThreshold; }

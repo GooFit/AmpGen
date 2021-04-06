@@ -263,7 +263,7 @@ namespace AmpGen
       Expression propagator( DebugSymbols* db = nullptr ) const;
 
       /// Calculates the total expression for this particle, including symmetrisation and the current polarisation state
-      Expression getExpression( DebugSymbols* db = nullptr, const unsigned int& index = 0 );
+      Expression getExpression( DebugSymbols* db = nullptr, const std::vector<int>& = {} );
 
       /// Calculate the transition matrix for this decay 
       Tensor transitionMatrix( DebugSymbols* db = nullptr );
@@ -281,6 +281,7 @@ namespace AmpGen
       /// matches Check the matching between two decay chains, according to the MatchState enum. 
       unsigned int matches( const Particle& other ) const; 
       std::string makeUniqueString();                        ///< Generate the decay descriptor for this decay. 
+      
     private:
       std::string m_name                     = {""};         ///< Name of the particle
       const ParticleProperties* m_props      = {nullptr};    ///< Particle Properties from the PDG
@@ -303,18 +304,14 @@ namespace AmpGen
       std::string modifierString() const;                    ///< Re-generate modifier string used to create particle
       void sortDaughters();                                  ///< Recursively order the particle's decay products. 
 
-      NamedParameter<spinFormalism> m_spinFormalism  = {"Particle::SpinFormalism"  ,spinFormalism::Covariant, optionalHelpString("Formalism to use for spin calculations", {  
-             {"Covariant", "[default] Covariant Tensor, based on Rarita-Schwinger constraints on the allowed covariant wavefunctions."}
-           , {"Canonical", "Canonical formulation, based on rotational properties of wavefunctions, i.e. Wigner D-matrices and Clebsch-Gordan for (L,S) expansion."} } ) };
-
-      NamedParameter<spinBasis>     m_spinBasis      = {"Particle::SpinBasis", spinBasis::Dirac, optionalHelpString("Basis to use for calculating external polarisation tensors / spinors.", {
-                      {"Dirac", "[default] Quantises along the z-axis"}
-                    , {"Weyl" , "Quantises along the direction of motion"}} )};
-
-      NamedParameter<sfType>  m_sfType   = {"Particle::SFType", sfType::Default, optionalHelpString("Non-default option allowing use of special radiative spin-factors for B->Kresgamma decays, implemented for Covariant formalism only",  {
-                      {"Default", "[default] covariant spin formalism used for full decay chain"}
-                    , {"Radiative" , "custom spin factors for B -> Kres gamma, (default) covariant spin factors for subsequent cascade decays"}} )};
-
+      NamedParameter<spinFormalism> m_spinFormalism  = {"Particle::SpinFormalism"  ,spinFormalism::Covariant, 
+             optionalHelpString("Formalism to use for spin calculations",  
+                 std::make_pair("Covariant", "[default] Covariant Tensor, based on Rarita-Schwinger constraints on the allowed covariant wavefunctions.")
+           ,    std::make_pair("Canonical", "Canonical formulation, based on rotational properties of wavefunctions, i.e. Wigner D-matrices and Clebsch-Gordan for (L,S) expansion.")  ) };
+      NamedParameter<spinBasis>     m_spinBasis      = {"Particle::SpinBasis", spinBasis::Dirac, 
+        optionalHelpString("Basis to use for calculating external polarisation tensors / spinors.",
+                      std::make_pair("Dirac", "[default] Quantises along the z-axis")
+                    , std::make_pair("Weyl", "Quantises along the direction of motion") )};
       NamedParameter<std::string> m_defaultModifier = {"Particle::DefaultModifier","", "Default modifier to use for lineshapes, for example to use normalised vs unnormalised Blatt-Weisskopf factors."};
   };
   std::ostream& operator<<( std::ostream& os, const Particle& particle );

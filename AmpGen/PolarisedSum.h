@@ -15,11 +15,12 @@
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
-#include "AmpGen/Integrator2.h"
+#include "AmpGen/Integrator.h"
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/Expression.h"
 #include "AmpGen/Tensor.h"
 #include "AmpGen/MinuitParameter.h"
+
 
 #include "TMatrixD.h"
 
@@ -35,45 +36,56 @@ namespace AmpGen
   class PolarisedSum
   {
     public: 
-      typedef Integrator<10>        integrator;
+    #if ENABLE_AVX
+      using EventList_type  = EventListSIMD; 
+    #else 
+      using EventList_type  = EventList; 
+    #endif
 
       PolarisedSum() = default; 
-      PolarisedSum(const EventType&, AmpGen::MinuitParameterSet&, const std::vector<MinuitProxy>& = {});
+      PolarisedSum(const EventType&, MinuitParameterSet&, const std::vector<MinuitProxy>& = {});
       void prepare();
-      void setEvents(AmpGen::EventList&);
-      void setMC(AmpGen::EventList&);
+      void setEvents(EventList_type&);
+      void setMC(EventList_type&);
+      #if ENABLE_AVX
+        void setEvents(EventList& evts){ m_ownEvents = true; setEvents( *new EventList_type(evts)) ; };
+        void setMC(EventList& evts){ setMC( *new EventList_type(evts)) ; };
+        double operator()(const double*, const unsigned) const; 
+      #endif
+      float_v operator()(const float_v*, const unsigned) const; 
+      real_t  operator()(const Event& evt) const;
       void reset(const bool& = false);
-      void debug(const AmpGen::Event&);
+      void debug(const Event&);
       void debug_norm(); 
       void setWeight(MinuitProxy);
       double getWeight() const;
-      void calculateNorms(const std::vector<bool>&); 
+      void updateNorms(); 
       void generateSourceCode(const std::string&, const double& = 1, bool = false);
-      void build_probunnormalised();
       Expression probExpression(const Tensor&, const std::vector<Expression>&, DebugSymbols* = nullptr) const; 
       size_t size() const;  
       real_t norm() const;
-      complex_t norm(const size_t&, const size_t&, integrator* = nullptr); 
-      inline real_t operator()(const AmpGen::Event& evt) const { return m_weight * prob_unnormalised(evt) / m_norm; }
-      real_t prob_unnormalised(const AmpGen::Event&) const;
-      real_t prob(const AmpGen::Event&) const;
-      real_t getValNoCache(const AmpGen::Event&) ;
+      complex_t norm(const size_t&, const size_t&, Integrator* = nullptr); 
+      real_t getValNoCache(const Event&) const;
       std::vector<FitFraction> fitFractions(const LinearErrorPropagator&);
-      std::vector<TransitionMatrix<std::vector<complex_t>>> matrixElements() const;
+      std::vector<TransitionMatrix<void>> matrixElements() const;
       void transferParameters(); 
-      Tensor transitionMatrix();
-      TransitionMatrix<std::vector<complex_t>> operator[](const size_t& i) const { return m_matrixElements[i] ; } 
-
+      Tensor transitionMatrix() const;
+      const TransitionMatrix<void>& operator[](const size_t& i) const { return m_matrixElements[i] ; } 
+      std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
+      KeyedFunctors<double(Event)> componentEvaluator(const EventList_type* = nullptr) const;     
     private: 
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};
-      EventList*                    m_events      = {nullptr};
+      EventList_type*               m_events      = {nullptr};
+      Store<complex_v, Alignment::AoS> m_cache    = {};
+      Store<float_v  , Alignment::SoA> m_pdfCache = {}; 
+      bool                          m_ownEvents   = {false};
       MinuitParameterSet*           m_mps         = {nullptr};
       MinuitProxy                   m_weight      = {nullptr,1}; 
       std::vector<MinuitProxy>      m_pVector     = {}; 
       bool                          m_verbosity   = {0};
       bool                          m_debug       = {0};
-      integrator                    m_integrator;
+      Integrator                    m_integrator;
       std::vector<Bilinears>        m_norms;
       EventType                     m_eventType;
       std::string                   m_prefix      = "";
@@ -81,9 +93,8 @@ namespace AmpGen
       std::vector<size_t>           m_integIndex; 
       AmplitudeRules                m_rules;  
       std::pair<unsigned, unsigned> m_dim; 
-      std::vector<TransitionMatrix<std::vector<complex_t>>>       m_matrixElements;  
-      CompiledExpression<real_t, const real_t*, const complex_t*> m_probExpression; 
-
+      std::vector<TransitionMatrix<void>>                          m_matrixElements;  
+      CompiledExpression<float_v(const real_t*, const complex_v*)> m_probExpression; 
       std::vector<std::vector<int>> indexProduct(const std::vector<std::vector<int>>&, const std::vector<int>&) const;
       std::vector<int> polarisations(const std::string&) const ;
   };

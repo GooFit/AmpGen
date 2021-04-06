@@ -40,10 +40,10 @@ RecursivePhaseSpace::RecursivePhaseSpace(const Particle& decayChain, const Event
   setRandom( rndm );
 }
 
-AmpGen::Event RecursivePhaseSpace::makeEvent( const size_t& cacheSize )
+AmpGen::Event RecursivePhaseSpace::makeEvent()
 {
-  AmpGen::Event evt = m_phsp.makeEvent( cacheSize );
-  AmpGen::Event rt( 4 * m_eventType.size(), cacheSize );
+  AmpGen::Event evt = m_phsp.makeEvent();
+  AmpGen::Event rt( 4 * m_eventType.size());
   for (size_t i = 0; i < m_nodes.size(); ++i ) {
     auto& segment = m_nodes[i];
     double px     = evt[4*i + 0];
@@ -58,7 +58,7 @@ AmpGen::Event RecursivePhaseSpace::makeEvent( const size_t& cacheSize )
         rt[4*segment.sink + 3] = pE;
       }
     } else {
-      auto evtTmp = segment.decayProds->makeEvent(cacheSize);
+      auto evtTmp = segment.decayProds->makeEvent();    
       double v    = sqrt( px * px + py * py + pz * pz ) / pE;
       boost( evtTmp, std::tuple<double,double,double>(px, py, pz), v );
       for(size_t j = 0; j < rt.size(); ++j) rt[j] += evtTmp[j];

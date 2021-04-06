@@ -34,7 +34,7 @@ namespace AmpGen
       auto ptrToStatic = getMe();
       auto raw_base    = ptrToStatic->m_terms.find( type );
       if ( raw_base == ptrToStatic->m_terms.end() ) {
-        if ( !quiet ) ERROR( type << " not found in Factory<" << typeof<TYPE>() << typeof<KEY_TYPE>() << " >" );
+        if ( !quiet ) ERROR( type << " not found in Factory<" << type_string<TYPE>() << type_string<KEY_TYPE>() << " >" );
         return nullptr;
       }
       auto objectToReturn = raw_base->second->create();

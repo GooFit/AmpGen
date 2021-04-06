@@ -26,16 +26,6 @@ MinuitParameterSet::MinuitParameterSet(const std::vector<MinuitParameter*>& para
   for( auto& param : params ) add(param); 
 }
 
-// MinuitParameterSet MinuitParameterSet::getFloating()
-// {
-//   MinuitParameterSet floating;
-//   for ( auto& param : *this ) {
-//     if ( param->isFree() && dynamic_cast<MinuitExpression*>(param) != nullptr ) 
-//       floating.add(param);
-//   }
-//   return floating;
-// }
-
 bool MinuitParameterSet::addToEnd( MinuitParameter* parPtr )
 {
   bool success = true;
@@ -132,6 +122,7 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
     double max  = hasLimits ? lexical_cast<double>( line[5], status ) : 0;
     if( !status ) return; 
     auto   flag = parse<Flag>( line[1] );
+    if( flag == Flag::Invalid ) return; 
     if ( OptionsParser::printHelp() )
       INFO( "MINUIT: Registered " << line[0] << " ( " << to_string<Flag>(flag) << ") = " << mean << ", step=" << step << " ("<< min << "," << max << ")" );
     add( new MinuitParameter( line[0], flag, mean, step, min, max ) ); 
@@ -150,6 +141,7 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
     if ( !status ) return;
     auto flag_re = parse<Flag>(line[1]);
     auto flag_im = parse<Flag>(line[4 + 2*hasLimits]);
+    if( flag_re == Flag::Invalid || flag_im == Flag::Invalid ) return; 
     if ( OptionsParser::printHelp() ) {
       INFO( "MINUIT: Complex " << line[0] << "_Re ( " << to_string<Flag>(flag_re) << ") = " << mean_re << ", step=" << step_re << " (" << min_re << "," << max_re << ")" );
       INFO( "MINUIT: Complex " << line[0] << "_Im ( " << to_string<Flag>(flag_im) << ") = " << mean_im << ", step=" << step_im << " (" << min_im << "," << max_im << ")" );
