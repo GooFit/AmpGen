@@ -38,8 +38,7 @@ namespace AmpGen
   {
   public:
     double operator()() const override;
-    PartialWidthConstraint() = default;
-    PartialWidthConstraint( const CoherentSum& pdf ); 
+    PartialWidthConstraint( const CoherentSum* pdf=nullptr) : m_pdf(pdf) {} 
     void configure( const std::string& configString, const AmpGen::MinuitParameterSet& mps ) override;
     ExtendLikelihoodBase* create() override { return new PartialWidthConstraint(); }
     static std::string _id;
