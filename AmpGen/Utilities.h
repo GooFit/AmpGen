@@ -19,7 +19,6 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/MetaUtils.h"
 
-
 namespace AmpGen {
   template <class it_type, class F>
     std::string vectorToString( it_type begin,
@@ -83,7 +82,7 @@ namespace AmpGen {
   template <class RETURN_TYPE>
     RETURN_TYPE lexical_cast( const std::string& word, bool& status )
     {
-      WARNING( "Only use specialised versions of this template (word = " << word << ", type = " << AmpGen::typeof<RETURN_TYPE>()
+      WARNING( "Only use specialised versions of this template (word = " << word << ", type = " << AmpGen::type_string<RETURN_TYPE>()
           << ")  " );
       status = 0;
       return RETURN_TYPE();
@@ -162,6 +161,11 @@ namespace AmpGen {
         }
         return total;
       }
+  template <typename return_type, typename contained_type> std::function<return_type(const contained_type&)> 
+              arrayToFunctor( const std::vector<return_type>& values)
+  {
+    return [values](const contained_type& event) -> return_type {return *(values.data() + event.index()); }; 
+  }
 
   template<class iterator>
     void parallel_sort(iterator begin, 

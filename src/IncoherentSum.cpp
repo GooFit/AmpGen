@@ -39,6 +39,7 @@ double IncoherentSum::norm( const Bilinears& norms ) const
 
 void IncoherentSum::prepare()
 {
+  /*
   if ( m_isConstant && m_prepareCalls != 0 ) return;
   transferParameters();
   for ( auto& mE : m_matrixElements ) {
@@ -47,11 +48,10 @@ void IncoherentSum::prepare()
     if ( m_prepareCalls != 0 && !amp.hasExternalsChanged() ) continue;
     if ( m_prepareCalls == 0 && m_events != nullptr )
       mE.addressData = m_events->registerExpression( amp );
-    if ( m_events != nullptr ) m_events->updateCache( amp, mE.addressData ); 
-    if ( m_prepareCalls == 0 && m_integrator.isReady() ){
-      m_integrator.prepareExpression( amp );
-    }
-    INFO( mE.addressData << " " << m_events->at(0).getCache(mE.addressData) );
+//    if ( m_events != nullptr ) m_events->updateCache( amp, mE.addressData ); 
+   // if ( m_prepareCalls == 0 && m_integrator.isReady() ){
+   //   m_integrator.prepareExpression( amp );
+   // }
     amp.resetExternals();
   }
   if( m_prepareCalls == 0 ){
@@ -64,6 +64,7 @@ void IncoherentSum::prepare()
   m_prepareCalls++;
   m_norm = norm();
   INFO( "norm = " << m_norm << " weight = " << m_weight );
+  */
 }
 
 std::vector<FitFraction> IncoherentSum::fitFractions( const LinearErrorPropagator& linProp )
@@ -86,8 +87,8 @@ double IncoherentSum::prob( const Event& evt ) const
 double IncoherentSum::prob_unnormalised( const Event& evt ) const 
 { 
   double value( 0. );
-  for ( auto& mE : m_matrixElements ) {
-    value += std::norm( mE.coefficient * evt.getCache( mE.addressData ) );
-  }
+  //for ( auto& mE : m_matrixElements ) {
+  //  value += std::norm( mE.coefficient * m_events->cache(evt.index(), mE.addressData ) );
+  //}
   return value;
 }

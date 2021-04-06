@@ -29,7 +29,7 @@ DEFINE_LINESHAPE( FormFactor )
   if ( lineshapeModifier == "BL" )        FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, Lp ) );
   if ( lineshapeModifier == "NFF" )       FormFactor = 1; 
   if ( lineshapeModifier == "BELLE2018" ) FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, q20 * radius * radius, Lp ) );
-
+  
   if( L != 0 ){
     ADD_DEBUG( q2      , dbexpressions );
     ADD_DEBUG( radius  , dbexpressions );
@@ -69,9 +69,13 @@ DEFINE_LINESHAPE( BW )
   Expression                              FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
   if ( lineshapeModifier == "BL" )        FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
   if ( lineshapeModifier == "BELLE2018" ) FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, q20 * radius * radius, L ) );
+  if ( lineshapeModifier == "NFF")        FormFactor = 1; 
   Expression runningWidth                     = width( s_cse, s1, s2, mass, width0, radius, L, dbexpressions );
   const Expression BW = FormFactor / ( mass * mass - s_cse  -1i * mass * runningWidth );
   const Expression kf = kFactor( mass, width0, dbexpressions );
+  ADD_DEBUG( s_cse, dbexpressions );
+  ADD_DEBUG( s1, dbexpressions );
+  ADD_DEBUG( s2, dbexpressions );
   ADD_DEBUG( FormFactor, dbexpressions );
   ADD_DEBUG( runningWidth, dbexpressions );
   ADD_DEBUG( BW, dbexpressions );

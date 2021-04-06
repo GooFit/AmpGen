@@ -50,11 +50,12 @@ namespace AmpGen
       }
       return set(m_handle,name);
     }
-    bool set( void* handle, const std::string& name )
+    bool set( void* handle, const std::string& name, bool isFatal = false)
     {
       m_fcn = (RETURN_TYPE( * )( IN_TYPES... ))dlsym( handle, name.c_str() );
       if ( m_fcn == nullptr ) {
-        ERROR( dlerror() );
+        if( !isFatal ) ERROR( "Failed to link: " << name << " error: " << dlerror() );
+        else FATAL("Failed to link: " << name << " error: " << dlerror() );
         return false;
       }
       return true;

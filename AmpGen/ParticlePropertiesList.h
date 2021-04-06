@@ -48,6 +48,7 @@ namespace AmpGen
     void print( std::ostream& out = std::cout ) const;
     bool readLatexLabels( const std::string& name );
     void makeMappings();
+    void addParticle(const std::vector<std::string>& properties );
   };
   std::ostream& operator<<( std::ostream& out, const ParticlePropertiesList& ppl );
 } // namespace AmpGen

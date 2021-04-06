@@ -36,22 +36,21 @@ namespace AmpGen
     */
   class TreePhaseSpace
   {
+    
     public:
       struct Vertex 
       {
+        enum Type { BW, Flat, Stable, QuasiStable};
         Vertex() = default; 
         Vertex(const Particle& particle, const double& min);
-        Vertex(const Particle& particle, const double& min, const double& max, const bool& isStable); 
+        Vertex(const Particle& particle, const double& min, const double& max); 
         double p() const; 
-        double genBW() const; 
-        double BW(const double& si) const; 
         double weight() const; 
-        double maxWeight() const; 
         double genPdf(const Event& event) const; 
         void generate();
         void print(const unsigned& offset = 0) const;
         void place(Event& event);
-        Event event(const unsigned& eventSize, const unsigned& cacheSize=0);
+        Event event(const unsigned& eventSize);
         void generateFullEvent();
         void setRhoMax(); 
         void setRandom(TRandom3* rnd);
@@ -59,22 +58,20 @@ namespace AmpGen
         Particle    particle;
         double min      = {0};
         double max      = {0}; 
-        double rhoMax   = {0};
-        double s        = {0};
-        bool   isStable = {false};
-        bool   isBW     = {true};
+        double phiMin   = {0};
+        double phiMax   = {0}; 
+        Type   type     = {Type::BW};
         unsigned index  = {999};
         double bwMass   = {0};
         double bwWidth  = {0};
-        double phiMin   = {0};
-        double phiMax   = {0};
-        double w        = {0};
-        double weightMax= {0}; 
+        double s        = {0};
         std::shared_ptr<Vertex> left    = {nullptr}; 
         std::shared_ptr<Vertex> right   = {nullptr};
         TRandom3* rand  = {nullptr};
         std::vector<unsigned> indices; 
-        TLorentzVector mom; 
+        TLorentzVector mom;
+        bool isMultiBody = {false}; 
+        PhaseSpace phsp; /// multibody phase to resort to for non two-body decomposition;   
       };
       
       explicit TreePhaseSpace(const EventType& type);
@@ -82,7 +79,7 @@ namespace AmpGen
       TreePhaseSpace(const std::vector<Particle>& decayChains, const EventType& type, TRandom* rndm = nullptr);
 
       void setRandom( TRandom* rand );
-      Event makeEvent( const unsigned& cacheSize = 0 );
+      Event makeEvent();
       size_t size() const;
       EventType eventType() const ;
       double genPdf( const Event& event) const ; 

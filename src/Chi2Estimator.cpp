@@ -6,8 +6,8 @@
 #include "AmpGen/ArgumentPack.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/EventList.h"
 #include "AmpGen/Event.h"
+
 
 using namespace AmpGen;
 
@@ -33,26 +33,11 @@ struct Moment {
   double var() { return N == 0 ? 0 : xx; }
 };
 
-Chi2Estimator::Chi2Estimator( const EventList& dataEvents, const EventList& mcEvents,
-    const std::function<double( const Event& )>& fcn, const unsigned int& minEvents ) : 
-  m_binning( dataEvents, MinEvents( minEvents ), Dim( dataEvents.eventType().dof() ) )
-{
-  doChi2( dataEvents, mcEvents, fcn );
-}
-
-Chi2Estimator::Chi2Estimator( const EventList& dataEvents, const EventList& mcEvents,
-    const std::function<double( const Event& )>& fcn, const std::string& filename ) : 
-  m_binning( File( filename ) )
-{
-  doChi2( dataEvents, mcEvents, fcn );
-}
-
-
 double Chi2Estimator::chi2() const { return m_chi2; }
 double Chi2Estimator::nBins() const { return m_nBins; }
 void   Chi2Estimator::writeBinningToFile( const std::string& filename ) { m_binning.serialize( filename ); }
 
-void   Chi2Estimator::doChi2( const EventList& dataEvents, const EventList& mcEvents,
+void   Chi2Estimator::doChi2( const EventList_type& dataEvents, const EventList_type& mcEvents,
     const std::function<double( const Event& )>& fcn )
 {
   std::vector<Moment> data( m_binning.size() );
@@ -63,7 +48,7 @@ void   Chi2Estimator::doChi2( const EventList& dataEvents, const EventList& mcEv
   unsigned int j           = 0;
   double total_data_weight = 0;
   double total_int_weight  = 0;
-  for ( auto& d : dataEvents ) {
+  for ( const auto& d : dataEvents ) {
     if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " data events" );
     double w = d.weight();
     data[m_binning.getBinNumber( d )].add( d.weight() );
@@ -71,10 +56,11 @@ void   Chi2Estimator::doChi2( const EventList& dataEvents, const EventList& mcEv
     j++;
   }
   j = 0;
-  for ( auto& evt : mcEvents ) {
+  for ( auto& evt : mcEvents ) 
+  {
     if ( j % 1000000 == 0 && j != 0 ) INFO( "Binned " << j << " sim. events" );
     double w = fcn( evt ) * evt.weight() / evt.genPdf();
-    mc[m_binning.getBinNumber( evt )].add( w );
+    mc[m_binning.getBinNumber(evt)].add( w );
     total_int_weight += w;
     j++;
   }
@@ -89,4 +75,6 @@ void   Chi2Estimator::doChi2( const EventList& dataEvents, const EventList& mcEv
   m_chi2  = chi2;
   m_nBins = m_binning.size();
 }
+
+
 
