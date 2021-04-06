@@ -25,7 +25,7 @@ class TGraph;
 namespace AmpGen
 {
 
-  class IExtendLikelihood;
+  class ExtendLikelihoodBase;
   class MinuitParameter;
   class MinuitParameterSet;
 
@@ -62,7 +62,7 @@ namespace AmpGen
     void gradientTest();
     bool doFit();
     TGraph* scan( MinuitParameter* param, const double& min, const double& max, const double& step );
-    void addExtendedTerm( IExtendLikelihood* term );
+    void addExtendedTerm( ExtendLikelihoodBase* term );
     TMatrixTSym<double> covMatrix() const;
     TMatrixTSym<double> covMatrixFull() const;
     double operator()( const double* par );
@@ -81,7 +81,7 @@ namespace AmpGen
     unsigned m_printLevel = {0};
     double   m_ll_zero    = {0};
     bool     m_normalise  = {false};
-    std::vector<IExtendLikelihood*> m_extendedTerms;
+    std::vector<ExtendLikelihoodBase*> m_extendedTerms;
   };
 } // namespace AmpGen
 #endif
