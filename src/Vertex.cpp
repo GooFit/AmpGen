@@ -525,9 +525,11 @@ DEFINE_VERTEX( S_TV_rp ){
   auto pP = fcn::sqrt(P2[0]*P2[0] + P2[1]*P2[1] + P2[2]*P2[2]);
   Tensor helOp = 1i* (SO3[0]*P2[0] + SO3[1]*P2[1] + SO3[2]*P2[2]) / pP; //helicity operator iL.p
   Tensor helOpV2 = helOp(mu,nu)*V2(nu);
+  helOpV2.st();
 
   auto dot0 = make_cse(dot(P1,P2));// P1(alpha) * P2(-alpha);
   Tensor res = V1(mu,nu)*P1(-nu);
+  res.st();
 
   return -1i*LeviCivita()(-mu,-nu,-alpha,-beta)*V2(mu)*res(nu)*P1(alpha)*P2(beta) 
       + helOpV2(mu)*(V1(-mu,-nu)*dot0-P1(-mu)*res(-nu))*P2(nu);
@@ -542,9 +544,11 @@ DEFINE_VERTEX( S_TV_rm ){
   auto pP = fcn::sqrt(P2[0]*P2[0] + P2[1]*P2[1] + P2[2]*P2[2]);
   Tensor helOp = 1i* (SO3[0]*P2[0] + SO3[1]*P2[1] + SO3[2]*P2[2]) / pP; //helicity operator iL.p
   Tensor helOpV2 = helOp(mu,nu)*V2(nu);
+  helOpV2.st();
 
   auto dot0 = make_cse(dot(P1,P2));//  P1(alpha) * P2(-alpha);
   Tensor res = V1(mu,nu)*P1(-nu);
+  res.st();
 
   return -1i*LeviCivita()(-mu,-nu,-alpha,-beta)*helOpV2(mu)*res(nu)*P1(alpha)*P2(beta) 
       + V2(mu)*(V1(-mu,-nu)*dot0-P1(-mu)*res(-nu))*P2(nu);
