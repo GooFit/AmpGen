@@ -77,7 +77,7 @@ template <class T> void generateSource(T& pdf, const std::string& sourceFile, Mi
   size_t nEvents      = NamedParameter<size_t>( "NormEvents", 1000000 );
   
   TRandom3 rnd(seed);
-
+  unsigned d_i = pdf.eventType().dim().first;
   Generator<PhaseSpace> phsp(pdf.eventType());
   phsp.setRandom(&rnd);
   EventList normEvents = phsp.generate(nEvents);
@@ -90,12 +90,15 @@ template <class T> void generateSource(T& pdf, const std::string& sourceFile, Mi
     {
       if constexpr ( std::is_same<T, PolarisedSum>::value )
       {
-        double px, py, pz; 
-        rnd.Sphere(px,py,pz, rnd.Uniform(0,1));
-        mps["Px"]->setCurrentFitVal(px);
-        mps["Py"]->setCurrentFitVal(py);
-        mps["Pz"]->setCurrentFitVal(pz);
-        pdf.transferParameters();
+        if( d_i > 1 )
+        {
+          double px, py, pz; 
+          rnd.Sphere(px,py,pz, rnd.Uniform(0,1));
+          mps["Px"]->setCurrentFitVal(px);
+          mps["Py"]->setCurrentFitVal(py);
+          mps["Pz"]->setCurrentFitVal(pz);
+          pdf.transferParameters();
+        }
       }
       double n = 0;
       if constexpr ( std::is_same<T, CoherentSum>::value ) n = std::norm( pdf.getValNoCache(evt) );
