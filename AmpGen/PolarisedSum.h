@@ -83,7 +83,7 @@ namespace AmpGen
       bool                          m_ownEvents   = {false};
       MinuitParameterSet*           m_mps         = {nullptr};
       MinuitProxy                   m_weight      = {nullptr,1}; 
-      MinuitParameter*              m_polParam    = {nullptr, 0.5};
+      MinuitParameter*              m_polParam    = {nullptr};
       std::vector<MinuitProxy>      m_pVector     = {};
       std::vector<MinuitProxy>      m_pfVector = {};  
       bool                          m_verbosity   = {0};
