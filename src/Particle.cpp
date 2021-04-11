@@ -473,9 +473,11 @@ Tensor Particle::spinTensor( DebugSymbols* db ) const
   }
   else if ( m_daughters.size() == 2 ) {
     auto vname = m_props->spinName() + "_" + m_daughters[0]->m_props->spinName() + m_daughters[1]->m_props->spinName() + "_" + orbitalString();
-    return Vertex::Factory::getSpinFactor( P(), Q(), 
+    Tensor value = Vertex::Factory::getSpinFactor( P(), Q(), 
 					      daughter(0)->spinTensor(db),
 					      daughter(1)->spinTensor(db), vname, db );
+    DEBUG( "Returning spin tensor" );
+    return value;
   } else if ( m_daughters.size() == 3 ) {
     return Vertex::Factory::getSpinFactorNBody( {
         {daughter(0)->P(), daughter(0)->spinTensor()},

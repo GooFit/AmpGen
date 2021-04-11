@@ -126,17 +126,17 @@ PolarisedSum::PolarisedSum(const EventType& type,
     else if( m_dim.first == 2 ) m_pVector = {p("Px"), p("Py"), p("Pz")};
     else if( m_dim.first == 3 ) m_pVector = {p("Px"), p("Py"), p("Pz"), p("Tyy"), p("Tzz"), p("Txy"), p("Txz"), p("Tyz")};
   }
-  m_polfracParam = mps.find("polFrac");
-  if(m_polfracParam ==  nullptr){
+  m_polParam = mps.find("polFrac");
+  if(m_polParam ==  nullptr){
     WARNING("No polarisation fraction param found, will be set to 0.5 (default)");
-    m_polfracParam = mps.addOrGet("polFrac", Flag::Fix,0.5,0);
+    m_polParam = mps.addOrGet("polFrac", Flag::Fix,0.5,0);
   } 
-  m_polfracVector = {m_polfracParam};
+  m_pfVector = {m_polParam};
 
   for(size_t i=0; i < m_dim.second * m_dim.first * m_dim.first; ++i) m_norms.emplace_back( m_matrixElements.size(), m_matrixElements.size() ); 
   
   DebugSymbols db; 
-  auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector,[](auto& p){ return Parameter(p->name());} ), convertProxies(m_polfracVector,[](auto& p){ return Parameter(p->name());} ), m_debug ? &db : nullptr);
+  auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector,[](auto& p){ return Parameter(p->name());} ), convertProxies(m_pfVector,[](auto& p){ return Parameter(p->name());} ), m_debug ? &db : nullptr);
   m_probExpression = make_expression<float_v, real_t, complex_v>( prob, "prob_unnormalised", m_mps, this->m_debug ? db : DebugSymbols() );
 }
 
@@ -208,7 +208,6 @@ void   PolarisedSum::prepare()
   auto updateInteg = [this](auto& t) mutable { if( t.workToDo ) this->m_integrator.updateCache(t) ; };
 
   transferParameters();
-  m_polfrac = m_polfracParam == nullptr ? 0.5 : m_polfracParam->mean(); 
   for_each_sequence(m_matrixElements.begin(), m_matrixElements.end(), flagUpdate, updateData, updateInteg); 
   if( m_integrator.isReady() ) updateNorms();
   std::for_each( m_matrixElements.begin(), m_matrixElements.end(), resetFlags );
@@ -312,7 +311,7 @@ complex_t PolarisedSum::norm(const size_t& i, const size_t& j, Integrator* integ
     auto m1        = (psiIndex-m2)/s1;
     //norm for B->Kresgamma
     if(psiIndex==0){
-      double crsqN = m_polfracVector[0];
+      double crsqN = m_pfVector[0];
       if(f == 0) {
 	total          += m_rho[psiIndex] * crsqN * m_norms[x].get(i, j, integ, ai+m1*s2+f, aj+m2*s2+f);
 	DEBUG(" norm total - RH  " << crsqN << " * "  << m_norms[x].get(i, j, integ, ai+m1*s2+f, aj+m2*s2+f) );
@@ -385,7 +384,7 @@ void PolarisedSum::generateSourceCode(const std::string& fname, const double& no
   }
   Tensor T_matrix( expressions, {m_dim.first, m_dim.second} );
   T_matrix.st();
-  auto amp        = probExpression(T_matrix, convertProxies(m_pVector, [](auto& proxy) -> Expression{ return double(proxy);} ), convertProxies(m_polfracVector, [](auto& proxy) -> Expression{ return double(proxy);} )); 
+  auto amp        = probExpression(T_matrix, convertProxies(m_pVector, [](auto& proxy) -> Expression{ return double(proxy);} ), convertProxies(m_pfVector, [](auto& proxy) -> Expression{ return double(proxy);} )); 
   stream << CompiledExpression<double(
                                const double*, 
                                const int&)>( amp / normalisation, "FCN", m_mps, disableBatch() ) << std::endl ;
@@ -504,7 +503,7 @@ void PolarisedSum::transferParameters()
     me.prepare();
   }
   for(auto& p : m_pVector) p.update();
-  for(auto& p  : m_polfracVector ) p.update();
+  for(auto& p  : m_pfVector ) p.update();
   m_weight.update();
   m_rho = densityMatrix(m_dim.first, m_pVector);
 }
