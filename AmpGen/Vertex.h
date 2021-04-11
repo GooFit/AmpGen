@@ -167,16 +167,11 @@ namespace AmpGen
     DECLARE_VERTEX( V_ff_PL );  
     DECLARE_VERTEX( V_ff_PR );  
 
-    DECLARE_VERTEX( P_AV0_rad_p);
-    DECLARE_VERTEX( P_VV0_rad_p);
-    DECLARE_VERTEX( P_TpV0_rad_p);
-    DECLARE_VERTEX( P_TmV0_rad_p);
-
-    DECLARE_VERTEX( P_AV0_rad_m);
-    DECLARE_VERTEX( P_VV0_rad_m);
-    DECLARE_VERTEX( P_TpV0_rad_m);
-    DECLARE_VERTEX( P_TmV0_rad_m);
-
+    DECLARE_VERTEX( S_VV_rp);
+    DECLARE_VERTEX( S_VV_rm);
+    DECLARE_VERTEX( S_TV_rp);
+    DECLARE_VERTEX( S_TV_rm);
+  
     class Factory : public AmpGen::Factory<Vertex::Base>
     {
     public:

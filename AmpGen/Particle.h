@@ -98,7 +98,6 @@ namespace AmpGen
       
   declare_enum( spinFormalism, Covariant, Canonical )
   declare_enum( spinBasis    , Dirac    , Weyl ) 
-  declare_enum( sfType       , Default  , Radiative ) 
 
   class Particle
   {
@@ -174,10 +173,6 @@ namespace AmpGen
 
       /// Return the particleProperties object for this particle
       const ParticleProperties* props() const;
-
-      /// Name of the vertex to use for radiative B->Kres gamma decays 
-      std::string radVertexName( unsigned int photonIndex,  unsigned int KresIndex ) const;
-
       
       QuarkContent quarks() const;          ///< Return the quarks of this particle
 
