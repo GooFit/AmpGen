@@ -83,10 +83,9 @@ namespace AmpGen
       bool                          m_ownEvents   = {false};
       MinuitParameterSet*           m_mps         = {nullptr};
       MinuitProxy                   m_weight      = {nullptr,1}; 
-      MinuitParameter*              m_polfracParam   = {nullptr};
-      double                        m_polfrac     = {1}; 
+      MinuitParameter*              m_polParam    = {nullptr, 0.5};
       std::vector<MinuitProxy>      m_pVector     = {};
-      std::vector<MinuitProxy>      m_polfracVector = {};  
+      std::vector<MinuitProxy>      m_pfVector = {};  
       bool                          m_verbosity   = {0};
       bool                          m_debug       = {0};
       Integrator                    m_integrator;
