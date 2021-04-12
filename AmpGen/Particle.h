@@ -304,7 +304,6 @@ namespace AmpGen
              optionalHelpString("Formalism to use for spin calculations",  
                  std::make_pair("Covariant", "[default] Covariant Tensor, based on Rarita-Schwinger constraints on the allowed covariant wavefunctions.")
            ,    std::make_pair("Canonical", "Canonical formulation, based on rotational properties of wavefunctions, i.e. Wigner D-matrices and Clebsch-Gordan for (L,S) expansion.")  ) };
-
       NamedParameter<spinBasis>     m_spinBasis      = {"Particle::SpinBasis", spinBasis::Dirac, 
         optionalHelpString("Basis to use for calculating external polarisation tensors / spinors.",
                       std::make_pair("Dirac", "[default] Quantises along the z-axis")
