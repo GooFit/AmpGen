@@ -1,4 +1,6 @@
-!=================== AmpGen v2r1 2020-28-10 ==================
+!=================== AmpGen v2r1 2021-12-04 ==================
+ - Addition of radiative vertices S_VV_r{p,m} and S_TV_r{p,m}, and parameterisation of final state density matrix 
+ - Add new keyword 'vertex' for more customisable vertex names 
  - Improved cmake configuration to allow installation
  - Consolidation of Generator and ConvertToSourceCode to single executable 'AmpGen'
 !=================== AmpGen v2r0 2020-25-04 ==================
