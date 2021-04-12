@@ -510,6 +510,23 @@ INFO("Making Combined LL");
 
 
       lassoMini.doFit();
+        std::ofstream paramsFile;
+  paramsFile.open(NamedParameter<std::string>("ParamOutput", "freeParams.opt"));
+  for (auto & p:MPS){
+	  if (p->isFree()){
+		  paramsFile << p->name() << " Free "<<" " << p->mean() << " " << p->err() << "\n ";
+		  std::cout << p->name() << " Free "<<" " << p->mean() << " " << p->err() << "\n ";
+
+	  }
+	  else {
+
+		  paramsFile << p->name() << " Fix "<<" " << p->mean() << " " << p->err() << "\n ";
+	  }
+  }
+paramsFile.close();
+
+
+
       FitResult * frLasso = new FitResult(lassoMini);
       frLasso->print();
       frLasso->writeToFile(logFile);
@@ -542,7 +559,7 @@ INFO("Making Combined LL");
   fCov->cd();
   covMatrix.Write("CovMatrix"); 
   fCov->Close();
-
+  
 
   return 0;
 }
