@@ -75,7 +75,8 @@ int main( int argc, char** argv )
   std::string modelName = argv[1];
   OptionsParser::getMe()->setQuiet();
   OptionsParser::setArgs( argc, argv );
-  PhaseSpace phsp( EventType(NamedParameter<std::string>("EventType", "").getVector()) );
+  auto t = EventType(NamedParameter<std::string>("EventType","").getVector()); 
+  PhaseSpace phsp(t);
   auto event = phsp.makeEvent();
   auto event2 = phsp.makeEvent();
   std::string lib    = NamedParameter<std::string>("Lib","");
@@ -99,10 +100,13 @@ int main( int argc, char** argv )
     }
   }
   if( type == "PolarisedSum"){
-    auto f1  = DynamicFCN<double(const double*, const int&, const double&, const double&, const double&)>(lib   , "FCN_extPol");
-    auto f2  = DynamicFCN<double(const double*, const int&, const double&, const double&, const double&)>(refLib, "FCN_extPol");
-    total += Counter(f1(event,+1,0,0,0), f2(event,+1,0,0,0), modelName + " fcn(x)" , 1e-6);
-    total += Counter(f1(event,-1,0,0,0), f2(event,-1,0,0,0), modelName + " fcn(Px)", 1e-6);
+    if( std::get<0>( t.dim() ) > 1 )
+    {
+      auto f1  = DynamicFCN<double(const double*, const int&, const double&, const double&, const double&)>(lib   , "FCN_extPol");
+      auto f2  = DynamicFCN<double(const double*, const int&, const double&, const double&, const double&)>(refLib, "FCN_extPol");
+      total += Counter(f1(event,+1,0,0,0), f2(event,+1,0,0,0), modelName + " fcn(x)" , 1e-6);
+      total += Counter(f1(event,-1,0,0,0), f2(event,-1,0,0,0), modelName + " fcn(Px)", 1e-6);
+    }
     for( auto& line : ftable ){
       auto i       = trim( split(line,' ')[2] );
       auto a1  = DynamicFCN<std::vector<complex_t>(const double*)>(lib   , i );
