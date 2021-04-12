@@ -61,7 +61,7 @@ namespace AmpGen
       double getWeight() const;
       void updateNorms(); 
       void generateSourceCode(const std::string&, const double& = 1, bool = false);
-      Expression probExpression(const Tensor&, const std::vector<Expression>&, DebugSymbols* = nullptr) const; 
+      Expression probExpression(const Tensor&, const std::vector<Expression>&, const std::vector<Expression>&, DebugSymbols* = nullptr) const; 
       size_t size() const;  
       real_t norm() const;
       complex_t norm(const size_t&, const size_t&, Integrator* = nullptr); 
@@ -83,7 +83,9 @@ namespace AmpGen
       bool                          m_ownEvents   = {false};
       MinuitParameterSet*           m_mps         = {nullptr};
       MinuitProxy                   m_weight      = {nullptr,1}; 
-      std::vector<MinuitProxy>      m_pVector     = {}; 
+      MinuitParameter*              m_polParam    = {nullptr};
+      std::vector<MinuitProxy>      m_pVector     = {};
+      std::vector<MinuitProxy>      m_pfVector = {};  
       bool                          m_verbosity   = {0};
       bool                          m_debug       = {0};
       Integrator                    m_integrator;

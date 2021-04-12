@@ -5,6 +5,8 @@
 #include <memory>
 #include <ostream>
 #include <initializer_list>
+#include <cmath>
+#include <complex>
 
 #include "AmpGen/DiracMatrices.h"
 #include "AmpGen/NamedParameter.h"
@@ -12,6 +14,8 @@
 #include "AmpGen/Units.h"
 
 using namespace AmpGen;
+using namespace std::complex_literals;
+
 
 static const Tensor::Index mu    = Tensor::Index();
 static const Tensor::Index nu    = Tensor::Index();
@@ -471,3 +475,78 @@ DEFINE_VERTEX( V_ff_PR )
   ADD_DEBUG_TENSOR( (Identity(4) + Gamma[4] )(b,c)* V2(c), db );
   return proj(mu, nu) * Bar(V1)(a) * Gamma4Vec()(-nu,a,b) * ( Identity(4) + Gamma[4] )(b,c)* V2(c); 
 }
+
+
+
+DEFINE_VERTEX( S_VV_rp ){
+  // P = Pres; Q = Pgamma, V1 = PolVector_gamma, V2 = polVector_Kres
+
+  // Implementation for B to Kres gamma with 1+ Kres spin-parity 
+  // Inputs: P = Pres+Pgamma; Q = Pres - Pgamma, V1 = PolVector_Kres, V2 = polVector_gamma
+
+  Tensor P1 = 0.5 * (P+Q);//Pkres
+  Tensor P2 = 0.5 * (P-Q);//Pgamma
+
+  auto pP = fcn::sqrt(P2[0]*P2[0] + P2[1]*P2[1] + P2[2]*P2[2]);
+  Tensor helOp = 1i* (SO3[0]*P2[0] + SO3[1]*P2[1] + SO3[2]*P2[2]) / pP; //helicity operator iL.p
+  Tensor helOpV2 = helOp(mu,nu)*V2(nu);
+
+  Tensor dot1 = Tensor( {dot(V2,V1) * dot(P1,P2)} );
+  Tensor dot2 = Tensor( {dot(V2,P1) * dot(V1,P2)} );
+  Tensor prod = Tensor( {LeviCivita()(-mu,-nu,-alpha,-beta)*helOpV2(mu)*V1(nu)*P1(alpha)*P2(beta)},{1} );
+  
+  return -1i*prod + (dot1-dot2);
+} 
+
+DEFINE_VERTEX( S_VV_rm ){
+  // Implementation for B to Kres gamma with 1- Kres spin-parity 
+  // Inputs: P = Pres+Pgamma; Q = Pres - Pgamma, V1 = PolVector_Kres, V2 = polVector_gamma
+
+  Tensor P1 = 0.5 * (P+Q);//Pkres
+  Tensor P2 = 0.5 * (P-Q);//Pgamma
+
+  auto pP = fcn::sqrt(P2[0]*P2[0] + P2[1]*P2[1] + P2[2]*P2[2]);
+  Tensor helOp = 1i* (SO3[0]*P2[0] + SO3[1]*P2[1] + SO3[2]*P2[2]) / pP; //helicity operator iL.p
+  Tensor helOpV2 = helOp(mu,nu)*V2(nu);
+
+  Tensor dot1 = Tensor( {dot(helOpV2,V1) * dot(P1,P2)} );
+  Tensor dot2 = Tensor( {dot(helOpV2,P1) * dot(V1,P2)} );
+  Tensor prod = Tensor( {LeviCivita()(-mu,-nu,-alpha,-beta)*V2(mu)*V1(nu)*P1(alpha)*P2(beta)},{1} );
+  
+  return -1i*prod + (dot1-dot2);
+}
+
+
+DEFINE_VERTEX( S_TV_rp ){
+  // Implementation for B to Kres gamma with 2+ Kres spin-parity 
+  Tensor P1 = 0.5 * (P+Q);//Pkres
+  Tensor P2 = 0.5 * (P-Q);//Pgamma
+
+  auto pP = fcn::sqrt(P2[0]*P2[0] + P2[1]*P2[1] + P2[2]*P2[2]);
+  Tensor helOp = 1i* (SO3[0]*P2[0] + SO3[1]*P2[1] + SO3[2]*P2[2]) / pP; //helicity operator iL.p
+  Tensor helOpV2 = helOp(mu,nu)*V2(nu);
+
+  auto dot0 = make_cse(dot(P1,P2));// P1(alpha) * P2(-alpha);
+  Tensor res = V1(mu,nu)*P1(-nu);
+
+  return -1i*LeviCivita()(-mu,-nu,-alpha,-beta)*V2(mu)*res(nu)*P1(alpha)*P2(beta) 
+      + helOpV2(mu)*(V1(-mu,-nu)*dot0-P1(-mu)*res(-nu))*P2(nu);
+} 
+
+
+DEFINE_VERTEX( S_TV_rm ){
+  // Implementation for B to Kres gamma with 2- Kres spin-parity 
+  Tensor P1 = 0.5 * (P+Q);//Pkres
+  Tensor P2 = 0.5 * (P-Q);//Pgamma
+
+  auto pP = fcn::sqrt(P2[0]*P2[0] + P2[1]*P2[1] + P2[2]*P2[2]);
+  Tensor helOp = 1i* (SO3[0]*P2[0] + SO3[1]*P2[1] + SO3[2]*P2[2]) / pP; //helicity operator iL.p
+  Tensor helOpV2 = helOp(mu,nu)*V2(nu);
+
+  auto dot0 = make_cse(dot(P1,P2));//  P1(alpha) * P2(-alpha);
+  Tensor res = V1(mu,nu)*P1(-nu);
+
+  return -1i*LeviCivita()(-mu,-nu,-alpha,-beta)*helOpV2(mu)*res(nu)*P1(alpha)*P2(beta) 
+      + V2(mu)*(V1(-mu,-nu)*dot0-P1(-mu)*res(-nu))*P2(nu);
+} 
+

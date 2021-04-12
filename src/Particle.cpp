@@ -161,6 +161,7 @@ void Particle::parseModifier( const std::string& mod )
 double Particle::spin() const { return double( m_props->twoSpin() / 2. ) ; }
 double Particle::S() const { return m_spinConfigurationNumber ; }
 
+
 void Particle::pdgLookup()
 {
   if ( m_props == nullptr ) {
@@ -473,8 +474,8 @@ Tensor Particle::spinTensor( DebugSymbols* db ) const
   else if ( m_daughters.size() == 2 ) {
     auto vname = m_props->spinName() + "_" + m_daughters[0]->m_props->spinName() + m_daughters[1]->m_props->spinName() + "_" + orbitalString();
     Tensor value = Vertex::Factory::getSpinFactor( P(), Q(), 
-        daughter(0)->spinTensor(db),
-        daughter(1)->spinTensor(db), vname, db );
+					      daughter(0)->spinTensor(db),
+					      daughter(1)->spinTensor(db), vname, db );
     DEBUG( "Returning spin tensor" );
     return value;
   } else if ( m_daughters.size() == 3 ) {
