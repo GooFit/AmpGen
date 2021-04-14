@@ -71,10 +71,10 @@ namespace AmpGen{
                     size_t i1 = i;
                     size_t i2 = order - i;
 		    if (m_PolyType=="antiSym_legendre"){
-                    	p+=m_mps["PhaseCorrection::C"+std::to_string(i1)+std::to_string(i2)]->mean() * fastLegendre(x, i1) * fastLegendre(y,2 * i2 + 1);
+                    	p+=m_mps["PhaseCorrection::C"+std::to_string(i1)+"_"+std::to_string(2*i2+1)]->mean() * fastLegendre(x, i1) * fastLegendre(y,2 * i2 + 1);
 		    }
 		    else if (m_PolyType=="antiSym_simple"){
-                    	p+=m_mps["PhaseCorrection::C"+std::to_string(i1)+std::to_string(i2)]->mean() * std::pow(x, i1) * std::pow(y,2 * i2 + 1);
+                    	p+=m_mps["PhaseCorrection::C"+std::to_string(i1)+"_"+std::to_string(2*i2+1)]->mean() * std::pow(x, i1) * std::pow(y,2 * i2 + 1);
 		    }
 
                     if (m_debug) INFO("f"<<i1<<i2<<" = "<<p);
