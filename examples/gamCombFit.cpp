@@ -508,7 +508,7 @@ INFO("Making Combined LL");
       Minimiser lassoMini = Minimiser(lasso, &MPS);
 
 
-
+    lassoMini.gradientTest();
       lassoMini.doFit();
         std::ofstream paramsFile;
   paramsFile.open(NamedParameter<std::string>("ParamOutput", "freeParams.opt"));

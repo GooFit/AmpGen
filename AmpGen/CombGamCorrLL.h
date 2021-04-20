@@ -46,47 +46,50 @@ namespace AmpGen
         std::vector<int> m_gammaSigns;
         std::vector<bool> m_useXYs;
         std::vector<bool> m_BConj;
+	bool m_print;
         
 
 
       public:
         CombGamCorrLL() = default;
         CombGamCorrLL(std::vector<EventList> SigData, 
-               std::vector<EventList> TagData, 
-               std::vector<EventList> GamData, 
+		   std::vector<EventList> TagData, 
+		   std::vector<EventList> GamData, 
 
-                   std::vector<EventList> SigInt, 
-                   std::vector<EventList> TagInt, 
-                   std::vector<EventList> GamInt, 
-                   
+		   std::vector<EventList> SigInt, 
+		   std::vector<EventList> TagInt, 
+		   std::vector<EventList> GamInt, 
+		   
 
-                   std::vector<EventType> SigType,
-                   std::vector<EventType> TagType,
-                   std::vector<EventType> GamType,
+		   std::vector<EventType> SigType,
+		   std::vector<EventType> TagType,
+		   std::vector<EventType> GamType,
 
                    MinuitParameterSet mps,
                    std::vector<std::string> sumFactors,
                    std::vector<int> gammaSigns,
                    std::vector<bool> useXYs,
                    std::vector<bool> BConj):
-                        m_SigData(SigData),
-                        m_TagData(TagData),
-                        m_GamData(GamData),
+                   m_SigData(SigData),
+                   m_TagData(TagData),
+		   m_GamData(GamData),
 
-                        m_SigInt(SigInt),
-                        m_TagInt(TagInt),
-                        m_GamInt(GamInt),
+		m_SigInt(SigInt),
+      m_TagInt(TagInt),
+		m_GamInt(GamInt),
 
-                        m_SigType(SigType),
-                        m_TagType(TagType),
-                        m_GamType(GamType),
+		m_SigType(SigType),
+		m_TagType(TagType),
+		m_GamType(GamType),
 
-                        m_mps(mps),
-                        m_SumFactors(sumFactors),
-                        m_gammaSigns(gammaSigns),
-                        m_useXYs(useXYs),
-                        m_BConj(BConj),
-                        m_debug(NamedParameter<bool>("CombGamCorrLL::Debug", false, "Debug CombLL"))
+		m_mps(mps),
+		m_SumFactors(sumFactors),
+		m_gammaSigns(gammaSigns),
+		m_useXYs(useXYs),
+		m_BConj(BConj),
+		m_debug(NamedParameter<bool>("CombGamCorrLL::Debug", false, "Debug CombLL")),
+                        m_print(NamedParameter<bool>("CombGamCorrLL::Print", false, "Print CombLL"))
+			
                         {
                             std::vector<pCoherentSum> pCS = {};
                             for (auto i=0; i < m_GamData.size() ; i++){
@@ -187,6 +190,13 @@ namespace AmpGen
                 ll += LL_Gam(i);
             }
             if (m_debug) INFO("LL = "<<ll);
+	    if (m_print){
+		std::cout<<ll<<", ";
+		for (auto p :  m_mps){
+			if (p->isFree()) std::cout<<p->name()<<", "<<p->mean()<<", "<<p->err()<<", ";
+		}
+		std::cout<<"\n";
+	    }
             return ll;
         }
 
