@@ -7,6 +7,7 @@
 #include "TFile.h"
 #include "TRandom3.h"
 #include "TTree.h"
+#include "TNtuple.h"
 
 #include "TGraph2D.h"
 
@@ -227,15 +228,15 @@ void printOut(EventList eventsSig, EventList eventsTag, pCorrelatedSum cs_tag, s
     auto aC = cs_tag.getC();
     auto aD = cs_tag.getD();
 
-    auto A = aA.getVal(evt_sig);
-    auto B = aB.getVal(evt_tag);
-    auto C = aC.getVal(evt_sig);
-    auto D = aD.getVal(evt_tag);
+    auto A = aA->getVal(evt_sig);
+    auto B = aB->getVal(evt_tag);
+    auto C = aC->getVal(evt_sig);
+    auto D = aD->getVal(evt_tag);
 
-    auto A2 = aA(evt_sig)/eventsSig.size();
-    auto B2 = aB(evt_tag)/eventsSig.size();
-    auto C2 = aC(evt_sig)/eventsSig.size();
-    auto D2 = aD(evt_tag)/eventsSig.size();
+    auto A2 = aA->prob(evt_sig)/eventsSig.size();
+    auto B2 = aB->prob(evt_tag)/eventsSig.size();
+    auto C2 = aC->prob(evt_sig)/eventsSig.size();
+    auto D2 = aD->prob(evt_tag)/eventsSig.size();
 
 
     auto ABCD = cs_tag.getVal(evt_sig, evt_tag);
@@ -345,10 +346,10 @@ for (int j=1;j<nBins + 1;j++){
     auto s12 = evt_sig.s(1,2);
     auto vals = cs_tag.getVals(evt_sig, evt_tag);
 
-    auto A = aA.getVal(evt_sig);
-    auto B = aB.getVal(evt_tag);
-    auto C = aC.getVal(evt_sig);
-    auto D = aD.getVal(evt_tag);
+    auto A = aA->getVal(evt_sig);
+    auto B = aB->getVal(evt_tag);
+    auto C = aC->getVal(evt_sig);
+    auto D = aD->getVal(evt_tag);
 
 
     auto ABCD = cs_tag.getVal(evt_sig, evt_tag);
@@ -357,10 +358,10 @@ for (int j=1;j<nBins + 1;j++){
 //    INFO("prob = "<<prob<<" Aprob = "<<aA(evt_sig)<<" Cprob = "<<aC(evt_sig));
     auto ACst = A * std::conj(C);
     auto dCorr =  std::complex<real_t>(0,0);//cs_tag.errcorrection(evt_sig, cov);
-  auto A2 = aA(evt_sig);
-    auto B2 = aB(evt_tag);
-    auto C2 = aC(evt_sig);
-    auto D2 = aD(evt_tag);
+  auto A2 = aA->prob(evt_sig);
+    auto B2 = aB->prob(evt_tag);
+    auto C2 = aC->prob(evt_sig);
+    auto D2 = aD->prob(evt_tag);
 
 
 
@@ -541,10 +542,10 @@ void printDT(int i, int j, EventList sigEvents, EventList tagEvents, pCorrelated
     auto aC = cs_tag.getC();
     auto aD = cs_tag.getD();
 
-    auto A = aA.getVal(evt_sig);
-    auto B = aB.getVal(evt_tag);
-    auto C = aC.getVal(evt_sig);
-    auto D = aD.getVal(evt_tag);
+    auto A = aA->getVal(evt_sig);
+    auto B = aB->getVal(evt_tag);
+    auto C = aC->getVal(evt_sig);
+    auto D = aD->getVal(evt_tag);
 
 
     auto ABCD = cs_tag.getVal(evt_sig, evt_tag);
@@ -554,10 +555,10 @@ void printDT(int i, int j, EventList sigEvents, EventList tagEvents, pCorrelated
     auto ACst = A * std::conj(C);
     auto DBst = D * std::conj(B);
     auto dCorr =  std::complex<real_t>(0,0);//cs_tag.errcorrection(evt_sig, cov);
-    auto A2 = aA(evt_sig);
-    auto B2 = aB(evt_tag);
-    auto C2 = aC(evt_sig);
-    auto D2 = aD(evt_tag);
+    auto A2 = aA->prob(evt_sig);
+    auto B2 = aB->prob(evt_tag);
+    auto C2 = aC->prob(evt_sig);
+    auto D2 = aD->prob(evt_tag);
 
 
 
@@ -627,7 +628,7 @@ int main( int argc, char** argv )
   std::string intFile = NamedParameter<std::string>("IntegrationSample", ""          , "Name of file containing flat sample." );
 
 
-
+  std::string outputFile = NamedParameter<std::string>("outputFile", "Output.root");
 
   TRandom3 rndm;
   rndm.SetSeed( seed );
@@ -641,6 +642,13 @@ if (doQC){
     //add_CP_conjugate(MPS);
     AddCPConjugate(MPS);
   }
+  INFO("Opening "<<dataFile);
+
+
+    TFile * dFile = TFile::Open(outputFile.c_str(), "RECREATE", "");
+        dFile->cd();
+  std::vector<TNtuple * > tuples;
+
   for (int i=0; i < tags.size(); i++){
 
 
@@ -695,20 +703,77 @@ if (doQC){
     tag_log<<tagName<<"_vals.csv"; 
     auto tag_ampFile = tag_log.str();
     out.open(tag_ampFile.c_str());
-    auto norm = cs_tag.norm();
+    //INFO("Calculating norm");
+    //auto norm = cs_tag.norm();
+    /*
     auto aA = cs_tag.getA();
     auto aB = cs_tag.getB();
     auto aC = cs_tag.getC();
     auto aD = cs_tag.getD();
+    */
     std::stringstream tag_logMC;
     tag_logMC<<tagName<<"MC_vals.csv";
 
     std::ofstream outMC;
     outMC.open(tag_logMC.str().c_str()); 
 
-    printOut(sigevents_tag, tagevents_tag, cs_tag, tag_log.str());
-    //printOut(sigMCevents_tag, tagMCevents_tag, cs_tag, tag_logMC.str());
+//    tuples.push_back(cs_tag.dumpVals(tagName));
+//    tuples.push_back(cs_tag.dumpValsMC(tagName));
 
+//    printOut(sigevents_tag, tagevents_tag, cs_tag, tag_log.str());
+    //printOut(sigMCevents_tag, tagMCevents_tag, cs_tag, tag_logMC.str());
+    
+    INFO("opening "<<outputFile);
+    dFile->cd();
+
+
+
+      TNtuple * tup = new TNtuple( (tagName + "_vals").c_str(), (tagName + "_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI:dd:s01S:s02S:s01T:s02T");
+    for (int i=0; i < sigevents_tag.size(); i++){
+      std::cout<<"\rAt "<<i<<std::flush;
+            auto v = cs_tag.getVals(sigevents_tag[i], tagevents_tag[i]);
+           auto a = v[0];
+           auto b = v[1];
+           auto c = v[2];
+           auto d = v[3];
+           real_t dd = std::imag(log(a * std::conj(c)/(std::abs(a * std::conj(c)) )));
+           auto s01S = sigevents_tag[i].s(0,1);
+           auto s02S = sigevents_tag[i].s(0,2);
+           auto s01T = tagevents_tag[i].s(0,1);
+           auto s02T = tagevents_tag[i].s(0,2);
+           tup->Fill(std::real(a), std::imag(a),std::real(b), std::imag(b),std::real(c), std::imag(c),std::real(d), std::imag(d), dd, s01S, s02S, s01T, s02T);
+
+      }
+    tup->Write();
+    
+    pCorrelatedSum cs_tagMC(signalType, tagType, MPS);
+    cs_tagMC.setEvents(sigMCevents_tag, tagMCevents_tag);
+    cs_tagMC.setMC(sigMCevents_tag, tagMCevents_tag);
+    cs_tagMC.prepare();
+
+     TNtuple * tupMC = new TNtuple( (tagName + "_MC_vals").c_str(), (tagName + "_MC_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI:dd:s01S:s02S:s01T:s02T");
+    for (int i=0; i < sigMCevents_tag.size(); i++){
+            auto v = cs_tagMC.getVals(sigMCevents_tag[i], tagMCevents_tag[i]);
+           auto a = v[0];
+           auto b = v[1];
+           auto c = v[2];
+           auto d = v[3];
+
+           real_t dd = std::imag(log(a * std::conj(c)/(std::abs(a * std::conj(c)) )));
+           auto s01S = sigMCevents_tag[i].s(0,1);
+           auto s02S = sigMCevents_tag[i].s(0,2);
+           auto s01T = tagMCevents_tag[i].s(0,1);
+           auto s02T = tagMCevents_tag[i].s(0,2);
+           tupMC->Fill(std::real(a), std::imag(a),std::real(b), std::imag(b),std::real(c), std::imag(c),std::real(d), std::imag(d), dd, s01S, s02S, s01T, s02T);
+
+      }
+    tupMC->Write();
+
+    
+
+
+
+  
     std::stringstream tagNameMC;
     tagNameMC<<tagName<<"MC";
 
@@ -726,7 +791,11 @@ if (doQC){
   }
 
 
+  
   }
+
+    dFile->Close();
+
 }
 
 else{

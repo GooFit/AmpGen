@@ -12,6 +12,7 @@
 //#include "AmpGen/CombCorrLL.h"
 //#include "AmpGen/CombGamCorrLL.h"
 #include "AmpGen/CombLL.h"
+#include "AmpGen/GamLL.h"
 #include "AmpGen/MetaUtils.h"
 #include <typeinfo>
 #include "AmpGen/AddCPConjugate.h"
@@ -84,7 +85,8 @@ int NInt = NamedParameter<int>("NInt", 1e7);
     
     INFO("Using "<<NInt<<" integration events");
 
-  EventList mc =  Generator<>(eventType, &rndm).generate(NInt);
+//  EventList mc =  Generator<>(eventType, &rndm).generate(NInt);
+
   for (auto& BTag : BTags){
 
     INFO("B DecayType = "<<BTag);
@@ -99,12 +101,6 @@ int NInt = NamedParameter<int>("NInt", 1e7);
     if (B_Conj == 1){
       //eventType = eventType.conj();
     }
-
-
-    //auto sig = CoherentSum(eventType, MPS );//,B_Pref, gammaSign, useXY, false);
-    //auto sig = PolarisedSum(eventType, MPS );//,B_Pref, gammaSign, useXY, false);
-
-
 
 
 
@@ -123,47 +119,19 @@ int NInt = NamedParameter<int>("NInt", 1e7);
     EventList Data = EventList(DataLoc, eventType);
 //    EventList Int = EventList(IntLoc, eventType);
 
-
-    
-    if (fitEach){
-      auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY, false);
-      sig.setEvents(Data);
-      sig.setMC(mc);
-
-
-      sig.prepare();
-
-
-
-      auto ll = make_likelihood(Data, sig);
-      Minimiser mini = Minimiser(ll, &MPS);
-      mini.gradientTest();
-      mini.doFit();
-      FitResult * fr = new FitResult(mini);
-      fr->writeToFile(NamedParameter<std::string>("LogFile_i", "BFit_minus.log"));
-    }
-    else {
-
-
     
     SigData.emplace_back(Data);
-    SigInt.emplace_back(mc);
+    //SigInt.emplace_back(mc);
     SigType.emplace_back(eventType);
     sumFactors.emplace_back(B_Pref);
     gammaSigns.emplace_back(gammaSign);
     useXYs.emplace_back(useXY);
     B_Conjs.emplace_back(B_Conj);
-    
-
-
-    }
 
 
   }
 
-
-if (!fitEach){
- auto LLC = CombLL(SigData, SigInt, SigType, MPS, sumFactors, gammaSigns, useXYs, B_Conjs);
+ //auto LLC = CombLL(SigData, mc, SigType, MPS, sumFactors, gammaSigns, useXYs, B_Conjs);
 //
 /*
   pdfs.reserve(SigData.size());
@@ -180,6 +148,7 @@ if (!fitEach){
 
     }
 */   
+/*
   Minimiser mini(LLC, &MPS);
 mini.prepare();
 INFO("Mini = "<<mini.FCN());
@@ -193,7 +162,24 @@ INFO("Mini = "<<mini.FCN());
   fCov->cd();
   covMatrix.Write("CovMatrix");
   delete fCov;
-}
+  */
+
+  GamLL LL (SigData, eventType, MPS, gammaSigns, useXYs, B_Conjs);
+  auto sf0 = LL.sumFactor(gammaSigns[0], useXYs[0]);
+  auto sf1 = LL.sumFactor(gammaSigns[1], useXYs[1]);
+
+  INFO("sf0 = "<<sf0);
+  INFO("sf1 = "<<sf1);
+
+  auto A = LL.get_A();
+  auto AMC = LL.get_AMC();
+
+  real_t n0 = LL.norm(0);
+  real_t n1 = LL.norm(1);
+  INFO("norm0 = "<<n0);
+  INFO("norm1 = "<<n1);
+  real_t ll = LL();
+  INFO("ll = "<<ll);
   return 0;
 }
 

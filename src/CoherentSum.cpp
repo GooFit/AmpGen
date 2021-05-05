@@ -360,7 +360,6 @@ complex_t CoherentSum::getVal( const Event& evt ) const
 {
   complex_t value( 0., 0. );
   for ( auto& mE : m_matrixElements ) {
-
     value += mE.coefficient * evt.getCache( mE.addressData );
   }
   return value;

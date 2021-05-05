@@ -25,7 +25,8 @@ namespace AmpGen
       private:
         std::vector<EventList> m_SigData;
 
-        std::vector<EventList> m_SigInt;
+       
+        EventList m_SigInt;
 
         std::vector<EventType> m_SigType;
 
@@ -43,7 +44,7 @@ namespace AmpGen
         CombLL() = default;
         CombLL(std::vector<EventList> SigData, 
 
-                   std::vector<EventList> SigInt, 
+                   EventList SigInt, 
 
                    std::vector<EventType> SigType,
 
@@ -70,7 +71,7 @@ namespace AmpGen
                             for (auto i=0; i < m_SigData.size() ; i++){
                                 pCoherentSum _pCS = pCoherentSum(m_SigType[i], m_mps, m_SumFactors[i], m_gammaSigns[i], m_useXYs[i], m_conj[i]);
                                 _pCS.setEvents(m_SigData[i]);
-                                _pCS.setMC(m_SigInt[i]);
+                                _pCS.setMC(m_SigInt);
                                 _pCS.prepare();
                                 m_Psi.push_back(_pCS);
                             }
@@ -83,7 +84,7 @@ namespace AmpGen
             auto psi = m_Psi[i];
             auto sigDat = m_SigData[i];
             ProfileClock pcN;
-            psi.prepare();
+            
             pcN.start();
             auto norm = psi.norm();
             pcN.stop();

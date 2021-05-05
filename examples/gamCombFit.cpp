@@ -343,6 +343,7 @@ INFO("Doing loop of Fits");
  std::vector<EventType> SigType;
  std::vector<EventType> TagType;
  std::vector<std::string> sumFactors;
+ std::vector<bool> constAmps;
  SimFit simfit;
 
 std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > pdfs;
@@ -368,33 +369,35 @@ for (int i=0; i < tags.size(); i++){
 
     auto signalType = types["signal"];
     auto tagType = types["tag"];
+    if (signalType==tagType){
+      constAmps.push_back(false);
+    }
+    else{
+      constAmps.push_back(true);
+    }
  
 
-    INFO("Generating MC for norm for tag "<<i);
-    EventList tagMCevents_tag = Generator<>(tagType, &rndm).generate(NInt);
+
 
 
     SigData.emplace_back(sigevents_tag);
     TagData.emplace_back(tagevents_tag);
-    SigInt.emplace_back(mc);
-    TagInt.emplace_back(tagMCevents_tag);
     SigType.emplace_back(sigevents_tag.eventType());
     TagType.emplace_back(tagevents_tag.eventType());
-    sumFactors.emplace_back("Psi(3770)");
+   
+   
 } 
 
-    
+ //return 0;   
     
 
 
  
   std::vector<EventList> BSigData;
-  std::vector<EventList> BSigInt;
-  std::vector<EventType> BSigType;
   std::vector<std::string> BsumFactors;
   std::vector<int> BgammaSigns;
-  std::vector<bool> BuseXYs;
-  std::vector<bool> BConj;
+  std::vector<int> BuseXYs;
+  std::vector<int> BConj;
 
 
 
@@ -405,7 +408,7 @@ for (int i=0; i < tags.size(); i++){
     auto B_Pref = split(BTag,' ')[1];
     int B_Conj = std::stoi(split(BTag,' ')[2]);
     int gammaSign = std::stoi(split(BTag,' ')[3]);
-    bool useXY = std::stoi(split(BTag,' ')[4]);
+    int useXY = std::stoi(split(BTag,' ')[4]);
     
     INFO("GammaSign = "<<gammaSign);
 
@@ -425,7 +428,6 @@ for (int i=0; i < tags.size(); i++){
     EventList Data = EventList(DataLoc, eventType);
 //    EventList Int = EventList(IntLoc, eventType);
 
-    EventList Int = Generator<>(eventType, &rndm).generate(NInt);
 
 //    auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY, B_Conj);
 //    sig.setEvents(Data);
@@ -433,17 +435,102 @@ for (int i=0; i < tags.size(); i++){
 
 
     BSigData.emplace_back(Data);
-    BSigInt.emplace_back(Int);
-    BSigType.emplace_back(eventType);
-    BsumFactors.emplace_back(B_Pref);
     BgammaSigns.emplace_back(gammaSign);
     BuseXYs.emplace_back(useXY);
     BConj.emplace_back(B_Conj);
-    
+
+
   }
+  /*
+  CombGamCorrLL(std::vector<EventList> SigData, 
+		   std::vector<EventList> TagData, 
 
+		   EventType SigType,
+		   std::vector<EventType> TagType,
+           std::vector<bool> constAmp,
 
+		   std::vector<EventList> GamData, 
+           std::vector<int> gammaSigns,
+           std::vector<int> useXYs,
 
+           std::vector<int> BConj,
+            MinuitParameterSet mps):
+  
+  */
+
+  bool useCache = NamedParameter<bool>("useCache", true);
+  if (useCache){
+
+      CombGamCorrLL LL(SigData, TagData, SigType[0], TagType, constAmps, BSigData, BgammaSigns, BuseXYs, BConj, MPS);
+      real_t LL_corr0 = LL.LLCorr(0);
+      INFO("LLCorr0 = "<<LL_corr0);
+      ProfileClock LLClock;
+      LLClock.start();
+      real_t ll = LL.LL();
+      LLClock.stop();
+      INFO("LL = "<<ll<<" took "<<LLClock.t_duration/1000<<" s");
+      simfit.add(LL);
+
+      polyLASSO lasso(simfit, MPS);
+      Minimiser mini = Minimiser(lasso, &MPS);
+      mini.gradientTest();
+      ProfileClock miniClock;
+      miniClock.start();
+      mini.doFit();
+      miniClock.stop();
+      INFO("Minimiser took "<<miniClock.t_duration/1000<<" s");
+      FitResult * fr = new FitResult(mini);
+      fr->writeToFile(logFile);
+      return 0;
+  }
+  else{
+      EventList mc =  Generator<>(eventType, &rndm).generate(NInt);
+      SimFit sfLL;
+      for (int i=0; i < SigData.size(); i++){ 
+        pCorrelatedSum pdf(SigType[i], TagType[i], MPS);
+        EventList tagMC = Generator<>(TagType[i], &rndm).generate(NInt);
+        pdf.setEvents(SigData[i], TagData[i]);
+        pdf.setMC(mc, tagMC);
+        pdf.prepare();
+        INFO("pdf(0,0) = "<<pdf.getVal(SigData[i][0], TagData[i][0]));
+        real_t norm = pdf.norm();
+        INFO("norm = "<<norm);
+
+        INFO("prob(0,0) = "<<pdf.prob(SigData[i][0], TagData[i][0]));
+        real_t nA;
+        real_t nB;
+        real_t nC;
+        real_t nD;
+        for (size_t k=0;k<SigData[i].size();k++){
+          auto v = pdf.getVals(SigData[i][k], TagData[i][k]);
+          auto a = v[0];
+          auto b = v[1];
+          auto c = v[2];
+          auto d = v[3];
+          nA += std::norm(a);
+          nB += std::norm(b);
+          nC += std::norm(c);
+          nD += std::norm(d);
+          INFO("a = "<<a);
+          INFO("|a|^2 = "<<std::norm(a));
+          INFO("|a|^2 = "<<std::pow(std::abs(a), 2));
+
+        }
+        
+  
+               
+        //CorrelatedLL<EventList, pCorrelatedSum&> LLCorr = make_likelihood(SigData[i], TagData[i], pdf);
+        
+        //INFO("LLCorr = "<<LLCorr.getVal());
+        /*
+        sfLL.add(LLCorr);
+        INFO("sfLL = "<<sfLL.getVal());
+        */
+      } 
+      return 0;
+
+  }
+//return 0;
 
 /*
     INFO("Making Combined Minimiser object");
@@ -464,6 +551,7 @@ for (int i=0; i < tags.size(); i++){
    simfit.add(pdfsB[i]);
 }
 */
+/*
 INFO("Making Combined LL");
  auto combLL =  CombGamCorrLL(
         SigData, 
@@ -490,7 +578,7 @@ INFO("Making Combined LL");
 
     if (NamedParameter<bool>("testLasso", true)){
       INFO("Making LASSO");
-//    LASSO lasso(MPS);
+    //LASSO lasso(MPS);
 
       ProfileClock pc;
       pc.start();
@@ -560,6 +648,6 @@ paramsFile.close();
   covMatrix.Write("CovMatrix"); 
   fCov->Close();
   
-
+*/
   return 0;
 }

@@ -13,6 +13,8 @@
 #include "AmpGen/CombLL.h"
 #include "AmpGen/MetaUtils.h"
 #include <typeinfo>
+#include "AmpGen/AddCPConjugate.h"
+#include "TNtuple.h"
 
 //#include <boost/algorithm/string.hpp>
 using namespace AmpGen;
@@ -40,7 +42,7 @@ int main( int argc, char* argv[] )
 
   bool m_debug = NamedParameter<bool>("debug", false);
   int nThreads = NamedParameter<int>("nThreads", 12);
-
+  int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
    #ifdef _OPENMP
   omp_set_num_threads( nThreads );
   if (m_debug) INFO( "Setting " << nThreads << " fixed threads for OpenMP" );
@@ -52,13 +54,13 @@ int main( int argc, char* argv[] )
       , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
  
   
-
+  int NInt = NamedParameter<int>("NInt", 10000000);
   auto BTags   = NamedParameter<std::string>("BTagTypes" , std::string(), "").getVector();
  
 
   MinuitParameterSet MPS;
   MPS.loadFromStream();
-
+    AddCPConjugate(MPS);
   EventType eventType = EventType(pNames);
 
   std::vector<EventList> SigData;
@@ -67,6 +69,14 @@ int main( int argc, char* argv[] )
   std::vector<std::string> sumFactors;
   std::vector<int> gammaSigns;
   std::vector<int> useXYs;
+     std::string outputFile = NamedParameter<std::string>("outputFile", "Output.root");
+  TRandom3 rndm;
+  rndm.SetSeed( seed );
+  gRandom = &rndm;
+
+
+        TFile * dFile = TFile::Open(outputFile.c_str(), "RECREATE", "");
+
   for (auto& BTag : BTags){
 
     INFO("B DecayType = "<<BTag);
@@ -103,7 +113,8 @@ int main( int argc, char* argv[] )
     std::string IntLoc = IntSS.str();
 
     EventList Data = EventList(DataLoc, eventType);
-    EventList Int = EventList(IntLoc, eventType);
+        EventList Int = Generator<>(eventType, &rndm).generate(NInt);
+//    EventList Int = EventList(IntLoc, eventType);
 
 
     sig.setEvents(Data);
@@ -118,6 +129,50 @@ int main( int argc, char* argv[] )
     useXYs.push_back(useXY);
 
     sig.prepare();
+    INFO("norm = "<<sig.norm());
+        dFile->cd();
+
+    TNtuple * tup = new TNtuple( (B_Name + "_vals").c_str(), (B_Name + "_vals").c_str(), "aR:aI:cR:cI:dd:s01:s02");
+    for (int i=0; i < Data.size(); i++){
+            auto v = sig.getVals(Data[i]);
+           auto a = v[0];
+
+           auto c = v[1];
+           real_t s01 = Data[i].s(0,1);
+           real_t s02 = Data[i].s(0,2);
+           real_t dd = std::imag(std::log(a * std::conj(c)/(std::abs(a * std::conj(c)))));
+
+           tup->Fill(std::real(a), std::imag(a),std::real(c), std::imag(c), dd, s01, s02);
+
+      }
+    tup->Write();
+
+
+
+    auto sigMC = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY);
+    sigMC.setEvents(Int);
+    sigMC.setMC(Int);
+    
+    sigMC.prepare();
+        dFile->cd();
+    TNtuple * tupMC = new TNtuple( (B_Name + "MC_vals").c_str(), (B_Name + "MC_vals").c_str(), "aR:aI:cR:cI:dd:s01:s02");
+    for (int i=0; i < Int.size(); i++){
+            auto v = sigMC.getVals(Int[i]);
+           auto a = v[0];
+
+           auto c = v[1];
+           real_t s01 = Int[i].s(0,1);
+           real_t s02 = Int[i].s(0,2);
+
+           real_t dd = std::imag(std::log(a * std::conj(c)/(std::abs(a * std::conj(c)))));
+           tupMC->Fill(std::real(a), std::imag(a),std::real(c), std::imag(c), dd, s01, s02);
+
+      }
+    tupMC->Write();
+
+  }
+ dFile->Close();
+/*
   std::vector<double> ci = {};
   std::vector<double> si = {};
   std::vector<double> bins = {};
@@ -226,6 +281,8 @@ int main( int argc, char* argv[] )
     }
     outcisi.close();
   }
+  */
+
   return 0;
 }
 

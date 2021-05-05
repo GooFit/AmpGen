@@ -44,6 +44,7 @@ namespace AmpGen
     eventListType*          m_events2;                          ///< The event list to evaluate likelihoods on
     bool                    m_debug = false;
     bool                    m_ext = false;
+    real_t m_norm=0;
 
   public:
     /// Default Constructor
@@ -52,17 +53,16 @@ namespace AmpGen
     /// Constructor from a set of PDF functions
     CorrelatedLL(const pdfTypes&... pdfs ) : 
       m_pdfs( std::tuple<pdfTypes...>( pdfs... ) ),
-      m_debug(NamedParameter<bool>("CorrelatedLL::Debug", false, "Print debug messages for CorrelatedLL")) {}
+      m_debug(NamedParameter<bool>("CorrelatedLL::Debug", false, "Print debug messages for CorrelatedLL")) {
+
+ 
+      }
 
     /// Returns negative twice the log-likelihood for this PDF and the given dataset.     
     double getVal(){
         double LL = 0;
         if (m_debug) INFO("Begin getVal()");
-        for_each( m_pdfs, []( auto& f ) { 
-          f.prepare(); 
-          //f.debugNorm();
-          });
-          
+         
         /*for (auto f : m_pdfs){
           f.prepare();
           if (m_debug) f.debugNorm();
@@ -74,7 +74,8 @@ namespace AmpGen
         if (m_debug) INFO("Events 2 size  = "<<m_events2->size());
 
         if (m_debug) std::get<0>(m_pdfs).debug( m_events1->at(0), m_events2->at(0) );
-        #pragma omp parallel for reduction( +: LL )
+        updateNorm();
+        #pragma omp parallel for reduction( +: LL ) 
         for ( unsigned int i = 0; i < m_events1->size(); ++i ) {
             auto prob = ((*this))( (*m_events1)[i], (*m_events2)[i]);
             //if (m_debug) INFO("Prob (from LL) = "<<prob);
@@ -110,10 +111,20 @@ namespace AmpGen
     double operator() (const eventValueType& event1, const eventValueType& event2){
         double prob=0;
         //double prob_norm=0;
-        for_each( this->m_pdfs, [&prob, &event1, &event2]( auto& f ) { prob += f.prob( event1, event2 ); } );
+        for_each( this->m_pdfs, [&prob, &event1, &event2]( auto& f ) { prob += std::norm(f.prob( event1, event2 )); } );
         //for_each( this->m_pdfs, [&prob_norm, &event1, &event2]( auto& f ) { prob_norm += f.prob( event1, event2 )/f.norm(); } );
         //if (m_debug) INFO("prob_norm = "<<prob_norm);
         return prob;
+    }
+
+    void updateNorm(){
+
+
+        for_each(this->m_pdfs, [](auto& f){ f.updateNorm(); });
+
+
+
+
     }
     
 

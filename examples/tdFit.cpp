@@ -36,7 +36,7 @@ void corrFit();
 void Scan2D();
 void do_CGFit();
 void tFit();
-CombGamCorrLL make_comb();
+//CombGamCorrLL make_comb();
 
 MinuitParameterSet *  copyMPS(MinuitParameterSet& mps);
 
@@ -1000,7 +1000,7 @@ if (doBFit){
   //MPS_B->loadFromStream();
 
   INFO("Doing combined fit for B");
-  CombLL combLL_B = CombLL(SigData_B, SigInt_B, SigType_B, MPS, sfList_B, gammaSigns, useXYs, B_Conjs);
+  CombLL combLL_B = CombLL(SigData_B, SigInt_B[0], SigType_B, MPS, sfList_B, gammaSigns, useXYs, B_Conjs);
 
   Minimiser combMini_B = Minimiser(combLL_B, &MPS);
     combMini_B.gradientTest();
@@ -1195,6 +1195,7 @@ for (int i=0; i < tags.size(); i++){
 }
 
 
+/*
 CombGamCorrLL make_comb(){
 
 
@@ -1316,9 +1317,10 @@ for (int i=0; i < tags.size(); i++){
   return comb;
 
 }
+*/
 
 
-
+/*
 void Scan2D(){
   auto output = NamedParameter<std::string>("Scan2DOutput", "Scan_2D.txt"); 
   auto comb = make_comb();
@@ -1357,8 +1359,8 @@ void Scan2D(){
  os.close();
 
 }
-
-
+*/
+/*
 void do_CGFit()
 {
   auto LL = make_comb();
@@ -1379,6 +1381,7 @@ void do_CGFit()
 
 
 }
+*/
 void tFit(){
    bool m_debug        = NamedParameter<bool>("Debug", false, "Debug QcFitter output");
   std::vector<std::string> varNames = {"E", "PX", "PY", "PZ"};

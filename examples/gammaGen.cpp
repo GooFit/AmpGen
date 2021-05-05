@@ -7,6 +7,7 @@
 #include "TFile.h"
 #include "TRandom3.h"
 #include "TTree.h"
+#include "TNtuple.h"
 
 #include "TGraph2D.h"
 
@@ -92,6 +93,8 @@ template <class PDF_TYPE, class PRIOR_TYPE>
   INFO("Prepared pCoherentSum");
   signalGenerator.fillEventList( pdf, events, nEvents , false);
 }
+
+
 
 
 int main( int argc, char** argv )
@@ -204,6 +207,16 @@ INFO("B DecayType = "<<BTag);
 //  if( accepted.size() == 0 ) return -1;
 
   accepted.tree( B_Name )->Write();
+  TNtuple * tup = new TNtuple((B_Name + "_vals").c_str(), (B_Name + "_vals").c_str(), "aR:aI:cR:cI");
+//  TNtuple * tup = new TNtuple( (tagname.str()+ "_vals").c_str(), (tagname.str() + "_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI");
+  for (auto& evt: accepted){
+    auto v = sig2.getVals(evt);
+    auto a = v[0];
+    auto c = v[1];
+    tup->Fill(std::real(a), std::imag(a),std::real(c), std::imag(c));
+
+  }
+  tup->Write();
   bool doPlots = NamedParameter<bool>("doPlots", true);
   if(doPlots){
   auto plots = accepted.makeDefaultProjections(Bins(nBins), LineColor(kBlack));

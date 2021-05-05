@@ -1,3 +1,4 @@
+
 #ifndef PCOHERENTSUM
 #define PCOHERENTSUM
 
@@ -7,9 +8,12 @@
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Lineshapes.h"
 #include "AmpGen/MinuitParameterSet.h"
-#include "AmpGen/PhaseCorrection.h"
 //#include "AmpGen/Polynomials.h"
+#include "AmpGen/PhaseCorrection.h"
+#include "TMatrixD.h"
+#include "TFile.h"
 
+#include "TNtuple.h"
 /* 
    pCoherentSum is the Quantum Correlated sum, designed as an input for the QcFitter program. 
    This object is designed to take the correlated decays:
@@ -42,17 +46,20 @@
 
 namespace AmpGen { 
 
+
 class pCoherentSum {
     public:
       //Takes amplitudes - 
         pCoherentSum();
-        pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType="Psi3770", int gamSign=1, bool useXY=false, bool conj=false);
+        pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType="Psi3770",
+        int gammaSign = 1, bool useXY = true, bool BConj = false );
+
         virtual ~pCoherentSum()=default;
-
-
         real_t operator()( const Event& event1) const { return prob(event1); }
-        real_t prob(const Event& event1) const {
+        real_t prob(const Event& event1 ) const {
         double P = std::norm(getVal(event1))/m_norm;  
+    
+    if (m_debug){
         double A2 = std::norm(m_A.getVal(event1))/m_norm;
 
         double C2 = std::norm(m_C.getVal(event1))/m_norm;
@@ -61,130 +68,85 @@ class pCoherentSum {
 
         auto i = Constant(0,1);
         complex_t eif = exp(i() * correction(event1));
-        
         double inter = -2*std::real(AC);
-        double corrected_inter = -2*std::real(AC * eif);
-        if (m_debug){
-            INFO("|AB-CD|^2 = "<<P);
-            INFO("A^2  + C^2  - 2Re(AC) = "<<A2+C2+inter);
-            INFO("A^2 + C^2 - 2Re(AC*eif) = "<<A2 +C2+corrected_inter);
-            INFO("|A|^2 = "<<A2);
+        double corrected_inter = -2*std::real(AC * eif);       
 
-            INFO("|C|^2 = "<<C2);
-
-            INFO("-2ReAC*eif = "<<inter);
-            INFO("Strong phase (AC) = "<<std::imag(std::log(AC/std::abs(AC))));
-            INFO("Correction = "<<std::imag(std::log(eif)));
-            INFO("Corrected Strong phase (AC) = "<<std::imag(std::log(AC*eif/std::abs(AC))));
-            INFO("Norm = "<<m_norm);
-
-        }
-        return P;
+    }
+    return P;
         }
 
     double getC(int i, int j, std::string pref="")const {
-        std::string key = "pCorrelatedSum::C"+pref+std::to_string(i)+std::to_string(j);
+        std::string key = "pCoherentSum::C"+pref+std::to_string(i)+std::to_string(j);
         double val=0;
         //if (m_debug) INFO(m_mps[key]->name()<<" = "<<m_mps[key]->mean());
         val = m_mps[key]->mean(); 
         return val;
     }
+    double getdC2(int i, int j, std::string pref="")const {
+        std::string key = "pCoherentSum::C"+pref+std::to_string(i)+std::to_string(j);
+        double val=0;
+        //if (m_debug) INFO(m_mps[key]->name()<<" = "<<m_mps[key]->mean());
+        val = pow(m_mps[key]->err(), 2); 
+        return val;
+    }
+
+
 
     complex_t getSumFactor()const {
         if (m_SFType=="Psi3770"){
             return -1;
         }
         else{
-
             if (m_useXY){
-        if (m_gamSign==1){
-        double xp = m_mps["pCoherentSum::x+"]->mean();
-        double yp = m_mps["pCoherentSum::y+"]->mean();
-       
-
-    
- 
-
-        auto sumFactor =  xp + Constant(0, 1)() * yp;
-//        auto sumFactor = xp + std::complex<double>(0, 1)* yp ;//+ Constant(0, 1) * yp;
-
-
-            return sumFactor;
-        }
-        else {
-        double xm = m_mps["pCoherentSum::x-"]->mean();
-        double ym = m_mps["pCoherentSum::y-"]->mean();
- 
-        complex_t sumFactor = xm + Constant(0, 1)() * ym;
-            return sumFactor;
-        }
-
-
-
-
+                if (m_gammaSign==-1){
+                    return complex_t(m_mps["pCoherentSum::x-"]->mean(), m_mps["pCoherentSum::y-"]->mean());
+                }
+                if (m_gammaSign==1){
+                    return complex_t(m_mps["pCoherentSum::x+"]->mean(), m_mps["pCoherentSum::y+"]->mean());
+                }
+            }
+            else{
+                return m_mps["pCoherentSum::rB"]->mean() * exp(complex_t(0, m_mps["pCoherentSum::deltaB"]->mean() + m_gammaSign * m_mps["pCoherentSum::gamma"]->mean()));
+                
 
             }
-else{
-
-        double r = 0;
-        double d = 0;
-        double g = 0;
-        std::stringstream ss_key_r;
-        std::stringstream ss_key_d;
-        std::stringstream ss_key_g;
-        ss_key_r<<"pCoherentSum::r";
-        ss_key_d<<"pCoherentSum::d";
-        ss_key_g<<"pCoherentSum::gamma";
-
-        std::string key_r = ss_key_r.str();
-        std::string key_d = ss_key_d.str();
-        std::string key_g = ss_key_g.str();
-
-        if (m_debug) INFO("Key for rB = "<<key_r);
-        if (m_debug) INFO("Key for deltaB = "<<key_d);
-        if (m_debug) INFO("Key for gamma = "<<key_g);
-
-        auto mps_r = m_mps.find(key_r);
-        auto mps_d = m_mps.find(key_d);
-        auto mps_g = m_mps.find(key_g);
-
-
-
-
-            r = mps_r->mean();
-        if (m_debug) INFO("rB = "<<r);
-
-
-
-
-            d = mps_d->mean();
-
-        if (m_debug) INFO("deltaB = "<<d);
-
-
-
-            g = mps_g->mean() * m_gamSign;
-
-        if (m_debug) INFO("gamma = "<<g);
-
-        complex_t sumFactor = exp(Constant(0, 1)() * (g + d)) * r;
-        return sumFactor;
-        }
-        }
+       }
         
     }
     
-    
+    CoherentSum getA(){
+        return m_A;
+    } 
 
-    real_t prob_unnormalised(const Event& event1) const {return std::norm(getVal(event1));}
+    CoherentSum getC(){
+        return m_C;
+    } 
+
+    const complex_t A(const Event& evt) const{
+        return m_A.getVal(evt);
+    }
+
+    const complex_t C(const Event& evt) const{
+        return m_C.getVal(evt);
+    }
+    real_t testnorm(){
+        INFO("norm = "<<norm());
+        return norm();
+    }
+
+
+
+    real_t prob_unnormalised(const Event& event1 ) const {return std::norm(getVal(event1));}
     void prepare();
     void reset(bool resetEvents);
     double slowNorm();
-    real_t testnorm() const;
     void setEvents(EventList& list1);
     void setMC(EventList& list1);
+    void setMC1(EventList& list1);
 
-    void updateNorms(const std::vector<size_t>& iA, const std::vector<size_t>& iC);
+
+    void updateNorms(const std::vector<size_t>& iA, const std::vector<size_t>& iB,
+        const std::vector<size_t>& iC, const std::vector<size_t>& iD);
 
     void debugNorm();
     void debug(const Event& event1) const; 
@@ -200,22 +162,87 @@ else{
     }
     std::vector<complex_t> getVals(const Event& event1) const {
         complex_t A = m_A.getVal(event1);
-    
+
         complex_t C = m_C.getVal(event1);
-    
-        complex_t AC = getVal(event1);
+
+        complex_t ABCD = getVal(event1);///std::sqrt(m_norm);
         complex_t corr = correction(event1);
-        std::vector<complex_t> vals = {A,C,AC, corr};
+        std::vector<complex_t> vals = {A,C,ABCD, corr};
         return vals;
     }
+
+
+    complex_t mag_correction(const Event& event) const {
+        Expression corr = 0;
+        auto x = event.s(0,1);
+        auto y = event.s(0,2);
+        auto z = event.s(1,2);
+        auto mp = sqrt(event.s(1,1));
+        auto mm = sqrt(event.s(2,2));
+        auto mK = sqrt(event.s(0,0));
+        auto mD = sqrt(x + y + z - pow(mp,2) - pow(mm,2) - pow(mK,2) ) ;
+        Expression xmin = pow(mp + mK, 2);
+        Expression xmax = pow(mD - mm, 2);
+        Expression x0 = (xmax + xmin)/2;
+        Expression ymin = pow(mp + mK, 2);
+        Expression ymax = pow(mD - mp, 2);
+        Expression y0 = (ymax + ymin)/2;
+        Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
+        Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
+        auto zp = (X+Y)/2;
+        auto zm = (X-Y)/2;
+        for (auto i=0; i < m_orderMag+1; i++){
+            Expression sum_i=0;
+            for (auto j=0; j<m_orderMag+1-i; j++){
+                real_t Cij = m_mps["pCoherentSum::C"+std::to_string(i) + std::to_string(j)]->mean();
+                sum_i += Cij*fcn::legendre(zp,i) * fcn::legendre(zm,2*j+1);
+               
+                }
+                corr += sum_i;
+    }
+    //corr = Constant(0,1) * corr;
+    //complex_t val = exp(corr());
+    if (m_pdebug) INFO("correction = "<<corr());
+    return corr();
+
+ 
+    }
+
+real_t norm_manual() const{
+ if (m_debug) INFO("Getting the value for the normalised pdf");
+  //complex_t sumFactor = getSumFactor(); 
+  complex_t z(0,0);
+  complex_t sumFactor = getSumFactor(); 
+ for (size_t i=0; i < m_sim1.size(); i++){
+    real_t f = m_pcMC1.calcCorrL((m_sim1)[i]);
+
+    z += (m_A.getVal((m_sim1)[i]) * std::conj(m_C.getVal((m_sim1)[i]) * sumFactor ) * exp(complex_t(0,f)));
+    z = z/(real_t)m_sim1.size(); 
+ }
+
+ return m_A.norm() + m_C.norm() + 2 * std::real(z);
+
+}
+
+real_t LL(){
+    real_t _LL = 0;
+    real_t n = norm();
+
+    #pragma omp parallel for reduction( +: _LL )
+    for (size_t i=0; i < m_events1.size(); i++){
+        _LL += log(std::norm(getVal((m_events1)[i]))/n);
+    }
+    return -2 * _LL;
+}
+
+
     complex_t correction(const Event& event) const {
         Expression corr = 0;
         PhaseCorrection pC(m_mps);
         //return pC.calcCorr(event);
+
         //return pC.fastCorr(event)().real();
-
         return pC.calcCorrL(event);
-
         auto x = event.s(0,1);
         auto y = event.s(0,2);
         auto z = event.s(1,2);
@@ -231,20 +258,17 @@ else{
         Expression y0 = (ymax + ymin)/2;
         Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
         Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
-
-
-
         auto zp = 0.5 * (X + Y);
         auto zm = 0.5 * (X - Y);
+        
 
         
         //INFO("Order = "<<m_order);
         for (auto i=0; i < m_order+1; i++){
             Expression sum_i=0;
             for (auto j=0; j<m_order+1-i; j++){
-                 real_t Cij = m_mps["pCorrelatedSum::C"+std::to_string(i) + std::to_string(j)]->mean();
+                real_t Cij = m_mps["pCoherentSum::C"+std::to_string(i) + std::to_string(j)]->mean();
                 sum_i += Cij*fcn::legendre(zp,i) * fcn::legendre(zm,2*j+1);
-               
                
 
                 if (m_pdebug){
@@ -259,112 +283,273 @@ else{
         if (m_pdebug) INFO("correction = "<<corr());
         return corr();
       }
+
+
+
+    //Need CovFile!
+    complex_t errcorrection(const Event& event, TMatrixD * cov) const {
+        Expression corr = 0;
+        auto x = event.s(0,1);
+        auto y = event.s(0,2);
+        auto z = event.s(1,2);
+        auto mp = sqrt(event.s(1,1))/2;
+        auto mm = sqrt(event.s(2,2))/2;
+        auto mK = sqrt(event.s(0,0))/2;
+        auto mD = sqrt(x + y + z - pow(mp,2) - pow(mm,2) - pow(mK,2) ) ;
+        Expression xmin = pow(mp + mK, 2);
+        Expression xmax = pow(mD - mm, 2);
+        Expression x0 = (xmax + xmin)/2;
+        Expression ymin = pow(mp + mK, 2);
+        Expression ymax = pow(mD - mp, 2);
+        Expression y0 = (ymax + ymin)/2;
+        Expression X = (2 * x - xmax - xmin)/(xmax - xmin);
+        Expression Y = (2 * y - ymax - ymin)/(ymax - ymin);
+
+        int nElements = 0.5*(m_order+1)*(m_order+2);
+       
+
+        int cov_ij = 0;
+        //INFO("Order = "<<m_order);
+        for (auto i=0; i < m_order+1; i++){
+            Expression sum_i=0;
+            for (auto j=0; j<m_order+1-i; j++){
+                
+                double Cij = getdC2(i,j);
+                auto zp = 0.5 * (X() + Y());
+                auto zm = 0.5 * (X() - Y());
+
+                sum_i = sum_i +  Cij * fcn::pow(fcn::legendre(zp, i) * fcn::legendre(zm, 2*j+1),2 )  ;
+                int cov_kl=0;
+                for (int k=0;k<m_order+1;k++){
+                    for (int l=0;l<m_order+1 - k;l++){
+                        double Ckl = getdC2(k,l);
+                        sum_i+= 2* (*cov)[cov_ij][cov_kl] *  fcn::pow(Cij * Ckl, 0.5) * fcn::legendre(zp, i) * fcn::legendre(zm, 2*j+1)*fcn::legendre(zp,k)*fcn::legendre(zm, 2*l+1);
+                
+                    }
+                }
+                cov_ij++;
+
+                
+                   
+
+                
+                
+                if (m_pdebug){
+                    INFO("sum_"<<i<<" = "<<sum_i());
+                }
+
+            }
+            corr += sum_i;
+        }
+        //corr = Constant(0,1) * corr;
+        //complex_t val = exp(corr());
+        if (m_pdebug) INFO("err correction = "<<pow(corr(), 0.5));
+        return pow(corr(), 0.5);
+
+      }
+
+
       //real_t norm(const Bilinears& norms) const; 
       double m_inter = 0;
 
-      complex_t A(Event& evt){
-          return m_A.getVal(evt);
-      }
-      complex_t C(Event& evt){
-          return m_C.getVal(evt);
-      }
-
-      real_t getFastNorm(){
-
-        if (m_debug) INFO("Getting the value for the normalised pdf");
-        if (m_debug) INFO("Get Matrix Elements for A,B,C,D");
-        complex_t sumFactor = getSumFactor();  
-        auto sum_amps = []( const Bilinears& bl, const auto& mA, const auto& mB )
-        {
-            complex_t v; 
-            for (size_t i=0; i< mA.size(); i++){
-            for (size_t j=0; j< mB.size(); j++){
-                v += bl.get(i, j) * mA[i].coefficient * std::conj(mB[j].coefficient);;
+    double getCParam(int i, int j) const{
+        std::string key = "MyPoly::C"+std::to_string(i)+std::to_string(j);
+        for (auto param : m_mps){
+            if (param->name()==key){
+                return param->mean();
             }
-            }
-            return v; 
-        };
-        /*
+        }
+        return 0;
+    }
 
-            */
-        real_t nA = m_A.norm();
-
-        real_t nC = m_C.norm();
-
-
-        complex_t nAC = sum_amps( m_normalisationsAC, m_A.matrixElements(), m_C.matrixElements() );
-        complex_t mix = nAC * std::conj(sumFactor);
-        real_t intTerm = 2 * mix.real();
-
-
-        double xp = m_mps["pCoherentSum::x+"]->mean();
-        double yp = m_mps["pCoherentSum::y+"]->mean();
-
+    void prepareCache( EventList& list1,   EventList& sim1)  {
+        CoherentSum A(m_type1, m_mps);       
         
-        real_t N = nA + nC * std::abs(sumFactor) + intTerm;
+        A.transferParameters();
+        A.setEvents(list1);
+        A.setMC(sim1);
+        A.prepare();
 
+        auto Anorm = m_A.norm();
+        INFO("m_ANorm = "<<A.norm());
+        INFO("m_ANorm = "<<Anorm);
+        CoherentSum C(m_type1.conj(true), m_mps);  C.transferParameters(); C.setEvents(list1); C.setMC(sim1); C.prepare(); m_Cnorm = m_C.norm();
+
+
+
+        INFO("m_CNorm = "<<C.norm());
+
+
+        for (size_t i=0; i<list1.size(); i++){
+            complex_t a(A.getValNoCache(list1[i]));
+
+            complex_t c(C.getValNoCache(list1[i]));
+
+            m_cache.insert(std::pair<real_t* , std::vector<complex_t> >(list1[i].address(),  std::vector<complex_t> ({a, c})));
+//            m_cache.insert(list1[i].address(), std::vector<complex_t>({A.getValNoCache(list1[i]), B.getValNoCache(list2[i]), C.getValNoCache(list1[i]), D.getValNoCache(list2[i])}));
+//            m_cacheMC.insert(sim1[i].address(), {A.getValNoCache(sim1[i]), B.getValNoCache(sim2[i]), C.getValNoCache(sim1[i]), D.getValNoCache(sim2[i])});
+        }
+        for (size_t i=0; i<sim1.size();i++){
+            m_Anorm += std::norm(A.getValNoCache(sim1[i]))/sim1.size();
+
+            m_Cnorm += std::norm(C.getValNoCache(sim1[i]))/sim1.size();
+
+        }
+        INFO("a = "<<A.prob(list1[0]));
+        INFO("m_ANorm = "<<m_Anorm);
+
+        INFO("m_CNorm = "<<m_Cnorm);
+
+
+        for (size_t i=0; i<sim1.size(); i++){
+            complex_t a(A.getValNoCache(sim1[i]));
+
+            complex_t c(C.getValNoCache(sim1[i]));
+
+
+//            m_cacheMC.insert(std::pair<real_t*, std::vector<complex_t> >(sim1[i].address(),  std::vector<complex_t> ({a, b, c, d})));
+            m_cacheMC.insert(std::pair<real_t* , std::vector<complex_t> >(sim1[i].address(),  std::vector<complex_t> ({a,  c })));
+//            m_cache.insert(sim1[i].address(), std::vector<complex_t>({A.getValNoCache(sim1[i]), B.getValNoCache(sim2[i]), C.getValNoCache(sim1[i]), D.getValNoCache(sim2[i])}));
+//            m_cacheMC.insert(sim1[i].address(), {A.getValNoCache(sim1[i]), B.getValNoCache(sim2[i]), C.getValNoCache(sim1[i]), D.getValNoCache(sim2[i])});
+        }
+        m_pc1.setEvents(list1);
+        m_pc1.prepareCache();
+        m_pcMC1.setEvents(sim1);
+        m_pcMC1.prepareCache();
+    }
+
+    const real_t normFromCache() const {
+        real_t n0=m_Anorm  + m_Cnorm ;
+        real_t n = 0;
+        real_t N=0;
+        complex_t sf = getSumFactor();
+        int id=0;
+        for (auto& [addresses, values] : m_cacheMC){
+            N++;
+            auto a = values[0];
+//            INFO("a = "<<a);
+
+            auto c = values[1];
+
+//            INFO("c = "<<c);
+
+            auto f = m_pcMC1.getValCache(id);
+            id++;
+//            INFO("f = "<<f);
+
+            n += 2  * std::real(a  * std::conj(c*sf) * exp(complex_t(0,f)));
+        }
         
+        return n0 + n/N;
+    } 
+    const real_t LLFromCache() const {
+     //   INFO("Calculating norm from cache");
+        real_t n = normFromCache();
+        INFO("n = "<<n);
+        real_t ll =0 ;
+        complex_t sf = getSumFactor();
+        int id =0;
+        for (auto& [address, values] : m_cache){
+            auto f = m_pc1.getValCache(id);
+            id++;
+
+            auto pdf = std::norm(values[0] * exp(complex_t(0, f/2)) + sf* values[1] * exp(complex_t(0, -f/2)))/n;
+            ll += log(pdf);
+        }
+        return -2*ll;
+    }
+
+
+    TNtuple * dumpVals(std::string tagName){
         
+        TNtuple * tup = new TNtuple( (tagName + "_vals").c_str(), (tagName + "_vals").c_str(), "aR:aI:cR:cI:dd");
+        for (int i=0; i < m_events1.size(); i++){
+            auto v = getVals(m_events1[i]);
+            auto a = v[0];
+            auto c = v[1];
 
-        return N;
 
+            real_t dd = std::imag(log(a * std::conj(c)/ (std::abs(a * std::conj(c)))  ));
+            tup->Fill(std::real(a), std::imag(a), std::real(c), std::imag(c), dd);
+        }
+        return tup;
+    }
+    TNtuple * dumpValsMC(std::string tagName){
+        
+        TNtuple * tup = new TNtuple( (tagName + "_vals").c_str(), (tagName + "_vals").c_str(), "aR:aI:cR:cI:dd");
+        for (int i=0; i < m_sim1.size(); i++){
+            auto v = getVals(m_sim1[i]);
+            auto a = v[0];
+            auto c = v[1];
 
-      }
+            real_t dd = std::imag(log(a * std::conj(c)/ (std::abs(a * std::conj(c)))  ));
+            tup->Fill(std::real(a), std::imag(a), std::real(c), std::imag(c),dd);
+        }
+        return tup;
+    }
    
     protected:
         double  m_norm  =    {0};
-        Bilinears m_normalisationsAC;
-
-        Bilinears m_normalisationsAA;
-
-        Bilinears m_normalisationsCC;
-
         MinuitParameterSet m_mps;
         std::string m_SFType;
-        bool m_conj;
         CoherentSum  m_A;
 
         CoherentSum  m_C;
 
-        EventList* m_events1 = nullptr;
 
-        Integrator<10> m_integratorAC;
 
-        std::vector<std::vector<MinuitParameter*> > m_Cparams;
+        EventList m_events1;
+        EventList m_sim1 ;
+
+
+        
+        EventType m_type1;
+
+
+        real_t m_normA;
+
+        real_t m_normC;
+
+      
         std::vector<std::vector<double> > m_poly;
         std::vector<FitFraction> outputFractionsA;
 
         std::vector<FitFraction> outputFractionsC;
 
-        Integrator<10> m_integratorAA;
-
-        Integrator<10> m_integratorCC;
-
-        bool m_coherentIntegral;
-        bool m_coherentIntegralA;
-
-        bool m_coherentIntegralC;
-
+     
+    
+        
+    
         bool m_debug;
         int m_debugFreq;
         bool m_pdebug;
         bool m_pNorm;
-        bool m_fastNorm;
-        bool m_slowNorm;
         bool m_updateNorms;
         int m_order;
+        int m_orderMag;
         std::string m_polyType;
+        std::string m_polyTypeMag;
         size_t m_prepareCalls = 0;
-        double m_Anorm;
+        real_t m_Anorm = 0;
 
-        double m_Cnorm;
-
-        int m_gamSign;
+        real_t m_Cnorm = 0;
 
         bool m_sameTag;
+        bool m_slowNorm;
         bool m_flat;
+        PhaseCorrection m_pc1;
+        PhaseCorrection m_pcMC1;
+
+        int m_gammaSign;
         bool m_useXY;
+        bool m_BConj;
+
+
+        std::map<real_t * , std::vector<complex_t> > m_cache = {};
+        std::map<real_t *, std::vector<complex_t> > m_cacheMC = {};
+
+
+
   };
 }
 #endif
-

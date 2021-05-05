@@ -14,7 +14,7 @@
 namespace AmpGen{
     class PhaseCorrection{
         public:
-            real_t fastLegendre(real_t x, size_t n){
+            const real_t fastLegendre(real_t x, size_t n) const {
                 switch (n)
                     {
                     case 0/* constant-expression */:
@@ -65,7 +65,7 @@ namespace AmpGen{
                     }
             
             }
-            real_t calcPoly(real_t x, real_t y, size_t order){
+            const real_t calcPoly(real_t x, real_t y, size_t order) const {
                 real_t p=0;
                 for (size_t i=0; i<order+1;i++){
                     size_t i1 = i;
@@ -87,7 +87,8 @@ namespace AmpGen{
 
 
             PhaseCorrection(const MinuitParameterSet& mps) : m_mps(mps), m_order(NamedParameter<size_t>("PhaseCorrection::Order", 2)), m_debug(NamedParameter<bool>("PhaseCorrection::debug", true)), m_start(NamedParameter<size_t>("PhaseCorrection::Start", 0)), m_PolyType(NamedParameter<std::string>("PhaseCorrection::PolyType", "antiSym_legendre")) {}
-            std::vector<real_t> getXY(Event event){
+            PhaseCorrection() = default;
+            const std::vector<real_t> getXY(Event event) const {
                  auto x = event.s(0,1);
                 auto y = event.s(0,2);
                 auto z = event.s(1,2);
@@ -117,7 +118,7 @@ namespace AmpGen{
                 return std::vector<real_t>({zp,zm});
 
             }
-            real_t calcCorr(Event event){
+            const real_t calcCorr(const Event event)const {
                 auto XY=getXY(event);
                 auto zp = XY[0];
                 auto zm = XY[1];
@@ -157,7 +158,7 @@ namespace AmpGen{
             }
 
 
-            Expression fastCorr(const Event event){
+            const Expression fastCorr(const Event event) const {
                 auto XY=getXY(event);
                 auto x = XY[0];
                 auto y = XY[1];
@@ -192,7 +193,7 @@ namespace AmpGen{
             }
 
 
-            real_t calcCorrL(Event event){
+            const real_t calcCorrL(const Event event) const {
                 auto XY=getXY(event);
                 auto x = XY[0];
                 auto y = XY[1];
@@ -229,6 +230,58 @@ namespace AmpGen{
             }
             
 
+        void setEvents(EventList& list){
+            m_events = &list;
+        }
+        
+        void prepareCache(){
+            INFO("Prepare cache for order "<<m_order);
+
+            int id=0;
+            for (auto& evt : *m_events){
+                auto XY=getXY(evt);
+                auto x = XY[0];
+                auto y = XY[1];
+                if (id%10000==0)std::cout<<"\rAt "<<id<<" event out of"<<m_events->size()<<std::flush;
+                id++;
+                std::map<std::string, real_t> map;
+                for (auto i=0;i<m_order+1;i++){
+                    for (auto j=0;j<m_order+1-i;j++){
+                        std::stringstream name_ss;
+                        name_ss<<"PhaseCorrection::C"<<i<<"_"<<2*j+1;
+                        std::string name_ij = name_ss.str();
+                       
+                        real_t value_ij = fastLegendre(x, i) * fastLegendre(y, 2*j+1);
+                       
+                        map.insert(std::pair<std::string, real_t> (name_ij, value_ij));
+                    }
+                }
+              
+                
+
+                //m_cache.insert(std::pair<const real_t*, const std::map<std::string, real_t> > (evt.address(), map));
+                m_cache.push_back(map);
+            }
+            INFO("Prepared Cache");
+
+        }
+
+
+        //const std::map<const real_t*, const std::map<std::string, real_t> > getCache(){
+        const std::vector<std::map<std::string, real_t> > getCache(){
+            return m_cache;
+        };
+
+        const real_t getValCache(int i)const{
+            real_t v=0;
+            auto m = m_cache[i];
+            for (auto& [key, value] : m){
+                v+=m_mps[key]->mean() * m.at(key);
+            }
+            return v;
+
+        }
+        
 
             
 
@@ -239,6 +292,9 @@ namespace AmpGen{
             size_t m_start;
             bool m_debug;
 	    std::string m_PolyType;
+            EventList* m_events = {nullptr};
+            //std::map< const real_t*, const std::map<std::string, real_t> > m_cache = {};
+            std::vector< std::map<std::string, real_t> > m_cache = {};
           
 
     };

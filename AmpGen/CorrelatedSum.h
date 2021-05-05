@@ -92,6 +92,9 @@ namespace AmpGen {
       }
       //real_t norm(const Bilinears& norms) const; 
       double m_inter = 0;
+      void updateNorm(){
+        m_norm = norm();
+      }
     protected:
       double  m_norm  =    {0};
       Bilinears m_normalisationsAC;

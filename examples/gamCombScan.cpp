@@ -363,6 +363,7 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
   if (doCombFit){
     
     //auto combLL = CombGamCorrLL(SigData, TagData, BSigData, SigInt, TagInt, BSigInt, SigType, TagType, BSigType, MPS, BsumFactors, BgammaSigns, BuseXYs);
+    /*
    auto combLL =  CombGamCorrLL(
         SigData, 
         TagData, 
@@ -405,7 +406,7 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
       }
     }
     scanOut.close();
-
+*/
  }
 
 

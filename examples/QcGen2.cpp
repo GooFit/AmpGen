@@ -7,7 +7,7 @@
 #include "TFile.h"
 #include "TRandom3.h"
 #include "TTree.h"
-
+#include "TNtuple.h"
 #include "TGraph2D.h"
 
 
@@ -250,6 +250,18 @@ for( auto& tag : tags ){
 
  TTree * tagTree = acceptedTag.tree(tagname.str().c_str());
  tagTree->Write(tagname.str().c_str());
+
+   TNtuple * tup = new TNtuple( (tagname.str()+ "_vals").c_str(), (tagname.str() + "_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI");
+  for (int i=0; i < acceptedSig.size(); i++){
+    auto v = cs.getVals(acceptedSig[i], acceptedTag[i]);
+    auto a = v[0];
+    auto b = v[1];
+    auto c = v[2];
+    auto d = v[3];
+    tup->Fill(std::real(a), std::imag(a),std::real(b), std::imag(b),std::real(c), std::imag(c),std::real(d), std::imag(d));
+
+  }
+    tup->Write();
 
    // acceptedSig.tree(tokens[0])->Write("Signal");
  //  acceptedTag.tree(tokens[0])->Write("Tag");
