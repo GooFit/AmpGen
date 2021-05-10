@@ -60,7 +60,7 @@ namespace AmpGen
       
       sqCo getCoordinates( const Event& evt ) const;
 
-    private:
+//    private:
       double    m_min;
       double    m_max;
       double    m_s0;

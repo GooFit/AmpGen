@@ -52,17 +52,15 @@ const std::vector<std::string> ParticlePropertiesList::dirList() const
   if ( nullptr != AmpEnv ) {
     AmpGenRoot = AmpEnv;
   } else {
-#ifdef AMPGENROOT_CMAKE
-    AmpGenRoot = AMPGENROOT_CMAKE;
+#ifdef AMPGENROOT
+    AmpGenRoot = AMPGENROOT;
     INFO( "Using built-in AMPGENROOT (set env variable if incorrect): " << AmpGenRoot );
 #else
     WARNING( "AMPGENROOT not set, may not be able to find pdg database" );
 #endif
   }
-  dirList.push_back( "" );
   dirList.push_back( AmpGenRoot + "/" );
   dirList.push_back( AmpGenRoot + "/options/" );
-  dirList.push_back( "../" );
   return dirList;
 }
 

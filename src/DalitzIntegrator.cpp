@@ -34,9 +34,9 @@ void DalitzIntegrator::set( const double& s0, const double& s1, const double& s2
 }
 double DalitzIntegrator::sqDp1( const Event& evt ) const
 {
-  TLorentzVector p1( ( evt.address( 0 ) ) );
-  TLorentzVector p2( ( evt.address( 4 ) ) );
-  TLorentzVector p3( ( evt.address( 8 ) ) );
+  TLorentzVector p1( evt.address( 0 ) );
+  TLorentzVector p2( evt.address( 4 ) );
+  TLorentzVector p3( evt.address( 8 ) );
   TLorentzVector pA = p1 + p2;
   auto arg = 2 * ( pA.Mag() - m_min ) / ( m_max - m_min ) - 1;
   if( arg > 1 || arg < -1 ){
