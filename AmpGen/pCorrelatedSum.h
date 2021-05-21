@@ -57,12 +57,12 @@ class pCorrelatedSum {
         double P = std::norm(getVal(event1, event2))/m_norm;  
     
     if (m_debug){
-        double A2 = std::norm(m_A->getVal(event1))/m_norm;
-        double B2 = std::norm(m_B->getVal(event2));
-        double C2 = std::norm(m_C->getVal(event1))/m_norm;
-        double D2 = std::norm(m_D->getVal(event2));
-        complex_t AC = m_A->getVal(event1) * std::conj(m_C->getVal(event1))/m_norm;
-        complex_t BD = m_B->getVal(event2) * std::conj(m_D->getVal(event2));
+        double A2 = std::norm(m_A.getVal(event1))/m_norm;
+        double B2 = std::norm(m_B.getVal(event2));
+        double C2 = std::norm(m_C.getVal(event1))/m_norm;
+        double D2 = std::norm(m_D.getVal(event2));
+        complex_t AC = m_A.getVal(event1) * std::conj(m_C.getVal(event1))/m_norm;
+        complex_t BD = m_B.getVal(event2) * std::conj(m_D.getVal(event2));
         auto i = Constant(0,1);
         complex_t eif = exp(i() * correction(event1));
         if (m_sameTag){
@@ -101,7 +101,7 @@ class pCorrelatedSum {
         std::string key = "pCorrelatedSum::C"+pref+std::to_string(i)+std::to_string(j);
         double val=0;
         //if (m_debug) INFO(m_mps[key]->name()<<" = "<<m_mps[key]->mean());
-        val = pow(m_mps[key]->err(), 2); 
+        val = pow(m_mps[key]->err(), 2);; 
         return val;
     }
 
@@ -141,19 +141,19 @@ class pCorrelatedSum {
         
     }
     
-    CoherentSum * getA(){
+    CoherentSum getA(){
         return m_A;
     } 
 
-    CoherentSum * getB(){
+    CoherentSum  getB(){
         return m_B;
     } 
 
-    CoherentSum * getC(){
+    CoherentSum  getC(){
         return m_C;
     } 
 
-    CoherentSum *  getD(){
+    CoherentSum  getD(){
         return m_D;
     } 
 
@@ -175,18 +175,18 @@ class pCorrelatedSum {
     complex_t getVal(const Event& event1, const Event& event2) const;
     complex_t getValNoCache(const Event& event1, const Event& event2) const;
     complex_t getValNoCache(const Event& event1, const Event& event2, const size_t& offset) const;
-    real_t size()const { return m_A->size() + m_B->size() + m_C->size() + m_D->size();}
+    real_t size()const { return m_A.size() + m_B.size() + m_C.size() + m_D.size();}
     std::vector<std::vector<FitFraction> > fitFractions(const LinearErrorPropagator& linProp);
     real_t norm()  const;
     double probA(const Event& event){
-        double prob = m_A->prob(event);
+        double prob = m_A.prob(event);
         return prob;
     }
     std::vector<complex_t> getVals(const Event& event1, const Event& event2) const {
-        complex_t A = m_A->getVal(event1);
-        complex_t B = m_B->getVal(event2);
-        complex_t C = m_C->getVal(event1);
-        complex_t D = m_D->getVal(event2);
+        complex_t A = m_A.getVal(event1);
+        complex_t B = m_B.getVal(event2);
+        complex_t C = m_C.getVal(event1);
+        complex_t D = m_D.getVal(event2);
         if (m_debug) std::cout<<"\rA = "<<A<<"\nB = "<<B<<"\nC = "<<C<<"\nD = "<<D<<std::flush;
 
 
@@ -194,8 +194,13 @@ class pCorrelatedSum {
         complex_t ABCD = getVal(event1, event2);///std::sqrt(m_norm);
 
         if (m_debug) INFO("ABCD = "<<ABCD);
-        complex_t corr = correction(event1);
-        std::vector<complex_t> vals = {A,B,C,D,ABCD, corr};
+        //complex_t corr = correction(event1);
+        real_t corr = m_pc1.calcCorrL(event1); 
+	if (m_sameTag){
+		//corr -= correction(event2);
+		corr -= m_pc2.calcCorrL(event2);
+	}
+        std::vector<complex_t> vals = {A,B,C,D,ABCD, complex_t(corr,0)};
 
         return vals;
     }
@@ -242,25 +247,27 @@ real_t norm_manual() const{
   //complex_t sumFactor = getSumFactor(); 
   complex_t z(0,0);
   
- for (size_t i=0; i < m_sim1->size(); i++){
+ for (size_t i=0; i < (*m_sim1).size(); i++){
     real_t f = m_pcMC1.calcCorrL((*m_sim1)[i])/2;
     if (m_sameTag) f = (m_pcMC1.calcCorrL((*m_sim1)[i]) - m_pcMC2.calcCorrL((*m_sim2)[i]))/2;
-    z += (m_A->getVal((*m_sim1)[i]) * m_B->getVal((*m_sim2)[i]) * std::conj(m_C->getVal((*m_sim1)[i]) * m_D->getVal((*m_sim2)[i])) * exp(complex_t(0,f)));
-    z = z/(real_t)m_sim1->size(); 
+    z += (m_A.getVal((*m_sim1)[i]) * m_B.getVal((*m_sim2)[i]) * std::conj(m_C.getVal((*m_sim1)[i]) * m_D.getVal((*m_sim2)[i])) * exp(complex_t(0,f)));
+    z = z/(real_t)(*m_sim1).size(); 
  }
 
- return m_A->norm()*m_B->norm() + m_C->norm() * m_D->norm() - 2 * std::real(z);
+ return m_A.norm()*m_B.norm() + m_C.norm() * m_D.norm() - 2 * std::real(z);
 
 }
 
-real_t LL(){
+const real_t LL() const {
     real_t _LL = 0;
+   
     real_t n = norm();
-    INFO("n = "<<n);
+    //INFO("n = "<<n);
     #pragma omp parallel for reduction( +: _LL )
-    for (size_t i=0; i < m_events1->size(); i++){
+    for (size_t i=0; i < (*m_events1).size(); i++){
         _LL += log(std::norm(getVal((*m_events1)[i], (*m_events2)[i]))/n);
     }
+    ////INFO("LL = "<<-2*_LL);
     return -2 * _LL;
 }
 
@@ -495,7 +502,7 @@ real_t LL(){
     TNtuple * dumpVals(std::string tagName){
         
         TNtuple * tup = new TNtuple( (tagName + "_vals").c_str(), (tagName + "_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI:dd");
-        for (int i=0; i < m_events1->size(); i++){
+        for (int i=0; i < (*m_events1).size(); i++){
             if (m_debug) std::cout<<"\rat "<<i;
             auto v = getVals((*m_events1)[i], (*m_events2)[i]);
             auto a = v[0];
@@ -510,7 +517,7 @@ real_t LL(){
     TNtuple * dumpValsMC(std::string tagName){
         
         TNtuple * tup = new TNtuple( (tagName + "_vals").c_str(), (tagName + "_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI:dd");
-        for (int i=0; i < m_sim1->size(); i++){
+        for (int i=0; i < (*m_sim1).size(); i++){
             auto v = getVals((*m_sim1)[i], (*m_sim2)[i]);
             auto a = v[0];
             auto b = v[1];
@@ -525,6 +532,15 @@ real_t LL(){
         m_norm = norm();
     }
 
+    void prepareACBD(){
+        m_ACstMC = {};
+        m_BDstMC = {};
+        for (size_t i=0;i<(*m_sim1).size();i++){
+            m_ACstMC.push_back(m_A.getValNoCache((*m_sim1)[i]) * std::conj(m_C.getValNoCache((*m_sim1)[i])));
+            m_BDstMC.push_back(m_B.getValNoCache((*m_sim2)[i]) * std::conj(m_D.getValNoCache((*m_sim2)[i])));
+        }
+    }
+
     protected:
         double  m_norm  =    {0};
         MinuitParameterSet m_mps;
@@ -532,14 +548,14 @@ real_t LL(){
         
         
         
-        CoherentSum * m_A = {nullptr};
-        CoherentSum * m_B = {nullptr};
-        CoherentSum * m_C = {nullptr};
-        CoherentSum * m_D = {nullptr};
+        CoherentSum m_A ;
+        CoherentSum  m_B;
+        CoherentSum  m_C;
+        CoherentSum  m_D;
 
 
-        EventList * m_events1={nullptr};
-        EventList * m_sim1 = {nullptr};
+        EventList *  m_events1 = {nullptr};
+        EventList * m_sim1  = {nullptr};
         EventList * m_events2 = {nullptr};
         EventList * m_sim2 = {nullptr};
         
@@ -582,6 +598,9 @@ real_t LL(){
         PhaseCorrection m_pcMC1;
         PhaseCorrection m_pc2;
         PhaseCorrection m_pcMC2;
+
+        std::vector<complex_t> m_ACstMC = {};
+        std::vector<complex_t> m_BDstMC = {};
 
         std::map<std::vector<real_t *> , std::vector<complex_t> > m_cache = {};
         std::map<std::vector<real_t *>, std::vector<complex_t> > m_cacheMC = {};

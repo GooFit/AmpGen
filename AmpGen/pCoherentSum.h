@@ -208,6 +208,10 @@ class pCoherentSum {
  
     }
 
+    void updateNorm(){
+        m_norm = norm();
+    }
+
 real_t norm_manual() const{
  if (m_debug) INFO("Getting the value for the normalised pdf");
   //complex_t sumFactor = getSumFactor(); 

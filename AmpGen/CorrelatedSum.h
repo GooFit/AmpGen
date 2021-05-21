@@ -95,6 +95,19 @@ namespace AmpGen {
       void updateNorm(){
         m_norm = norm();
       }
+    
+real_t LL(){
+    real_t _LL = 0;
+    real_t n = norm();
+    INFO("n = "<<n);
+    #pragma omp parallel for reduction( +: _LL )
+    for (size_t i=0; i < m_events1->size(); i++){
+        _LL += log(std::norm(getVal((*m_events1)[i], (*m_events2)[i]))/n);
+    }
+    return -2 * _LL;
+}
+
+
     protected:
       double  m_norm  =    {0};
       Bilinears m_normalisationsAC;

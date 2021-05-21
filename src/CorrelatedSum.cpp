@@ -442,7 +442,9 @@ void CorrelatedSum::debugNorm()
       INFO("ABC*D* = "<<val);
       INFO("|AB-CD|^2 = "<<n_slow);
     }
+
   }
+
  
 
   auto integrate = []( const EventList& events, const CoherentSum& A, const CoherentSum& B) -> complex_t 
@@ -476,6 +478,14 @@ void CorrelatedSum::debugNorm()
  // INFO("My value for n_slow = "<<n_slow);
   INFO("My value for n_slow = "<<I);
   INFO("The difference = "<<difference<<"%");
+  real_t pA =0;
+  real_t p=0;
+  for (size_t i=0;i<m_events1->size();i++){
+    pA += m_A.prob((*m_events1)[i]);
+    p+=prob((*m_events1)[i], (*m_events2)[i]);
+  }
+  INFO("pA = "<<pA);
+  INFO("p = "<<p);
 }
 
 

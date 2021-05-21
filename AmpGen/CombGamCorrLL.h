@@ -214,24 +214,43 @@ namespace AmpGen
 
         real_t NormCorr(int i){
             real_t n=0;
-            complex_t w1=0;
-            complex_t w2=0;
+            //complex_t w1=0;
+	    complex_t w1(0,0);
+	    complex_t w2(0,0);
+            //complex_t w2=0;
           //  INFO("At norm");
+	    real_t w1R=0;
+	    real_t w1I=0;
+	    #pragma omp parallel for reduction( +: w1R ) reduction ( +:w1I ) 
             for (int j=0; j < m_AMC.size(); j++){
+	      
                 real_t f = m_pcMC.getValCache(j);
-                w1+=m_AMC[j] * std::conj(m_CMC[j]) * exp(complex_t(0,f))/(real_t)m_AMC.size();
-                if(m_TagType[i]==m_SigType){
-                     w2 += m_CMC[j] * std::conj(m_AMC[j]) * exp(complex_t(0,-f))/(real_t)m_AMC.size();
-                }
-                else
-                {   if(m_constAmp[i]) {
-                       w2+=m_BMC[i][0] * std::conj(m_DMC[i][0])/(real_t)m_AMC.size();
-                    }
-                    else{
-                        w2+=m_BMC[i][j] * std::conj(m_DMC[i][j])/(real_t)m_AMC.size();
-                    }
-                }
+                complex_t _w1=m_AMC[j] * std::conj(m_CMC[j]) * exp(complex_t(0,f))/(real_t)m_AMC.size();
+		w1R += std::real(_w1);
+		w1I += std::imag(_w1);
+
+	    }
+	    w1 = complex_t(w1R, w1I);
+            if(m_TagType[i]==m_SigType){
+                w2 = std::conj(w1);
             }
+            else{
+                if(m_constAmp[i]) {
+                   w2=m_BMC[i][0] * std::conj(m_DMC[i][0]);
+                }
+                else{
+		   real_t w2R=0;	
+		   real_t w2I=0;	
+		   #pragma omp parallel for reduction( +: w1R ) reduction ( +:w1I ) 
+		   for (int j=0; j < m_BMC[i].size(); j++){
+		       complex_t _w2=m_BMC[i][j] * std::conj(m_DMC[i][j])/(real_t)m_AMC.size();
+             	       w2R += std::real(_w2);
+		       w2I += std::real(_w2);
+		   }
+		   w2=complex_t(w2R,w2I);
+                }
+             }
+            
            // INFO("w1 = "<<w1);
            // INFO("w2 = "<<w2);
             if (m_TagType[i]==m_SigType) {
@@ -252,6 +271,9 @@ namespace AmpGen
             
             real_t n = NormCorr(i);
         //    INFO("norm = "<<n);
+	///
+	//
+	    #pragma omp parallel for reduction( +: ll )
             for (size_t j=0; j < m_A.size(); j++){
                 real_t f1 = m_pc[i].getValCache(j);
                 if (m_SigType==m_TagType[i]){
@@ -285,13 +307,32 @@ namespace AmpGen
         real_t NormGam(size_t i){
             real_t n=0;
             complex_t sf = sumFactor(m_gammaSigns[i], m_useXYs[i]);
-            complex_t w1=0;
-            complex_t w2=0;
+            //complex_t w1=0;
+	    complex_t w1(0,0);
+	    complex_t w2(0,0);
+
+            //complex_t w2=0;
+	    //
+	    //
+	    real_t w1R=0;
+	    real_t w2R=0;
+	    real_t w1I=0;
+	    real_t w2I=0;
+	    #pragma omp parallel for reduction( +: w1R ) reduction ( +:w1I) reduction ( +:w2R ) reduction ( +:w2I )
             for (size_t j=0; j<m_AMC.size(); j++){
                 real_t f = m_pcMC.getValCache(j);
-                w1 += m_AMC[j] * std::conj(m_CMC[j] * sf) * cos(f)/(real_t)m_AMC.size(); 
-                w2 += -m_AMC[j] * std::conj(m_CMC[j] * sf) * sin(f)/(real_t)m_AMC.size(); 
+                complex_t _w1 = m_AMC[j] * std::conj(m_CMC[j] * sf) * cos(f)/(real_t)m_AMC.size(); 
+                complex_t _w2 = -m_AMC[j] * std::conj(m_CMC[j] * sf) * sin(f)/(real_t)m_AMC.size(); 
+		w1R+=std::real(_w1);
+		w1I+=std::imag(_w1);
+		w2R+=std::real(_w2);
+		w2I+=std::imag(_w2);
+
             }
+	    w1 = complex_t(w1R, w1I);
+	    w2 = complex_t(w2R, w2I);
+	    
+
             if (m_BConj[i]==1){
                 return m_CNorm + std::norm(sf) * m_ANorm + 2 * std::real( std::conj(w1) + complex_t(0,1) *  std::conj(w2) );
             }
@@ -326,9 +367,11 @@ namespace AmpGen
 
         real_t LL(){
             real_t ll=0;
+            /*
             for (size_t i=0;i<m_gA.size();i++){
                 ll+=LLGam(i);
             }
+            */
             for (size_t i=0;i<m_A.size();i++){
                 ll+=LLCorr(i);
             }
@@ -346,9 +389,11 @@ namespace AmpGen
             for (int i=0;i<m_A.size();i++){
                 ll+=LLCorr(i);
             }
+            /*
             for (int i=0; i< m_gA.size();i++){
                 ll+=LLGam(i);
             }
+            */
             return ll;
 
            

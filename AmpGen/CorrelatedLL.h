@@ -59,7 +59,7 @@ namespace AmpGen
       }
 
     /// Returns negative twice the log-likelihood for this PDF and the given dataset.     
-    double getVal(){
+    double getValOld(){
         double LL = 0;
         if (m_debug) INFO("Begin getVal()");
          
@@ -106,6 +106,14 @@ namespace AmpGen
 
     }
 
+    const real_t getVal() const {
+      real_t ll = 0;
+
+
+      for_each( this->m_pdfs, [&ll]( auto& f ) { ll += f.LL(); } );
+      return ll;
+    }
+
 
 
     double operator() (const eventValueType& event1, const eventValueType& event2){
@@ -125,6 +133,10 @@ namespace AmpGen
 
 
 
+    }
+
+    void prepare(){
+      for_each(this->m_pdfs, [](auto& f){f.prepare();});
     }
     
 
@@ -195,7 +207,7 @@ void setMC(eventListType& events1, eventListType& events2){
     Therefore, named CorrelatedLL, it is useful to use this function to get a likelihood for a PDF containing a single term (i.e. signal or background only).  
     */
   template <class eventListType = EventList, class... pdfTypes> 
-  auto make_LL( pdfTypes&&... pdfs )
+  auto make_correlatedLL( pdfTypes&&... pdfs )
   {
     //return CorrelatedLL<eventListType, pdfTypes...>( std::forward<pdfTypes>( pdfs )... );
     return CorrelatedLL<eventListType, pdfTypes...>( pdfs... );

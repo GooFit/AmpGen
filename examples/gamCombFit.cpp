@@ -484,52 +484,87 @@ for (int i=0; i < tags.size(); i++){
       return 0;
   }
   else{
+      std::vector<pCorrelatedSum> psis;
       EventList mc =  Generator<>(eventType, &rndm).generate(NInt);
       SimFit sfLL;
+      std::vector<CorrelatedLL<EventList, pCorrelatedSum&>* > LLs; 
+INFO("simfit = "<<sfLL.getVal());
       for (int i=0; i < SigData.size(); i++){ 
-        pCorrelatedSum pdf(SigType[i], TagType[i], MPS);
+       INFO("Making pdf "<<i); 
+        auto pdf = pCorrelatedSum(SigType[i], TagType[i], MPS);
+        auto pdf0 = CoherentSum(SigType[i], MPS); 
         EventList tagMC = Generator<>(TagType[i], &rndm).generate(NInt);
         pdf.setEvents(SigData[i], TagData[i]);
-        pdf.setMC(mc, tagMC);
+        pdf0.setEvents(  SigData[i]);
+        pdf0.setMC(mc);
+        pdf0.prepare();
+        real_t prob0 = 0;
+        real_t prob =0;
+               pdf.setMC(mc, tagMC);
         pdf.prepare();
+       pdf.debugNorm();
         INFO("pdf(0,0) = "<<pdf.getVal(SigData[i][0], TagData[i][0]));
-        real_t norm = pdf.norm();
-        INFO("norm = "<<norm);
-
-        INFO("prob(0,0) = "<<pdf.prob(SigData[i][0], TagData[i][0]));
-        real_t nA;
-        real_t nB;
-        real_t nC;
-        real_t nD;
-        for (size_t k=0;k<SigData[i].size();k++){
-          auto v = pdf.getVals(SigData[i][k], TagData[i][k]);
-          auto a = v[0];
-          auto b = v[1];
-          auto c = v[2];
-          auto d = v[3];
-          nA += std::norm(a);
-          nB += std::norm(b);
-          nC += std::norm(c);
-          nD += std::norm(d);
-          INFO("a = "<<a);
-          INFO("|a|^2 = "<<std::norm(a));
-          INFO("|a|^2 = "<<std::pow(std::abs(a), 2));
-
+        INFO("pdfMC(0,0) = "<<pdf.getVal(mc[0], tagMC[0]));
+        
+ for (size_t j=0;j<SigData[i].size();j++){
+            prob0 += pdf0.prob(SigData[i][j]);
+            prob += pdf.prob(SigData[i][j], TagData[i][j]);
         }
+        INFO("sum prob(A) = "<<prob0);
+        INFO("sum prob = "<<prob);
+
+ //       real_t norm = pdf.norm();
+  //      INFO("norm = "<<norm);
+        pdf.updateNorm();
+
+     
+
         
-  
                
-        //CorrelatedLL<EventList, pCorrelatedSum&> LLCorr = make_likelihood(SigData[i], TagData[i], pdf);
-        
-        //INFO("LLCorr = "<<LLCorr.getVal());
+        auto LLCorr = make_likelihood(SigData[i], TagData[i], pdf);
+        LLCorr.setMC(mc, tagMC);
+        LLCorr.prepare();
+        LLs.push_back(&LLCorr);
+        INFO("LLCorr = "<<LLCorr.getVal());
+//        sfLL.add(LLCorr);
         /*
         sfLL.add(LLCorr);
         INFO("sfLL = "<<sfLL.getVal());
         */
+
       } 
+      INFO("Done with thye loop");
+//INFO("simfit = "<<sfLL.getVal());
+
+
+//      auto LL = CombCorrLL(SigData, TagData, SigType[0], TagType, MPS, NInt, seed);    
+      //auto LL = CombCorrLL(psis);
+     auto LL0 = LLs[0]; 
+     INFO("LL0 = "<<LL0);
+     INFO("LL0 = "<<LL0->getVal());
+     //auto _LL = *LL0;
+     //INFO("LL0 = "<<_LL.getVal());
+     // INFO("LL = "<<LLs[0].getVal());
+      /*
+      polyLASSO lasso(sfLL, MPS);
+      
+      INFO("lasso = "<<lasso.getVal());
+      Minimiser mini = Minimiser(lasso, &MPS);
+      mini.gradientTest();
+      ProfileClock miniClock;
+      miniClock.start();
+      mini.doFit();
+      miniClock.stop();
+      INFO("Minimiser took "<<miniClock.t_duration/1000<<" s");
+      FitResult * fr = new FitResult(mini);
+      fr->writeToFile(logFile);
+*/
+
+
       return 0;
 
   }
+}
 //return 0;
 
 /*
@@ -649,5 +684,3 @@ paramsFile.close();
   fCov->Close();
   
 */
-  return 0;
-}
