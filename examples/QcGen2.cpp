@@ -251,14 +251,17 @@ for( auto& tag : tags ){
  TTree * tagTree = acceptedTag.tree(tagname.str().c_str());
  tagTree->Write(tagname.str().c_str());
 
-   TNtuple * tup = new TNtuple( (tagname.str()+ "_vals").c_str(), (tagname.str() + "_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI");
+   TNtuple * tup = new TNtuple( (tagname.str()+ "_vals").c_str(), (tagname.str() + "_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI:dd:f");
   for (int i=0; i < acceptedSig.size(); i++){
     auto v = cs.getVals(acceptedSig[i], acceptedTag[i]);
     auto a = v[0];
     auto b = v[1];
     auto c = v[2];
     auto d = v[3];
-    tup->Fill(std::real(a), std::imag(a),std::real(b), std::imag(b),std::real(c), std::imag(c),std::real(d), std::imag(d));
+    auto psi = v[4];
+    auto f = v[5];
+    auto dd = std::imag(log ( a * std::conj(c)/std::abs(a * std::conj(c))  ));
+    tup->Fill(std::real(a), std::imag(a),std::real(b), std::imag(b),std::real(c), std::imag(c),std::real(d), std::imag(d),dd, std::real(f));
 
   }
     tup->Write();

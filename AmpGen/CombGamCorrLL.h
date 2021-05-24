@@ -134,12 +134,12 @@ namespace AmpGen
                         CoherentSum * B = new CoherentSum(m_TagType[i].conj(true), m_mps); INFO("size(B) = "<<B->size()); B->setEvents(mc_tag); B->setMC(mc_tag); B->transferParameters(); B->prepare(); m_BNorms.insert(std::pair<size_t, real_t>(i, B->norm())); BMC.push_back(B->getValNoCache(mc_tag[0])); B->reset(true); delete B;
 
                         
-                        for (auto v : BMC) m_BNorms[i] += std::norm(v)/(size_t)BMC.size();
+                      //  for (auto v : BMC) m_BNorms[i] += std::norm(v)/(size_t)BMC.size();
                         INFO("B Norm = "<<m_BNorms[i]);
 
                         INFO("Setting up MC for D");
                         CoherentSum * D = new CoherentSum(m_TagType[i], m_mps);            D->setEvents(mc_tag); D->setMC(mc_tag); D->transferParameters(); D->prepare(); m_DNorms.insert(std::pair<size_t, real_t>(i, D->norm())); DMC.push_back(D->getValNoCache(mc_tag[0])); D->reset(true); delete D;
-                        for (auto v : DMC) m_DNorms[i] += std::norm(v)/(size_t)DMC.size();
+                     //   for (auto v : DMC) m_DNorms[i] += std::norm(v)/(size_t)DMC.size();
                         INFO("D Norm = "<<m_DNorms[i]);
                     }
                     else{
@@ -160,11 +160,12 @@ namespace AmpGen
                 //m_DMC.insert(std::pair<EventType, std::vector<complex_t> >(m_TagType[i],DMC));
             }
             //Data
-            std::vector<complex_t> vA;
-            std::vector<complex_t> vB;
-            std::vector<complex_t> vC;
-            std::vector<complex_t> vD;
             for (int i=0;i<SigData.size();i++){
+
+                std::vector<complex_t> vA= {};
+                std::vector<complex_t> vB = {};
+                std::vector<complex_t> vC= {};
+                std::vector<complex_t> vD = {};
 
                 INFO("Setting up data "<<i<<" for A");
                 CoherentSum * A = new CoherentSum(m_SigType, m_mps);               A->setEvents(SigData[i]); A->setMC(mc);  A->transferParameters(); A->prepare();for (auto& evt:SigData[i]) {vA.push_back(A->getValNoCache(evt));} A->reset(true); delete A;
@@ -176,10 +177,13 @@ namespace AmpGen
                 CoherentSum * D = new CoherentSum(m_TagType[i], m_mps);            D->setEvents(TagData[i]); D->setMC(mc);  D->transferParameters(); D->prepare();for (auto& evt:TagData[i]) {vD.push_back(D->getValNoCache(evt));} D->reset(true); delete D;
                 PhaseCorrection pc(m_mps);
                 INFO("Preparing phase correction for "<<i);
+                
                 pc.setEvents(SigData[i]);
                 pc.prepareCache();
+                INFO("vA size = "<<vA.size());
                 m_pc.push_back(pc);
                 m_A.push_back(vA);
+                INFO("mA size = "<<m_A[i].size());
                 m_B.push_back(vB);
                 m_C.push_back(vC);
                 m_D.push_back(vD);
@@ -274,7 +278,8 @@ namespace AmpGen
 	///
 	//
 	    #pragma omp parallel for reduction( +: ll )
-            for (size_t j=0; j < m_A.size(); j++){
+            for (size_t j=0; j < m_A[i].size(); j++){
+              
                 real_t f1 = m_pc[i].getValCache(j);
                 if (m_SigType==m_TagType[i]){
                     real_t f2 = m_pcT.getValCache(j);

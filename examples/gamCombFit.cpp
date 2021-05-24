@@ -247,10 +247,10 @@ int main( int argc, char* argv[] )
   rndm.SetSeed( seed );
   gRandom = &rndm;
 
-  if (m_debug) INFO("LogFile: " << logFile << "; Plots: " << plotFile );
+  INFO("LogFile: " << logFile << "; Plots: " << plotFile );
    #ifdef _OPENMP
   omp_set_num_threads( nThreads );
-  if (m_debug) INFO( "Setting " << nThreads << " fixed threads for OpenMP" );
+  INFO( "Setting " << nThreads << " fixed threads for OpenMP" );
   omp_set_dynamic( 0 );
 #endif
 
@@ -472,7 +472,7 @@ for (int i=0; i < tags.size(); i++){
       simfit.add(LL);
 
       polyLASSO lasso(simfit, MPS);
-      Minimiser mini = Minimiser(lasso, &MPS);
+      Minimiser mini = Minimiser(LL, &MPS);
       mini.gradientTest();
       ProfileClock miniClock;
       miniClock.start();
@@ -487,13 +487,16 @@ for (int i=0; i < tags.size(); i++){
       std::vector<pCorrelatedSum> psis;
       EventList mc =  Generator<>(eventType, &rndm).generate(NInt);
       SimFit sfLL;
-      std::vector<CorrelatedLL<EventList, pCorrelatedSum&>* > LLs; 
+      std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > LLs; 
 INFO("simfit = "<<sfLL.getVal());
       for (int i=0; i < SigData.size(); i++){ 
        INFO("Making pdf "<<i); 
+       /*
         auto pdf = pCorrelatedSum(SigType[i], TagType[i], MPS);
         auto pdf0 = CoherentSum(SigType[i], MPS); 
+        */
         EventList tagMC = Generator<>(TagType[i], &rndm).generate(NInt);
+        /*
         pdf.setEvents(SigData[i], TagData[i]);
         pdf0.setEvents(  SigData[i]);
         pdf0.setMC(mc);
@@ -512,39 +515,55 @@ INFO("simfit = "<<sfLL.getVal());
         }
         INFO("sum prob(A) = "<<prob0);
         INFO("sum prob = "<<prob);
+        */
+        SigInt.push_back(mc);
+        TagInt.push_back(tagMC);
+        sumFactors.push_back("Psi3770");
 
  //       real_t norm = pdf.norm();
   //      INFO("norm = "<<norm);
-        pdf.updateNorm();
+//        pdf.updateNorm();
 
      
 
         
                
-        auto LLCorr = make_likelihood(SigData[i], TagData[i], pdf);
-        LLCorr.setMC(mc, tagMC);
-        LLCorr.prepare();
-        LLs.push_back(&LLCorr);
-        INFO("LLCorr = "<<LLCorr.getVal());
-//        sfLL.add(LLCorr);
+       // CombGamCorrLL LL(SigData, TagData, SigType[0], TagType, constAmps, BSigData, BgammaSigns, BuseXYs, BConj, MPS);
+       // real_t norm0 = LL.NormCorr(i);
+//    INFO("CombGamCorrLL::norm("<<i<<")= "<<norm0);
+//        INFO("ComGamCorrLL::LLCorr("<<i<<") = "<<LL.LLCorr(i));
+ //       INFO("pdf norm = "<<pdf.norm());
+    
+
+//        auto LLCorr = make_likelihood(SigData[i], TagData[i], pdf);
+//        LLCorr.setMC(mc, tagMC);
+ //       LLCorr.prepare();
+       
+  //      INFO("LLCorr = "<<LLCorr.getVal());
+//LLs.push_back(LLCorr);
+       // sfLL.add(LLCorr);
         /*
         sfLL.add(LLCorr);
         INFO("sfLL = "<<sfLL.getVal());
         */
 
       } 
-      INFO("Done with thye loop");
-//INFO("simfit = "<<sfLL.getVal());
+    
 
 
-//      auto LL = CombCorrLL(SigData, TagData, SigType[0], TagType, MPS, NInt, seed);    
+
+      auto LL = CombCorrLL(SigData, TagData, SigInt, TagInt, SigType, TagType, MPS, sumFactors);    
+      sfLL.add(LL);
+      INFO("LL = "<<sfLL.getVal());
+      Minimiser mini =Minimiser(sfLL, &MPS);
+      mini.gradientTest();
+      mini.doFit();
+      FitResult * fr = new FitResult(mini);
+      fr->writeToFile(logFile);
       //auto LL = CombCorrLL(psis);
-     auto LL0 = LLs[0]; 
-     INFO("LL0 = "<<LL0);
-     INFO("LL0 = "<<LL0->getVal());
-     //auto _LL = *LL0;
+    //auto _LL = *LL0;
      //INFO("LL0 = "<<_LL.getVal());
-     // INFO("LL = "<<LLs[0].getVal());
+  //    INFO("LL = "<<LLs[0].getVal());
       /*
       polyLASSO lasso(sfLL, MPS);
       
