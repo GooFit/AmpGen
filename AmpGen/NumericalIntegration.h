@@ -5,6 +5,7 @@
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/simd/utils.h"
 #include "AmpGen/simd/integrate_fp.h"
+#include <queue>
 
 namespace AmpGen {
   template <typename function_type> double integrate_1d( const function_type& fcn, const double& min, const double& max, gsl_integration_workspace* ws = nullptr)
@@ -13,7 +14,7 @@ namespace AmpGen {
     double result = 0;
     double error  = 0;
     gsl_function F;
-  //  static_assert( is_functor<function_type, double( const double& )>::value == std::true_type , "function is of wrong type");
+    //  static_assert( is_functor<function_type, double( const double& )>::value == std::true_type , "function is of wrong type");
     if constexpr( is_functor<function_type, double( const double& )>::value )
     { 
       F.function = [](double x, void* p) -> double { return (*static_cast<function_type*>(p))(x); };
@@ -62,11 +63,11 @@ namespace AmpGen {
     int index = {0};
     std::array<double, dim> a     = {0};
     std::array<double, dim> b     = {0};
+    bool operator<( const integral<dim>& other) const { return var < other.var; }
   };  
 
   template<unsigned dim, typename fcn> std::tuple<double, double, unsigned> integrate_fp( const fcn& F, const std::array<double,dim>& ctr, const std::array<double, dim>& wth )
   {
-    //      integrate_fp_avx2d
     if constexpr( is_functor<fcn, double(const std::array<float_v, dim>&)>::value and utils::size<float_v>::value == 4 )
       return AmpGen::integrate_fp_avx2d<dim>(F, ctr, wth);
     else 
@@ -77,12 +78,12 @@ namespace AmpGen {
 
   template <unsigned dim, typename fcn> double integrate(const fcn& F, const std::array<double, dim> xmin, const std::array<double, dim>&  xmax)
   {
-    // Based off of Math/IntegratorMultiDim
+    // Based off of ROOT Math/IntegratorMultiDim
     // With improved speed and safety:
     // - No dynamic memory allocation
     // - Static dimension of integrals 
     // - Supports vectorised integrands  
-    // References to actual method [again, from Math/IntegratorMultiDim
+    // References to actual method [again, from ROOT Math/IntegratorMultiDim]
     //   1.A.C. Genz and A.A. Malik, Remarks on algorithm 006:
     //     An adaptive algorithm for numerical integration over
     //     an N-dimensional rectangular region, J. Comput. Appl. Math. 6 (1980) 295-302.
@@ -95,7 +96,8 @@ namespace AmpGen {
       }
       else static_assert(true, "1D function doesn't have recognised signature");
     }
-    else { 
+    else {
+
       double epsrel = 1e-9;  //specified relative accuracy
       double epsabs = 0.; //specified relative accuracy
       //output parameters
@@ -105,14 +107,14 @@ namespace AmpGen {
       double abserr = 0;
       auto status  = 3;
 
-      unsigned int ifncls = 0;
+      unsigned int ifncls = 0; /// number of function calls 
       bool  ldv   = false;
       unsigned isbrgn = 1;
       unsigned isbrgs = 1;
 
-      constexpr unsigned irlcls = get_power<2,dim>::value +2*dim*(dim+1)+1;
-      constexpr unsigned minpts = get_power<2,dim>::value +2*dim*(dim+1)+1;
-      constexpr unsigned maxpts = 100000;//specified maximal number of function evaluations
+      constexpr unsigned irlcls = get_power<2,dim>::value +2*dim*(dim+1)+1; // number of function evaluations per iteration
+      constexpr unsigned minpts = get_power<2,dim>::value +2*dim*(dim+1)+1; // minimum number of function evaluations
+      constexpr unsigned maxpts = 100000;                                   // maximum number of function evaluations
 
       std::array<integral<dim>, ( 1 + maxpts/irlcls)/2 > partial_integrals; 
 
@@ -179,7 +181,7 @@ namespace AmpGen {
         if ((relerr < epsrel && aresult < epsabs) or 
             ( ( relerr < epsrel || abserr < epsabs ) && ifncls > minpts) ){ status = 0; break ; }
         if (( isbrgs >= partial_integrals.size()-1) or ( ifncls+2*irlcls > maxpts ) )  { status = 2; break; }
-//        std::cout << "#calls: " << ifncls << ", #cycles: " << isbrgs << " / " << ( 1 + maxpts/irlcls)/2 << std::endl; 
+        //        std::cout << "#calls: " << ifncls << ", #cycles: " << isbrgs << " / " << ( 1 + maxpts/irlcls)/2 << std::endl; 
         ldv = true;
         isbrgn  = 1;
         current_integral = &( partial_integrals[isbrgn] );
@@ -194,6 +196,7 @@ namespace AmpGen {
       } while( status == 3 ); 
 
       return result;         //an approximate value of the integral
+
     }
   }
 }

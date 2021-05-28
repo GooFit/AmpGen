@@ -28,27 +28,34 @@ namespace AmpGen
   class DynamicFCN<RETURN_TYPE( IN_TYPES... )>
   {
   private:
-    void* m_handle                        = {nullptr};
+    struct LibHandle {
+      void* handle={nullptr}; 
+      LibHandle(void* handle) : handle(handle) {};
+      ~LibHandle(){ if( handle !=nullptr) dlclose(handle); }
+      operator void*(){ return handle; }
+    };
+
+    std::shared_ptr<LibHandle> m_handle   = {nullptr};
     RETURN_TYPE ( *m_fcn )( IN_TYPES... ) = {nullptr};
 
   public:
     DynamicFCN() = default; 
     DynamicFCN( const std::string& lib, const std::string& name ) : 
-      m_handle(dlopen( lib.c_str(), RTLD_NOW )) {
-        set(m_handle,name);
+      m_handle(std::make_shared<LibHandle>(dlopen( lib.c_str(), RTLD_NOW ))) {
+      set(*m_handle,name);
     }
-    DynamicFCN( void* handle, const std::string& name ) : m_handle(handle) { set( handle, name ); }
-    ~DynamicFCN() = default;
+    DynamicFCN( void* handle, const std::string& name ) : m_handle(std::make_shared<LibHandle>(handle)) { set( handle, name ); }
+    ~DynamicFCN(){ }
 
     bool set( const std::string& lib, const std::string& name )
     {
       DEBUG("Linking handle: " << lib << ":" << name );
-      m_handle = dlopen( lib.c_str(), RTLD_NOW );
+      m_handle = std::make_shared<LibHandle>( dlopen( lib.c_str(), RTLD_NOW ) );
       if( !m_handle ){
         DEBUG( dlerror() );
         return false;
       }
-      return set(m_handle,name);
+      return set(*m_handle,name);
     }
     bool set( void* handle, const std::string& name, bool isFatal = false)
     {

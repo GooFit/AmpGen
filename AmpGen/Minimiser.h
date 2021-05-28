@@ -32,7 +32,7 @@ namespace AmpGen
   class Minimiser
   {
   private:
-    def_has_function(getVal);
+    def_has_function(getVal)
 
   public:
     template <typename TYPE> void setFunction( TYPE& fcn )
