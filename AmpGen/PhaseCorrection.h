@@ -9,6 +9,7 @@
 #include "AmpGen/Event.h"
 #include <TF1.h>
 #include <Math/WrappedTF1.h>
+#include "TMatrixTSym.h"
 //#include <Math/SpecFunMathMore.h>
 //#include "AmpGen/Polynomials.h"
 namespace AmpGen{
@@ -65,6 +66,31 @@ namespace AmpGen{
                     }
             
             }
+            
+            const real_t Poly1D(real_t x, size_t i) const {
+
+                if (m_PolyType=="antiSym_legendre"){
+                    return fastLegendre(x, i);
+                }
+                else if (m_PolyType=="antiSym_simple"){
+                    return std::pow(x, i); 
+                }
+                
+            }
+
+
+
+
+            const real_t Poly2D(real_t x, real_t y, size_t i, size_t j)const {
+                if (m_PolyType=="antiSym_legendre"){
+                    return fastLegendre(x, i) * fastLegendre(y, 2 * j + 1);
+                }
+                else if (m_PolyType=="antiSym_simple"){
+                    return std::pow(x, i) * std::pow(y, 2 * j + 1);
+                }
+                
+            }
+
             const real_t calcPoly(real_t x, real_t y, size_t order) const {
                 real_t p=0;
                 for (size_t i=0; i<order+1;i++){
@@ -77,6 +103,7 @@ namespace AmpGen{
                     	p+=m_mps["PhaseCorrection::C"+std::to_string(i1)+"_"+std::to_string(2*i2+1)]->mean() * std::pow(x, i1) * std::pow(y,2 * i2 + 1);
 		    }
 
+
                     if (m_debug) INFO("f"<<i1<<i2<<" = "<<p);
                 }
                 return p;
@@ -86,7 +113,19 @@ namespace AmpGen{
             
 
 
-            PhaseCorrection(const MinuitParameterSet& mps) : m_mps(mps), m_order(NamedParameter<size_t>("PhaseCorrection::Order", 2)), m_debug(NamedParameter<bool>("PhaseCorrection::debug", true)), m_start(NamedParameter<size_t>("PhaseCorrection::Start", 0)), m_PolyType(NamedParameter<std::string>("PhaseCorrection::PolyType", "antiSym_legendre")) {}
+            PhaseCorrection(const MinuitParameterSet& mps) : m_mps(mps), m_order(NamedParameter<size_t>("PhaseCorrection::Order", 2)), m_debug(NamedParameter<bool>("PhaseCorrection::debug", true)), m_start(NamedParameter<size_t>("PhaseCorrection::Start", 0)), m_PolyType(NamedParameter<std::string>("PhaseCorrection::PolyType", "antiSym_legendre")) {
+                size_t i=0;
+            for (size_t j=0;j<m_order+1;j++){
+                    for (size_t k=0;k<m_order +1 -j ; k++){
+                        auto v= std::vector<size_t>({j, k});
+                        auto p = std::pair<size_t, std::vector<size_t> >(i, v);
+                        m_ijs.insert(p);
+                        INFO("i = "<<i<<", j = "<<j<<", k = "<<k);
+                        i++;
+                        
+                    }
+                }
+           }
             PhaseCorrection() = default;
             const std::vector<real_t> getXY(Event event) const {
                  auto x = event.s(0,1);
@@ -207,6 +246,118 @@ namespace AmpGen{
                 return p;
 
             }
+
+            const real_t est_errCorrL(const Event event, TMatrixTSym<double>* pcov,  bool useCov=false , size_t startFrom=0, size_t until=0) const {
+                real_t result = 0;
+                auto XY = getXY(event);
+                auto x = XY[0];
+                auto y = XY[1];
+
+
+                
+              //  INFO("At start of err_estCorrL"); 
+ 
+
+               auto ijs = m_ijs;
+                        
+
+                if (useCov){
+
+                    auto cov = (*pcov);
+
+                for (size_t i=startFrom; i<cov.GetNrows() - until;i++){
+                    for (size_t j=startFrom; j<cov.GetNcols() - until;j++){
+             
+             
+             
+                        size_t i1 = ijs[i][0];
+             
+                        size_t j1 = ijs[i][1];
+                        size_t i2 = ijs[j][0];
+                        size_t j2 = ijs[j][1];
+
+
+                     
+
+
+                        //result += cov[i][j] * Poly1D(x, i) * Poly1D(y, 2*j+1);
+                        result += cov[i][j] * Poly1D(x, i1) * Poly1D(y, 2*j1+1) * Poly1D(x, i2) * Poly1D(y, 2*j2+1);
+
+                    }
+                }
+                }
+                else{
+
+                    for (size_t i=0; i < m_order; i++){
+                        for (size_t j=0;j< m_order -i;j++){
+                            result += std::norm( m_mps["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j +1)]->err() * Poly1D(x, i) * Poly1D(y, 2*j+1) );
+                        }
+                    }
+
+                }
+                return sqrt(result);
+            }
+
+            const real_t est_errCov(const Event event1, const Event event2, TMatrixTSym<double> cov = TMatrixTSym<double>(), size_t startFrom=0, size_t until=0) const {
+                real_t result = 0;
+                auto XY1 = getXY(event1);
+                auto x1 = XY1[0];
+                auto y1 = XY1[1];
+
+                auto XY2 = getXY(event2);
+                auto x2 = XY2[0];
+                auto y2 = XY2[1];
+
+
+
+                
+                INFO("At start of err_estCorrL"); 
+ 
+
+                int nE = cov.GetNoElements();
+                INFO("nE = "<<nE);
+              
+
+
+                auto ijs = m_ijs;
+                        
+
+                if (nE>0){
+
+                for (size_t i=startFrom; i<cov.GetNrows() - until;i++){
+                    for (size_t j=startFrom; j<cov.GetNcols() - until;j++){
+             
+             
+             
+                        size_t i1 = ijs[i][0];
+             
+                        size_t j1 = ijs[i][1];
+                        size_t i2 = ijs[j][0];
+                        size_t j2 = ijs[j][1];
+
+
+                     
+
+
+                        //result += cov[i][j] * Poly1D(x, i) * Poly1D(y, 2*j+1);
+                        result += cov[i][j] * Poly1D(x1, i1) * Poly1D(y1, 2*j1+1) * Poly1D(x2, i2) * Poly1D(y2, 2*j2+1);
+
+                    }
+                }
+                }
+                else{
+
+                    for (size_t i=0; i < m_order; i++){
+                        for (size_t j=0; m_order -i;j++){
+                            result += std::norm(m_mps["PhaseCorrecion::C" + std::to_string(i) + "_" + std::to_string(2 * j +1)]->err()) * Poly1D(x1, i) * Poly1D(y1, 2*j+1) * Poly1D(x2, i) * Poly1D(y2, 2*j+1) ;
+
+                        }
+                    }
+
+                }
+                return result;
+            }
+
             std::function<real_t(real_t,real_t,size_t,MinuitParameterSet)> makefunc(){
                 size_t order = m_order;
                 std::function<real_t(real_t,real_t,int,MinuitParameterSet)> f = 
@@ -295,6 +446,8 @@ namespace AmpGen{
             EventList* m_events = {nullptr};
             //std::map< const real_t*, const std::map<std::string, real_t> > m_cache = {};
             std::vector< std::map<std::string, real_t> > m_cache = {};
+            std::map<size_t , std::vector<size_t> > m_ijs;
+
           
 
     };

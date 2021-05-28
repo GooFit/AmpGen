@@ -86,7 +86,7 @@ int main( int argc, char* argv[] )
     ///  eventType = eventType.conj(true);
    // }
 
-    auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY, B_Conj);
+    auto sig = pCoherentSum(eventType, MPS , gammaSign, useXY, B_Conj);
 
 
 

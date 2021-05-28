@@ -11,7 +11,7 @@ using namespace AmpGen;
 
 pCoherentSum::pCoherentSum() = default; 
 
-pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType,
+pCoherentSum::pCoherentSum(const EventType& type1, const MinuitParameterSet& mps,
 int gammaSign, bool useXY, bool BConj):
   m_debug(NamedParameter<bool>("pCoherentSum::debug", false, "Print Debug messages for pCoherentSum")),
   
@@ -33,16 +33,16 @@ m_type1(type1),
 
 
 
-  m_flat(NamedParameter<bool>("pCoherentSum::flat", false, "Force Amplitude=1")),
+  m_flat(NamedParameter<bool>("pCoherentSum::flat", false, "Force Amplitude=1"))
 
 
 
 
 
-  m_SFType(SFType)
+  
 {
 
-  if (m_BConj) m_type1 = m_type1.conj(true);
+//  if (m_BConj) m_type1 = m_type1.conj(true);
 
   m_A = CoherentSum(m_type1, m_mps),
 
@@ -72,11 +72,23 @@ real_t pCoherentSum::norm() const {
     //real_t f = m_pcMC1.getValCache((m_sim1)[i].address());
     real_t f = m_pcMC1.calcCorrL((m_sim1)[i]);
     
-    z += (m_A.getValNoCache((m_sim1)[i]) * std::conj(m_C.getValNoCache((m_sim1)[i])) * exp(complex_t(0,f)));
+
+    if (m_BConj){
+
+      z += (m_C.getValNoCache((m_sim1)[i]) * std::conj(m_A.getValNoCache((m_sim1)[i])) * exp(complex_t(0,f)));
+    }
+    else{
+      z += (m_A.getValNoCache((m_sim1)[i]) * std::conj(m_C.getValNoCache((m_sim1)[i])) * exp(complex_t(0,f)));
+    }
     z = z/(real_t)m_sim1.size(); 
  }
 
+if (m_BConj){
  return m_A.norm() + std::norm(sumFactor) * m_C.norm() + 2 * std::real(z * std::conj(sumFactor));
+}
+else {
+ return m_C.norm() + std::norm(sumFactor) * m_A.norm() + 2 * std::real(z * std::conj(sumFactor));
+}
 
 }
 
@@ -137,7 +149,13 @@ complex_t pCoherentSum::getVal(const Event& evt1) const {
   auto f = m_pc1.calcCorrL(evt1)/2;
 
  // return m_A.getVal(evt1) * m_B.getVal(evt2) * exp( std::complex<double>(0,1) ) + getSumFactor() *  m_C.getVal(evt1) * m_D.getVal(evt2) * exp(-std::complex<double>(0,1) );
+ if (m_BConj){
+  return m_C.getVal(evt1) * exp(complex_t(0, f)) + getSumFactor() *  m_A.getVal(evt1) * exp(complex_t(0, -f));
+ }
+  else{
   return m_A.getVal(evt1) * exp(complex_t(0, f)) + getSumFactor() *  m_C.getVal(evt1) * exp(complex_t(0, -f));
+ }
+
 }
 complex_t pCoherentSum::getValNoCache(const Event& evt1) const {
   complex_t A = m_A.getValNoCache(evt1);

@@ -189,7 +189,7 @@ INFO("B DecayType = "<<BTag);
     if (B_Conj == 1){
       //eventType = eventType.conj(true);
    }
-    pCoherentSum sig2( eventType, MPS, B_Pref, gammaSign, useXY, B_Conj);
+    pCoherentSum sig2( eventType, MPS, gammaSign, useXY, B_Conj);
     EventList mc( eventType);
       Generator<PhaseSpace> signalGenerator( phsp );
 //      CoherentSum sig(eventType, MPS);

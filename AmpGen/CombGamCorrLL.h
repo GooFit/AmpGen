@@ -53,8 +53,8 @@ namespace AmpGen
 
 
         std::vector<int> m_gammaSigns;
-        std::vector<int> m_useXYs;
-        std::vector<int> m_BConj;
+        std::vector<bool> m_useXYs;
+        std::vector<bool> m_BConj;
         bool m_print;
 
         std::vector<PhaseCorrection> m_pc={};
@@ -75,9 +75,9 @@ namespace AmpGen
 
 		   std::vector<EventList> GamData, 
            std::vector<int> gammaSigns,
-           std::vector<int> useXYs,
+           std::vector<bool> useXYs,
 
-           std::vector<int> BConj,
+           std::vector<bool> BConj,
             MinuitParameterSet mps):
             m_SigType(SigType),
             m_TagType(TagType),

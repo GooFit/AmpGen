@@ -948,7 +948,7 @@ void doBFit(){
     gammaSigns.push_back(gammaSign);
     useXYs.push_back(useXY);
     B_Conjs.emplace_back(B_Conj);
-    auto cs_B = pCoherentSum(BEventType,  MPS, B_Pref , gammaSign, useXY);
+    auto cs_B = pCoherentSum(BEventType,  MPS , gammaSign, useXY);
     cs_B.setEvents(sigevents_B);
     cs_B.setMC(sigMCevents_B);
     cs_B.prepare();
@@ -1421,7 +1421,7 @@ void tFit(){
   EventList sigevents = EventList(dataFile, sigType);
   EventList sigMCevents = EventList(intFile, sigType);
 
-  pCoherentSum sig(sigType, MPS, "Bp2Dhp", 1, true);
+  pCoherentSum sig(sigType, MPS, 1, true);
   sig.setEvents(sigevents);
   sig.setMC(sigMCevents);
   sig.prepare();

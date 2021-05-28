@@ -51,7 +51,7 @@ class pCoherentSum {
     public:
       //Takes amplitudes - 
         pCoherentSum();
-        pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, std::string SFType="Psi3770",
+        pCoherentSum(const EventType& type1, const MinuitParameterSet& mps, 
         int gammaSign = 1, bool useXY = true, bool BConj = false );
 
         virtual ~pCoherentSum()=default;
@@ -93,24 +93,21 @@ class pCoherentSum {
 
 
     complex_t getSumFactor()const {
-        if (m_SFType=="Psi3770"){
-            return -1;
-        }
-        else{
-            if (m_useXY){
-                if (m_gammaSign==-1){
-                    return complex_t(m_mps["pCoherentSum::x-"]->mean(), m_mps["pCoherentSum::y-"]->mean());
-                }
-                if (m_gammaSign==1){
-                    return complex_t(m_mps["pCoherentSum::x+"]->mean(), m_mps["pCoherentSum::y+"]->mean());
-                }
-            }
-            else{
-                return m_mps["pCoherentSum::rB"]->mean() * exp(complex_t(0, m_mps["pCoherentSum::deltaB"]->mean() + m_gammaSign * m_mps["pCoherentSum::gamma"]->mean()));
-                
 
-            }
-       }
+    if (m_useXY){
+        if (m_gammaSign==-1){
+            return complex_t(m_mps["pCoherentSum::x-"]->mean(), m_mps["pCoherentSum::y-"]->mean());
+        }
+        if (m_gammaSign==1){
+            return complex_t(m_mps["pCoherentSum::x+"]->mean(), m_mps["pCoherentSum::y+"]->mean());
+        }
+    }
+    else{
+        return m_mps["pCoherentSum::rB"]->mean() * exp(complex_t(0, m_mps["pCoherentSum::deltaB"]->mean() + m_gammaSign * m_mps["pCoherentSum::gamma"]->mean()));
+        
+
+    }
+
         
     }
     
@@ -495,7 +492,7 @@ real_t LL(){
     protected:
         double  m_norm  =    {0};
         MinuitParameterSet m_mps;
-        std::string m_SFType;
+
         CoherentSum  m_A;
 
         CoherentSum  m_C;

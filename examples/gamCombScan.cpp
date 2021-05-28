@@ -327,7 +327,7 @@ MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     //  eventType = eventType.conj(true);
    // }
 
-    auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY, B_Conj);
+    auto sig = pCoherentSum(eventType, MPS , gammaSign, useXY, B_Conj);
 
     std::string DataFile = NamedParameter<std::string>("BDataSample", "");
     std::string IntFile = NamedParameter<std::string>("BIntegrationSample", "");

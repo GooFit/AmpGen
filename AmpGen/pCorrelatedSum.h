@@ -557,7 +557,7 @@ const real_t LL() const {
         EventList *  m_events1 = {nullptr};
         EventList * m_sim1  = {nullptr};
         EventList * m_events2 = {nullptr};
-        EventList * m_sim2 = {nullptr};
+        EventList * m_sim2  = {nullptr};
         
         EventType m_type1;
         EventType m_type2;   

@@ -32,11 +32,11 @@ namespace AmpGen
         std::vector<EventType> m_TagType;
         MinuitParameterSet m_mps;
         bool m_debug;
-        std::vector<pCorrelatedSum> m_Psi;
+        std::vector<pCorrelatedSum> m_Psi = {};
         std::vector<pCorrelatedSum*> m_Psi2;
         std::vector<std::string> m_SumFactors;
         
-
+        EventList m_MC;
 
       public:
         CombCorrLL() = default;
@@ -52,6 +52,123 @@ namespace AmpGen
 
           }
 
+//void makeProjection(pCorrelatedSum cs_tag, std::string tag_plotName, std::string prefix ,int nBins, EventList sigevents_tag, EventList tagevents_Tag, EventList sigMCevents_tag, EventList tagMCevents_tag){
+void makeProjection(int i, std::string tag_plotName, std::string prefix ,int nBins){
+        INFO("@"<<i);
+        auto cs_tag = m_Psi[i];
+        auto sigevents_tag = m_SigData[i];
+        //auto sigMCevents_tag = m_SigInt[i];
+        auto sigMCevents_tag = m_SigInt[0];
+        auto tagevents_tag = m_TagData[i];
+        auto tagMCevents_tag = m_TagInt[i];
+
+        INFO( "norm[1] = " << cs_tag.norm() );
+        TFile* f = TFile::Open(tag_plotName.c_str(),"UPDATE");
+        auto projections = sigevents_tag.eventType().defaultProjections(nBins);
+        real_t norm = cs_tag.norm();
+        for( auto& projection : projections ){
+          auto data_plot = projection(sigevents_tag, Prefix(prefix));
+          auto hist = projection.plot(prefix);
+          real_t integral = 0;
+          for(unsigned i = 0 ; i != sigMCevents_tag.size(); ++i)
+          {
+            hist->Fill( projection( sigMCevents_tag[i] ), std::norm(cs_tag.getVal( sigMCevents_tag[i], tagMCevents_tag[i] ))/norm );
+            integral += std::norm(cs_tag.getVal(sigMCevents_tag[i], tagMCevents_tag[i]))/norm;
+
+          }
+          auto data_integral = data_plot->Integral();
+          auto hist_integral = hist->Integral();
+          INFO("data integral = "<<data_integral);
+          INFO("hist integral = "<<hist_integral);
+          INFO("hist integral = "<<integral);
+          //hist->Scale( data_plot->Integral() / hist->Integral() );
+          hist->Scale( data_plot->Integral() / integral );
+          hist->SetName( (std::string("MC_")+hist->GetName()).c_str() );
+          hist->Write();
+          data_plot->Write();
+
+          auto bins = hist->GetBin(hist->GetEntries()) -1;
+          auto x0 = hist->GetBinCenter(0);
+          auto x1 = hist->GetBinCenter(bins +1);
+
+          TH1D * pull = new TH1D( (std::string("Pull_") + hist->GetName()).c_str(), "Pull", bins, x0, x1 );
+          for (int i=0;i<hist->GetEntries();i++){
+            double p=0;
+            double d = hist->GetBinContent(i) - data_plot->GetBinContent(i);
+            double s2 = hist->GetBinContent(i) + data_plot->GetBinContent(i);
+            double x = hist->GetBinCenter(i);
+            if (s2!=0) p=d/sqrt(s2);
+            pull->Fill(x, p);
+          }
+          pull->Write();
+
+
+        }
+        auto p2 = sigMCevents_tag.eventType().defaultProjections(nBins);
+        for( unsigned i = 0 ; i != p2.size() -1; ++i )
+        {
+          for( unsigned j=i+1; j < p2.size(); ++j )
+          {
+            auto dalitz = Projection2D( p2[i], p2[j] );
+            auto hdalitz = dalitz.plot(prefix);
+            auto data_plot = sigevents_tag.makeProjection(dalitz, Prefix(prefix));
+            real_t integral = 0;
+            for( unsigned event = 0 ; event != sigMCevents_tag.size(); ++event )
+            {
+              auto pos = dalitz(sigMCevents_tag[event]);
+              //hdalitz->Fill( pos.first, pos.second, cs_tag.prob( sigMCevents_tag[event], tagMCevents_tag[event] ) );
+              hdalitz->Fill( pos.first, pos.second, std::norm(cs_tag.getVal( sigMCevents_tag[event], tagMCevents_tag[event] ))/norm );
+              integral += std::norm(cs_tag.getVal( sigMCevents_tag[event], tagMCevents_tag[event] ) )/norm;
+            }
+          auto data_integral = data_plot->Integral();
+          //auto hdalitz_integral = hdalitz->Integral();
+          auto hdalitz_integral = integral;
+          INFO("data integral = "<<data_integral);
+          INFO("hdalitz integral = "<<hdalitz_integral);
+          INFO("hdalitz integral = "<<integral);
+
+            //hdalitz->Scale( data_plot->Integral() / hdalitz->Integral() );
+            hdalitz->Scale( data_plot->Integral() / integral );
+            hdalitz->SetName( ( std::string("MC_") + hdalitz->GetName() ).c_str() );
+            hdalitz->Write();
+            data_plot->Write(); 
+
+            auto px = hdalitz->ProjectionX();
+            auto py = hdalitz->ProjectionY();
+
+            auto bins = px->GetBin(px->GetEntries() -1);
+            auto x0 = px->GetBinCenter(0);
+            auto x1 = px->GetBinCenter(bins +1);
+
+            bins = py->GetBin(py->GetEntries() -1);
+            auto y0 = py->GetBinCenter(0);
+            auto y1 = py->GetBinCenter(bins +1);
+
+
+//            bins = int(sqrt(bins));
+
+
+            TH2D * pull_2D = new TH2D( (std::string("Pull_") + hdalitz->GetName() ).c_str(), "Pull", bins, x0, x1, bins, y0, y1 );
+            for (int i=0;i<data_plot->GetEntries();i++){
+              for (int j=0;j<hdalitz->GetEntries();j++){
+                double p=0;
+                double d = hdalitz->GetBinContent(i,j) - data_plot->GetBinContent(i,j);
+                double s2 = hdalitz->GetBinContent(i,j) + data_plot->GetBinContent(i,j);
+                if (s2!=0) p = d/sqrt(s2);
+                double x = px->GetBinCenter(i);
+                double y = py->GetBinCenter(j);
+                pull_2D->Fill(x, y, p);
+            }
+          }
+          pull_2D->Write();
+        }
+        }
+        f->Close();
+        
+}
+
+
+
         void setEvents(int i, EventList list1, EventList list2){
           m_Psi[i].setEvents(list1, list2);
         }
@@ -59,6 +176,9 @@ namespace AmpGen
           m_Psi[i].setMC(list1, list2);
         }
 
+        pCorrelatedSum pdf(int i){
+          return m_Psi[i];
+        }
         
 
         CombCorrLL(std::vector<EventList> SigData, 
@@ -68,8 +188,8 @@ namespace AmpGen
                    EventType SigType,
                    std::vector<EventType> TagType,
                    MinuitParameterSet mps,
-                   size_t NInt,
-                   size_t seed
+                   size_t seed,
+                   size_t NInt
         ):
                         m_SigData(SigData),
                         m_TagData(TagData),
@@ -81,30 +201,40 @@ namespace AmpGen
                        // m_SumFactors(sumFactors),
                         m_debug(NamedParameter<bool>("CombCorrLL::Debug", false, "Debug CombCorrLL"))
                         {
-          TRandom3 rndm;
-          rndm.SetSeed( seed );
-          gRandom = &rndm;
+                              TRandom3 rndm;
+                              rndm.SetSeed( seed );
+                              gRandom = &rndm;
 
 
                            
-                            m_SigType.push_back(SigType);
+                           
 
-                            auto mcSig = Generator<>(SigType, &rndm).generate(NInt);
+                            m_MC= Generator<>(SigType, &rndm).generate(NInt);
+                            INFO("n(m_MC) = "<<m_MC.size());
 
                             std::vector<pCorrelatedSum> pCS = {};
                             for (auto i=0; i < m_SigData.size() ; i++){
+
+                               m_TagInt.push_back(Generator<>(TagType[i], &rndm).generate(NInt));
                               if (m_debug) INFO("Making pCorrelatedSum");
-                                pCorrelatedSum _pCS = pCorrelatedSum(SigType, m_TagType[i], m_mps);
+                                pCorrelatedSum _pCS = pCorrelatedSum(SigType, TagType[i], mps);
 
-                                auto mcTag = Generator<>(TagType[i], &rndm).generate(NInt);
+
+                                //m_TagInt.push_back(mcTag);
                                 _pCS.setEvents(m_SigData[i], m_TagData[i]);
-                                _pCS.setMC(mcSig, mcTag);
-                                if (m_debug) INFO("Preparing "<<i+1<<"/"<<m_SigData.size());
+                                _pCS.setMC(m_MC, m_TagInt[i]);
+                                INFO("Preparing "<<i+1<<"/"<<m_SigData.size());
                                 _pCS.prepare();
-                                if (m_debug) INFO("Prepared "<<i+1<<"/"<<m_SigData.size());
-                                m_Psi.push_back(_pCS);
-                            }
+                                INFO("Prepared "<<i+1<<"/"<<m_SigData.size());
 
+                             
+                              _pCS.debugNorm();
+                                INFO("norm = "<<_pCS.norm());
+                                m_Psi.push_back(_pCS);
+                                INFO("Finished making LL"<<i);
+                            }
+                            INFO("Made LLs");
+                            INFO("norm[0] = "<< m_Psi[0].norm());
     //                        m_Psi(*pCS);
 
 
@@ -130,13 +260,19 @@ namespace AmpGen
                         m_debug(NamedParameter<bool>("CombCorrLL::Debug", false, "Debug CombCorrLL"))
                         {
                             std::vector<pCorrelatedSum> pCS = {};
+                            m_MC = SigInt[0];
                             for (auto i=0; i < m_SigData.size() ; i++){
-                                pCorrelatedSum _pCS = pCorrelatedSum(m_SigType[i], m_TagType[i], m_mps, m_SumFactors[i]);
+                                pCorrelatedSum _pCS = pCorrelatedSum(m_SigType[0], m_TagType[i], m_mps, m_SumFactors[i]);
                                 _pCS.setEvents(m_SigData[i], m_TagData[i]);
-                                _pCS.setMC(m_SigInt[i], m_TagInt[i]);
+                                //_pCS.setMC(m_SigInt[i], m_TagInt[i]);
+                                _pCS.setMC(m_SigInt[0], m_TagInt[i]);
                                 if (m_debug) INFO("Preparing "<<i+1<<"/"<<m_SigData.size());
+
                                 _pCS.prepare();
                                 if (m_debug) INFO("Prepared "<<i+1<<"/"<<m_SigData.size());
+
+                             // INFO("psiMC(0,0) = "<<_pCS.getVal(m_MC[0], m_TagInt[i][0]));
+                              _pCS.debugNorm();
                                 if (m_debug) INFO("Norm = "<<_pCS.norm());
                                 if (m_debug) INFO("LL = "<<_pCS.LL());
 
@@ -147,11 +283,20 @@ namespace AmpGen
 
 
                         }
+        void reset(){
+            for (size_t i=0;i<m_Psi.size();i++) m_Psi[i].reset(true);
+        }
+
+
         double LL(int i){
 
+                if (m_debug)INFO("At "<<i<<" out of "<<m_Psi.size());
                 //auto _LL =  make_likelihood( m_SigData[i], m_TagData[i] , m_Psi[i]);
                 auto psi = m_Psi[i];
                 if (m_debug) INFO("Getting norm for "<<i);
+              
+               
+              
                 real_t norm = psi.norm();
                 if (m_debug) INFO("LL = "<<psi.LL());
                 if (m_debug) INFO("Norm = "<<norm);

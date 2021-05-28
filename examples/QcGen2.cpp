@@ -149,7 +149,15 @@ int main( int argc, char** argv )
   std::string inputSignal = NamedParameter<std::string> ("inputSignal", "inputSignal.root", "The initial signal events");
   std::string inputTagPref = NamedParameter<std::string> ("inputTagPref", "inputTag_", "The file format for the input tag events - e.g. inputTag_ + KK = inputTag_KK.root");
   std::string sumFactor = NamedParameter<std::string>("sumFactor", "Psi3770", "KeyWord for SumFactor between A(X->f) and A(Xbar -> f) - default is Psi3770 -> A - Abar");
+  std::string CovMatrixFile = NamedParameter<std::string>("CovMatrixFile", "");
 
+  TMatrixTSym<double> * cov;
+  INFO("CovMatrixFile = "<<CovMatrixFile);
+  if (CovMatrixFile!=""){
+    auto covMatrixRootFile = TFile::Open(CovMatrixFile.c_str());
+    cov = (TMatrixTSym<double>*)covMatrixRootFile->Get("CovMatrix"); 
+    covMatrixRootFile->Close();
+  }
 
 TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
 
@@ -250,8 +258,17 @@ for( auto& tag : tags ){
 
  TTree * tagTree = acceptedTag.tree(tagname.str().c_str());
  tagTree->Write(tagname.str().c_str());
+    auto pc = PhaseCorrection(*MPS); 
+    INFO("CovMatrix");
+    //INFO("nE = "<<cov->GetNoElements());
+    //cov->Print();
 
-   TNtuple * tup = new TNtuple( (tagname.str()+ "_vals").c_str(), (tagname.str() + "_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI:dd:f");
+    bool useCov = !(CovMatrixFile=="");
+    INFO("useCov = "<<useCov);
+
+    INFO("df(0) = " << pc.est_errCorrL(acceptedSig[0], cov , useCov));
+    INFO("Dones CovMatrix");
+   TNtuple * tup = new TNtuple( (tagname.str()+ "_vals").c_str(), (tagname.str() + "_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI:dd:f:df");
   for (int i=0; i < acceptedSig.size(); i++){
     auto v = cs.getVals(acceptedSig[i], acceptedTag[i]);
     auto a = v[0];
@@ -260,10 +277,13 @@ for( auto& tag : tags ){
     auto d = v[3];
     auto psi = v[4];
     auto f = v[5];
+    auto df = pc.est_errCorrL(acceptedSig[i], cov, useCov);
+//    if (int(100 * i/acceptedSig.size()) % 5 == 0) INFO("df("<<i<<") = "<<df);
     auto dd = std::imag(log ( a * std::conj(c)/std::abs(a * std::conj(c))  ));
-    tup->Fill(std::real(a), std::imag(a),std::real(b), std::imag(b),std::real(c), std::imag(c),std::real(d), std::imag(d),dd, std::real(f));
+    tup->Fill(std::real(a), std::imag(a),std::real(b), std::imag(b),std::real(c), std::imag(c),std::real(d), std::imag(d),dd, std::real(f), df);
 
   }
+
     tup->Write();
 
    // acceptedSig.tree(tokens[0])->Write("Signal");

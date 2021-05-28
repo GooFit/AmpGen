@@ -69,7 +69,7 @@ namespace AmpGen
                         {
                             std::vector<pCoherentSum> pCS = {};
                             for (auto i=0; i < m_SigData.size() ; i++){
-                                pCoherentSum _pCS = pCoherentSum(m_SigType[i], m_mps, m_SumFactors[i], m_gammaSigns[i], m_useXYs[i], m_conj[i]);
+                                pCoherentSum _pCS = pCoherentSum(m_SigType[i], m_mps, m_gammaSigns[i], m_useXYs[i], m_conj[i]);
                                 _pCS.setEvents(m_SigData[i]);
                                 _pCS.setMC(m_SigInt);
                                 _pCS.prepare();

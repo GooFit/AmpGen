@@ -272,12 +272,18 @@ void pCorrelatedSum::debugNorm()
 //INFO("A0 = "<<m_A.getVal((*m_sim1)[0]));
 INFO("ACst[0] = "<<m_ACstMC[0]);
   real_t nA_0 = m_A.norm();
+  real_t nB_0 = m_B.norm();
+  real_t nC_0 = m_C.norm();
+  real_t nD_0 = m_D.norm();
   real_t nA_1 = 0;
   for (size_t i=0;i<(*m_sim1).size();i++){
     nA_1 += std::norm(m_A.getValNoCache((*m_sim1)[i]));
   }
   nA_1 = nA_1/(real_t)(*m_sim1).size();
   INFO("nA_0 = "<<nA_0);
+  INFO("nB_0 = "<<nB_0);
+  INFO("nC_0 = "<<nC_0);
+  INFO("nD_0 = "<<nD_0);
   INFO("nA_1 = "<<nA_1);
 
   real_t n0 = norm();

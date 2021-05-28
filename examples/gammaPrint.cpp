@@ -96,7 +96,7 @@ int main( int argc, char* argv[] )
       eventType = eventType.conj(true);
     }
 
-    auto sig = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY);
+    auto sig = pCoherentSum(eventType, MPS , gammaSign, useXY);
 
 
 
@@ -149,7 +149,7 @@ int main( int argc, char* argv[] )
 
 
 
-    auto sigMC = pCoherentSum(eventType, MPS ,B_Pref, gammaSign, useXY);
+    auto sigMC = pCoherentSum(eventType, MPS ,gammaSign, useXY);
     sigMC.setEvents(Int);
     sigMC.setMC(Int);
     
