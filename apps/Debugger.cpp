@@ -86,6 +86,10 @@ int main( int argc, char** argv )
     INFO( eventType );
     AddCPConjugate(MPS);
   }
+  if( NamedParameter<bool>( "AddConj", false) == true && NamedParameter<bool>( "conj", false ) == false )
+  {
+    AddCPConjugate(MPS); 
+  }
   INFO( "EventType = " << eventType );
   
   std::string infile = NamedParameter<std::string>("InputFile","");
