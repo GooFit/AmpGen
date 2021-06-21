@@ -32,7 +32,7 @@ void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
       if ( reOrIm == "Re" || reOrIm == "Im" ){
         auto test_particle = Particle(pname);
         if( std::count( forbidden.begin(), forbidden.end(), test_particle.name() ) != 0 ){
-          INFO( "Name:" << test_particle.name() << " is forbidden" );
+          DEBUG( "Name:" << pname << " is forbidden" );
           continue; 
         }  
         Particle test = Particle(test_particle).conj();
@@ -47,7 +47,7 @@ void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
     }
     if( mps.find( new_name ) == nullptr )
     {
-      INFO("Adding CP conjugated rule: " << new_name << " from " << name ); 
+      DEBUG("Adding CP conjugated rule: " << new_name << " from " << name ); 
       tmp.push_back( new MinuitExpression(new_name, sgn * MinuitParameterLink(param) )) ;  
     }
   }

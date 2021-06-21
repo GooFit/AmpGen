@@ -21,7 +21,7 @@ PhaseSpace::PhaseSpace( const EventType& type, TRandom* rand ) :
 {
   setDecay( type.motherMass(), type.masses() );
   if ( type.isTimeDependent() ){
-    INFO("Generating with time-dependence");
+    DEBUG("Generating with time-dependence");
     m_decayTime = ParticlePropertiesList::get( type.mother() )->lifetime();
   }
 }
