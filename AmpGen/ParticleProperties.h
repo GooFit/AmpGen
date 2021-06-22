@@ -65,6 +65,7 @@ namespace AmpGen
         m_customName = true; 
         m_name = name; }                ///< Set the name of the particle
 
+      void removeDistinctAnti(){ m_Aformat = ' '; }
       void print( std::ostream& out = std::cout ) const;
 
       bool operator==( const ParticleProperties& rhs ) const;

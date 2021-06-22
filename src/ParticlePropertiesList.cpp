@@ -188,6 +188,7 @@ void ParticlePropertiesList::makeAlias( const std::string& name, const std::stri
   }
   ParticleProperties* pp = new ParticleProperties( *it );
   pp->setName( alias );
+  pp->removeDistinctAnti();  
   m_byName[alias] = pp;
 }
 
