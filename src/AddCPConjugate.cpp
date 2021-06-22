@@ -11,11 +11,13 @@
 
 using namespace AmpGen; 
 
+
 void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
 {
   std::vector<MinuitParameter*> tmp;
   std::string cartOrPolar = NamedParameter<std::string>("CouplingConstant::Coordinates" ,"cartesian");
   std::vector<std::string> forbidden = NamedParameter<std::string>("AddCPConjugate::Forbid").getVector();  
+
   for( auto& param : mps ){
     const std::string name = param->name();
     std::string new_name = name; 
@@ -32,7 +34,6 @@ void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
       if ( reOrIm == "Re" || reOrIm == "Im" ){
         auto test_particle = Particle(pname);
         if( std::count( forbidden.begin(), forbidden.end(), test_particle.name() ) != 0 ){
-          // DEBUG( "Name:" << pname << " is forbidden" );
           continue; 
         }  
         Particle test = Particle(test_particle).conj();
@@ -47,7 +48,6 @@ void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
     }
     if( mps.find( new_name ) == nullptr )
     {
-      // DEBUG("Adding CP conjugated rule: " << new_name << " from " << name ); 
       tmp.push_back( new MinuitExpression(new_name, sgn * MinuitParameterLink(param) )) ;  
     }
   }
