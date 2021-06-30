@@ -16,11 +16,6 @@
 #include "TDecompChol.h"
 #include "TMatrixD.h"
 #include "TRandom3.h"
-#include "TVectorD.h"
-#include "TMatrixDfwd.h"
-#include "TMatrixT.h"
-#include "TVectorDfwd.h"
-#include "TVectorT.h"
 
 class TRandom3;
 

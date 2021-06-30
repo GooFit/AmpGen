@@ -56,11 +56,19 @@ namespace AmpGen {
 
 /// @ingroup msgService macro DEBUG
 /// Used for printing verbose debugging messages, only if DEBUGLEVEL is defined.  
+
+#ifdef DEBUGLEVEL
 #define DEBUG( X ) { \
-      if constexpr( AmpGen::detail::debug_type<typename std::decay<decltype(*this)>::type>::value ) { \
-      std::cout << "\033[2;32m" << std::left << std::setw( AmpGen::detail::FCNNAMELENGTH ) << AmpGen::detail::trimmedString(__PRETTY_FUNCTION__) \
-        << "  DEBUG        "                    \
-        << "\033[0m" << X << " " << std::endl; } }
+  std::cout << "\033[2;32m" << std::left << std::setw( AmpGen::detail::FCNNAMELENGTH ) << AmpGen::detail::trimmedString(__PRETTY_FUNCTION__) \
+    << "  DEBUG        "                    \
+    << "\033[0m" << X << " " << std::endl; }
+#else
+#define DEBUG( X ) { \
+  if constexpr( AmpGen::detail::debug_type<typename std::decay<decltype(*this)>::type>::value ) { \
+  std::cout << "\033[2;32m" << std::left << std::setw( AmpGen::detail::FCNNAMELENGTH ) << AmpGen::detail::trimmedString(__PRETTY_FUNCTION__) \
+    << "  DEBUG        "                    \
+    << "\033[0m" << X << " " << std::endl; } }
+#endif
 
 /// @ingroup msgService macro INFO
 /// Used for printing information messages, and will always be printed. 

@@ -1,7 +1,8 @@
 #include "AmpGen/Pade.h"
 #include "TMatrixD.h"
-#include "TVectorD.h"
+#include "TVectorT.h"
 
+typedef TVectorT<double> TVectorD; 
 
 std::vector<double> AmpGen::detail::solve_pade(const std::function<double(const double&)>& fcn,
     const double& min,

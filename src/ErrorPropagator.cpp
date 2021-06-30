@@ -5,6 +5,10 @@
 #include "AmpGen/MinuitParameterSet.h"
 #include "TDecompChol.h"
 #include "TRandom3.h"
+#include "TMatrixD.h"
+#include "TVectorT.h"
+
+typedef TVectorT<double> TVectorD; 
 
 using namespace AmpGen;
 
@@ -111,7 +115,7 @@ double LinearErrorPropagator::getError( const std::function<double(void)>& fcn )
     errorVec(i) = derivative(fcn,i);
     fcn(); 
   }
-  return sqrt( errorVec * ( m_cov * errorVec ) );
+  return sqrt( Dot( errorVec, m_cov * errorVec ) );
 }
 
 std::vector<double> LinearErrorPropagator::getVectorError( const std::function<std::vector<double>(void)>& fcn, size_t RANK ) const
@@ -136,7 +140,7 @@ std::vector<double> LinearErrorPropagator::getVectorError( const std::function<s
   }
   fcn();
   std::vector<double> rt( RANK, 0 );
-  for ( unsigned int j = 0; j < RANK; ++j ) rt[j] = sqrt( errorVec[j] * ( m_cov * errorVec[j] ) );
+  for ( unsigned int j = 0; j < RANK; ++j ) rt[j] = sqrt( Dot( errorVec[j] , m_cov * errorVec[j] ) );
   return rt;
 }
 
