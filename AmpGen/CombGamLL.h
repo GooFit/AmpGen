@@ -79,6 +79,8 @@ namespace AmpGen
         real_t LL(int i){
             real_t n = m_Psi[i].norm();
             real_t ll =0;
+
+            #pragma omp parallel for reduction( +: ll )
             for (size_t j=0;j<m_SigData[i].size();j++){
                 real_t pdf = std::norm(m_Psi[i].getVal(m_SigData[i][j]))/n;
                 ll += -2 * log(pdf);
@@ -117,7 +119,8 @@ namespace AmpGen
                 auto x1 = hist->GetBinCenter(bins +1);
 
                 TH1D * pull = new TH1D( (std::string("Pull_") + hist->GetName()).c_str(), "Pull", bins, x0, x1 );
-                for (int j=0;j<hist->GetEntries();j++){
+                //for (int j=0;j<hist->GetEntries();j++){
+                for (int j=0;j<bins;j++){
                     double p=0;
                     double d = hist->GetBinContent(j) - data->GetBinContent(j);
                     double s2 = hist->GetBinContent(j) + data->GetBinContent(j);
@@ -127,9 +130,11 @@ namespace AmpGen
                 }
                 pull->Write();
             }
-            for (size_t j=0; j < projections.size(); j++){
-                for(size_t k=j+1; k < projections.size(); k++){
-                    auto dalitz = Projection2D(projections[j], projections[k]);
+	    int nBins2D = sqrt(nBins);
+            auto projections2 = m_SigType.defaultProjections(nBins2D);
+            for (size_t j=0; j < projections2.size(); j++){
+                for(size_t k=j+1; k < projections2.size(); k++){
+                    auto dalitz = Projection2D(projections2[j], projections2[k]);
                     auto hdalitz = dalitz.plot(prefix);
                     auto data = m_SigData[i].makeProjection(dalitz, Prefix(prefix));
                     real_t integral=0;
@@ -161,8 +166,10 @@ namespace AmpGen
 
 
                     TH2D * pull_2D = new TH2D( (std::string("Pull_") + hdalitz->GetName() ).c_str(), "Pull", bins, x0, x1, bins, y0, y1 );
-                    for (int l=0;l<data->GetEntries();l++){
-                        for (int m=0;m<hdalitz->GetEntries();m++){
+                    //for (int l=0;l<data->GetEntries();l++){
+                    for (int l=0;l<bins;l++){
+                        //for (int m=0;m<hdalitz->GetEntries();m++){
+                        for (int m=0;m<bins;m++){
                             double p=0;
                             double d = hdalitz->GetBinContent(l,m) - data->GetBinContent(l,m);
                             double s2 = hdalitz->GetBinContent(l,m) + data->GetBinContent(l,m);

@@ -136,6 +136,8 @@ if (m_debug){
 INFO("v = "<<getValNoCache( (*m_sim1)[0], (*m_sim2)[0] ));
   }
   real_t acR, acI, bdR, bdI;
+
+  #pragma omp parallel for reduction( +: n )
   for (size_t i=0; i<(*m_sim1).size(); i++){
     n+=std::norm(getVal((*m_sim1)[i], (*m_sim2)[i]))/(real_t) (*m_sim1).size();
   

@@ -16,10 +16,13 @@
 #include "AmpGen/CombGamLL.h"
 //#include <Math/IFunction.h>
 #include <Math/Functor.h>
+#include <TGraph.h>
+#include <Minuit2/Minuit2Minimizer.h>
 #include "AmpGen/PhaseCorrection.h"
 #include <typeinfo>
 
-//#include <boost/algorithm/string.hpp>
+
+#include <boost/algorithm/string/replace.hpp>
 using namespace AmpGen;
 using namespace std::complex_literals;
 
@@ -223,7 +226,8 @@ MinuitParameterSet CombinedFit(EventType eventType, std::vector<EventType> TagTy
 
       sf.add(LLB);
       INFO("sf = "<<sf.getVal());
-      Minimiser mini(sf, &MPS);
+      auto pl = polyLASSO(sf, MPS);
+      Minimiser mini(pl, &MPS);
       mini.gradientTest();
       mini.doFit();
       LLCorr.reset();
@@ -236,7 +240,7 @@ void CombinedFitAndWrite(EventType eventType, std::vector<EventType> TagType, st
               std::vector<EventList> BSigData, std::vector<int> BgammaSigns, std::vector<bool> BuseXYs, std::vector<bool> BConj, 
               MinuitParameterSet MPS, size_t seed, size_t NInt, std::string plotFile, std::string logFile,
               std::vector<std::string> tags, std::vector<std::string> BTags,  
-              int fBins){
+              int fBins, bool makePlots, bool doScan){
      TRandom3 rndm;
      rndm.SetSeed( seed );
      gRandom = &rndm;
@@ -258,7 +262,11 @@ void CombinedFitAndWrite(EventType eventType, std::vector<EventType> TagType, st
       auto LLB0 = CombGamLL(SigType[0], BSigData, MPS, BgammaSigns, BuseXYs, BConj, SigInt[0]); 
       sf.add(LLCorr0);
       sf.add(LLB0);
-      auto m0 = Minimiser(sf, &MPS);
+
+      auto pl = polyLASSO(sf, MPS);
+      auto m0 = Minimiser(pl, &MPS);
+
+      m0.gradientTest();
       m0.doFit();
       FitResult * fr0 = new FitResult(m0);
       fr0->writeToFile(logFile);
@@ -266,35 +274,80 @@ void CombinedFitAndWrite(EventType eventType, std::vector<EventType> TagType, st
       fp0->Close();
 
 //      void makeProjection(pCorrelatedSum cs_tag, std::string tag_plotName, int nBins, EventList sigevents_tag, EventList tagevents_Tag, EventList sigMCevents_tag, EventList tagMCevents_tag){
-      for (int i=0;i<SigData.size();i++){
-        //auto pdfi = pCorrelatedSum(SigType[i], TagType[i], MPS);
-        //pdfi.setEvents(SigData[i], TagData[i]);
-        //pdfi.setMC(SigInt[i], TagInt[i]);
-        //pdfi.prepare();
-       // int _nBins = fBins * SigData[i].size();
-        //INFO("Using "<<_nBins<<" bins = "<<fBins<<" * "<<SigData[i].size());
-       int _nBins =  int(std::pow(SigData[i].size(), 1/3.) * fBins ) ;
-       
+      if (makePlots){
+        for (int i=0;i<SigData.size();i++){
+          //auto pdfi = pCorrelatedSum(SigType[i], TagType[i], MPS);
+          //pdfi.setEvents(SigData[i], TagData[i]);
+          //pdfi.setMC(SigInt[i], TagInt[i]);
+          //pdfi.prepare();
+        // int _nBins = fBins * SigData[i].size();
+          //INFO("Using "<<_nBins<<" bins = "<<fBins<<" * "<<SigData[i].size());
+        int _nBins =  int(std::pow(SigData[i].size(), 1/3.) * fBins ) ;
+        _nBins = 100;
+        
 
-       INFO("Using "<<_nBins);
-        auto tagName = split(tags[i],' ')[0];
-        //makeProjection(pdfi, plotFile, tagName, int(fBins * SigData[i].size()) , SigData[i], TagData[i], SigInt[i], TagInt[i]);
-        LLCorr0.makeProjection(i, plotFile, tagName, _nBins);
+        INFO("Using "<<_nBins);
+          auto tagName = split(tags[i],' ')[0];
+          //makeProjection(pdfi, plotFile, tagName, int(fBins * SigData[i].size()) , SigData[i], TagData[i], SigInt[i], TagInt[i]);
+          LLCorr0.makeProjection(i, plotFile, tagName, _nBins);
+        }
+        for (int i=0;i<BSigData.size();i++){
+
+        // int _nBins = fBins * BSigData[i].size();
+
+        int _nBins =  int(std::pow(BSigData[i].size(), 1/3.) * fBins);
+
+        _nBins = 100;
+        INFO("Using "<<_nBins);
+          auto tagName = split(BTags[i],' ')[0];
+          LLB0.makeProjection(i, plotFile, tagName, _nBins);
+        
+        }
       }
-      for (int i=0;i<BSigData.size();i++){
 
-       // int _nBins = fBins * BSigData[i].size();
-
-       int _nBins =  int(std::pow(BSigData[i].size(), 1/3.) * fBins);
-       INFO("Using "<<_nBins);
-        auto tagName = split(BTags[i],' ')[0];
-        LLB0.makeProjection(i, plotFile, tagName, _nBins);
-      
-      }
       auto cov0 = m0.covMatrix();
       auto f0 =TFile::Open(plotFile.c_str(), "UPDATE");
       cov0.Write("CovMatrix");
+
+      
+      ROOT::Minuit2::Minuit2Minimizer*  internal_mini = m0.minimiserInternal();
+      auto corr = cov0;
+      for (size_t i=0;i<cov0.GetNcols();i++){
+        for(size_t j=0;j<cov0.GetNrows();j++){
+          corr[i][j] = internal_mini->Correlation(i, j);
+        }
+      }
+      corr.Write("CorrMatrix");
       f0->Close();
+
+
+
+    if (doScan){
+     
+      size_t n_sigma = 5;
+      size_t n_points = 20;
+      
+      for (auto& p : MPS){
+
+         if (p->isFree()){
+          real_t step = 2 * n_sigma * p->err()/n_points;
+          real_t p_init = p->mean();
+
+        //  p->fix();
+          
+          auto scan_graph = m0.scan(p, p->mean() - n_sigma * p->err(), p->mean() + n_sigma * p->err(), step);
+          auto f_scan = TFile::Open(plotFile.c_str(), "UPDATE");
+          std::string old_name = p->name();
+          std::string new_name = boost::replace_all_copy(old_name, "::", "_");
+          scan_graph->Write( ("Scan_" + new_name).c_str() );
+          f_scan->Close();
+          p->setCurrentFitVal(p_init);
+         // p->setFree();
+         }
+      
+        }
+      }
+    
 
 
 }
@@ -332,6 +385,7 @@ int main( int argc, char* argv[] )
     int fBins = NamedParameter<int>("fBins", 1, "fraction of nEvents to be used as bins for projections");
     int nFits = NamedParameter<int>("nFits", 4, "number of repeats of mini.doFits() for debug purposes!");
     bool doProjections = NamedParameter<bool>("doProjections", true);
+    bool doScan = NamedParameter<bool>("doScan", true);
     bool doPCorrSum = NamedParameter<bool>("doPCorrSum", false);
 //    bool doCombFit = NamedParameter<bool>("doCombFit", false, "Do a combined fit of 3 tags - at the moment this is hard coded for now");
 
@@ -597,12 +651,14 @@ for (int i=0; i < tags.size(); i++){
   }
   else{
 
+/*
     for (size_t i=0; i<NIntMods.size() - 1;i++){
       INFO("Using "<<NIntMods[i]<<" * "<<NInt<<" integration events");
       auto NInt_i = int(std::stod(NIntMods[i]) *NInt);
       INFO("NInt = "<<NInt_i);
-    CombinedFit( eventType,  TagType,  SigData  ,TagData,  BSigData, BgammaSigns, BuseXYs, BConj, MPS, seed, NInt);     
+    CombinedFit( eventType,  TagType,  SigData  ,TagData,  BSigData, BgammaSigns, BuseXYs, BConj, MPS, seed, NInt_i);     
           }
+          */
    
 
 
@@ -616,7 +672,7 @@ for (int i=0; i < tags.size(); i++){
  //   INFO("Done two fit!");
     auto NInt_Final = int(std::stod(NIntMods[NIntMods.size() - 1]) * NInt);
     CombinedFitAndWrite(eventType, TagType, SigData, TagData, BSigData, BgammaSigns, BuseXYs,  BConj, MPS,  seed,  NInt_Final,  plotFile,  logFile,
-             tags,  BTags, fBins);
+             tags,  BTags, fBins, doProjections, doScan);
 
 
    return 0;

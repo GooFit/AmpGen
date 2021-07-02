@@ -70,6 +70,9 @@ void makeProjection(int i, std::string tag_plotName, std::string prefix ,int nBi
           auto data_plot = projection(sigevents_tag, Prefix(prefix));
           auto hist = projection.plot(prefix);
           real_t integral = 0;
+
+
+            INFO("Filling MC");
           for(unsigned i = 0 ; i != sigMCevents_tag.size(); ++i)
           {
             hist->Fill( projection( sigMCevents_tag[i] ), std::norm(cs_tag.getVal( sigMCevents_tag[i], tagMCevents_tag[i] ))/norm );
@@ -90,9 +93,11 @@ void makeProjection(int i, std::string tag_plotName, std::string prefix ,int nBi
           auto bins = hist->GetBin(hist->GetEntries()) -1;
           auto x0 = hist->GetBinCenter(0);
           auto x1 = hist->GetBinCenter(bins +1);
+          INFO("Making 1D pulls");
 
           TH1D * pull = new TH1D( (std::string("Pull_") + hist->GetName()).c_str(), "Pull", bins, x0, x1 );
-          for (int i=0;i<hist->GetEntries();i++){
+          //for (int i=0;i<hist->GetEntries();i++){
+          for (int i=0;i<bins;i++){
             double p=0;
             double d = hist->GetBinContent(i) - data_plot->GetBinContent(i);
             double s2 = hist->GetBinContent(i) + data_plot->GetBinContent(i);
@@ -104,7 +109,8 @@ void makeProjection(int i, std::string tag_plotName, std::string prefix ,int nBi
 
 
         }
-        auto p2 = sigMCevents_tag.eventType().defaultProjections(nBins);
+	int nBins2D = sqrt(nBins);
+        auto p2 = sigMCevents_tag.eventType().defaultProjections(nBins2D);
         for( unsigned i = 0 ; i != p2.size() -1; ++i )
         {
           for( unsigned j=i+1; j < p2.size(); ++j )
@@ -113,6 +119,8 @@ void makeProjection(int i, std::string tag_plotName, std::string prefix ,int nBi
             auto hdalitz = dalitz.plot(prefix);
             auto data_plot = sigevents_tag.makeProjection(dalitz, Prefix(prefix));
             real_t integral = 0;
+
+            INFO("Filling MC");
             for( unsigned event = 0 ; event != sigMCevents_tag.size(); ++event )
             {
               auto pos = dalitz(sigMCevents_tag[event]);
@@ -145,12 +153,14 @@ void makeProjection(int i, std::string tag_plotName, std::string prefix ,int nBi
             auto y1 = py->GetBinCenter(bins +1);
 
 
-//            bins = int(sqrt(bins));
 
 
+            INFO("Making 2D Pulls");
             TH2D * pull_2D = new TH2D( (std::string("Pull_") + hdalitz->GetName() ).c_str(), "Pull", bins, x0, x1, bins, y0, y1 );
-            for (int i=0;i<data_plot->GetEntries();i++){
-              for (int j=0;j<hdalitz->GetEntries();j++){
+            //for (int i=0;i<data_plot->GetEntries();i++){
+            for (int i=0;i<bins;i++){
+              //for (int j=0;j<hdalitz->GetEntries();j++){
+              for (int j=0;j<bins;j++){
                 double p=0;
                 double d = hdalitz->GetBinContent(i,j) - data_plot->GetBinContent(i,j);
                 double s2 = hdalitz->GetBinContent(i,j) + data_plot->GetBinContent(i,j);

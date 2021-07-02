@@ -31,9 +31,10 @@ namespace AmpGen
         real_t lambda = m_mps["LASSO::lambda"]->mean() ;
         if (m_debug) INFO("lambda = "<<lambda);
         double pen = 0;
-        for (size_t i=m_start;i<m_order;i++){
-          pen += penaltyPerOrder(i);
+        for (auto& p : m_mps){
+          if (p->isFree()) pen += std::abs(p->mean());
         }
+        
         return  lambda * pen;
 
       }

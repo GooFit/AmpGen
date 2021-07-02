@@ -60,11 +60,11 @@ class pCoherentSum {
         double P = std::norm(getVal(event1))/m_norm;  
     
     if (m_debug){
-        double A2 = std::norm(m_A.getVal(event1))/m_norm;
+        double A2 = std::norm(m_A->getVal(event1))/m_norm;
 
-        double C2 = std::norm(m_C.getVal(event1))/m_norm;
+        double C2 = std::norm(m_C->getVal(event1))/m_norm;
 
-        complex_t AC = m_A.getVal(event1) * std::conj(m_C.getVal(event1))/m_norm;
+        complex_t AC = m_A->getVal(event1) * std::conj(m_C->getVal(event1))/m_norm;
 
         auto i = Constant(0,1);
         complex_t eif = exp(i() * correction(event1));
@@ -111,20 +111,20 @@ class pCoherentSum {
         
     }
     
-    CoherentSum getA(){
+    CoherentSum * getA(){
         return m_A;
     } 
 
-    CoherentSum getC(){
+    CoherentSum * getC(){
         return m_C;
     } 
 
     const complex_t A(const Event& evt) const{
-        return m_A.getVal(evt);
+        return m_A->getVal(evt);
     }
 
     const complex_t C(const Event& evt) const{
-        return m_C.getVal(evt);
+        return m_C->getVal(evt);
     }
     real_t testnorm(){
         INFO("norm = "<<norm());
@@ -150,17 +150,17 @@ class pCoherentSum {
     complex_t getVal(const Event& event1) const;
     complex_t getValNoCache(const Event& event1) const;
     complex_t getValNoCache(const Event& event1, const size_t& offset) const;
-    real_t size()const { return m_A.size() + m_C.size() ;}
+    real_t size()const { return m_A->size() + m_C->size() ;}
     std::vector<std::vector<FitFraction> > fitFractions(const LinearErrorPropagator& linProp);
     real_t norm()  const;
     double probA(const Event& event){
-        double prob = m_A.prob(event);
+        double prob = m_A->prob(event);
         return prob;
     }
     std::vector<complex_t> getVals(const Event& event1) const {
-        complex_t A = m_A.getVal(event1);
+        complex_t A = m_A->getVal(event1);
 
-        complex_t C = m_C.getVal(event1);
+        complex_t C = m_C->getVal(event1);
 
         complex_t ABCD = getVal(event1);///std::sqrt(m_norm);
         complex_t corr = correction(event1);
@@ -214,14 +214,14 @@ real_t norm_manual() const{
   //complex_t sumFactor = getSumFactor(); 
   complex_t z(0,0);
   complex_t sumFactor = getSumFactor(); 
- for (size_t i=0; i < m_sim1.size(); i++){
-    real_t f = m_pcMC1.calcCorrL((m_sim1)[i]);
+ for (size_t i=0; i < m_sim1->size(); i++){
+    real_t f = m_pcMC1.calcCorrL((*m_sim1)[i]);
 
-    z += (m_A.getVal((m_sim1)[i]) * std::conj(m_C.getVal((m_sim1)[i]) * sumFactor ) * exp(complex_t(0,f)));
-    z = z/(real_t)m_sim1.size(); 
+    z += (m_A->getVal((*m_sim1)[i]) * std::conj(m_C->getVal((*m_sim1)[i]) * sumFactor ) * exp(complex_t(0,f)));
+    z = z/(real_t)m_sim1->size(); 
  }
 
- return m_A.norm() + m_C.norm() + 2 * std::real(z);
+ return m_A->norm() + m_C->norm() + 2 * std::real(z);
 
 }
 
@@ -230,8 +230,8 @@ real_t LL(){
     real_t n = norm();
 
     #pragma omp parallel for reduction( +: _LL )
-    for (size_t i=0; i < m_events1.size(); i++){
-        _LL += log(std::norm(getVal((m_events1)[i]))/n);
+    for (size_t i=0; i < m_events1->size(); i++){
+        _LL += log(std::norm(getVal((*m_events1)[i]))/n);
     }
     return -2 * _LL;
 }
@@ -371,10 +371,10 @@ real_t LL(){
         A.setMC(sim1);
         A.prepare();
 
-        auto Anorm = m_A.norm();
+        auto Anorm = m_A->norm();
         INFO("m_ANorm = "<<A.norm());
         INFO("m_ANorm = "<<Anorm);
-        CoherentSum C(m_type1.conj(true), m_mps);  C.transferParameters(); C.setEvents(list1); C.setMC(sim1); C.prepare(); m_Cnorm = m_C.norm();
+        CoherentSum C(m_type1.conj(true), m_mps);  C.transferParameters(); C.setEvents(list1); C.setMC(sim1); C.prepare(); m_Cnorm = m_C->norm();
 
 
 
@@ -464,8 +464,8 @@ real_t LL(){
     TNtuple * dumpVals(std::string tagName){
         
         TNtuple * tup = new TNtuple( (tagName + "_vals").c_str(), (tagName + "_vals").c_str(), "aR:aI:cR:cI:dd");
-        for (int i=0; i < m_events1.size(); i++){
-            auto v = getVals(m_events1[i]);
+        for (int i=0; i < m_events1->size(); i++){
+            auto v = getVals((*m_events1)[i]);
             auto a = v[0];
             auto c = v[1];
 
@@ -478,8 +478,8 @@ real_t LL(){
     TNtuple * dumpValsMC(std::string tagName){
         
         TNtuple * tup = new TNtuple( (tagName + "_vals").c_str(), (tagName + "_vals").c_str(), "aR:aI:cR:cI:dd");
-        for (int i=0; i < m_sim1.size(); i++){
-            auto v = getVals(m_sim1[i]);
+        for (int i=0; i < m_sim1->size(); i++){
+            auto v = getVals((*m_sim1)[i]);
             auto a = v[0];
             auto c = v[1];
 
@@ -493,14 +493,14 @@ real_t LL(){
         double  m_norm  =    {0};
         MinuitParameterSet m_mps;
 
-        CoherentSum  m_A;
+        CoherentSum  * m_A = {nullptr};
 
-        CoherentSum  m_C;
+        CoherentSum  * m_C = {nullptr};
 
 
 
-        EventList m_events1;
-        EventList m_sim1 ;
+        EventList * m_events1 = {nullptr};
+        EventList * m_sim1 = {nullptr} ;
 
 
         

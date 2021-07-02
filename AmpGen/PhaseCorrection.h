@@ -113,7 +113,13 @@ namespace AmpGen{
             
 
 
-            PhaseCorrection(const MinuitParameterSet& mps) : m_mps(mps), m_order(NamedParameter<size_t>("PhaseCorrection::Order", 2)), m_debug(NamedParameter<bool>("PhaseCorrection::debug", true)), m_start(NamedParameter<size_t>("PhaseCorrection::Start", 0)), m_PolyType(NamedParameter<std::string>("PhaseCorrection::PolyType", "antiSym_legendre")) {
+            PhaseCorrection(const MinuitParameterSet& mps) : m_mps(mps),
+             m_order(NamedParameter<size_t>("PhaseCorrection::Order", 2)), 
+             m_debug(NamedParameter<bool>("PhaseCorrection::debug", true)),
+             m_start(NamedParameter<size_t>("PhaseCorrection::Start", 0)),
+             m_i(NamedParameter<size_t>("PhaseCorrection::i", 0)),
+             m_j(NamedParameter<size_t>("PhaseCorrection::j", 1)),
+             m_PolyType(NamedParameter<std::string>("PhaseCorrection::PolyType", "antiSym_legendre")) {
                 size_t i=0;
             for (size_t j=0;j<m_order+1;j++){
                     for (size_t k=0;k<m_order +1 -j ; k++){
@@ -233,25 +239,67 @@ namespace AmpGen{
 
 
             const real_t calcCorrL(const Event event) const {
-                auto XY=getXY(event);
-                auto x = XY[0];
-                auto y = XY[1];
+                //auto XY=getXY(event);
+                //auto x = XY[0]* 10;
+                //auto y = XY[1];
+                auto x = event.s(0,1);
+                auto y = event.s(0,2);
+
+                auto z1 = (x + y)/2;
+                auto z2 = (y - x)/2;
+
+                real_t m1 = 2.2340742171132946;
+                real_t c1 = -3.1171885586526695;
+
+                real_t m2 = 0.8051636393861085;
+                real_t c2 = -9.54231895051727e-05;
+
+                auto w1 = m1 * z1 + c1;
+                auto w2 = m2 * z2 + c2;
+
                 real_t p = 0;
+                
+               
+                /*
+                int i=m_i;
+                int j=m_j;
+
+                
+
+                return m_mps["PhaseCorrection::C" + std::to_string(i) + "_"  + std::to_string(j)]->mean() * fastLegendre(w1, i) * fastLegendre(w2, j);
+                */
+                
                 for (size_t i=m_start;i<m_order+1 ; i++){
                    
-                    p+=calcPoly(x,y,i);
+                    p+=calcPoly(w1,w2,i);
                     if (m_debug) INFO("f"<<i<<" = "<<p);
 
                 }
                 return p;
+                
+                
+                //return m_mps["PhaseCorrection::C" + std::to_string(i) + "_"  + std::to_string(j)]->mean() * std::pow(x, i) * std::pow(y, j);
 
             }
 
             const real_t est_errCorrL(const Event event, TMatrixTSym<double>* pcov,  bool useCov=false , size_t startFrom=0, size_t until=0) const {
                 real_t result = 0;
-                auto XY = getXY(event);
-                auto x = XY[0];
-                auto y = XY[1];
+                
+                auto x = event.s(0,1);
+                auto y = event.s(0,2);
+
+                auto z1 = (x + y)/2;
+                auto z2 = (y - x)/2;
+
+                real_t m1 = 2.2340742171132946;
+                real_t c1 = -3.1171885586526695;
+
+                real_t m2 = 0.8051636393861085;
+                real_t c2 = -9.54231895051727e-05;
+
+                auto w1 = m1 * z1 + c1;
+                auto w2 = m2 * z2 + c2;
+
 
 
                 
@@ -281,18 +329,26 @@ namespace AmpGen{
 
 
                         //result += cov[i][j] * Poly1D(x, i) * Poly1D(y, 2*j+1);
-                        result += cov[i][j] * Poly1D(x, i1) * Poly1D(y, 2*j1+1) * Poly1D(x, i2) * Poly1D(y, 2*j2+1);
+                        result += cov[i][j] * Poly1D(w1, i1) * Poly1D(w2, 2*j1+1) * Poly1D(w1, i2) * Poly1D(w2, 2*j2+1);
 
                     }
                 }
                 }
                 else{
+                    /*
+                    int i=m_i;
+                    int j=m_j;
+                    result += std::norm(m_mps["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(j)]->err()) * Poly1D(x, i) * Poly1D(y, j) * Poly1D(x, i) * Poly1D(y, j) ;
+                    */
 
+                    
                     for (size_t i=0; i < m_order; i++){
                         for (size_t j=0;j< m_order -i;j++){
-                            result += std::norm( m_mps["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j +1)]->err() * Poly1D(x, i) * Poly1D(y, 2*j+1) );
+                            result += std::norm( m_mps["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j +1)]->err() * Poly1D(w1, i) * Poly1D(w2, 2*j+1) );
                         }
                     }
+                    
+                    
 
                 }
                 return sqrt(result);
@@ -346,13 +402,17 @@ namespace AmpGen{
                 }
                 }
                 else{
-
+                    int i=m_i;
+                    int j=m_j;
+                    result += std::norm(m_mps["PhaseCorrecion::C" + std::to_string(i) + "_" + std::to_string(j)]->err()) * Poly1D(x1, i) * Poly1D(y1, j) * Poly1D(x2, i) * Poly1D(y2, j) ;
+                    /*
                     for (size_t i=0; i < m_order; i++){
                         for (size_t j=0; m_order -i;j++){
                             result += std::norm(m_mps["PhaseCorrecion::C" + std::to_string(i) + "_" + std::to_string(2 * j +1)]->err()) * Poly1D(x1, i) * Poly1D(y1, 2*j+1) * Poly1D(x2, i) * Poly1D(y2, 2*j+1) ;
 
                         }
                     }
+                    */
 
                 }
                 return result;
@@ -441,6 +501,8 @@ namespace AmpGen{
             MinuitParameterSet m_mps;
             size_t m_order;
             size_t m_start;
+            size_t m_i;
+            size_t m_j;
             bool m_debug;
 	    std::string m_PolyType;
             EventList* m_events = {nullptr};
