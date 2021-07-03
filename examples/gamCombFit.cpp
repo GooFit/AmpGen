@@ -651,14 +651,14 @@ for (int i=0; i < tags.size(); i++){
   }
   else{
 
-/*
+
     for (size_t i=0; i<NIntMods.size() - 1;i++){
       INFO("Using "<<NIntMods[i]<<" * "<<NInt<<" integration events");
       auto NInt_i = int(std::stod(NIntMods[i]) *NInt);
       INFO("NInt = "<<NInt_i);
     CombinedFit( eventType,  TagType,  SigData  ,TagData,  BSigData, BgammaSigns, BuseXYs, BConj, MPS, seed, NInt_i);     
           }
-          */
+
    
 
 
