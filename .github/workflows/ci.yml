@@ -18,15 +18,14 @@ jobs:
     steps: 
     - uses: actions/checkout@v1
     - uses: conda-incubator/setup-miniconda@v2
-
-    - name: Get ROOT
-      run: ./.ci/build_root.sh
-      shell: bash 
+      with: 
+        activate-environment: miniconda-env 
+        environment-file: .github/etc/env.yml
     - name: Configure
       run: cmake -S . -B build -DENABLE_INSTALL=0
     - name: Build
       run: cmake --build build -j "$(getconf _NPROCESSORS_ONLN)"
     - name: Run
-      run: ./build/bin/AmpGen.exe options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 10000
+      run: ./build/bin/AmpGen.exe options/example_b2kstarll.opt --nEvents 10000
       env:
         CTEST_OUTPUT_ON_FAILURE: true
