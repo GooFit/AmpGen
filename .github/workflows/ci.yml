@@ -21,6 +21,8 @@ jobs:
       with: 
         activate-environment: miniconda-env 
         environment-file: .github/etc/env.yml
+    - run: conda --version
+    - run: which root
     - name: Configure
       run: cmake -S . -B build -DENABLE_INSTALL=0
     - name: Build
