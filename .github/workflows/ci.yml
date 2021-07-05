@@ -15,7 +15,7 @@ jobs:
 
     runs-on: ubuntu-latest
     container:
-      image: rootproject/root:latest
+      image: rootproject/root:6.24.00-conda
 
     steps:
     - uses: actions/checkout@v1
