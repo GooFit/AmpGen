@@ -1,6 +1,4 @@
-
-
-[![Build Status][travis-badge]][travis-link]
+[![Actions Status][actions-badge]][actions-link]
 [![License: LGPL v3][license-badge]](./LICENSE)
 
 <p align="center">
