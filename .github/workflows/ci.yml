@@ -17,6 +17,7 @@ jobs:
 
     steps: 
     - uses: actions/checkout@v1
+    - uses: conda-incubator/setup-miniconda@v2
 
     - name: Get ROOT
       run: ./.ci/build_root.sh
