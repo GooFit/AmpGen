@@ -20,12 +20,19 @@ jobs:
 
     steps: 
     - uses: actions/checkout@v1
-    - uses: conda-incubator/setup-miniconda@v2
-      with: 
-        activate-environment: miniconda-env 
-        environment-file: .github/etc/env.yml
-    - run: conda --version
-    - run: which root
+    - name: Setup ROOT
+      uses: actions/cache@v2
+      env:
+          CACHE_NUMBER: 0
+      with:
+        path: ~/conda_pkgs_dir
+        key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{hashFiles('.github/etc/env.yml') }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: miniconda-env
+          environment-file: .github/etc/env.yml
+          use-only-tar-bz2: true
+
     - name: Configure
       run: cmake -S . -B build -DENABLE_INSTALL=0
     - name: Build
