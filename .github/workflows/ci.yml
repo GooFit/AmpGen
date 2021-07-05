@@ -14,14 +14,10 @@ jobs:
     name: Test
 
     runs-on: ubuntu-latest
-    container:
-      image: rootproject/root:6.24.00-conda
-
-    steps:
-    - uses: actions/checkout@v1
-      with:
-        submodules: recursive
-
+    
+    - name: Get ROOT
+      run: ./.ci/build_root.sh
+      shell: bash 
     - name: Configure
       run: cmake -S . -B build -DENABLE_INSTALL=0
     - name: Build
