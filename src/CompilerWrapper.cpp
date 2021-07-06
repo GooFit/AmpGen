@@ -100,12 +100,14 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();
   if( print_all ) INFO( expression.name() << " " << cname << " Compile time = " << tWall / 1000. << " [size = " << fileSize(cname)/1024 << ", " << fileSize(oname)/1024 << "] kB" );
+/*
   if( print_all && isClang() )
   {
     auto lines = vectorFromFile( cname );
     for (const auto& line : lines ) 
       std::cout << line << std::endl; 
   }
+*/
   return true;
 }
 
