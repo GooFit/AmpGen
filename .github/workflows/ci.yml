@@ -20,8 +20,6 @@ jobs:
 
     steps: 
     - uses: actions/checkout@v1
-    - name: check OS
-      run: echo ${{ runner.os }}
     - name: Cache Conda
       uses: actions/cache@v2
       env:
@@ -29,13 +27,13 @@ jobs:
       with:
         path: ~/conda_pkgs_dir
         key:
-            ubuntu-latest-conda-${{ env.CACHE_NUMBER }}-${{
+            ${{ runner.os }}-${{ env.CACHE_NUMBER }}-${{
             hashFiles('.github/etc/env.yml') }}
-
-    - name: Setup ROOT
-      uses: conda-incubator/setup-miniconda@v2
+    - uses: conda-incubator/setup-miniconda@v2
       with:
+          auto-update-conda: false
           activate-environment: miniconda-env
+          channel-priority: strict
           environment-file: .github/etc/env.yml
           use-only-tar-bz2: true
     - name: Configure

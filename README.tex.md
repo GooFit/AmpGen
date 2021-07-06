@@ -1,6 +1,4 @@
-
-
-[![Build Status][travis-badge]][travis-link]
+[![AmpGen Actions Status](https://github.com/GooFit/AmpGen/workflows/Build/badge.svg)](https://github.com/GooFit/AmpGen/actions)
 [![License: LGPL v3][license-badge]](./LICENSE)
 
 <p align="center">
