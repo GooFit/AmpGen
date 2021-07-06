@@ -167,7 +167,7 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
   #endif
 
-  if(useOpenMP) compile_flags.push_back("-fopenmp");
+  if(useOpenMP && std::string(AMPGEN_OPENMP_FLAGS) != "") compile_flags.push_back( AMPGEN_OPENMP_FLAGS );
 
   std::vector<const char*> argp = { m_cxx.c_str(), "-shared", "-rdynamic", "-fPIC"};
   
@@ -179,7 +179,6 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     #if __APPLE__
     argp.push_back("-lstdc++");
     #endif
-    if( useOpenMP ) argp.push_back("-fopenmp=libiomp5");
     argp.push_back( "-march=native");
   }
 
