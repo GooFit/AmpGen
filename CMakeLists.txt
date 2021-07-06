@@ -136,7 +136,6 @@ endif()
 
 
 if( USE_OPENMP )
-  target_compile_definitions(AmpGen PUBLIC "USE_OPENMP=1")
   list( GET OpenMP_CXX_LIBRARIES 0 openmp_lib) 
   message(STATUS "OpenMP_CXX_LIBRARIES: ${openmp_lib} CXX_FLAGS: ${OpenMP_CXX_FLAGS}")
   if(OpenMP_FOUND OR OpenMP_CXX_FOUND)
@@ -159,7 +158,6 @@ if( USE_OPENMP )
     message(STATUS "OpenMP not found for CXX")
   endif()
 else()
-  target_compile_definitions(AmpGen PUBLIC  "USE_OPENMP=0")
   target_compile_definitions(AmpGen PRIVATE "AMPGEN_OPENMP_FLAGS=\"\"")
 endif()
 

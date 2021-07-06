@@ -160,8 +160,6 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
   using namespace std::chrono_literals;
   std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", {"-Ofast", "--std="+get_cpp_version()}); 
  
-  bool useOpenMP = USE_OPENMP; 
-
   #if ENABLE_AVX 
     compile_flags.push_back("-march=native");
     compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
@@ -171,7 +169,7 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
   #endif
 
-  if(useOpenMP && std::string(AMPGEN_OPENMP_FLAGS) != ""){
+  if(std::string(AMPGEN_OPENMP_FLAGS) != ""){
     auto flags = split(AMPGEN_OPENMP_FLAGS, ' ');
     for( const auto& flag : flags ) compile_flags.push_back(flag); 
   }
