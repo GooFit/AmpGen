@@ -78,7 +78,7 @@ void CompiledExpressionBase::prepare()
 void CompiledExpressionBase::addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const
 {
   for ( auto& dep : m_dependentSubexpressions ) {
-    std::string rt = "  auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver.get()) +";"; 
+    std::string rt = "  const auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver.get()) +";"; 
     stream << rt << "\n";
     sizeOfStream += sizeof(char) * rt.size(); /// bytes /// 
   }

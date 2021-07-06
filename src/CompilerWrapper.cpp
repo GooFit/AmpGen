@@ -167,8 +167,10 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
   #endif
 
-  if(useOpenMP && std::string(AMPGEN_OPENMP_FLAGS) != "") compile_flags.push_back( AMPGEN_OPENMP_FLAGS );
-
+  if(useOpenMP && std::string(AMPGEN_OPENMP_FLAGS) != ""){
+    auto flags = split(AMPGEN_OPENMP_FLAGS, ' ');
+    for( const auto& flag : flags ) compile_flags.push_back(flag); 
+  }
   std::vector<const char*> argp = { m_cxx.c_str(), "-shared", "-rdynamic", "-fPIC"};
   
   std::transform( compile_flags.begin(), compile_flags.end(), std::back_inserter(argp), [](const auto& flag ){return flag.c_str() ; } );
