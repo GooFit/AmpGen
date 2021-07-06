@@ -20,10 +20,21 @@ endif()
 file(GLOB_RECURSE AMPGEN_SRC src/*)
 file(GLOB_RECURSE AMPGEN_HDR AmpGen/*)
 
+include(${PROJECT_SOURCE_DIR}/cmake/FindAVX.cmake)
+CHECK_FOR_AVX()
+
 set(CMAKE_CXX_STANDARD "17"    CACHE STRING "CMAKE_CXX_STANDARD")
-set(USE_SIMD           "AVX2d" CACHE STRING "USE_SIMD")       # AVX instruction set + precision to use 
+message( STATUS AVX2_FOUND )
+
+if( AVX2_FOUND )
+  set(USE_SIMD           "AVX2d" CACHE STRING "USE_SIMD")       # AVX instruction set + precision to use 
+  set(USE_MVEC           TRUE    CACHE BOOL   "USE_MVEC")       # flag to use vector math library mvec 
+else()
+  set(USE_SIMD           "0"     CACHE STRING "USE_SIMD")       # AVX instruction set + precision to use 
+  set(USE_MVEC           FALSE   CACHE BOOL   "USE_MVEC")       # flag to use vector math library mvec 
+endif()
+
 set(USE_OPENMP         TRUE    CACHE BOOL   "USE_OPENMP")     # flag to use openmp for threading 
-set(USE_MVEC           TRUE    CACHE BOOL   "USE_MVEC")       # flag to use vector math library mvec 
 set(ENABLE_FITTING     TRUE    CACHE BOOL   "ENABLE_FITTING") # flag to enable fitting (requires Minuit2) 
 set(ENABLE_TESTS       TRUE    CACHE BOOL   "ENABLE_TESTS")   # flag to build unit tests
 set(BUILTIN_GSL        TRUE    CACHE BOOL   "BUILTIN_GSL")    # flag to use ROOT's builtin GSL 
