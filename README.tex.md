@@ -206,7 +206,7 @@ The output includes a tree (DalitzEventList) of candidates with the full four-ve
 </p>
 
 
-Several models for different @f$D^0@f$ decays published by the LHCb collaboration are included in the options directory, in addition to several other decay modes to demonstrate different features. These options often do not include EventTypes so as they can be included as part of a larger decay chain if required. For example, to generate @f$10^6@f$ toy @f$\Dz\to\Km\pip\pip\pim@f$ decays, the type of the events requested must also be specified: 
+Several models for different @f$D^0@f$ decays published by the LHCb collaboration are included in the options directory, in addition to several other decay modes to demonstrate different features. These options often do not include EventTypes so as they can be included as part of a larger decay chain if required. For example, to generate @f$10^6@f$ toy @f$D^0\to K^- \pi^+ \pi^+ \pi^-@f$ decays, the type of the events requested must also be specified: 
 
 ```shell
 AmpGen.exe options/D02Kpipipi.opt --EventType "D0 K- pi+ pi+ pi-" --nEvents 1000000
