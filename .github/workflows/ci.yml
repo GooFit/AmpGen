@@ -12,8 +12,11 @@ jobs:
 
   build:
     name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest,  ubuntu-latest]
 
-    runs-on: [ubuntu-latest, macos-latest] 
     defaults:
       run:
         shell: bash -l {0}
