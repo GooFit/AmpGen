@@ -37,6 +37,7 @@ void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
           continue; 
         }  
         Particle test = Particle(test_particle).conj();
+        if( ! test.props()->hasDistinctAnti() ) continue; 
         if( cartOrPolar == "polar" )     sgn = reOrIm == "Re" ? test.CP() : 1; 
         if( cartOrPolar == "cartesian" ) sgn = test.CP();
         new_name = test.uniqueString() +"_"+reOrIm;
