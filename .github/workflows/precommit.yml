@@ -20,9 +20,14 @@ jobs:
       run: python .github/scripts/process_markdown.py README.tex.md README.md 
     - name: Commit files
       run: |
-        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        git commit -m "Add changes" -a
+        if git status | grep -q modified; then
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git commit -m "Add changes" -a
+        else 
+          echo "Nothing to do"
+        fi
+
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
