@@ -1,4 +1,4 @@
-name: Build 
+name: CI 
 on:
   push: 
     branches: 
@@ -49,10 +49,27 @@ jobs:
         CTEST_OUTPUT_ON_FAILURE: true
     - name: Unit tests
       run: |
-        mkdir xml
-        for x in build/bin/test/test_* ; do name=$(basename $x); $x --log_level=all --log_format=JUNIT > xml/$name.xml ; done
-    - name: Publish Unit Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v1
-      if: always()
+        for x in build/bin/test/test_* ; do name=$(basename $x); $x --log_level=all --log_format=JUNIT > ${name}.xml ; done
+          - name: Upload Unit Test Results
+    - uses: actions/upload-artifact@v2
       with:
-        files: xml/*.xml
+        name: Unit Test Results (OS ${{ runner.os }})
+        path: *.xml
+
+  publish-test-results:
+    name: "Publish Unit Tests Results"
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    # the build-and-test job might be skipped, we don't need to run this job then
+    if: success() || failure()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: artifacts/**/*.xml
