@@ -7,8 +7,10 @@
 
 namespace AmpGen { 
 
+  #if ENABLE_AVX2d
   template<unsigned dim, typename fcn> std::tuple<double, double, unsigned> integrate_fp_avx2d( const fcn& F, const std::array<double,dim>& ctr, const std::array<double, dim>& wth )
   {
+    static_assert( utils::size<float_v>::value == 4, "Not using AVX2");
     static const double xl2 = 0.358568582800318073;//lambda_2
     static const double xl4 = 0.948683298050513796;//lambda_4
     static const double xl5 = 0.688247201611685289;//lambda_5
@@ -117,6 +119,7 @@ namespace AmpGen {
     auto rgnerr  = std::abs(rgnval-rgncmp);//compares estim error with expected error
     return {rgnval, rgnerr, idvaxn};
   }
+  #endif 
 
   template<unsigned dim, typename fcn> std::tuple<double, double, unsigned> integrate_fp_scalar( const fcn& F, const std::array<double,dim>& ctr, const std::array<double, dim>& wth )
   {

@@ -21,9 +21,6 @@
 #include "AmpGen/Tensor.h"
 #include "AmpGen/MinuitParameter.h"
 
-
-#include "TMatrixD.h"
-
 namespace AmpGen
 {
   class LinearErrorPropagator;

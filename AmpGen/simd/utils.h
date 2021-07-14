@@ -43,7 +43,7 @@ namespace AmpGen {
     template <>        struct is_vector_type <AVX::complex_v> : std::true_type {}; 
     template <>        struct is_vector_type <AVX::real_v  >  : std::true_type {}; 
     template <>        struct size           <AVX::complex_v>{ static constexpr unsigned value = AVX::complex_v::size; }; 
-    template <>        struct size           <AVX::real_v>   { static constexpr unsigned value = AVX::complex_v::size; };
+    template <>        struct size           <AVX::real_v>   { static constexpr unsigned value = AVX::real_v::size; };
 #endif
     template <typename simd_type, typename container_type, typename functor_type> simd_type gather(
         const container_type& container, const functor_type& functor, unsigned offset=0, typename simd_type::scalar_type df =0.)

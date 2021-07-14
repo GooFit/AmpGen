@@ -1,7 +1,7 @@
 #ifndef AMPGEN_ARRAY_H
 #define AMPGEN_ARRAY_H
 
-#include <memory.h>
+#include <memory>
 #include <vector>
 #include <cstddef>
 #include <memory>
