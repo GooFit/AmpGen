@@ -13,7 +13,10 @@ if ( Boost_FOUND )
       RUNTIME_OUTPUT_DIRECTORY         "${CMAKE_TEST_OUTPUT_DIRECTORY}" 
       EXECUTABLE_OUTPUT_DIRECTORY      "${CMAKE_TEST_OUTPUT_DIRECTORY}" 
     )
-    target_link_libraries(${testName} PUBLIC ${Boost_LIBRARIES} AmpGen)
+    target_link_libraries(${testName} PRIVATE ${Boost_LIBRARIES} AmpGen)
+    if( UNIX AND NOT APPLE )
+      target_link_libraries( ${testName} PRIVATE rt)
+    endif()
     add_test(NAME ${testName} WORKING_DIRECTORY ${CMAKE_TEST_OUTPUT_DIRECTORY} COMMAND ${CMAKE_TEST_OUTPUT_DIRECTORY}/${testName} ) 
   endforeach(testSrc)
 else()
