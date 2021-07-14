@@ -17,7 +17,7 @@ extern "C" void    _ZGVdN8vvv_sincos(__m256 x, __m256i ptrs, __m256i ptrc);
   inline real_v function_name( const real_v& v ){ return _ZGVcN8v_##function_name (v) ; }
 #else
 #define libmvec_alias( F ) \
-  inline real_v F( const real_v& v ){ auto arr = v.to_array(); return real_v(  \
+  inline real_v F( const real_v& v ){ auto arr = v.to_ptr(); return real_v(  \
       std::F(arr[0]), std::F(arr[1]), std::F(arr[2]), std::F(arr[3]),          \
       std::F(arr[4]), std::F(arr[5]), std::F(arr[6]), std::F(arr[7]) ) ; }
 #endif
@@ -41,7 +41,8 @@ namespace AmpGen {
 
       void store( float* ptr ) const { _mm256_storeu_ps( ptr, data ); }
       std::array<float, 8> to_array() const { std::array<float, 8> b; store( &b[0] ); return b; }
-      float at(const unsigned i) const { return to_array()[i] ; }       
+      const float* to_ptr() const { return reinterpret_cast<const double*>( &data ) ; }
+      float at(const unsigned i) const { return to_ptr()[i] ; }       
       operator __m256() const { return data ; } 
     };
     
@@ -100,21 +101,11 @@ namespace AmpGen {
     inline real_v select(const real_v& mask, const real_v& a, const real_v& b ) { return _mm256_blendv_ps( b, a, mask ); }
     inline real_v select(const bool& mask   , const real_v& a, const real_v& b ) { return mask ? a : b; } 
     inline real_v atan2( const real_v& y, const real_v& x ){ 
-      std::array<float, 8> bx{x.to_array()}, by{y.to_array()}, rt;
+      const auto* bx = reinterpret_cast<const double*>( &x.data );
+      const auto* by = reinterpret_cast<const double*>( &y.data ); 
       for( unsigned i = 0 ; i != 8 ; ++i ) rt[i] = std::atan2( by[i] , bx[i] );
       return real_v (rt.data() ); 
     }
-//    inline real_v gather( const double* base_addr, const real_v& offsets) 
-//    {
-//      auto addr_avx =_mm256_cvtps_epi32(offsets);
-//      std::array<uint32_t, 8> addr;
-//      _mm256_storeu_ps( addr.data(), _mm256_cvtps_epi32(offsets) );
-//      return real_v( 
-//          base_addr[addr[0]], base_addr[addr[1]],base_addr[addr[2]],base_addr[addr[3]],
-//          base_addr[addr[4]], base_addr[addr[5]],base_addr[addr[6]],base_addr[addr[7]] );
-//
-//      //return _mm256_i32gather_ps(base_addr,  _mm256_cvtps_epi32(offsets),sizeof(double));
-//    } 
     
     inline real_v fmadd( const real_v& a, const real_v& b, const real_v& c )
     {
@@ -141,11 +132,11 @@ namespace AmpGen {
       complex_v( const std::complex<double>& f ) : re( f.real() ), im( f.imag() ) {}
       complex_v( const std::complex<float>& f  ) : re( f.real() ), im( f.imag() ) {}
       
-      const std::complex<float> at(const unsigned i) const { return std::complex<float>(re.to_array()[i], im.to_array()[i]) ; }       
+      const std::complex<float> at(const unsigned i) const { return std::complex<float>(re.at(i), im.at(i) ; }       
       void store( float* sre, float* sim ) const { re.store(sre); im.store(sim);  } 
       void store( std::complex<float>* r ) const { 
-        auto re_arr = re.to_array();
-        auto im_arr = im.to_array();
+        auto re_arr = re.to_ptr();
+        auto im_arr = im.to_ptr();
         for( unsigned i = 0 ; i != re_arr.size(); ++i ) r[i] = std::complex<float>( re_arr[i], im_arr[i] ); 
       }
       auto to_array() const 

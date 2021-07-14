@@ -20,7 +20,7 @@ extern "C" void    _ZGVdN4vvv_sincos(__m256d x, __m256i ptrs, __m256i ptrc);
   inline real_v function_name( const real_v& v ){ return _ZGVcN4v_##function_name (v) ; }
 #else
 #define libmvec_alias( F ) \
-  inline real_v F( const real_v& v ){ auto arr = v.to_array(); return real_v( std::F(arr[0]), std::F(arr[1]), std::F(arr[2]), std::F(arr[3])) ; }
+  inline real_v F( const real_v& v ){ auto arr = v.to_ptr(); return real_v( std::F(arr[0]), std::F(arr[1]), std::F(arr[2]), std::F(arr[3])) ; }
 #endif
 
 namespace AmpGen {
@@ -40,8 +40,9 @@ namespace AmpGen {
       real_v(const double* f ) : data( _mm256_loadu_pd( f ) ) {}
       real_v(const std::array<double,4> f ) : data( _mm256_loadu_pd( f.data() ) ) {}
       void store( double* ptr ) const { _mm256_storeu_pd( ptr, data ); }
+      const double* to_ptr() const { return reinterpret_cast<const double*>( &data ) ; }
       std::array<double, 4> to_array() const { std::array<double, 4> b; store( &b[0] ); return b; }
-      double at(const unsigned i) const { return to_array()[i] ; }
+      double at(const unsigned i) const { return to_ptr()[i]; }
       operator __m256d() const { return data ; }
     };
 
@@ -99,7 +100,8 @@ namespace AmpGen {
     inline real_v select(const bool& mask   , const real_v& a, const real_v& b ) { return mask ? a : b; }
     inline real_v sign  ( const real_v& v){ return select( v > 0., +1., -1. ); }
     inline real_v atan2( const real_v& y, const real_v& x ){
-      std::array<double, 4> bx{x.to_array()}, by{y.to_array()};
+      const double* bx = x.to_ptr();
+      const double* by = y.to_ptr(); 
       return real_v (
           std::atan2(   by[0], bx[0])
           , std::atan2( by[1], bx[1])
@@ -148,7 +150,7 @@ namespace AmpGen {
         im ( arr[0].imag(), arr[1].imag(), arr[2].imag(), arr[3].imag() ){}
       explicit complex_v( const real_v& arg ) : re(arg) {};
       explicit complex_v( const double& arg ) : re(arg) {};
-      const std::complex<double> at(const unsigned i) const { return std::complex<float>(re.to_array()[i], im.to_array()[i]) ; }
+      const std::complex<double> at(const unsigned i) const { return std::complex<double>(re.at(i), im.at(i)); }
       void store( double* sre, double* sim ){ re.store(sre); im.store(sim);  }
       void store( scalar_type* r ) const {
         auto re_arr = re.to_array();
@@ -164,8 +166,8 @@ namespace AmpGen {
     };
 
     inline std::ostream& operator<<( std::ostream& os, const real_v& obj ) {
-      auto buffer = obj.to_array();
-      for( unsigned i = 0 ; i != 4; ++i ) os << buffer[i] << " ";
+      auto data = obj.to_ptr();
+      for( unsigned i = 0 ; i != 4; ++i ) os << data[i] << " ";
       return os;
     }
     inline real_v     real(const complex_v& arg ){ return arg.re ; }

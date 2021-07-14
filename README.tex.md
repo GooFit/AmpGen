@@ -132,7 +132,7 @@ The production/decay couplings of the @f$K_1(1270)^+@f$ resonance are now define
 
 Configuration can be split over multiple files by the using _Import_ keyword, for example, to import the parameters for the parameters associated with the isoscalar K-matrix, the line
 ```
-Import \@f$AMPGENROOT/options/kMatrix.opt
+Import $AMPGENROOT/options/kMatrix.opt
 ```
 
 can be added to options file. Multiple user configuration files can also be specified by including multiple files on the command line.
@@ -142,7 +142,6 @@ can be added to options file. Multiple user configuration files can also be spec
 AmpGen supports several different types of probability density functions (PDFs), which are detailed in this section. 
 
 #####  CoherentSum 
-
 The most common type of PDF is the CoherentSum. In this case, the total amplitude is given by the sum of amplitudes, weighted by complex coefficients. At a position in the phase space @f$\mathbf{x}@f$, the transition amplitude @f$\mathcal{T}@f$  is given by:
 
 @f$\mathcal{T}(\mathbf{x}) = \sum_{k} g_k A_k (\mathbf{x})@f$
