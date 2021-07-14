@@ -1,7 +1,3 @@
-#include <TMatrixDfwd.h>
-#include <TMatrixT.h>
-#include <TMatrixTSym.h>
-#include <TMatrixTUtils.h>
 #include <memory.h>
 #include <iomanip>
 #include <istream>

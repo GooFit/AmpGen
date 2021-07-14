@@ -1,6 +1,5 @@
 #ifndef AMPGEN_DALITZINTEGRATOR_H
 #define AMPGEN_DALITZINTEGRATOR_H
-#include <TAxis.h>
 #include <TH1.h>
 #include <TH2.h>
 #include <TF2.h>

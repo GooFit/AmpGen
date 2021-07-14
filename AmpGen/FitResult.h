@@ -2,7 +2,6 @@
 #define AMPGEN_FITRESULT_H
 
 #include "TMatrixD.h"
-#include "TClass.h"
 
 #include "AmpGen/FitFraction.h"
 #include "AmpGen/MinuitParameter.h"

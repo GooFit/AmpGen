@@ -7,10 +7,7 @@
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/CompiledExpressionBase.h"
 #include "AmpGen/MsgService.h"
-#include "TMatrixDfwd.h"
-#include "TMatrixT.h"
-#include "TMatrixTUtils.h"
-#include "TVectorT.h"
+#include <TVectorD.h>
 
 using namespace AmpGen; 
 
