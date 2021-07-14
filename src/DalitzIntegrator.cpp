@@ -185,6 +185,7 @@ TH2D* DalitzIntegrator::makePlot( const std::function<double(const double*)>& fc
 }
 
 
+/*
 double DalitzIntegrator::integrate_internal( TF2& fcn ) const
 {
   ROOT::Math::WrappedMultiTF1 wf1( fcn );
@@ -195,3 +196,4 @@ double DalitzIntegrator::integrate_internal( TF2& fcn ) const
   double xmax[] = {1, 1};
   return ig.Integral(xmin,xmax);
 }
+*/

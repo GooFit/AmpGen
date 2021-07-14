@@ -4,9 +4,10 @@
 #include <stddef.h>
 #include <vector>
 
+#include <TRandom.h>
+
 #include "AmpGen/Event.h"
 #include "AmpGen/EventType.h"
-#include "TRandom.h"
 
 namespace AmpGen
 {

@@ -1,16 +1,19 @@
 #ifndef AMPGEN_TREEREADER_H
 #define AMPGEN_TREEREADER_H 1
 
-#include "AmpGen/MsgService.h"
-#include "TLeaf.h"
-#include "TTree.h"
 #include <vector>
+
+#include "AmpGen/MsgService.h"
 #include "AmpGen/MetaUtils.h"
+
+class TTree; 
+
 namespace AmpGen
 {
   class TreeReader 
   {
     private:
+      std::string getBranchType(const std::string& name); 
       struct IReadBranch {
         std::string name;
         IReadBranch( const std::string& name = "" ) : name( name ) {}
@@ -75,12 +78,7 @@ namespace AmpGen
       template <typename OutputType> void setBranch( const std::string& name, OutputType* ptr )
       {
         IReadBranch* new_branch = nullptr;
-        TLeaf* leaf = m_tree->GetLeaf( name.c_str() );
-        if( leaf == nullptr ){
-          ERROR( "Leaf: " << name << " not found");
-          return; 
-        }
-        std::string branchType                     = leaf->GetTypeName();
+        auto branchType = getBranchType(name);
         if( branchType == "Double_t" ) new_branch = new ReadBranch<Double_t , OutputType>( name, ptr );
         if( branchType == "Float_t" )  new_branch = new ReadBranch<Float_t  , OutputType>( name, ptr );
         if( branchType == "Bool_t" )   new_branch = new ReadBranch<Bool_t   , OutputType>( name, ptr );

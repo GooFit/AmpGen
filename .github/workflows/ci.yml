@@ -70,8 +70,9 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           path: artifacts
-
+      - name: check files
+        run: find . -name '*.xml'
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1
         with:
-          files: artifacts/**/xml/*.xml
+          files: xml/*.xml

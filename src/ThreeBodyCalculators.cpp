@@ -132,7 +132,7 @@ TGraph* ThreeBodyCalculator::fastRunningMass(
 double ThreeBodyCalculator::PartialWidth::getWidth( const double& s )
 {
   integrator.setMother( s );
-  return integrator.integrate(totalWidth);
+  return integrator.integrateDP(totalWidth);
 }
 
 Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(

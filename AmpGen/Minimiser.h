@@ -8,7 +8,8 @@
 #include <iostream>
 #include <vector>
 
-#include "TMatrixTSym.h"
+#include <TMatrixTSym.h>
+
 #include "AmpGen/MetaUtils.h"
 
 /** @cond PRIVATE */

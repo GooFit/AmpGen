@@ -1,9 +1,6 @@
 #ifndef AMPGEN_DALITZINTEGRATOR_H
 #define AMPGEN_DALITZINTEGRATOR_H
-#include <TH1.h>
-#include <TH2.h>
-#include <TF2.h>
-#include <TRandom3.h>
+
 #include <stddef.h>
 #include <chrono>
 #include <cmath>
@@ -11,6 +8,8 @@
 #include <functional>
 #include <string>
 #include <utility>
+
+#include "AmpGen/NumericalIntegration.h"
 
 class TH1D;
 class TH2D;
@@ -31,11 +30,11 @@ namespace AmpGen
 
       DalitzIntegrator( const double& s0, const double& s1, const double& s2, const double& s3);
 
-      template <class FCN> double integrate( FCN fcn, const double& s) const;
+      template <typename FCN> double integrateDP( FCN fcn, const double& s) const;
 
-      template <class FCN> double integrate( FCN fcn ) const
+      template <typename FCN> double integrateDP( FCN fcn ) const
       {
-        return integrate( fcn, m_s0 );
+        return integrateDP( fcn, m_s0 );
       }
       double getMAB(sqCo coords)   const;
       double J(const sqCo& coords) const;
@@ -66,19 +65,17 @@ namespace AmpGen
       double    m_s1;
       double    m_s2;
       double    m_s3;
-      double integrate_internal( TF2& fcn ) const ;
+   //   double integrate_internal( TF2& fcn ) const ;
    
   };
-  template <class FCN>
-  double DalitzIntegrator::integrate( FCN fcn, const double& s) const
+  template <typename FCN>
+  double DalitzIntegrator::integrateDP( FCN fcn, const double& s) const
   {
     double event[12];
     for(size_t i = 0; i < 12; ++i) event[i] = 0; 
-    TF2 f( "fcn", [&]( double* x, double* p ) {
-      sqCo pos = {x[0], x[1]};
-      setEvent( pos, event, s);
-      return J(pos, s) * std::real( fcn(event) ); }, 0, 1, 0, 1, 0 );
-    return integrate_internal(f) / s;
+    return integrate<2>(  [&]( const std::array<double,2>& x ) {
+      setEvent( *reinterpret_cast<const sqCo*>(&x) , event, s);
+      return J( *reinterpret_cast<const sqCo*>(&x) , s) * std::real( fcn(event) ); }, std::array<double,2>{0., 0.}, std::array<double, 2>{1.,1.} ) /s;
   }
 
 } // namespace AmpGen

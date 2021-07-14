@@ -1,7 +1,20 @@
+#include <TLeaf.h>
+#include <TTree.h>
+
 #include "AmpGen/TreeReader.h"
 using namespace AmpGen; 
 
 TreeReader::TreeReader( TTree* tree ) : m_tree( tree ) {}
+
+std::string TreeReader::getBranchType(const std::string& name)
+{
+  TLeaf* leaf = m_tree->GetLeaf( name.c_str() );
+  if( leaf == nullptr ){
+    ERROR( "Leaf: " << name << " not found");
+    return ""; 
+  }
+  return leaf->GetTypeName();
+}
 
 void TreeReader::setEntryList( const std::vector<size_t>& entryList ){ m_entryList = entryList ; }
 

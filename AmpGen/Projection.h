@@ -6,9 +6,9 @@
 #include <string>
 #include <utility>
 
-#include "TH1D.h"
-#include "TH2D.h"
-#include "THStack.h"
+#include <TH1D.h>
+#include <TH2D.h>
+#include <THStack.h>
 
 #include "AmpGen/ArgumentPack.h"
 #include "AmpGen/Types.h"

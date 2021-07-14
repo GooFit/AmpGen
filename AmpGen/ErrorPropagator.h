@@ -10,12 +10,12 @@
 #include <array>
 #include <utility>
 
+#include <TMatrixD.h>
+#include <TRandom3.h>
+
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MsgService.h"
 
-#include "TDecompChol.h"
-#include "TMatrixD.h"
-#include "TRandom3.h"
 
 class TRandom3;
 
