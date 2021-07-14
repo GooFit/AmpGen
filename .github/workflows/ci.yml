@@ -47,3 +47,12 @@ jobs:
       run: ./build/bin/AmpGen.exe options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 10000
       env:
         CTEST_OUTPUT_ON_FAILURE: true
+    - name: Unit tests
+      run: |
+        mkdir xml
+        for x in build/bin/test/test_* ; do name=$(basename $x); $x --log_level=all --log_format=JUNIT > xml/$name.xml ; done
+    - name: Publish Unit Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      if: always()
+      with:
+        files: xml/*.xml
