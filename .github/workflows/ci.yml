@@ -78,4 +78,4 @@ jobs:
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1
         with:
-          files: artifacts/Results (Linux)/*.xml
+          files: artifacts/**/*.xml
