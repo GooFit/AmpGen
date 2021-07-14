@@ -64,13 +64,13 @@ namespace AmpGen
             else if constexpr( std::is_convertible<decltype(arg), MinuitParameterSet>::value ) mps = &arg;
             
             else if constexpr( std::is_convertible<decltype(arg), disableBatch>::value ) {
-              WARNING("Disabling bulk evaluation: did you do this on purpose?");
+              DEBUG("Disabling bulk evaluation: did you do this on purpose?");
               m_disableBatch = true; 
             }
             else ERROR("Unrecognised argument: " << type_string(arg) ); 
           }; 
           for_each( std::tuple<const namedArgs&...>(args...), process_argument);
-          if( mps == nullptr ) WARNING("No minuit parameterset linked.");
+          if( mps == nullptr ){ DEBUG("No minuit parameterset linked."); }
           resolve(mps);
           if constexpr(std::is_same<ret_type,void>::value ) 
           {
