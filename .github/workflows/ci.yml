@@ -52,7 +52,8 @@ jobs:
         mkdir xml 
         for x in build/bin/test/test_*; do 
           name=$(basename $x); $x --log_level=all --log_format=JUNIT > xml/${name}.xml 
-          sed -i -n '/^<?xml version="1.0" encoding="UTF-8"?>$/,$p' xml/${name}.xml
+          sed -n '/^<?xml version="1.0" encoding="UTF-8"?>$/,$p' xml/${name}.xml-i
+          mv xml/${name}.xml-i xml/${name}.xml
         done
 
     - name: Upload Unit Test Results
