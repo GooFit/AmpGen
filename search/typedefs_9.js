@@ -1,0 +1,5 @@
+var searchData=
+[
+  ['scalar_5ftype_2616',['scalar_type',['../d4/d8e/struct_amp_gen_1_1_a_v_x2d_1_1real__v.html#a15deec76b0ad03432dde221fc63a9a44',1,'AmpGen::AVX2d::real_v::scalar_type()'],['../d9/d37/struct_amp_gen_1_1_a_v_x2d_1_1complex__v.html#acf6b1b9a48d252713304fe1042fcbc59',1,'AmpGen::AVX2d::complex_v::scalar_type()'],['../d5/d87/struct_amp_gen_1_1_a_v_x2f_1_1real__v.html#abb3786bc4c5aa310e5fcf9132645263a',1,'AmpGen::AVX2f::real_v::scalar_type()'],['../d3/dcb/struct_amp_gen_1_1_a_v_x2f_1_1complex__v.html#a252a5c8c3150f7bc22386b627bcd905f',1,'AmpGen::AVX2f::complex_v::scalar_type()'],['../d1/d9d/struct_amp_gen_1_1_a_v_x512d_1_1real__v.html#aadb89fa1f841156e30837ccbad5508ca',1,'AmpGen::AVX512d::real_v::scalar_type()'],['../d1/d00/struct_amp_gen_1_1_a_v_x512d_1_1complex__v.html#a196fb4afdf48d8bb36d403cc691ed055',1,'AmpGen::AVX512d::complex_v::scalar_type()']]],
+  ['sqco_2617',['sqCo',['../df/d1a/class_amp_gen_1_1_dalitz_integrator.html#a99e15420a6675b429d4181508a321dbc',1,'AmpGen::DalitzIntegrator']]]
+];
