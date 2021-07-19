@@ -83,10 +83,6 @@ else()
   separate_arguments(GSL_LIBRARIES)
 endif()
 message(STATUS "GSL libraries: ${GSL_LIBRARIES}")
-#  endif()
-    #endif()
-
-message( 
 
 if( USE_OPENMP )
   find_package(OpenMP)
