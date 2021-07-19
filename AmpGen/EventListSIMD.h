@@ -103,7 +103,6 @@ namespace AmpGen
 
     TTree* tree( const std::string& name, const std::vector<std::string>& extraBranches = {} ) const;
     
-
     TH1D* makeProjection(const Projection& projection  , const ArgumentPack& args = ArgumentPack()) const; 
     TH2D* makeProjection(const Projection2D& projection, const ArgumentPack& args = ArgumentPack()) const;
     std::vector<TH1D*> makeProjections( const std::vector<Projection>& projections, const ArgumentPack& args );

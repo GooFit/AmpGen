@@ -32,7 +32,7 @@ namespace AmpGen {
       real_v(__m256 data ) : data(data) {}
       real_v(const float& f )      : data( _mm256_set1_ps(f) ) {}
       real_v(const double& f )     : data( _mm256_set1_ps( float(f) )) {}
-      real_v(const float* f )      : data( _mm256_loadu_ps( f ) ) {}
+      explicit real_v(const float* f )      : data( _mm256_loadu_ps( f ) ) {}
       real_v(const float& x0, const float& x1, const float& x2, const float& x3,
           const float& x4, const float& x5, const float& x6, const float& x7)
       {

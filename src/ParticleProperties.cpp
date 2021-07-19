@@ -24,6 +24,19 @@ void ParticleProperties::print( std::ostream& out ) const
     << "\n";
 }
 
+std::vector<int> ParticleProperties::polarisations() const 
+{
+  if( twoSpin() == 0 ) return {0};          // scalar 
+  if( isPhoton() )     return {1,-1};       // photon 
+  if( twoSpin() == 1 ) return {1,-1};       // fermion
+  if( twoSpin() == 2 ) return {1,0,-1};     // vector
+  if( twoSpin() == 4 ) return {2,1,0,-1,-2};// tensor
+  else { 
+    WARNING("Particle with spin: " << twoSpin() << "/2" << " not implemented in initial/final state");
+    return {0};
+  }
+}
+
 int ParticleProperties::chargeFromString( const std::string& ch, bool& status ) const
 {
   if ( ch == "+" ) return 1;

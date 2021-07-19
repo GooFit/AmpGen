@@ -37,7 +37,7 @@ namespace AmpGen {
       {
         data = _mm256_set_pd(x3,x2,x1,x0);
       }
-      real_v(const double* f ) : data( _mm256_loadu_pd( f ) ) {}
+      explicit real_v(const double* f ) : data( _mm256_loadu_pd( f ) ) {}
       real_v(const std::array<double,4> f ) : data( _mm256_loadu_pd( f.data() ) ) {}
       void store( double* ptr ) const { _mm256_storeu_pd( ptr, data ); }
       const double* to_ptr() const { return reinterpret_cast<const double*>( &data ) ; }

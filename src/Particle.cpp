@@ -396,14 +396,19 @@ Expression Particle::getExpression( DebugSymbols* db, const std::vector<int>& st
     db->emplace_back( uniqueString() , Parameter( "NULL", 0, true ) );
   Expression total = 0;
   Tensor::Index a;
-  auto finalStateParticles  = getFinalStateParticles();
-  auto orderings            = identicalDaughterOrderings();
+  auto fsp              = getFinalStateParticles();
+  auto orderings        = identicalDaughterOrderings();
   bool doSymmetrisation = !hasModifier("NoSym");
   bool sumAmplitudes    = !hasModifier("Inco");
   bool includeSpin      = !hasModifier("BgSpin0");
   std::vector<int> exchangeParities;
-  std::transform( finalStateParticles.begin(), finalStateParticles.end(), std::back_inserter(exchangeParities), 
+  std::transform(fsp.begin(), fsp.end(), std::back_inserter(exchangeParities), 
       [](const auto& p){ return p->props()->isFermion() ? -1 : 1; } );
+  std::map< std::vector<size_t>, Expression> props; 
+  for( const auto& ordering : orderings ){
+    setOrdering( ordering );
+    props[ordering] = make_cse(propagator(db)); 
+  }
   for(const auto& ordering : orderings){
     auto exchangeParity = minSwaps( ordering, exchangeParities );   
     setOrdering( ordering );
@@ -432,16 +437,14 @@ Expression Particle::getExpression( DebugSymbols* db, const std::vector<int>& st
     }
     if( db != nullptr ){
       std::string finalStateString="";
-      for( auto& fs : finalStateParticles ) 
-        if( fs->spin() != 0 ){
-          finalStateString += std::to_string(fs->polState()) + "_";
-        }
+      for( const auto& fs : fsp)
+        if( fs->spin() != 0 ) finalStateString += std::to_string(fs->polState()) + "_";
       if( finalStateString != "" ) 
         finalStateString = finalStateString.substr(0, finalStateString.size()-1);
       db->emplace_back( "SF_"+std::to_string(polState()) +"_"+ finalStateString , spinFactor );
     }
     DEBUG( "Got spin matrix element -> calculating lineshape product" );
-    Expression ls = make_cse(propagator(db)) * spinFactor; 
+    Expression ls = props[ordering] * spinFactor; 
     if(sumAmplitudes) total = total + exchangeParity.second * ls;
     else              total = total + fcn::conj(ls) * ls;
     if(!doSymmetrisation) break;

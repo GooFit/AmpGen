@@ -91,12 +91,9 @@ namespace AmpGen
       std::string                   m_prefix      = "";
       std::vector<complex_t>        m_rho;
       std::vector<size_t>           m_integIndex; 
-      AmplitudeRules                m_rules;  
       std::pair<unsigned, unsigned> m_dim; 
       std::vector<TransitionMatrix<void>>                          m_matrixElements;  
       CompiledExpression<float_v(const real_t*, const complex_v*)> m_probExpression; 
-      std::vector<std::vector<int>> indexProduct(const std::vector<std::vector<int>>&, const std::vector<int>&) const;
-      std::vector<int> polarisations(const std::string&) const ;
   };
 } // namespace AmpGen
 

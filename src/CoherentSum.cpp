@@ -35,8 +35,7 @@ using namespace AmpGen;
 CoherentSum::CoherentSum() = default; 
 
 CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
-  :   m_rules    (mps)
-    , m_evtType  (type)
+  :   m_evtType  (type)
     , m_printFreq(NamedParameter<size_t>(     "CoherentSum::PrintFrequency", 100)  )
     , m_dbThis   (NamedParameter<bool>(       "CoherentSum::Debug"         , false))
     , m_verbosity(NamedParameter<bool>(       "CoherentSum::Verbosity"     , 0)    )
@@ -44,7 +43,8 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
     , m_prefix   (prefix)
     , m_mps(&mps) 
 {
-  auto amplitudes      = m_rules.getMatchingRules( m_evtType, prefix);
+  auto rules = AmplitudeRules::create(mps);
+  auto amplitudes      = rules->getMatchingRules( m_evtType, prefix);
   if( amplitudes.size() == 0 ){
     WARNING("The defined amplitudes don't seem to be able to be able to generate eventType: " << type);
   }
@@ -131,7 +131,8 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
   prepare();
   bool recomputeIntegrals    = NamedParameter<bool>("CoherentSum::RecomputeIntegrals", false );
   std::vector<FitFraction> outputFractions;
-  for(auto& rule : m_rules.rules()) 
+  auto rules = AmplitudeRules::get();
+  for(auto& rule : rules->rules() ) 
   {
     FitFractionCalculator<CoherentSum> pCalc(this, findIndices(m_matrixElements, rule.first), recomputeIntegrals);
     for(auto& process : rule.second) 
@@ -145,7 +146,7 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
     auto fractions = pCalc(rule.first, linProp);
     std::transform( fractions.begin(), fractions.end(), std::back_inserter(outputFractions),[](auto& p){ return p;} );
   };
-  auto ffForHead = m_rules.rulesForDecay(m_evtType.mother(), m_prefix);
+  auto ffForHead = rules->rulesForDecay(m_evtType.mother(), m_prefix);
   FitFractionCalculator<CoherentSum> iCalc(this, findIndices(m_matrixElements, m_evtType.mother()), recomputeIntegrals);
   for ( size_t i = 0; i < ffForHead.size(); ++i ) 
   {

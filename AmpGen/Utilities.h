@@ -171,6 +171,25 @@ namespace AmpGen {
     return [values](const contained_type& event) -> return_type {return *(values.data() + event.index()); }; 
   }
 
+  template <typename T> std::vector<std::vector<T>> all_combinations( const std::vector< std::vector<T>>& elements )
+  {
+    int nc = 1; 
+    for( const auto & s : elements ) nc *= s.size(); 
+    std::vector< std::vector<T>> comb (nc, std::vector<T>(elements.size(), 0));
+    for( int i = 0 ; i != comb.size(); ++i )
+    {
+      int counter = i; 
+      for( int j = elements.size()-1 ; j >= 0; --j )
+      {
+        int t    = counter % elements[j].size();
+        counter  = ( counter - t ) / elements[j].size();
+        comb[i][j] = elements[j][t];
+      }
+    }
+    return comb; 
+  }
+
+
   template<class iterator>
     void parallel_sort(iterator begin, 
         iterator end, 

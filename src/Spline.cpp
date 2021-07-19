@@ -1,13 +1,14 @@
-#include "AmpGen/Spline.h"
-
 #include <ostream>
 
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_linalg.h>
+
+#include "AmpGen/Spline.h"
 #include "AmpGen/ASTResolver.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/CompiledExpressionBase.h"
 #include "AmpGen/MsgService.h"
-#include <TVectorD.h>
 
 using namespace AmpGen; 
 
@@ -33,6 +34,11 @@ Spline::Spline(const Spline& spline, const Expression& x, DebugSymbols* db ) :
 Expression Spline::operator()( const Expression& x, DebugSymbols* db )
 {
   return Spline(*this,x, db); 
+}
+
+SplineTransfer::~SplineTransfer()
+{
+  if( m_transferMatrix != nullptr ) gsl_matrix_free(m_transferMatrix); 
 }
 
 Expression AmpGen::getSpline( const std::string& name, const Expression& x, const std::string& arrayName,
@@ -77,40 +83,31 @@ Expression Spline::eval(DebugSymbols* db) const
 }
 
 void SplineTransfer::print() const { INFO( "Source: " << m_parameters[0]->name() ); }
-SplineTransfer::SplineTransfer() = default;
-
-SplineTransfer::SplineTransfer( const SplineTransfer& other )
-  : CacheTransfer(other.m_address, other.m_name, other.m_value, other.m_size)
-  , m_transferMatrix( other.m_transferMatrix )
-  , m_parameters( other.m_parameters )
-  , m_nKnots( other.m_nKnots )
-  , m_min( other.m_min )
-  , m_max( other.m_max )
-{
-}
 
 SplineTransfer::SplineTransfer( const size_t& address, const std::string& name, const unsigned int& N, const double& min, const double& max )
   : CacheTransfer(address, name)
-  , m_transferMatrix( TMatrixD( N - 2, N - 2 ) )
   , m_parameters( N, nullptr )
   , m_nKnots(N)
   , m_min( min )
   , m_max( max )
 {
   unsigned int size = N - 2;
-  TMatrixD M(size, size);
+  gsl_matrix* M = gsl_matrix_alloc(size,size); 
+  gsl_matrix_set_all(M, 0. );
+  m_transferMatrix = gsl_matrix_alloc(size, size); 
   for ( unsigned int i = 0; i < size; ++i ) {
-    M[i][i] = 4;
+    gsl_matrix_set(M, i,i,4.); 
     if ( i != size - 1 ) {
-      M[i][i + 1] = 1;
-      M[i + 1][i] = 1;
+      gsl_matrix_set(M, i,i+1,1.); 
+      gsl_matrix_set(M, i+1,i,1.); 
     }
   }
-  DEBUG( m_transferMatrix.GetNrows() << " x " << m_transferMatrix.GetNcols() << "  ; " << M.GetNrows() << " x "
-      << M.GetNcols() );
-
-  m_transferMatrix = M.Invert();
-  DEBUG( "Leaving constructor ..." );
+  gsl_permutation *p = gsl_permutation_alloc(size);
+  int s;
+  gsl_linalg_LU_decomp(M, p, &s);
+  gsl_linalg_LU_invert(M, p, m_transferMatrix);
+  gsl_permutation_free(p);
+  gsl_matrix_free(M); 
 }
 
 bool SplineTransfer::isConfigured()
@@ -129,21 +126,22 @@ void SplineTransfer::set( const unsigned int& N, const double& value )
 
 void SplineTransfer::transfer( CompiledExpressionBase* destination )
 {
-  unsigned int size = m_parameters.size() - 2;
-  TVectorD L( size );
-  for ( unsigned int i = 0; i < size; ++i ) {
-    L[i] = m_parameters[i + 2]->mean() - 2 * m_parameters[i + 1]->mean() + m_parameters[i]->mean();
-  }
-  DEBUG( L.GetNrows() << "   " << m_transferMatrix.GetNrows() << "   " << m_transferMatrix.GetNcols() );
-  auto mtv = m_transferMatrix * L;
+  unsigned size = m_parameters.size() - 2;
   std::vector<double> mvectors( m_parameters.size(), 0 );
   double spacing = ( m_max - m_min ) / double( m_parameters.size() - 1);
 
-  for ( int i = 0; i < mtv.GetNrows(); ++i ) mvectors[i + 1] = 6 * mtv[i] / ( spacing * spacing );
+  for( unsigned i = 0 ; i != size; ++i )
+  { 
+    for( unsigned j = 0 ; j != size; ++j )
+    {
+      double lj = m_parameters[j + 2]->mean() - 2 * m_parameters[j + 1]->mean() + m_parameters[j]->mean();
+      mvectors[i+1] += 6 * gsl_matrix_get(m_transferMatrix, i, j ) * lj / (spacing*spacing); 
+    }
+  } 
 
-  for ( unsigned int i = 0; i < m_parameters.size(); ++i ) {
-    DEBUG( "Knot["<<i<<"] : value = (" << m_parameters[i]->mean() << ", "  << m_address +i << ") "
-        << " curvature = (" << mvectors[i] << " , " << m_address + m_nKnots +i << ")" );
+  for ( unsigned i = 0; i < m_parameters.size(); ++i ) {
+    DEBUG( "Knot GSL["<<i<<"] : value = (" << m_parameters[i]->mean() << ", "  << m_address +i << ") "
+        << " curvature = (" << round( mvectors[i],10) << " , " << m_address + m_nKnots +i << ")" );
     destination->setExternal( m_parameters[i]->mean(), m_address + i );
     destination->setExternal( mvectors[i], m_address + m_nKnots + i );  
   }

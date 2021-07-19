@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "AmpGen/ProfileClock.h"
 
 #include "AmpGen/AmplitudeRules.h"
 #include "AmpGen/CompiledExpression.h"
@@ -144,7 +145,9 @@ Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(
     auto perm = particle.identicalDaughterOrderings();
     for ( auto& p : perm ) {
       particle.setOrdering(p);
-      particle.setLineshape( "FormFactor" );
+      if( particle.lineshape().find("EFF") or particle.lineshape().find("ExpFF") )
+        particle.setLineshape( "ExpFF" );
+      else particle.setLineshape("FormFactor");
       Expression prop = make_cse( c.to_expression() ) * make_cse( particle.propagator( msym ) );
       if ( msym != nullptr )
       { 
@@ -175,17 +178,15 @@ ThreeBodyCalculator::ThreeBodyCalculator( const std::string& head, MinuitParamet
   std::vector<EventType> finalStates;
   auto rules                = AmplitudeRules( mps );
   auto rulesForThisParticle = rules.rulesForDecay( head );
-  for ( auto& pAmp : rulesForThisParticle ) {
-    auto type = pAmp.eventType();
-    if ( std::find( finalStates.begin(), finalStates.end(), type ) != finalStates.end() ) continue;
-    bool stateToBeExpanded = false;
-    for ( auto& fs : type.finalStates() ) {
-      if ( rules.hasDecay( fs ) ) stateToBeExpanded = true;
+  for ( const auto& coupling : rulesForThisParticle ) {
+    auto all_decay_paths = rules.expand(coupling); 
+    for( const auto& [particle, coupling] : all_decay_paths )
+    {
+      auto type = particle.eventType();
+      if ( std::find( finalStates.begin(), finalStates.end(), type ) == finalStates.end() ) finalStates.push_back(type);
     }
-    if ( stateToBeExpanded ) continue;
-    INFO( "Final state to sum = " << type );
-    finalStates.push_back( type );
   }
+  if( finalStates.size() == 0 ) FATAL("Particle: " << head << " has no integrable decay path");
   for ( auto& type : finalStates ) m_widths.emplace_back( type, mps );
   if( nKnots != 999) setAxis( nKnots, min, max ); 
 }
@@ -201,14 +202,17 @@ void ThreeBodyCalculator::setAxis( const size_t& nKnots, const double& min, cons
 void ThreeBodyCalculator::updateRunningWidth( MinuitParameterSet& mps, const double& mNorm )
 {
   prepare();
-  setNorm( mNorm == 0 ? mps[m_name + "_mass"]->mean() : mNorm ); 
+  ProfileClock pc; 
+  setNorm( mNorm == 0 ? mps[m_name + "_mass"]->mean() : mNorm );
   for ( size_t c = 0; c < m_nKnots; ++c ) {
     double s                   = m_min + double(c) * m_step;
-    double I                   = getWidth(s);
+    double I                   = getWidth(s) / m_norm;
     const std::string knotName = m_name + "::Spline::Gamma::" + std::to_string( c );
     if ( mps.find( knotName ) != nullptr ) mps[knotName]->setCurrentFitVal( I );
     INFO( knotName << " = " << I );
   }
+  pc.stop();
+  INFO( "Time to do integrals: " << pc );
 }
 
 void ThreeBodyCalculator::prepare()
@@ -243,15 +247,15 @@ ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitPar
   for ( auto& p : unpacked ) {
     partialWidths.emplace_back( spinAverageMatrixElement( {p}, &msym ), p.first.decayDescriptor(), &mps, evtFormat);
   }
-  totalWidth = CompiledExpression< complex_t(const real_t*, const real_t*) > ( matrixElementTotal, "width", &mps, evtFormat);
+  totalWidth = CompiledExpression< complex_v(const real_t*, const float_v*) > ( matrixElementTotal, "width", &mps, evtFormat);
   CompilerWrapper(true).compile( totalWidth, "");
 }
 
-double ThreeBodyCalculator::getWidth( const double& m )
+double ThreeBodyCalculator::getWidth( const double& s )
 {
   double G = 0;
   for ( auto& w : m_widths ){
-    double wp = w.getWidth( m ); 
+    double wp = w.getWidth( s ); 
     if( std::isnan( wp) ) continue; 
     G += wp;
   }
@@ -261,7 +265,7 @@ double ThreeBodyCalculator::getWidth( const double& m )
 void ThreeBodyCalculator::setNorm( const double& mNorm )
 {
   m_norm = 1;
-  m_norm = getWidth(mNorm);
+  m_norm = getWidth(mNorm * mNorm);
 }
 
 void ThreeBodyCalculator::makePlots(const double& mass, const size_t& x, const size_t& y)
@@ -273,18 +277,22 @@ void ThreeBodyCalculator::makePlots(const double& mass, const size_t& x, const s
   int points = NamedParameter<int>( "nPoints", 50000000 );
   sq.setMother( evtType.motherMass() );
   prepare();
+  /*
   auto fcn = [&](const double* evt) { return std::real(fcs(evt)); };
   sq.makePlot( fcn, Projection2D( projection_operators[x], projection_operators[y] ), "s01_vs_s02", points )->Write();
+  */
 }
 
 void ThreeBodyCalculator::debug( const double& m, const double& theta )
 {
+  /*
   for( auto& width : m_widths )
   {
     Event event(12);
-    width.integrator.setEvent({m,theta},event);
+    width.integrator.setEvent({float_v(m),float_v(theta)},event);
     event.print();
     width.totalWidth.debug( event.address() );
   }
+  */
 }
 

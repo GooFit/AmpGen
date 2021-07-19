@@ -8,12 +8,12 @@
 #include <utility>
 #include <vector>
 
+#include <gsl/gsl_matrix.h>
+
 #include "AmpGen/Array.h"
 #include "AmpGen/Expression.h"
 #include "AmpGen/CacheTransfer.h"
 #include "AmpGen/Types.h"
-
-#include <TMatrixD.h>
 
 namespace AmpGen{
   class ASTResolver;
@@ -23,19 +23,23 @@ namespace AmpGen{
   class SplineTransfer : public CacheTransfer
   {
     public:
-      SplineTransfer();
-      SplineTransfer( const SplineTransfer& other );
+//      SplineTransfer();
       SplineTransfer( const size_t& address, const std::string& name, const unsigned int& N, const double& min, const double& max );
       void transfer( CompiledExpressionBase* destination ) override;
       bool isConfigured();
-      void set( const unsigned int& N, AmpGen::MinuitParameter* f );
+      void set( const unsigned int& N, MinuitParameter* f );
       void set( const unsigned int& N, const double& value );
       void print()  const override;
       size_t size() const override { return 2*m_nKnots; }
-
+      
+      SplineTransfer( const SplineTransfer&) = delete;
+      SplineTransfer& operator=(const SplineTransfer&) = delete; 
+      SplineTransfer& operator=(SplineTransfer&&) = delete; 
+      SplineTransfer( SplineTransfer&&) = delete; 
+      ~SplineTransfer(); 
     private:
-      TMatrixD m_transferMatrix;
-      std::vector<AmpGen::MinuitParameter*> m_parameters;
+      gsl_matrix*  m_transferMatrix = {nullptr}; 
+      std::vector<MinuitParameter*> m_parameters;
       size_t       m_nKnots;
       double       m_min;
       double       m_max;
@@ -64,8 +68,8 @@ namespace AmpGen{
       Expression                   m_x; 
       Expression                   m_eval; 
   };
-  Expression getSpline( const std::string& name, const AmpGen::Expression& x, const std::string& arrayName,
-      AmpGen::DebugSymbols* dbexpressions = nullptr, const bool& continueSpline = false );
+  Expression getSpline( const std::string& name, const Expression& x, const std::string& arrayName,
+      DebugSymbols* dbexpressions = nullptr, const bool& continueSpline = false );
 }
 
 #endif 

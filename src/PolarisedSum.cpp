@@ -56,20 +56,20 @@ PolarisedSum::PolarisedSum(const EventType& type,
   , m_verbosity (NamedParameter<bool>("PolarisedSum::Verbosity", 0     ))
   , m_debug     (NamedParameter<bool>("PolarisedSum::Debug"    , false ))
   , m_eventType (type)
-  , m_rules     (mps)
   , m_dim       (m_eventType.dim())
 {
+  auto rules = AmplitudeRules::create(mps); 
   std::string objCache = NamedParameter<std::string>("PolarisedSum::ObjectCache", ""    );
   spaceType stype      = NamedParameter<spaceType>(  "PolarisedSum::SpaceType"  , spaceType::spin);
   {
   ThreadPool tp(std::thread::hardware_concurrency() );
   if( stype == spaceType::spin )
   {
-    auto prodPols        = polarisations(m_eventType.mother()); 
-    std::vector<std::vector<int>> polStates; 
-    for(const auto& pol : prodPols ) polStates.push_back({pol}); 
-    for(unsigned i = 0 ; i != type.size(); ++i ) polStates = indexProduct(polStates, polarisations( type[i] ) ); 
-    auto protoAmps       = m_rules.getMatchingRules(m_eventType);
+    auto prodPols        = ParticleProperties::get(m_eventType.mother())->polarisations();
+    std::vector<std::vector<int>> pols = { prodPols }; 
+    for(unsigned i=0; i != type.size(); ++i) pols.push_back( ParticleProperties::get(type[i])->polarisations() ); 
+    auto polStates = all_combinations( pols ); 
+    auto protoAmps       = rules->getMatchingRules(m_eventType);
     for(const auto& m : protoAmps ) INFO( m.first.uniqueString() ); 
     m_matrixElements.resize( protoAmps.size() );
     for(unsigned i = 0; i < m_matrixElements.size(); ++i)
@@ -98,8 +98,8 @@ PolarisedSum::PolarisedSum(const EventType& type,
   if ( stype == spaceType::flavour )
   {
     m_dim = {2,1};
-    auto r1 = m_rules.getMatchingRules(m_eventType, m_prefix);
-    auto r2 = m_rules.getMatchingRules(m_eventType.conj(true), m_prefix);  
+    auto r1 = rules->getMatchingRules(m_eventType, m_prefix);
+    auto r2 = rules->getMatchingRules(m_eventType.conj(true), m_prefix);  
     m_matrixElements.resize( r1.size() + r2.size() );
     for(unsigned i = 0 ; i != m_matrixElements.size(); ++i)
     {
@@ -135,32 +135,6 @@ PolarisedSum::PolarisedSum(const EventType& type,
   auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector,[](auto& p){ return Parameter(p->name());} ), 
                                                  convertProxies(m_pfVector,[](auto& p){ return Parameter(p->name());} ), m_debug ? &db : nullptr);
   m_probExpression = make_expression<float_v, real_t, complex_v>( prob, "prob_unnormalised", m_mps, this->m_debug ? db : DebugSymbols() );
-}
-
-std::vector<int> PolarisedSum::polarisations( const std::string& name ) const 
-{
-  auto props = *ParticlePropertiesList::get( name );
-  if( props.twoSpin() == 0 ) return {0};         // scalar 
-  if( props.isPhoton() )     return {1,-1};      // photon 
-  if( props.twoSpin() == 1 ) return {1,-1};      // fermion
-  if( props.twoSpin() == 4 ) return {-2,1,0,1,2};// tensor
-  if( props.twoSpin() == 2 ) return {1,0,-1};    // vector
-  else { 
-    WARNING("Particle with spin: " << props.twoSpin() << "/2" << " not implemented in initial/final state");
-    return {0};
-  }
-}
-
-std::vector<std::vector<int>> PolarisedSum::indexProduct(const std::vector<std::vector<int>>& A, const std::vector<int>& B ) const 
-{
-  std::vector<std::vector<int>> rt; 
-  for( auto& iA : A ){
-    for( auto& iB : B ){
-      rt.push_back(iA);
-      rt.rbegin()->push_back(iB);
-    }
-  }
-  return rt;
 }
 
 std::vector<complex_t> densityMatrix(const unsigned& dim, const std::vector<MinuitProxy>& pv )
@@ -456,10 +430,11 @@ std::vector<FitFraction> PolarisedSum::fitFractions(const LinearErrorPropagator&
   bool recomputeIntegrals    = NamedParameter<bool>("PolarisedSum::RecomputeIntegrals", false );
   bool interferenceFractions = NamedParameter<bool>("PolarisedSum::InterferenceFractions", false );
   std::vector<FitFraction> outputFractions; 
-  for(const auto& rule : m_rules.rules()) 
+  const auto& rules = AmplitudeRules::get();
+  for(const auto& [head, couplings] : rules->rules() ) 
   {
-    FitFractionCalculator<PolarisedSum> pCalc(this, findIndices(m_matrixElements, rule.first), recomputeIntegrals);
-    for(const auto& process : rule.second) 
+    FitFractionCalculator<PolarisedSum> pCalc(this, findIndices(m_matrixElements, head), recomputeIntegrals);
+    for(const auto& process : couplings) 
     {
       if(process.head() == m_eventType.mother() && process.prefix() != m_prefix) continue;
       auto numeratorIndices   = processIndex(m_matrixElements, process.name());
@@ -467,7 +442,7 @@ std::vector<FitFraction> PolarisedSum::fitFractions(const LinearErrorPropagator&
       pCalc.emplace_back(process.name(), numeratorIndices);
     }
     if( pCalc.calculators.size() == 0 ) continue;  
-    auto fractions = pCalc(rule.first, prop);
+    auto fractions = pCalc(head, prop);
     for( const auto& f : fractions ) outputFractions.emplace_back(f);
   }
   INFO("Fit fractions: ");
@@ -475,7 +450,7 @@ std::vector<FitFraction> PolarisedSum::fitFractions(const LinearErrorPropagator&
   
   if( interferenceFractions )
   {  
-    auto head_rules = m_rules.rulesForDecay(m_eventType.mother(), m_prefix);   
+    auto head_rules = rules->rulesForDecay(m_eventType.mother(), m_prefix);   
     FitFractionCalculator<PolarisedSum> iCalc(this, findIndices(m_matrixElements, m_eventType.mother()), recomputeIntegrals);
     for(size_t i = 0 ; i < head_rules.size(); ++i)
     {

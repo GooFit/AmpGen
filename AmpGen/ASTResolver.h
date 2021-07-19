@@ -36,10 +36,9 @@ namespace AmpGen {
       {
         auto it = m_cacheFunctions.find(name);
         if( it != m_cacheFunctions.end() ) return it->second->address();
-        auto cacheFunction = std::make_shared<TYPE>(m_nParameters, name, args... );
-        m_cacheFunctions[name] = cacheFunction;
-        m_nParameters += cacheFunction->size();
-        return m_nParameters - cacheFunction->size();
+        m_cacheFunctions[name] = std::make_shared<TYPE>(m_nParameters, name, args... );
+        m_nParameters += m_cacheFunctions[name]->size();
+        return m_nParameters - m_cacheFunctions[name]->size();
       }
       size_t nParams() const { return m_nParameters ; }       
       bool enableCuda() const { return m_enable_cuda ; }

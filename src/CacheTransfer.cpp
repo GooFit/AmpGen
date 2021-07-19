@@ -9,8 +9,6 @@
 
 using namespace AmpGen;
 
-CacheTransfer::CacheTransfer() = default; 
-
 CacheTransfer::CacheTransfer( const size_t& address, const std::string& name, const double& value, const size_t& size ) : 
   m_address(address), 
   m_size(size),

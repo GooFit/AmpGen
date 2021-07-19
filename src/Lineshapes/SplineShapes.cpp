@@ -37,8 +37,7 @@ DEFINE_LINESHAPE( GSpline )
   Expression BF = fcn::sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) ) ;
   if( useEFF ) BF =  fcn::exp( -q2 * radius * radius / 2. );
   if ( useGFF ) {
-    const Expression alpha = Parameter( particleName + "_alpha" );
-    BF = fcn::exp( -( sInGeV - mass*mass ) * ( sInGeV - mass*mass )/( 2*alpha*alpha ) );
+    WARNING("Gaussian form factors in running width are depreciated (as they don't make much sense)");
   }
 
   const Expression width_shape  = getSpline( particleName, sInGeV   , "Gamma", dbexpressions, true );

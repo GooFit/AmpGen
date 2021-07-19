@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <string>
 #include <functional>
+#include "AmpGen/MsgService.h"
 
 namespace AmpGen
 {
@@ -15,7 +16,6 @@ namespace AmpGen
   class CacheTransfer 
   {
     public:
-      CacheTransfer();
       CacheTransfer( const size_t& address, const std::string& name, const double& value=0, const size_t& size=1);
       virtual ~CacheTransfer() = default;
 
@@ -25,6 +25,13 @@ namespace AmpGen
       virtual void print()     const;
       virtual size_t size()    const { return m_size ; }  
       virtual std::string name() const { return m_name; } 
+
+      
+      CacheTransfer( const CacheTransfer&) = delete;
+      CacheTransfer& operator=(const CacheTransfer&) = delete; 
+      CacheTransfer& operator=(CacheTransfer&&) = delete; 
+      CacheTransfer( CacheTransfer&&) = delete; 
+
     protected: 
       size_t       m_address = {0};
       size_t       m_size    = {0}; 

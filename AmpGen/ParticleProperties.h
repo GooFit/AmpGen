@@ -78,7 +78,7 @@ namespace AmpGen
       ParticleProperties anti() const;                                          ///< Return the antiparticle of this particle
 
       static const ParticleProperties* get( const std::string& name, const bool& quiet=false ); 
-
+      std::vector<int> polarisations() const; 
     private:
       double m_mass{0};                  ///< mass [GeV]
       double m_mErrPlus{0};              ///< +ve mass error [GeV]

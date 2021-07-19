@@ -52,7 +52,6 @@ namespace AmpGen
     CoherentSum( const EventType& type, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "" );
     virtual ~CoherentSum() = default; 
 
-    AmplitudeRules protoAmplitudes() { return m_rules; }
     std::string prefix() const { return m_prefix; }
     
     auto operator[]( const size_t& index ) { return m_matrixElements[index]; }
@@ -104,7 +103,6 @@ namespace AmpGen
   protected:
     std::vector<TransitionMatrix<complex_v>> m_matrixElements; ///< Vector of matrix elements
     Bilinears        m_normalisations;                         ///< Normalisation integrals
-    AmplitudeRules   m_rules;                                  ///< Ruleset for the selected transition.
      
     Integrator       m_integrator;                             ///< Tool to calculate integrals 
     const EventList_type*  m_events       = {nullptr};               ///< Data events to evaluate PDF on

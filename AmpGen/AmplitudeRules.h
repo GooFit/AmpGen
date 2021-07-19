@@ -72,17 +72,21 @@ namespace AmpGen
   class AmplitudeRules
   {
     public:
-      AmplitudeRules() = default; 
+      static const AmplitudeRules* get(); 
+      static AmplitudeRules* create( const MinuitParameterSet& mps); 
       AmplitudeRules( const MinuitParameterSet& mps );
-      std::vector<Coupling> rulesForDecay(const std::string& head, const std::string& prefix="");
-      bool hasDecay( const std::string& head );
+      std::vector<Coupling> rulesForDecay(const std::string& head, const std::string& prefix="") const;
+      bool hasDecay( const std::string& head ) const;
       const std::map<std::string, std::vector<Coupling>>& rules() const;
       std::vector<std::pair<Particle, TotalCoupling>> getMatchingRules( 
           const EventType& type, const std::string& prefix="" );
       std::vector<Coupling> processesThatProduce(const Particle& particle) const; 
 
+
+      std::vector<std::pair<Particle, TotalCoupling>> expand( const Coupling& coupling ) const; 
     private:
       std::map<std::string, std::vector<Coupling>> m_rules;
+      static AmplitudeRules* gAmplitudeRules;
   };
 
   template <class RT> struct TransitionMatrix : public CompiledExpression<RT(const real_t*, const float_v*)>  

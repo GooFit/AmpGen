@@ -200,9 +200,8 @@ namespace AmpGen {
         current_integral -> a[idvax0] -= current_integral->b[idvax0];
 
       } while( status == 3 ); 
-
+//      std::cout << "IFNCLS: " << ifncls << " ISBRGN: " << isbrgn  << " ISBRGS: " << isbrgs << " " << abserr << " " << relerr << std::endl; 
       return result;         //an approximate value of the integral
-
     }
   }
 }
