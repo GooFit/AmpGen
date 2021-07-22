@@ -237,6 +237,8 @@ namespace AmpGen{
 
             }
 
+            
+
 
             const real_t calcCorrL(const Event event) const {
                 //auto XY=getXY(event);
@@ -269,6 +271,30 @@ namespace AmpGen{
                 return m_mps["PhaseCorrection::C" + std::to_string(i) + "_"  + std::to_string(j)]->mean() * fastLegendre(w1, i) * fastLegendre(w2, j);
                 */
                 
+                if (m_PolyType=="Gaussian"){
+                    real_t sc = m_mps["PhaseCorrection::GaussScale"]->mean();
+                    real_t muX = m_mps["PhaseCorrection::GaussMuX"]->mean();
+                    real_t muY = m_mps["PhaseCorrection::GaussMuY"]->mean();
+                    real_t sigmaX = m_mps["PhaseCorrection::GaussSigmaX"]->mean();
+                    real_t sigmaY = m_mps["PhaseCorrection::GaussSigmaY"]->mean();
+                    int sign = z2/abs(z2);
+                    if (sign == 1){
+                    real_t gauss = sign * sc/(2 * M_PI * sigmaX * sigmaY) * exp ( -pow( x - muX, 2)/(2*sigmaX) - pow(y - muY, 2)/(2 * sigmaY));
+
+
+                    return gauss;
+
+                    }
+                    else{
+                    real_t gauss = sign * sc/(2 * M_PI * sigmaX * sigmaY) * exp ( -pow( y - muX, 2)/(2*sigmaX) - pow(x - muY, 2)/(2 * sigmaY));
+
+
+                    return gauss;
+ 
+                    }
+
+                }
+
                 for (size_t i=m_start;i<m_order+1 ; i++){
                    
                     p+=calcPoly(w1,w2,i);
@@ -299,6 +325,10 @@ namespace AmpGen{
 
                 auto w1 = m1 * z1 + c1;
                 auto w2 = m2 * z2 + c2;
+
+                if (m_PolyType=="Gaussian"){
+                    return 0;
+                }
 
 
 
