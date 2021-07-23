@@ -174,3 +174,29 @@ void Minimiser::addExtendedTerm( ExtendLikelihoodBase* m_term )
 
 ROOT::Minuit2::Minuit2Minimizer* Minimiser::minimiserInternal() { return m_minimiser; }
 
+void Minimiser::minos( MinuitParameter* parameter )
+{ 
+  if( m_minimiser == nullptr ) ERROR("No minimiser");
+  ROOT::Math::Functor f( *this, m_nParams );
+  m_minimiser->SetFunction( f );
+  
+  unsigned int index = 0; 
+  for( ; index != m_nParams; ++index )
+  {
+    if( parameter->name() == m_parSet->at( m_mapping[index] )->name() ) break;
+  }
+  if( index == m_nParams ) ERROR( parameter->name() << " not amongst free parameters for fit");
+  double low{0}, high{0};
+  int status =0;
+  m_minimiser->GetMinosError(index, low, high, status);
+  parameter->setResult( *parameter, parameter->err(), low, high );
+  INFO( parameter->name() << " " << 
+        parameter->mean() << " - " << 
+        parameter->errNeg() << " + " << 
+        parameter->errPos() );
+}
+
+void Minimiser::setPrintLevel( const int printLevel){ 
+  m_printLevel = printLevel; 
+  if( m_minimiser != nullptr ) m_minimiser->SetPrintLevel( m_printLevel );
+} 

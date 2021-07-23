@@ -1,11 +1,13 @@
+#ifndef  AMPGEN_NUMERICALINTEGRATION_H 
+#define  AMPGEN_NUMERICALINTEGRATION_H 1 
+#include <iostream>
+#include <queue>
 
 #include <gsl/gsl_integration.h>
-#include <iostream>
 
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/simd/utils.h"
 #include "AmpGen/simd/integrate_fp.h"
-#include <queue>
 
 namespace AmpGen {
   template <typename function_type> double integrate_1d( const function_type& fcn, const double& min, const double& max, gsl_integration_workspace* ws = nullptr)
@@ -205,3 +207,6 @@ namespace AmpGen {
     }
   }
 }
+
+
+#endif 
