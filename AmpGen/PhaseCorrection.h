@@ -277,16 +277,28 @@ namespace AmpGen{
                     real_t muY = m_mps["PhaseCorrection::GaussMuY"]->mean();
                     real_t sigmaX = m_mps["PhaseCorrection::GaussSigmaX"]->mean();
                     real_t sigmaY = m_mps["PhaseCorrection::GaussSigmaY"]->mean();
+                    real_t linWm = m_mps["PhaseCorrection::GaussLinearW-"]->mean();
+                    real_t quadWm = m_mps["PhaseCorrection::GaussQuadraticW-"]->mean();
+                    real_t erfFactor = m_mps["PhaseCorrection::GaussErfFactor"]->mean();
                     int sign = z2/abs(z2);
+                    real_t mod_erf = std::erf(z2/erfFactor);
                     if (sign == 1){
-                    real_t gauss = sign * sc/(2 * M_PI * sigmaX * sigmaY) * exp ( -pow( x - muX, 2)/(2*sigmaX) - pow(y - muY, 2)/(2 * sigmaY));
+                    //real_t gauss = (linWm * wm + sign * quadWm * pow(w2, 2)) * sc/(2 * M_PI * sigmaX * sigmaY) * exp ( -pow( x - muX, 2)/(2*sigmaX) - pow(y - muY, 2)/(2 * sigmaY));
+                    //real_t gauss = sign * sc * exp ( -pow( x - muX, 2)/(2*sigmaX) - pow(y - muY, 2)/(2 * sigmaY)) ;
+                    //real_t erf = 1 - pow(1 + 0.278393 * abs(w2) + 0.230389 * pow(abs(w2), 2) + 0.000972 * pow(abs(w2), 3) + 0.078108 * pow(abs(w2), 4), -4);
+                    
+                    //real_t gauss =  (linWm * w2 + sign * quadWm * pow(w2, 2)) * sc * exp ( -pow( x - muX, 2)/(2*sigmaX) - pow(y - muY, 2)/(2 * sigmaY)) ;
+                    real_t gauss =  mod_erf * sc * exp ( -pow( x - muX, 2)/(2*sigmaX) - pow(y - muY, 2)/(2 * sigmaY)) ;
 
 
                     return gauss;
 
                     }
                     else{
-                    real_t gauss = sign * sc/(2 * M_PI * sigmaX * sigmaY) * exp ( -pow( y - muX, 2)/(2*sigmaX) - pow(x - muY, 2)/(2 * sigmaY));
+                    //real_t gauss = sign * sc/(2 * M_PI * sigmaX * sigmaY) * exp ( -pow( y - muX, 2)/(2*sigmaX) - pow(x - muY, 2)/(2 * sigmaY));
+                    //real_t gauss = sign * sc * exp ( -pow( y - muX, 2)/(2*sigmaX) - pow(x - muY, 2)/(2 * sigmaY));
+                    //real_t gauss = (linWm * w2 + sign * quadWm * pow(w2, 2)) * sc * exp ( -pow( y - muX, 2)/(2*sigmaX) - pow(x - muY, 2)/(2 * sigmaY));
+                    real_t gauss = mod_erf * sc * exp ( -pow( y - muX, 2)/(2*sigmaX) - pow(x - muY, 2)/(2 * sigmaY));
 
 
                     return gauss;
