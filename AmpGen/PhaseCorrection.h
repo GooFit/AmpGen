@@ -277,11 +277,11 @@ namespace AmpGen{
                     real_t muY = m_mps["PhaseCorrection::GaussMuY"]->mean();
                     real_t sigmaX = m_mps["PhaseCorrection::GaussSigmaX"]->mean();
                     real_t sigmaY = m_mps["PhaseCorrection::GaussSigmaY"]->mean();
-                    real_t linWm = m_mps["PhaseCorrection::GaussLinearW-"]->mean();
-                    real_t quadWm = m_mps["PhaseCorrection::GaussQuadraticW-"]->mean();
+                    //real_t linWm = m_mps["PhaseCorrection::GaussLinearW-"]->mean();
+                    //real_t quadWm = m_mps["PhaseCorrection::GaussQuadraticW-"]->mean();
                     real_t erfFactor = m_mps["PhaseCorrection::GaussErfFactor"]->mean();
                     int sign = z2/abs(z2);
-                    real_t mod_erf = std::erf(z2/erfFactor);
+                    real_t mod_erf = std::erf(w2/erfFactor);
                     if (sign == 1){
                     //real_t gauss = (linWm * wm + sign * quadWm * pow(w2, 2)) * sc/(2 * M_PI * sigmaX * sigmaY) * exp ( -pow( x - muX, 2)/(2*sigmaX) - pow(y - muY, 2)/(2 * sigmaY));
                     //real_t gauss = sign * sc * exp ( -pow( x - muX, 2)/(2*sigmaX) - pow(y - muY, 2)/(2 * sigmaY)) ;
