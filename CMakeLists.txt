@@ -116,6 +116,9 @@ else()
   target_compile_definitions(AmpGen PUBLIC "USE_MVEC=0") 
 endif()
 
+message( STATUS "ENABLE_FITTING = ${ENABLE_FITTING}")
+message( STATUS "USE_ROOT       = ${USE_ROOT}")
+
 if( ENABLE_FITTING AND USE_ROOT )
   if( ( NOT TARGET ROOT::Minuit2 AND NOT TARGET Minuit2 ) OR "${extern_minuit2}" )
     message( STATUS "Use external Minuit2")
@@ -133,8 +136,6 @@ if( ENABLE_FITTING AND USE_ROOT )
     add_library(ROOT::Minuit2 ALIAS Minuit2)
   endif()
   target_link_libraries(AmpGen PUBLIC ROOT::Minuit2 )
-else()
-  message(DEBUG "Disable fitting")
 endif()
 
 
