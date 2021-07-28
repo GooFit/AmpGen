@@ -22,12 +22,13 @@ using namespace AmpGen::fcn;
 using namespace std::complex_literals;
 
 DEFINE_CAST(Constant )
+DEFINE_CAST(ExpressionPack)
 DEFINE_CAST(Parameter )
 DEFINE_CAST(SubTree )
 DEFINE_CAST(Ternary )
 DEFINE_CAST(Function )
-DEFINE_CAST(ComplexParameter);
-DEFINE_CAST(LambdaExpression);
+DEFINE_CAST(ComplexParameter)
+DEFINE_CAST(LambdaExpression)
 
 Expression::Expression( const std::shared_ptr<IExpression>& expression ) : m_expression( expression ) {}
 
@@ -361,4 +362,33 @@ void LambdaExpression::resolve(ASTResolver& resolver) const {
 }
 
 
+ExpressionPack::ExpressionPack( const Expression& A, const Expression& B )
+{
+  auto c1 = dynamic_cast<ExpressionPack*>( A.get() );
+  auto c2 = dynamic_cast<ExpressionPack*>( B.get() );
+  if ( c1 != nullptr ) {
+    for ( auto& expr : c1->m_expressions ) m_expressions.push_back( expr );
+  } else
+    m_expressions.push_back( A );
+  if ( c2 != nullptr ) {
+    for ( auto& expr : c2->m_expressions ) m_expressions.push_back( expr );
+  } else
+    m_expressions.push_back( B );
+}
+
+std::string ExpressionPack::to_string(const ASTResolver* resolver) const
+{
+  std::string rt = "";
+  for ( auto expr : m_expressions ) {
+    rt += expr.to_string(resolver) + ", ";
+  }
+  return rt.substr( 0, rt.length() - 2 );
+}
+
+void ExpressionPack::resolve( ASTResolver& resolver ) const
+{
+  for ( auto& expr : m_expressions ) expr.resolve( resolver );
+}
+
+complex_t ExpressionPack::operator()() const { return 0; }
 

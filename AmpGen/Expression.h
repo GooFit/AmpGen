@@ -49,6 +49,7 @@
 
 #define DEFINE_BINARY_OPERATOR( X ) \
   X::X( const AmpGen::Expression& l, const AmpGen::Expression& r ) : IBinaryExpression(l,r ) {} \
+  X::X( const AmpGen::Expression& expr) : IBinaryExpression(expr) {} \
   X::operator Expression() const { return Expression( std::make_shared<X>(*this) ) ; } 
 
 #define DEFINE_UNARY_OPERATOR( X, F ) \
@@ -80,6 +81,7 @@
   class X : public IBinaryExpression {                      \
     public:                                                 \
     X( const Expression& l, const Expression& r );          \
+    X( const Expression& expr);                             \
     virtual std::string to_string(const ASTResolver* resolver=nullptr) const override ;        \
     operator Expression() const ;                           \
     virtual complex_t operator()() const override;          \
@@ -264,12 +266,41 @@ namespace AmpGen
     std::string m_name;
     std::vector<Expression> m_args;
   };
+  /// @ingroup ExpressionEngine class ExpressionPack
+  /// A group of expressions packed into a single expression 
+  
+  class ExpressionPack : public IExpression {
+    public:
+      explicit ExpressionPack( const std::vector<Expression>& expressions ): m_expressions(expressions) {}
+      ExpressionPack( const Expression& A, const Expression& B );
+      std::string to_string(const ASTResolver* resolver=nullptr) const override;
+      void resolve( ASTResolver& resolver ) const override;
+      complex_t operator()() const override;
+      operator Expression() const ;
+      const std::vector<Expression>& expressions() const { return m_expressions ; }
+    private:
+      std::vector<Expression> m_expressions;
+  };
 
   /// @ingroup ExpressionEngine class IBinaryExpression
   ///  Base class for binary expressions, i.e. those that take a pair of arguments (such as \f$+,-,\times,/\f$)
   class IBinaryExpression : public IExpression {
     public:
     IBinaryExpression( const Expression& l, const Expression& r ) : lval( l ), rval( r ){};
+    IBinaryExpression( const Expression& pack )
+    {
+      auto as_pack = static_cast< const ExpressionPack*>(pack.get() );
+      if( as_pack != nullptr )
+      {
+        auto expr = as_pack->expressions();
+        if( expr.size() != 2 ) FATAL("Wrong number of inputs");
+        lval = expr[0]; 
+        rval = expr[1]; 
+      }
+      else {
+        FATAL("wrong number of inputs" ); 
+      }
+    }
     void resolve( ASTResolver& resolver ) const override;
     complex_t operator()() const override = 0;
     Expression l() const { return lval ; }

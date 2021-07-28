@@ -4,6 +4,8 @@
 #include <cmath>
 #include <ostream>
 
+#include <TRandom3.h>
+
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
@@ -17,7 +19,6 @@ using namespace AmpGen;
 using namespace std::complex_literals; 
 
 DEFINE_CAST( MinuitParameterLink )
-DEFINE_CAST( ExpressionPack )
 
 namespace AmpGen 
 {
@@ -44,7 +45,7 @@ void ExpressionParser::processUnaryOperators( std::vector<std::string>& opCodes,
     auto fcn = m_unaryFunctions.find( opCodes[pos] );
     DEBUG( " op = " << opCodes[pos] << " pos = " << pos );
     if ( fcn == m_unaryFunctions.end() ) continue;
-    expressions[pos] = ( fcn )->second( expressions[pos] );
+    expressions[pos] = fcn->second( expressions[pos] );
     opCodes.erase( opCodes.begin() + pos );
     pos--;
   }
@@ -84,7 +85,6 @@ std::vector< std::pair<iterator, iterator> > split_it( iterator begin, iterator 
     if( *it == delimiter && b1l == 0 && b2l == 0 ) 
     {
       rt.rbegin()->second = it; 
-      // INFO( *it << " " << std::distance( begin, rt.rbegin()->first) << " " << std::distance( begin, rt.rbegin()->second) );
       rt.emplace_back( it+1, it+1);
     }
   }
@@ -129,7 +129,8 @@ Expression ExpressionParser::parseTokens(std::vector<std::string>::const_iterato
     }
     else {
       auto f = std::find_if(m_binaryFunctions.begin(), m_binaryFunctions.end(), [it](auto& jt){ return jt.first == *it; } );
-      if( f != m_binaryFunctions.end() || m_unaryFunctions.count(*it) ) opCodes.push_back(*it);
+      if( f != m_binaryFunctions.end() || m_unaryFunctions.count(*it) )
+        opCodes.push_back(*it);
       else expressions.push_back( processEndPoint( *it , mps ) );
     }
   }
@@ -158,7 +159,12 @@ ExpressionParser::ExpressionParser()
   add_unary<Real>("real");
   add_unary<Imag>("imag");
   add_unary<Abs>("abs");
+  
+  add_multi_arg("atan2"         , std::function<Expression(Expression, Expression)>( [](Expression A, Expression B){ return fcn::atan2(A, B); }) );  
+  add_multi_arg("Ternary"       , std::function<Expression(Expression, Expression, Expression)>( [](Expression A, Expression B, Expression C){ return Ternary(A, B, C) ; } ) ); 
+  add_multi_arg("Secret", std::function<Expression(std::string, double, double)>( [](std::string key, double min, double max){ return TRandom3( FNV1a_hash(key) ).Uniform(min, max); } ) );
 
+  /// the order of operations matters here
   add_binary( "^" , [](const auto& A, const auto& B ) { return fcn::pow(A,B); } );
   add_binary( "/" , [](const auto& A, const auto& B ) { return A / B; } ); 
   add_binary( "*" , [](const auto& A, const auto& B ) { return A * B; } );
@@ -180,7 +186,6 @@ ExpressionParser::ExpressionParser()
   else if ( degOrRad != angType::rad){
     FATAL("CouplingConstant::AngularUnits must be either rad or deg");
   } 
-
 }
 
 Expression ExpressionParser::parse( 
@@ -214,7 +219,7 @@ Expression ExpressionParser::processEndPoint( const std::string& name, const Min
       else return MinuitParameterLink( mps->find(name+"_Re") ) * fcn::exp( m_sf * 1i *MinuitParameterLink( mps->find(name+"_Im") ) ); 
     }
     else { 
-      WARNING( "Token not understood: " << name << " [map size = " << mps->size() << "]" );
+      DEBUG( "Token not understood: " << name << " [map size = " << mps->size() << "]" );
     }
   }
   return Parameter( name, 0, true );
@@ -249,32 +254,3 @@ const MinuitParameter& MinuitParameterLink::param() const {
   return *m_parameter ; 
 }
 
-ExpressionPack::ExpressionPack( const Expression& A, const Expression& B )
-{
-  auto c1 = dynamic_cast<ExpressionPack*>( A.get() );
-  auto c2 = dynamic_cast<ExpressionPack*>( B.get() );
-  if ( c1 != nullptr ) {
-    for ( auto& expr : c1->m_expressions ) m_expressions.push_back( expr );
-  } else
-    m_expressions.push_back( A );
-  if ( c2 != nullptr ) {
-    for ( auto& expr : c2->m_expressions ) m_expressions.push_back( expr );
-  } else
-    m_expressions.push_back( B );
-}
-
-std::string ExpressionPack::to_string(const ASTResolver* resolver) const
-{
-  std::string rt = "";
-  for ( auto expr : m_expressions ) {
-    rt += expr.to_string(resolver) + ", ";
-  }
-  return rt.substr( 0, rt.length() - 2 );
-}
-
-void ExpressionPack::resolve( ASTResolver& resolver ) const
-{
-  for ( auto& expr : m_expressions ) expr.resolve( resolver );
-}
-
-complex_t ExpressionPack::operator()() const { return 0; }

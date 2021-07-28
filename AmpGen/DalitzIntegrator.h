@@ -8,7 +8,6 @@
 #include <functional>
 #include <string>
 #include <utility>
-#include <TF2.h>
 
 #include "AmpGen/simd/utils.h"
 #include "AmpGen/NumericalIntegration.h"
@@ -72,7 +71,6 @@ namespace AmpGen
       double    m_s1;
       double    m_s2;
       double    m_s3;
-      double integrate_internal( TF2& fcn ) const ;
    
   };
   template <typename FCN>
