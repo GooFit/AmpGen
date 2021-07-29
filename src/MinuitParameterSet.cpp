@@ -34,6 +34,7 @@ bool MinuitParameterSet::addToEnd( MinuitParameter* parPtr )
   if ( m_keyAccess.find( parPtr->name() ) != m_keyAccess.end() ) {
     WARNING( "Parameter with name " << parPtr->name() << " already exists!" );
   }
+  INFO( "Adding: " << parPtr->name() ); 
   m_keyAccess[parPtr->name()] = parPtr;
   return success;
 }
@@ -153,29 +154,29 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
 
 void MinuitParameterSet::tryAlias( const std::vector<std::string>& line )
 {
+  INFO( line[0] );
   if ( line.size() < 3 ) return;
-  if ( line[1] == "=" ) {
-    addToEnd( new MinuitExpression(line, this) );
-  }
+  if ( line[1] == "=" ) addToEnd( new MinuitExpression(line, this) );
 }
 
 void MinuitParameterSet::loadFromStream()
 {
-  auto ppfl = OptionsParser::getMe();
+  auto ppfl = OptionsParser::getMe()->getInputOrdered();
   std::vector<std::vector<std::string>> protoAliases;
-  for ( auto it = ppfl->begin(); it != ppfl->end(); ++it ) {
-    tryParameter( it->second );
-    if ( it->second.size() >= 3 && it->second[1] == "=" ) protoAliases.push_back( it->second );
+  for ( const auto& tokens : ppfl )
+  {
+    tryParameter( tokens );
+    if ( tokens.size() >= 3 && tokens[1] == "=" ) protoAliases.push_back( tokens );
   }
-  for ( auto& alias : protoAliases ) tryAlias( alias );
+  for ( const auto& alias : protoAliases ) tryAlias( alias );
 }
 
 void MinuitParameterSet::loadFromFile( const std::string& file )
 {
   processFile( file, [this]( auto& line ) {
-      this->tryParameter( split( line, {' ', '\t'} ) );
-      this->tryAlias( split( line, {' ', '\t'} ) );
-      } );
+    this->tryParameter( split( line, {' ', '\t'} ) );
+    this->tryAlias( split( line, {' ', '\t'} ) );
+  } );
 }
 
 void MinuitParameterSet::set( const MinuitParameterSet& other )

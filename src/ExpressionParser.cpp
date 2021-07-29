@@ -222,6 +222,7 @@ Expression ExpressionParser::processEndPoint( const std::string& name, const Min
       DEBUG( "Token not understood: " << name << " [map size = " << mps->size() << "]" );
     }
   }
+  WARNING("Parameter: " << name << " not found: " << mps);
   return Parameter( name, 0, true );
 }
 

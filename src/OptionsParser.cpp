@@ -39,6 +39,14 @@ bool OptionsParser::ignoreThisLine( const std::string& line )
   return false;
 }
 
+std::vector<std::vector<std::string>> OptionsParser::getInputOrdered() const 
+{
+  std::vector<std::vector<std::string>> rt; 
+  for( const auto& key : m_orderedKeys ) rt.push_back( m_parsedLines.find(key)->second );
+  return rt; 
+}
+
+
 void OptionsParser::setCommandLineArgs( int argc, char** argv, const std::string& description )
 {
   if( !m_quiet ) printSplash();
@@ -109,7 +117,10 @@ void OptionsParser::addArg( const std::vector<std::string>& tokens )
   const auto& key = tokens[0];
   DEBUG("Adding arg with key: " << key );
   if( m_keywords.count(key) != 0 ) m_keywords[key]( tokens );
-  else m_parsedLines[key] = tokens; 
+  else { 
+    m_parsedLines[key] = tokens; 
+    m_orderedKeys.push_back(key); 
+  }
 }
 
 std::vector<std::string> OptionsParser::makeParsedStrings( const std::string& line, int& braceDepth ) const

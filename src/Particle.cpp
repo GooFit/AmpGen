@@ -415,6 +415,7 @@ Expression Particle::getExpression( DebugSymbols* db, const std::vector<int>& st
     Expression spinFactor = 1; 
     if( includeSpin && m_spinFormalism == spinFormalism::Covariant ){
       Tensor st = spinTensor(db);
+      st.st();
       if( m_props->twoSpin() == 0 ) spinFactor = st[0];
       if( m_props->twoSpin() == 1 ){
         Tensor is = Bar( externalSpinTensor(m_polState) );
@@ -476,11 +477,9 @@ Tensor Particle::spinTensor( DebugSymbols* db ) const
   }
   else if ( m_daughters.size() == 2 ) {
     auto vname = m_props->spinName() + "_" + m_daughters[0]->m_props->spinName() + m_daughters[1]->m_props->spinName() + "_" + orbitalString();
-    Tensor value = Vertex::Factory::getSpinFactor( P(), Q(), 
-					      daughter(0)->spinTensor(db),
-					      daughter(1)->spinTensor(db), vname, db );
-    DEBUG( "Returning spin tensor" );
-    return value;
+    return Vertex::Factory::getSpinFactor( P(), Q(), 
+					   daughter(0)->spinTensor(db),
+					   daughter(1)->spinTensor(db), vname, db );
   } else if ( m_daughters.size() == 3 ) {
     return Vertex::Factory::getSpinFactorNBody( {
         {daughter(0)->P(), daughter(0)->spinTensor()},
