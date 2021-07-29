@@ -1,0 +1,30 @@
+EventType B+ K+ pi- pi+ gamma0
+
+Type PolarisedSum
+
+Particle::SpinBasis Weyl
+Particle::SFType Radiative
+
+CouplingConstant::Coordinates  polar
+CouplingConstant::AngularUnits   rad
+
+#1+
+
+B+{K(1)(1270)+{K*(892)0{K+,pi-},pi+},gamma0}               Fixed       1.000       0.000          Fixed                 0.0         0.0
+
+B+{K(1)(1270)+{rho(770)0{pi+,pi-},K+},gamma0}              Free       2.061       0.005          Free                -0.910         0.1
+
+# 1-
+
+B+{K*(1410)+{K*(892)0{K+,pi-},pi+},gamma0}                 Free       0.715       0.005          Free                 0.0         0.1
+
+# 2+
+
+B+{K(2)*(1430)+{K*(892)0{K+,pi-},pi+},gamma0}              Free        1.271       0.005          Free                 0.0         0.1
+
+
+#cRsq - fraction of right-handed amplitudes
+cRsq     Blind      0.5   0.05
+
+#Blinding 
+cRsq_blind=Secret( "Meigas" ,1,2)
