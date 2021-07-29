@@ -16,6 +16,7 @@
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/Particle.h"
 
 using namespace AmpGen;
 
@@ -34,7 +35,7 @@ bool MinuitParameterSet::addToEnd( MinuitParameter* parPtr )
   if ( m_keyAccess.find( parPtr->name() ) != m_keyAccess.end() ) {
     WARNING( "Parameter with name " << parPtr->name() << " already exists!" );
   }
-  INFO( "Adding: " << parPtr->name() ); 
+  DEBUG( "Adding: " << parPtr->name() ); 
   m_keyAccess[parPtr->name()] = parPtr;
   return success;
 }
@@ -154,7 +155,6 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
 
 void MinuitParameterSet::tryAlias( const std::vector<std::string>& line )
 {
-  INFO( line[0] );
   if ( line.size() < 3 ) return;
   if ( line[1] == "=" ) addToEnd( new MinuitExpression(line, this) );
 }
@@ -167,6 +167,11 @@ void MinuitParameterSet::loadFromStream()
   {
     tryParameter( tokens );
     if ( tokens.size() >= 3 && tokens[1] == "=" ) protoAliases.push_back( tokens );
+    else if ( tokens[0].find("=") != std::string::npos && ! Particle::isValidDecayDescriptor( tokens[0] ) )
+    {
+      auto expanded = split(tokens[0], '=');
+      WARNING( tokens[0] << " could be an expression, but not separated with white space. Did you mean: " << expanded[0] << " = " << expanded[1]  << " ... ?"); 
+    }
   }
   for ( const auto& alias : protoAliases ) tryAlias( alias );
 }

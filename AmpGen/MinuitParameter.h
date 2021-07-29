@@ -50,7 +50,7 @@ namespace AmpGen
     virtual ~MinuitParameter() = default;
     
     friend class MinuitParameterSet;
-  private:
+  protected:
     Flag m_flag;
     std::string m_name = {""};
     double m_meanInit = {0};

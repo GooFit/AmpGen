@@ -13,14 +13,14 @@ MinuitExpression::MinuitExpression( const std::vector<std::string>& tokens, Minu
 {
   setName( tokens[0] );
   m_expression = ExpressionParser::parse(tokens.begin() + 2 , tokens.end() , mps );
-  fix(); 
+  m_flag = Flag::Hide; 
 }
 
 MinuitExpression::MinuitExpression(const std::string& name, const Expression& expression)
 {
   setName(name); 
   m_expression = expression; 
-  fix();
+  m_flag = Flag::Hide; 
 }
 
 double MinuitExpression::mean() const { return std::real(getVal()); }
