@@ -2,6 +2,7 @@
 #define AMPGEN_ENUM_H 1
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
+#include <string.h>
 
 #define declare_enum(name, ...)  \
 enum class name {__VA_ARGS__, Invalid};                                     \
@@ -37,6 +38,7 @@ namespace AmpGen {
       unsigned end   = 0;
       auto compare = [](const char* word, const char* otherWord, const unsigned& nChar)
       {
+        if( strlen(word) != nChar ) return false; 
         for( size_t x = 0; x != nChar ; ++x) if( word[x] != otherWord[x] ) return false;
         return true;
       };
