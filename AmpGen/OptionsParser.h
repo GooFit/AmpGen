@@ -29,8 +29,10 @@ namespace AmpGen
     iterator end();
     const_iterator begin() const;
     const_iterator end() const;
+    std::vector<std::vector<std::string>> getInputOrdered() const; 
   private:
-    std::map<std::string,std::vector<std::string>>   m_parsedLines; 
+    std::vector<std::string>                          m_orderedKeys; 
+    std::map<std::string, std::vector<std::string>>   m_parsedLines; 
     std::map<std::string, std::function<void(std::vector<std::string>)> > m_keywords;
     bool m_printHelp = {false};  
     bool m_quiet     = {false}; 

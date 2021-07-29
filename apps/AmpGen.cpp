@@ -215,7 +215,7 @@ int main( int argc, char** argv )
   if( poissonVaryYield ) nEvents = rand.Poisson( nEvents );
   MinuitParameterSet MPS;
   MPS.loadFromStream();
-  
+
   EventType eventType; 
   std::string decay   = NamedParameter<std::string>("Decay","","Single decay written on the command line"); 
   if( decay != "" )

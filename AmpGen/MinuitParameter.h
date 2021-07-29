@@ -52,15 +52,15 @@ namespace AmpGen
     friend class MinuitParameterSet;
   private:
     Flag m_flag;
-    std::string m_name;
-    double m_meanInit;
-    double m_stepInit;
-    double m_minInit;
-    double m_maxInit;
-    double m_meanResult;
-    double m_errPosResult;
-    double m_errNegResult;
-    double m_errResult;
+    std::string m_name = {""};
+    double m_meanInit = {0};
+    double m_stepInit = {0};
+    double m_minInit  = {0};
+    double m_maxInit  = {0};
+    double m_meanResult = {0};
+    double m_errPosResult = {0};
+    double m_errNegResult = {0};
+    double m_errResult    = {0};
   };
 
   class MinuitProxy
