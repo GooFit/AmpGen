@@ -30,9 +30,14 @@ unsigned int Minimiser::nPars() const { return m_nParams; }
 void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState & state) 
 {
   std::cout<<"\n"<<std::endl;
-  // Prints the FCN, Edm and Ncalls in a single line:
-  ROOT::Minuit2::MnPrint::PrintState(std::cout, state, "iteration  #  ",i); 
-  
+  std::cout << "iteration  #  ";
+  if (i>=0) std::cout << std::setw(3) << i;
+  int pr = std::cout.precision(13);
+  std::cout << " - FCN = " <<  std::setw(16) << state.Fval();
+  std::cout.precision(pr);
+  std::cout << " Edm = " <<  std::setw(12) << state.Edm() << " NCalls = " << std::setw(6) << state.NFcn();
+  std::cout << std::endl;
+
   // Ensure sync with current parameter value inside Minuit
   for(size_t j = 0; j < m_mapping.size(); ++j ) {
     m_parSet->at( m_mapping[j] )->setCurrentFitVal( state.Vec()[j] );
