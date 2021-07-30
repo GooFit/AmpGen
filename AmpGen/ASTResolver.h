@@ -53,7 +53,9 @@ namespace AmpGen {
       void clear();
 
       std::map<const IExpression*, std::string> parameters() const { return m_resolvedParameters; }
+      std::vector<Parameter> unresolvedParameters()          const { return m_unresolvedParameters; }
     private: 
+      std::vector<Parameter>                                m_unresolvedParameters;        /// Parameters that cannot be resolved
       std::map<const IExpression*, std::string>             m_resolvedParameters;          /// Map of parameters that have been resolved
       std::map<std::string, std::shared_ptr<CacheTransfer>> m_cacheFunctions;              /// Container of functions for calculating function cache
       std::map<std::string, unsigned>                       m_evtMap;                      /// Event specification 

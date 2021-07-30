@@ -126,6 +126,7 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
   }
   auto address = addCacheFunction<CacheTransfer>( parameter.name(), parameter.defaultValue() );
   addResolvedParameter( &parameter, address );
+  if( ! parameter.isResolved() ) m_unresolvedParameters.push_back( parameter ); 
 }
 
 template <> void ASTResolver::resolve<MinuitParameterLink>(const MinuitParameterLink& parameter)

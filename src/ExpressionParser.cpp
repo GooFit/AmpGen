@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <cmath>
 #include <ostream>
+#include <functional>
 
 #include <TRandom3.h>
 
@@ -192,8 +193,18 @@ Expression ExpressionParser::parse(
     std::vector<std::string>::const_iterator begin,
     std::vector<std::string>::const_iterator end,
     const MinuitParameterSet* mps ) { 
-  return getMe()->parseTokens(begin, end, mps ); 
+  auto parsed = getMe()->parseTokens(begin, end, mps ); 
+  ASTResolver resolver( {}, mps ); 
+  parsed.resolve( resolver ); 
+  if( resolver.unresolvedParameters().size() != 0 )
+  {
+    auto expr = vectorToString( begin, end, " ", [](const auto& str){ return str; } ); 
+    ERROR("Expression: " << expr << " contains unknown parameters:");
+    for( const auto& parameter : resolver.unresolvedParameters() ) ERROR ( parameter.name() );
+  }
+  return parsed; 
 }
+
 Expression ExpressionParser::parse( 
     const std::string& expr,
     const MinuitParameterSet* mps ) { 
@@ -222,8 +233,7 @@ Expression ExpressionParser::processEndPoint( const std::string& name, const Min
       DEBUG( "Token not understood: " << name << " [map size = " << mps->size() << "]" );
     }
   }
-  DEBUG("Parameter: " << name << " not found: " << mps);
-  return Parameter( name, 0, true );
+  return Parameter( name );
 }
 
 MinuitParameterLink::MinuitParameterLink( MinuitParameter* param ) : m_parameter( param ) {}
