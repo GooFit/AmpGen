@@ -38,9 +38,6 @@ void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState & state)
     m_parSet->at( m_mapping[j] )->setCurrentFitVal( state.Vec()[j] );
   }
 
-  for(size_t ii = 0 ; ii < m_parSet->size(); ++ii) {
-      auto par = m_parSet->at(ii);
-
   // Print parameter values during the minimisation (blind params are shifted by the blinding offset)
   for(size_t iii = 0 ; iii < m_parSet->size(); ++iii) {
     auto par = m_parSet->at(iii);
@@ -61,7 +58,7 @@ void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState & state)
   if (state.HasCovariance() )
     std::cout << "Error matrix change = " << state.Error().Dcovar() << std::endl;
 
-  }
+  
 }
 
 
@@ -104,7 +101,7 @@ void Minimiser::prepare()
   std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse");
   size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
   double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 0.1);
-  m_printLevel          = NamedParameter<size_t>( "Minimiser::PrintLevel", 4);   //Maria. Change this once checks are done. 
+  m_printLevel          = NamedParameter<size_t>( "Minimiser::PrintLevel", 0); 
   m_normalise           = NamedParameter<bool>(   "Minimiser::Normalise",false);
   if ( m_minimiser != nullptr ) delete m_minimiser;
   m_minimiser = new Minuit2::Minuit2Minimizer(algorithm.c_str() );
@@ -117,17 +114,16 @@ void Minimiser::prepare()
   m_minimiser->SetPrintLevel( m_printLevel );
   m_mapping.clear();
   m_covMatrix.clear();
-  /*
- //Maria. Uncomment this once checks are done. 
+
   if (m_printLevel){
     for (size_t i = 0 ; i< m_parSet->size(); ++i){
       auto par = m_parSet->at(i);
       if (par->isBlind()){
-	FATAL("Minimiser::PrintLevel is !=0 and there are parameters declared either as Blind or SecretOffset, neither of which should have its real value printed. Set PrintLevel == 0 (in Minimiser.cpp) for a blind fit.");
+	FATAL("Minimiser::PrintLevel is !=0, this is incompatible with having blind parameters.");
       }
     }
   }
-  */
+
   for(size_t i = 0 ; i < m_parSet->size(); ++i)
   {
     auto par = m_parSet->at(i);

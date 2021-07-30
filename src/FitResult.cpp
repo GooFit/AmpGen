@@ -129,7 +129,8 @@ void FitResult::writeToFile( const std::string& fname )
   outlog<<"Parameter Name, Flag, mean, error, errNeg, errPos\n";
   for (size_t i = 0; i < (size_t)m_covarianceMatrix.GetNrows(); ++i ) {
     auto param = m_mps->at(i);
-
+    if (param->name().find("_blind") != std::string::npos ) continue;
+    
     if ( param->isBlind() ){
       double secretoffset  =  m_mps->at(param->name()+"_blind")->mean();
       if (!secretoffset ){
@@ -181,6 +182,7 @@ void FitResult::print() const
 
   for (size_t i = 0; i < (size_t)m_covarianceMatrix.GetNrows(); ++i ) {
     auto param = m_mps->at(i);
+    if (param->name().find("_blind") != std::string::npos ) continue;
     if ( param->isBlind() ) {
       double secretoffset =  m_mps->at(param->name()+"_blind")->mean();
       if (secretoffset == 0.) {
