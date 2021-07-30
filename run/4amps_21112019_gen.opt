@@ -3,7 +3,6 @@ EventType B+ K+ pi- pi+ gamma0
 Type PolarisedSum
 
 Particle::SpinBasis Weyl
-Particle::SFType Radiative
 
 CouplingConstant::Coordinates  polar
 CouplingConstant::AngularUnits   rad
@@ -16,15 +15,15 @@ B+{K(1)(1270)+{rho(770)0{pi+,pi-},K+},gamma0}              Free       2.061     
 
 # 1-
 
-B+{K*(1410)+{K*(892)0{K+,pi-},pi+},gamma0}                 Free       0.715       0.005          Free                 0.0         0.1
+B+{K*(1410)+{K*(892)0{K+,pi-},pi+},gamma0}                 Free       0.715       0.005          Free                 3.0         0.1
 
 # 2+
 
-B+{K(2)*(1430)+{K*(892)0{K+,pi-},pi+},gamma0}              Free        1.271       0.005          Free                 0.0         0.1
+B+{K(2)*(1430)+{K*(892)0{K+,pi-},pi+},gamma0}              Free        1.271       0.005          Free                 -2.0         0.1
 
 
 #cRsq - fraction of right-handed amplitudes
-cRsq     Blind      0.5   0.05
+polFrac     Blind      0.35   0.05
 
 #Blinding 
-cRsq_blind=Secret( blabla ,1,2)
+polFrac_blind = Secret ( blabla , 1 , 2 )
