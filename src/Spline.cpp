@@ -139,6 +139,7 @@ void SplineTransfer::transfer( CompiledExpressionBase* destination )
     }
   } 
 
+  // CHECK_BLINDING 
   for ( unsigned i = 0; i < m_parameters.size(); ++i ) {
     DEBUG( "Knot GSL["<<i<<"] : value = (" << m_parameters[i]->mean() << ", "  << m_address +i << ") "
         << " curvature = (" << round( mvectors[i],10) << " , " << m_address + m_nKnots +i << ")" );

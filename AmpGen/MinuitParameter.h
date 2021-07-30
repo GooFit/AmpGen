@@ -10,7 +10,7 @@
 namespace AmpGen
 {
   class MinuitParameterSet;
-  declare_enum( Flag, Free, Hide, Fix, CompileTimeConstant)
+  declare_enum( Flag, Free, Hide, Fix, CompileTimeConstant, Blind)
   class MinuitParameter
   {
   public: 
@@ -24,6 +24,7 @@ namespace AmpGen
     Flag flag() const;
     bool isFixed() const;
     bool isFree()  const;
+    bool isBlind()  const;
     const std::string& name() const;
 
     double meanInit() const;
