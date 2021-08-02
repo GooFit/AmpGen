@@ -113,18 +113,20 @@ K*(892)0{K+,pi-}
 ```
 describes an excited vector kaon decaying into a charged kaon and pion. For more details about the API for describing particle decays, see [AmpGen::Particle](https://goofit.github.io/AmpGen/de/dd7/class_amp_gen_1_1_particle.html) The other numbers on the lines that describe the decays parameterise the coupling to this channel,
 either in terms of real and imaginary parts or an amplitude and a phase. Each parameter is specified in terms of three numbers: the _fix_ flag, the initial value, and the step size.
-The possible options for the _fix_ flag are:
+The possible options for the _fix_ flag, which can be specified either by name or via an integer key (0,1,2,3,4), are: 
 
 * Free (fix=0) and a step size of not 0.
+* Hide (fix=1) 
 * Fixed (fix=2, for historical reasons)
 * Compile-Time-Constant (fix=3) which indicates that the parameter should be treated as a (JIT) compile time constant, which in some cases allows for more aggressive optimisations to be performed.
-
+* Blind (fix=4) indicates a parameter should be blind, meaning its true value will be hidden from the user to prevent unintentionally biasing analysis. For details, see [Blinding](#parameter-blinding). 
 These options can be used in the AmpGen application, which is described below.
+
 
 Decays can either be specified fully inline, as above, or split into multiple steps, which is useful for treating the so called _cascade_ decays, an example of which is shown below.
 ```
 D0{K(1)(1270)+,pi-}                         0     1      0.1       0     0      0.1   
-Type
+
 K(1)(1270)+{rho(770)0{pi+,pi-},K+}          2     1      0         2     0      0
 K(1)(1270)+{K*(892)0{K+,pi-},pi+}           0     1      0.1       0     0      0.1
 ```
@@ -348,6 +350,22 @@ K(1)(1270)bar-_mass = K(1)(1270)+_mass
 ```
 Parameter expressions are whitespace delimited due to the abundance of **odd** glyphs such as brackets and +/- in the names of parameters.
 Expressions support the binary operations @f$(+,-,/,* )@f$, as well as common unary functions such as sqrt, trigonometric functions etc.
+
+### Parameter Blinding 
+
+Parameters can blinded, that is, their actual values obscured from the user to avoid unintentional biasing of an analysis. 
+For example, suppose that a blind analysis of the @f$K_1(1270)^-@f$ mass were to be performed. The mass variable in the options file would be declared as 
+```
+K(1)(1270)+_mass Blind 1.27 0.01 0.0 2.0 
+```
+The mass will now be shifted by an amount specified by the variable *variableName*_blind, which must also be declared by the user. 
+In order to be useful, the amount the variable is shifted by is normally kept secret from the user. For this purpose, a special function *Secret* is implemented that can be used in expressions. 
+```
+K(1)(1270)+_mass Blind 1.27 0.01 0.0 2.0
+K(1)(1270)+_mass_blind = Secret ( my_secret , -1 , 1 )
+```
+where the arguments are a key that generates a unique secret per key, and the minimal and maximal value of the shift. 
+
 
 ### Spin Formalisms
 
