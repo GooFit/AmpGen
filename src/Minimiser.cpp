@@ -24,46 +24,54 @@
 
 using namespace AmpGen;
 using namespace ROOT;
+namespace AmpGen {   
+  complete_enum ( PrintLevel, Quiet, Info, Verbose, VeryVerbose); 
+};
 
 unsigned int Minimiser::nPars() const { return m_nParams; }
 
 void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState & state) 
 {
-  std::cout<<"\n"<<std::endl;
-  std::cout << "iteration  #  ";
-  if (i>=0) std::cout << std::setw(3) << i;
-  int pr = std::cout.precision(13);
-  std::cout << " - FCN = " <<  std::setw(16) << state.Fval();
-  std::cout.precision(pr);
-  std::cout << " Edm = " <<  std::setw(12) << state.Edm() << " NCalls = " << std::setw(6) << state.NFcn();
-  std::cout << std::endl;
-
+  if( m_printLevel == PrintLevel::Quiet ) return; 
+ 
+  if( i >= 0)
+  {
+    INFO( "Iteration  #  "
+      << std::setw(3) << i << " - FCN = " <<  std::setw(16) << state.Fval()
+    << " Edm = " <<  std::setw(12) << state.Edm() << " NCalls = " << std::setw(6) << state.NFcn() );
+  }
+  else {
+    INFO( "Iteration  #  "
+      << std::setprecision(13)
+      << " - FCN = " <<  std::setw(16) << state.Fval()
+      << " Edm = " <<  std::setw(12) << state.Edm() << " NCalls = " << std::setw(6) << state.NFcn() );
+  }
   // Ensure sync with current parameter value inside Minuit
   for(size_t j = 0; j < m_mapping.size(); ++j ) {
     m_parSet->at( m_mapping[j] )->setCurrentFitVal( state.Vec()[j] );
   }
 
   // Print parameter values during the minimisation (blind params are shifted by the blinding offset)
-  for(size_t iii = 0 ; iii < m_parSet->size(); ++iii) {
-    auto par = m_parSet->at(iii);
-    if ( ! (par->isFree() || par->isBlind() )  ) continue;      
-    if (par->isBlind()){
-      double secretoffset = m_parSet->at(par->name()+"_blind")->mean();
-      if (!secretoffset){
-	INFO("Attempting to print a blind parameter without secretoffset. Check Minimiser.cpp");
-	continue;
-      }	
-      std::cout<< par->name()<< " " << par->mean() + secretoffset << "(BLIND)"<<std::endl;
+  if( m_printLevel >= PrintLevel::Verbose )
+  {
+    for(size_t iii = 0 ; iii < m_parSet->size(); ++iii) {
+      auto par = m_parSet->at(iii);
+      if ( ! (par->isFree() || par->isBlind() )  ) continue;      
+      if (par->isBlind()){
+        double secretoffset = m_parSet->at(par->name()+"_blind")->mean();
+        if (!secretoffset){
+          INFO("Attempting to print a blind parameter without secretoffset. Check Minimiser.cpp");
+          continue;
+        }	
+        INFO( par->name()<< " " << par->mean() + secretoffset << "(BLIND)" ); 
+      }
+      else{
+        INFO( par->name()<< " " << par->mean() );
+      }
     }
-    else{
-      std::cout<< par->name()<< " " << par->mean() <<std::endl;
-    }
+    if (state.HasCovariance() )
+      INFO("Error matrix change = " << state.Error().Dcovar() );
   }
-
-  if (state.HasCovariance() )
-    std::cout << "Error matrix change = " << state.Error().Dcovar() << std::endl;
-
-  
 }
 
 
@@ -106,7 +114,12 @@ void Minimiser::prepare()
   std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse");
   size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
   double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 0.1);
-  m_printLevel          = NamedParameter<size_t>( "Minimiser::PrintLevel", 0); 
+  m_printLevel          = NamedParameter<PrintLevel>( "Minimiser::PrintLevel", PrintLevel::Info); 
+  unsigned printLevelMinuit2 = NamedParameter<unsigned>("Minimiser::Minuit2MinimizerPrintLevel", m_printLevel == PrintLevel::VeryVerbose ? 3 : 0 );
+  if( m_printLevel == PrintLevel::Invalid )
+  {
+    FATAL("Requested print level is not valid");
+  }
   m_normalise           = NamedParameter<bool>(   "Minimiser::Normalise",false);
   if ( m_minimiser != nullptr ) delete m_minimiser;
   m_minimiser = new Minuit2::Minuit2Minimizer(algorithm.c_str() );
@@ -114,19 +127,17 @@ void Minimiser::prepare()
   m_minimiser->SetMaxFunctionCalls( maxCalls );
   m_minimiser->SetMaxIterations( 100000 );
   m_minimiser->SetTolerance( tolerance );
-//  m_minimiser->SetStrategy( 3 );
+  //  m_minimiser->SetStrategy( 3 );
   //  m_minimiser->SetPrecision(std::numeric_limits<double>::epsilon());
-  m_minimiser->SetPrintLevel( m_printLevel );
+  INFO(printLevelMinuit2);
+  m_minimiser->SetPrintLevel( printLevelMinuit2 ); // turn off minuit printing 
   m_mapping.clear();
   m_covMatrix.clear();
 
-  if (m_printLevel){
-    for (size_t i = 0 ; i< m_parSet->size(); ++i){
-      auto par = m_parSet->at(i);
-      if (par->isBlind()){
-	FATAL("Minimiser::PrintLevel is !=0, this is incompatible with having blind parameters.");
-      }
-    }
+  if (m_printLevel >= PrintLevel::VeryVerbose && 
+      std::any_of( m_parSet->begin(), m_parSet->end(), [](const auto& p ){ return p->isBlind(); } ) )
+  {
+    FATAL("Minimiser::PrintLevel is !=0, this is incompatible with having blind parameters.");
   }
 
   for(size_t i = 0 ; i < m_parSet->size(); ++i)
@@ -137,11 +148,33 @@ void Minimiser::prepare()
     if ( par->minInit() != 0 || par->maxInit() != 0 )
       m_minimiser->SetVariableLimits( m_mapping.size(), par->minInit(), par->maxInit() );
     m_mapping.push_back(i);
-    if ( m_printLevel != 0 ) INFO( *par );
+    if ( m_printLevel == PrintLevel::VeryVerbose )  INFO( *par );
   }
   m_nParams = m_mapping.size();
   m_covMatrix.resize( m_nParams * m_nParams, 0 );
 }
+
+std::string covMatrixStatusString( ROOT::Minuit2::Minuit2Minimizer* mini )
+{
+  if( mini->CovMatrixStatus() == -1 ) return "not available (inversion failed or Hesse failed)";
+  if( mini->CovMatrixStatus() ==  0 ) return "available but not positive defined status";
+  if( mini->CovMatrixStatus() ==  1 ) return "only approximate";
+  if( mini->CovMatrixStatus() ==  2 ) return "is full matrix but forced pos def";
+  if( mini->CovMatrixStatus() ==  3 ) return "is full and accurate"; 
+  return "unknown";
+} 
+
+std::string minuitStatusString( ROOT::Minuit2::Minuit2Minimizer* mini )
+{
+  if( mini->Status() == 0 ) return "converged"; 
+  if( mini->Status() == 1 ) return "forced positive definite";
+  if( mini->Status() == 2 ) return "Hesse is invalid";
+  if( mini->Status() == 3 ) return "Edm is above maximum";
+  if( mini->Status() == 4 ) return "Reached max calls";
+  if( mini->Status() == 5 ) return "unknown";
+  return "unknown";
+} 
+
 
 bool Minimiser::doFit()
 {
@@ -165,6 +198,18 @@ bool Minimiser::doFit()
     }
   }
   m_status = m_minimiser->Status();
+  
+  INFO("Minuit2Minimize: " << minuitStatusString(m_minimiser) << ", covariance matrix: " << covMatrixStatusString( m_minimiser ) ); 
+  INFO("Status = " << m_status ); 
+  INFO("FVAL   = " << FCN() );
+  INFO("Edm    = " << Edm() );
+  INFO("Nfcn   = " << m_minimiser->NCalls() );
+  if( m_status != 0 && m_printLevel != PrintLevel::VeryVerbose )
+  {
+    WARNING("Fit has not converged, some clues from Minuit2 may not be printed due to low verbosity level.");
+    WARNING("Suggest using Minimiser::PrintLevel VeryVerbose or higher");
+  }
+
   if(NamedParameter<bool>("Minimiser::RunMinos",false)){
     for( unsigned i = 0 ; i != m_nParams; ++i ){
       double low  = 0;
@@ -271,17 +316,11 @@ void Minimiser::minos( MinuitParameter* parameter )
      }
 }
 
-void Minimiser::setPrintLevel( const int printLevel){ 
+void Minimiser::setPrintLevel( const PrintLevel& printLevel){ 
   m_printLevel = printLevel; 
-
-  if (m_printLevel){
-    for (size_t i = 0 ; i< m_parSet->size(); ++i){
-      auto par = m_parSet->at(i);
-      if (par->isBlind()){
-	FATAL("Minimiser::PrintLevel is !=0, incompatible with having any Blind parameter");
-      }
+  if (m_printLevel == PrintLevel::VeryVerbose ){
+    for (const auto& param : *m_parSet){
+      if ( param->isBlind() ) FATAL("Minimiser::PrintLevel is == VeryVerbose, incompatible with having any Blind parameter");
     }
   }
-
-  if( m_minimiser != nullptr ) m_minimiser->SetPrintLevel( m_printLevel );
 } 

@@ -179,24 +179,37 @@ void FitResult::print() const
   INFO( "Edm          = " << m_Edm );
 
   std::cout<<"\n"<<std::endl;
+  
+  unsigned longest_parameter_name = 10;
+  for( unsigned i = 0 ; i != (unsigned)m_covarianceMatrix.GetNrows(); ++i )
+  {
+    auto param = m_mps->at(i); 
+    if( param->name().size() > longest_parameter_name ) longest_parameter_name = param->name().size() + 3; 
+  }
 
-  for (size_t i = 0; i < (size_t)m_covarianceMatrix.GetNrows(); ++i ) {
+  for (unsigned i = 0; i < (unsigned)m_covarianceMatrix.GetNrows(); ++i ) {
     auto param = m_mps->at(i);
     if (param->name().find("_blind") != std::string::npos ) continue;
+    double mean = param->mean(); 
     if ( param->isBlind() ) {
       double secretoffset =  m_mps->at(param->name()+"_blind")->mean();
       if (secretoffset == 0.) {
         INFO("\n\n\n Attempting to print a blind result!!! \n\n\n Skipping parameter for now, change this in FitResult.cpp");
         continue;
       }
-      INFO( "Parameter"
-            << " " << param->name() << "     " << to_string<Flag>(param->flag()) << "        " << param->mean() + secretoffset << " +/- "<<  m_mps->at(i)->err() << "Pos err:" << m_mps->at(i)->errPos() << "Neg err:" << m_mps->at(i)->errNeg()  << "  (BLIND)");
+      mean += secretoffset;
     }
-    else {
-      INFO( "Parameter"
-            << " " << param->name() << "     " << to_string<Flag>(param->flag()) << "        " << param->mean() << " +/- " << (param->isFree() ?  m_mps->at(i)->err() : 0) << "Pos err:" << (param->isFree() ? m_mps->at(i)->errPos() : 0) << "Neg err:" << (param->isFree() ? m_mps->at(i)->errNeg() : 0)  << " ");
+    if( param->flag() == Flag::Free or
+        param->flag() == Flag::Fix  or 
+        param->flag() == Flag::Blind )  
+    INFO( std::setw(longest_parameter_name)
+          << param->name() << "     " << std::setw(5) << to_string<Flag>(param->flag())  
+          << std::right << std::setw(13) << param->mean() << " ± "  
+          << std::left  << std::setw(13) << (param->isFree() ?  m_mps->at(i)->err() : 0) 
+          << " Pos err:" << std::setw(11) << (param->isFree() ? m_mps->at(i)->errPos() : 0) 
+          << " Neg err:" << std::setw(11) << (param->isFree() ? m_mps->at(i)->errNeg() : 0)  
+          << (param->isBlind() ? "  (BLIND)" : "") );
     }
-  }
   std::cout<<"\n"<<std::endl;
 }
 

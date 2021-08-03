@@ -20,7 +20,7 @@
 
 namespace AmpGen {
   namespace detail {
-    constexpr static int FCNNAMELENGTH = 45; 
+    constexpr static int FCNNAMELENGTH = 38; 
 
     inline std::string trimmedString( std::string thing, const unsigned int& length = FCNNAMELENGTH )
     {

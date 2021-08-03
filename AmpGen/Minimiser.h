@@ -13,6 +13,7 @@
 #include <Minuit2/MnTraceObject.h>
 
 #include "AmpGen/MetaUtils.h"
+#include "AmpGen/enum.h"
 
 /** @cond PRIVATE */
 namespace ROOT
@@ -27,7 +28,7 @@ class TGraph;
 
 namespace AmpGen
 {
-
+  declare_enum ( PrintLevel, Quiet, Info, Verbose, VeryVerbose ) 
   class ExtendLikelihoodBase;
   class MinuitParameter;
   class MinuitParameterSet;
@@ -76,7 +77,7 @@ namespace AmpGen
     MinuitParameterSet* parSet() const;
     int status() const;
     ROOT::Minuit2::Minuit2Minimizer* minimiserInternal();
-    void setPrintLevel( const int printLevel);
+    void setPrintLevel( const PrintLevel& printLevel);
     void minos( MinuitParameter* param );
   private:
     MinuitParameterSet*         m_parSet       = {nullptr};
@@ -84,11 +85,11 @@ namespace AmpGen
     ROOT::Minuit2::Minuit2Minimizer*  m_minimiser    = {nullptr};
     std::vector<double>         m_covMatrix    = {0};
     std::vector<unsigned>       m_mapping      = {};
-    int      m_status     = {0};
-    unsigned m_nParams    = {0};
-    unsigned m_printLevel = {0};
-    double   m_ll_zero    = {0};
-    bool     m_normalise  = {false};
+    int        m_status     = {0};
+    unsigned   m_nParams    = {0};
+    PrintLevel m_printLevel = {PrintLevel::Info};
+    double     m_ll_zero    = {0};
+    bool       m_normalise  = {false};
     std::vector<ExtendLikelihoodBase*> m_extendedTerms;
   };
 } // namespace AmpGen
