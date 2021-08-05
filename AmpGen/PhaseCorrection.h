@@ -357,24 +357,16 @@ namespace AmpGen{
 
                 for (size_t i=startFrom; i<cov.GetNrows() - until;i++){
                     for (size_t j=startFrom; j<cov.GetNcols() - until;j++){
-             
-             
-             
                         size_t i1 = ijs[i][0];
-             
                         size_t j1 = ijs[i][1];
                         size_t i2 = ijs[j][0];
                         size_t j2 = ijs[j][1];
-
-
-                     
-
-
                         //result += cov[i][j] * Poly1D(x, i) * Poly1D(y, 2*j+1);
                         result += cov[i][j] * Poly1D(w1, i1) * Poly1D(w2, 2*j1+1) * Poly1D(w1, i2) * Poly1D(w2, 2*j2+1);
-
                     }
                 }
+
+
                 }
                 else{
                     /*
