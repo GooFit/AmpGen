@@ -120,6 +120,7 @@ The possible options for the _fix_ flag, which can be specified either by name o
 * Fixed (fix=2, for historical reasons)
 * Compile-Time-Constant (fix=3) which indicates that the parameter should be treated as a (JIT) compile time constant, which in some cases allows for more aggressive optimisations to be performed.
 * Blind (fix=4) indicates a parameter should be blind, meaning its true value will be hidden from the user to prevent unintentionally biasing analysis. For details, see [Blinding](#parameter-blinding). 
+
 These options can be used in the AmpGen application, which is described below.
 
 
@@ -301,11 +302,12 @@ This section contains miscellaneous details on more advanced functionality, incl
 * [Python Bindings](#python-bindings)
 * [Particle Properties and Lineshape parameters](#particle-properties-and-lineshape-parameters)
 * [Fit parameters and expressions](#fit-parameters-and-expressions)
+* [Parameter Blinding](#parameter-blinding)
 * [Spin Formalisms](#spin-formalisms)
 * [Quasiparticles](#quasiparticles)
 
 ### Python Bindings
-Models built into a shared library can be used in python using the following flags into ConvertToSourceCode:
+Models built into a shared library can be used in python using the following flags: 
 ```shell
 ./AmpGen.exe MyOpts.opt --Output=MyFile.cpp --SourceOnly --OutputEvents=events.csv --IncludePythonBindings
 ```
