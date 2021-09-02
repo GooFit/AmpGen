@@ -129,7 +129,6 @@ void Minimiser::prepare()
   m_minimiser->SetTolerance( tolerance );
   //  m_minimiser->SetStrategy( 3 );
   //  m_minimiser->SetPrecision(std::numeric_limits<double>::epsilon());
-  INFO(printLevelMinuit2);
   m_minimiser->SetPrintLevel( printLevelMinuit2 ); // turn off minuit printing 
   m_mapping.clear();
   m_covMatrix.clear();
@@ -209,8 +208,9 @@ bool Minimiser::doFit()
     WARNING("Fit has not converged, some clues from Minuit2 may not be printed due to low verbosity level.");
     WARNING("Suggest using Minimiser::PrintLevel VeryVerbose or higher");
   }
-
-  if(NamedParameter<bool>("Minimiser::RunMinos",false)){
+  bool runMinos = NamedParameter<bool>("Minimiser::RunMinos",false);
+  if(runMinos)
+  {
     for( unsigned i = 0 ; i != m_nParams; ++i ){
       double low  = 0;
       double high = 0;
@@ -219,11 +219,41 @@ bool Minimiser::doFit()
       auto param = m_parSet->at( m_mapping[i] );
       param->setResult( *param, param->err(), low, high  );
     }
-    // for( unsigned i = 0 ; i != m_nParams; ++i )
-    // {
-    // auto param = m_parSet->at( m_mapping[i] );
-    // INFO( param->name() << " " << param->mean() << " " << param->errPos() << " " << param->errNeg() );
-    //}
+  }
+  
+  if( m_printLevel >= PrintLevel::Info )
+  { 
+    unsigned longest_parameter_name = 10;  
+    for(const auto& param : *m_parSet )
+    {
+      if( param->name().size() > longest_parameter_name ) longest_parameter_name = param->name().size() + 3; 
+    }
+    for( const auto& param : *m_parSet )
+    { 
+      double mean = param->mean(); 
+      if ( param->isBlind() ) {
+        double secretoffset =  m_parSet->at(param->name()+"_blind")->mean();
+        if (secretoffset == 0.) {
+          INFO("\n\n\n Attempting to print a blind result!!! \n\n\n Skipping parameter for now, change this in Minimiser.cpp");
+          continue;
+        }
+        mean += secretoffset;
+      }
+      if( param->flag() == Flag::Free or
+          param->flag() == Flag::Fix  or 
+          param->flag() == Flag::Blind ){
+       if( runMinos ) INFO( std::setw(longest_parameter_name)
+            << param->name() << "     " << std::setw(5) << to_string<Flag>(param->flag())  
+            << std::right << std::setw(13) << param->mean() << " ± "  
+            << std::left  << std::setw(13) << (param->isFree() ?  param->err() : 0) 
+            << " Pos err:" << std::setw(11) << (param->isFree() ? param->errPos() : 0) 
+            << " Neg err:" << std::setw(11) << (param->isFree() ? param->errNeg() : 0) );
+       else INFO( std::setw(longest_parameter_name)
+            << param->name() << "     " << std::setw(5) << to_string<Flag>(param->flag())  
+            << std::right << std::setw(13) << param->mean() << " ± "  
+            << std::left  << std::setw(13) << (param->isFree() ?  param->err() : 0) );
+      }
+    }
   }
   return 1;
 }
@@ -296,8 +326,9 @@ void Minimiser::minos( MinuitParameter* parameter )
   if( index == m_nParams ) ERROR( parameter->name() << " not amongst free parameters for fit");
   double low{0}, high{0};
   int status =0;
+  double v0  = *parameter;
   m_minimiser->GetMinosError(index, low, high, status);
-  parameter->setResult( *parameter, parameter->err(), low, high );
+  parameter->setResult(v0, parameter->err(), low, high );
 
   if (parameter->isBlind())
     {

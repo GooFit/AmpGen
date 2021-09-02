@@ -58,8 +58,8 @@ namespace AmpGen {
 
   std::vector<std::string> vectorFromFile( const std::string& filename, const char ignoreLinesThatBeginWith = '#' );
 
-  std::vector<std::string> split( const std::string& s, char delim, bool ignoreWhitespace = true );
-  std::vector<std::string> split( const std::string& s, const std::vector<char>& delims );
+  std::vector<std::string> split( const std::string&, char, bool = true);
+  std::vector<std::string> split( const std::string&, const std::vector<char>&, bool=false );
 
   std::vector<size_t> findAll( const std::string& input, const std::string& ch );
 

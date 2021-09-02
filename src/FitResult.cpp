@@ -177,9 +177,9 @@ void FitResult::print() const
   INFO( "Fit Status   = " << m_status );
   INFO( "NCalls       = " << m_NCalls );
   INFO( "Edm          = " << m_Edm );
-
+  /*
   std::cout<<"\n"<<std::endl;
-  
+ 
   unsigned longest_parameter_name = 10;
   for( unsigned i = 0 ; i != (unsigned)m_covarianceMatrix.GetNrows(); ++i )
   {
@@ -211,6 +211,7 @@ void FitResult::print() const
           << (param->isBlind() ? "  (BLIND)" : "") );
     }
   std::cout<<"\n"<<std::endl;
+  */
 }
 
 std::vector<MinuitParameter*> FitResult::parameters() const

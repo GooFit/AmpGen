@@ -32,8 +32,28 @@ std::vector<std::string> AmpGen::split( const std::string& s, char delim, bool i
   return elems;
 }
 
-std::vector<std::string> AmpGen::split( const std::string& s, const std::vector<char>& delims )
+std::vector<std::string> AmpGen::split( const std::string& s, const std::vector<char>& delims, bool keepDelims )
 {
+  std::vector<std::string> elems;
+  std::string tmp; 
+  for( std::size_t i = 0 ; i != s.size(); ++i )
+  {
+    auto c = s[i]; 
+    bool found = false; 
+    for( const auto& delim : delims )
+    {
+      if( c != delim ) continue; 
+      if( tmp != "") elems.push_back(tmp); 
+      if( keepDelims ) elems.push_back( std::string(1, delim) );
+      tmp   = "";
+      found = true;
+      break; 
+    }
+    if( !found ) tmp += c; 
+  }
+  if( tmp != "" ) elems.push_back(tmp);
+  return elems;
+  /*
   std::vector<std::string> elems;
   std::stringstream ss( s );
   std::string strDelim = std::accumulate( delims.begin(), delims.end(), std::string("") );
@@ -46,8 +66,8 @@ std::vector<std::string> AmpGen::split( const std::string& s, const std::vector<
     }
     if ( prev < line.length() ) elems.push_back( line.substr( prev, std::string::npos ) );
   }
-
-  return elems;
+  return elems; 
+  */
 }
 
 void AmpGen::swapChars(std::string& arg, const char a, const char b)

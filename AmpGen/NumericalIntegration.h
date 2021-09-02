@@ -103,6 +103,7 @@ namespace AmpGen {
         return integrate_1d( [&F](const double& x){ return F( std::array<double,1>{x} ); }, xmin[0], xmax[0] );
       }
       else static_assert(true, "1D function doesn't have recognised signature");
+      return 0;
     }
     else {
 
