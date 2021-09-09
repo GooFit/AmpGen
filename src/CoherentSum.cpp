@@ -172,7 +172,7 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
   stream << "#include <vector>\n";
   stream << "#include <math.h>\n";
   if ( add_mt ) stream << "#include <thread>\n";
-  bool includePythonBindings = NamedParameter<bool>("CoherentSum::IncludePythonBindings",false);
+  bool includePythonBindings = NamedParameter<bool>("IncludePythonBindings",false);
 
   for ( auto& p : m_matrixElements ){
     auto expr = CompiledExpression<complex_t(const real_t*, const real_t*)>(
@@ -195,14 +195,15 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
   stream << CompiledExpression<std::complex<double>(const double*, const int&)>( amplitude  , "AMP", disableBatch() ) << std::endl; 
   stream << CompiledExpression<double(const double*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN", disableBatch() ) << std::endl; 
   if( includePythonBindings ){
-    stream << CompiledExpression<unsigned int(void)>( m_matrixElements.size(), "matrix_elements_n" ) << std::endl;
-    stream << CompiledExpression<double      (void)>( normalisation, "normalization") << std::endl;
-
+    stream << CompiledExpression<unsigned int(void)>( m_matrixElements.size(), "matrix_elements_n", disableBatch() ) << std::endl;
+    stream << CompiledExpression<double      (void)>( normalisation, "normalization", disableBatch() ) << std::endl;
     stream << "extern \"C\" const char* matrix_elements(int n) {\n";
     for ( size_t i = 0; i < m_matrixElements.size(); i++ ) {
       stream << "  if(n ==" << i << ") return \"" << m_matrixElements.at(i).progName() << "\" ;\n";
     }
     stream << "  return 0;\n}\n";
+
+    /*
     stream << "extern \"C\" void FCN_all(double* out, double* events, unsigned int size, int parity, double* amps){\n";
     stream << "  double local_amps [] = {\n";
     for ( unsigned int i = 0; i < size(); ++i ) {
@@ -226,14 +227,15 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
       stream << ( i == size() - 1 ? ";" : " +" ) << "\n";
     }
     stream << "  out[i] =  std::norm(amplitude) / " << normalisation << ";\n  }\n}\n";
-
-    stream << "extern \"C\" double coefficients( int n, int which, int parity){\n";
+    */
+    stream << "extern \"C\" std::complex<double> coefficients(int n, int parity){\n";
     for ( size_t i = 0; i < size(); i++ ) {
       auto& p    = m_matrixElements[i];
       int parity = p.decayTree.finalStateParity();
       stream << "  if(n == " << i << ") return ";
-      if ( parity == -1 ) stream << "double(parity) * ";
-      stream << "(which==0 ? " << p.coupling().real() << " : " << p.coupling().imag() << ");\n";
+      if ( parity == -1 ) stream << "double(parity) * "; 
+      stream << p.coupling() << ";\n";
+//      stream << "(which==0 ? " << p.coupling().real() << " : " << p.coupling().imag() << ");\n";
     }
     stream << "  return 0;\n}\n";
   }
