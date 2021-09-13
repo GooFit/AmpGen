@@ -107,7 +107,7 @@ namespace AmpGen {
     }
     else {
 
-      double epsrel = 1e-9;  //specified relative accuracy
+      double epsrel = 5e-10;  //specified relative accuracy
       double epsabs = 0.; //specified relative accuracy
       //output parameters
       double relerr = 0 ; //an estimation of the relative accuracy of the result

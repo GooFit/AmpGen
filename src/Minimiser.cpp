@@ -116,7 +116,7 @@ void Minimiser::prepare()
 {
   std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse");
   size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
-  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 0.1);
+  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 0.01);
   m_printLevel          = NamedParameter<PrintLevel>( "Minimiser::PrintLevel", PrintLevel::Info); 
   unsigned printLevelMinuit2 = NamedParameter<unsigned>("Minimiser::Minuit2MinimizerPrintLevel", m_printLevel == PrintLevel::VeryVerbose ? 3 : 0 );
   if( m_printLevel == PrintLevel::Invalid )
@@ -130,7 +130,7 @@ void Minimiser::prepare()
   m_minimiser->SetMaxFunctionCalls( maxCalls );
   m_minimiser->SetMaxIterations( 100000 );
   m_minimiser->SetTolerance( tolerance );
-  //  m_minimiser->SetStrategy( 3 );
+  m_minimiser->SetStrategy( 3 );
   //  m_minimiser->SetPrecision(std::numeric_limits<double>::epsilon());
   m_minimiser->SetPrintLevel( printLevelMinuit2 ); // turn off minuit printing 
   m_mapping.clear();
@@ -316,6 +316,8 @@ ROOT::Minuit2::Minuit2Minimizer* Minimiser::minimiserInternal() { return m_minim
 
 void Minimiser::minos( MinuitParameter* parameter )
 { 
+  INFO("Getting MINOS error: " << parameter->name() << " : " << parameter->mean() << " +/- " << parameter->err() );
+
   if( m_minimiser == nullptr ) ERROR("No minimiser");
 
   ROOT::Math::Functor f( *this, m_nParams );
@@ -326,12 +328,19 @@ void Minimiser::minos( MinuitParameter* parameter )
   {
     if( parameter->name() == m_parSet->at( m_mapping[index] )->name() ) break;
   }
+  double v0 = parameter->mean();
   if( index == m_nParams ) ERROR( parameter->name() << " not amongst free parameters for fit");
   double low{0}, high{0};
   int status =0;
-  double v0  = *parameter;
+  std::vector<double> init_values ( m_minimiser->X(), m_minimiser->X() + m_nParams); 
+
+  if( parameter->minInit() != 0 && v0 - parameter->err() < parameter->minInit() ) return;  
+  if( parameter->maxInit() != 0 && v0 + parameter->err() > parameter->maxInit() ) return;  
+  
   m_minimiser->GetMinosError(index, low, high, status);
-  parameter->setResult(v0, parameter->err(), low, high );
+  parameter->setResult( v0, parameter->err(), low, high );
+  
+  for( int i = 0 ; i != m_nParams; ++i ) m_parSet->at( m_mapping[i] )->setCurrentFitVal( init_values[i] );
 
   if (parameter->isBlind())
   {
