@@ -6,10 +6,15 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+
 #include <Minuit2/Minuit2Minimizer.h>
 #include <Minuit2/MinimumState.h>
 #include <Minuit2/MnPrint.h>
 #include <Minuit2/MinimumParameters.h>
+#include <Fit/FitConfig.h>
+#include <Math/Factory.h>
+#include <Math/Functor.h>
+#include <Math/Minimizer.h>
 
 #include "AmpGen/ExtendLikelihoodBase.h"
 #include "AmpGen/MinuitParameter.h"
@@ -17,13 +22,11 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Utilities.h"
-#include "Math/Factory.h"
-#include "Math/Functor.h"
-#include "Math/Minimizer.h"
 #include "AmpGen/ProfileClock.h"
 
 using namespace AmpGen;
 using namespace ROOT;
+
 namespace AmpGen {   
   complete_enum ( PrintLevel, Quiet, Info, Verbose, VeryVerbose); 
 };
@@ -33,18 +36,18 @@ unsigned int Minimiser::nPars() const { return m_nParams; }
 void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState & state) 
 {
   if( m_printLevel == PrintLevel::Quiet ) return; 
- 
+
   if( i >= 0)
   {
     INFO( "Iteration  #  "
-      << std::setw(3) << i << " - FCN = " <<  std::setw(16) << state.Fval()
-    << " Edm = " <<  std::setw(12) << state.Edm() << " NCalls = " << std::setw(6) << state.NFcn() );
+        << std::setw(3) << i << " - FCN = " <<  std::setw(16) << state.Fval()
+        << " Edm = " <<  std::setw(12) << state.Edm() << " NCalls = " << std::setw(6) << state.NFcn() );
   }
   else {
     INFO( "Iteration  #  "
-      << std::setprecision(13)
-      << " - FCN = " <<  std::setw(16) << state.Fval()
-      << " Edm = " <<  std::setw(12) << state.Edm() << " NCalls = " << std::setw(6) << state.NFcn() );
+        << std::setprecision(13)
+        << " - FCN = " <<  std::setw(16) << state.Fval()
+        << " Edm = " <<  std::setw(12) << state.Edm() << " NCalls = " << std::setw(6) << state.NFcn() );
   }
   // Ensure sync with current parameter value inside Minuit
   for(size_t j = 0; j < m_mapping.size(); ++j ) {
@@ -197,7 +200,7 @@ bool Minimiser::doFit()
     }
   }
   m_status = m_minimiser->Status();
-  
+
   INFO("Minuit2Minimize: " << minuitStatusString(m_minimiser) << ", covariance matrix: " << covMatrixStatusString( m_minimiser ) ); 
   INFO("Status = " << m_status ); 
   INFO("FVAL   = " << FCN() );
@@ -220,7 +223,7 @@ bool Minimiser::doFit()
       param->setResult( *param, param->err(), low, high  );
     }
   }
-  
+
   if( m_printLevel >= PrintLevel::Info )
   { 
     unsigned longest_parameter_name = 10;  
@@ -242,13 +245,13 @@ bool Minimiser::doFit()
       if( param->flag() == Flag::Free or
           param->flag() == Flag::Fix  or 
           param->flag() == Flag::Blind ){
-       if( runMinos ) INFO( std::setw(longest_parameter_name)
+        if( runMinos ) INFO( std::setw(longest_parameter_name)
             << param->name() << "     " << std::setw(5) << to_string<Flag>(param->flag())  
             << std::right << std::setw(13) << param->mean() << " ± "  
             << std::left  << std::setw(13) << (param->isFree() ?  param->err() : 0) 
             << " Pos err:" << std::setw(11) << (param->isFree() ? param->errPos() : 0) 
             << " Neg err:" << std::setw(11) << (param->isFree() ? param->errNeg() : 0) );
-       else INFO( std::setw(longest_parameter_name)
+        else INFO( std::setw(longest_parameter_name)
             << param->name() << "     " << std::setw(5) << to_string<Flag>(param->flag())  
             << std::right << std::setw(13) << param->mean() << " ± "  
             << std::left  << std::setw(13) << (param->isFree() ?  param->err() : 0) );
@@ -260,12 +263,12 @@ bool Minimiser::doFit()
 
 TGraph* Minimiser::scan( MinuitParameter* param, const double& min, const double& max, const double& step )
 {
- 
+
   double secretoffset = 0.;
   if ( param->isBlind() ){ 
     secretoffset =  m_parSet->at( param->name()+"_blind")->mean();
-      }
- 
+  }
+
   param->fix();
   TGraph* rt = new TGraph();
   for ( double sv = min; sv < max; sv += step ) {
@@ -331,27 +334,77 @@ void Minimiser::minos( MinuitParameter* parameter )
   parameter->setResult(v0, parameter->err(), low, high );
 
   if (parameter->isBlind())
-    {
-      double secretoffset = m_parSet->at(parameter->name()+"_blind")->mean();
-      INFO( parameter->name() << " (BLIND) " << 
-	    parameter->mean()+secretoffset << "  - " << 
-	    parameter->errNeg() << " + " << 
-	    parameter->errPos() );
-    }
-   else  
-     {
-       INFO( parameter->name()   << 
-	     parameter->mean()   << "  - " << 
-	     parameter->errNeg() << " + " << 
-	     parameter->errPos() );
-     }
+  {
+    double secretoffset = m_parSet->at(parameter->name()+"_blind")->mean();
+    INFO( parameter->name() << " (BLIND) " << 
+        parameter->mean()+secretoffset << "  - " << 
+        parameter->errNeg() << " + " << 
+        parameter->errPos() );
+  }
+  else  
+  {
+    INFO( parameter->name()   << 
+        parameter->mean()   << "  - " << 
+        parameter->errNeg() << " + " << 
+        parameter->errPos() );
+  }
 }
 
-void Minimiser::setPrintLevel( const PrintLevel& printLevel){ 
+void Minimiser::setPrintLevel( const PrintLevel& printLevel)
+{ 
   m_printLevel = printLevel; 
   if (m_printLevel == PrintLevel::VeryVerbose ){
     for (const auto& param : *m_parSet){
       if ( param->isBlind() ) FATAL("Minimiser::PrintLevel is == VeryVerbose, incompatible with having any Blind parameter");
     }
   }
-} 
+}
+
+namespace AmpGen { 
+  namespace detail { 
+    class FitResult : public ROOT::Fit::FitResult {
+      public:
+        FitResult( const unsigned nParams ) : ROOT::Fit::FitResult(){ 
+          fCovMatrix.resize( nParams  *  nParams ); 
+          fErrors.resize(nParams);
+          fParams.resize(nParams); 
+          fParNames.resize(nParams); }
+        void set( ROOT::Minuit2::Minuit2Minimizer* mini, int status, double fcn)
+        {
+          fCovMatrix.resize( NPar() * NPar() );
+          mini->GetCovMatrix( fCovMatrix.data() );
+          fCovStatus = mini->CovMatrixStatus();
+          fEdm       = mini->Edm();
+          fVal       = fcn;
+          fStatus    = status; 
+          fErrors.assign( mini->Errors(), mini->Errors() + NPar() ); 
+          fParams.assign( mini->X(), mini->X() + NPar() ); 
+          fNdf       = NPar();
+          fNCalls    = mini->NCalls();
+          fValid     = fStatus == 0; 
+        } 
+        void setName( const unsigned int& index, const std::string& name )
+        {
+          fParNames[index] = name; 
+        }
+        void setAsymmError(const unsigned int& index, const double& low, const double& high )
+        {
+          fMinosErrors[index] = std::make_pair(low,high);
+        }
+    };
+  }
+}
+
+ROOT::Fit::FitResult Minimiser::fitResult() const 
+{
+  detail::FitResult fr(m_nParams); 
+  if( m_minimiser == nullptr ) return fr;
+  fr.set(m_minimiser, status(), FCN()); 
+  for( int i = 0 ; i != m_mapping.size(); ++i )
+  {
+    auto p = m_parSet->at ( m_mapping[i] );
+    fr.setName( i, p->name() );
+    if( p->errPos() != p->errNeg() ) fr.setAsymmError(i, p->errNeg(), p->errPos() );
+  }
+  return ROOT::Fit::FitResult(fr); 
+}

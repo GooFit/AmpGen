@@ -21,6 +21,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/ErrorPropagator.h"
+
 #ifdef _OPENMP
   #include <omp.h>
   #include <thread>
@@ -37,6 +38,7 @@
 #include <TH1.h>
 #include <TFile.h>
 #include <TRandom3.h>
+#include <TFitResult.h>
 
 using namespace AmpGen;
 
@@ -139,6 +141,7 @@ FitResult* doFit( likelihoodType&& likelihood, EventList_type& data, EventList_t
      (i.e. the likielihood, and a set of MinuitParameters. */
   Minimiser mini( likelihood, &MPS );
   mini.doFit();
+
   FitResult* fr = new FitResult(mini);
   
   auto twall_end  = std::chrono::high_resolution_clock::now();
@@ -153,7 +156,6 @@ FitResult* doFit( likelihoodType&& likelihood, EventList_type& data, EventList_t
   Chi2Estimator chi2( data, mc, likelihood.evaluator(&mc), MinEvents(15), Dim(data.eventType().dof()) );
   chi2.writeBinningToFile("chi2_binning.txt");
   fr->addChi2( chi2.chi2(), chi2.nBins() );
-  fr->print();
 
   /* Make the plots for the different components in the PDF, i.e. the signal and backgrounds. 
      The structure assumed the PDF is some SumPDF<eventListType, pdfType1, pdfType2,... >. */
@@ -166,5 +168,10 @@ FitResult* doFit( likelihoodType&& likelihood, EventList_type& data, EventList_t
     proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
     proj(data, PlotOptions::Prefix("Data") )->Write();
   }
+  
+  auto root_fr = mini.fitResult();
+  auto x = new TFitResult(root_fr);
+  x->SetName("FitResult"); 
+  x->Write();
   return fr;
 }

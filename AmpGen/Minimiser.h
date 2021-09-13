@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <TMatrixTSym.h>
+#include <Fit/FitResult.h>
 #include <Minuit2/MinimumState.h>
 #include <Minuit2/MnTraceObject.h>
 
@@ -79,6 +80,7 @@ namespace AmpGen
     ROOT::Minuit2::Minuit2Minimizer* minimiserInternal();
     void setPrintLevel( const PrintLevel& printLevel);
     void minos( MinuitParameter* param );
+    ROOT::Fit::FitResult fitResult() const; 
   private:
     MinuitParameterSet*         m_parSet       = {nullptr};
     std::function<double(void)> m_theFunction;
@@ -91,6 +93,7 @@ namespace AmpGen
     double     m_ll_zero    = {0};
     bool       m_normalise  = {false};
     std::vector<ExtendLikelihoodBase*> m_extendedTerms;
+
   };
 } // namespace AmpGen
 #endif
