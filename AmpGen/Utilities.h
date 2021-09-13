@@ -119,7 +119,7 @@ namespace AmpGen {
       while ( inFile.good() ) {
         std::getline( inFile, tmp );
         tmp.erase( std::remove_if( tmp.begin(), tmp.end(), [](const char c){ return c == '\r'; }), tmp.end() );
-        if ( tmp.size() == 0 || tmp[0] == ignoreLinesThatBeginWith ) continue;
+        if ( ignoreLinesThatBeginWith != '\0' && ( tmp.size() == 0 || tmp[0] == ignoreLinesThatBeginWith ) ) continue;
         toDo( tmp );
       }
       inFile.close();
