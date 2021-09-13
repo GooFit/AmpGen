@@ -247,13 +247,13 @@ bool Minimiser::doFit()
           param->flag() == Flag::Blind ){
         if( runMinos ) INFO( std::setw(longest_parameter_name)
             << param->name() << "     " << std::setw(5) << to_string<Flag>(param->flag())  
-            << std::right << std::setw(13) << param->mean() << " ± "  
+            << std::right << std::setw(13) << mean << " ± "  
             << std::left  << std::setw(13) << (param->isFree() ?  param->err() : 0) 
             << " Pos err:" << std::setw(11) << (param->isFree() ? param->errPos() : 0) 
             << " Neg err:" << std::setw(11) << (param->isFree() ? param->errNeg() : 0) );
         else INFO( std::setw(longest_parameter_name)
             << param->name() << "     " << std::setw(5) << to_string<Flag>(param->flag())  
-            << std::right << std::setw(13) << param->mean() << " ± "  
+            << std::right << std::setw(13) << mean << " ± "  
             << std::left  << std::setw(13) << (param->isFree() ?  param->err() : 0) );
       }
     }
@@ -400,6 +400,10 @@ namespace AmpGen {
         {
           fMinosErrors[index] = std::make_pair(low,high);
         }
+        void blind(const unsigned int& index, const double& offset )
+        {
+          fParams[index] += offset;  
+        }
     };
   }
 }
@@ -414,6 +418,7 @@ ROOT::Fit::FitResult Minimiser::fitResult() const
     auto p = m_parSet->at ( m_mapping[i] );
     fr.setName( i, p->name() );
     if( p->errPos() != p->errNeg() ) fr.setAsymmError(i, p->errNeg(), p->errPos() );
+    if( p->isBlind() ) fr.blind(i, m_parSet->at( p->name() + "_blind" )->mean() ); 
   }
   return ROOT::Fit::FitResult(fr); 
 }
