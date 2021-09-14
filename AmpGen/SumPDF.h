@@ -5,6 +5,7 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/KeyedFunctors.h"
+#include "AmpGen/KahanSum.h"
 #include <tuple>
 
 #if ENABLE_AVX
@@ -37,6 +38,8 @@ namespace AmpGen
       compile time or binary size. It isn't primarily used as PDF, as its primary function is 
       as a likelihood via function getVal(). 
       Typically constructed using either the make_pdf helper function or make_likelihood helper function.  */
+
+  
   template <class eventListType, class... pdfTypes>
   class SumPDF
   {
@@ -56,31 +59,30 @@ namespace AmpGen
 
     double getVal()
     {
+      for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
+      std::vector<float_v> tmp( m_events->nBlocks() );
       if constexpr( std::is_same<eventListType,EventList>::value )
       {
-        double LL = 0;
-        for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
-        #pragma omp parallel for reduction( +: LL )
+        #pragma omp parallel for
         for ( unsigned int i = 0; i < m_events->size(); ++i ) {
           auto prob = ((*this))(( *m_events)[i] );
           auto w = (*m_events)[i].weight();
-          LL += w*log(prob);
+          tmp[i] = w * log(prob);  
         }
-        return -2 * LL;
       }
       #if ENABLE_AVX 
       if constexpr( std::is_same<eventListType, EventListSIMD>::value )
       {
-        float_v LL = 0.f;
-        for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
-        #pragma omp parallel for reduction( +: LL )
-        for ( size_t block = 0; block < m_events->nBlocks(); ++block ) 
+        #pragma omp parallel for
+        for( unsigned block = 0 ; block != m_events->nBlocks(); ++block )
         {
-          LL += m_events->weight(block) * AVX::log(this->operator()(m_events->block(block), block));
+          tmp[block] = m_events->weight(block) * AVX::log(this->operator()(m_events->block(block), block));  
         }
-        return -2 * utils::sum_elements(LL);
       }
       #endif
+      KahanSum<float_v> sum;
+      for( unsigned block = 0 ; block != m_events->nBlocks(); ++block ) sum += tmp[block];
+      return -2 * utils::sum_elements(sum.sum);
     } 
     /// Returns the probability for the given event. 
     float_v operator()( const float_v* evt , const unsigned block)
