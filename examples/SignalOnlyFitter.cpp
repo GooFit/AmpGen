@@ -130,11 +130,7 @@ int main( int argc, char* argv[] )
   
   fr->addFractions( fitFractions );
   fr->writeToFile( logFile );
-  if ( outOptFile != "" )
-  {
-    if ( inOptFile != "" ) fr->writeOptions(outOptFile, inOptFile);
-    else fr->writeOptions(outOptFile);
-  }
+  if ( outOptFile != "" ) fr->writeOptions(outOptFile, inOptFile);
 
   output->Close();
 }
