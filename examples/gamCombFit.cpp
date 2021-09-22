@@ -265,6 +265,40 @@ void CombinedFitAndWrite(EventType eventType, std::vector<EventType> TagType, st
 
       auto pl = polyLASSO(sf, MPS);
       auto m0 = Minimiser(pl, &MPS);
+      doScan = NamedParameter<bool>("doScan", false);
+      if (doScan){
+     
+          size_t n_sigma = NamedParameter<int>("ScanNSigma", 3);
+          size_t n_points = NamedParameter<int>("ScanPoints", 20);
+          std::string scan_name = NamedParameter<std::string>("ScanParameter", "pCoherentSum::x+") ;
+          
+
+
+          auto p = MPS[scan_name];
+          real_t step = 2 * n_sigma * p->err()/n_points;
+          real_t p_init = p->mean();
+
+          INFO("Fixing "<<scan_name);
+          MPS[scan_name]->fix(); 
+          if (MPS[scan_name]->isFixed()) INFO("Have Fixed parameter");
+          //auto scan_graph = m0.scan(p, p->mean() - n_sigma * p->err(), p->mean() + n_sigma * p->err(), step);
+          auto scan_graph = m0.scan(MPS[scan_name], p->mean() - n_sigma * p->err(), p->mean() + n_sigma * p->err(), step);
+
+          std::string old_name = p->name();
+          std::string new_name = boost::replace_all_copy(old_name, "::", "_");
+          //auto f_scan = TFile::Open(plotFile.c_str(), "UPDATE");
+          auto f_scan = TFile::Open(("Scan_"+new_name + ".root").c_str(), "UPDATE");
+          scan_graph->Write( ("Scan_" + new_name).c_str() );
+          f_scan->Close();
+          MPS[scan_name]->setCurrentFitVal(p_init);
+          MPS[scan_name]->setFree();
+
+      
+
+        return;          
+      }
+        
+
 
       m0.gradientTest();
       m0.doFit();
@@ -304,7 +338,7 @@ void CombinedFitAndWrite(EventType eventType, std::vector<EventType> TagType, st
         
         }
       }
-
+      INFO("Making Covariance Matrix");
       auto cov0 = m0.covMatrix();
       auto f0 =TFile::Open(plotFile.c_str(), "UPDATE");
       cov0.Write("CovMatrix");
@@ -315,39 +349,15 @@ void CombinedFitAndWrite(EventType eventType, std::vector<EventType> TagType, st
       for (size_t i=0;i<cov0.GetNcols();i++){
         for(size_t j=0;j<cov0.GetNrows();j++){
           corr[i][j] = internal_mini->Correlation(i, j);
+          INFO("corr["<<i<<", "<<j<<"] = "<<corr[i][j]);
         }
       }
+      INFO("Writing Correlation Matrix");
       corr.Write("CorrMatrix");
+      INFO("Writing to File");
       f0->Close();
 
 
-
-    if (doScan){
-     
-      size_t n_sigma = 5;
-      size_t n_points = 20;
-      
-      for (auto& p : MPS){
-
-         if (p->isFree()){
-          real_t step = 2 * n_sigma * p->err()/n_points;
-          real_t p_init = p->mean();
-
-        //  p->fix();
-          
-          auto scan_graph = m0.scan(p, p->mean() - n_sigma * p->err(), p->mean() + n_sigma * p->err(), step);
-          auto f_scan = TFile::Open(plotFile.c_str(), "UPDATE");
-          std::string old_name = p->name();
-          std::string new_name = boost::replace_all_copy(old_name, "::", "_");
-          scan_graph->Write( ("Scan_" + new_name).c_str() );
-          f_scan->Close();
-          p->setCurrentFitVal(p_init);
-         // p->setFree();
-         }
-      
-        }
-      }
-    
 
 
 }

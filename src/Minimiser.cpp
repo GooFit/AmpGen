@@ -152,10 +152,11 @@ bool Minimiser::doFit()
 TGraph* Minimiser::scan( MinuitParameter* param, const double& min, const double& max, const double& step )
 {
   param->fix();
+  m_parSet->find(param->name())->fix();
   TGraph* rt = new TGraph();
   for ( double sv = min; sv < max; sv += step ) {
     param->setCurrentFitVal( sv );
-    //doFit();
+    doFit();
     rt->SetPoint( rt->GetN(), sv, FCN() );
   }
   return rt;
