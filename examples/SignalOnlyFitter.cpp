@@ -68,6 +68,9 @@ int main( int argc, char* argv[] )
   [[maybe_unused]]
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , 8           , "Number of threads to use" );
   size_t      seed     = NamedParameter<size_t>     ("Seed"      , 0           , "Random seed used" );
+  
+  std::string outOptFile = NamedParameter<std::string>("OutputOptionFile", ""  , "Name of output option file updated with the best-fit parameters");
+  std::string inOptFile = NamedParameter<std::string>("InputOptionFile", ""    , "Name of input option file to use as template for OutputOptionFile");
    
   if( dataFile == "" ) FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off );
   if( pNames.size() == 0 ) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
@@ -127,7 +130,12 @@ int main( int argc, char* argv[] )
   
   fr->addFractions( fitFractions );
   fr->writeToFile( logFile );
-  
+  if ( outOptFile != "" )
+  {
+    if ( inOptFile != "" ) fr->writeOptions(outOptFile, inOptFile);
+    else fr->writeOptions(outOptFile);
+  }
+
   output->Close();
 }
 
