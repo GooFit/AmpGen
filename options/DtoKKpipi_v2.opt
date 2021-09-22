@@ -73,12 +73,12 @@ a(1)(1260)-[GSpline.EFF]{phi(1020)0{K+,K-},pi-}_Im        = a(1)(1260)+[GSpline.
 a(1)(1260)-[GSpline.EFF]{phi(1020)0{K+,K-},pi-}_Re        = a(1)(1260)+[GSpline.EFF]{phi(1020)0{K+,K-},pi+}_Re
 K(1)(1270)bar-[D;GSpline.EFF]{K*(892)bar0{K-,pi+},pi-}_Re = K(1)(1270)+[D;GSpline.EFF]{K*(892)0{K+,pi-},pi+}_Re      
 K(1)(1270)bar-[D;GSpline.EFF]{K*(892)bar0{K-,pi+},pi-}_Im = K(1)(1270)+[D;GSpline.EFF]{K*(892)0{K+,pi-},pi+}_Im 
-K(1)(1270)bar-[GSpline.EFF]{KPi70,pi-}_Re                 = K(1)(1270)+[GSpline.EFF]{KPi60,pi+}_Re
-K(1)(1270)bar-[GSpline.EFF]{KPi70,pi-}_Im                 = K(1)(1270)+[GSpline.EFF]{KPi60,pi+}_Im  
-KPi70[FOCUS.I32]{K-,pi+}_Im                               = KPi60[FOCUS.I32]{K+,pi-}_Im
-KPi70[FOCUS.I32]{K-,pi+}_Re                               = KPi60[FOCUS.I32]{K+,pi-}_Re
-KPi70[FOCUS.Kpi]{K-,pi+}_Im                               = KPi60[FOCUS.Kpi]{K+,pi-}_Im
-KPi70[FOCUS.Kpi]{K-,pi+}_Re                               = KPi60[FOCUS.Kpi]{K+,pi-}_Re
+K(1)(1270)bar-[GSpline.EFF]{KPi6bar0,pi-}_Re              = K(1)(1270)+[GSpline.EFF]{KPi60,pi+}_Re
+K(1)(1270)bar-[GSpline.EFF]{KPi6bar0,pi-}_Im              = K(1)(1270)+[GSpline.EFF]{KPi60,pi+}_Im  
+KPi6bar0[FOCUS.I32]{K-,pi+}_Im                            = KPi60[FOCUS.I32]{K+,pi-}_Im
+KPi6bar0[FOCUS.I32]{K-,pi+}_Re                            = KPi60[FOCUS.I32]{K+,pi-}_Re
+KPi6bar0[FOCUS.Kpi]{K-,pi+}_Im                            = KPi60[FOCUS.Kpi]{K+,pi-}_Im
+KPi6bar0[FOCUS.Kpi]{K-,pi+}_Re                            = KPi60[FOCUS.Kpi]{K+,pi-}_Re
 
 KK00[kMatrix.poleKK.0]{K+,K-}	                                2	0.302729	0.0252574   2	 0.430332	0.0889706
 KK00[kMatrix.poleKK.1]{K+,K-}	                                2	1.08037	        0.0390758   2	 1.38463	0.0326171
