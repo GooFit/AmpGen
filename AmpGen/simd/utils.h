@@ -67,14 +67,14 @@ namespace AmpGen {
         {
           const auto arr = obj.to_ptr();
           auto rt = arr[0];
-          for( unsigned i = 1 ; i != size<simd_type>::value; ++i ) rt = rt + arr[i];
+          for( unsigned i = 1 ; i != size<simd_type>::value; ++i ) rt += arr[i];
           return rt;
         }
         if constexpr( std::is_same_v<simd_type, AVX2d::complex_v> or std::is_same_v<simd_type, AVX2f::complex_v> )
         {
           const auto arr = obj.to_array();
           auto rt = arr[0];
-          for( unsigned i = 1 ; i != size<simd_type>::value; ++i ) rt = rt + arr[i];
+          for( unsigned i = 1 ; i != size<simd_type>::value; ++i ) rt += arr[i];
           return rt;
         }
       }
