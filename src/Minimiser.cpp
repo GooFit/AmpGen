@@ -316,7 +316,6 @@ ROOT::Minuit2::Minuit2Minimizer* Minimiser::minimiserInternal() { return m_minim
 
 void Minimiser::minos( MinuitParameter* parameter )
 { 
-  INFO("Getting MINOS error: " << parameter->name() << " : " << parameter->mean() << " +/- " << parameter->err() );
 
   if( m_minimiser == nullptr ) ERROR("No minimiser");
 
@@ -333,9 +332,10 @@ void Minimiser::minos( MinuitParameter* parameter )
   double low{0}, high{0};
   int status =0;
   std::vector<double> init_values ( m_minimiser->X(), m_minimiser->X() + m_nParams); 
-
-  if( parameter->minInit() != 0 && v0 - parameter->err() < parameter->minInit() ) return;  
-  if( parameter->maxInit() != 0 && v0 + parameter->err() > parameter->maxInit() ) return;  
+  bool paramHasLimits = parameter->minInit() !=0 or parameter->maxInit() !=0;
+  INFO("Getting MINOS error: " << parameter->name() << " : " << parameter->mean() << " +/- " << parameter->err() << " hasLimits: " << paramHasLimits );
+  if( paramHasLimits != 0 && ( v0 - parameter->err() < parameter->minInit() ) ) return;  
+  if( paramHasLimits != 0 && ( v0 + parameter->err() > parameter->maxInit() ) ) return;  
   
   m_minimiser->GetMinosError(index, low, high, status);
   parameter->setResult( v0, parameter->err(), low, high );
@@ -374,21 +374,24 @@ namespace AmpGen {
     class FitResult : public ROOT::Fit::FitResult {
       public:
         FitResult( const unsigned nParams ) : ROOT::Fit::FitResult(){ 
-          fCovMatrix.resize( nParams  *  nParams ); 
+          fCovMatrix.resize( nParams  *  (1 + nParams ) / 2 ); 
           fErrors.resize(nParams);
           fParams.resize(nParams); 
           fParNames.resize(nParams); }
         void set( ROOT::Minuit2::Minuit2Minimizer* mini, int status, double fcn)
         {
-          fCovMatrix.resize( NPar() * NPar() );
-          mini->GetCovMatrix( fCovMatrix.data() );
+          fNdf       = NPar();
+          unsigned it= 0;
+          for (unsigned i = 0; i < fNdf; ++i)
+            for (unsigned j = 0; j <= i; ++j)
+              fCovMatrix[it++] = mini->CovMatrix(i,j);
+
           fCovStatus = mini->CovMatrixStatus();
           fEdm       = mini->Edm();
           fVal       = fcn;
           fStatus    = status; 
           fErrors.assign( mini->Errors(), mini->Errors() + NPar() ); 
           fParams.assign( mini->X(), mini->X() + NPar() ); 
-          fNdf       = NPar();
           fNCalls    = mini->NCalls();
           fValid     = fStatus == 0; 
         } 

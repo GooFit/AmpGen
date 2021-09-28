@@ -90,6 +90,11 @@ namespace AmpGen
     void loadFromTree( TTree* tree, const ArgumentPack& args ); 
     void loadFromFile( const std::string& fname, const ArgumentPack& args );
     void clear();
+    void extend(const std::string& key, unsigned pos)
+    {
+      m_extensions[key] = pos; 
+    }
+    
     void setWeight( const unsigned int& pos, const double& w, const double&g=+1)
     {
       m_data[pos].setWeight(w);
