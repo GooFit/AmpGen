@@ -65,6 +65,7 @@ FitResult::FitResult( MinuitParameterSet& mps, const TMatrixD& covMini ) : m_mps
   m_covarianceMatrix.ResizeTo( covMini.GetNcols(), covMini.GetNrows() );
   m_covarianceMatrix = covMini;
   for (size_t i = 0; i < m_mps->size(); ++i ) {
+    m_covMapping[m_mps->at(i)->name()] = i; 
     if ( m_mps->at(i)->isFree() || m_mps->at(i)->isBlind() ) m_nParam++;
   }
 }
