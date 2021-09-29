@@ -241,6 +241,7 @@ TreePhaseSpace::Vertex TreePhaseSpace::Vertex::make(const Particle& particle, Tr
     if( d1.size() == 0) return particle.mass();
     return std::accumulate(d1.begin(), d1.end(), 0., [](double acc, auto& p){ return acc + p->mass(); } );
   };
+  if( decayProducts.size() == 0 ) return TreePhaseSpace::Vertex(); 
   if( decayProducts.size() == 1 ) return TreePhaseSpace::Vertex::make(*decayProducts[0], parent);
   if( decayProducts.size() == 2 )
   {
@@ -256,6 +257,13 @@ TreePhaseSpace::Vertex TreePhaseSpace::Vertex::make(const Particle& particle, Tr
     for( auto& index : parent->left ->indices ) parent->indices.push_back(index);
     for( auto& index : parent->right->indices ) parent->indices.push_back(index);
     return *parent;  
+  }
+  else {
+    /// split using quasi particles
+    std::vector<Particle> particles;
+    for( unsigned int i = 1; i != decayProducts.size(); ++i ) particles.push_back( *decayProducts[i] );
+    Particle particle2( "NonResS0", particles );
+    return TreePhaseSpace::Vertex::make( Particle( particle.name(), *decayProducts[0], particle2 ), parent);
   }
   return TreePhaseSpace::Vertex();
 }

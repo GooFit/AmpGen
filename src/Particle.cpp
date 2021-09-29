@@ -37,7 +37,7 @@ Particle::Particle( const std::string& name, const Particle& p1, const Particle&
  , m_props{ParticlePropertiesList::get(name)}
  , m_daughters{ std::make_shared<Particle>(p1), std::make_shared<Particle>(p2) }
 {
-  pdgLookup();
+  pdgLookup(true);
   sortDaughters();
   for ( auto& d : m_daughters ) d->setParent( this );
   m_uniqueString = makeUniqueString();
@@ -48,11 +48,23 @@ Particle::Particle( const int& pdgID, const Particle& p1, const Particle& p2 ) :
   , m_daughters{std::make_shared<Particle>(p1) , std::make_shared<Particle>(p2) }
 { 
   if ( m_props != nullptr ) m_name = m_props->name();
-  pdgLookup();
+  pdgLookup(true);
   sortDaughters();
   for ( auto& d : m_daughters ) d->setParent( this );
   m_uniqueString = makeUniqueString();
 }
+
+Particle::Particle(const std::string& name, const std::vector<Particle>& particles ) :
+   m_name{name}
+ , m_props{ParticlePropertiesList::get(name)}
+{
+  for( const auto& p : particles ) m_daughters.push_back( std::make_shared<Particle>(p) ); 
+  pdgLookup(true);
+  sortDaughters(); 
+  for ( auto& d : m_daughters ) d->setParent( this );
+  m_uniqueString = makeUniqueString();
+}
+
 
 Particle::Particle( const std::string& name, const unsigned int& index ) :
    m_props{ParticlePropertiesList::get( name )}
@@ -162,7 +174,7 @@ double Particle::spin() const { return double( m_props->twoSpin() / 2. ) ; }
 double Particle::S() const { return m_spinConfigurationNumber ; }
 
 
-void Particle::pdgLookup()
+void Particle::pdgLookup(bool quiet)
 {
   if ( m_props == nullptr ) {
     m_isStateGood = false;
@@ -197,8 +209,8 @@ void Particle::pdgLookup()
     d->setParent(this);
     charge += d->props()->charge();
   }
-  if( m_minL == 999 ) ERROR("Decay: " << m_name << " does not appear to have an allowed spin-orbit configuration");
-  if( m_daughters.size() != 0 && m_props->charge() != charge ) ERROR("Decay: " << m_name << " does not conserve (electric) charge");
+  if( !quiet && m_minL == 999 ) ERROR("Decay: " << m_name << " does not appear to have an allowed spin-orbit configuration");
+  if( !quiet && m_daughters.size() != 0 && m_props->charge() != charge ) ERROR("Decay: " << m_name << " does not conserve (electric) charge");
 }
 
 Tensor Particle::P() const

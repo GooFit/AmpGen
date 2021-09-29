@@ -102,8 +102,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
      stream << "}\n";
     }
     else {
-      auto as_tensor = cast<TensorExpression>(m_obj).tensor();
-      
+      auto as_tensor = cast<TensorExpression>(m_obj).tensor(); 
       for(unsigned j=0; j != as_tensor.size(); ++j )
         stream << "r[s * "<< j<<"] = " << return_type << "(" << as_tensor[j].to_string(m_resolver.get()) << ");\n";
       stream << "}\n";  
@@ -112,7 +111,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   else if( !enable_cuda ){
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );
-    stream << "return " << m_obj.to_string(m_resolver.get()) << ";\n}\n";
+    stream << "return " << returnTypename() << "(" << m_obj.to_string(m_resolver.get()) << ");\n}\n";
   }
   else {
     stream << "__global__ void " << progName() << "( " << returnTypename() + "* r, const int N, " << fcnSignature() << "){\n"; 
