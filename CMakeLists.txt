@@ -17,9 +17,6 @@ if(EXISTS "${LOC_PATH}")
   message(FATAL_ERROR "You cannot build in a source directory (or any directory with a CMakeLists.txt file). Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
 endif()
 
-file(GLOB_RECURSE AMPGEN_SRC src/*)
-file(GLOB_RECURSE AMPGEN_HDR AmpGen/*)
-
 include(${PROJECT_SOURCE_DIR}/cmake/FindAVX.cmake)
 CHECK_FOR_AVX()
 
@@ -41,6 +38,19 @@ set(ENABLE_INSTALL     TRUE    CACHE BOOL   "ENABLE_INSTALL") # flag to enable i
 set(AMPGENROOT         "${PROJECT_SOURCE_DIR}" CACHE STRING "AMPGENROOT")
 set(AMPGENROOT_CMAKE   "${CMAKE_BINARY_DIR}/bin" CACHE STRING "AMPGENROOT_CMAKE")
 set(USE_ROOT           TRUE    CACHE BOOL   "Flag to use root (required for fitting, plotting & I/O)")
+set(USE_TBB           FALSE    CACHE BOOL   "USE_TBB")     # flag to use TBB (only used internally by ROOT, but linkage seems unreliable)
+
+file(GLOB_RECURSE AMPGEN_SRC src/*)
+file(GLOB_RECURSE AMPGEN_HDR AmpGen/*)
+
+message("AMPGEN_SRC = ${AMPGEN_SRC}")
+
+if( NOT ENABLE_FITTING )
+  list(REMOVE_ITEM AMPGEN_SRC ${PROJECT_SOURCE_DIR}/src/Minimiser.cpp)
+  list(REMOVE_ITEM AMPGEN_SRC ${PROJECT_SOURCE_DIR}/src/FitResult.cpp)
+  list(REMOVE_ITEM AMPGEN_HDR ${PROJECT_SOURCE_DIR}/AmpGen/Minimiser.h)
+  list(REMOVE_ITEM AMPGEN_HDR ${PROJECT_SOURCE_DIR}/AmpGen/FitResult.h)
+endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -64,23 +74,13 @@ add_library(${PROJECT_NAME} SHARED ${AMPGEN_SRC} ${AMPGEN_HDR})
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 if( USE_ROOT )
-  if(NOT DEFINED ROOT_LIBRARIES_EXTERNAL )
-    if(DEFINED ENV{ROOTSYS})
-      list(APPEND CMAKE_MODULE_PATH "$ENV{ROOTSYS}/etc/cmake/")
-    endif()
-    find_package(ROOT COMPONENTS Matrix MathMore MathCore Gpad Tree Graf)
-  else()
-    string( REPLACE ":" " " ROOT_LIBRARIES ${ROOT_LIBRARIES_EXTERNAL})
-    separate_arguments(ROOT_LIBRARIES)
+  if(DEFINED ENV{ROOTSYS})
+    list(APPEND CMAKE_MODULE_PATH "$ENV{ROOTSYS}/etc/cmake/")
   endif()
+  find_package(ROOT COMPONENTS Matrix MathMore MathCore Gpad Tree Graf)
 endif() 
 
-if( NOT DEFINED GSL_LIBRARIES_EXTERNAL )
-  find_package(GSL)
-else()
-  string( REPLACE ":" " " GSL_LIBRARIES ${GSL_LIBRARIES_EXTERNAL})
-  separate_arguments(GSL_LIBRARIES)
-endif()
+find_package(GSL)
 
 if( USE_OPENMP )
   find_package(OpenMP)
@@ -108,10 +108,8 @@ find_library(libmvec mvec)
 if ( USE_MVEC AND libmvec  )
   message( DEBUG "Using libmvec for vectorised math operations")
   target_link_libraries(AmpGen PUBLIC mvec)
-  target_compile_definitions(AmpGen PUBLIC "USE_MVEC=1") 
 else()
   message( DEBUG "libmvec not found, with use scalar math where necessary.")
-  target_compile_definitions(AmpGen PUBLIC "USE_MVEC=0") 
 endif()
 
 if( ENABLE_FITTING AND USE_ROOT )
@@ -132,7 +130,6 @@ if( ENABLE_FITTING AND USE_ROOT )
   endif()
   target_link_libraries(AmpGen PUBLIC ROOT::Minuit2 )
 endif()
-
 
 if( USE_OPENMP )
   list( GET OpenMP_CXX_LIBRARIES 0 openmp_lib) 
@@ -160,9 +157,10 @@ else()
   target_compile_definitions(AmpGen PRIVATE "AMPGEN_OPENMP_FLAGS=\"\"")
 endif()
 
-if( DEFINED TBB_LIBRARIES )
-  target_link_libraries(AmpGen PUBLIC ${TBB_LIBRARIES})
-endif()
+if( USE_TBB) 
+  find_package(TBB REQUIRED)
+  target_link_libraries(AmpGen PUBLIC TBB::tbb)
+endif() 
 
 # Default to XROOTD only if on CMT system. Can be overridden with -DAMPGEN_XROOTD=ON
 if(DEFINED ENV{CMTCONFIG})
@@ -178,6 +176,12 @@ if(AMPGEN_XROOTD)
     HINTS "/cvmfs/lhcb.cern.ch/lib/lcg/releases/LCG_89/xrootd/4.6.0/$ENV{CMTCONFIG}/lib64")
   target_link_libraries(AmpGen PUBLIC ${XROOTD_LIB})
 endif()
+
+target_compile_definitions(AmpGen PUBLIC
+  "USE_MVEC=$<BOOL:${USE_MVEC} AND ${libmvec}>"
+  "ENABLE_FITTING=${ENABLE_FITTING}"
+)
+
 
 target_compile_definitions(AmpGen PRIVATE
   "AMPGENROOT_CMAKE=\"${AMPGENROOT_CMAKE}\""

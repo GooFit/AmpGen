@@ -35,7 +35,9 @@ Tensor Vertex::Factory::getSpinFactor( const Tensor& P, const Tensor& Q, const T
 {
   auto connector = Vertex::Factory::get( name );
   if ( connector == nullptr ) {
-    FATAL( "Could not find vertex: " << name ) ; 
+    ERROR( "Vertex: " << name << " not yet implemented"); 
+    ERROR( "Try to use canonical spin formulation: " << italic_on << "Particle::SpinFormalism canonical" << italic_off ); 
+    FATAL( "Vertex: " << name << " not yet implemented."); 
     return Tensor( std::vector<double>( {1.} ), {0} );
   } else
     return (*connector)( P, Q, V1, V2, db );
