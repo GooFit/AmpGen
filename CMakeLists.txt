@@ -39,6 +39,12 @@ set(AMPGENROOT         "${PROJECT_SOURCE_DIR}" CACHE STRING "AMPGENROOT")
 set(AMPGENROOT_CMAKE   "${CMAKE_BINARY_DIR}/bin" CACHE STRING "AMPGENROOT_CMAKE")
 set(USE_ROOT           TRUE    CACHE BOOL   "Flag to use root (required for fitting, plotting & I/O)")
 set(USE_TBB           FALSE    CACHE BOOL   "USE_TBB")     # flag to use TBB (only used internally by ROOT, but linkage seems unreliable)
+set(PACKED_CMAKE_PREFIX_PATH "" CACHE STRING "PACKED_CMAKE_PREFIX_PATH")
+if( NOT PACKED_CMAKE_PREFIX_PATH STREQUAL "" )
+  string( REPLACE "|" " " CMAKE_PREFIX_PATH ${PACKED_CMAKE_PREFIX_PATH})
+  separate_arguments(PACKED_CMAKE_PREFIX_PATH)
+endif()
+
 
 file(GLOB_RECURSE AMPGEN_SRC src/*)
 file(GLOB_RECURSE AMPGEN_HDR AmpGen/*)
