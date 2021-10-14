@@ -43,8 +43,6 @@ set(USE_TBB           FALSE    CACHE BOOL   "USE_TBB")     # flag to use TBB (on
 file(GLOB_RECURSE AMPGEN_SRC src/*)
 file(GLOB_RECURSE AMPGEN_HDR AmpGen/*)
 
-message("AMPGEN_SRC = ${AMPGEN_SRC}")
-
 if( NOT ENABLE_FITTING )
   list(REMOVE_ITEM AMPGEN_SRC ${PROJECT_SOURCE_DIR}/src/Minimiser.cpp)
   list(REMOVE_ITEM AMPGEN_SRC ${PROJECT_SOURCE_DIR}/src/FitResult.cpp)
