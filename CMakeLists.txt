@@ -77,14 +77,16 @@ configure_file ("${PROJECT_SOURCE_DIR}/AmpGen/Version.h.in" "${CMAKE_BINARY_DIR}
 add_library(${PROJECT_NAME} SHARED ${AMPGEN_SRC} ${AMPGEN_HDR})
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-if( USE_ROOT )
+if( USE_ROOT AND NOT DEFINED ROOT_LIBRARIES )
   if(DEFINED ENV{ROOTSYS})
     list(APPEND CMAKE_MODULE_PATH "$ENV{ROOTSYS}/etc/cmake/")
   endif()
   find_package(ROOT COMPONENTS Matrix MathMore MathCore Gpad Tree Graf)
 endif() 
 
-find_package(GSL)
+if ( NOT DEFINED GSL_LIBRARIES )
+  find_package(GSL)
+endif()
 
 if( USE_OPENMP )
   find_package(OpenMP)
@@ -161,10 +163,12 @@ else()
   target_compile_definitions(AmpGen PRIVATE "AMPGEN_OPENMP_FLAGS=\"\"")
 endif()
 
-if( USE_TBB) 
+if( DEFINED TBB_DIR )
+  list(APPEND CMAKE_MODULE_PATH "${TBB_DIR}")
   find_package(TBB REQUIRED)
   target_link_libraries(AmpGen PUBLIC TBB::tbb)
-endif() 
+
+endif()
 
 # Default to XROOTD only if on CMT system. Can be overridden with -DAMPGEN_XROOTD=ON
 if(DEFINED ENV{CMTCONFIG})
