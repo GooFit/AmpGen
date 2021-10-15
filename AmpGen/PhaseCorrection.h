@@ -126,7 +126,7 @@ namespace AmpGen{
                         auto v= std::vector<size_t>({j, k});
                         auto p = std::pair<size_t, std::vector<size_t> >(i, v);
                         m_ijs.insert(p);
-                        INFO("i = "<<i<<", j = "<<j<<", k = "<<k);
+                        if (m_debug) INFO("i = "<<i<<", j = "<<j<<", k = "<<k);
                         i++;
                         
                     }

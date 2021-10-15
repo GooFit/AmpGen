@@ -90,8 +90,10 @@ template <class PDF_TYPE, class PRIOR_TYPE>
   pdf.setMC(mc);
   
   pdf.prepare();
+
   INFO("Prepared pCoherentSum");
-  signalGenerator.fillEventList( pdf, events, nEvents , false);
+  INFO("Norm = "<<pdf.norm());
+  signalGenerator.fillEventList( pdf, events, nEvents );
 }
 
 
@@ -207,14 +209,15 @@ INFO("B DecayType = "<<BTag);
 //  if( accepted.size() == 0 ) return -1;
 
   accepted.tree( B_Name )->Write();
-  TNtuple * tup = new TNtuple((B_Name + "_vals").c_str(), (B_Name + "_vals").c_str(), "aR:aI:cR:cI:dd");
+  TNtuple * tup = new TNtuple((B_Name + "_vals").c_str(), (B_Name + "_vals").c_str(), "aR:aI:cR:cI:dd:psiR:psiI");
 //  TNtuple * tup = new TNtuple( (tagname.str()+ "_vals").c_str(), (tagname.str() + "_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI");
   for (auto& evt: accepted){
     auto v = sig2.getVals(evt);
     auto a = v[0];
     auto c = v[1];
+    auto psi = v[2];
     auto dd = std::imag(log ( a * std::conj(c)/std::abs(a * std::conj(c))  ));
-    tup->Fill(std::real(a), std::imag(a),std::real(c), std::imag(c), dd);
+    tup->Fill(std::real(a), std::imag(a),std::real(c), std::imag(c), dd, std::real(psi), std::imag(psi));
 
   }
   tup->Write();

@@ -106,8 +106,9 @@ namespace AmpGen
               pdf.setEvents( mcSig, mcTag );
               pdf.setMC( mcSig, mcTag );
               pdf.prepare();
-
+              real_t norm = pdf.norm();
               INFO("Prepared CorrelatedSum");
+              INFO("norm = "<<norm);
               t_eval.stop();
               if ( normalisationConstant == 0 ) {
                 double max = 0;

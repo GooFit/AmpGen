@@ -35,6 +35,7 @@
 #include "AmpGen/enum.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/AddCPConjugate.h"
+#include "TNtuple.h"
 
 using namespace AmpGen;
 
@@ -132,7 +133,7 @@ int main( int argc, char** argv )
 
   INFO("Generating events with type = " << eventType );
 
-
+  TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
   if ( genType == generatorType::CoherentSum ) {
     CoherentSum sig( eventType, MPS );
     PhaseSpace phsp(eventType,&rand);
@@ -161,10 +162,27 @@ int main( int argc, char** argv )
     }
     out.close();
   }
+ 
   sig.setEvents(accepted);
   sig.setMC(accepted);
   sig.prepare();
   INFO("Norm = "<<sig.norm()); 
+    TNtuple * tup = new TNtuple("vals","vals", "psiR:psiI:prob:dd");
+//  TNtuple * tup = new TNtuple( (tagname.str()+ "_vals").c_str(), (tagname.str() + "_vals").c_str(), "psiR:psiI");
+      for (auto& evt: accepted){
+    //auto v = sig.getVal(evt);
+    auto v = sig.getValNoCache(evt);
+    auto evtT = evt;
+    evtT.swap(1,2);
+    auto vT = sig.getValNoCache(evtT);
+    auto p = sig.prob(evt);
+    auto dd = std::imag(std::log(  v * std::conj(vT) /(std::abs(v * std::conj(vT)))));
+    tup->Fill(std::real(v), std::imag(v), p, dd);
+
+  }
+  tup->Write();
+
+
   } 
   else if ( genType == generatorType::PolarisedSum ){
     PolarisedSum sig( eventType, MPS ); 
@@ -197,7 +215,7 @@ int main( int argc, char** argv )
     FATAL("Did not recognise configuration: " << genType );
   }
   if( accepted.size() == 0 ) return -1;
-  TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
+
   accepted.tree( "DalitzEventList" )->Write();
   auto plots = accepted.makeDefaultProjections(Bins(nBins), LineColor(kBlack));
   for ( auto& plot : plots ) plot->Write();
@@ -209,6 +227,8 @@ int main( int argc, char** argv )
       }
     }
   } 
+ 
+
 
 
 

@@ -268,7 +268,8 @@ for( auto& tag : tags ){
 
     INFO("df(0) = " << pc.est_errCorrL(acceptedSig[0], cov , useCov));
     INFO("Dones CovMatrix");
-   TNtuple * tup = new TNtuple( (tagname.str()+ "_vals").c_str(), (tagname.str() + "_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI:dd:f:df");
+   TNtuple * tup = new TNtuple( (tagname.str()+ "_vals").c_str(), (tagname.str() + "_vals").c_str(), "aR:aI:bR:bI:cR:cI:dR:dI:dd:f:df:psiR:psiI");
+    real_t norm = 1;
   for (int i=0; i < acceptedSig.size(); i++){
     auto v = cs.getVals(acceptedSig[i], acceptedTag[i]);
     auto a = v[0];
@@ -280,7 +281,7 @@ for( auto& tag : tags ){
     auto df = pc.est_errCorrL(acceptedSig[i], cov, useCov);
 //    if (int(100 * i/acceptedSig.size()) % 5 == 0) INFO("df("<<i<<") = "<<df);
     auto dd = std::imag(log ( a * std::conj(c)/std::abs(a * std::conj(c))  ));
-    tup->Fill(std::real(a), std::imag(a),std::real(b), std::imag(b),std::real(c), std::imag(c),std::real(d), std::imag(d),dd, std::real(f), df);
+    tup->Fill(std::real(a), std::imag(a),std::real(b), std::imag(b),std::real(c), std::imag(c),std::real(d), std::imag(d),dd, std::real(f), df, std::real(psi), std::imag(psi));
 
   }
 
@@ -342,12 +343,16 @@ for( auto& tag : tags ){
          
     }
     out.close();
+
   }
+ for (auto& p : *MPS){
+     std::cout<<p->name()<<" "<<p->flag()<<" "<<p->mean()<<" "<<" 0 \n";
+ } 
+
+
 INFO("End of Tag Loop");
  }
     f->Close();
-
- 
 
  return 0;
 }
