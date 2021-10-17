@@ -28,6 +28,71 @@ using namespace AmpGen;
 using namespace std::complex_literals;
 
 
+template <class PDF_TYPE, class PRIOR_TYPE> 
+  void GenerateEvents( EventList& events
+                       , PDF_TYPE& pdf 
+                       , PRIOR_TYPE& prior
+                       , const size_t& nEvents
+                       , const size_t& blockSize
+                       , TRandom* rndm )
+{
+  Generator<PRIOR_TYPE> signalGenerator( prior );
+  signalGenerator.setRandom( rndm);
+  signalGenerator.setBlockSize( blockSize );
+  signalGenerator.fillEventList( pdf, events, nEvents );
+}
+
+
+
+
+Event makeEvent(double s01, double s02, double eps, EventType type){
+TRandom3 rndm;
+  rndm.SetSeed( 0 );
+  gRandom = &rndm;
+    PhaseSpace ps(type);
+
+    Event evt =ps.makeEvent();
+    double x = evt.s(0,1);
+    double y = evt.s(0,2);
+    double dx = x - s01;
+    double dy = y - s02;
+    double dr = std::pow(std::pow(dx, 2) + std::pow(dy, 2), 0.5);
+  while ( dr > eps ){
+
+
+    evt =ps.makeEvent();
+
+    //INFO("s01, s02 = "<<evt.s(0, 1)<<" , "<<evt.s(0,2) << ", "<<s01<< " , "<<s02);
+    x = evt.s(0,1);
+    y = evt.s(0,2);
+    dx = x - s01;
+    dy = y - s02;
+    dr = std::pow(std::pow(dx, 2) + std::pow(dy, 2), 0.5);
+
+  }
+
+    return evt;
+    
+
+
+
+}
+
+EventList makeEvents(std::vector<double> s01, std::vector<double> s02, double eps, EventType type){
+    EventList evts(type);
+    std::vector<Event> evts_v;
+    for (int i=0;i<s01.size();i++){
+        Event evt = makeEvent(s01[i], s02[i], eps, type);
+        //INFO("made evt "<<i<<" s01 = "<< evt.s(0,1));
+        evts.push_back(evt);
+
+    }
+    INFO("Made "<<evts.size()<<" events");
+    return evts;
+}
+
+
+
 double strongPhaseDiff(CoherentSum A, CoherentSum C, Event event){
     //auto evtT = event;
     //evtT.swap(1,2);
@@ -203,10 +268,10 @@ int main( int argc, char* argv[] )
         zBESIII.insert(pM);
     }
 
-  int NInt = NamedParameter<int>("NInt", 1e7);
-  INFO("Using "<<NInt<<" integration events");
+  int NIntBins = NamedParameter<int>("NIntBins", 1000);
+  INFO("Using "<<NIntBins<<" integration events");
   EventType eventType(pNames);
-  EventList mc =  Generator<>(eventType, &rndm).generate(NInt);
+  EventList mc =  Generator<>(eventType, &rndm).generate(NIntBins);
   CoherentSum A(eventType, MPS);
   CoherentSum C(eventType.conj(true), MPS);
   A.setEvents(mc);
@@ -218,7 +283,8 @@ int main( int argc, char* argv[] )
 
 
 
-    TFile* f = TFile::Open( output.c_str(), "RECREATE" );
+    
+    /*
     mc.tree("Events")->Write("Events");
    TNtuple * tup = new TNtuple( "Vals", "Vals", "aR:aI:s01:s02:dd:bin");
    std::map<int, std::vector<Event> > m = binEvents(mc, nBins, A, C);
@@ -253,12 +319,76 @@ int main( int argc, char* argv[] )
     }
     tup_BESIII->Write("cisi_BESIII");
 
-   f->Close();
+*/
+/*
+    ProfileClock t_chi2;
+    t_chi2.start();
+    double chi2_1 = chi2();
+    t_chi2.stop();
+    INFO("t(chi2) = "<<t_chi2);
+    MPS["D0{K*(892)+[BW]{K0S0,pi+},pi-}_Re"]->setCurrentFitVal(0);
+    double chi2_2 = chi2();
+    INFO("chi2_1 = "<<chi2_1);
+    INFO("chi2_2 = "<<chi2_2);
+    double eps = NamedParameter<double>("eps", 0.1);
+    ProfileClock t_makeEvent;
+    t_makeEvent.start();
+    Event evt = makeEvent(1.5, 1.5, eps, eventType);
+    t_makeEvent.stop();
+    INFO("s01, s02 = "<<evt.s(0, 1)<<" , "<<evt.s(0,2)<<" took "<<t_makeEvent);
+    f->Close();
+    */
+
+    std::string refBinningFile = NamedParameter<std::string>("refBinningFile", "ref_equal.root");
+    TFile *fRefEqual = TFile::Open(refBinningFile.c_str());//, "UPDATE");
+    fRefEqual->cd();
+    std::vector<int> bins = {-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8};
+    std::vector<EventList> my_bins;
+    for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
+
+        int bin = bins[bin_idx];
+        INFO("bin = "<<bin);
+        /*
+        TTree * t_bin;
+        
+        if (bin>0) t_bin = (TTree*)fRefEqual->Get(("bin"+std::to_string(bin)).c_str() );
+        if (bin<0) t_bin = (TTree*)fRefEqual->Get(("binm"+std::to_string(std::abs(bin))).c_str() );
+
+
+        Float_t s01_bin_i, s02_bin_i;
+        t_bin->SetBranchAddress("s01", &s01_bin_i);
+        t_bin->SetBranchAddress("s02", &s02_bin_i);
+        std::vector<double> s01_bin, s02_bin;
+        for (int i=0;i<t_bin->GetEntries();i++){
+            t_bin->GetEntry(i);
+            s01_bin.push_back((double)s01_bin_i);
+            s02_bin.push_back((double)s02_bin_i);
+        }
+        INFO("n(s01) = "<<s01_bin.size());
+
+        //f->cd();  
+        */
+       EventList my_bin_bin;
+//       TTree * my_t_bin;
+       if (bin>0) my_bin_bin = EventList(("ref_equal.root:myBin"+std::to_string(bin)).c_str(), eventType );
+       if (bin<0) my_bin_bin = EventList(("ref_equal.root:myBinm"+std::to_string(std::abs(bin))).c_str(), eventType );
+
+
+       
+
+
+//        EventList my_bin_bin = makeEvents(s01_bin, s02_bin, eps, eventType);
+        my_bins.push_back(my_bin_bin);
+//        if (bin>0) my_bin_bin.tree(("myBin" + std::to_string(bin)).c_str())->Write(("myBin" + std::to_string(bin)).c_str());
+//        if (bin<0) my_bin_bin.tree(("myBinm" + std::to_string(std::abs(bin))).c_str())->Write(("myBinm" + std::to_string(std::abs(bin))).c_str());
+    }
+
+    fRefEqual->Close();
 
    auto chi2 = [&A, &C, nBins, mc, &zBESIII](){
        double _chi2=0;
-       (*(&A)).transferParameters();
-       (*(&C)).transferParameters();
+       (*(&A)).prepare();
+       (*(&C)).prepare();
 
 
        std::map<int, complex_t> cisi = cs(A, C, mc, nBins);
@@ -277,21 +407,126 @@ int main( int argc, char* argv[] )
        return _chi2;
    };
 
-    ProfileClock t_chi2;
-    t_chi2.start();
-    double chi2_1 = chi2();
-    t_chi2.stop();
-    INFO("t(chi2) = "<<t_chi2);
+    auto chi2_binning = [my_bins, &A, &C, nBins, NIntBins](){
+        double _chi2 = 0;
+        std::vector<int> bins = {-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8};
+        (*(&A)).prepare();
+        (*(&C)).prepare();
+        
+        
+        for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
+
+
+            int actualBin = bins[bin_idx];
+            EventList my_bin = my_bins[bin_idx];
+
+            int numEvents = NIntBins;
+            if (my_bin.size()<numEvents) numEvents = my_bin.size();
+            for (int i=0;i<numEvents;i++){
+                int myBin = getBin(my_bin[i], nBins, (*(&A)), (*(&C)));
+                _chi2 += std::pow(myBin - actualBin, 2);
+//int getBin(Event event, size_t nBins, CoherentSum A, CoherentSum C){
+            }
+        }
+ 
+        return _chi2;
+
+
+    };
+
+    CoherentSum A_mag(eventType, MPS);
+    EventList magEvents;
+
+    PhaseSpace phsp(eventType,&rndm);
+    size_t nEvents      = NamedParameter<size_t>     ("nEvents"  , 10000, "Total number of events to generate" );
+    size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
+
+    TRandom3 rand;
+    rand.SetSeed( seed + 934534 );
+
+    GenerateEvents( magEvents, A, phsp , nEvents, blockSize, &rand );
+    A_mag.setEvents(magEvents);
+
+    int NInt = NamedParameter<int>("NInt", 1e7);
+    EventList magMC =  Generator<>(eventType, &rndm).generate(NInt);
+
+    A_mag.setMC(magMC);
+    auto LLMagFit = make_likelihood(magEvents, A_mag);
+    double chi2_weight = NamedParameter<double>("chi2_weight", 1);
+    INFO("chi2_weight = "<<chi2_weight);
+    auto fitMagAndBin = [chi2, &LLMagFit, chi2_weight](){
+        double combLL = chi2_weight *  chi2() + (*(&LLMagFit)).getVal();
+        return combLL;
+    };
+
+    double LLMagFit_PreFit = LLMagFit.getVal();
+    double chi2_binning_PreFit = chi2();
+    double fitMagAndBin_PreFit = fitMagAndBin();
+    INFO("LLMag = "<<LLMagFit_PreFit);
+    INFO("chi2_binning = "<<chi2_binning_PreFit);
+    INFO("fitMagAndBin = "<<fitMagAndBin_PreFit);
+
     MPS["D0{K*(892)+[BW]{K0S0,pi+},pi-}_Re"]->setCurrentFitVal(0);
-    double chi2_2 = chi2();
-    INFO("chi2_1 = "<<chi2_1);
-    INFO("chi2_2 = "<<chi2_2);
 
-
-
-   Minimiser mini(chi2, &MPS);
+   Minimiser mini(fitMagAndBin, &MPS);
    auto res_fit = mini.doFit();
-   //FitResult * fr = new FitResult(mini);
-   //fr->writeToFile(logFile);
+    double LLMagFit_PostFit = LLMagFit.getVal();
+    double chi2_binning_PostFit = chi2();
+    double fitMagAndBin_PostFit = fitMagAndBin();
+
+    double diff_LLMagFit = LLMagFit_PostFit - LLMagFit_PreFit;
+    double diff_chi2_binning = chi2_binning_PostFit - chi2_binning_PreFit;
+    double diff_fitMagAndBin = fitMagAndBin_PostFit - fitMagAndBin_PreFit;
+
+    INFO("LLMag = "<<LLMagFit_PostFit);
+    INFO("chi2_binning = "<<chi2_binning_PostFit);
+    INFO("fitMagAndBin = "<<fitMagAndBin_PostFit);
+
+    INFO("dLLMag = "<<diff_LLMagFit);
+    INFO("dchi2_binning = "<<diff_chi2_binning);
+    INFO("dfitMagAndBin = "<<diff_fitMagAndBin);
+
+   FitResult * fr = new FitResult(mini);
+   fr->writeToFile(logFile);
+   INFO("Writing fitted bins + cisi");
+    TFile* f = TFile::Open( output.c_str(), "RECREATE" );
+    TNtuple * tup = new TNtuple( "Vals", "Vals", "aR:aI:s01:s02:dd:bin");
+   std::map<int, std::vector<Event> > m = binEvents(mc, nBins, A, C);
+   for (auto p : m){
+       int bin = p.first;
+       std::vector<Event> evts = p.second;
+       for (auto evt:evts){
+            double s01 = evt.s(0,1);
+            double s02 = evt.s(0,2);
+            double dd = strongPhaseDiff(A, C, evt);
+            complex_t a = A.getValNoCache(evt);
+            Event evtT = evt;
+            evtT.swap(1,2);
+            complex_t c = std::conj(A.getValNoCache(evtT));
+            tup->Fill(std::real(a), std::imag(a), s01, s02, dd, bin);
+       }
+   }
+   tup->Write("Vals");
+   INFO("writing BESIII cisi");
+
+    std::map<int, complex_t> cisi = cs(A, C, mc, nBins);
+    TNtuple * tup_cs = new TNtuple("cisi", "cisi", "i:c:s");
+    for (auto p:cisi){
+        int bin = p.first;
+        complex_t z = p.second;
+        tup_cs->Fill(bin, std::real(z), std::imag(z));
+    }
+    tup_cs->Write("cisi");
+    TNtuple * tup_BESIII = new TNtuple("cisi_BESIII", "cisi_BESIII", "i:c:s");
+    for (int i=0;i<cBESIII.size();i++){
+        int bin = i+1;
+        tup_BESIII->Fill(bin, cBESIII[i], sBESIII[i]);
+    }
+    tup_BESIII->Write("cisi_BESIII");
+    INFO("Closing file");
+    f->Close();
+
+
+   
     return 0;
 }
