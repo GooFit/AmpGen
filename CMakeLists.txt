@@ -8,7 +8,7 @@ if(${CMAKE_VERSION} VERSION_LESS 3.12)
   cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
 
-project(AmpGen LANGUAGES CXX VERSION 2.2)
+project(AmpGen LANGUAGES CXX VERSION 2.3)
 
 set(AMPGEN_CXX ${CMAKE_CXX_COMPILER} CACHE FILEPATH "This should be the path to compiler (use which c++ for macOS)" )
 
