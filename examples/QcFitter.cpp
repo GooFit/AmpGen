@@ -302,7 +302,7 @@ MinuitParameterSet  MPS_tag;// = new MinuitParameterSet();
   MPS_tag.loadFromStream();
   if (makeCPConj){
     INFO("Making CP conjugate states");
-    add_CP_conjugate(MPS_tag);
+    AddCPConjugate(MPS_tag);
   }
     std::stringstream tag_log;
     auto tagName = split(tags[i],' ')[0];
@@ -332,7 +332,7 @@ MinuitParameterSet  MPS_tag;// = new MinuitParameterSet();
     TagInt.emplace_back(tagMCevents_tag);
     SigType.emplace_back(sigevents_tag.eventType());
     TagType.emplace_back(tagevents_tag.eventType());
-    sumFactors.emplace_back("Psi(3770)");
+    sumFactors.emplace_back("Psi3770");
 
     if (doTagFit) TagFit(sigevents_tag, tagevents_tag, MPS_tag, mc, tagMCevents_tag, inits, tag_logName, tag_plotName, 15, maxAttempts);
 
