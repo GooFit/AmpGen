@@ -159,6 +159,8 @@ TGraph* Minimiser::scan( MinuitParameter* param, const double& min, const double
     doFit();
     rt->SetPoint( rt->GetN(), sv, FCN() );
   }
+
+
   return rt;
 }
 
