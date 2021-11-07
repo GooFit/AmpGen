@@ -64,6 +64,92 @@ template <class PDF_TYPE, class PRIOR_TYPE>
   signalGenerator.fillEventList( pdf, eventsSig, eventsTag, nEvents );
 }
 
+std::vector<std::string> makeBranches(EventType Type, std::string prefix){
+  auto n = Type.finalStates().size();
+  std::vector<std::string> branches;
+  std::vector<std::string> varNames = {"PX", "PY", "PZ", "E"};
+  for (long unsigned int i=0; i<n; i++){
+    auto part = replaceAll(Type.finalStates()[i], "+", "p");
+    part = replaceAll(part, "-", "m");
+    for (auto varName : varNames){
+      std::ostringstream stringStream;
+      stringStream<<prefix<<part<<"_"<<varName;
+      branches.push_back(stringStream.str());
+    }
+  }
+  return branches;
+}
+
+
+
+std::map<std::string, EventType> makeEventTypes(std::vector<std::string> sigName, std::string tagName){
+  EventType signalType( sigName );
+  INFO("Getting Tag name split "<<tagName);
+  auto tokens       = split(tagName, ' ');
+  INFO("Building Tag particle"<<tokens[1]);
+  auto tagParticle  = Particle(tokens[1], {}, false);
+  INFO("Build EventType");
+  EventType    tagType = tagParticle.eventType(); 
+  auto sigBranches = makeBranches(signalType, "");
+  auto tagBranches = makeBranches(tagType, "Tag_");
+
+  std::map<std::string, EventType> types = {};
+
+  types["signal"] = signalType;
+  types["tag"] = tagType;
+  return types;
+
+}
+
+EventList getEvents(std::string type, std::vector<std::string> sigName, std::string tagName, std::string dataFile){
+   
+
+
+    INFO("From "<<dataFile);
+    INFO("Getting Tag name split "<<tagName);
+    auto tokens       = split(tagName, ' ');
+    INFO("Building Tag particle"<<tokens[1]);
+    auto types = makeEventTypes(sigName, tagName);
+    INFO("Build EventType");
+    auto signalType = types["signal"];
+    auto tagType = types["tag"];
+    auto sigBranches = makeBranches(signalType, "");
+    auto tagBranches = makeBranches(tagType, "Tag_");
+
+    EventList sigEvents;
+    EventList tagEvents;
+
+
+    EventList null;
+
+
+    INFO("Generated Events used QcGen2");
+    std::stringstream signame;
+    signame<<":Signal_";
+    signame<<tokens[0];
+    std::stringstream tagname;
+    tagname<<":Tag_";
+    tagname<<tokens[0];
+    sigEvents = EventList(dataFile + signame.str() , signalType);
+    tagEvents = EventList(dataFile + tagname.str() , tagType);
+
+
+    
+    if (type=="signal"){
+     return sigEvents;
+    }
+    else if (type=="tag"){ 
+        return tagEvents;
+    }
+    else {
+        return null;
+    }
+    
+
+
+}
+
+
 
 Event makeEvent(double s01, double s02, double eps, EventType type){
 TRandom3 rndm;
@@ -142,45 +228,53 @@ int getBin(Event event, size_t nBins, CoherentSum A, CoherentSum C){
     return b;
 }
 
-double minS(Event event, EventList events, double fracNevents=1){
+double minS(Event event, std::vector<double> x, std::vector<double> y, double fracNevents=1){
     double dS = 100;
-    int nEvents = events.size() * fracNevents;
+    int nEvents = x.size() * fracNevents;
 //    INFO("Going through "<<nEvents);
     if (nEvents == 0) nEvents = 1;
 
     std::vector<double> dSs(nEvents);
     #pragma omp parallel for
     for (int i=0;i<nEvents;i++){
-        Event evt = events[i];
-        double dx = event.s(0,1) - evt.s(0,1);
-        double dy = event.s(0,2) - evt.s(0,2);
-        double ds_new = std::pow(std::pow(dx, 2) + std::pow(dy, 2), 0.5);
-//        if (ds_new < dS) {
-//            dS = ds_new;
+        //Event evt = events[i];
+        double dx = event.s(0,1) - x[i];//evt.s(0,1);
+        double dy = event.s(0,2) - y[i];//evt.s(0,2);
+        double ds_new = std::pow(dx, 2) + std::pow(dy, 2);
+        if (ds_new < dS) {
+            dS = ds_new;
            // INFO("Got "<<dS<<" for "<<event.s(0,1)<<", "<<event.s(0,2)<< " at "<<i<<" out of "<<nEvents);
-//        }
-        dSs[i] = ds_new;
+        }
+//        dSs[i] = ds_new;
     }
 
 
-    #pragma omp parallel for reduction(min:dS)
+/*    #pragma omp parallel for reduction(min:dS)
     for (int i=0;i<dSs.size();i++){
         double ds_new = dSs[i];
         if (ds_new < dS) dS = ds_new;
     }
-
+*/
     return dS;
 }
 
-int getBinFromRef(Event event, std::map<int, EventList> ref, int nBins, double fracNevents = 1){
+int getBinFromRef(Event event, std::map<int, std::vector<double> > ref_x, std::map<int, std::vector<double> > ref_y, int nBins, double fracNevents = 1){
     int binSign = 1;
     if (event.s(0,2) > event.s(0, 1)) binSign = -1;
     double dS = 100;
     int myBin =-1;
+
+   
+    
+
     for (int i=1;i<nBins + 1; i++){
+
+
         int bin = binSign * i;
-        EventList evts = ref[bin];
-        double ds_new = minS(event, evts, fracNevents);
+        //EventList evts = ref[bin];
+        std::vector<double> x = ref_x[bin];
+        std::vector<double> y = ref_y[bin];
+        double ds_new = minS(event, x, y, fracNevents);
         if (ds_new < dS){
 
             dS = ds_new;
@@ -194,17 +288,17 @@ int getBinFromRef(Event event, std::map<int, EventList> ref, int nBins, double f
     return myBin;
 }
 
-std::vector<std::map<int, EventList> > binEventsFromRef(EventList sig, EventList tag, std::map<int, EventList> ref, int nBins, double fracNevents=1, bool DTag = false){
+std::vector<std::map<int, EventList> > binEventsFromRef(EventList sig, EventList tag, std::map<int, std::vector<double> > refX, std::map<int, std::vector<double> > refY, int nBins, double fracNevents=1, bool DTag = false){
     std::vector<std::map<int, EventList> > v_binnedEvents;
 
     EventType sigType = sig.eventType();
     EventType tagType = tag.eventType();
     std::map<int, EventList> binnedSig;
     std::map<int, EventList> binnedTag;
-    INFO("my EventType = "<<sigType<<" ref eventType = "<<ref[1].eventType());
+
 
     size_t nRefs=0;
-    for (auto p:ref){ nRefs += p.second.size();}
+    for (auto p:refX){ nRefs += p.second.size();}
     INFO("Have "<<nRefs<<" reference events");
 
     for (int i=1;i<nBins + 1; i++){
@@ -218,11 +312,11 @@ std::vector<std::map<int, EventList> > binEventsFromRef(EventList sig, EventList
     ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__));
     for (int i=0;i<sig.size();i++){
 //        INFO(i<<" s01 = "<<sig[i].s(0,1));
-        int myBin = getBinFromRef(sig[i], ref, nBins, fracNevents);
+        int myBin = getBinFromRef(sig[i], refX, refY, nBins, fracNevents);
         binnedSig[myBin].push_back(sig[i]);
 
         if (DTag){
-            int myBin_OT = getBinFromRef(tag[i], ref, nBins, fracNevents);
+            int myBin_OT = getBinFromRef(tag[i], refX, refY, nBins, fracNevents);
             binnedTag[myBin_OT].push_back(tag[i]);
             pb.print( double(i)/double(sig.size()), " of DT binning"  );
 
@@ -241,7 +335,7 @@ std::vector<std::map<int, EventList> > binEventsFromRef(EventList sig, EventList
 
 }
 
-std::vector<std::map<std::pair<int, int>, EventList> > binDTEventsFromRef(EventList sig, EventList tag, std::map<int, EventList> ref, int nBins, double fracNevents=1, bool DTag = false){
+std::vector<std::map<std::pair<int, int>, EventList> > binDTEventsFromRef(EventList sig, EventList tag, std::map<int, std::vector<double> > refX, std::map<int, std::vector<double> > refY, int nBins, double fracNevents=1, bool DTag = false){
     std::vector<std::map<std::pair<int, int>, EventList> > v_binnedEvents;
     std::map<std::pair<int, int>, EventList> binnedSig;
     std::map<std::pair<int, int>, EventList> binnedTag;
@@ -266,10 +360,10 @@ std::vector<std::map<std::pair<int, int>, EventList> > binDTEventsFromRef(EventL
 
 
     for (int i=0;i<sig.size();i++){
-        int myBin = getBinFromRef(sig[i], ref, nBins, fracNevents);
+        int myBin = getBinFromRef(sig[i], refX, refY, nBins, fracNevents);
 
        
-        int myBin_OT = getBinFromRef(tag[i], ref, nBins, fracNevents);
+        int myBin_OT = getBinFromRef(tag[i], refX, refY, nBins, fracNevents);
         pb.print( double(i)/double(sig.size()), " of DT binning"  );
 
         std::pair<int, int> bin_pair({myBin, myBin_OT});
@@ -1298,6 +1392,8 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
     std::vector<int> bins = {1,2,3,4,5,6,7,8, -1, -2, -3, -4, -5, -6, -7, -8};
 
     std::map<int, EventList> my_bins;
+    std::map<int, std::vector<double> > my_x;
+    std::map<int, std::vector<double> > my_y;
     for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
         int bin = bins[bin_idx];
         INFO("bin = "<<bin);
@@ -1306,6 +1402,16 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
         if (bin>0) my_bin_bin = EventList(("ref_equal.root:myBin"+std::to_string(bin)).c_str(), eventType );
         if (bin<0) my_bin_bin = EventList(("ref_equal.root:myBinm"+std::to_string(std::abs(bin))).c_str(), eventType );
         my_bins.insert(std::pair<int, EventList>({bin, my_bin_bin}));
+        std::vector<double> my_x_bin;
+        std::vector<double> my_y_bin;
+
+        for (auto e : my_bin_bin){
+            my_x_bin.push_back(e.s(0,1));
+            my_y_bin.push_back(e.s(0,2));
+        }
+
+        my_x.insert(std::pair<int, std::vector<double> >({bin, my_x_bin}));
+        my_y.insert(std::pair<int, std::vector<double> >({bin, my_y_bin}));
 
     }
 
@@ -1362,7 +1468,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
         GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , NamedParameter<size_t>("nCorrEvents", 100000), blockSize, &rndm );
 
         EventList mcKK =  Generator<>(KK, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
-        std::vector<std::map<int, EventList> > binnedEvents = binEventsFromRef(sig_KK, tag_KK, my_bins, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
+        std::vector<std::map<int, EventList> > binnedEvents = binEventsFromRef(sig_KK, tag_KK, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
         std::map<int, double> NSig;
         std::map<int, double> NTag;
         std::map<int, double> YCP;
@@ -1444,7 +1550,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
 
 
         INFO("Binning DT");
-        std::vector<std::map<std::pair<int, int>, EventList> > binnedEventsDT = binDTEventsFromRef(sig, tag, my_bins, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
+        std::vector<std::map<std::pair<int, int>, EventList> > binnedEventsDT = binDTEventsFromRef(sig, tag, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
         INFO("Binned DT");
         std::map<std::pair<int, int>, int> M;
         
@@ -1521,8 +1627,8 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
         GenerateEvents(BpEvents, psiBplus, phspSig, nBEvents, blockSize, &rndm);
         GenerateEvents(BmEvents, psiBminus, phspSig, nBEvents, blockSize, &rndm);
 
-        std::vector<std::map<int, EventList> > binnedEventsBp = binEventsFromRef(BpEvents, BpEvents, my_bins, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
-        std::vector<std::map<int, EventList> > binnedEventsBm = binEventsFromRef(BmEvents, BmEvents, my_bins, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
+        std::vector<std::map<int, EventList> > binnedEventsBp = binEventsFromRef(BpEvents, BpEvents, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
+        std::vector<std::map<int, EventList> > binnedEventsBm = binEventsFromRef(BmEvents, BmEvents, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
 
         std::map<int, double> Nplus;
         std::map<int, double> Nminus;
@@ -1620,6 +1726,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
 
 
 
+
 void genMI(MinuitParameterSet MPS, EventType eventType){
 
     size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
@@ -1692,6 +1799,9 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
     //std::vector<int> bins = {1,2,3,4,5,6,7,8, -1, -2, -3, -4, -5, -6, -7, -8};
 
     std::map<int, EventList> my_bins;
+    std::map<int, std::vector<double> > my_x;
+    std::map<int, std::vector<double> > my_y;
+ 
     for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
         int bin = bins[bin_idx];
         INFO("bin = "<<bin);
@@ -1700,6 +1810,18 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
         if (bin>0) my_bin_bin = EventList(("ref_equal.root:myBin"+std::to_string(bin)).c_str(), eventType );
         if (bin<0) my_bin_bin = EventList(("ref_equal.root:myBinm"+std::to_string(std::abs(bin))).c_str(), eventType );
         my_bins.insert(std::pair<int, EventList>({bin, my_bin_bin}));
+        std::vector<double> my_x_bin;
+        std::vector<double> my_y_bin;
+
+        for (auto e : my_bin_bin){
+            my_x_bin.push_back(e.s(0,1));
+            my_y_bin.push_back(e.s(0,2));
+        }
+
+        my_x.insert(std::pair<int, std::vector<double> >({bin, my_x_bin}));
+        my_y.insert(std::pair<int, std::vector<double> >({bin, my_y_bin}));
+
+
 
     }
 
@@ -1747,7 +1869,7 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
     INFO("Generating KK events");
     GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , nCP, blockSize, &rndm );
     INFO("Binning KK << nEvents = "<<sig_KK.size());
-    std::vector<std::map<int, EventList> > binned_KK = binEventsFromRef(sig_KK, tag_KK, my_bins, nBins, NamedParameter<double>("nEventsRefFrac", 1));
+    std::vector<std::map<int, EventList> > binned_KK = binEventsFromRef(sig_KK, tag_KK, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
 
     for (int i=0;i<bins.size();i++){
         int bin = bins[i];
@@ -1761,7 +1883,7 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
     INFO("Generating Kspipi events");
     GenerateCorrEvents( sig_Kspipi, tag_Kspipi, cs_Kspipi, phspSig, phspSig , nKspipi, blockSize, &rndm );
     INFO("Binning Kspipi");
-    std::vector<std::map<std::pair<int, int>, EventList> > binned_Kspipi = binDTEventsFromRef(sig_Kspipi, tag_Kspipi, my_bins, nBins, NamedParameter<double>("nEventsRefFrac", 1));
+    std::vector<std::map<std::pair<int, int>, EventList> > binned_Kspipi = binDTEventsFromRef(sig_Kspipi, tag_Kspipi, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
 
 
     std::string treeName_Kspipi = "Kspipi";
@@ -1801,16 +1923,16 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
 
 
     INFO("Binning Kspi0");
-    std::vector<std::map<int, EventList> > binned_Kspi0 = binEventsFromRef(sig_Kspi0, tag_Kspi0, my_bins, nBins, NamedParameter<double>("nEventsRefFrac", 1));
+    std::vector<std::map<int, EventList> > binned_Kspi0 = binEventsFromRef(sig_Kspi0, tag_Kspi0, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
     INFO("Binning Kppim");
-    std::vector<std::map<int, EventList> > binned_Kppim = binEventsFromRef(sig_Kppim, tag_Kppim, my_bins, nBins, NamedParameter<double>("nEventsRefFrac", 1));
+    std::vector<std::map<int, EventList> > binned_Kppim = binEventsFromRef(sig_Kppim, tag_Kppim, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
     INFO("Binning Kmpip");
-    std::vector<std::map<int, EventList> > binned_Kmpip = binEventsFromRef(sig_Kmpip, tag_Kmpip, my_bins, nBins, NamedParameter<double>("nEventsRefFrac", 1));
+    std::vector<std::map<int, EventList> > binned_Kmpip = binEventsFromRef(sig_Kmpip, tag_Kmpip, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
 
     INFO("Binning B+");
-    std::vector<std::map<int, EventList> > binned_Bp = binEventsFromRef(sig_Bp, sig_Bp, my_bins, nBins, NamedParameter<double>("nEventsRefFrac", 1));
+    std::vector<std::map<int, EventList> > binned_Bp = binEventsFromRef(sig_Bp, sig_Bp, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
     INFO("Binning B-");
-    std::vector<std::map<int, EventList> > binned_Bm = binEventsFromRef(sig_Bm, sig_Bm, my_bins, nBins, NamedParameter<double>("nEventsRefFrac", 1));
+    std::vector<std::map<int, EventList> > binned_Bm = binEventsFromRef(sig_Bm, sig_Bm, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
 
    
     for (int i=0;i<bins.size();i++){
@@ -1850,6 +1972,9 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
 
 
 void fitMI(MinuitParameterSet MPS, EventType eventType){
+  auto pNames = NamedParameter<std::string>("EventType" , ""    
+      , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
+
     TRandom3 rndm;
     rndm.SetSeed( NamedParameter<int>("Seed", 0) );
     gRandom = &rndm;
@@ -1863,8 +1988,520 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     }
 
 
+    std::string refBinningFile = NamedParameter<std::string>("refBinningFile", "ref_equal.root");
+
+    TFile * fRefEqual = TFile::Open(refBinningFile.c_str());
+    fRefEqual->cd();
+   
+    
+
+    std::map<int, EventList> my_bins;
+    std::map<int, std::vector<double> > my_x;
+    std::map<int, std::vector<double> > my_y;
+    for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
+        int bin = bins[bin_idx];
+        INFO("bin = "<<bin);
+        EventList my_bin_bin;
+//       TTree * my_t_bin;
+        if (bin>0) my_bin_bin = EventList(("ref_equal.root:myBin"+std::to_string(bin)).c_str(), eventType );
+        if (bin<0) my_bin_bin = EventList(("ref_equal.root:myBinm"+std::to_string(std::abs(bin))).c_str(), eventType );
+        my_bins.insert(std::pair<int, EventList>({bin, my_bin_bin}));
+        std::vector<double> my_x_bin;
+        std::vector<double> my_y_bin;
+        for (auto e : my_bin_bin){
+            my_x_bin.push_back(e.s(0,1));
+            my_y_bin.push_back(e.s(0,2));
+        }
+
+        my_x.insert(std::pair<int, std::vector<double> >({bin, my_x_bin}));
+        my_y.insert(std::pair<int, std::vector<double> >({bin, my_y_bin}));
+
+    }
+
+    fRefEqual->Close();
+
+
+    EventList mc =  Generator<>(eventType, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
+    CoherentSum A(eventType, MPS);
+    CoherentSum C(eventType.conj(true), MPS);
+    A.setEvents(mc);
+    C.setEvents(mc);
+    A.setMC(mc);
+    C.setMC(mc);
+    A.prepare();
+    C.prepare();
+
+
+    INFO("Getting K_i, Z_i from the model");
+    std::map<int, double> K0;
+    std::map<int, double> Kbar0;
+    std::map<int, complex_t> Z0;
+    for (int i=0;i<bins.size();i++){
+            int bin = bins[i];
+            double _K = getK(bin, A, my_bins);
+            double _Kbar = getK(bin, C,  my_bins);
+            complex_t _Z = getZ(bin, A, C, my_bins);
+            K0.insert(std::pair<int, double>({bin, _K}));
+            Kbar0.insert(std::pair<int, double>({bin, _Kbar}));
+            Z0.insert(std::pair<int, complex_t>({bin, _Z}));
+
+    }
+
+    for (int i=1;i<nBins + 1;i++){
+        MPS["c_"+std::to_string(i)]->setCurrentFitVal(std::real(Z0[i]));
+        MPS["s_"+std::to_string(i)]->setCurrentFitVal(std::imag(Z0[i]));
+    }
+
+
+
+
+   
+
+    auto tags           = NamedParameter<std::string>("TagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();  
+    auto BTags   = NamedParameter<std::string>("BTagTypes" , std::string(), "").getVector();
+
+    std::map<std::string, EventList> SigData;
+    std::map<std::string,EventList> TagData;
+    std::map<std::string,EventList> SigInt;
+    std::map<std::string,EventList> TagInt;
+    std::map<std::string,EventType> SigType;
+    std::map<std::string,EventType> TagType;
+    std::map<std::string,std::string> sumFactors;
+    for (int i=0; i < tags.size(); i++){
+        std::stringstream tag_log;
+        auto tagName = split(tags[i],' ')[0];
+        tag_log<<tagName<<"_fit.log";
+        std::stringstream tag_fit;
+        tag_fit<<tagName<<"_plots.root";
+        auto tag_plotName = tag_fit.str();
+        auto tag_logName = tag_log.str();
+        auto sigevents_tag = getEvents("signal", pNames, tags[i], NamedParameter<std::string>("DataSample", "besiii.root"));
+        INFO("Have signal events for "<<i);
+        auto tagevents_tag = getEvents("tag", pNames, tags[i], NamedParameter<std::string>("DataSample", "besiii.root"));
+        INFO("Have tag events for "<<i);
+        auto types = makeEventTypes(pNames, tags[i]);
+        auto signalType = types["signal"];
+        auto tagType = types["tag"];
+        SigData.insert(std::pair<std::string, EventList>({tagName, sigevents_tag}));
+        TagData.insert(std::pair<std::string, EventList>({tagName, tagevents_tag}));
+        SigType.insert(std::pair<std::string, EventType>({tagName, sigevents_tag.eventType()}));
+        TagType.insert(std::pair<std::string, EventType>({tagName, tagevents_tag.eventType()}));
+    } 
+    std::map<std::string,EventList> BSigData;
+    std::map<std::string,std::string> BsumFactors;
+    std::map<std::string,int> BgammaSigns;
+    std::map<std::string,bool> BuseXYs;
+    std::map<std::string,bool> BConj;
+    for (auto& BTag : BTags){
+        INFO("B DecayType = "<<BTag); 
+        EventType eventType2 = EventType(pNames);
+        auto B_Name = split(BTag,' ')[0];
+        auto B_Pref = split(BTag,' ')[1];
+        bool B_Conj = std::stoi(split(BTag,' ')[2]);
+        int gammaSign = std::stoi(split(BTag,' ')[3]);
+        bool useXY = std::stoi(split(BTag,' ')[4]);
+        INFO("GammaSign = "<<gammaSign);
+        std::string DataFile = NamedParameter<std::string>("BDataSample", "");
+        std::string IntFile = NamedParameter<std::string>("BIntegrationSample", "");
+        std::stringstream DataSS;
+        DataSS<<DataFile<<":"<<B_Name;
+        std::string DataLoc = DataSS.str();
+        EventList Data = EventList(DataLoc, eventType2);
+        BSigData.insert(std::pair<std::string, EventList>({B_Name, Data}));
+        BgammaSigns.insert(std::pair<std::string, int>({B_Name, gammaSign}));
+        BuseXYs.insert(std::pair<std::string, bool>({B_Name, useXY}));
+        BConj.insert(std::pair<std::string, bool>({B_Name, B_Conj}));
+    }
+    std::map<std::string, std::vector<std::map<int, EventList> > > binned_BESIII;
+    std::map<std::string, std::vector<std::map<int, EventList> > > binned_LHCb;
+    std::vector<std::map<std::pair<int, int>, EventList> > binned_Kspipi = binDTEventsFromRef(SigData["Kspipi"], TagData["Kspipi"], my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
+    for (auto p : SigData){
+        if (p.first != "Kspipi") {
+            std::vector<std::map<int, EventList> > binned_events = binEventsFromRef(SigData[p.first], TagData[p.first], my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
+            binned_BESIII.insert(std::pair<std::string, std::vector<std::map<int, EventList> > >({p.first, binned_events}));
+        }
+    }
+    for (auto p : BSigData){
+        if (p.first != "Kspipi") {
+            std::vector<std::map<int, EventList> > binned_events = binEventsFromRef(BSigData[p.first], BSigData[p.first], my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
+            binned_LHCb.insert(std::pair<std::string, std::vector<std::map<int, EventList> > >({p.first, binned_events}));
+        }
+    }
+    std::map<int, EventList> binned_KK_sig = binned_BESIII["KK"][0];
+    std::map<int, EventList> binned_Kppim_sig = binned_BESIII["Kppim"][0];
+    std::map<int, EventList> binned_Kmpip_sig = binned_BESIII["Kmpip"][0];
+    std::map<int, EventList> binned_Kspi0_sig = binned_BESIII["Kspi0"][0];
+    std::map<int, EventList> binned_KK_tag = binned_BESIII["KK"][1];
+    std::map<int, EventList> binned_Kppim_tag = binned_BESIII["Kppim"][1];
+    std::map<int, EventList> binned_Kmpip_tag = binned_BESIII["Kmpip"][1];
+    std::map<int, EventList> binned_Kspi0_tag = binned_BESIII["Kspi0"][1];
+    std::map<std::pair<int, int>, EventList> binned_Kspipi_sig = binned_Kspipi[0];
+    std::map<std::pair<int, int>, EventList> binned_Kspipi_tag = binned_Kspipi[0];
+    
+    
+    std::map<int, EventList> binned_Bp = binned_LHCb["Bp2Dhp"][0];
+    std::map<int, EventList> binned_Bm = binned_LHCb["Bm2Dhm"][0];
+
+
+    std::map<int, double> K;
+    std::map<int, double> Kbar;
+    double sumK=0;
+    double sumKbar = 0;
+    std::map<int, double> F_KK;
+    double sum_KK = 0;
+    std::map<int, double> F_Kspi0;
+    double sum_Kspi0 = 0;
+
+    std::map<int, double> F_Bp;
+    std::map<int, double> F_Bm;
+    double sum_Bp = 0;
+    double sum_Bm = 0;
+
+
+    for (auto p : binned_Kppim_sig){
+        double nD0_i = binned_Kppim_sig[p.first].size();
+        double nDbar0_i = binned_Kppim_sig[p.first].size();
+        sumK += nD0_i;
+        sumKbar += nDbar0_i;
+        K.insert(std::pair<int, double>({p.first, nD0_i})  );
+        Kbar.insert(std::pair<int, double>({p.first, nDbar0_i})  );
+        double nKK_i = binned_KK_sig[p.first].size();
+        sum_KK += nKK_i;
+        double nKspi0_i = binned_Kspi0_sig[p.first].size();
+        sum_Kspi0 += nKspi0_i;
+        F_KK.insert(std::pair<int, double>({p.first, nKK_i}));
+        F_Kspi0.insert(std::pair<int, double>({p.first, nKspi0_i}));
+
+        double nBp_i = binned_Bp[p.first].size();
+        double nBm_i = binned_Bm[p.first].size();
+        F_Bp.insert(std::pair<int, double>({p.first, nBp_i}));
+        F_Bm.insert(std::pair<int, double>({p.first, nBm_i}));
+        sum_Bp += nBp_i;
+        sum_Bm += nBm_i;
+
+    }
+    for (auto p : K){
+        K[p.first] = K[p.first]/sumK;
+        Kbar[p.first] = Kbar[p.first]/sumKbar;
+        F_KK[p.first] = F_KK[p.first]/sum_KK;
+        F_Kspi0[p.first] = F_Kspi0[p.first]/sum_Kspi0;
+        F_Bp[p.first] = F_Bp[p.first]/sum_Bp;
+        F_Bm[p.first] = F_Bm[p.first]/sum_Bm;
+    }
+
+    std::map<std::pair<int, int>, double> F_Kspipi;
+    double sum_Kspipi = 0;
+    for (auto p : binned_Kspipi_sig){
+        double n_Kspipi_ij = p.second.size();
+        sum_Kspipi += n_Kspipi_ij;
+        F_Kspipi.insert(std::pair<std::pair<int, int>, double>(p.first, n_Kspipi_ij));
+    }
+    for (auto p : binned_Kspipi_sig){
+        F_Kspipi[p.first] = F_Kspipi[p.first]/sum_Kspipi;
+    }
+
+    auto Y_CP = [MPS](int bin, int CP, std::map<int, double> K, std::map<int, double> Kbar){
+        double sumYCP = 0;
+
+        for (auto p : K ){
+            sumYCP += K[p.first] + Kbar[p.first] - 2 * std::pow(K[p.first]  * Kbar[p.first], 0.5  ) * CP * MPS["c_" + std::to_string(std::abs(p.first))]->mean();
+        }
+        
+        return (K[bin] + Kbar[bin] - 2 * CP * std::pow(K[bin]* Kbar[bin], 0.5) * MPS["c_" + std::to_string(std::abs(bin))]->mean())/sumYCP;
+
+    };
+
+    auto Y_Kspipi = [MPS](int bin_sig, int bin_tag, std::map<int, double> K, std::map<int, double> Kbar){
+        double sumY = 0;
+        for (auto p1 : K){
+            for (auto p2 : K){
+                sumY += K[p1.first] * Kbar[p2.first] + Kbar[p1.first] * K[p2.first] 
+                - 2 * std::pow( K[p1.first] * Kbar[p2.first] * Kbar[p1.first] * K[p2.first]  , 0.5 ) * (
+                    MPS["c_" + std::to_string(std::abs(p1.first))]->mean() * MPS["c_" + std::to_string(std::abs(p2.first))]->mean()
+                    +  p1.first * p2.first/(std::abs(p1.first) * std::abs(p2.first)) * MPS["s_" + std::to_string(std::abs(p1.first))]->mean() * MPS["s_" + std::to_string(std::abs(p2.first))]->mean()
+                );
+
+            }
+        }
+        return (K[bin_sig] * Kbar[bin_tag] + Kbar[bin_sig] * K[bin_tag] 
+            - 2 * std::pow( K[bin_sig] * Kbar[bin_tag] * Kbar[bin_sig] * K[bin_tag]  , 0.5 ) * (
+                MPS["c_" + std::to_string(std::abs(bin_sig))]->mean() * MPS["c_" + std::to_string(std::abs(bin_tag))]->mean()
+                +  bin_sig * bin_tag/(std::abs(bin_sig) * std::abs(bin_tag)) * MPS["s_" + std::to_string(std::abs(bin_sig))]->mean() * MPS["s_" + std::to_string(std::abs(bin_tag))]->mean()
+            ))/sumY;
+
+    };
+    auto Y_Bp = [MPS](int bin, std::map<int, double> K, std::map<int, double> Kbar, std::map<int, complex_t> Z){
+        double sumY = 0;
+
+
+
+        complex_t zB(MPS["pCoherentSum::x+"]->mean() ,-MPS["pCoherentSum::y+"]->mean());
+
+
+        for (auto p : K ){
+            //complex_t zC(MPS["c_" + std::to_string(std::abs(p.first)) ]->mean(), p.first/std::abs(p.first)  * MPS["s_" + std::to_string(std::abs(p.first)) ]->mean())
+
+            complex_t zC =Z[p.first] ;
+
+            double _Y = Kbar[p.first] + K[p.first] *(std::norm(zB)) + 2 * std::pow(K[p.first]  * Kbar[p.first], 0.5  ) * std::real(zC * std::conj(zB));
+            if (_Y < 0){
+                INFO("Y  = "<<_Y);
+                _Y =0 ;
+
+            }
+
+            else{
+            sumY += _Y;
+            }
+        }
+        
+
+//        complex_t zC(MPS["c_" + std::to_string(std::abs(bin)) ]->mean(), bin/std::abs(bin)  * MPS["s_" + std::to_string(std::abs(bin)) ]->mean());
+        complex_t zC = Z[bin];
+        double Y =  (Kbar[bin] + K[bin] *(std::norm(zB)) + 2 * std::pow(K[bin]  * Kbar[bin], 0.5  ) * std::real(zC * std::conj(zB)))/sumY;
+        if (Y<0){
+            INFO("Y = "<<Y);
+            Y = 0;
+        }
+        return Y;
+
+    };
+
+    auto Y_Bm = [MPS](int bin, std::map<int, double> K, std::map<int, double> Kbar, std::map<int, complex_t> Z){
+        double sumY = 0;
+        //A + zC ==> A2 + C2 z2 + 2  (sqrt(A2C2) real(c + is) z*)
+
+        complex_t zB(MPS["pCoherentSum::x-"]->mean() ,MPS["pCoherentSum::y-"]->mean());
+//       complex_t zB(x, y);
+
+
+        for (auto p : K ){
+            //complex_t zC(MPS["c_" + std::to_string(std::abs(p.first)) ]->mean(), p.first/std::abs(p.first)  * MPS["s_" + std::to_string(std::abs(p.first)) ]->mean());
+
+            complex_t zC =Z[p.first] ;
+            double _Y = K[p.first] + Kbar[p.first] *(std::norm(zB)) + 2 * std::pow(K[p.first]  * Kbar[p.first], 0.5  ) * std::real(zC * std::conj(zB));
+            
+            if (_Y < 0){
+                INFO("Y  = "<<_Y);
+                _Y =0 ;
+
+            }
+
+            else{
+            sumY += _Y;
+            }
+        }
+        
+
+        //complex_t zC(MPS["c_" + std::to_string(std::abs(bin)) ]->mean(), bin/std::abs(bin)  * MPS["s_" + std::to_string(std::abs(bin)) ]->mean());
+
+        complex_t zC = Z[bin];
+        double Y =  (K[bin] + Kbar[bin] *(std::norm(zB)) + 2 * std::pow(K[bin]  * Kbar[bin], 0.5  ) * std::real(zC * std::conj(zB)))/sumY;
+        if (Y<0){
+            INFO("Y = "<<Y);
+            Y = 0;
+        }
+        return Y;
+
+
+
+
+    };
+
+
+
+
+    for (auto p : F_KK){
+        double N_KK = F_KK[p.first] * sum_KK;
+        double N_Bp = F_Bp[p.first] * sum_Bp;
+        double N_Bm = F_Bm[p.first] * sum_Bm;
+        double N_Kspi0 = F_Kspi0[p.first] * sum_Kspi0;
+        double N_K = K[p.first] * sumK;
+        double N_Kbar = Kbar[p.first] * sumKbar;
+        double Y_KK = Y_CP(p.first, 1, K0, Kbar0) * sum_KK;
+        double YBp = Y_Bp(p.first, K0, Kbar0, Z0) * sum_Bp;
+        double YBm = Y_Bm(p.first, K0, Kbar0, Z0) * sum_Bm;
+        double Y_Kspi0 = Y_CP(p.first, -1, K0, Kbar0) * sum_Kspi0;
+        INFO(p.first<<" "<<N_KK<<" "<<N_Kspi0<<" "<<N_Bp<<" "<<N_Bm);
+        INFO(p.first<<" "<<Y_KK<<" "<<Y_Kspi0<<" "<<YBp<<" "<<YBm);
+    }
+
+
+    auto chi2_CP = [&F_KK, &F_Kspi0, sum_KK, sum_Kspi0, MPS, &Y_CP, &K, &Kbar](){
+        double chi2 = 0;
+        for (auto p : (*(&F_KK))){
+            int bin = p.first;
+            double N_KK = (*(&F_KK))[bin] * sum_KK;
+            double N_Kspi0 = (*(&F_Kspi0))[bin] * sum_Kspi0;
+            double E_KK = (*(&Y_CP))(bin, 1, (*(&K)), (*(&Kbar))) * sum_KK;
+            double E_Kspi0 = (*(&Y_CP))(bin, -1, (*(&K)), (*(&Kbar))) * sum_Kspi0;
+            double dN_KK = std::pow(N_KK, 0.5);
+            double dE_KK = std::pow(E_KK, 0.5);
+            double err_KK = std::pow(N_KK + E_KK, 0.5);
+
+            double dN_Kspi0 = std::pow(N_Kspi0, 0.5);
+            double dE_Kspi0 = std::pow(E_Kspi0, 0.5);
+            double err_Kspi0 = std::pow(N_Kspi0 + E_Kspi0, 0.5);
+            if (N_KK!=0)chi2 += std::pow((N_KK - E_KK)/dN_KK, 2);
+            //chi2 += std::pow(N_KK - E_KK, 2)/err_KK;
+           // pdf = mu^n/n! e^-mu
+           // log pdf = n log mu - log n! - mu
+            //chi2 += -2*(-E_KK + N_KK * std::log(E_KK) - std::log(std::tgamma(N_KK+1)));
+            if(N_Kspi0!=0) chi2 += std::pow((N_Kspi0 - E_Kspi0)/dN_Kspi0, 2);
+            //chi2 += std::pow(N_Kspi0 - E_Kspi0, 2)/err_Kspi0; 
+            //chi2 +=-2*(-E_Kspi0 + N_Kspi0 * std::log(E_Kspi0) - std::log(std::tgamma(N_Kspi0+1)));
+        }
+        return chi2;
+    };
+
+    auto chi2_Kspipi = [&F_Kspipi, sum_Kspipi, &Y_Kspipi, &K, &Kbar, MPS](){
+        double chi2 = 0;
+        for (auto p : (*(&F_Kspipi))){
+            std::pair<int, int> bin_pair = p.first;
+            int bin_sig = bin_pair.first;
+            int bin_tag = bin_pair.second;
+            double N_Kspipi = p.second * sum_Kspipi;
+            double dN_Kspipi = std::pow(N_Kspipi, 0.5);
+            double E_Kspipi = (*(&Y_Kspipi))(bin_sig, bin_tag,  (*(&K)), (*(&Kbar))) * sum_Kspipi;
+            double dE_Kspipi = std::pow(E_Kspipi, 0.5);
+            double err_Kspipi = std::pow(N_Kspipi + E_Kspipi, 0.5);
+            if (N_Kspipi!=0) chi2 += std::pow((E_Kspipi - N_Kspipi)/dN_Kspipi, 2);
+             //chi2 += std::pow(E_Kspipi - N_Kspipi, 2)/err_Kspipi;
+
+            //chi2 +=-2*( -E_Kspipi + N_Kspipi * std::log(E_Kspipi) - std::log(std::tgamma(N_Kspipi+1)));
+            //if (N_Kspipi!=0) chi2 += 
+        }
+        return chi2;
+    };
+
+    auto chi2_BESIII = [&chi2_Kspipi, &chi2_CP, MPS](){
+        double chi2 = 0;
+        return (*(&chi2_Kspipi))() + (*(&chi2_CP))();
+    };
+
+    MPS["pCoherentSum::x+"]->fix();
+    MPS["pCoherentSum::y+"]->fix();
+    MPS["pCoherentSum::x-"]->fix();
+    MPS["pCoherentSum::y-"]->fix();
+
+    Minimiser mini_BESIII(chi2_BESIII, &MPS);
+    mini_BESIII.doFit();
+
+
+    FitResult * fr_BESIII = new FitResult(mini_BESIII);
+    fr_BESIII->writeToFile(NamedParameter<std::string>("MIBESIIILogFile", "Fit_MI_BESIII.log"));
+
+    MPS["pCoherentSum::x+"]->setFree();
+    MPS["pCoherentSum::y+"]->setFree();
+    MPS["pCoherentSum::x-"]->setFree();
+    MPS["pCoherentSum::y-"]->setFree();
+
+
+
+
+    for (int i=1;i<nBins + 1;i++){
+        double ci_Fit = MPS["c_" + std::to_string(i)]->mean();
+        double dci_Fit = MPS["c_" + std::to_string(i)]->err();
+        double si_Fit = MPS["s_" + std::to_string(i)]->mean();
+        double dsi_Fit = MPS["s_" + std::to_string(i)]->err();
+
+        complex_t zi = Z0[i];
+        double diff_ci = ci_Fit - std::real(zi);
+        double diff_si = si_Fit - std::imag(zi);
+        double pull_ci = diff_ci;
+        double pull_si = diff_si;
+        if (dci_Fit!= 0) pull_ci = pull_ci/dci_Fit;
+        if (dsi_Fit!= 0) pull_si = pull_si/dsi_Fit;
+        INFO(i<<" "<<std::real(zi)<<" "<<ci_Fit<<" +- "<<dci_Fit<<" "<<diff_ci<<" "<<pull_ci);
+        INFO(i<<" "<<std::imag(zi)<<" "<<si_Fit<<" +- "<<dsi_Fit<<" "<<diff_si<<" "<<pull_si);
+        
+
+    }   
+    for (int i =1;i<nBins + 1;i++){
+        double ci = MPS["c_"+std::to_string(i)]->mean();
+        double dci = MPS["c_"+std::to_string(i)]->err();
+        double si = MPS["s_"+std::to_string(i)]->mean();
+        double dsi = MPS["s_"+std::to_string(i)]->err();
+        MPS["c_"+std::to_string(i)]->setLimits( ci - dci, ci + dci );
+        MPS["s_"+std::to_string(i)]->setLimits( si - dsi, si + dsi );
+        MPS["c_"+std::to_string(i)]->fix();
+        MPS["s_"+std::to_string(i)]->fix();
+ 
+    }
+
+
+    auto chi2_B = [&F_Bp, &F_Bm, sum_Bp, sum_Bm, MPS, &Y_Bp ,&Y_Bm, &K0, &Kbar0, &Z0, nBins](){
+        double chi2 = 0;
+        std::map<int, complex_t> Z;
+        for (int i =1;i<nBins + 1;i++){
+            double c = MPS["c_"+std::to_string(i)]->mean();
+            double s = MPS["s_"+std::to_string(i)]->mean();
+            Z.insert(std::pair<int, complex_t>({i, complex_t(c, s)}));
+            Z.insert(std::pair<int, complex_t>({-i, complex_t(c, -s)}));
+        }
+        for (auto p : (*(&F_Bp))){
+
+//            double _Y_Bp = MPS["YBp_"+std::to_string(p.first)]->mean();
+//            double _Y_Bm = MPS["YBm_"+std::to_string(p.first)]->mean();
+            int bin = p.first;
+            double N_Bp = (*(&F_Bp))[bin] * sum_Bp;
+            double N_Bm = (*(&F_Bm))[bin] * sum_Bm;
+            double E_Bp = (*(&Y_Bp))(bin, (*(&K0)), (*(&Kbar0)),(*(&Z))  ) * sum_Bp;
+            double E_Bm = (*(&Y_Bm))(bin, (*(&K0)), (*(&Kbar0)),(*(&Z)) ) * sum_Bm;
+            double dN_Bp = std::pow(N_Bp, 0.5);
+            double dE_Bp = std::pow(E_Bp, 0.5);
+            double err_Bp = std::pow(N_Bp + E_Bp, 0.5);
+
+            double dN_Bm = std::pow(N_Bm, 0.5);
+            double dE_Bm = std::pow(E_Bm, 0.5);
+            double err_Bm = std::pow(N_Bm + E_Bm, 0.5);
+            //if (N_Bp!=0)chi2 += std::pow((N_Bp - E_Bp), 2);
+           if (N_Bp!=0)chi2 += std::pow((N_Bp - E_Bp)/dN_Bp, 2);
+            //chi2 += std::pow(N_Bp - E_Bp, 2)/err_Bp;
+           // pdf = mu^n/n! e^-mu
+           // log pdf = n log mu - log n! - mu
+            //chi2 +=  2 * E_Bp - 2 * N_Bp * std::log(E_Bp);// + 2 * std::log(std::tgamma(N_Bp + 1));
+            //chi2 +=  2 * E_Bm - 2 * N_Bm * std::log(E_Bm);// + 2 * std::log(std::tgamma(N_Bm + 1));
+            //if(N_Bm!=0) chi2 += std::pow((N_Bm - E_Bm)/dN_Bm, 2);
+            if(N_Bm!=0) chi2 += std::pow((N_Bm - E_Bm)/dN_Bm, 2);
+            //chi2 += std::pow(N_Bm - E_Bm, 2)/err_Bm; 
+            //chi2 +=-2*(-E_Bm + N_Bm * std::log(E_Bm) - std::log(std::tgamma(N_Bm+1)));
+        }
+        return chi2;
+    };
+    INFO("chi2 = "<<chi2_B());
+    Minimiser mini_B(chi2_B, &MPS);
+    mini_B.doFit();
+    double my_chi2 = 0;
+    for (auto p : F_KK){
+        double N_KK = F_KK[p.first] * sum_KK;
+        double N_Bp = F_Bp[p.first] * sum_Bp;
+        double N_Bm = F_Bm[p.first] * sum_Bm;
+        double N_Kspi0 = F_Kspi0[p.first] * sum_Kspi0;
+        double N_K = K[p.first] * sumK;
+        double N_Kbar = Kbar[p.first] * sumKbar;
+        double Y_KK = Y_CP(p.first, 1, K0, Kbar0) * sum_KK;
+        double YBp = Y_Bp(p.first, K0, Kbar0, Z0) * sum_Bp;
+        double YBm = Y_Bm(p.first, K0, Kbar0, Z0) * sum_Bm;
+        double Y_Kspi0 = Y_CP(p.first, -1, K0, Kbar0) * sum_Kspi0;
+        double pull_Bp = (N_Bp - YBp)/std::pow(N_Bp, 0.5);
+        double pull_Bm = (N_Bm - YBm)/std::pow(N_Bm, 0.5);
+        my_chi2 += std::pow(pull_Bp, 2) + std::pow(pull_Bm, 2);
+        INFO(p.first<<" "<<N_KK<<" "<<N_Kspi0<<" "<<N_Bp<<" "<<N_Bm);
+        INFO(p.first<<" "<<Y_KK<<" "<<Y_Kspi0<<" "<<YBp<<" "<<YBm<<" "<<pull_Bp<<" "<<pull_Bm);
+        
+    }
+    INFO(chi2_B()<<" "<<my_chi2);
+
+    FitResult * fr_B = new FitResult(mini_B);
+    fr_B->writeToFile(NamedParameter<std::string>("MILHCbLogFile", "Fit_MI_LHCb.log"));
+
+
+    return ;        
+/*
     std::string input = NamedParameter<std::string>("DataSample", "binnedEventsForMI.root");
     TFile * f = TFile::Open(input.c_str());
+  
     std::map<int, EventList> binned_KK_sig;
     std::map<int, EventList> binned_Kppim_sig;
     std::map<int, EventList> binned_Kmpip_sig;
@@ -1879,6 +2516,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     
     std::map<int, EventList> binned_Bp;
     std::map<int, EventList> binned_Bm;
+
     std::string treeName_KK = "KK";
     std::string treeName_Kspi0 = "Kspi0";
     std::string treeName_Kppim = "Kppim";
@@ -1886,7 +2524,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     std::string treeName_Kspipi = "Kspipi";
     std::string treeName_Bp = "Bp";
     std::string treeName_Bm = "Bm";
- 
+
     std::vector<std::string>  KKstr = {"D0", "K+", "K-"};
     std::vector<std::string>  Kspi0str = {"D0", "K0S0", "pi0"};
     std::vector<std::string>  Kppimstr = {"D0", "K+", "pi-"};
@@ -2211,61 +2849,6 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
 
 
 
-
-    std::string refBinningFile = NamedParameter<std::string>("refBinningFile", "ref_equal.root");
-
-    TFile * fRefEqual = TFile::Open(refBinningFile.c_str());
-    fRefEqual->cd();
-   
-    
-
-    std::map<int, EventList> my_bins;
-    for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
-        int bin = bins[bin_idx];
-        INFO("bin = "<<bin);
-        EventList my_bin_bin;
-//       TTree * my_t_bin;
-        if (bin>0) my_bin_bin = EventList(("ref_equal.root:myBin"+std::to_string(bin)).c_str(), eventType );
-        if (bin<0) my_bin_bin = EventList(("ref_equal.root:myBinm"+std::to_string(std::abs(bin))).c_str(), eventType );
-        my_bins.insert(std::pair<int, EventList>({bin, my_bin_bin}));
-
-    }
-
-    fRefEqual->Close();
-
-        
-    EventList mc =  Generator<>(eventType, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
-    CoherentSum A(eventType, MPS);
-    CoherentSum C(eventType.conj(true), MPS);
-    A.setEvents(mc);
-    C.setEvents(mc);
-    A.setMC(mc);
-    C.setMC(mc);
-    A.prepare();
-    C.prepare();
-
-
-    INFO("Getting K_i, Z_i from the model");
-    std::map<int, double> K0;
-    std::map<int, double> Kbar0;
-    std::map<int, complex_t> Z0;
-    for (int i=0;i<bins.size();i++){
-            int bin = bins[i];
-            double _K = getK(bin, A, my_bins);
-            double _Kbar = getK(bin, C,  my_bins);
-            complex_t _Z = getZ(bin, A, C, my_bins);
-            K0.insert(std::pair<int, double>({bin, _K}));
-            Kbar0.insert(std::pair<int, double>({bin, _Kbar}));
-            Z0.insert(std::pair<int, complex_t>({bin, _Z}));
-
-    }
-
-    for (int i=1;i<nBins + 1;i++){
-        MPS["c_"+std::to_string(i)]->setCurrentFitVal(std::real(Z0[i]));
-        MPS["s_"+std::to_string(i)]->setCurrentFitVal(std::imag(Z0[i]));
-    }
-
-
     for (auto p : F_KK){
         double N_KK = F_KK[p.first] * sum_KK;
         double N_Bp = F_Bp[p.first] * sum_Bp;
@@ -2420,7 +3003,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     }
     INFO(chi2_B()<<" "<<my_chi2);
 
-/*
+
     TFile * fScan = TFile::Open("MILLScan.root", "RECREATE");
     double xp0 = MPS["pCoherentSum::x+"]->mean();
     double yp0 = MPS["pCoherentSum::y+"]->mean();
