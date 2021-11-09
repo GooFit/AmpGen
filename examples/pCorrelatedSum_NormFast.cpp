@@ -26,6 +26,7 @@
 #include "AmpGen/pCorrelatedSum.h"
 #include "AmpGen/pCoherentSum.h"
 #include <boost/algorithm/string/replace.hpp>
+#include <cmath>
 using namespace AmpGen;
 using namespace std::complex_literals;
 
@@ -118,210 +119,152 @@ EventList mcKK =  Generator<>(KK, &rndm).generate(NamedParameter<size_t>("NInt",
   A.setEvents(mc); A.setMC(mc); A.prepare();
   C.setEvents(mc); C.setMC(mc); C.prepare();
 
+
+  ProfileClock clockgetVal;
+  ProfileClock clockgetValForNorm;
+  complex_t v0=0;
+  complex_t v0forNorm=0;
+  std::vector<double> timesGetVal;
+  std::vector<double> timesGetValForNorm;
+  for (int i=0;i<mc.size();i++){
+  clockgetVal.start();
+  v0 = psi.getVal(mc[i], mcKK[i]);
+  clockgetVal.stop();
+  timesGetVal.push_back(clockgetVal);
+  }
+
+
+
+  for (int i=0;i<mc.size();i++){
+  clockgetValForNorm.start();
+  v0forNorm = psi.getValForNorm(i);
+  clockgetValForNorm.stop();
+  
+  timesGetValForNorm.push_back(clockgetValForNorm);
+  }
+
+  double meanGetValTime = std::accumulate(timesGetVal.begin(), timesGetVal.end(), 0);
+  double meanGetValForNormTime = std::accumulate(timesGetValForNorm.begin(), timesGetValForNorm.end(), 0);
+  INFO("mean t(getVal) = "<<meanGetValTime);
+  INFO("mean t(getValForNorm) = "<<meanGetValForNormTime);
+
+  INFO("v0 = "<<v0<<" took "<<clockgetVal);
+  INFO("v0 = "<<v0forNorm<<" took "<<clockgetValForNorm);
+
+
+  int nL=0;
+  for (int i=0;i<mc.size();i++){
+clockgetValForNorm.start();
+  v0forNorm = psi.getValForNorm(i);
+  clockgetValForNorm.stop();
+   clockgetVal.start();
+  v0 = psi.getVal(mc[i], mcKK[i]);
+  clockgetVal.stop();
+  if (clockgetValForNorm > clockgetVal){
+    nL+=1;
+  }
+  
+  }
+INFO("Why did "<<nL<<" take longer?");
+ 
+
+
   INFO("log10 = "<<log(10));
+  double x0 = 3;
+  INFO("leg_8(x) = "<<std::legendre(8, x0));
   ProfileClock clockManual;
   clockManual.start();
   double normManual = psi.norm();
   clockManual.stop();
   INFO("My value for norm by sum(|psi|^2) = "<<normManual<<" took "<<clockManual);
-
-  double nA = 0;
-  double nC = 0;
-  ProfileClock clockAC;
-  clockAC.start();
-  for (size_t i=0;i<mc.size();i++){
-      nA += std::norm(A.getValNoCache(mc[i]));
-      nC += std::norm(A.getValNoCache(mc[i]));
+  real_t N = mc.size();
+  real_t nA=0;
+  real_t nC = 0;
+  ProfileClock clockNormSum;
+  clockNormSum.start();
+  double normSum = 0;
+  for (int i=0;i<mc.size();i++){
+    normSum += std::norm(psi.getVal(mc[i], mcKK[i]))/N;
   }
-  nA = nA/(real_t)mc.size();
-  nC = nC/(real_t)mc.size();
-  clockAC.stop();
-  INFO("nA = "<<nA<<" nC = "<<nC<<" took "<<clockAC);
+  clockNormSum.stop();
+  INFO("normSum = "<<normSum<<" took "<<clockNormSum);
+  std::vector<double> psi2Arr;
+  ProfileClock clockPsi2Arr;
+  ProfileClock clockCorr;
 
 
-  std::vector<complex_t> g1;
-  complex_t G1 = 0;
-
-  std::map<std::pair<size_t, size_t>, std::vector<double> > g2;
-  std::map<std::pair<size_t, size_t>, double> G2;
-
-  std::vector<complex_t> Delta1;
-  std::map<std::pair<size_t, size_t>, std::vector<double> > Delta2;
-  real_t N = mc.size(); 
-  ProfileClock clockG1;
-  clockG1.start();
-  double sumDD = 0;
-  for (size_t i=0;i<mc.size();i++){
-      complex_t a = A.getVal(mc[i]);
-      complex_t c = C.getVal(mc[i]);
-      double dd = std::arg(a * c);
-      sumDD += dd;
-      complex_t _g1 (log(std::abs(a)) + log(std::abs(c)), dd);
-     // complex_t _g1= log(a * std::conj(c));
-//      INFO("g1 = "<<G1<<" dd = "<<dd<<" a = "<<a<<" c = "<<c);
-      //complex_t _g1 = std::log(A.getVal(mc[i]) * std::conj(C.getVal(mc[i])));
-      g1.push_back(_g1);
-      G1 += _g1;
-  }
-  clockG1.stop();
-
-  INFO("Got "<<g1.size()<<" g1, sum(g1) = G1 = "<<G1<<" took "<<clockG1);
-
-  INFO("sumDD = "<<sumDD);
-
-  ProfileClock clockG2;
-  clockG2.start();
-  for (size_t m=0;m<pc.getOrder()+1;m++){
-    for (size_t n=0;n<pc.getOrder() + 1 - m; n++){
-        std::pair<size_t, size_t> mn({m, 2*n+1});
-        std::vector<double> g2_mn;
-        double G2_mn=0;
-        for (size_t i=0;i<mc.size();i++){
-            std::vector<double> XY = pc.getXY(mc[i]);
-            double _g2_mn = pc.Poly2D(XY[0], XY[1], m, 2*n+1);
-            g2_mn.push_back(_g2_mn);
-            G2_mn += _g2_mn;
-        }
-
-        g2.insert(std::pair<std::pair<size_t, size_t>, std::vector<double> >({mn, g2_mn})  );
-        G2.insert(std::pair<std::pair<size_t, size_t>, double>({mn, G2_mn})  );
+  std::vector<double> absA, absC, cosdd, sindd, dd;
+  std::map<std::pair<size_t, size_t>, std::vector<double> > Pmn;
+  std::map<std::pair<size_t, size_t>, MinuitParameter*> Cmn;
+  
+  double avg_dd = 0;
+  ProfileClock clockAmp;
+  clockAmp.start();
+  for (auto evt:mc){
+    complex_t a = A.getValNoCache(evt);
+    complex_t c = C.getValNoCache(evt);
+    absA.push_back(std::abs(a));
+    absC.push_back(std::abs(c));
+    nA += std::norm(a);
+    nC += std::norm(c);
+    double _dd = std::arg(a * std::conj(c));
+    dd.push_back(_dd);
+    cosdd.push_back(cos(_dd));
+    sindd.push_back(sin(_dd));
+    avg_dd += _dd/N;
+    for (auto p : Pmn){
+       double poly2d = pc.Poly2D(pc.getXY(evt)[0], pc.getXY(evt)[1], p.first.first, p.first.second);
+       Pmn[p.first].push_back(poly2d);
     }
+  }
+  clockAmp.stop();
+  INFO("average dd = "<<avg_dd<<" took "<<clockAmp);
+  INFO("Cmn has "<<Cmn.size()<<" elements, Pmn has "<<Pmn.size()<<" elements ");
+
+  ProfileClock clockMyNorm;
+  clockMyNorm.start();
+  clockPsi2Arr.start();
+  for (int i=0;i<mc.size();i++){
+  clockCorr.start();
+    double corr = pc.calcCorrL(mc[i]);
+  clockCorr.stop();
+    //double sum = absA[i] * absC[i] * cos(dd[i] + corr);
+    double sum = std::real(A.getVal(mc[i]) * std::conj(C.getVal(mc[i])) * exp(complex_t(0, corr))); 
+
+    psi2Arr.push_back(sum);
   } 
-  clockG2.stop();
+  clockPsi2Arr.stop();
+  INFO("Took "<<clockPsi2Arr<<" to vectorise the psis");
+  INFO("Took "<<clockCorr<<" to calculate correction");
 
-  INFO("Got "<<g2.size()<<" took "<<clockG2);
+  ProfileClock clockAcc;
+  clockAcc.start();
+  double myNorm = std::accumulate(psi2Arr.begin(), psi2Arr.end(),0);
+  clockAcc.stop();
 
-  ProfileClock clockDelta1;
-  clockDelta1.start();
-  for (size_t i=0;i<mc.size();i++){
-      Delta1.push_back( g1[i] - G1 );
+  myNorm = (nA + nC - 2 * myNorm)/N;
+  clockMyNorm.stop();
+
+  INFO("Took "<<clockAcc<<" to acculmate");
+  INFO("Got "<<myNorm<<" for normalisation took "<<clockMyNorm);
+  double myNormLoop = 0;
+  ProfileClock clockLoop;
+  clockLoop.start();
+  for (int i=0;i<psi2Arr.size();i++){
+    myNormLoop += psi2Arr[i];
   }
-  clockDelta1.stop();
-  INFO("Got "<<Delta1.size()<<" took "<<clockDelta1);
+  clockLoop.stop();
+  INFO("Took "<<clockLoop<<" to loop");
 
-  ProfileClock clockDelta2 ;
-  clockDelta2.start();
-  for (size_t m=0;m<pc.getOrder()+1;m++){
-      for(size_t n=0;n<pc.getOrder()+1 -m;n++){
-          std::pair<size_t, size_t> mn({m,2*n+1});
-          std::vector<double> Delta2_mn;
-          for(size_t i=0;i<mc.size();i++){
-              Delta2_mn.push_back(g2[mn][i] - G2[mn]);
-          }
-          Delta2.insert(std::pair<std::pair<size_t, size_t>, std::vector<double> >({mn, Delta2_mn}));
-      }
-  }
-  clockDelta2.stop();
 
-  INFO("Got "<<Delta2.size()<<" took "<<clockDelta2);
- 
-  std::vector<complex_t> Delta;
-  ProfileClock clockDelta;
-  clockDelta.start();
-  for (size_t i=0;i<Delta1.size();i++){
-    complex_t _Delta_i = Delta1[i];  
-    /*
-    for (auto p : Delta2){
-        std::pair<size_t, size_t> ij = p.first;
-        size_t m = ij.first;
-        size_t n = ij.second;
-        _Delta_i += complex_t(0, MPS["PhaseCorrection::C" + std::to_string(m) + "_" + std::to_string(n)]->mean() * p.second[i]);
-        
-    }
-    */
-    Delta.push_back(_Delta_i);
-  }
-  clockDelta.stop();
-  INFO("Got "<<Delta.size()<<" Delta2 took "<<clockDelta);
-  ProfileClock clockDeltaMN;
-  clockDeltaMN.start();
-
-  complex_t expDelta1; 
-    for (auto p : Delta2){
-        std::pair<size_t, size_t> ij = p.first;
-        size_t m = ij.first;
-        size_t n = ij.second;
-        for (size_t i=0;i<Delta.size();i++){     
-//            INFO(i<<" "<<Delta[i]<<" "<<MPS["PhaseCorrection::C" + std::to_string(m) + "_" + std::to_string(n)]->mean() * p.second[i]);
-            double DMN = MPS["PhaseCorrection::C" + std::to_string(m) + "_" + std::to_string(n)]->mean() * p.second[i];
-            expDelta1 += exp(Delta[i] + complex_t(0, DMN));
-        }
-    }
-
-  clockDeltaMN.stop();
-  INFO("DeltaMN took "<<clockDeltaMN<<" expDelta = "<<expDelta1);
-
-  ProfileClock clockG0;
-  clockG0.start();
-  complex_t G0;// = G1;
-  for (auto p : G2){
-        std::pair<size_t, size_t> ij = p.first;
-        size_t m = ij.first;
-        size_t n = ij.second;
-        double DMN = MPS["PhaseCorrection::C" + std::to_string(m) + "_" + std::to_string(n)]->mean() * p.second;
-        G0 += (G1 + complex_t(0, DMN));
-  }
-  clockG0.stop();
-
-  INFO("G0 Took "<<clockG0<<" G0 = "<<G0<<" expG0 = "<<exp(G0));
- 
-  complex_t inter =  exp(G0) * expDelta1 ;
-  double myNorm = -2 * std::real(exp(G0) * expDelta1) + nA + nC;
- INFO("My Norm (from calculating logs and exps) = "<<myNorm<<" inter = "<<inter);
- 
+  ProfileClock clockgetC;
+  clockgetC.start();
+  double c01 = MPS["PhaseCorrection::C0_1"]->mean();
+  clockgetC.stop();
+  INFO("Took "<<clockgetC<<" to get 1 MPS param");
 
   return 0;
-  auto G = [&MPS, &G1, &G2](){
-      complex_t _G = G1;
-      for (auto p : G2){
-          std::pair<size_t, size_t> ij = p.first;
-          size_t m = ij.first;
-          size_t n = ij.second;
-          _G += complex_t(0,MPS["PhaseCorrection::C" + std::to_string(m) + "_" + std::to_string(n)]->mean() * p.second);
-      }
-      return _G;
-  };
-
-  auto expDelta = [&MPS, &Delta1, &Delta2](){
-      //std::vector<complex_t> _Delta;
-      complex_t _expDelta = 0;
-      for (size_t i=0;i<Delta1.size();i++){
-        complex_t _Delta_i = Delta1[i];  
-        for (auto p : Delta2){
-            std::pair<size_t, size_t> ij = p.first;
-            size_t i = ij.first;
-            size_t j = ij.second;
-            _Delta_i += complex_t(0, MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(j)]->mean() * p.second[i]);
-            
-        }
-        _expDelta += std::exp(_Delta_i);
-      }
-      return _expDelta;
-  };
-
-  INFO("Getting G");
-  ProfileClock clockG;
-  clockG.start();
-  complex_t G01 = G();
-  clockG.stop();
-
-
-  INFO("Getting Delta");
-  ProfileClock clockexpDelta;
-  clockDelta.start();
-  complex_t expDelta0 = expDelta();
-  clockexpDelta.stop();
-
-  double myNorm2 = -2 * std::real(std::exp(G0) * expDelta0) + nA + nC;
-  INFO("My Norm (from calculating logs and exps) = "<<myNorm);
-  return 0;
-
-
-
-
-
-
-
+ 
 
 
 

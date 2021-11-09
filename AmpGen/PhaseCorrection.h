@@ -10,6 +10,7 @@
 #include <TF1.h>
 #include <Math/WrappedTF1.h>
 #include "TMatrixTSym.h"
+#include <cmath>
 //#include <Math/SpecFunMathMore.h>
 //#include "AmpGen/Polynomials.h"
 namespace AmpGen{
@@ -106,7 +107,8 @@ namespace AmpGen{
                     size_t i1 = i;
                     size_t i2 = order - i;
 		    if (m_PolyType=="antiSym_legendre"){
-                    	p+=m_mps["PhaseCorrection::C"+std::to_string(i1)+"_"+std::to_string(2*i2+1)]->mean() * fastLegendre(x, i1) * fastLegendre(y,2 * i2 + 1);
+                    	//p+=m_mps["PhaseCorrection::C"+std::to_string(i1)+"_"+std::to_string(2*i2+1)]->mean() * fastLegendre(x, i1) * fastLegendre(y,2 * i2 + 1);
+                    	p+=m_mps["PhaseCorrection::C"+std::to_string(i1)+"_"+std::to_string(2*i2+1)]->mean() * std::legendre(i1,x) * std::legendre(2 * i2 + 1, y);
 		    }
 		    else if (m_PolyType=="antiSym_simple"){
                     	p+=m_mps["PhaseCorrection::C"+std::to_string(i1)+"_"+std::to_string(2*i2+1)]->mean() * std::pow(x, i1) * std::pow(y,2 * i2 + 1);
@@ -265,7 +267,69 @@ namespace AmpGen{
             }
 
 
+            const real_t calcCorrXY(double x, double y) const {
+                double p = 0;
+                  auto z1 = (x + y)/2;
+                    auto z2 = (y - x)/2;
 
+    real_t m1 = 2.2340742171132946;
+                    real_t c1 = -3.1171885586526695;
+
+                    real_t m2 = 0.8051636393861085;
+                    real_t c2 = -9.54231895051727e-05;
+
+                    auto w1 = m1 * z1 + c1;
+                    auto w2 = m2 * z2 + c2;
+
+
+                if (m_PolyType=="Gaussian"){
+                    real_t sc = m_mps["PhaseCorrection::GaussScale"]->mean();
+                    real_t muX = m_mps["PhaseCorrection::GaussMuX"]->mean();
+                    real_t muY = m_mps["PhaseCorrection::GaussMuY"]->mean();
+                    real_t sigmaX = m_mps["PhaseCorrection::GaussSigmaX"]->mean();
+                    real_t sigmaY = m_mps["PhaseCorrection::GaussSigmaY"]->mean();
+                    //real_t linWm = m_mps["PhaseCorrection::GaussLinearW-"]->mean();
+                    //real_t quadWm = m_mps["PhaseCorrection::GaussQuadraticW-"]->mean();
+                    real_t erfFactor = m_mps["PhaseCorrection::GaussErfFactor"]->mean();
+                    int sign = z2/abs(z2);
+                    real_t mod_erf = std::erf(w2/erfFactor);
+                    if (sign == 1){
+                    //real_t gauss = (linWm * wm + sign * quadWm * pow(w2, 2)) * sc/(2 * M_PI * sigmaX * sigmaY) * exp ( -pow( x - muX, 2)/(2*sigmaX) - pow(y - muY, 2)/(2 * sigmaY));
+                    //real_t gauss = sign * sc * exp ( -pow( x - muX, 2)/(2*sigmaX) - pow(y - muY, 2)/(2 * sigmaY)) ;
+                    //real_t erf = 1 - pow(1 + 0.278393 * abs(w2) + 0.230389 * pow(abs(w2), 2) + 0.000972 * pow(abs(w2), 3) + 0.078108 * pow(abs(w2), 4), -4);
+                    
+                    //real_t gauss =  (linWm * w2 + sign * quadWm * pow(w2, 2)) * sc * exp ( -pow( x - muX, 2)/(2*sigmaX) - pow(y - muY, 2)/(2 * sigmaY)) ;
+                    real_t gauss =  mod_erf * sc * exp ( -pow( x - muX, 2)/(2*sigmaX) - pow(y - muY, 2)/(2 * sigmaY)) ;
+
+
+                    return gauss;
+
+                    }
+                    else{
+                    //real_t gauss = sign * sc/(2 * M_PI * sigmaX * sigmaY) * exp ( -pow( y - muX, 2)/(2*sigmaX) - pow(x - muY, 2)/(2 * sigmaY));
+                    //real_t gauss = sign * sc * exp ( -pow( y - muX, 2)/(2*sigmaX) - pow(x - muY, 2)/(2 * sigmaY));
+                    //real_t gauss = (linWm * w2 + sign * quadWm * pow(w2, 2)) * sc * exp ( -pow( y - muX, 2)/(2*sigmaX) - pow(x - muY, 2)/(2 * sigmaY));
+                    real_t gauss = mod_erf * sc * exp ( -pow( y - muX, 2)/(2*sigmaX) - pow(x - muY, 2)/(2 * sigmaY));
+
+
+                    return gauss;
+ 
+                    }
+
+                }
+
+                for (size_t i=m_start;i<m_order+1 ; i++){
+                  
+                 
+                    p+=calcPoly(w1,w2,i);
+                    if (m_debug) INFO("f"<<i<<" = "<<p);
+
+                }
+            
+                return p;
+                
+
+            }
 
             const real_t calcCorrL(const Event event) const {
                 //auto XY=getXY(event);

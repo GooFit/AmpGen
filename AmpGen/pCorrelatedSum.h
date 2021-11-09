@@ -541,6 +541,8 @@ const real_t LL() const {
         }
     }
 
+    complex_t getValForNorm(const int i) const;
+
     protected:
         double  m_norm  =    {0};
         MinuitParameterSet m_mps;
@@ -605,6 +607,10 @@ const real_t LL() const {
         std::map<std::vector<real_t *> , std::vector<complex_t> > m_cache = {};
         std::map<std::vector<real_t *>, std::vector<complex_t> > m_cacheMC = {};
 
+        std::vector<double> m_sig_s01MC;
+        std::vector<double> m_tag_s01MC;
+        std::vector<double> m_sig_s02MC;
+        std::vector<double> m_tag_s02MC;
 
 
   };

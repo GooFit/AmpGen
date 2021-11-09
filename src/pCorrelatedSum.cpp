@@ -137,9 +137,10 @@ INFO("v = "<<getValNoCache( (*m_sim1)[0], (*m_sim2)[0] ));
   }
   real_t acR, acI, bdR, bdI;
 
-  #pragma omp parallel for reduction( +: n )
+//  #pragma omp parallel for reduction( +: n )
   for (size_t i=0; i<(*m_sim1).size(); i++){
-    n+=std::norm(getVal((*m_sim1)[i], (*m_sim2)[i]))/(real_t) (*m_sim1).size();
+//    n+=std::norm(getVal((*m_sim1)[i], (*m_sim2)[i]))/(real_t) (*m_sim1).size();
+    n+=std::norm(getValForNorm(i))/(real_t) (*m_sim1).size();
   
    // complex_t ac = m_ACstMC[i] * exp(complex_t(0, m_pc1.calcCorrL((*m_sim1)[i])))/(real_t) (*m_sim1).size() ;
     //complex_t bd = m_BDstMC[i]/(real_t) (*m_sim1).size();
@@ -156,7 +157,7 @@ INFO("v = "<<getValNoCache( (*m_sim1)[0], (*m_sim2)[0] ));
 //    z = AC * std::conj(AC);
 //  }
  // n = m_A.norm() * m_B.norm() + m_C.norm() * m_D.norm() - 2 * std::real(z);
-  if (m_debug) INFO("n = "<<n);
+   INFO("n = "<<n);
 
  
   return n;
@@ -204,6 +205,17 @@ void pCorrelatedSum::setMC(EventList& list1, EventList& list2){
   m_C.setMC(list1);
   m_D.setMC(list2);
 
+
+  for (int i=0;i<list1.size();i++){
+    m_sig_s01MC.push_back(list1[i].s(0,1));
+    m_sig_s02MC.push_back(list1[i].s(0,2));
+
+    if (m_sameTag){
+      m_tag_s01MC.push_back(list2[i].s(0,1));
+      m_tag_s02MC.push_back(list2[i].s(0,2));
+    }
+  }
+
   
   //m_pcMC1.setEvents(list1);
   //m_pcMC1.prepareCache();
@@ -230,9 +242,14 @@ void pCorrelatedSum::setMC2(EventList& list2){
 }
 
 
-complex_t pCorrelatedSum::getVal(const Event& evt1, const Event& evt2) const {
+complex_t pCorrelatedSum::getValForNorm(const int i) const {
+  Event evt1 = (*m_sim1)[i];
+  Event evt2 = (*m_sim2)[i];
+
+
+
   if (m_flat) return 1;
-  auto f = m_pc1.calcCorrL(evt1)/2;
+  auto f = m_pc1.calcCorrXY(m_sig_s01MC[i], m_sig_s02MC[i]);
   if (m_debug){
     INFO("A(evt) = "<<m_A.getVal(evt1));
     INFO("B(evt) = "<<m_B.getVal(evt2));
@@ -242,7 +259,26 @@ complex_t pCorrelatedSum::getVal(const Event& evt1, const Event& evt2) const {
   //auto f = m_pc1.getValCache(evt1)/2;
   //if (m_sameTag) f = (m_pc1.getValCache(evt1) - m_pc2.getValCache(evt2))/2;
   //if (m_sameTag) f = (m_pc1.getValCache(evt1) - m_pc2.getValCache(evt2))/2;
-  if (m_sameTag) f = (m_pc1.calcCorrL(evt1) - m_pc2.calcCorrL(evt2))/2;
+  //if (m_sameTag) f = (m_pc1.calcCorrL(evt1) - m_pc2.calcCorrL(evt2));
+  if (m_sameTag) f = m_pc1.calcCorrXY(m_sig_s01MC[i], m_sig_s02MC[i]) - m_pc2.calcCorrXY(m_tag_s01MC[i], m_tag_s02MC[i]);
+ // return m_A.getVal(evt1) * m_B.getVal(evt2) * exp( std::complex<double>(0,1) ) + getSumFactor() *  m_C.getVal(evt1) * m_D.getVal(evt2) * exp(-std::complex<double>(0,1) );
+  return m_A.getVal(evt1) * m_B.getVal(evt2) * exp(complex_t(0, f/2)) -  m_C.getVal(evt1) * m_D.getVal(evt2) * exp(complex_t(0, -f/2));
+}
+
+
+complex_t pCorrelatedSum::getVal(const Event& evt1, const Event& evt2) const {
+  if (m_flat) return 1;
+  auto f = m_pc1.calcCorrL(evt1);
+  if (m_debug){
+    INFO("A(evt) = "<<m_A.getVal(evt1));
+    INFO("B(evt) = "<<m_B.getVal(evt2));
+    INFO("C(evt) = "<<m_C.getVal(evt1));
+    INFO("D(evt) = "<<m_D.getVal(evt2));
+  }
+  //auto f = m_pc1.getValCache(evt1)/2;
+  //if (m_sameTag) f = (m_pc1.getValCache(evt1) - m_pc2.getValCache(evt2))/2;
+  //if (m_sameTag) f = (m_pc1.getValCache(evt1) - m_pc2.getValCache(evt2))/2;
+  if (m_sameTag) f = (m_pc1.calcCorrL(evt1) - m_pc2.calcCorrL(evt2));
  // return m_A.getVal(evt1) * m_B.getVal(evt2) * exp( std::complex<double>(0,1) ) + getSumFactor() *  m_C.getVal(evt1) * m_D.getVal(evt2) * exp(-std::complex<double>(0,1) );
   return m_A.getVal(evt1) * m_B.getVal(evt2) * exp(complex_t(0, f/2)) + getSumFactor() *  m_C.getVal(evt1) * m_D.getVal(evt2) * exp(complex_t(0, -f/2));
 }
