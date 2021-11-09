@@ -66,7 +66,11 @@ namespace AmpGen{
                     }
             
             }
-            
+
+            const size_t getOrder() const {
+                return m_order;
+            }
+
             const real_t Poly1D(real_t x, size_t i) const {
 
                 if (m_PolyType=="antiSym_legendre"){
@@ -83,13 +87,18 @@ namespace AmpGen{
 
             const real_t Poly2D(real_t x, real_t y, size_t i, size_t j)const {
                 if (m_PolyType=="antiSym_legendre"){
-                    return fastLegendre(x, i) * fastLegendre(y, 2 * j + 1);
+                    return fastLegendre(x, i) * fastLegendre(y, j);
                 }
                 else if (m_PolyType=="antiSym_simple"){
-                    return std::pow(x, i) * std::pow(y, 2 * j + 1);
+                    return std::pow(x, i) * std::pow(y, j);
+                }
+                else{
+                    return 0;
                 }
                 
             }
+
+
 
             const real_t calcPoly(real_t x, real_t y, size_t order) const {
                 real_t p=0;
@@ -134,10 +143,27 @@ namespace AmpGen{
            }
             PhaseCorrection() = default;
             const std::vector<real_t> getXY(Event event) const {
+                auto x = event.s(0,1);
+                auto y = event.s(0,2);
+
+                auto z1 = (x + y)/2;
+                auto z2 = (y - x)/2;
+
+                real_t m1 = 2.2340742171132946;
+                real_t c1 = -3.1171885586526695;
+
+                real_t m2 = 0.8051636393861085;
+                real_t c2 = -9.54231895051727e-05;
+
+                auto w1 = m1 * z1 + c1;
+                auto w2 = m2 * z2 + c2;
+
+
+                /*
                  auto x = event.s(0,1);
                 auto y = event.s(0,2);
                 auto z = event.s(1,2);
-                /*
+                
                 auto mp = sqrt(event.s(1,1))/2;
                 auto mm = sqrt(event.s(2,2))/2;
                 auto mK = sqrt(event.s(0,0))/2;
@@ -153,14 +179,15 @@ namespace AmpGen{
                 Expression ymin = pow(mp + mK, 2);
                 Expression ymax = pow(mD - mp, 2);
                 Expression y0 = (ymax + ymin)/2;
-                */
+                
                 real_t xmin = 0.406004;
                 real_t xmax = 2.976556;
                 real_t X = (2 * x - xmax - xmin)/(xmax - xmin);
                 real_t Y = (2 * y - xmax - xmin)/(xmax - xmin);
                 auto zp = (X+Y)/2;
                 auto zm = (X-Y)/2;
-                return std::vector<real_t>({zp,zm});
+                */
+                return std::vector<real_t>({w1, w2});
 
             }
             const real_t calcCorr(const Event event)const {
@@ -237,7 +264,7 @@ namespace AmpGen{
 
             }
 
-            
+
 
 
             const real_t calcCorrL(const Event event) const {

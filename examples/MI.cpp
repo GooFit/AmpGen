@@ -548,6 +548,25 @@ complex_t getZ(int i, CoherentSum A, CoherentSum C, std::map<int, EventList> m){
     return num/std::pow(denA * denC, 0.5);
 }
 
+complex_t getZPrime(int i, CoherentSum A, CoherentSum C, PhaseCorrection pc, std::map<int, EventList> m){
+    complex_t num = 0;
+    double denA = 0;
+    double denC = 0;
+    EventList evts = m[i];
+    for (auto evt: evts){
+        complex_t corr(0,pc.calcCorrL(evt));
+        num += A.getValNoCache(evt) * std::conj(C.getValNoCache(evt)) * exp(corr);
+        denA += std::norm(A.getValNoCache(evt));
+        denC += std::norm(C.getValNoCache(evt));
+    }
+    return num/std::pow(denA * denC, 0.5);
+}
+
+
+
+
+
+
 std::map<int, double> getKs(std::map<int, EventList> map, CoherentSum A){
     std::map<int, double> m;
     for (auto p:map){
@@ -591,6 +610,7 @@ void GGSZ(MinuitParameterSet MPS, EventType eventType);
 void testTim(MinuitParameterSet MPS, EventType eventType);
 void genMI(MinuitParameterSet MPS, EventType eventType);
 void fitMI(MinuitParameterSet MPS, EventType eventType);
+void printZ(MinuitParameterSet MPS, EventType eventType);
 int main( int argc, char* argv[] )
 {
   /* The user specified options must be loaded at the beginning of the programme, 
@@ -673,6 +693,7 @@ int main( int argc, char* argv[] )
   if (NamedParameter<bool>("testMI", false))  testMI(MPS, eventType);
   if (NamedParameter<bool>("genMI", false))  genMI(MPS, eventType);
   if (NamedParameter<bool>("fitMI", false))  fitMI(MPS, eventType);
+  if (NamedParameter<bool>("printZ", false))  printZ(MPS, eventType);
 //
 //
 }
@@ -3063,4 +3084,87 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     */
     
 
+}
+void printZ(MinuitParameterSet MPS, EventType eventType){
+  auto pNames = NamedParameter<std::string>("EventType" , ""    
+      , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
+
+    TRandom3 rndm;
+    rndm.SetSeed( NamedParameter<int>("Seed", 0) );
+    gRandom = &rndm;
+ 
+
+    size_t nBins(NamedParameter<size_t>("nBins", 8));
+    std::vector<int> bins = {};
+    for (int i=1;i<nBins+1;i++){
+        bins.push_back(i);
+        bins.push_back(-i);
+    }
+
+
+    std::string refBinningFile = NamedParameter<std::string>("refBinningFile", "ref_equal.root");
+
+    TFile * fRefEqual = TFile::Open(refBinningFile.c_str());
+    fRefEqual->cd();
+   
+    
+
+    std::map<int, EventList> my_bins;
+    std::map<int, std::vector<double> > my_x;
+    std::map<int, std::vector<double> > my_y;
+    for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
+        int bin = bins[bin_idx];
+        INFO("bin = "<<bin);
+        EventList my_bin_bin;
+//       TTree * my_t_bin;
+        if (bin>0) my_bin_bin = EventList(("ref_equal.root:myBin"+std::to_string(bin)).c_str(), eventType );
+        if (bin<0) my_bin_bin = EventList(("ref_equal.root:myBinm"+std::to_string(std::abs(bin))).c_str(), eventType );
+        my_bins.insert(std::pair<int, EventList>({bin, my_bin_bin}));
+        std::vector<double> my_x_bin;
+        std::vector<double> my_y_bin;
+        for (auto e : my_bin_bin){
+            my_x_bin.push_back(e.s(0,1));
+            my_y_bin.push_back(e.s(0,2));
+        }
+
+        my_x.insert(std::pair<int, std::vector<double> >({bin, my_x_bin}));
+        my_y.insert(std::pair<int, std::vector<double> >({bin, my_y_bin}));
+
+    }
+
+    fRefEqual->Close();
+
+
+    EventList mc =  Generator<>(eventType, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
+    CoherentSum A(eventType, MPS);
+    CoherentSum C(eventType.conj(true), MPS);
+    A.setEvents(mc);
+    C.setEvents(mc);
+    A.setMC(mc);
+    C.setMC(mc);
+    A.prepare();
+    C.prepare();
+
+
+    INFO("Getting K_i, Z_i from the model");
+    std::map<int, double> K0;
+    std::map<int, double> Kbar0;
+    std::map<int, complex_t> Z0;
+    std::ofstream output;
+    output.open(NamedParameter<std::string>("printZOut", "Z.txt"), std::ofstream::out | std::ofstream::app );
+    PhaseCorrection pc(MPS);
+
+    for (int i=0;i<bins.size();i++){
+            int bin = bins[i];
+            double _K = getK(bin, A, my_bins);
+            double _Kbar = getK(bin, C,  my_bins);
+            complex_t _Z = getZ(bin, A, C, my_bins);
+            complex_t _ZPrime = getZPrime(bin, A, C, pc, my_bins);
+            K0.insert(std::pair<int, double>({bin, _K}));
+            Kbar0.insert(std::pair<int, double>({bin, _Kbar}));
+            Z0.insert(std::pair<int, complex_t>({bin, _Z}));
+            output<<bin<<" "<<std::real(_Z)<<" "<<std::imag(_Z)<<" "<<std::real(_ZPrime)<<" "<<std::imag(_ZPrime)<<"\n";
+    }
+
+    
 }

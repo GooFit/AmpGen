@@ -662,11 +662,13 @@ for (int i=0; i < tags.size(); i++){
   else{
 
 
+    
     for (size_t i=0; i<NIntMods.size() - 1;i++){
       INFO("Using "<<NIntMods[i]<<" * "<<NInt<<" integration events");
       auto NInt_i = int(std::stod(NIntMods[i]) *NInt);
       INFO("NInt = "<<NInt_i);
     CombinedFit( eventType,  TagType,  SigData  ,TagData,  BSigData, BgammaSigns, BuseXYs, BConj, MPS, seed, NInt_i);     
+
           }
 
    
@@ -683,6 +685,30 @@ for (int i=0; i < tags.size(); i++){
     auto NInt_Final = int(std::stod(NIntMods[NIntMods.size() - 1]) * NInt);
     CombinedFitAndWrite(eventType, TagType, SigData, TagData, BSigData, BgammaSigns, BuseXYs,  BConj, MPS,  seed,  NInt_Final,  plotFile,  logFile,
              tags,  BTags, fBins, doProjections, doScan);
+
+    double Lambda = MPS["LASSO::lambda"]->mean();
+    if (Lambda !=0 ){
+      INFO("Did a LASSO Fit - now doing the final fit");
+      double thres = NamedParameter<double>("LASSO::Threshold", 0.01);
+      for (auto&p:MPS){
+        if (p->isFree() && std::abs(p->mean()) < thres){
+           p->setCurrentFitVal(0);
+           p->fix();
+        }
+      }
+
+     
+      MPS["LASSO::lambda"]->setCurrentFitVal(0);
+      for (auto&p:MPS){
+        if (p->isFree()) INFO(p->name());
+      }
+      
+      CombinedFitAndWrite(eventType, TagType, SigData, TagData, BSigData, BgammaSigns, BuseXYs,  BConj, MPS,  seed,  NInt_Final,  plotFile,  logFile,
+             tags,  BTags, fBins, doProjections, doScan);
+
+
+
+    }
 
 
    return 0;
