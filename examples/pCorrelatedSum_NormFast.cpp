@@ -110,14 +110,79 @@ auto pNames = NamedParameter<std::string>("EventType" , ""
 EventList mcKK =  Generator<>(KK, &rndm).generate(NamedParameter<size_t>("NInt", 1e6));
   pCorrelatedSum psi(eventType, KK, MPS);
   PhaseCorrection pc(MPS);
+
+
   psi.setEvents(mc, mcKK);
   psi.setMC(mc, mcKK);
   psi.prepare();
+  ProfileClock clockManual;
+  clockManual.start();
+  double normManual = psi.norm();
+  clockManual.stop();
+  INFO("My value for norm by sum(|psi|^2) = "<<normManual<<" took "<<clockManual);
+  return 0;
 
   CoherentSum A(eventType, MPS);
+  CoherentSum B(KK, MPS);
   CoherentSum C(eventType.conj(true), MPS);
+  CoherentSum D(KK.conj(true), MPS);
   A.setEvents(mc); A.setMC(mc); A.prepare();
+  B.setEvents(mcKK); B.setMC(mcKK); B.prepare();
   C.setEvents(mc); C.setMC(mc); C.prepare();
+  D.setEvents(mcKK); D.setMC(mcKK); D.prepare();
+
+  std::vector<complex_t> As, Bs, Cs, Ds;
+  for (int i=0;i<mc.size();i++){
+    As.push_back(A.getVal(mc[i]));
+    Bs.push_back(B.getVal(mcKK[i]));
+    Cs.push_back(C.getVal(mc[i]));
+    Ds.push_back(D.getVal(mcKK[i]));
+  }
+
+  ProfileClock clockcalcCorrL, clockcalcCorrXY;
+  double fcalcCorrL = 0;
+  double fcalcCorrXY = 0;
+  clockcalcCorrL.start();
+
+  #pragma omp parallel for reduction (+:fcalcCorrL)
+  for (int i=0;i<mc.size();i++){
+    double corr = pc.calcCorrL(mc[i]);
+   fcalcCorrL +=std::norm(A.getVal(mc[i]) * B.getVal(mcKK[i])  * exp(complex_t(0, corr/2))- C.getVal(mc[i])  * D.getVal(mcKK[i]) * exp(complex_t(0, -corr/2)));
+   //fcalcCorrL +=std::norm(A.getVal(mc[i]) * B.getVal(mcKK[i]) - C.getVal(mc[i])  * D.getVal(mcKK[i]) );
+
+
+  }
+  clockcalcCorrL.stop();
+  std::vector<double> s01(mc.size()), s02(mc.size());
+
+  for (int i=0;i<mc.size();i++){
+      s01[i] = mc[i].s(0,1);
+      s02[i] = mc[i].s(0,2);
+  }
+
+  
+
+  clockcalcCorrXY.start();
+  std::vector<double> corrXY(mc.size());
+  #pragma omp parallel for
+  for (int i=0;i<mc.size();i++){
+    double _corrXY = pc.calcCorrXY(s01[i], s02[i]);
+    corrXY[i] = std::norm(As[i] * Bs[i] * exp(complex_t(0, _corrXY/2)) - Cs[i] * Ds[i] * exp(complex_t(0, -_corrXY/2)));
+  }
+
+
+  for (int i=0;i<mc.size();i++){
+
+    //fcalcCorrXY += std::norm(As[i] * Bs[i] * exp(complex_t(0, corrXY[i]/2)) - Cs[i] * Ds[i] * exp(complex_t(0, -corrXY[i]/2)));
+    //fcalcCorrXY += std::norm(As[i] * Bs[i] - Cs[i] * Ds[i]);
+    fcalcCorrXY += corrXY[i];
+
+  }
+  clockcalcCorrXY.stop();
+
+  INFO("Got "<<fcalcCorrL<<" took "<<clockcalcCorrL<<" for f(evt)");
+  INFO("Got "<<fcalcCorrXY<<" took "<<clockcalcCorrXY<<" for f(s01, s02)");
+
 
 
   ProfileClock clockgetVal;
@@ -172,11 +237,7 @@ INFO("Why did "<<nL<<" take longer?");
   INFO("log10 = "<<log(10));
   double x0 = 3;
   INFO("leg_8(x) = "<<std::legendre(8, x0));
-  ProfileClock clockManual;
-  clockManual.start();
-  double normManual = psi.norm();
-  clockManual.stop();
-  INFO("My value for norm by sum(|psi|^2) = "<<normManual<<" took "<<clockManual);
+
   real_t N = mc.size();
   real_t nA=0;
   real_t nC = 0;
