@@ -25,7 +25,8 @@ namespace AmpGen
         PHASESPACE m_gpsTag;
 
         size_t     m_generatorBlock = {5000000};
-        TRandom*   m_rnd            = {gRandom};
+        TRandom*   m_rndSig            = {gRandom};
+        TRandom*   m_rndTag            = {gRandom};
         bool       m_normalise      = {true};
 
       public:
@@ -36,15 +37,16 @@ namespace AmpGen
             m_gpsTag = tagPH;
             m_sigType = m_gpsSig.eventType();
             m_tagType = m_gpsTag.eventType();
-            setRandom( m_rnd );
+            setRandom( m_rndSig, m_rndTag );
           }
         PHASESPACE phspSig() { return m_gpsSig; }
         PHASESPACE phspTag() { return m_gpsTag; }
-        void setRandom( TRandom* rand )
+        void setRandom( TRandom* randSig, TRandom* randTag )
         {
-          m_rnd = rand;
-          m_gpsSig.setRandom( m_rnd );
-          m_gpsTag.setRandom( m_rnd );
+          m_rndSig = randSig;
+          m_rndTag = randTag;
+          m_gpsSig.setRandom( m_rndSig );
+          m_gpsTag.setRandom( m_rndTag );
         }
         void fillEventListPhaseSpace( EventList& listSig, EventList& listTag, const size_t& N, const size_t& cacheSize = 0 )
         {
@@ -77,7 +79,7 @@ namespace AmpGen
         template <class PDF, class HARD_CUT>
           void fillEventList( PDF& pdf, EventList& listSig, EventList& listTag, const size_t& N, HARD_CUT cut )
           {
-            if ( m_rnd == nullptr ) {
+            if ( m_rndSig == nullptr  || m_rndTag == nullptr) {
               ERROR( "Random generator not set!" );
               return;
             }
@@ -136,9 +138,12 @@ namespace AmpGen
                   if (mcSig[i].genPdf() > normalisationConstant ) WARNING( "PDF value exceeds norm value: " << mcSig[i].genPdf() << " > " << normalisationConstant );
                   if (mcTag[i].genPdf() > normalisationConstant ) WARNING( "PDF value exceeds norm value: " << mcTag[i].genPdf() << " > " << normalisationConstant );
                 }
-                auto threshold = normalisationConstant * m_rnd->Rndm();
-                if ( mcSig[i].genPdf() > threshold ) listSig.push_back( mcSig[i] );
-                if ( mcTag[i].genPdf() > threshold ) listTag.push_back( mcTag[i] );
+                auto thresholdSig = normalisationConstant * m_rndSig->Rndm();
+                auto thresholdTag = normalisationConstant * m_rndTag->Rndm();
+                if ( mcSig[i].genPdf() > thresholdSig && mcTag[i].genPdf() > thresholdTag  ) {
+                  listSig.push_back( mcSig[i] );
+                 listTag.push_back( mcTag[i] );
+                }
                 if ( listSig.size() - size0 == N  && listTag.size() - size0 == N) break;
               }
               t_acceptReject.stop();
@@ -160,7 +165,7 @@ namespace AmpGen
 template <class PDF>
           void filterEventList( PDF& pdf, EventList& listSig, EventList& listTag, EventList& inSig, EventList& inTag, const size_t& N )
           {
-            if ( m_rnd == nullptr ) {
+            if ( m_rndSig == nullptr && m_rndTag == nullptr ) {
               ERROR( "Random generator not set!" );
               return;
             }
@@ -206,8 +211,9 @@ template <class PDF>
                   if (inSig[i].genPdf() > normalisationConstant ) WARNING( "PDF value exceeds norm value: " << inSig[i].genPdf() << " > " << normalisationConstant );
                   if (inTag[i].genPdf() > normalisationConstant ) WARNING( "PDF value exceeds norm value: " << inTag[i].genPdf() << " > " << normalisationConstant );
                 }
-                auto threshold = normalisationConstant * m_rnd->Rndm();
-                if ( inSig[i].genPdf() > threshold &&  inTag[i].genPdf() > threshold   )
+                auto thresholdSig = normalisationConstant * m_rndSig->Rndm();
+                auto thresholdTag = normalisationConstant * m_rndTag->Rndm();
+                if ( inSig[i].genPdf() > thresholdSig &&  inTag[i].genPdf() > thresholdSig   )
                 { listSig.push_back( inSig[i] );
                listTag.push_back( inTag[i] );
                 }

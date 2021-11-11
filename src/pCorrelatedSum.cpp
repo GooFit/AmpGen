@@ -136,12 +136,32 @@ if (m_debug){
 INFO("v = "<<getValNoCache( (*m_sim1)[0], (*m_sim2)[0] ));
   }
   real_t acR, acI, bdR, bdI;
-
+  real_t n1 = m_sim1->size();
+  real_t n2 = m_sim2->size();
+  INFO("Have "<<m_sim1->size()<<" x "<<m_sim2->size()<<" integration events");
   #pragma omp parallel for reduction( +: n )
+
+
   for (size_t i=0; i<(*m_sim1).size(); i++){
-    n+=std::norm(getVal((*m_sim1)[i], (*m_sim2)[i]))/(real_t) (*m_sim1).size();
-//    n+=std::norm(getValForNorm(i))/(real_t) (*m_sim1).size();
-  
+  for (size_t j=0; j<(*m_sim2).size(); j++){
+
+    Event evt1 = (*m_sim1)[i];
+    Event evt2 = (*m_sim2)[j];
+auto a = m_A.getValNoCache(evt1);
+auto b = m_B.getValNoCache(evt2);
+auto c = m_C.getValNoCache(evt1);
+auto d = m_D.getValNoCache(evt2);
+    auto f = m_pc1.calcCorrL(evt1);
+    if (m_sameTag) f = (m_pc1.calcCorrL(evt1) - m_pc2.calcCorrL(evt2));
+    complex_t psi = m_A.getValNoCache(evt1) * m_B.getValNoCache(evt2) * exp(complex_t(0, f/2)) + getSumFactor() *  m_C.getValNoCache(evt1) * m_D.getValNoCache(evt2) * exp(complex_t(0, -f/2));
+    real_t psi2 = std::norm(a) * std::norm(b) + std::norm(c) * std::norm(d) - 2*std::real(a * b * std::conj(c * d));
+    //n+=std::norm(psi)/(n1 * n2);
+    n+=psi2/(n1 * n2);
+    
+  }
+//    n+=std::norm(getValNoCache((*m_sim1)[i], (*m_sim2)[i]))/(real_t) (*m_sim1).size();
+   // n+=std::norm(getValForNorm(i))/(real_t) (*m_sim1).size();
+   // if (m_sameTag) INFO("n = "<<n); 
    // complex_t ac = m_ACstMC[i] * exp(complex_t(0, m_pc1.calcCorrL((*m_sim1)[i])))/(real_t) (*m_sim1).size() ;
     //complex_t bd = m_BDstMC[i]/(real_t) (*m_sim1).size();
    // acR += std::real(ac);
@@ -200,6 +220,9 @@ void pCorrelatedSum::setEvents(EventList& list1, EventList& list2){
 void pCorrelatedSum::setMC(EventList& list1, EventList& list2){
   m_sim1 = &list1;
   m_sim2 = &list2;
+  INFO("Setting MC "<<list1.size()<<" for m_sim1 which now has "<<m_sim1->size());
+  INFO("Setting MC "<<list2.size()<<" for m_sim2 which now has "<<m_sim2->size());
+
   m_A.setMC(list1);
   m_B.setMC(list2);
   m_C.setMC(list1);
@@ -284,26 +307,33 @@ complex_t pCorrelatedSum::getVal(const Event& evt1, const Event& evt2) const {
   return m_A.getVal(evt1) * m_B.getVal(evt2) * exp(complex_t(0, f/2)) + getSumFactor() *  m_C.getVal(evt1) * m_D.getVal(evt2) * exp(complex_t(0, -f/2));
 }
 complex_t pCorrelatedSum::getValNoCache(const Event& evt1, const Event& evt2) const {
-  complex_t A = m_A.getValNoCache(evt1);
-  complex_t B = m_B.getValNoCache(evt2);
-  complex_t C = m_C.getValNoCache(evt1);
-  complex_t D = m_D.getValNoCache(evt2);
-  complex_t f = m_pc1.calcCorrL(evt1);
-  if (m_sameTag){
-    f -= m_pc1.calcCorrL(evt2);
+  if (m_flat) return 1;
+  auto f = m_pc1.calcCorrL(evt1);
+  if (m_debug){
+    INFO("A(evt) = "<<m_A.getValNoCache(evt1));
+    INFO("B(evt) = "<<m_B.getValNoCache(evt2));
+    INFO("C(evt) = "<<m_C.getValNoCache(evt1));
+    INFO("D(evt) = "<<m_D.getValNoCache(evt2));
   }
-  auto i = Constant(0,1);
-
-  //auto sumFactor = getSumFactor();
-  double sumFactor = -1;
-  complex_t val = A  *exp(i()*f/2.) * B + sumFactor * C * D  *exp(-i()*f/2.);
-  //complex_t val = A *exp(i()*f)* B - C * D;
-  if (m_flat){
-    val = 1;
+  //auto f = m_pc1.getValCache(evt1)/2;
+  //if (m_sameTag) f = (m_pc1.getValCache(evt1) - m_pc2.getValCache(evt2))/2;
+  //if (m_sameTag) f = (m_pc1.getValCache(evt1) - m_pc2.getValCache(evt2))/2;
+  if (m_sameTag) f = (m_pc1.calcCorrL(evt1) - m_pc2.calcCorrL(evt2));
+ // return m_A.getVal(evt1) * m_B.getVal(evt2) * exp( std::complex<double>(0,1) ) + getSumFactor() *  m_C.getVal(evt1) * m_D.getVal(evt2) * exp(-std::complex<double>(0,1) );
+  complex_t psi = m_A.getValNoCache(evt1) * m_B.getValNoCache(evt2) * exp(complex_t(0, f/2)) + getSumFactor() *  m_C.getValNoCache(evt1) * m_D.getValNoCache(evt2) * exp(complex_t(0, -f/2));
+  if (m_sameTag && psi==complex_t(0,0)){
+    INFO("evt1= "<<evt1.s(0,1)<<" evt2 = "<<evt2.s(0,1));
+    INFO("A(evt) = "<<m_A.getValNoCache(evt1));
+    INFO("B(evt) = "<<m_B.getValNoCache(evt2));
+    INFO("C(evt) = "<<m_C.getValNoCache(evt1));
+    INFO("D(evt) = "<<m_D.getValNoCache(evt2));
+    INFO("psi(evt) = "<<psi);
   }
-  return val;
+ 
+ 
+//  return m_A.getValNoCache(evt1) * m_B.getValNoCache(evt2) * exp(complex_t(0, f/2)) + getSumFactor() *  m_C.getValNoCache(evt1) * m_D.getValNoCache(evt2) * exp(complex_t(0, -f/2));
+  return psi;
 }
-
 
 void pCorrelatedSum::debugNorm()
 {
@@ -315,10 +345,19 @@ INFO("ACst[0] = "<<m_ACstMC[0]);
   real_t nC_0 = m_C.norm();
   real_t nD_0 = m_D.norm();
   real_t nA_1 = 0;
+  real_t nB_1 = 0;
+  real_t nC_1 = 0;
+  real_t nD_1 = 0;
   for (size_t i=0;i<(*m_sim1).size();i++){
     nA_1 += std::norm(m_A.getValNoCache((*m_sim1)[i]));
+    nB_1 += std::norm(m_B.getValNoCache((*m_sim2)[i]));
+    nC_1 += std::norm(m_C.getValNoCache((*m_sim1)[i]));
+    nD_1 += std::norm(m_D.getValNoCache((*m_sim2)[i]));
   }
   nA_1 = nA_1/(real_t)(*m_sim1).size();
+  nB_1 = nB_1/(real_t)(*m_sim1).size();
+  nC_1 = nC_1/(real_t)(*m_sim1).size();
+  nD_1 = nD_1/(real_t)(*m_sim1).size();
   INFO("nA_0 = "<<nA_0);
   INFO("nB_0 = "<<nB_0);
   INFO("nC_0 = "<<nC_0);
@@ -329,26 +368,40 @@ INFO("ACst[0] = "<<m_ACstMC[0]);
   real_t n1 = 0;
   complex_t in1 = 0;
   complex_t in2= 0;
+  complex_t in3 = 0;
+  real_t n2 = 0;
   for (size_t i=0;i<(*m_sim1).size();i++){
     n1 += std::norm(getValNoCache((*m_sim1)[i], (*m_sim2)[i]));
     in1 += m_A.getValNoCache((*m_sim1)[i]) * std::conj(m_C.getValNoCache((*m_sim1)[i])) * exp(complex_t(0, m_pc1.calcCorrL((*m_sim1)[i])))/(real_t)(*m_sim1).size();
     in2 += m_B.getValNoCache((*m_sim2)[i]) * std::conj(m_D.getValNoCache((*m_sim2)[i]))/(real_t)(*m_sim1).size();
+    in3 += m_A.getValNoCache((*m_sim1)[i]) * std::conj(m_C.getValNoCache((*m_sim1)[i])) * exp(complex_t(0, m_pc1.calcCorrL((*m_sim1)[i]))) * m_B.getValNoCache((*m_sim2)[i]) * std::conj(m_D.getValNoCache((*m_sim2)[i]))/(real_t)(*m_sim1).size();
+    n2 += std::norm(m_A.getValNoCache((*m_sim1)[i])) * std::norm(m_B.getValNoCache((*m_sim2)[i])) +
+          std::norm(m_C.getValNoCache((*m_sim1)[i])) * std::norm(m_D.getValNoCache((*m_sim2)[i]));
+
+
+
+
 
   }
   
   n1 = n1/(real_t)(*m_sim1).size();
+  n2 = n2/(real_t)(*m_sim2).size();
   real_t z0 = n0 - m_A.norm() * m_B.norm()- m_C.norm() * m_D.norm();
-  real_t z1 = n1 - m_A.norm() * m_B.norm()- m_C.norm() * m_D.norm();
+  real_t z1 = n1 - nA_1 * nB_1 - nC_1 * nD_1;
 
   real_t z2 =-2 * std::real( in1 * in2);
+  real_t z3 =-2 * std::real( in3);
   
 
   INFO("n0 = "<<n0);
   INFO("n1 = "<<n1);
+  INFO("n2 = "<<n2);
+  INFO("n0 - n2 = "<<n0 - n2);
 
-  INFO("z1 = "<<z0);
+  INFO("z0 = "<<z0);
   INFO("z1 = "<<z1);
   INFO("z2 = "<<z2);
+  INFO("z2 = "<<z3);
 
   updateNorm();
   real_t pA =0;

@@ -160,7 +160,7 @@ namespace AmpGen
                 //m_DMC.insert(std::pair<EventType, std::vector<complex_t> >(m_TagType[i],DMC));
             }
             //Data
-            for (int i=0;i<SigData.size();i++){
+            for (size_t i=0;i<SigData.size();i++){
 
                 std::vector<complex_t> vA= {};
                 std::vector<complex_t> vB = {};
@@ -196,7 +196,7 @@ namespace AmpGen
                 }
 
             }
-            for (int i=0; i< GamData.size();i++){
+            for (size_t i=0; i< GamData.size();i++){
                 std::vector<complex_t> vgA;
                 std::vector<complex_t> vgC;
                 CoherentSum * A = new CoherentSum(m_SigType, m_mps);            A->setEvents(GamData[i]); A->setMC(mc);  A->transferParameters(); A->prepare(); for (auto& evt:GamData[i]) {vgA.push_back(A->getValNoCache(evt));} A->reset(true); delete A;
@@ -217,7 +217,7 @@ namespace AmpGen
 
 
         real_t NormCorr(int i){
-            real_t n=0;
+            
             //complex_t w1=0;
 	    complex_t w1(0,0);
 	    complex_t w2(0,0);
@@ -226,7 +226,7 @@ namespace AmpGen
 	    real_t w1R=0;
 	    real_t w1I=0;
 	    #pragma omp parallel for reduction( +: w1R ) reduction ( +:w1I ) 
-            for (int j=0; j < m_AMC.size(); j++){
+            for (size_t j=0; j < m_AMC.size(); j++){
 	      
                 real_t f = m_pcMC.getValCache(j);
                 complex_t _w1=m_AMC[j] * std::conj(m_CMC[j]) * exp(complex_t(0,f))/(real_t)m_AMC.size();
@@ -246,7 +246,7 @@ namespace AmpGen
 		   real_t w2R=0;	
 		   real_t w2I=0;	
 		   #pragma omp parallel for reduction( +: w1R ) reduction ( +:w1I ) 
-		   for (int j=0; j < m_BMC[i].size(); j++){
+		   for (size_t j=0; j < m_BMC[i].size(); j++){
 		       complex_t _w2=m_BMC[i][j] * std::conj(m_DMC[i][j])/(real_t)m_AMC.size();
              	       w2R += std::real(_w2);
 		       w2I += std::real(_w2);
@@ -310,7 +310,7 @@ namespace AmpGen
           }
 
         real_t NormGam(size_t i){
-            real_t n=0;
+            
             complex_t sf = sumFactor(m_gammaSigns[i], m_useXYs[i]);
             //complex_t w1=0;
 	    complex_t w1(0,0);
@@ -353,7 +353,7 @@ namespace AmpGen
  //           INFO("norm = "<<n);
             complex_t sf = sumFactor(m_gammaSigns[i], m_useXYs[i]);
             for (size_t j=0;j<m_gA[i].size(); j++){
-                real_t pdf = 0;
+                
 
                 real_t f = m_pcg[i].getValCache(j);
                
@@ -391,11 +391,11 @@ namespace AmpGen
 
         double getVal(){
             double ll =0 ;
-            for (int i=0;i<m_A.size();i++){
+            for (size_t i=0;i<m_A.size();i++){
                 ll+=LLCorr(i);
             }
             /*
-            for (int i=0; i< m_gA.size();i++){
+            for (size_t i=0; i< m_gA.size();i++){
                 ll+=LLGam(i);
             }
             */

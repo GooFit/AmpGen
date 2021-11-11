@@ -132,7 +132,7 @@ EventList mcKK =  Generator<>(KK, &rndm).generate(NamedParameter<size_t>("NInt",
   D.setEvents(mcKK); D.setMC(mcKK); D.prepare();
 
   std::vector<complex_t> As, Bs, Cs, Ds;
-  for (int i=0;i<mc.size();i++){
+  for (size_t i=0;i<mc.size();i++){
     As.push_back(A.getVal(mc[i]));
     Bs.push_back(B.getVal(mcKK[i]));
     Cs.push_back(C.getVal(mc[i]));
@@ -145,7 +145,7 @@ EventList mcKK =  Generator<>(KK, &rndm).generate(NamedParameter<size_t>("NInt",
   clockcalcCorrL.start();
 
   #pragma omp parallel for reduction (+:fcalcCorrL)
-  for (int i=0;i<mc.size();i++){
+  for (size_t i=0;i<mc.size();i++){
     double corr = pc.calcCorrL(mc[i]);
    fcalcCorrL +=std::norm(A.getVal(mc[i]) * B.getVal(mcKK[i])  * exp(complex_t(0, corr/2))- C.getVal(mc[i])  * D.getVal(mcKK[i]) * exp(complex_t(0, -corr/2)));
    //fcalcCorrL +=std::norm(A.getVal(mc[i]) * B.getVal(mcKK[i]) - C.getVal(mc[i])  * D.getVal(mcKK[i]) );
@@ -155,7 +155,7 @@ EventList mcKK =  Generator<>(KK, &rndm).generate(NamedParameter<size_t>("NInt",
   clockcalcCorrL.stop();
   std::vector<double> s01(mc.size()), s02(mc.size());
 
-  for (int i=0;i<mc.size();i++){
+  for (size_t i=0;i<mc.size();i++){
       s01[i] = mc[i].s(0,1);
       s02[i] = mc[i].s(0,2);
   }
@@ -165,13 +165,13 @@ EventList mcKK =  Generator<>(KK, &rndm).generate(NamedParameter<size_t>("NInt",
   clockcalcCorrXY.start();
   std::vector<double> corrXY(mc.size());
   #pragma omp parallel for
-  for (int i=0;i<mc.size();i++){
+  for (size_t i=0;i<mc.size();i++){
     double _corrXY = pc.calcCorrXY(s01[i], s02[i]);
     corrXY[i] = std::norm(As[i] * Bs[i] * exp(complex_t(0, _corrXY/2)) - Cs[i] * Ds[i] * exp(complex_t(0, -_corrXY/2)));
   }
 
 
-  for (int i=0;i<mc.size();i++){
+  for (size_t i=0;i<mc.size();i++){
 
     //fcalcCorrXY += std::norm(As[i] * Bs[i] * exp(complex_t(0, corrXY[i]/2)) - Cs[i] * Ds[i] * exp(complex_t(0, -corrXY[i]/2)));
     //fcalcCorrXY += std::norm(As[i] * Bs[i] - Cs[i] * Ds[i]);
@@ -191,7 +191,7 @@ EventList mcKK =  Generator<>(KK, &rndm).generate(NamedParameter<size_t>("NInt",
   complex_t v0forNorm=0;
   std::vector<double> timesGetVal;
   std::vector<double> timesGetValForNorm;
-  for (int i=0;i<mc.size();i++){
+  for (size_t i=0;i<mc.size();i++){
   clockgetVal.start();
   v0 = psi.getVal(mc[i], mcKK[i]);
   clockgetVal.stop();
@@ -200,7 +200,7 @@ EventList mcKK =  Generator<>(KK, &rndm).generate(NamedParameter<size_t>("NInt",
 
 
 
-  for (int i=0;i<mc.size();i++){
+  for (size_t i=0;i<mc.size();i++){
   clockgetValForNorm.start();
   v0forNorm = psi.getValForNorm(i);
   clockgetValForNorm.stop();
@@ -218,7 +218,7 @@ EventList mcKK =  Generator<>(KK, &rndm).generate(NamedParameter<size_t>("NInt",
 
 
   int nL=0;
-  for (int i=0;i<mc.size();i++){
+  for (size_t i=0;i<mc.size();i++){
 clockgetValForNorm.start();
   v0forNorm = psi.getValForNorm(i);
   clockgetValForNorm.stop();
@@ -244,7 +244,7 @@ INFO("Why did "<<nL<<" take longer?");
   ProfileClock clockNormSum;
   clockNormSum.start();
   double normSum = 0;
-  for (int i=0;i<mc.size();i++){
+  for (size_t i=0;i<mc.size();i++){
     normSum += std::norm(psi.getVal(mc[i], mcKK[i]))/N;
   }
   clockNormSum.stop();
@@ -285,7 +285,7 @@ INFO("Why did "<<nL<<" take longer?");
   ProfileClock clockMyNorm;
   clockMyNorm.start();
   clockPsi2Arr.start();
-  for (int i=0;i<mc.size();i++){
+  for (size_t i=0;i<mc.size();i++){
   clockCorr.start();
     double corr = pc.calcCorrL(mc[i]);
   clockCorr.stop();
@@ -311,7 +311,7 @@ INFO("Why did "<<nL<<" take longer?");
   double myNormLoop = 0;
   ProfileClock clockLoop;
   clockLoop.start();
-  for (int i=0;i<psi2Arr.size();i++){
+  for (size_t i=0;i<psi2Arr.size();i++){
     myNormLoop += psi2Arr[i];
   }
   clockLoop.stop();

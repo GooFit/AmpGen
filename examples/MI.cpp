@@ -55,11 +55,12 @@ template <class PDF_TYPE, class PRIOR_TYPE>
                        , PRIOR_TYPE& priorTag
                        , const size_t& nEvents
                        , const size_t& blockSize
-                       , TRandom* rndm 
+                       , TRandom* rndmSig 
+                       , TRandom* rndmTag
 		       )
 {
   QcGenerator<PRIOR_TYPE> signalGenerator( priorSig, priorTag );
-  signalGenerator.setRandom( rndm);
+  signalGenerator.setRandom( rndmSig, rndmTag);
   signalGenerator.setBlockSize( blockSize );
   signalGenerator.fillEventList( pdf, eventsSig, eventsTag, nEvents );
 }
@@ -666,9 +667,11 @@ int main( int argc, char* argv[] )
   if (intFile == ""){
 
   }
-  TRandom3 rndm;
-  rndm.SetSeed( seed );
-  gRandom = &rndm;
+  TRandom3 rndmSig;
+    TRandom3 rndmTag;
+  rndmSig.SetSeed( seed + 100 );
+  rndmTag.SetSeed( seed + 101 );
+  gRandom = &rndmSig;
 
   INFO("LogFile: " << logFile << "; Plots: " << plotFile );
    #ifdef _OPENMP
@@ -1198,11 +1201,13 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
 
 void GGSZ(MinuitParameterSet MPS, EventType eventType){
     int nBins = NamedParameter<int>("nBins", 8, "number of bins for MI");
-  TRandom3 rndm;
-  rndm.SetSeed( NamedParameter<size_t>("Seed",0) );
-  gRandom = &rndm;
+  TRandom3 rndmSig;
+  TRandom3 rndmTag;
+  rndmSig.SetSeed( NamedParameter<size_t>("Seed",0)  + 100);
+  rndmTag.SetSeed( NamedParameter<size_t>("Seed",0)  + 101);
+  gRandom = &rndmSig;
   int NIntBins = NamedParameter<int>("NIntBins", 1000);
-    EventList mc =  Generator<>(eventType, &rndm).generate(NIntBins);
+    EventList mc =  Generator<>(eventType, &rndmSig).generate(NIntBins);
     CoherentSum A(eventType, MPS);
     bool conjHead = NamedParameter<bool>("conjHead", true);
     CoherentSum C(eventType.conj(conjHead), MPS);
@@ -1235,18 +1240,18 @@ void GGSZ(MinuitParameterSet MPS, EventType eventType){
 
 
 	
-    PhaseSpace phspSig(eventType,&rndm);
-    PhaseSpace phspTag_KK(KK,&rndm);
-    PhaseSpace phspTag_Kppim(Kppim,&rndm);
+    PhaseSpace phspSig(eventType,&rndmSig);
+    PhaseSpace phspTag_KK(KK,&rndmTag);
+    PhaseSpace phspTag_Kppim(Kppim,&rndmTag);
     pCorrelatedSum cs_KK(eventType, KK, MPS);
     pCorrelatedSum cs_Kppim(eventType, Kppim, MPS);
     pCorrelatedSum cs_Kspipi(eventType, eventType, MPS);
     INFO("Generating Events now!");
     size_t blockSize = NamedParameter<size_t>("blockSize", 10000);
     size_t nCorrEvents      = NamedParameter<size_t>     ("nCorrEvents"  , 10000, "Total number of events to generate" );
-    GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , nCorrEvents, blockSize, &rndm );
-    GenerateCorrEvents( sig_Kppim, tag_Kppim, cs_Kppim, phspSig, phspTag_Kppim , nCorrEvents, blockSize, &rndm );
-    GenerateCorrEvents( sig_Kspipi, tag_Kspipi, cs_Kspipi, phspSig, phspSig , nCorrEvents, blockSize, &rndm );
+    GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , nCorrEvents, blockSize, &rndmSig, &rndmTag );
+    GenerateCorrEvents( sig_Kppim, tag_Kppim, cs_Kppim, phspSig, phspTag_Kppim , nCorrEvents, blockSize, &rndmSig, &rndmTag );
+    GenerateCorrEvents( sig_Kspipi, tag_Kspipi, cs_Kspipi, phspSig, phspSig , nCorrEvents, blockSize, &rndmSig, &rndmTag );
 
     pCoherentSum psiBplus( eventType, MPS, 1, true, true);
     pCoherentSum psiBminus( eventType, MPS, -1, true, false);
@@ -1255,8 +1260,8 @@ void GGSZ(MinuitParameterSet MPS, EventType eventType){
 
    
     size_t nBEvents      = NamedParameter<size_t>     ("nBEvents"  , 10000, "Total number of events to generate" );
-    GenerateEvents(BpEvents, psiBplus, phspSig, nBEvents, blockSize, &rndm);
-    GenerateEvents(BmEvents, psiBminus, phspSig, nBEvents, blockSize, &rndm);
+    GenerateEvents(BpEvents, psiBplus, phspSig, nBEvents, blockSize, &rndmSig);
+    GenerateEvents(BmEvents, psiBminus, phspSig, nBEvents, blockSize, &rndmSig);
 
     psiBplus.setEvents(BpEvents);
     psiBplus.setMC(mc);
@@ -1371,9 +1376,11 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
   
     size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
     size_t nBins = NamedParameter<size_t>("nBins", 8);
-    TRandom3 rndm;
-  rndm.SetSeed( seed );
-  gRandom = &rndm;
+    TRandom3 rndmSig;
+    TRandom3 rndmTag;
+  rndmSig.SetSeed( seed + 100 );
+  rndmTag.SetSeed( seed + 101);
+  gRandom = &rndmSig;
 
 
     std::vector<std::string>  KKstr = {"D0", "K+", "K-"};
@@ -1394,9 +1401,9 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
 
 
 	
-    PhaseSpace phspSig(eventType,&rndm);
-    PhaseSpace phspTag_KK(KK,&rndm);
-    PhaseSpace phspTag_Kppim(Kppim,&rndm);
+    PhaseSpace phspSig(eventType,&rndmSig);
+    PhaseSpace phspTag_KK(KK,&rndmTag);
+    PhaseSpace phspTag_Kppim(Kppim,&rndmTag);
  //   pCorrelatedSum cs_KK(eventType, KK, MPS);
 
 
@@ -1439,7 +1446,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
     fRefEqual->Close();
 
 
-    EventList mc =  Generator<>(eventType, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
+    EventList mc =  Generator<>(eventType, &rndmSig).generate(NamedParameter<size_t>("nMC", 10000));
     CoherentSum A(eventType, MPS);
     CoherentSum C(eventType.conj(true), MPS);
     A.setEvents(mc);
@@ -1486,9 +1493,9 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
     bool doCP = NamedParameter<bool>("doCP", true);
     if (doCP){
     pCorrelatedSum cs_KK(eventType, KK, MPS);
-        GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , NamedParameter<size_t>("nCorrEvents", 100000), blockSize, &rndm );
+        GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , NamedParameter<size_t>("nCorrEvents", 100000), blockSize, &rndmSig, &rndmTag );
 
-        EventList mcKK =  Generator<>(KK, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
+        EventList mcKK =  Generator<>(KK, &rndmSig).generate(NamedParameter<size_t>("nMC", 10000));
         std::vector<std::map<int, EventList> > binnedEvents = binEventsFromRef(sig_KK, tag_KK, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
         std::map<int, double> NSig;
         std::map<int, double> NTag;
@@ -1550,7 +1557,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
         EventList sig = sig_Kspipi;
         EventList tag = tag_Kspipi;
         PhaseSpace phspTag = phspSig;
-        GenerateCorrEvents( sig, tag, cs_Kspipi, phspSig, phspTag , NamedParameter<size_t>("nCorrEvents", 100000), blockSize, &rndm );
+        GenerateCorrEvents( sig, tag, cs_Kspipi, phspSig, phspTag , NamedParameter<size_t>("nCorrEvents", 100000), blockSize, &rndmSig, &rndmTag );
 
         CoherentSum A(eventType, MPS);
         CoherentSum B(eventType.conj(true), MPS);
@@ -1645,8 +1652,8 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
 
     
         size_t nBEvents      = NamedParameter<size_t>     ("nBEvents"  , 1000, "Total number of events to generate" );
-        GenerateEvents(BpEvents, psiBplus, phspSig, nBEvents, blockSize, &rndm);
-        GenerateEvents(BmEvents, psiBminus, phspSig, nBEvents, blockSize, &rndm);
+        GenerateEvents(BpEvents, psiBplus, phspSig, nBEvents, blockSize, &rndmSig);
+        GenerateEvents(BmEvents, psiBminus, phspSig, nBEvents, blockSize, &rndmSig);
 
         std::vector<std::map<int, EventList> > binnedEventsBp = binEventsFromRef(BpEvents, BpEvents, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
         std::vector<std::map<int, EventList> > binnedEventsBm = binEventsFromRef(BmEvents, BmEvents, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
@@ -1752,9 +1759,11 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
 
     size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
     
-    TRandom3 rndm;
-    rndm.SetSeed( NamedParameter<int>("Seed", 0) );
-    gRandom = &rndm;
+    TRandom3 rndmSig;
+    TRandom3 rndmTag;
+    rndmSig.SetSeed( NamedParameter<int>("Seed", 0) + 100 );
+    rndmTag.SetSeed( NamedParameter<int>("Seed", 0) + 101 );
+    gRandom = &rndmSig;
  
 
     size_t nBins(NamedParameter<size_t>("nBins", 8));
@@ -1797,11 +1806,11 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
  
 
 
-    PhaseSpace phspSig(eventType,&rndm);
-    PhaseSpace phspTag_KK(KK,&rndm);
-    PhaseSpace phspTag_Kspi0(Kspi0,&rndm);
-    PhaseSpace phspTag_Kppim(Kppim,&rndm);
-    PhaseSpace phspTag_Kmpip(Kmpip,&rndm);
+    PhaseSpace phspSig(eventType,&rndmSig);
+    PhaseSpace phspTag_KK(KK,&rndmTag);
+    PhaseSpace phspTag_Kspi0(Kspi0,&rndmTag);
+    PhaseSpace phspTag_Kppim(Kppim,&rndmTag);
+    PhaseSpace phspTag_Kmpip(Kmpip,&rndmTag);
 
 
     INFO("Generating correlated events");
@@ -1862,7 +1871,7 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
  
 
     
-    EventList mc =  Generator<>(eventType, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
+    EventList mc =  Generator<>(eventType, &rndmSig).generate(NamedParameter<size_t>("nMC", 10000));
     CoherentSum A(eventType, MPS);
     CoherentSum C(eventType.conj(true), MPS);
     A.setEvents(mc);
@@ -1888,7 +1897,7 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
     }
     
     INFO("Generating KK events");
-    GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , nCP, blockSize, &rndm );
+    GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , nCP, blockSize, &rndmSig, &rndmTag );
     INFO("Binning KK << nEvents = "<<sig_KK.size());
     std::vector<std::map<int, EventList> > binned_KK = binEventsFromRef(sig_KK, tag_KK, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
 
@@ -1902,7 +1911,7 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
 
  
     INFO("Generating Kspipi events");
-    GenerateCorrEvents( sig_Kspipi, tag_Kspipi, cs_Kspipi, phspSig, phspSig , nKspipi, blockSize, &rndm );
+    GenerateCorrEvents( sig_Kspipi, tag_Kspipi, cs_Kspipi, phspSig, phspSig , nKspipi, blockSize, &rndmSig, &rndmTag );
     INFO("Binning Kspipi");
     std::vector<std::map<std::pair<int, int>, EventList> > binned_Kspipi = binDTEventsFromRef(sig_Kspipi, tag_Kspipi, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
 
@@ -1928,19 +1937,19 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
 
 
     INFO("Generating Kspi0 events");
-    GenerateCorrEvents( sig_Kspi0, tag_Kspi0, cs_Kspi0, phspSig, phspTag_Kspi0 , nCP, blockSize, &rndm );
+    GenerateCorrEvents( sig_Kspi0, tag_Kspi0, cs_Kspi0, phspSig, phspTag_Kspi0 , nCP, blockSize, &rndmSig, &rndmTag );
     INFO("Generating Kppim events");
-    GenerateCorrEvents( sig_Kppim, tag_Kppim, cs_Kppim, phspSig, phspTag_Kppim , nD0, blockSize, &rndm );
+    GenerateCorrEvents( sig_Kppim, tag_Kppim, cs_Kppim, phspSig, phspTag_Kppim , nD0, blockSize, &rndmSig, &rndmTag );
     INFO("Generating Kmpip events");
-    GenerateCorrEvents( sig_Kmpip, tag_Kmpip, cs_Kmpip, phspSig, phspTag_Kmpip , nDbar0, blockSize, &rndm );
+    GenerateCorrEvents( sig_Kmpip, tag_Kmpip, cs_Kmpip, phspSig, phspTag_Kmpip , nDbar0, blockSize, &rndmSig, &rndmTag );
     
     
     INFO("Generating B+- events");
     pCoherentSum psiBplus( eventType, MPS, 1, true, true);
     pCoherentSum psiBminus( eventType, MPS, -1, true, false);
 
-    GenerateEvents(sig_Bp, psiBplus, phspSig, nB, blockSize, &rndm);
-    GenerateEvents(sig_Bm, psiBminus, phspSig, nB, blockSize, &rndm);
+    GenerateEvents(sig_Bp, psiBplus, phspSig, nB, blockSize, &rndmSig);
+    GenerateEvents(sig_Bm, psiBminus, phspSig, nB, blockSize, &rndmSig);
 
 
     INFO("Binning Kspi0");
@@ -1996,9 +2005,11 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
   auto pNames = NamedParameter<std::string>("EventType" , ""    
       , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
 
-    TRandom3 rndm;
-    rndm.SetSeed( NamedParameter<int>("Seed", 0) );
-    gRandom = &rndm;
+    TRandom3 rndmSig;
+    TRandom3 rndmTag;
+    rndmSig.SetSeed( NamedParameter<int>("Seed", 0) + 100);
+    rndmTag.SetSeed( NamedParameter<int>("Seed", 0) + 101);
+    gRandom = &rndmSig;
  
 
     size_t nBins(NamedParameter<size_t>("nBins", 8));
@@ -2042,7 +2053,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     fRefEqual->Close();
 
 
-    EventList mc =  Generator<>(eventType, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
+    EventList mc =  Generator<>(eventType, &rndmSig).generate(NamedParameter<size_t>("nMC", 10000));
     CoherentSum A(eventType, MPS);
     CoherentSum C(eventType.conj(true), MPS);
     A.setEvents(mc);
@@ -3089,9 +3100,11 @@ void printZ(MinuitParameterSet MPS, EventType eventType){
   auto pNames = NamedParameter<std::string>("EventType" , ""    
       , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
 
-    TRandom3 rndm;
-    rndm.SetSeed( NamedParameter<int>("Seed", 0) );
-    gRandom = &rndm;
+    TRandom3 rndmSig;
+    TRandom3 rndmTag;
+    rndmSig.SetSeed( NamedParameter<int>("Seed", 0)  + 100);
+    rndmTag.SetSeed( NamedParameter<int>("Seed", 0)  + 101);
+    gRandom = &rndmSig;
  
 
     size_t nBins(NamedParameter<size_t>("nBins", 8));
@@ -3135,7 +3148,7 @@ void printZ(MinuitParameterSet MPS, EventType eventType){
     fRefEqual->Close();
 
 
-    EventList mc =  Generator<>(eventType, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
+    EventList mc =  Generator<>(eventType, &rndmSig).generate(NamedParameter<size_t>("nMC", 10000));
     CoherentSum A(eventType, MPS);
     CoherentSum C(eventType.conj(true), MPS);
     A.setEvents(mc);

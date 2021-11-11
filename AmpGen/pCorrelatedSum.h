@@ -166,6 +166,61 @@ class pCorrelatedSum {
     void setMC1(EventList& list1);
     void setMC2(EventList& list2);
 
+    void setEventsByRef(EventList * list1, EventList * list2){
+        m_events1 = list1;
+        m_events2 = list1;
+        m_A.setEvents(*m_events1);
+        m_B.setEvents(*m_events2);
+        m_C.setEvents(*m_events1);
+        m_D.setEvents(*m_events2);
+        
+    }
+    void setMCByRef(EventList * list1, EventList * list2){
+        m_sim1 = list1;
+        m_sim2 = list2;
+        m_A.setMC(*m_sim1);
+        m_B.setMC(*m_sim2);
+        m_C.setMC(*m_sim1);
+        m_D.setMC(*m_sim2);
+        
+    }
+    real_t normFromZ(complex_t ACstF, complex_t BDst){
+        INFO("nA = "<<m_A.norm());
+        INFO("nB = "<<m_B.norm());
+        INFO("nC = "<<m_C.norm());
+        INFO("nD = "<<m_D.norm());
+        INFO("ACstF = "<<ACstF);
+        INFO("BDst = "<<BDst);
+        if (m_sameTag){        
+            return 2 * (m_A.norm() * m_C.norm() -std::pow(std::real(ACstF), 2));// * std::conj( ACstF )));
+        }
+        
+        return m_A.norm() * m_B.norm() + m_C.norm() * m_D.norm() - 2 * std::real(ACstF * BDst );
+        
+    }
+
+    complex_t getBDstSum(){
+        complex_t r = 0;
+        if (m_sameTag){
+
+
+            for (size_t j =0;j<m_sim2->size();j++){
+                r +=  m_C.getValNoCache((*m_sim2)[j]) * std::conj(m_A.getValNoCache((*m_sim2)[j])) * exp(complex_t(0,-m_pc2.calcCorrL((*m_sim2)[j]))); 
+            }
+
+
+            r = r/(real_t)m_sim2->size();
+        }
+        else{
+            for (size_t i =0;i<m_sim2->size();i++){
+                r += m_B.getValNoCache((*m_sim2)[i]) * std::conj(m_D.getValNoCache((*m_sim2)[i]));
+            }
+            r = r/(real_t)m_sim2->size();
+        }
+
+        return r;
+        
+    }
 
     void updateNorms(const std::vector<size_t>& iA, const std::vector<size_t>& iB,
         const std::vector<size_t>& iC, const std::vector<size_t>& iD);
@@ -260,10 +315,11 @@ real_t norm_manual() const{
 
 const real_t LL() const {
     real_t _LL = 0;
-   
+
+
     real_t n = norm();
     //INFO("n = "<<n);
-    #pragma omp parallel for reduction( +: _LL )
+    //#pragma omp parallel for reduction( +: _LL )
     for (size_t i=0; i < (*m_events1).size(); i++){
         _LL += log(std::norm(getVal((*m_events1)[i], (*m_events2)[i]))/n);
     }
@@ -600,7 +656,7 @@ const real_t LL() const {
         PhaseCorrection m_pcMC1;
         PhaseCorrection m_pc2;
         PhaseCorrection m_pcMC2;
-
+        complex_t m_BDMCSum;
         std::vector<complex_t> m_ACstMC = {};
         std::vector<complex_t> m_BDstMC = {};
 

@@ -203,7 +203,7 @@ int main( int argc, char* argv[] )
   size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Random seed to use.");
   //bool   poissonYield = NamedParameter<bool  >("PoissonYield", true        , "Flag to include Poisson fluctuations in expected yields (only if nEvents is not specified)");
   //bool   noQCFit      = NamedParameter<bool  >("noQCFit"     , false       , "Treat Signal and Tag as uncorrelated and fit the data individually");
-  double crossSection = NamedParameter<double>("CrossSection", 3.26 * 1000 , "Cross section for e⁺e⁻ → Ψ(3770) → DD'");
+  
   std::string output  = NamedParameter<std::string>("Output" , "ToyMC.root", "File containing output events"); 
   auto pNames = NamedParameter<std::string>("EventType" , ""    
       , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
@@ -213,11 +213,11 @@ int main( int argc, char* argv[] )
   auto BTags   = NamedParameter<std::string>("BTagTypes" , std::string(), "").getVector();
 
   bool m_debug        = NamedParameter<bool>("Debug", false, "Debug QcFitter output");
-    bool doDebugNorm  = NamedParameter<bool>("doDebugNorm", false, "Debug the normalisation of the pdf");
-    int nBins = NamedParameter<int>("nBins", 100, "number of bins for projection");
-    int nFits = NamedParameter<int>("nFits", 4, "number of repeats of mini.doFits() for debug purposes!");
-    bool doProjections = NamedParameter<bool>("doProjections", true);
-    bool doPCorrSum = NamedParameter<bool>("doPCorrSum", false);
+  
+  
+  
+  
+  
 //    bool doCombFit = NamedParameter<bool>("doCombFit", false, "Do a combined fit of 3 tags - at the moment this is hard coded for now");
 
 
@@ -231,10 +231,10 @@ int main( int argc, char* argv[] )
   std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
   bool makeCPConj      = NamedParameter<bool>("makeCPConj", false, "Make CP Conjugates");
   bool doCombFit      = NamedParameter<bool>("doCombFit", true, "Do combined fit");
-  bool doTagFit      = NamedParameter<bool>("doTagFit", true, "Do fit for each tag");
-  int  maxAttempts = NamedParameter<int>("maxAttempts", 5, "Max attempts to get a valid minimum from Minuit2");
-  bool QcGen2 = NamedParameter<bool>("QcGen2", false, "internal boolean - for new QcGenerator");
-  bool doFit = NamedParameter<bool>("doFit", true, "Do the fit");
+  
+  
+  
+  
   if( dataFile == "" ) FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off );
   if( pNames.size() == 0 ) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
   if (intFile == ""){
@@ -283,7 +283,7 @@ INFO("Doing loop of Fits");
 
  std::vector<CorrelatedLL<EventList, pCorrelatedSum&> > totalLL;
 // SimFit totalLL;
-for (int i=0; i < tags.size(); i++){
+for (size_t i=0; i < tags.size(); i++){
 MinuitParameterSet * MPS_tag = new MinuitParameterSet();
   MPS_tag->loadFromStream();
   if (makeCPConj){

@@ -73,11 +73,12 @@ template <class PDF_TYPE, class PRIOR_TYPE>
                        , PRIOR_TYPE& priorTag
                        , const size_t& nEvents
                        , const size_t& blockSize
-                       , TRandom* rndm 
+                       , TRandom* rndmSig
+                       , TRandom* rndmTag 
 		       )
 {
   QcGenerator<PRIOR_TYPE> signalGenerator( priorSig, priorTag );
-  signalGenerator.setRandom( rndm);
+  signalGenerator.setRandom( rndmSig, rndmTag);
   signalGenerator.setBlockSize( blockSize );
   signalGenerator.fillEventList( pdf, eventsSig, eventsTag, nEvents );
 }
@@ -92,11 +93,12 @@ template <class PDF_TYPE, class PRIOR_TYPE>
                        , PRIOR_TYPE& priorTag
                        , const size_t& nEvents
                        , const size_t& blockSize
-                       , TRandom* rndm 
+                       , TRandom* rndmSig
+                       , TRandom* rndmTag 
 		       )
 {
   QcGenerator<PRIOR_TYPE> signalGenerator( priorSig, priorTag );
-  signalGenerator.setRandom( rndm);
+  signalGenerator.setRandom( rndmSig, rndmTag);
   signalGenerator.setBlockSize( blockSize );
   signalGenerator.filterEventList( pdf, eventsSig, eventsTag,inSig, inTag, nEvents );
 }
@@ -176,8 +178,11 @@ for( auto& tag : tags ){
     }
     auto tagParticle  = Particle(tokens[1], {}, false);
     EventType    tagType = tagParticle.eventType();
-  TRandom3 rand;
-  rand.SetSeed( seed + 934534 );
+  TRandom3 randSig, randTag;
+  randSig.SetSeed( seed + 934534 );
+  randTag.SetSeed( seed + 934535 );
+
+
   //auto x = MinuitParameter("QcGen::X", Flag::Fix, 4, 0);
   //INFO("X = "<<x.mean());
   MinuitParameterSet* MPS = new MinuitParameterSet();
@@ -220,10 +225,10 @@ for( auto& tag : tags ){
   INFO("Making CorrelatedSum");
     pCorrelatedSum cs( sigType, tagType, *MPS ,sumFactor);
 
-    PhaseSpace phspSig(sigType,&rand);
-    PhaseSpace phspTag(tagType,&rand);
+    PhaseSpace phspSig(sigType,&randSig);
+    PhaseSpace phspTag(tagType,&randTag);
     INFO("Generating Events now!");
-    GenerateEvents( acceptedSig, acceptedTag, cs, phspSig, phspTag , nEvents_tag, blockSize, &rand );
+    GenerateEvents( acceptedSig, acceptedTag, cs, phspSig, phspTag , nEvents_tag, blockSize, &randSig, &randTag );
 
     if (debug){
 	    for (int i=0; i<acceptedSig.size(); i++){
