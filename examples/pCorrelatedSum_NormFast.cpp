@@ -320,7 +320,7 @@ INFO("Why did "<<nL<<" take longer?");
 
   ProfileClock clockgetC;
   clockgetC.start();
-  double c01 = MPS["PhaseCorrection::C0_1"]->mean();
+  
   clockgetC.stop();
   INFO("Took "<<clockgetC<<" to get 1 MPS param");
 

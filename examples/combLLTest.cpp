@@ -34,7 +34,7 @@ std::vector<std::string> makeBranches(EventType Type, std::string prefix){
   auto n = Type.finalStates().size();
   std::vector<std::string> branches;
   std::vector<std::string> varNames = {"PX", "PY", "PZ", "E"};
-  for (long unsigned int i=0; i<n; i++){
+  for (size_t i=0; i<n; i++){
     auto part = replaceAll(Type.finalStates()[i], "+", "p");
     part = replaceAll(part, "-", "m");
     for (auto varName : varNames){
@@ -172,18 +172,18 @@ int main( int argc, char* argv[] )
     auto tags           = NamedParameter<std::string>("TagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();
     bool m_debug        = NamedParameter<bool>("Debug", false, "Debug QcFitter output");
     
-    int nBins = NamedParameter<int>("nBins", 100, "number of bins for projection");
-    int nFits = NamedParameter<int>("nFits", 4, "number of repeats of mini.doFits() for debug purposes!");
-    bool doProjections = NamedParameter<bool>("doProjections", true);
-    bool doPCorrSum = NamedParameter<bool>("doPCorrSum", false);
+
+
+
+
     std::string dataFile = NamedParameter<std::string>("DataSample", ""          , "Name of file containing data sample to fit." );
     std::string intFile  = NamedParameter<std::string>("IntegrationSample",""    , "Name of file containing events to use for MC integration.");
   std::string logFile  = NamedParameter<std::string>("LogFile"   , "QcFitter.log", "Name of the output log file");
   std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
 
     bool makeCPConj      = NamedParameter<bool>("makeCPConj", false, "Make CP Conjugates");
-    bool doCombFit      = NamedParameter<bool>("doCombFit", false, "Do combined fit");
-    bool doTagFit      = NamedParameter<bool>("doTagFit", false, "Do fit for each tag");
+
+
     bool QcGen2 = NamedParameter<bool>("QcGen2", false, "internal boolean - for new QcGenerator");
     bool doFit = NamedParameter<bool>("doFit", true, "Do the fit");
     if( dataFile == "" ) FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off );
@@ -225,7 +225,7 @@ int main( int argc, char* argv[] )
     std::vector<std::string> sumFactors;
     double LL_comb_sum = 0;
     std::vector<double> LL_tags;
-    for (int i=0; i < tags.size(); i++){
+    for (size_t i=0; i < tags.size(); i++){
     MinuitParameterSet * MPS_tag = new MinuitParameterSet();
     MPS_tag->loadFromStream();
     if (makeCPConj){

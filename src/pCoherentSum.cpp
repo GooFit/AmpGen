@@ -33,6 +33,7 @@ m_type1(type1),
 
 
 
+  m_calcZAtStart(NamedParameter<bool>("pCoherentSum::calcZAtStart", true)),
   m_flat(NamedParameter<bool>("pCoherentSum::flat", false, "Force Amplitude=1"))
 
 
@@ -44,9 +45,9 @@ m_type1(type1),
 
 //  if (m_BConj) m_type1 = m_type1.conj(true);
 
-  m_A = new CoherentSum(m_type1, m_mps),
+  m_A = CoherentSum(m_type1, m_mps),
 
-  m_C = new CoherentSum(m_type1.conj(NamedParameter<bool>("pCoherentSum::ConjHead", true, "Only Conjugate the head of the EventType")), m_mps),
+  m_C = CoherentSum(m_type1.conj(NamedParameter<bool>("pCoherentSum::ConjHead", true, "Only Conjugate the head of the EventType")), m_mps),
 
 
 
@@ -56,25 +57,38 @@ m_type1(type1),
 }
 void pCoherentSum::prepare(){
 
-  m_A->prepare();
+  m_A.prepare();
 
-  m_C->prepare();
-
+  m_C.prepare();
+  INFO("Preparing m_AC");
+  if (m_calcZAtStart){
+    m_zAC = getACstSum();
+  }
 }
 
 real_t pCoherentSum::norm() const {
   if (m_debug) INFO("Getting the value for the normalised pdf");
   complex_t sumFactor = getSumFactor(); 
-  m_A->transferParameters();
-  m_C->transferParameters();
+//  m_A.prepare();
+//  m_C.prepare();
   complex_t z(0,0);
   real_t w=0;
   real_t n=0;
- #pragma omp parallel for reduction( +: n )
- for (size_t i=0; i < m_sim1->size(); i++){
+ if (m_BConj){
+  return m_C.norm() + std::norm(sumFactor) *  m_A.norm() + 2 * std::real(m_zAC * std::conj(sumFactor));
+ }
+  else{
+
+  return m_A.norm() + std::norm(sumFactor) *  m_C.norm() + 2 * std::real(std::conj(m_zAC) * std::conj(sumFactor));
+  
+ }
+ return 0;
+
+// #pragma omp parallel for reduction( +: n )
+ //for (size_t i=0; i < m_sim1->size(); i++){
     //real_t f = m_pcMC1.getValCache((m_sim1)[i].address());
 //    real_t f = m_pcMC1.calcCorrL((*m_sim1)[i]);
-    n+=std::norm(getVal((*m_sim1)[i])); 
+    //n+=std::norm(getVal((*m_sim1)[i])); 
 /*
     if (m_BConj){
       
@@ -88,8 +102,9 @@ real_t pCoherentSum::norm() const {
     }
     */
 
- }
- return n/(real_t)m_sim1->size();
+ //}
+ 
+ //return n/(real_t)m_sim1->size();
   //z = z/(real_t)m_sim1.size(); 
 /*
 if (m_BConj){
@@ -116,9 +131,9 @@ void pCoherentSum::reset(bool resetEvents){
     m_sim1 = nullptr;
     m_sim2 = nullptr;
     */
-    m_A->reset(true);
+    m_A.reset(true);
 
-    m_C->reset(true);
+    m_C.reset(true);
 
   }
 }
@@ -126,9 +141,9 @@ void pCoherentSum::reset(bool resetEvents){
 void pCoherentSum::setEvents(EventList& list1){
   m_events1 = &list1;
 
-  m_A->setEvents(list1);
+  m_A.setEvents(list1);
 
-  m_C->setEvents(list1);
+  m_C.setEvents(list1);
 
  // m_pc1.setEvents(list1);
  // m_pc1.prepareCache();
@@ -140,18 +155,18 @@ void pCoherentSum::setEvents(EventList& list1){
 void pCoherentSum::setMC(EventList& list1){
   m_sim1 = &list1;
 
-  m_A->setMC(list1);
+  m_A.setMC(list1);
 
-  m_C->setMC(list1);
+  m_C.setMC(list1);
 
   //m_pcMC1.setEvents(list1);
   //m_pcMC1.prepareCache();
 }
 void pCoherentSum::setMC1(EventList& list1){
   m_sim1 = &list1;
-  m_A->setMC(list1);
+  m_A.setMC(list1);
 
-  m_C->setMC(list1);
+  m_C.setMC(list1);
 
 }
 
@@ -159,35 +174,34 @@ complex_t pCoherentSum::getVal(const Event& evt1) const {
   if (m_flat) return 1;
   //auto f = m_pc1.getValCache(evt1)/2;
   auto f = m_pc1.calcCorrL(evt1)/2;
-  m_A->transferParameters();
+  //m_A.transferParameters();
 
 
  // return m_A.getVal(evt1) * m_B.getVal(evt2) * exp( std::complex<double>(0,1) ) + getSumFactor() *  m_C.getVal(evt1) * m_D.getVal(evt2) * exp(-std::complex<double>(0,1) );
  if (m_BConj){
-  return m_C->getVal(evt1) * exp(complex_t(0, f)) + getSumFactor() *  m_A->getVal(evt1) * exp(complex_t(0, -f));
+  return m_C.getVal(evt1) * exp(complex_t(0, -f)) + getSumFactor() *  m_A.getVal(evt1) * exp(complex_t(0, f));
  }
   else{
-  return m_A->getVal(evt1) * exp(complex_t(0, f)) + getSumFactor() *  m_C->getVal(evt1) * exp(complex_t(0, -f));
+  return m_A.getVal(evt1) * exp(complex_t(0, f)) + getSumFactor() *  m_C.getVal(evt1) * exp(complex_t(0, -f));
  }
+ return 0;
 
 }
 complex_t pCoherentSum::getValNoCache(const Event& evt1) const {
-  complex_t A = m_A->getValNoCache(evt1);
+  if (m_flat) return 1;
+  //auto f = m_pc1.getValCache(evt1)/2;
+  auto f = m_pc1.calcCorrL(evt1)/2;
+  //m_A.transferParameters();
 
-  complex_t C = m_C->getValNoCache(evt1);
 
-  complex_t f = correction(evt1);
-
-  auto i = Constant(0,1);
-
-  //auto sumFactor = getSumFactor();
-  double sumFactor = -1;
-  complex_t val = A  *exp(i()*f/2.)  + sumFactor * C  *exp(-i()*f/2.);
-  //complex_t val = A *exp(i()*f)* B - C * D;
-  if (m_flat){
-    val = 1;
-  }
-  return val;
+ // return m_A.getVal(evt1) * m_B.getVal(evt2) * exp( std::complex<double>(0,1) ) + getSumFactor() *  m_C.getVal(evt1) * m_D.getVal(evt2) * exp(-std::complex<double>(0,1) );
+ if (m_BConj){
+  return m_C.getValNoCache(evt1) * exp(complex_t(0, -f)) + getSumFactor() *  m_A.getValNoCache(evt1) * exp(complex_t(0, f));
+ }
+  else{
+  return m_A.getValNoCache(evt1) * exp(complex_t(0, f)) + getSumFactor() *  m_C.getValNoCache(evt1) * exp(complex_t(0, -f));
+ }
+  return 0;
 }
 
 
@@ -206,17 +220,17 @@ void pCoherentSum::debug(const Event& evt1) const
 {
   INFO( "A[x, y] = " << getVal(evt1) << " " << getValNoCache(evt1) << " " << m_norm << " " << prob(evt1) << " " << prob_unnormalised(evt1) );
   INFO("|AB-CD|^2 = "<<prob(evt1));
-  INFO("|A|^2 = "<<m_A->prob(evt1));
+  INFO("|A|^2 = "<<m_A.prob(evt1));
 
-  INFO("|C|^2 = "<<m_C->prob(evt1));
+  INFO("|C|^2 = "<<m_C.prob(evt1));
 
   INFO("Norm = "<<m_norm);
 }
 
 std::vector<std::vector<FitFraction> > pCoherentSum::fitFractions(const LinearErrorPropagator& linProp){
-    outputFractionsA = m_A->fitFractions(linProp);
+    outputFractionsA = m_A.fitFractions(linProp);
 
-    outputFractionsC = m_C->fitFractions(linProp);
+    outputFractionsC = m_C.fitFractions(linProp);
 
     std::vector<std::vector<FitFraction> > outputFractions;   
     outputFractions.push_back(outputFractionsA);

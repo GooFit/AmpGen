@@ -30,8 +30,8 @@ m_type2(type2),
   m_pcMC2(mps),
 
   m_flat(NamedParameter<bool>("pCorrelatedSum::flat", false, "Force Amplitude=1")),
-  m_analyticNorm(NamedParameter<bool>("pCorrelatedSum::analyticNorm", false)),
-
+  m_analyticNorm(NamedParameter<bool>("pCorrelatedSum::analyticNorm", true)),
+  m_calcZAtStart(NamedParameter<bool>("pCorrelatedSum::calcZAtStart", true)),
 
 
 
@@ -76,6 +76,13 @@ void pCorrelatedSum::prepare(){
   m_D.transferParameters();
   m_D.prepare();
   prepareACBD();
+
+  if (!m_sameTag)  m_zBD = getBDstSum();
+
+  if (m_calcZAtStart){
+    m_zAC = getACstSum();
+   
+  }
   //updateNorm();
 
 }
@@ -95,8 +102,7 @@ real_t pCorrelatedSum::norm() const {
 
 
  if (m_analyticNorm){
-  complex_t z(0,0);
-  complex_t z1, z2;
+  /*
  for (size_t i=0; i < (*m_sim1).size(); i++){
     //real_t f = m_pcMC1.getValCache(((*m_sim1))[i].address());
     real_t f = m_pcMC1.calcCorrL((*m_sim1)[i]);
@@ -116,15 +122,15 @@ real_t pCorrelatedSum::norm() const {
       z2 += m_B.getVal((*m_sim2)[i]) *  std::conj(m_D.getVal((*m_sim2)[i])) / (real_t) (*m_sim1).size();
 
     }
+    */
 //    z += (m_A.getVal(((*m_sim1))[i]) * m_B.getVal(((*m_sim2))[i]) * std::conj(m_C.getVal(((*m_sim1))[i]) * m_D.getVal(((*m_sim2))[i])) * exp(complex_t(0,f)));
 
- }
+ //}
  if (m_sameTag){
-   return m_A.norm()*m_B.norm() + m_C.norm() * m_D.norm() - 2 * std::real(std::norm(z));
+   return 2*(m_A.norm()*m_C.norm() - std::real(std::norm(m_zAC)));
  }
  else{ 
-   z = z1 * z2;
-   return m_A.norm()*m_B.norm() + m_C.norm() * m_D.norm() - 2 * std::real(z);
+   return m_A.norm()*m_B.norm() + m_C.norm() * m_D.norm() - 2 * std::real(m_zAC * m_zBD);
  }
 
 }
@@ -229,15 +235,6 @@ void pCorrelatedSum::setMC(EventList& list1, EventList& list2){
   m_D.setMC(list2);
 
 
-  for (int i=0;i<list1.size();i++){
-    m_sig_s01MC.push_back(list1[i].s(0,1));
-    m_sig_s02MC.push_back(list1[i].s(0,2));
-
-
-    if (m_sameTag){
-      m_tag_s01MC.push_back(list2[i].s(0,1));
-      m_tag_s02MC.push_back(list2[i].s(0,2));
-    }
   }
 
   
@@ -248,7 +245,7 @@ void pCorrelatedSum::setMC(EventList& list1, EventList& list2){
   //    m_pcMC2.prepareCache();
  // }
 
-}
+//}
 void pCorrelatedSum::setMC1(EventList& list1){
   (*m_sim1) = list1;
   m_A.setMC(list1);

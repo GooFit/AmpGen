@@ -60,11 +60,11 @@ class pCoherentSum {
         double P = std::norm(getVal(event1))/m_norm;  
     
     if (m_debug){
-        double A2 = std::norm(m_A->getVal(event1))/m_norm;
+        double A2 = std::norm(m_A.getVal(event1))/m_norm;
 
-        double C2 = std::norm(m_C->getVal(event1))/m_norm;
+        double C2 = std::norm(m_C.getVal(event1))/m_norm;
 
-        complex_t AC = m_A->getVal(event1) * std::conj(m_C->getVal(event1))/m_norm;
+        complex_t AC = m_A.getVal(event1) * std::conj(m_C.getVal(event1))/m_norm;
 
         auto i = Constant(0,1);
         complex_t eif = exp(i() * correction(event1));
@@ -107,24 +107,25 @@ class pCoherentSum {
         
 
     }
+    return 0;
 
         
     }
     
-    CoherentSum * getA(){
+    CoherentSum  getA(){
         return m_A;
     } 
 
-    CoherentSum * getC(){
+    CoherentSum  getC(){
         return m_C;
     } 
 
     const complex_t A(const Event& evt) const{
-        return m_A->getVal(evt);
+        return m_A.getVal(evt);
     }
 
     const complex_t C(const Event& evt) const{
-        return m_C->getVal(evt);
+        return m_C.getVal(evt);
     }
     real_t testnorm(){
         INFO("norm = "<<norm());
@@ -141,6 +142,25 @@ class pCoherentSum {
     void setMC(EventList& list1);
     void setMC1(EventList& list1);
 
+void setEventsByRef(EventList * list1){
+        m_events1 = list1;
+
+        m_A.setEvents(*m_events1);
+
+        m_C.setEvents(*m_events1);
+
+        
+    }
+    void setMCByRef(EventList * list1){
+        m_sim1 = list1;
+
+        m_A.setMC(*m_sim1);
+
+        m_C.setMC(*m_sim1);
+
+        
+    }
+
 
     void updateNorms(const std::vector<size_t>& iA, const std::vector<size_t>& iB,
         const std::vector<size_t>& iC, const std::vector<size_t>& iD);
@@ -150,17 +170,17 @@ class pCoherentSum {
     complex_t getVal(const Event& event1) const;
     complex_t getValNoCache(const Event& event1) const;
     complex_t getValNoCache(const Event& event1, const size_t& offset) const;
-    real_t size()const { return m_A->size() + m_C->size() ;}
+    real_t size()const { return m_A.size() + m_C.size() ;}
     std::vector<std::vector<FitFraction> > fitFractions(const LinearErrorPropagator& linProp);
     real_t norm()  const;
     double probA(const Event& event){
-        double prob = m_A->prob(event);
+        double prob = m_A.prob(event);
         return prob;
     }
     std::vector<complex_t> getVals(const Event& event1) const {
-        complex_t A = m_A->getVal(event1);
+        complex_t A = m_A.getVal(event1);
 
-        complex_t C = m_C->getVal(event1);
+        complex_t C = m_C.getVal(event1);
 
         complex_t ABCD = getVal(event1);///std::sqrt(m_norm);
         complex_t corr = correction(event1);
@@ -217,11 +237,11 @@ real_t norm_manual() const{
  for (size_t i=0; i < m_sim1->size(); i++){
     real_t f = m_pcMC1.calcCorrL((*m_sim1)[i]);
 
-    z += (m_A->getVal((*m_sim1)[i]) * std::conj(m_C->getVal((*m_sim1)[i]) * sumFactor ) * exp(complex_t(0,f)));
+    z += (m_A.getVal((*m_sim1)[i]) * std::conj(m_C.getVal((*m_sim1)[i]) * sumFactor ) * exp(complex_t(0,f)));
     z = z/(real_t)m_sim1->size(); 
  }
 
- return m_A->norm() + m_C->norm() + 2 * std::real(z);
+ return m_A.norm() + m_C.norm() + 2 * std::real(z);
 
 }
 
@@ -231,7 +251,7 @@ real_t LL(){
 
     #pragma omp parallel for reduction( +: _LL )
     for (size_t i=0; i < m_events1->size(); i++){
-        _LL += log(std::norm(getVal((*m_events1)[i]))/n);
+        _LL += log(std::norm(getValNoCache((*m_events1)[i]))/n);
     }
     return -2 * _LL;
 }
@@ -371,10 +391,10 @@ real_t LL(){
         A.setMC(sim1);
         A.prepare();
 
-        auto Anorm = m_A->norm();
+        auto Anorm = m_A.norm();
         INFO("m_ANorm = "<<A.norm());
         INFO("m_ANorm = "<<Anorm);
-        CoherentSum C(m_type1.conj(true), m_mps);  C.transferParameters(); C.setEvents(list1); C.setMC(sim1); C.prepare(); m_Cnorm = m_C->norm();
+        CoherentSum C(m_type1.conj(true), m_mps);  C.transferParameters(); C.setEvents(list1); C.setMC(sim1); C.prepare(); m_Cnorm = m_C.norm();
 
 
 
@@ -488,14 +508,39 @@ real_t LL(){
         }
         return tup;
     }
+    const complex_t getACstSum()const{
+    
+//        complex_t r = 0;
+        real_t x=0;
+        real_t y=0;
+
+        #pragma omp parallel for reduction( +:x,y )
+        for (size_t i =0;i<m_sim1->size();i++){
+            real_t f = m_pcMC1.calcCorrL((*m_sim1)[i]);
+            complex_t r = m_A.getValNoCache((*m_sim1)[i]) * std::conj(m_C.getValNoCache((*m_sim1)[i])) * exp(complex_t(0, f));
+            x += std::real(r);
+            y += std::imag(r);
+        }
+        complex_t r(x, y);
+        r = r/(real_t)m_sim1->size();
+        return r;
+        
+    }
+
+
+    void updateZACst(complex_t z) {
+        m_zAC = z;
+    }
+
+
+
    
     protected:
         double  m_norm  =    {0};
         MinuitParameterSet m_mps;
 
-        CoherentSum  * m_A = {nullptr};
-
-        CoherentSum  * m_C = {nullptr};
+        CoherentSum  m_A;// = {nullptr};
+        CoherentSum   m_C;// = {nullptr};
 
 
 
@@ -544,11 +589,11 @@ real_t LL(){
         int m_gammaSign;
         bool m_useXY;
         bool m_BConj;
-
+        complex_t m_zAC;
 
         std::map<real_t * , std::vector<complex_t> > m_cache = {};
         std::map<real_t *, std::vector<complex_t> > m_cacheMC = {};
-
+        bool m_calcZAtStart;
 
 
   };

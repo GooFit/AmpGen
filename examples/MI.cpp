@@ -55,12 +55,12 @@ template <class PDF_TYPE, class PRIOR_TYPE>
                        , PRIOR_TYPE& priorTag
                        , const size_t& nEvents
                        , const size_t& blockSize
-                       , TRandom* rndmSig 
-                       , TRandom* rndmTag
+                       , TRandom* rndm
+
 		       )
 {
   QcGenerator<PRIOR_TYPE> signalGenerator( priorSig, priorTag );
-  signalGenerator.setRandom( rndmSig, rndmTag);
+  signalGenerator.setRandom( rndm);
   signalGenerator.setBlockSize( blockSize );
   signalGenerator.fillEventList( pdf, eventsSig, eventsTag, nEvents );
 }
@@ -188,7 +188,7 @@ TRandom3 rndm;
 EventList makeEvents(std::vector<double> s01, std::vector<double> s02, double eps, EventType type){
     EventList evts(type);
     std::vector<Event> evts_v;
-    for (int i=0;i<s01.size();i++){
+    for( long unsigned int  i=0;i<s01.size();i++){
         Event evt = makeEvent(s01[i], s02[i], eps, type);
         //INFO("made evt "<<i<<" s01 = "<< evt.s(0,1));
         evts.push_back(evt);
@@ -214,7 +214,7 @@ int getBin(Event event, size_t nBins, CoherentSum A, CoherentSum C){
     double s02 = event.s(0, 2);
     double dd0 = M_PI - dd;
     double ddInv = M_PI + dd0;
-    for (int i=1;i<nBins+1;i++){
+    for( long unsigned int  i=1;i<nBins+1;i++){
 //        double b1 = -M_PI + i * 2 * M_PI/nBins;
         //double b2 = b1 + 2 * M_PI/nBins;
         double b1 = (2 * M_PI/nBins) * (i - (3/2));
@@ -237,7 +237,7 @@ double minS(Event event, std::vector<double> x, std::vector<double> y, double fr
 
     std::vector<double> dSs(nEvents);
     #pragma omp parallel for
-    for (int i=0;i<nEvents;i++){
+    for( long unsigned int  i=0;i<nEvents;i++){
         //Event evt = events[i];
         double dx = event.s(0,1) - x[i];//evt.s(0,1);
         double dy = event.s(0,2) - y[i];//evt.s(0,2);
@@ -251,7 +251,7 @@ double minS(Event event, std::vector<double> x, std::vector<double> y, double fr
 
 
 /*    #pragma omp parallel for reduction(min:dS)
-    for (int i=0;i<dSs.size();i++){
+    for( long unsigned int  i=0;i<dSs.size();i++){
         double ds_new = dSs[i];
         if (ds_new < dS) dS = ds_new;
     }
@@ -268,7 +268,7 @@ int getBinFromRef(Event event, std::map<int, std::vector<double> > ref_x, std::m
    
     
 
-    for (int i=1;i<nBins + 1; i++){
+    for( long unsigned int  i=1;i<nBins + 1; i++){
 
 
         int bin = binSign * i;
@@ -302,7 +302,7 @@ std::vector<std::map<int, EventList> > binEventsFromRef(EventList sig, EventList
     for (auto p:refX){ nRefs += p.second.size();}
     INFO("Have "<<nRefs<<" reference events");
 
-    for (int i=1;i<nBins + 1; i++){
+    for( long unsigned int  i=1;i<nBins + 1; i++){
         int bin = i;
         binnedSig.insert(std::pair<int, EventList>({bin, EventList(sigType)}));
         binnedSig.insert(std::pair<int, EventList>({-bin, EventList(sigType)}));
@@ -311,7 +311,7 @@ std::vector<std::map<int, EventList> > binEventsFromRef(EventList sig, EventList
     }
     INFO("Binning "<<sig.size()<<" events");
     ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__));
-    for (int i=0;i<sig.size();i++){
+    for( long unsigned int  i=0;i<sig.size();i++){
 //        INFO(i<<" s01 = "<<sig[i].s(0,1));
         int myBin = getBinFromRef(sig[i], refX, refY, nBins, fracNevents);
         binnedSig[myBin].push_back(sig[i]);
@@ -341,7 +341,7 @@ std::vector<std::map<std::pair<int, int>, EventList> > binDTEventsFromRef(EventL
     std::map<std::pair<int, int>, EventList> binnedSig;
     std::map<std::pair<int, int>, EventList> binnedTag;
     std::vector<int> bins = {};
-    for (int i=1;i<nBins+1;i++){
+    for( long unsigned int  i=1;i<nBins+1;i++){
         bins.push_back(i);
         bins.push_back(-i);
     }
@@ -349,8 +349,8 @@ std::vector<std::map<std::pair<int, int>, EventList> > binDTEventsFromRef(EventL
     EventType tagType = tag.eventType();
 
     ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__));
-    for (int i=0;i<bins.size(); i++){
-        for (int j=0;j<bins.size(); j++){
+    for( long unsigned int  i=0;i<bins.size(); i++){
+        for( long unsigned int  j=0;j<bins.size(); j++){
             int bin_sig = bins[i];
             int bin_tag = bins[j];
             std::pair<int, int> bin_pair({bin_sig, bin_tag});
@@ -360,7 +360,7 @@ std::vector<std::map<std::pair<int, int>, EventList> > binDTEventsFromRef(EventL
     }
 
 
-    for (int i=0;i<sig.size();i++){
+    for( long unsigned int  i=0;i<sig.size();i++){
         int myBin = getBinFromRef(sig[i], refX, refY, nBins, fracNevents);
 
        
@@ -389,7 +389,7 @@ std::map< int, EventList > binEvents(EventList events, size_t nBins, CoherentSum
     std::map<int, EventList > map;
     std::vector<int> bins;
 
-    for (int j=0;j<nBins;j++){
+    for( long unsigned int  j=0;j<nBins;j++){
         std::pair<int, EventList > pP(j+1, EventList(events.eventType()));
         std::pair<int, EventList > pM(-(j+1), EventList(events.eventType()));
         map.insert(pP);
@@ -398,7 +398,7 @@ std::map< int, EventList > binEvents(EventList events, size_t nBins, CoherentSum
 
     }
 
-    for (int j=0;j<events.size();j++){
+    for( long unsigned int  j=0;j<events.size();j++){
         double dd = strongPhaseDiff(A, C, events[j]);
         double s01 = events[j].s(0, 1);
         double s02 = events[j].s(0, 2);
@@ -435,7 +435,7 @@ std::map<int, complex_t> cs(CoherentSum A, CoherentSum C, EventList events, int 
     A.transferParameters();
     C.transferParameters();
     std::map<int, EventList > m = binEvents(events, nBins, A, C);
-    for (int i=0;i<nBins;i++){
+    for( long unsigned int  i=0;i<nBins;i++){
         EventList evtP = m[i+1];
         EventList evtM = m[-(i+1)];
         complex_t zP = cs_i(A, C, evtP, evtP.size());
@@ -667,11 +667,11 @@ int main( int argc, char* argv[] )
   if (intFile == ""){
 
   }
-  TRandom3 rndmSig;
-    TRandom3 rndmTag;
-  rndmSig.SetSeed( seed + 100 );
-  rndmTag.SetSeed( seed + 101 );
-  gRandom = &rndmSig;
+  TRandom3 rndm;
+
+  rndm.SetSeed( seed);
+  
+  gRandom = &rndm;
 
   INFO("LogFile: " << logFile << "; Plots: " << plotFile );
    #ifdef _OPENMP
@@ -752,7 +752,7 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
      std::vector<double> cBESIII = {0.708,0.671,0.001,-0.602, -0.965, -0.554, 0.046, 0.403}; 
     std::vector<double> sBESIII = {0.128, 0.341, 0.893, 0.723, 0.020, -0.589, -0.686, -0.474};
     std::map<int, complex_t> zBESIII = {};
-    for (int i=0;i<cBESIII.size();i++){
+    for( long unsigned int  i=0;i<cBESIII.size();i++){
         complex_t zP(cBESIII[i], sBESIII[i]);
         complex_t zM(cBESIII[i], -sBESIII[i]);
         std::pair<int, complex_t> pP(i+1, zP);
@@ -807,7 +807,7 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
     }
     tup_cs->Write("cisi");
     TNtuple * tup_BESIII = new TNtuple("cisi_BESIII", "cisi_BESIII", "i:c:s");
-    for (int i=0;i<cBESIII.size();i++){
+    for( long unsigned int  i=0;i<cBESIII.size();i++){
         int bin = i+1;
         tup_BESIII->Fill(bin, cBESIII[i], sBESIII[i]);
     }
@@ -848,7 +848,7 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
     fRefEqual->cd();
     std::vector<int> bins = {-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8};
     std::vector<EventList> my_bins;
-    for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
+    for( long unsigned int  bin_idx=0;bin_idx<bins.size();bin_idx++){
 
         int bin = bins[bin_idx];
         INFO("bin = "<<bin);
@@ -865,7 +865,7 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
             t_bin->SetBranchAddress("s01", &s01_bin_i);
             t_bin->SetBranchAddress("s02", &s02_bin_i);
             std::vector<double> s01_bin, s02_bin;
-            for (int i=0;i<t_bin->GetEntries();i++){
+            for( long unsigned int  i=0;i<t_bin->GetEntries();i++){
                 t_bin->GetEntry(i);
                 s01_bin.push_back((double)s01_bin_i);
                 s02_bin.push_back((double)s02_bin_i);
@@ -895,14 +895,14 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
 
 //        std::vector<int> bins = {-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8};
         std::vector<int> bins;// = {-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8};
-        for (int i=-nBins;i<0;i++) bins.push_back(i);
-        for (int i=1;i<nBins+ 1;i++) bins.push_back(i);
+        for( long unsigned int  i=-nBins;i<0;i++) bins.push_back(i);
+        for( long unsigned int  i=1;i<nBins+ 1;i++) bins.push_back(i);
 
       // std::map<int, complex_t> cisi = cs(A, C, mc, nBins);
 
 
         #pragma omp parallel for reduction( +: _chi2)
-        for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
+        for( long unsigned int  bin_idx=0;bin_idx<bins.size();bin_idx++){
 //           complex_t myZP = cisi[i+1];
 ///           complex_t myZM = cisi[-(i+1)];
             
@@ -920,14 +920,14 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
     auto chi2_binning = [my_bins, &A, &C, nBins, NIntBins](){
         double _chi2 = 0;
         std::vector<int> bins;// = {-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8};
-        for (int i=-nBins;i<0;i++) bins.push_back(i);
-        for (int i=1;i<nBins+ 1;i++) bins.push_back(i);
+        for( long unsigned int  i=-nBins;i<0;i++) bins.push_back(i);
+        for( long unsigned int  i=1;i<nBins+ 1;i++) bins.push_back(i);
 //        std::vector<int> bins = {-8,-4,-2,-1, 1,2,4,8};
         (*(&A)).prepare();
         (*(&C)).prepare();
         
         
-        for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
+        for( long unsigned int  bin_idx=0;bin_idx<bins.size();bin_idx++){
 
 
             int actualBin = bins[bin_idx];
@@ -937,7 +937,7 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
             if (my_bin.size()<numEvents) numEvents = my_bin.size();
 
             #pragma omp parallel for reduction( +: _chi2)
-            for (int i=0;i<numEvents;i++){
+            for( long unsigned int  i=0;i<numEvents;i++){
                 int myBin = getBin(my_bin[i], nBins, (*(&A)), (*(&C)));
                 _chi2 += std::pow((myBin - actualBin), 2);
 //int getBin(Event event, size_t nBins, CoherentSum A, CoherentSum C){
@@ -1038,7 +1038,7 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
     }
     
     if (NamedParameter<bool>("scanParam", true)){
-        for (int idx=0;idx<bins.size();idx++){
+        for( long unsigned int  idx=0;idx<bins.size();idx++){
             int bin = bins[idx];
             EventList evts = my_bins[idx];
             std::string paramName = NamedParameter<std::string>("scanParamName", "D0{K*(892)bar-{K0S0,pi-},pi+}_Re");
@@ -1049,7 +1049,7 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
             double pMin = p0 - nSigma * dp;
             double pMax = p0 + nSigma * dp;
 
-            for (int i=0;i<nSteps;i++){
+            for( long unsigned int  i=0;i<nSteps;i++){
                 
                 auto evt = evts[0];
             
@@ -1076,13 +1076,13 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
                 int nEvents = NamedParameter<int>("nEventsMinForBin", 100);
                 double pMin = p0 - nSigma * dp;
                 double pMax = p0 + nSigma * dp;
-                for (int idx=0;idx<bins.size();idx++){
+                for( long unsigned int  idx=0;idx<bins.size();idx++){
                     double bindiff=100;
                     int myNewBin = -1;
                     double pOpt = p0;
-                    for (int i=0;i<nSteps;i++){
+                    for( long unsigned int  i=0;i<nSteps;i++){
                         if (my_bins[idx].size()<nEvents) nEvents = my_bins[idx].size();
-                        for (int j=0;j<nEvents;j++){
+                        for( long unsigned int  j=0;j<nEvents;j++){
                         p->setCurrentFitVal(pMin + (pMax - pMin)*i/nSteps);
                         A.prepare();
                         C.prepare();
@@ -1164,7 +1164,7 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
     INFO("writing BESIII cisi");
 
 
-        for (int i=0;i<cBESIII.size();i++){
+        for( long unsigned int  i=0;i<cBESIII.size();i++){
             int bin = i+1;
             tup_BESIII->Fill(bin, cBESIII[i], sBESIII[i]);
             tup_BESIII->Fill(-bin, cBESIII[i], -sBESIII[i]);
@@ -1201,13 +1201,13 @@ size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Rand
 
 void GGSZ(MinuitParameterSet MPS, EventType eventType){
     int nBins = NamedParameter<int>("nBins", 8, "number of bins for MI");
-  TRandom3 rndmSig;
-  TRandom3 rndmTag;
-  rndmSig.SetSeed( NamedParameter<size_t>("Seed",0)  + 100);
-  rndmTag.SetSeed( NamedParameter<size_t>("Seed",0)  + 101);
-  gRandom = &rndmSig;
+  TRandom3 rndm;
+
+  rndm.SetSeed( NamedParameter<size_t>("Seed",0) );
+
+  gRandom = &rndm;
   int NIntBins = NamedParameter<int>("NIntBins", 1000);
-    EventList mc =  Generator<>(eventType, &rndmSig).generate(NIntBins);
+    EventList mc =  Generator<>(eventType, &rndm).generate(NIntBins);
     CoherentSum A(eventType, MPS);
     bool conjHead = NamedParameter<bool>("conjHead", true);
     CoherentSum C(eventType.conj(conjHead), MPS);
@@ -1240,18 +1240,18 @@ void GGSZ(MinuitParameterSet MPS, EventType eventType){
 
 
 	
-    PhaseSpace phspSig(eventType,&rndmSig);
-    PhaseSpace phspTag_KK(KK,&rndmTag);
-    PhaseSpace phspTag_Kppim(Kppim,&rndmTag);
+    PhaseSpace phspSig(eventType,&rndm);
+    PhaseSpace phspTag_KK(KK,&rndm);
+    PhaseSpace phspTag_Kppim(Kppim,&rndm);
     pCorrelatedSum cs_KK(eventType, KK, MPS);
     pCorrelatedSum cs_Kppim(eventType, Kppim, MPS);
     pCorrelatedSum cs_Kspipi(eventType, eventType, MPS);
     INFO("Generating Events now!");
     size_t blockSize = NamedParameter<size_t>("blockSize", 10000);
     size_t nCorrEvents      = NamedParameter<size_t>     ("nCorrEvents"  , 10000, "Total number of events to generate" );
-    GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , nCorrEvents, blockSize, &rndmSig, &rndmTag );
-    GenerateCorrEvents( sig_Kppim, tag_Kppim, cs_Kppim, phspSig, phspTag_Kppim , nCorrEvents, blockSize, &rndmSig, &rndmTag );
-    GenerateCorrEvents( sig_Kspipi, tag_Kspipi, cs_Kspipi, phspSig, phspSig , nCorrEvents, blockSize, &rndmSig, &rndmTag );
+    GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , nCorrEvents, blockSize, &rndm );
+    GenerateCorrEvents( sig_Kppim, tag_Kppim, cs_Kppim, phspSig, phspTag_Kppim , nCorrEvents, blockSize, &rndm);
+    GenerateCorrEvents( sig_Kspipi, tag_Kspipi, cs_Kspipi, phspSig, phspSig , nCorrEvents, blockSize, &rndm);
 
     pCoherentSum psiBplus( eventType, MPS, 1, true, true);
     pCoherentSum psiBminus( eventType, MPS, -1, true, false);
@@ -1260,8 +1260,8 @@ void GGSZ(MinuitParameterSet MPS, EventType eventType){
 
    
     size_t nBEvents      = NamedParameter<size_t>     ("nBEvents"  , 10000, "Total number of events to generate" );
-    GenerateEvents(BpEvents, psiBplus, phspSig, nBEvents, blockSize, &rndmSig);
-    GenerateEvents(BmEvents, psiBminus, phspSig, nBEvents, blockSize, &rndmSig);
+    GenerateEvents(BpEvents, psiBplus, phspSig, nBEvents, blockSize, &rndm);
+    GenerateEvents(BmEvents, psiBminus, phspSig, nBEvents, blockSize, &rndm);
 
     psiBplus.setEvents(BpEvents);
     psiBplus.setMC(mc);
@@ -1367,7 +1367,7 @@ void GGSZ(MinuitParameterSet MPS, EventType eventType){
 
 void testTim(MinuitParameterSet MPS, EventType eventType){
  size_t hwt = std::thread::hardware_concurrency();
-  size_t nThreads     = NamedParameter<size_t>("nCores"      , hwt         , "Number of threads to use");
+  //size_t nThreads     = NamedParameter<size_t>("nCores"      , hwt         , "Number of threads to use");
   //double luminosity   = NamedParameter<double>("Luminosity"  , 818.3       , "Luminosity to generate. Defaults to CLEO-c integrated luminosity.");
   //size_t nEvents      = NamedParameter<size_t>("nEvents"     , 0           , "Can also generate a fixed number of events per tag, if unspecified use the CLEO-c integrated luminosity.");
   size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Random seed to use.");
@@ -1376,11 +1376,11 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
   
     size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
     size_t nBins = NamedParameter<size_t>("nBins", 8);
-    TRandom3 rndmSig;
-    TRandom3 rndmTag;
-  rndmSig.SetSeed( seed + 100 );
-  rndmTag.SetSeed( seed + 101);
-  gRandom = &rndmSig;
+    TRandom3 rndm;
+
+  rndm.SetSeed( seed );
+
+  gRandom = &rndm;
 
 
     std::vector<std::string>  KKstr = {"D0", "K+", "K-"};
@@ -1401,9 +1401,9 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
 
 
 	
-    PhaseSpace phspSig(eventType,&rndmSig);
-    PhaseSpace phspTag_KK(KK,&rndmTag);
-    PhaseSpace phspTag_Kppim(Kppim,&rndmTag);
+    PhaseSpace phspSig(eventType,&rndm);
+    PhaseSpace phspTag_KK(KK,&rndm);
+    PhaseSpace phspTag_Kppim(Kppim,&rndm);
  //   pCorrelatedSum cs_KK(eventType, KK, MPS);
 
 
@@ -1422,7 +1422,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
     std::map<int, EventList> my_bins;
     std::map<int, std::vector<double> > my_x;
     std::map<int, std::vector<double> > my_y;
-    for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
+    for( long unsigned int  bin_idx=0;bin_idx<bins.size();bin_idx++){
         int bin = bins[bin_idx];
         INFO("bin = "<<bin);
         EventList my_bin_bin;
@@ -1446,7 +1446,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
     fRefEqual->Close();
 
 
-    EventList mc =  Generator<>(eventType, &rndmSig).generate(NamedParameter<size_t>("nMC", 10000));
+    EventList mc =  Generator<>(eventType, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
     CoherentSum A(eventType, MPS);
     CoherentSum C(eventType.conj(true), MPS);
     A.setEvents(mc);
@@ -1459,7 +1459,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
     std::map<int, double> K;
     std::map<int, double> Kbar;
     std::map<int, complex_t> Z;
-    for (int i=0;i<bins.size();i++){
+    for( long unsigned int  i=0;i<bins.size();i++){
             int bin = bins[i];
     //double getK(int i, CoherentSum A, std::map<int, EventList> m){
             double _K = getK(bin, A, my_bins);
@@ -1474,7 +1474,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
     if (NamedParameter<bool>("printKZ", false)){
 
 
-        for (int i=0;i<bins.size();i++){
+        for( long unsigned int  i=0;i<bins.size();i++){
             int bin = bins[i];
     //double getK(int i, CoherentSum A, std::map<int, EventList> m){
 //            double K = getK(bin, A, my_bins);
@@ -1493,9 +1493,9 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
     bool doCP = NamedParameter<bool>("doCP", true);
     if (doCP){
     pCorrelatedSum cs_KK(eventType, KK, MPS);
-        GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , NamedParameter<size_t>("nCorrEvents", 100000), blockSize, &rndmSig, &rndmTag );
+        GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , NamedParameter<size_t>("nCorrEvents", 100000), blockSize, &rndm);
 
-        EventList mcKK =  Generator<>(KK, &rndmSig).generate(NamedParameter<size_t>("nMC", 10000));
+        EventList mcKK =  Generator<>(KK, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
         std::vector<std::map<int, EventList> > binnedEvents = binEventsFromRef(sig_KK, tag_KK, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
         std::map<int, double> NSig;
         std::map<int, double> NTag;
@@ -1505,7 +1505,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
         double sumNTag = 0;
         double sumYCP = 0;
         int CP = NamedParameter<int>("CP", 1);
-        for (int i=0;i<bins.size();i++){
+        for( long unsigned int  i=0;i<bins.size();i++){
             int bin = bins[i];
             double NSig_i = binnedEvents[0][bin].size();
             double NTag_i = binnedEvents[1][bin].size();
@@ -1523,7 +1523,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
  
 
         }
-        for (int i=0;i<bins.size();i++){
+        for( long unsigned int  i=0;i<bins.size();i++){
             int bin = bins[i];
             double Y = YCP[bin]/sumYCP;
             double nSig = NSig[bin];
@@ -1541,7 +1541,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
 
         std::ofstream fPulls;
         fPulls.open(NamedParameter<std::string>("pullFileCP", "pullsCP.txt") ,std::ofstream::out | std::ofstream::app );
-        for (int i=1;i<nBins+1;i++){
+        for( long unsigned int  i=1;i<nBins+1;i++){
             fPulls<<pull[i]<<" "<<pull[-i]<<" ";
         }
         fPulls<<"\n";
@@ -1557,7 +1557,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
         EventList sig = sig_Kspipi;
         EventList tag = tag_Kspipi;
         PhaseSpace phspTag = phspSig;
-        GenerateCorrEvents( sig, tag, cs_Kspipi, phspSig, phspTag , NamedParameter<size_t>("nCorrEvents", 100000), blockSize, &rndmSig, &rndmTag );
+        GenerateCorrEvents( sig, tag, cs_Kspipi, phspSig, phspTag , NamedParameter<size_t>("nCorrEvents", 100000), blockSize, &rndm);
 
         CoherentSum A(eventType, MPS);
         CoherentSum B(eventType.conj(true), MPS);
@@ -1588,8 +1588,8 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
         std::map<std::pair<int, int>, double> YKspipi;
         double sumYKspipi = 0;
         double sumM = 0;
-        for (int i=0;i<bins.size();i++){
-            for (int j=0;j<bins.size();j++){
+        for( long unsigned int  i=0;i<bins.size();i++){
+            for( long unsigned int  j=0;j<bins.size();j++){
 
                 int bin_sig = bins[i];
                 int bin_tag = bins[j];
@@ -1652,8 +1652,8 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
 
     
         size_t nBEvents      = NamedParameter<size_t>     ("nBEvents"  , 1000, "Total number of events to generate" );
-        GenerateEvents(BpEvents, psiBplus, phspSig, nBEvents, blockSize, &rndmSig);
-        GenerateEvents(BmEvents, psiBminus, phspSig, nBEvents, blockSize, &rndmSig);
+        GenerateEvents(BpEvents, psiBplus, phspSig, nBEvents, blockSize, &rndm);
+        GenerateEvents(BmEvents, psiBminus, phspSig, nBEvents, blockSize, &rndm);
 
         std::vector<std::map<int, EventList> > binnedEventsBp = binEventsFromRef(BpEvents, BpEvents, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
         std::vector<std::map<int, EventList> > binnedEventsBm = binEventsFromRef(BmEvents, BmEvents, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 0.1));
@@ -1662,7 +1662,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
         std::map<int, double> Nminus;
         double sumNplus = 0;
         double sumNminus = 0;
-        for (int i=0;i<bins.size();i++){
+        for( long unsigned int  i=0;i<bins.size();i++){
             int bin = bins[i];
             double Nplus_i = binnedEventsBp[0][bin].size();
             double Nminus_i = binnedEventsBm[0][bin].size();
@@ -1689,7 +1689,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
         double sumYBminus = 0;
         std::map<int, double> pullBplus;
         std::map<int, double> pullBminus;
-        for (int i=0;i<bins.size();i++){
+        for( long unsigned int  i=0;i<bins.size();i++){
 
             int bin = bins[i];
             double K = getK(bin, A, my_bins);
@@ -1710,7 +1710,7 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
             YBplus.insert(std::pair<int, double>({bin, _Yplus}));
             YBminus.insert(std::pair<int, double>({bin, _Yminus}));
         }
-        for (int i=0;i<bins.size();i++){
+        for( long unsigned int  i=0;i<bins.size();i++){
 
             int bin = bins[i];
             double Yplus = YBplus[bin]/sumYBplus;
@@ -1730,14 +1730,14 @@ void testTim(MinuitParameterSet MPS, EventType eventType){
         }
         std::ofstream fPullsBp;
         fPullsBp.open(NamedParameter<std::string>("pullFileBplus", "pullsBplus.txt") ,std::ofstream::out | std::ofstream::app );
-        for (int i=1;i<nBins+1;i++){
+        for( long unsigned int  i=1;i<nBins+1;i++){
             fPullsBp<<pullBplus[i]<<" "<<pullBplus[-i]<<" ";
         }
         fPullsBp<<"\n";
         fPullsBp.close();
         std::ofstream fPullsBm;
         fPullsBm.open(NamedParameter<std::string>("pullFileBminus", "pullsBminus.txt") ,std::ofstream::out | std::ofstream::app );
-        for (int i=1;i<nBins+1;i++){
+        for( long unsigned int  i=1;i<nBins+1;i++){
             fPullsBm<<pullBminus[i]<<" "<<pullBminus[-i]<<" ";
         }
         fPullsBm<<"\n";
@@ -1759,16 +1759,16 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
 
     size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 100000, "Number of events to generate per block" );
     
-    TRandom3 rndmSig;
-    TRandom3 rndmTag;
-    rndmSig.SetSeed( NamedParameter<int>("Seed", 0) + 100 );
-    rndmTag.SetSeed( NamedParameter<int>("Seed", 0) + 101 );
-    gRandom = &rndmSig;
+    TRandom3 rndm;
+
+    rndm.SetSeed( NamedParameter<int>("Seed", 0));
+
+    gRandom = &rndm;
  
 
     size_t nBins(NamedParameter<size_t>("nBins", 8));
     std::vector<int> bins = {};
-    for (int i=1;i<nBins+1;i++){
+    for( long unsigned int  i=1;i<nBins+1;i++){
         bins.push_back(i);
         bins.push_back(-i);
     }
@@ -1806,11 +1806,11 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
  
 
 
-    PhaseSpace phspSig(eventType,&rndmSig);
-    PhaseSpace phspTag_KK(KK,&rndmTag);
-    PhaseSpace phspTag_Kspi0(Kspi0,&rndmTag);
-    PhaseSpace phspTag_Kppim(Kppim,&rndmTag);
-    PhaseSpace phspTag_Kmpip(Kmpip,&rndmTag);
+    PhaseSpace phspSig(eventType,&rndm);
+    PhaseSpace phspTag_KK(KK,&rndm);
+    PhaseSpace phspTag_Kspi0(Kspi0,&rndm);
+    PhaseSpace phspTag_Kppim(Kppim,&rndm);
+    PhaseSpace phspTag_Kmpip(Kmpip,&rndm);
 
 
     INFO("Generating correlated events");
@@ -1832,7 +1832,7 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
     std::map<int, std::vector<double> > my_x;
     std::map<int, std::vector<double> > my_y;
  
-    for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
+    for( long unsigned int  bin_idx=0;bin_idx<bins.size();bin_idx++){
         int bin = bins[bin_idx];
         INFO("bin = "<<bin);
         EventList my_bin_bin;
@@ -1871,7 +1871,7 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
  
 
     
-    EventList mc =  Generator<>(eventType, &rndmSig).generate(NamedParameter<size_t>("nMC", 10000));
+    EventList mc =  Generator<>(eventType, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
     CoherentSum A(eventType, MPS);
     CoherentSum C(eventType.conj(true), MPS);
     A.setEvents(mc);
@@ -1886,7 +1886,7 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
     std::map<int, double> K;
     std::map<int, double> Kbar;
     std::map<int, complex_t> Z;
-    for (int i=0;i<bins.size();i++){
+    for( long unsigned int  i=0;i<bins.size();i++){
             int bin = bins[i];
             double _K = getK(bin, A, my_bins);
             double _Kbar = getK(bin, C,  my_bins);
@@ -1897,11 +1897,11 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
     }
     
     INFO("Generating KK events");
-    GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , nCP, blockSize, &rndmSig, &rndmTag );
+    GenerateCorrEvents( sig_KK, tag_KK, cs_KK, phspSig, phspTag_KK , nCP, blockSize, &rndm);
     INFO("Binning KK << nEvents = "<<sig_KK.size());
     std::vector<std::map<int, EventList> > binned_KK = binEventsFromRef(sig_KK, tag_KK, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
 
-    for (int i=0;i<bins.size();i++){
+    for( long unsigned int  i=0;i<bins.size();i++){
         int bin = bins[i];
         INFO(bin<<" "<<binned_KK[0][bin].size());
    
@@ -1911,7 +1911,7 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
 
  
     INFO("Generating Kspipi events");
-    GenerateCorrEvents( sig_Kspipi, tag_Kspipi, cs_Kspipi, phspSig, phspSig , nKspipi, blockSize, &rndmSig, &rndmTag );
+    GenerateCorrEvents( sig_Kspipi, tag_Kspipi, cs_Kspipi, phspSig, phspSig , nKspipi, blockSize, &rndm);
     INFO("Binning Kspipi");
     std::vector<std::map<std::pair<int, int>, EventList> > binned_Kspipi = binDTEventsFromRef(sig_Kspipi, tag_Kspipi, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
 
@@ -1937,19 +1937,19 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
 
 
     INFO("Generating Kspi0 events");
-    GenerateCorrEvents( sig_Kspi0, tag_Kspi0, cs_Kspi0, phspSig, phspTag_Kspi0 , nCP, blockSize, &rndmSig, &rndmTag );
+    GenerateCorrEvents( sig_Kspi0, tag_Kspi0, cs_Kspi0, phspSig, phspTag_Kspi0 , nCP, blockSize, &rndm);
     INFO("Generating Kppim events");
-    GenerateCorrEvents( sig_Kppim, tag_Kppim, cs_Kppim, phspSig, phspTag_Kppim , nD0, blockSize, &rndmSig, &rndmTag );
+    GenerateCorrEvents( sig_Kppim, tag_Kppim, cs_Kppim, phspSig, phspTag_Kppim , nD0, blockSize, &rndm);
     INFO("Generating Kmpip events");
-    GenerateCorrEvents( sig_Kmpip, tag_Kmpip, cs_Kmpip, phspSig, phspTag_Kmpip , nDbar0, blockSize, &rndmSig, &rndmTag );
+    GenerateCorrEvents( sig_Kmpip, tag_Kmpip, cs_Kmpip, phspSig, phspTag_Kmpip , nDbar0, blockSize, &rndm);
     
     
     INFO("Generating B+- events");
     pCoherentSum psiBplus( eventType, MPS, 1, true, true);
     pCoherentSum psiBminus( eventType, MPS, -1, true, false);
 
-    GenerateEvents(sig_Bp, psiBplus, phspSig, nB, blockSize, &rndmSig);
-    GenerateEvents(sig_Bm, psiBminus, phspSig, nB, blockSize, &rndmSig);
+    GenerateEvents(sig_Bp, psiBplus, phspSig, nB, blockSize, &rndm);
+    GenerateEvents(sig_Bm, psiBminus, phspSig, nB, blockSize, &rndm);
 
 
     INFO("Binning Kspi0");
@@ -1965,7 +1965,7 @@ void genMI(MinuitParameterSet MPS, EventType eventType){
     std::vector<std::map<int, EventList> > binned_Bm = binEventsFromRef(sig_Bm, sig_Bm, my_x, my_y, nBins, NamedParameter<double>("nEventsRefFrac", 1));
 
    
-    for (int i=0;i<bins.size();i++){
+    for( long unsigned int  i=0;i<bins.size();i++){
         int bin = bins[i];
         std::string treeName_KK_sig_i = treeName_KK + "_sig_" +  std::to_string(bin);
         std::string treeName_Kppim_sig_i = treeName_Kppim + "_sig_" +  std::to_string(bin);
@@ -2005,16 +2005,16 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
   auto pNames = NamedParameter<std::string>("EventType" , ""    
       , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
 
-    TRandom3 rndmSig;
-    TRandom3 rndmTag;
-    rndmSig.SetSeed( NamedParameter<int>("Seed", 0) + 100);
-    rndmTag.SetSeed( NamedParameter<int>("Seed", 0) + 101);
-    gRandom = &rndmSig;
+    TRandom3 rndm;
+
+    rndm.SetSeed( NamedParameter<int>("Seed", 0) );
+
+    gRandom = &rndm;
  
 
     size_t nBins(NamedParameter<size_t>("nBins", 8));
     std::vector<int> bins = {};
-    for (int i=1;i<nBins+1;i++){
+    for( long unsigned int  i=1;i<nBins+1;i++){
         bins.push_back(i);
         bins.push_back(-i);
     }
@@ -2030,7 +2030,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     std::map<int, EventList> my_bins;
     std::map<int, std::vector<double> > my_x;
     std::map<int, std::vector<double> > my_y;
-    for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
+    for( long unsigned int  bin_idx=0;bin_idx<bins.size();bin_idx++){
         int bin = bins[bin_idx];
         INFO("bin = "<<bin);
         EventList my_bin_bin;
@@ -2053,7 +2053,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     fRefEqual->Close();
 
 
-    EventList mc =  Generator<>(eventType, &rndmSig).generate(NamedParameter<size_t>("nMC", 10000));
+    EventList mc =  Generator<>(eventType, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
     CoherentSum A(eventType, MPS);
     CoherentSum C(eventType.conj(true), MPS);
     A.setEvents(mc);
@@ -2068,7 +2068,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     std::map<int, double> K0;
     std::map<int, double> Kbar0;
     std::map<int, complex_t> Z0;
-    for (int i=0;i<bins.size();i++){
+    for( long unsigned int  i=0;i<bins.size();i++){
             int bin = bins[i];
             double _K = getK(bin, A, my_bins);
             double _Kbar = getK(bin, C,  my_bins);
@@ -2079,7 +2079,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
 
     }
 
-    for (int i=1;i<nBins + 1;i++){
+    for( long unsigned int  i=1;i<nBins + 1;i++){
         MPS["c_"+std::to_string(i)]->setCurrentFitVal(std::real(Z0[i]));
         MPS["s_"+std::to_string(i)]->setCurrentFitVal(std::imag(Z0[i]));
     }
@@ -2099,7 +2099,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     std::map<std::string,EventType> SigType;
     std::map<std::string,EventType> TagType;
     std::map<std::string,std::string> sumFactors;
-    for (int i=0; i < tags.size(); i++){
+    for( long unsigned int  i=0; i < tags.size(); i++){
         std::stringstream tag_log;
         auto tagName = split(tags[i],' ')[0];
         tag_log<<tagName<<"_fit.log";
@@ -2354,7 +2354,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
         double YBp = Y_Bp(p.first, K0, Kbar0, Z0) * sum_Bp;
         double YBm = Y_Bm(p.first, K0, Kbar0, Z0) * sum_Bm;
         double Y_Kspi0 = Y_CP(p.first, -1, K0, Kbar0) * sum_Kspi0;
-        INFO(p.first<<" "<<N_KK<<" "<<N_Kspi0<<" "<<N_Bp<<" "<<N_Bm);
+        INFO(p.first<<" "<<N_KK<<" "<<N_Kspi0<<" "<<N_Bp<<" "<<N_Bm<<" "<<N_K<<" "<<N_Kbar);
         INFO(p.first<<" "<<Y_KK<<" "<<Y_Kspi0<<" "<<YBp<<" "<<YBm);
     }
 
@@ -2395,8 +2395,8 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
             double N_Kspipi = p.second * sum_Kspipi;
             double dN_Kspipi = std::pow(N_Kspipi, 0.5);
             double E_Kspipi = (*(&Y_Kspipi))(bin_sig, bin_tag,  (*(&K)), (*(&Kbar))) * sum_Kspipi;
-            double dE_Kspipi = std::pow(E_Kspipi, 0.5);
-            double err_Kspipi = std::pow(N_Kspipi + E_Kspipi, 0.5);
+            //double dE_Kspipi = std::pow(E_Kspipi, 0.5);
+            //double err_Kspipi = std::pow(N_Kspipi + E_Kspipi, 0.5);
             if (N_Kspipi!=0) chi2 += std::pow((E_Kspipi - N_Kspipi)/dN_Kspipi, 2);
              //chi2 += std::pow(E_Kspipi - N_Kspipi, 2)/err_Kspipi;
 
@@ -2431,7 +2431,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
 
 
 
-    for (int i=1;i<nBins + 1;i++){
+    for( long unsigned int  i=1;i<nBins + 1;i++){
         double ci_Fit = MPS["c_" + std::to_string(i)]->mean();
         double dci_Fit = MPS["c_" + std::to_string(i)]->err();
         double si_Fit = MPS["s_" + std::to_string(i)]->mean();
@@ -2449,7 +2449,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
         
 
     }   
-    for (int i =1;i<nBins + 1;i++){
+    for( long unsigned int  i =1;i<nBins + 1;i++){
         double ci = MPS["c_"+std::to_string(i)]->mean();
         double dci = MPS["c_"+std::to_string(i)]->err();
         double si = MPS["s_"+std::to_string(i)]->mean();
@@ -2465,7 +2465,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     auto chi2_B = [&F_Bp, &F_Bm, sum_Bp, sum_Bm, MPS, &Y_Bp ,&Y_Bm, &K0, &Kbar0, &Z0, nBins](){
         double chi2 = 0;
         std::map<int, complex_t> Z;
-        for (int i =1;i<nBins + 1;i++){
+        for( long unsigned int  i =1;i<nBins + 1;i++){
             double c = MPS["c_"+std::to_string(i)]->mean();
             double s = MPS["s_"+std::to_string(i)]->mean();
             Z.insert(std::pair<int, complex_t>({i, complex_t(c, s)}));
@@ -2481,12 +2481,12 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
             double E_Bp = (*(&Y_Bp))(bin, (*(&K0)), (*(&Kbar0)),(*(&Z))  ) * sum_Bp;
             double E_Bm = (*(&Y_Bm))(bin, (*(&K0)), (*(&Kbar0)),(*(&Z)) ) * sum_Bm;
             double dN_Bp = std::pow(N_Bp, 0.5);
-            double dE_Bp = std::pow(E_Bp, 0.5);
-            double err_Bp = std::pow(N_Bp + E_Bp, 0.5);
+            //double dE_Bp = std::pow(E_Bp, 0.5);
+            //double err_Bp = std::pow(N_Bp + E_Bp, 0.5);
 
             double dN_Bm = std::pow(N_Bm, 0.5);
-            double dE_Bm = std::pow(E_Bm, 0.5);
-            double err_Bm = std::pow(N_Bm + E_Bm, 0.5);
+            //double dE_Bm = std::pow(E_Bm, 0.5);
+            //double err_Bm = std::pow(N_Bm + E_Bm, 0.5);
             //if (N_Bp!=0)chi2 += std::pow((N_Bp - E_Bp), 2);
            if (N_Bp!=0)chi2 += std::pow((N_Bp - E_Bp)/dN_Bp, 2);
             //chi2 += std::pow(N_Bp - E_Bp, 2)/err_Bp;
@@ -2519,7 +2519,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
         double pull_Bp = (N_Bp - YBp)/std::pow(N_Bp, 0.5);
         double pull_Bm = (N_Bm - YBm)/std::pow(N_Bm, 0.5);
         my_chi2 += std::pow(pull_Bp, 2) + std::pow(pull_Bm, 2);
-        INFO(p.first<<" "<<N_KK<<" "<<N_Kspi0<<" "<<N_Bp<<" "<<N_Bm);
+        INFO(p.first<<" "<<N_KK<<" "<<N_Kspi0<<" "<<N_Bp<<" "<<N_Bm<<" "<<N_K<<" "<<N_Kbar);
         INFO(p.first<<" "<<Y_KK<<" "<<Y_Kspi0<<" "<<YBp<<" "<<YBm<<" "<<pull_Bp<<" "<<pull_Bm);
         
     }
@@ -2581,7 +2581,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     EventList sig_Bm(eventType);
     
 
-    for (int i=0;i<bins.size();i++){
+    for( long unsigned int  i=0;i<bins.size();i++){
         int bin = bins[i];
         std::string treeName_KK_sig_i = treeName_KK + "_sig_" +  std::to_string(bin);
         std::string treeName_Kppim_sig_i = treeName_Kppim + "_sig_" +  std::to_string(bin);
@@ -2683,7 +2683,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
         binned_Bm.insert(std::pair<int, EventList>({bin, sig_Bm}));
 
 
-        for (int j=0;j<bins.size();j++){
+        for( long unsigned int  j=0;j<bins.size();j++){
             int bin_tag = bins[j];
             INFO("Getting binned Kspipi events "<<bin<<", "<<bin_tag);
             std::pair<int, int> binPair({bin, bin_tag});
@@ -2953,7 +2953,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
 
     Minimiser mini_BESIII(chi2_BESIII, &MPS);
     mini_BESIII.doFit();
-    for (int i=1;i<nBins + 1;i++){
+    for( long unsigned int  i=1;i<nBins + 1;i++){
         double ci_Fit = MPS["c_" + std::to_string(i)]->mean();
         double dci_Fit = MPS["c_" + std::to_string(i)]->err();
         double si_Fit = MPS["s_" + std::to_string(i)]->mean();
@@ -2975,7 +2975,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     auto chi2_B = [&F_Bp, &F_Bm, sum_Bp, sum_Bm, MPS, &Y_Bp ,&Y_Bm, &K0, &Kbar0, &Z0, nBins](){
         double chi2 = 0;
         std::map<int, complex_t> Z;
-        for (int i =1;i<nBins + 1;i++){
+        for( long unsigned int  i =1;i<nBins + 1;i++){
             double c = MPS["c_"+std::to_string(i)]->mean();
             double s = MPS["s_"+std::to_string(i)]->mean();
             Z.insert(std::pair<int, complex_t>({i, complex_t(c, s)}));
@@ -3075,8 +3075,8 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
 
     MPS["pCoherentSum::x+"]->fix();
     MPS["pCoherentSum::y+"]->fix();
-    for (int i=0;i<(int)std::pow(N, 0.5);i++){
-        for (int j=0;j<(int)std::pow(N, 0.5);j++){
+    for( long unsigned int  i=0;i<(int)std::pow(N, 0.5);i++){
+        for( long unsigned int  j=0;j<(int)std::pow(N, 0.5);j++){
             double _x = x0 + dx * i;
             double _y = x0 + dx * j;
 
@@ -3100,16 +3100,16 @@ void printZ(MinuitParameterSet MPS, EventType eventType){
   auto pNames = NamedParameter<std::string>("EventType" , ""    
       , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
 
-    TRandom3 rndmSig;
-    TRandom3 rndmTag;
-    rndmSig.SetSeed( NamedParameter<int>("Seed", 0)  + 100);
-    rndmTag.SetSeed( NamedParameter<int>("Seed", 0)  + 101);
-    gRandom = &rndmSig;
+    TRandom3 rndm;
+
+    rndm.SetSeed( NamedParameter<int>("Seed", 0) );
+
+    gRandom = &rndm;
  
 
     size_t nBins(NamedParameter<size_t>("nBins", 8));
     std::vector<int> bins = {};
-    for (int i=1;i<nBins+1;i++){
+    for( long unsigned int  i=1;i<nBins+1;i++){
         bins.push_back(i);
         bins.push_back(-i);
     }
@@ -3125,7 +3125,7 @@ void printZ(MinuitParameterSet MPS, EventType eventType){
     std::map<int, EventList> my_bins;
     std::map<int, std::vector<double> > my_x;
     std::map<int, std::vector<double> > my_y;
-    for (int bin_idx=0;bin_idx<bins.size();bin_idx++){
+    for( long unsigned int  bin_idx=0;bin_idx<bins.size();bin_idx++){
         int bin = bins[bin_idx];
         INFO("bin = "<<bin);
         EventList my_bin_bin;
@@ -3148,7 +3148,7 @@ void printZ(MinuitParameterSet MPS, EventType eventType){
     fRefEqual->Close();
 
 
-    EventList mc =  Generator<>(eventType, &rndmSig).generate(NamedParameter<size_t>("nMC", 10000));
+    EventList mc =  Generator<>(eventType, &rndm).generate(NamedParameter<size_t>("nMC", 10000));
     CoherentSum A(eventType, MPS);
     CoherentSum C(eventType.conj(true), MPS);
     A.setEvents(mc);
@@ -3167,7 +3167,7 @@ void printZ(MinuitParameterSet MPS, EventType eventType){
     output.open(NamedParameter<std::string>("printZOut", "Z.txt"), std::ofstream::out | std::ofstream::app );
     PhaseCorrection pc(MPS);
 
-    for (int i=0;i<bins.size();i++){
+    for( long unsigned int  i=0;i<bins.size();i++){
             int bin = bins[i];
             double _K = getK(bin, A, my_bins);
             double _Kbar = getK(bin, C,  my_bins);

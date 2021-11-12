@@ -9,11 +9,13 @@
 #include "AmpGen/CombGamCorrLL.h"
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/polyLASSO.h"
+#include "AmpGen/Minimiser.h"
 #include "AmpGen/ProfileClock.h"
 #include <TMath.h>
 #include "AmpGen/AddCPConjugate.h"
 #include "AmpGen/CombGamLL.h"
 #include "AmpGen/ProgressBar.h"
+#include "AmpGen/FitResult.h"
 //#include <Math/IFunction.h>
 #include <Math/Functor.h>
 #include <TGraph.h>
@@ -47,7 +49,7 @@ int main( int argc, char* argv[] )
   size_t seed         = NamedParameter<size_t>("Seed"        , 0           , "Random seed to use.");
 
 
-
+  size_t Order = NamedParameter<size_t>("PhaseCorrection::Order", 2);
   std::string BESIIIDataFile = NamedParameter<std::string>("BESIIIDataSample", ""          , "Name of file containing data sample to fit." );
   std::string LHCbDataFile = NamedParameter<std::string>("LHCbDataSample", ""          , "Name of file containing data sample to fit." );
   std::string intFile  = NamedParameter<std::string>("IntegrationSample",""    , "Name of file containing events to use for MC integration.");
@@ -112,13 +114,60 @@ int main( int argc, char* argv[] )
   }
   INFO("Calculating the int AC eif part now and share it between amps!");
   auto ACeif = [&pc, &ac, &mcSig](){
-    complex_t z = 0;
+    
+    real_t x=0; 
+    real_t y=0; 
+    #pragma omp parallel for reduction(+:x,y)
     for (size_t i=0;i<mcSig.size();i++){
-      z += exp(complex_t(0,pc.calcCorrL(mcSig[i]))) * ac[i];
+      complex_t r = exp(complex_t(0,pc.calcCorrL(mcSig[i]))) * ac[i];
+      x += std::real(r);
+      y += std::imag(r);
     }
+    complex_t z(x, y);
     return z/(real_t)mcSig.size();
   };
   complex_t aceif = ACeif();
+  std::map<std::string, EventList> LHCbSig;
+  for (auto tag : LHCbTags){
+    auto arr_tag = split(tag, ' ');
+    auto tagName = arr_tag[0];
+
+    EventList Events = EventList(LHCbDataFile + ":" + tagName, sigType);
+    LHCbSig.insert(std::pair<std::string, EventList>({tagName, Events}));
+  }
+  std::vector<pCoherentSum> LHCbAmps(LHCbSig.size());
+  int i=0;
+  INFO("Preparing B Amplitudes");
+  for (auto tag : LHCbTags){
+    auto arr_tag = split(tag, ' ');
+    auto tagName = arr_tag[0];
+    bool conjD =(bool) std::stoi(arr_tag[2]);
+    int BSign = std::stoi(arr_tag[3]);
+    bool useXY = (bool) std::stoi(arr_tag[4]);
+
+    LHCbAmps[i] = pCoherentSum(sigType, MPS, BSign, useXY, conjD);
+    LHCbAmps[i].setEventsByRef(&LHCbSig[tagName]);
+    LHCbAmps[i].setMCByRef(&mcSig);
+    LHCbAmps[i].updateZACst(aceif); 
+    INFO("Preparing LHCb "<<tagName);
+    ProfileClock clockPreparePsiLHCb;
+    clockPreparePsiLHCb.start();
+    LHCbAmps[i].prepare();
+    clockPreparePsiLHCb.stop();
+    
+    INFO("Prepared "<<tagName<<" amp in "<<clockPreparePsiLHCb); 
+
+
+    ProfileClock clockNormPsiLHCb;
+    clockNormPsiLHCb.start();
+    double normPsi = LHCbAmps[i].norm();
+    clockNormPsiLHCb.stop();
+    INFO("Norm for "<<tagName <<" = "<<normPsi<<" took "<<clockNormPsiLHCb);
+    
+    i++;
+    
+  }
+
   //std::map<std::string, pCorrelatedSum> BESIIIAmps;
   std::map<std::string, EventList> BESIIISig;
   std::map<std::string, EventList> BESIIITag;
@@ -144,25 +193,25 @@ int main( int argc, char* argv[] )
 
   //Hard code our tags for now 
 
-  std::vector<pCorrelatedSum> ps (BESIIITags.size());
-  size_t i =0 ;
+  std::vector<pCorrelatedSum> BESIIIAmps (BESIIITags.size());
+  i =0 ;
   for (auto p:BESIIISig){
     EventList sig = BESIIISig[p.first];
     EventList tag = BESIIITag[p.first];
     EventList tagMC = BESIIITagMC[p.first];
-    ps[i] = pCorrelatedSum (sig.eventType(), tag.eventType(), MPS);
-    ps[i].setEventsByRef(&sig, &tag);
+    BESIIIAmps[i] = pCorrelatedSum (sig.eventType(), tag.eventType(), MPS);
+    BESIIIAmps[i].setEventsByRef(&sig, &tag);
   
-    ps[i].setMCByRef(&mcSig, &tagMC);
-
+    BESIIIAmps[i].setMCByRef(&mcSig, &tagMC);
+    BESIIIAmps[i].updateZACst(aceif);
     
-    ps[i].prepare();
+    BESIIIAmps[i].prepare();
     CoherentSum B(tag.eventType(), MPS); B.setEvents(tagMC); B.setMC(tagMC); B.prepare();
     CoherentSum D(tag.eventType().conj(true), MPS); D.setEvents(tagMC); D.setMC(tagMC); D.prepare();
     real_t normB = B.norm();
     real_t normD = D.norm();
 
-    real_t norm = ps[i].norm();
+    real_t norm = BESIIIAmps[i].norm();
     INFO("norm = "<<norm);
     INFO("normA = "<<normA);
     INFO("normB = "<<normB);
@@ -174,210 +223,224 @@ int main( int argc, char* argv[] )
 
     INFO("sigMC s(0,1)[0] = "<<mcSig[0].s(0,1));
     INFO("tagMC s(0,1)[0] = "<<tagMC[0].s(0,1));
-    complex_t BD = ps[i].getBDstSum();
+    complex_t BD = BESIIIAmps[i].getBDstSum();
     BDs.push_back(BD);
- real_t myNormCalc = ps[i].normFromZ(aceif, BD);
+ real_t myNormCalc = BESIIIAmps[i].normFromZ(aceif, BD);
 INFO("my attempt at getting norm  = "<<myNormCalc);
     INFO("BD = "<<BD<<" ACeif = "<<aceif);
-    real_t nA = 0;
-    real_t nB = 0;
-    real_t nC = 0;
-    real_t nD = 0;
     complex_t zAC = 0;
-    complex_t zBD = 0;
-    real_t nAB = 0;
-    real_t nCD = 0;
-    complex_t zABCD = 0;
     real_t N = mcSig.size();
-    for (size_t j=0;j<mcSig.size();j++){
-   
-      nA += std::norm(A.getValNoCache(mcSig[j]))/N;
-      nB += std::norm(B.getValNoCache(tagMC[j]))/N;
-      nC += std::norm(C.getValNoCache(mcSig[j]))/N;
-      nD += std::norm(D.getValNoCache(tagMC[j]))/N;
-      zAC += A.getValNoCache(mcSig[j]) * std::conj(C.getValNoCache(mcSig[j]))/N;
-      zBD += B.getValNoCache(tagMC[j]) * std::conj(D.getValNoCache(tagMC[j]))/N;
 
-    }
-    INFO("manualA = "<<nA);
-    INFO("manualB = "<<nB);
-    INFO("manualC = "<<nC);
-    INFO("manualD = "<<nD);
-    INFO("zAC = "<<zAC);
-    INFO("zBD = "<<zBD);
-    
-    normMan = nA * nB + nC * nD - 2 * std::real(zAC * zBD);
-    INFO("normManual = "<<normMan);
-    //if (sig.eventType()==tag.eventType()) BD = std::conj(aceif);
-   
+ 
 
     
 //    ps[i].debugNorm();
     i++;
   }
-  return 0;
-  INFO("Out of loop i = "<<i);
   
-  ProfileClock clockNormKK;
-  ProfileClock clockLLKK;
-  clockLLKK.start();
-  clockNormKK.start();
-  double psKKNorm = ps[0].norm();
-  clockNormKK.stop();
-  double LLKK = 0; 
-  for (size_t i=0;i<BESIIISig["KK"].size();i++){
-    Event sig = BESIIISig["KK"][i];
-    Event tag = BESIIITag["KK"][i];
-    LLKK += log(std::norm(ps[0].getValNoCache(sig, tag))/psKKNorm );
- 
+
+
+  //  complex_t zAC = 0;
+    real_t N = mcSig.size();
+
+
+  ProfileClock clockAC, clockNorm;
+
+  clockNorm.start();
+  clockAC.start();
+  /*
+    for (size_t j=0;j<mcSig.size();j++){
+      real_t corr = pc.calcCorrL(mcSig[j]);   
+      zAC += A.getValNoCache(mcSig[j]) * std::conj(C.getValNoCache(mcSig[j])) * exp(complex_t(0, corr))/N;
+    }
+    */
+   complex_t zAC = ACeif();
+  clockAC.stop();
+
+  ProfileClock clockBESIII;
+  clockBESIII.start();
+  for (auto p : BESIIIAmps){
+    p.updateZACst(zAC);
+    INFO("n = "<<p.norm());
   }
-  clockLLKK.stop();
-  INFO("norm0 = "<<psKKNorm<<" took "<<clockNormKK);
-  INFO("LLKK = "<<LLKK<<" took "<<clockLLKK);
+  clockBESIII.stop();
+  
 
-  ProfileClock clockNormKspi0;
-  ProfileClock clockLLKspi0;
-  clockLLKspi0.start();
-  clockNormKspi0.start();
-  double psKspi0Norm = ps[1].norm();
-  clockNormKspi0.stop();
-  double LLKspi0 = 0; 
-  for (size_t i=0;i<BESIIISig["Kspi0"].size();i++){
-    Event sig = BESIIISig["Kspi0"][i];
-    Event tag = BESIIITag["Kspi0"][i];
-    LLKspi0 += log(std::norm(ps[1].getValNoCache(sig, tag))/psKspi0Norm );
- 
+
+
+
+  ProfileClock clockLHCb;
+  clockLHCb.start();
+
+  for (auto p : LHCbAmps){
+    p.updateZACst(zAC);
+    INFO("n = "<<p.norm());
   }
-  clockLLKspi0.stop();
-  INFO("norm0 = "<<psKspi0Norm<<" took "<<clockNormKspi0);
-  INFO("LLKspi0 = "<<LLKspi0<<" took "<<clockLLKspi0);
 
-  ProfileClock clockNormKppim;
-  ProfileClock clockLLKppim;
-  clockLLKppim.start();
-  clockNormKppim.start();
-  double psKppimNorm = ps[2].norm();
-  clockNormKppim.stop();
-  double LLKppim = 0; 
-  for (size_t i=0;i<BESIIISig["Kppim"].size();i++){
-    Event sig = BESIIISig["Kppim"][i];
-    Event tag = BESIIITag["Kppim"][i];
-    LLKppim += log(std::norm(ps[2].getValNoCache(sig, tag))/psKppimNorm );
- 
-  }
-  clockLLKppim.stop();
-  INFO("norm0 = "<<psKppimNorm<<" took "<<clockNormKppim);
-  INFO("LLKppim = "<<LLKppim<<" took "<<clockLLKppim);
+  clockLHCb.stop();
 
-  ProfileClock clockNormKmpip;
-  ProfileClock clockLLKmpip;
-  clockLLKmpip.start();
-  clockNormKmpip.start();
-  double psKmpipNorm = ps[3].norm();
-  clockNormKmpip.stop();
-  double LLKmpip = 0; 
-  for (size_t i=0;i<BESIIISig["Kmpip"].size();i++){
-    Event sig = BESIIISig["Kmpip"][i];
-    Event tag = BESIIITag["Kmpip"][i];
-    LLKmpip += log(std::norm(ps[3].getValNoCache(sig, tag))/psKmpipNorm );
- 
-  }
-  clockLLKmpip.stop();
-  INFO("norm0 = "<<psKmpipNorm<<" took "<<clockNormKmpip);
-  INFO("LLKmpip = "<<LLKmpip<<" took "<<clockLLKmpip);
+clockNorm.stop();
+  INFO("Took "<<clockAC<<" to calc int ACeif");
+  INFO("Took "<<clockBESIII<<" to calc BESIII Norms");
+  INFO("Took "<<clockLHCb<<" to calc LHCb Norms");
+  INFO("Took "<<clockNorm<<" to calculate all "<<BESIIIAmps.size()<<" normalisations for BESIII + "<<LHCbAmps.size()<<" normalisations for LHCb");
 
-  ProfileClock clockNormKspipi;
-  ProfileClock clockLLKspipi;
+  auto LL_BESIII = [&BESIIIAmps, &ACeif, &BESIIISig, &BESIIITag](){
+    complex_t z = ACeif();
+    real_t ll = 0;
+    int i=0;
+    for (auto p : BESIIISig){
+      auto evts = p.second;
+      BESIIIAmps[i].updateZACst(z);
+      real_t ll_i=0;
+      real_t n = BESIIIAmps[i].norm();
+      #pragma omp parallel for reduction (+:ll_i)
+      for(size_t j=0;j<evts.size();j++){
+        ll_i += log(std::norm(BESIIIAmps[i].getValNoCache(BESIIISig[p.first][j], BESIIITag[p.first][j]))/n);
+      }
+      ll+=ll_i;
+      i++;
+//      ll += p.LL();
 
-  Event sig = BESIIISig["Kspipi"][0];
-  Event tag = BESIIITag["Kspipi"][0];
-
-  complex_t v_kspipi_00 = ps[4].getValNoCache(sig, tag);
-  INFO("vKspipi "<<v_kspipi_00);
-
-
-  clockLLKspipi.start();
-  clockNormKspipi.start();
-
- 
-  double psKspipiNorm = ps[4].norm();
-  clockNormKspipi.stop();
- return 0;
-  double LLKspipi = 0; 
-  for (size_t i=0;i<BESIIISig["Kspipi"].size();i++){
-    Event sig = BESIIISig["Kspipi"][i];
-    Event tag = BESIIITag["Kspipi"][i];
-    LLKspipi += log(std::norm(ps[4].getValNoCache(sig, tag))/psKspipiNorm );
- 
-  }
-  clockLLKspipi.stop();
-  INFO("norm0 = "<<psKspipiNorm<<" took "<<clockNormKspipi);
-  INFO("LLKspipi = "<<LLKspipi<<" took "<<clockLLKspipi);
-
-
-
-
-
-
-
-  return 0;
-
-  EventList sigKK = BESIIISig["KK"];
-  EventList tagKK = BESIIITag["KK"];
-  EventList tagKKMC = BESIIITagMC["KK"];
-  pCorrelatedSum psKK(sigKK.eventType(), tagKK.eventType(), MPS);
-  psKK.setEvents(sigKK, tagKK);
-  psKK.setMC(mcSig, tagKKMC);
-  psKK.prepare();
-  real_t normKK = psKK.norm();
-  INFO("normKK = "<<normKK);
-
-  EventList sigKspi0 = BESIIISig["Kspi0"];
-  EventList tagKspi0 = BESIIITag["Kspi0"];
-  EventList tagKspi0MC = BESIIITagMC["Kspi0"];
-  pCorrelatedSum psKspi0(sigKspi0.eventType(), tagKspi0.eventType(), MPS);
-  psKspi0.setEvents(sigKspi0, tagKspi0);
-  psKspi0.setMC(mcSig, tagKspi0MC);
-  psKspi0.prepare();
-  real_t normKspi0 = psKspi0.norm();
-  INFO("normKspi0 = "<<normKspi0);
-
-  EventList sigKmpip = BESIIISig["Kmpip"];
-  EventList tagKmpip = BESIIITag["Kmpip"];
-  EventList tagKmpipMC = BESIIITagMC["Kmpip"];
-  pCorrelatedSum psKmpip(sigKmpip.eventType(), tagKmpip.eventType(), MPS);
-  psKmpip.setEvents(sigKmpip, tagKmpip);
-  psKmpip.setMC(mcSig, tagKmpipMC);
-  psKmpip.prepare();
-  real_t normKmpip = psKmpip.norm();
-  INFO("normKmpip = "<<normKmpip);
-
-  EventList sigKppim = BESIIISig["Kppim"];
-  EventList tagKppim = BESIIITag["Kppim"];
-  EventList tagKppimMC = BESIIITagMC["Kppim"];
-  pCorrelatedSum psKppim(sigKppim.eventType(), tagKppim.eventType(), MPS);
-  psKppim.setEvents(sigKppim, tagKppim);
-  psKppim.setMC(mcSig, tagKppimMC);
-  psKppim.prepare();
-  real_t normKppim = psKppim.norm();
-  INFO("normKppim = "<<normKppim);
-
-  EventList sigKspipi = BESIIISig["Kspipi"];
-  EventList tagKspipi = BESIIITag["Kspipi"];
-
-  pCorrelatedSum psKspipi(sigKspipi.eventType(), tagKspipi.eventType(), MPS);
-  psKspipi.setEvents(sigKspipi, tagKspipi);
-  psKspipi.setMC(mcSig, mcSig);
-  psKspipi.prepare();
-  real_t normKspipi = psKspipi.norm();
-  INFO("normKspipi = "<<normKspipi);
-
-  auto LL_BESIII = [&psKK, &psKspi0](){
-    return psKK.LL() + psKspi0.LL();
+    }
+    return -2*ll;
   };
 
-  double LL = LL_BESIII();
+  auto LL_LHCb = [&LHCbAmps, &ACeif, &LHCbSig](){
+    complex_t z = ACeif();
+    real_t ll = 0;
+    int i=0;
+    for (auto p : LHCbSig){
+      auto evts = p.second;
+      LHCbAmps[i].updateZACst(z);
+      real_t ll_i=0;
+      real_t n = LHCbAmps[i].norm();
+      #pragma omp parallel for reduction (+:ll_i)
+      for(size_t j=0;j<evts.size();j++){
+        ll_i += log(std::norm(LHCbAmps[i].getValNoCache(LHCbSig[p.first][j]))/n);
+      }
+      ll+=ll_i;
+      i++;
+//      ll += p.LL();
 
+    }
+    return -2*ll;
+  };
+  auto LL_BESIII_LHCb = [&BESIIIAmps, &LHCbAmps, &ACeif, &BESIIISig, &BESIIITag, &LHCbSig](){
+    complex_t z = ACeif();
+    real_t ll = 0;
+    int i=0;
+    for (auto p : BESIIISig){
+      auto evts = p.second;
+      BESIIIAmps[i].updateZACst(z);
+      real_t ll_i=0;
+      real_t n = BESIIIAmps[i].norm();
+      #pragma omp parallel for reduction (+:ll_i)
+      for(size_t j=0;j<evts.size();j++){
+        ll_i += log(std::norm(BESIIIAmps[i].getValNoCache(BESIIISig[p.first][j], BESIIITag[p.first][j]))/n);
+      }
+      ll+=ll_i;
+      i++;
+//      ll += p.LL();
+
+    }
+    i = 0;
+    for (auto p : LHCbSig){
+      auto evts = p.second;
+      LHCbAmps[i].updateZACst(z);
+      real_t ll_i=0;
+      real_t n = LHCbAmps[i].norm();
+      #pragma omp parallel for reduction (+:ll_i)
+      for(size_t j=0;j<evts.size();j++){
+        ll_i += log(std::norm(LHCbAmps[i].getValNoCache(LHCbSig[p.first][j]))/n);
+      }
+      ll+=ll_i;
+      i++;
+//      ll += p.LL();
+
+    }
+    return -2*ll;
+  };
+
+  auto LL_BESIII_LHCb_LASSO = [&LL_BESIII_LHCb, &MPS, &Order](){
+
+        real_t lambda = MPS["LASSO::lambda"]->mean() ;
+        real_t penalty=0;
+        for (size_t i=0;i<Order+1;i++){
+            for (size_t j=0;j<Order+1-i;j++){
+                int i1 = i;
+                int i2 = 2 * j + 1;
+                auto p = MPS["PhaseCorrection::C" + std::to_string(i1) + "_" + std::to_string(i2)];
+                penalty += std::abs(p->mean());
+            }
+        }
+        return LL_BESIII_LHCb() + lambda * penalty;
+  };
+
+
+
+
+
+    ProfileClock clockBESIIILL;
+    clockBESIIILL.start();
+    INFO("LL = "<<LL_BESIII());
+    clockBESIIILL.stop();
+    INFO("Took "<<clockBESIIILL<<" to calc LL(BESIII)");
+
+    ProfileClock clockLHCbLL;
+    clockLHCbLL.start();
+    INFO("LL = "<<LL_LHCb());
+    clockLHCbLL.stop();
+    INFO("Took "<<clockLHCbLL<<" to calc LL(LHCb)");
+
+    ProfileClock clockBESIII_LHCbLL;
+    clockBESIII_LHCbLL.start();
+    INFO("LL = "<<LL_BESIII_LHCb());
+    clockBESIII_LHCbLL.stop();
+    INFO("Took "<<clockBESIII_LHCbLL<<" to calc LL(BESIII_LHCb)");
+
+    
+    size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
+    real_t maxTime_ms = maxCalls * clockBESIII_LHCbLL;
+    INFO("Max time a fit should take = "<<maxTime_ms<<" ms = "<<maxTime_ms/(60 * 60 * 1e3)<<" hours");
+
+
+
+    real_t lambda = MPS["LASSO::lambda"]->mean() ;
+    if (lambda != 0){
+      INFO("Doing LASSO Fit with lambda = "<<lambda);
+      Minimiser mini_BESIII_LHCb_LASSO(LL_BESIII_LHCb_LASSO, &MPS);
+      mini_BESIII_LHCb_LASSO.doFit();
+      real_t LASSO_Threshold = NamedParameter<real_t>("LASSO::Threshold", 0.01);
+      for (long unsigned int i=0;i<Order+1;i++){
+        for (long unsigned int j=0;j<Order+1-i;j++){
+            auto p = MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)];
+            if (abs(p->mean())< LASSO_Threshold){
+              MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setCurrentFitVal(0);
+              MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->fix();
+              INFO("Excluding C"<<i<<"_"<<2*j+1<<" from fit");
+            }
+
+        }
+      }
+    }
+    Minimiser mini_BESIII_LHCb(LL_BESIII_LHCb, &MPS);
+    mini_BESIII_LHCb.doFit();
+    FitResult * fr = new FitResult(mini_BESIII_LHCb);
+    fr->writeToFile(logFile);
+
+        
+
+
+
+
+
+
+
+
+ 
+  return 0;
+  INFO("Out of loop i = "<<i);
 
 
 

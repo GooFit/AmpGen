@@ -73,12 +73,12 @@ template <class PDF_TYPE, class PRIOR_TYPE>
                        , PRIOR_TYPE& priorTag
                        , const size_t& nEvents
                        , const size_t& blockSize
-                       , TRandom* rndmSig
-                       , TRandom* rndmTag 
+                       , TRandom* rndm
+
 		       )
 {
   QcGenerator<PRIOR_TYPE> signalGenerator( priorSig, priorTag );
-  signalGenerator.setRandom( rndmSig, rndmTag);
+  signalGenerator.setRandom( rndm);
   signalGenerator.setBlockSize( blockSize );
   signalGenerator.fillEventList( pdf, eventsSig, eventsTag, nEvents );
 }
@@ -94,11 +94,11 @@ template <class PDF_TYPE, class PRIOR_TYPE>
                        , const size_t& nEvents
                        , const size_t& blockSize
                        , TRandom* rndmSig
-                       , TRandom* rndmTag 
+
 		       )
 {
   QcGenerator<PRIOR_TYPE> signalGenerator( priorSig, priorTag );
-  signalGenerator.setRandom( rndmSig, rndmTag);
+  signalGenerator.setRandom( rndmSig);
   signalGenerator.setBlockSize( blockSize );
   signalGenerator.filterEventList( pdf, eventsSig, eventsTag,inSig, inTag, nEvents );
 }
@@ -178,9 +178,9 @@ for( auto& tag : tags ){
     }
     auto tagParticle  = Particle(tokens[1], {}, false);
     EventType    tagType = tagParticle.eventType();
-  TRandom3 randSig, randTag;
-  randSig.SetSeed( seed + 934534 );
-  randTag.SetSeed( seed + 934535 );
+  TRandom3 rand;
+  rand.SetSeed( seed + 934534 );
+
 
 
   //auto x = MinuitParameter("QcGen::X", Flag::Fix, 4, 0);
@@ -225,10 +225,10 @@ for( auto& tag : tags ){
   INFO("Making CorrelatedSum");
     pCorrelatedSum cs( sigType, tagType, *MPS ,sumFactor);
 
-    PhaseSpace phspSig(sigType,&randSig);
-    PhaseSpace phspTag(tagType,&randTag);
+    PhaseSpace phspSig(sigType,&rand);
+    PhaseSpace phspTag(tagType,&rand);
     INFO("Generating Events now!");
-    GenerateEvents( acceptedSig, acceptedTag, cs, phspSig, phspTag , nEvents_tag, blockSize, &randSig, &randTag );
+    GenerateEvents( acceptedSig, acceptedTag, cs, phspSig, phspTag , nEvents_tag, blockSize, &rand);
 
     if (debug){
 	    for (int i=0; i<acceptedSig.size(); i++){

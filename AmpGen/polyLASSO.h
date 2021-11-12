@@ -8,7 +8,13 @@ namespace AmpGen
   class polyLASSO
   {
     public:
-      polyLASSO(SimFit ll, const MinuitParameterSet mps) : m_mps(mps), m_ll(ll), m_order(NamedParameter<size_t>( "PhaseCorrection::Order") ), m_debug(NamedParameter<bool>("LASSO::debug", false)), m_start(NamedParameter<size_t>("PhaseCorrection::Start", 0)) {}
+      polyLASSO(SimFit ll, const MinuitParameterSet mps) : 
+           m_mps(mps),
+           m_ll(ll),
+           m_order(NamedParameter<size_t>( "PhaseCorrection::Order", 0) ), 
+           m_debug(NamedParameter<bool>("LASSO::debug", false)), 
+           m_start(NamedParameter<size_t>("PhaseCorrection::Start", 0))
+           {}
       double getVal()
       {
         double LL = m_ll.getVal();

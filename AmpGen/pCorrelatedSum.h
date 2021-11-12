@@ -138,6 +138,7 @@ class pCorrelatedSum {
 
         return sumFactor;
         }
+        return 0;
         
     }
     
@@ -198,26 +199,45 @@ class pCorrelatedSum {
         return m_A.norm() * m_B.norm() + m_C.norm() * m_D.norm() - 2 * std::real(ACstF * BDst );
         
     }
+    void updateZACst(complex_t z) {
+        m_zAC = z;
+    }
 
-    complex_t getBDstSum(){
-        complex_t r = 0;
-        if (m_sameTag){
+    const complex_t getACstSum()const{
+    
+//        complex_t r = 0;
+        real_t x=0;
+        real_t y=0;
 
-
-            for (size_t j =0;j<m_sim2->size();j++){
-                r +=  m_C.getValNoCache((*m_sim2)[j]) * std::conj(m_A.getValNoCache((*m_sim2)[j])) * exp(complex_t(0,-m_pc2.calcCorrL((*m_sim2)[j]))); 
-            }
-
-
-            r = r/(real_t)m_sim2->size();
+        #pragma omp parallel for reduction( +:x,y )
+        for (size_t i =0;i<m_sim1->size();i++){
+            real_t f = m_pcMC1.calcCorrL((*m_sim1)[i]);
+            complex_t r = m_A.getValNoCache((*m_sim1)[i]) * std::conj(m_C.getValNoCache((*m_sim1)[i])) * exp(complex_t(0, f));
+            x += std::real(r);
+            y += std::imag(r);
         }
-        else{
-            for (size_t i =0;i<m_sim2->size();i++){
-                r += m_B.getValNoCache((*m_sim2)[i]) * std::conj(m_D.getValNoCache((*m_sim2)[i]));
-            }
-            r = r/(real_t)m_sim2->size();
-        }
+        complex_t r(x, y);
+        r = r/(real_t)m_sim1->size();
+        return r;
+        
+    }
 
+
+
+
+    const complex_t getBDstSum()const{
+
+        real_t x=0;
+        real_t y=0;
+
+        #pragma omp parallel for reduction( +:x,y )
+        for (size_t i =0;i<m_sim2->size();i++){
+            complex_t r  = m_B.getValNoCache((*m_sim2)[i]) * std::conj(m_D.getValNoCache((*m_sim2)[i]));
+            x += std::real(r);
+            y += std::imag(r);
+        }
+        complex_t r(x, y);
+        r = r/(real_t)m_sim2->size();
         return r;
         
     }
@@ -319,9 +339,9 @@ const real_t LL() const {
 
     real_t n = norm();
     //INFO("n = "<<n);
-    //#pragma omp parallel for reduction( +: _LL )
+    #pragma omp parallel for reduction( +: _LL )
     for (size_t i=0; i < (*m_events1).size(); i++){
-        _LL += log(std::norm(getVal((*m_events1)[i], (*m_events2)[i]))/n);
+        _LL += log(std::norm(getValNoCache((*m_events1)[i], (*m_events2)[i]))/n);
     }
     ////INFO("LL = "<<-2*_LL);
     return -2 * _LL;
@@ -594,6 +614,16 @@ const real_t LL() const {
         for (size_t i=0;i<(*m_sim1).size();i++){
             m_ACstMC.push_back(m_A.getValNoCache((*m_sim1)[i]) * std::conj(m_C.getValNoCache((*m_sim1)[i])));
             m_BDstMC.push_back(m_B.getValNoCache((*m_sim2)[i]) * std::conj(m_D.getValNoCache((*m_sim2)[i])));
+            
+            m_sig_s01MC.push_back((*m_sim1)[i].s(0,1));
+            m_sig_s02MC.push_back((*m_sim1)[i].s(0,2));
+
+
+            if (m_sameTag){
+                m_tag_s01MC.push_back((*m_sim2)[i].s(0,1));
+                m_tag_s02MC.push_back((*m_sim2)[i].s(0,2));
+            }
+
         }
     }
 
@@ -624,7 +654,8 @@ const real_t LL() const {
         real_t m_normB;
         real_t m_normC;
         real_t m_normD;
-      
+        complex_t m_zAC; 
+        complex_t m_zBD; 
         std::vector<std::vector<double> > m_poly;
         std::vector<FitFraction> outputFractionsA;
         std::vector<FitFraction> outputFractionsB; 
@@ -668,6 +699,7 @@ const real_t LL() const {
         std::vector<double> m_sig_s02MC;
         std::vector<double> m_tag_s02MC;
 
+        bool m_calcZAtStart;
 
   };
 }
