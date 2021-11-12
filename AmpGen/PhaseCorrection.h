@@ -80,6 +80,7 @@ namespace AmpGen{
                 else if (m_PolyType=="antiSym_simple"){
                     return std::pow(x, i); 
                 }
+                return 0;
                 
             }
 
@@ -96,6 +97,7 @@ namespace AmpGen{
                 else{
                     return 0;
                 }
+                return 0;
                 
             }
 

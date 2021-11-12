@@ -27,6 +27,8 @@ namespace AmpGen{
 
         //correlated part
 
+        std::vector<TH1D *> hists;
+
         auto n = m_events1.size(); 
         int i=0;
         while (i < n){
@@ -42,10 +44,12 @@ namespace AmpGen{
             if( selection != nullptr ) INFO("Filter efficiency = " << plot1->GetEntries() << " / " << m_events1.size() );
             if( selection != nullptr ) INFO("Filter efficiency = " << plot2->GetEntries() << " / " << m_events2.size() );
 
-            std::vector<TH1D *> hists = {plot1, plot2};
+            hists = std::vector<TH1D *>({plot1, plot2});
             return hists;
+        
 
         }
+    return hists;
 
 
     }
