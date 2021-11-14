@@ -317,7 +317,7 @@ complex_t pCorrelatedSum::getValNoCache(const Event& evt1, const Event& evt2) co
   //if (m_sameTag) f = (m_pc1.getValCache(evt1) - m_pc2.getValCache(evt2))/2;
   if (m_sameTag) f = (m_pc1.calcCorrL(evt1) - m_pc2.calcCorrL(evt2));
  // return m_A.getVal(evt1) * m_B.getVal(evt2) * exp( std::complex<double>(0,1) ) + getSumFactor() *  m_C.getVal(evt1) * m_D.getVal(evt2) * exp(-std::complex<double>(0,1) );
-  complex_t psi = m_A.getValNoCache(evt1) * m_B.getValNoCache(evt2) * exp(complex_t(0, f/2)) + getSumFactor() *  m_C.getValNoCache(evt1) * m_D.getValNoCache(evt2) * exp(complex_t(0, -f/2));
+  complex_t psi = m_A.getValNoCache(evt1) * m_B.getValNoCache(evt2) * exp(complex_t(0, f/2)) -   m_C.getValNoCache(evt1) * m_D.getValNoCache(evt2) * exp(complex_t(0, -f/2));
   if (m_sameTag && psi==complex_t(0,0)){
     INFO("evt1= "<<evt1.s(0,1)<<" evt2 = "<<evt2.s(0,1));
     INFO("A(evt) = "<<m_A.getValNoCache(evt1));

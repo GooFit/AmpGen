@@ -138,9 +138,9 @@ namespace AmpGen
                   if (mcSig[i].genPdf() > normalisationConstant ) WARNING( "PDF value exceeds norm value: " << mcSig[i].genPdf() << " > " << normalisationConstant );
                   if (mcTag[i].genPdf() > normalisationConstant ) WARNING( "PDF value exceeds norm value: " << mcTag[i].genPdf() << " > " << normalisationConstant );
                 }
-                auto thresholdSig = normalisationConstant * m_rnd->Rndm();
-                auto thresholdTag = normalisationConstant * m_rnd->Rndm();
-                if ( mcSig[i].genPdf() > thresholdSig && mcTag[i].genPdf() > thresholdTag  ) {
+                auto threshold = normalisationConstant * m_rnd->Rndm();
+                //auto thresholdTag = normalisationConstant * m_rnd->Rndm();
+                if ( mcSig[i].genPdf() > threshold && mcTag[i].genPdf() > threshold  ) {
                   listSig.push_back( mcSig[i] );
                  listTag.push_back( mcTag[i] );
                 }

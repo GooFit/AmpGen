@@ -32,6 +32,115 @@
 using namespace AmpGen;
 using namespace std::complex_literals;
 
+void make1DProjections(std::string fileName, std::vector<real_t> mcVals, EventList dataSig, EventList mcSig, std::string prefix, int nBins){
+
+  TFile* f = TFile::Open(fileName.c_str(),"UPDATE");
+  f->cd();
+  auto projections = dataSig.eventType().defaultProjections(nBins);
+  for (auto& proj : projections){
+    auto data_plot = proj(dataSig,  Prefix(prefix));
+    auto hist = proj.plot(prefix);
+    real_t integral = 0;
+    for (int j=0;j!=mcSig.size();++j){
+      hist->Fill(proj( mcSig[j] ), mcVals[j]);
+      integral += mcVals[j];
+    }
+    auto data_integral = data_plot->Integral();
+    auto hist_integral = hist->Integral();
+    hist->Scale(data_integral/integral);
+    auto histName = hist->GetName();
+    hist->SetName((std::string("MC_") + histName).c_str());
+    hist->Write();
+    data_plot->Write();
+
+    auto bins = hist->GetBin(hist->GetEntries()) -1;
+    auto x0 = hist->GetBinCenter(0);
+    auto x1 = hist->GetBinCenter(bins +1);
+    INFO("Making 1D pulls");
+
+    TH1D * pull = new TH1D( (std::string("Pull_") + histName).c_str(), "Pull", bins, x0, x1 );
+
+    for (int i=0;i<bins;i++){
+      double p=0;
+      double d = hist->GetBinContent(i) - data_plot->GetBinContent(i);
+      double s2 = hist->GetBinContent(i) + data_plot->GetBinContent(i);
+      double x = hist->GetBinCenter(i);
+      if (s2!=0) p=d/sqrt(s2);
+      pull->Fill(x, p);
+    }
+    pull->Write();
+  }
+  f->Close();
+}
+
+
+void make2DProjections(std::string fileName, std::vector<real_t> mcVals, EventList dataSig, EventList mcSig, std::string prefix, int nBins2D){
+
+  TFile* f = TFile::Open(fileName.c_str(),"UPDATE");
+  auto p2 = mcSig.eventType().defaultProjections(nBins2D);
+  for( unsigned i = 0 ; i != p2.size() -1; ++i )
+  {
+    for( unsigned j=i+1; j < p2.size(); ++j )
+    {
+      auto dalitz = Projection2D( p2[i], p2[j] );
+      auto hdalitz = dalitz.plot(prefix);
+      auto data_plot = dataSig.makeProjection(dalitz, Prefix(prefix));
+      real_t integral = 0;
+
+      INFO("Filling MC");
+      for( unsigned event = 0 ; event != mcSig.size(); ++event )
+      {
+        auto pos = dalitz(mcSig[event]);
+        //hdalitz->Fill( pos.first, pos.second, cs_tag.prob( mcSig[event], tagMCevents_tag[event] ) );
+        hdalitz->Fill( pos.first, pos.second, mcVals[event]); 
+        integral += mcVals[event] ;
+      }
+      auto data_integral = data_plot->Integral();
+      //auto hdalitz_integral = hdalitz->Integral();
+      auto hdalitz_integral = integral;
+      INFO("data integral = "<<data_integral);
+      INFO("hdalitz integral = "<<hdalitz_integral);
+      INFO("hdalitz integral = "<<integral);
+
+      //hdalitz->Scale( data_plot->Integral() / hdalitz->Integral() );
+      hdalitz->Scale( data_plot->Integral() / integral );
+      hdalitz->SetName( ( std::string("MC_") + hdalitz->GetName() ).c_str() );
+      hdalitz->Write();
+      data_plot->Write(); 
+
+      auto px = hdalitz->ProjectionX();
+      auto py = hdalitz->ProjectionY();
+
+      auto bins = px->GetBin(px->GetEntries() -1);
+      auto x0 = px->GetBinCenter(0);
+      auto x1 = px->GetBinCenter(bins +1);
+
+      bins = py->GetBin(py->GetEntries() -1);
+      auto y0 = py->GetBinCenter(0);
+      auto y1 = py->GetBinCenter(bins +1);
+
+
+
+
+      INFO("Making 2D Pulls");
+      TH2D * pull_2D = new TH2D( (std::string("Pull_") + hdalitz->GetName() ).c_str(), "Pull", bins, x0, x1, bins, y0, y1 );
+      for (int i=0;i<bins;i++){
+        for (int j=0;j<bins;j++){
+          double p=0;
+          double d = hdalitz->GetBinContent(i,j) - data_plot->GetBinContent(i,j);
+          double s2 = hdalitz->GetBinContent(i,j) + data_plot->GetBinContent(i,j);
+          if (s2!=0) p = d/sqrt(s2);
+          double x = px->GetBinCenter(i);
+          double y = py->GetBinCenter(j);
+          pull_2D->Fill(x, y, p);
+        }
+      }
+      pull_2D->Write();
+    }
+  }
+  f->Close();
+}
+
 
 int main( int argc, char* argv[] )
 {
@@ -77,8 +186,8 @@ int main( int argc, char* argv[] )
 
   }
   TRandom3 rndmSig, rndmTag;
-  rndmSig.SetSeed( seed + 100 );
-  rndmTag.SetSeed( seed + 100 );
+  rndmSig.SetSeed( seed  );
+  rndmTag.SetSeed( seed + 1 );
 
 
   INFO("LogFile: " << logFile << "; Plots: " << plotFile );
@@ -186,6 +295,8 @@ int main( int argc, char* argv[] )
     
   gRandom = &rndmSig;
     EventList mcTag = Generator<>(tagType, &rndmSig).generate(NInt);
+    if (sigType == tagType) mcTag = Generator<>(tagType, &rndmTag).generate(NInt);
+
     BESIIITagMC.insert(std::pair<std::string, EventList>(tagName, mcTag));
     BESIIISig.insert(std::pair<std::string, EventList>(tagName, sigEvents));
     BESIIITag.insert(std::pair<std::string, EventList>(tagName, tagEvents));
@@ -430,15 +541,46 @@ clockNorm.stop();
     fr->writeToFile(logFile);
 
         
+    size_t nBins = NamedParameter<size_t>("nBins", 100);
+    TFile * plotF = TFile::Open(plotFile.c_str(), "RECREATE");
+    plotF->Close();
+    i=0;
+    for (auto p : BESIIISig){
+      auto name = p.first;
+      auto psi = BESIIIAmps[i]; 
+      auto sig = BESIIISig[p.first];
+      auto tag = BESIIITag[p.first];
+      auto tagMC = BESIIITagMC[p.first];
+      real_t norm = psi.norm();
+      std::vector<real_t> mcVals;
+      INFO("Getting mcVals for "<<name);
+      for (int j=0;j<mcSig.size();j++){
+        mcVals.push_back(std::norm(psi.getValNoCache(mcSig[j], tagMC[j]))/norm);
+      }
 
+    //  void make1DProjections(std::string fileName, std::vector<real_t> mcVals, EventList dataSig, EventList mcSig, std::string prefix, int nBins)
+      make1DProjections(plotFile, mcVals, sig, mcSig, p.first, nBins);
+      make2DProjections(plotFile, mcVals, sig, mcSig, p.first, int(std::pow(nBins, 0.5)));
+      i++;
+    }
+    i=0;
+    for (auto p : LHCbSig){
+      auto name = p.first;
+      auto psi = LHCbAmps[i]; 
+      auto sig = LHCbSig[p.first]; 
+      real_t norm = psi.norm();
+      std::vector<real_t> mcVals;
 
+      INFO("Getting mcVals for "<<name);
+      for (int j=0;j<mcSig.size();j++){
+        mcVals.push_back(std::norm(psi.getValNoCache(mcSig[j]))/norm);
+      }
 
-
-
-
-
-
- 
+      //  void make1DProjections(std::string fileName, std::vector<real_t> mcVals, EventList dataSig, EventList mcSig, std::string prefix, int nBins)
+      make1DProjections(plotFile, mcVals, sig, mcSig, p.first, nBins);
+      make2DProjections(plotFile, mcVals, sig, mcSig, p.first, int(std::pow(nBins, 0.5)));
+      i++;
+    } 
   return 0;
   INFO("Out of loop i = "<<i);
 
