@@ -2597,14 +2597,45 @@ for (auto p : F_Kspipi){
         double dci =  MPS["c_"+std::to_string(i)]->err();
         double si = MPS["s_"+std::to_string(i)]->mean();
         double dsi =  MPS["s_"+std::to_string(i)]->err();
-        MPS["c_"+std::to_string(i)]->setLimits( ci - dci, ci + dci );
-        MPS["s_"+std::to_string(i)]->setLimits( si - dsi, si + dsi );
+//        MPS["c_"+std::to_string(i)]->setLimits( ci - dci, ci + dci );
+//        MPS["s_"+std::to_string(i)]->setLimits( si - dsi, si + dsi );
 //        MPS["c_"+std::to_string(i)]->fix();
 //        MPS["s_"+std::to_string(i)]->fix();
  
     }
-    auto chi2_BESIII_LHCb = [&chi2_BESIII, &chi2_B](){
-        return chi2_BESIII() + chi2_B();
+    std::vector<real_t> xBESIII;
+    std::vector<std::string> nameBESIII;
+    for (auto& p : MPS){
+        if (p->isFree()){
+            xBESIII.push_back(p->mean());
+            nameBESIII.push_back(p->name());
+        }
+    }
+    auto VmBESIII = mini_BESIII.covMatrix();
+    std::string plotFile = NamedParameter<std::string>("Plots", "MI.root");
+    TFile * f = TFile::Open(plotFile.c_str(), "RECREATE");
+
+    auto VBESIII = VmBESIII.Invert();
+    VBESIII.Write();
+    f->Close();
+
+    auto gaussConstraintBESIII = [&MPS, &xBESIII, &VBESIII, &nameBESIII](){
+        real_t chi2 = 0;
+        for (int i=0;i<xBESIII.size();i++){
+            for (int j=0;j<xBESIII.size();j++){
+                real_t paramT = MPS[nameBESIII[i]]->mean();
+                real_t param = MPS[nameBESIII[j]]->mean();
+                real_t deltaT = paramT - xBESIII[i];
+                real_t delta = param - xBESIII[j];
+                real_t V = VBESIII[i][j];
+                chi2 += deltaT * V * delta;
+            }
+        }
+        return chi2;
+    };
+
+    auto chi2_BESIII_LHCb = [&gaussConstraintBESIII, &chi2_B](){
+        return gaussConstraintBESIII() + chi2_B();
     };
     INFO("chi2 = "<<chi2_B());
     INFO("chi2 = "<<chi2_BESIII_LHCb());
