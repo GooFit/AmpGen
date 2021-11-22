@@ -2,6 +2,7 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/Event.h"
 #include "TRandom.h"
 #include "TRandom3.h"
 #include <numeric>
@@ -11,8 +12,7 @@ using namespace AmpGen;
 
 TreePhaseSpace::TreePhaseSpace(const Particle& decayChain, const EventType& type, TRandom* rndm) :
   m_rand(rndm == nullptr ? (TRandom3*)gRandom : (TRandom3*)rndm),
-  m_type(type),
-  m_gen(1)
+  m_type(type)
 {
   auto orderings = decayChain.identicalDaughterOrderings();
   for( auto& ordering : orderings )
@@ -21,7 +21,11 @@ TreePhaseSpace::TreePhaseSpace(const Particle& decayChain, const EventType& type
     p.setOrdering(ordering);
     m_top.push_back( Vertex::make( p) );
     m_weights.push_back(1);
+    double w_max = m_top.rbegin()->maxWeight();
+    std::cout << w_max << " " << m_wmax << std::endl; 
+    if( w_max > m_wmax ) m_wmax = w_max;  
   }
+  m_wmax = 1./m_wmax; 
   double sum_of_weights = std::accumulate( m_weights.begin(), m_weights.end(), 0 );
   m_dice = std::discrete_distribution<>(m_weights.begin(), m_weights.end()); 
   for( auto& w : m_weights ) w /= sum_of_weights; 
@@ -30,8 +34,7 @@ TreePhaseSpace::TreePhaseSpace(const Particle& decayChain, const EventType& type
 
 TreePhaseSpace::TreePhaseSpace(const std::vector<Particle>& decayChains, const EventType& type, TRandom* rndm) :
   m_rand(rndm == nullptr ? (TRandom3*)gRandom : (TRandom3*)rndm),
-  m_type(type),
-  m_gen(1)
+  m_type(type)
 {
   for( auto& decayChain : decayChains )
   {
@@ -42,8 +45,11 @@ TreePhaseSpace::TreePhaseSpace(const std::vector<Particle>& decayChains, const E
       p.setOrdering(ordering);
       m_top.push_back( Vertex::make(p) );
       m_weights.push_back(1);
+      double w_max = m_top.rbegin()->maxWeight();
+      if( w_max > m_wmax ) m_wmax = w_max;  
     }
   }
+  m_wmax = 1./m_wmax; 
   setRandom(rndm);
   double sum_of_weights = std::accumulate( m_weights.begin(), m_weights.end(), 0 );
   for( auto& w : m_weights ) w /= sum_of_weights; 
@@ -53,14 +59,16 @@ TreePhaseSpace::TreePhaseSpace(const std::vector<Particle>& decayChains, const E
 Event TreePhaseSpace::makeEvent()
 {
   unsigned j = 0; 
-  double w = 0; 
+  double w = 0;
+  int trials = 0;  
   do {
     j = m_dice(m_gen); 
     m_top[j].generate();
-    w = m_top[j].weight();
-  } while ( w == 0 );
+    w = m_top[j].weight() * m_wmax;
+ //   if( trials++ % 100000 == 0  && trials != 0  ) WARNING("Tried " << trials << " events, still nada, " << w << " " << m_wmax );
+  } while ( w < m_rand->Uniform() );
   auto event = m_top[j].event(m_type.size());
-  event.setGenPdf( genPdf(event)/w );
+  event.setGenPdf( genPdf(event) );
   return event; 
 }
 
@@ -201,7 +209,6 @@ void TreePhaseSpace::Vertex::place(Event& event)
 
 Event TreePhaseSpace::Vertex::event(const unsigned& eventSize)
 {
-  if( isMultiBody ) return phsp.makeEvent();  
   Event output(4 * eventSize); 
   mom.SetXYZT(0,0,0,sqrt(s)); 
   generateFullEvent();
@@ -297,5 +304,12 @@ double TreePhaseSpace::genPdf(const Event& event) const
 size_t TreePhaseSpace::size() const 
 {
   return m_top.size();
+}
+
+
+double TreePhaseSpace::Vertex::maxWeight() const 
+{
+  if( left == nullptr || right == nullptr ) return 1.0;
+  return rho(max*max, left->min * left->min, right->min * right->min) * left->maxWeight() * right->maxWeight(); 
 }
 

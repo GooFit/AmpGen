@@ -256,8 +256,9 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   {
     if( particle.props()->twoSpin() == 0 ) return Mz==0; // a scalar
     // polarisation spinor / vector etc. in the quantisation of the lab (i.e. along the z-axis or lab particle momentum)
-    if( particle.props()->isPhoton() && Mz == 0. ) ERROR("Photon polarisation state is wrong");
-    if( particle.polState() == 0 ) ERROR("Photon external state is wrong...");
+    if( particle.props()->isPhoton() && (Mz == 0. or particle.polState() == 0 ) ){
+      ERROR("Photon polarisation state is wrong");
+    }
     auto labPol = particle.externalSpinTensor(particle.polState(), db); 
     auto inverseMyTransform = myFrame.inverse();
     if( particle.props()->twoSpin() == 1 ) // so a fermion 

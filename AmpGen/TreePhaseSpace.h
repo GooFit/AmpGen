@@ -12,7 +12,6 @@
 #include <random>
 
 #include "AmpGen/EventType.h"
-#include "AmpGen/PhaseSpace.h"
 #include "AmpGen/Particle.h"
 
 #include <TRandom3.h>
@@ -52,7 +51,6 @@ namespace AmpGen
         void place(Event& event);
         Event event(const unsigned& eventSize);
         void generateFullEvent();
-        void setRhoMax(); 
         void setRandom(TRandom3* rnd);
         static Vertex make(const Particle& particle, Vertex* parent = nullptr); 
         Particle    particle;
@@ -70,8 +68,7 @@ namespace AmpGen
         TRandom3* rand  = {nullptr};
         std::vector<unsigned> indices; 
         TLorentzVector mom;
-        bool isMultiBody = {false}; 
-        PhaseSpace phsp; /// multibody phase to resort to for non two-body decomposition;   
+        double maxWeight() const; 
       };
       
       explicit TreePhaseSpace(const EventType& type);
@@ -93,7 +90,8 @@ namespace AmpGen
       std::discrete_distribution<> m_dice;  ///< 
       std::vector<double>   m_weights; 
       std::vector<unsigned> m_generatorRecord;  
-      std::mt19937          m_gen;
+      std::mt19937          m_gen  {0};
+      double                m_wmax = {0}; 
   };
 } // namespace AmpGen
 
