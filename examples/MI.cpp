@@ -2379,14 +2379,15 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
     }
 
 
-    auto chi2_CP = [&F_KK, &F_Kspi0, sum_KK, sum_Kspi0, &MPS, &Y_CP, &K0, &Kbar0](){
+    auto chi2_CP = [&F_KK, &F_Kspi0, sum_KK, sum_Kspi0, nBins, &MPS, &Y_CP, &K0, &Kbar0](){
         double chi2 = 0;
-        for (auto p : F_KK){
-            int bin = p.first;
-            double N_KK = F_KK[bin] * sum_KK;
-            double N_Kspi0 = F_Kspi0[bin] * sum_Kspi0;
-            double E_KK  = Y_CP(bin, 1, K0, Kbar0) * sum_KK;
-            double E_Kspi0 = Y_CP(bin, -1, K0, Kbar0) * sum_Kspi0;
+//        for (auto p : F_KK){
+        for (int i=1;i<nBins+1;i++){
+        //    int bin = p.first;
+            double N_KK = (F_KK[i] + F_KK[-i]) * sum_KK;
+            double N_Kspi0 = (F_Kspi0[i] + F_Kspi0[-i]) * sum_Kspi0;
+            double E_KK  = (Y_CP(i, 1, K0, Kbar0) + Y_CP(-i, 1, K0, Kbar0)) * sum_KK;
+            double E_Kspi0 = (Y_CP(i, -1, K0, Kbar0) + Y_CP(-i, -1, K0, Kbar0)) * sum_Kspi0;
             double dN_KK = std::pow(N_KK, 0.5);
             double dE_KK = std::pow(E_KK, 0.5);
             double err_KK = std::pow(N_KK + E_KK, 0.5);
@@ -2553,7 +2554,7 @@ for (auto p : F_Kspipi){
     
 
 
-    auto chi2_B = [&F_Bp, &F_Bm, sum_Bp, sum_Bm, MPS, &Y_Bp ,&Y_Bm, &K0, &Kbar0, &Z0, nBins](){
+    auto chi2_B = [&F_Bp, &F_Bm, sum_Bp, sum_Bm, nBins, MPS, &Y_Bp ,&Y_Bm, &K0, &Kbar0, &Z0, nBins](){
         double chi2 = 0;
         std::map<int, complex_t> Z;
         for( long unsigned int  i =1;i<nBins + 1;i++){
@@ -2562,15 +2563,16 @@ for (auto p : F_Kspipi){
             Z.insert(std::pair<int, complex_t>({i, complex_t(c, s)}));
             Z.insert(std::pair<int, complex_t>({-i, complex_t(c, -s)}));
         }
-        for (auto p : (*(&F_Bp))){
+        //for (auto p : (*(&F_Bp))){
+        for (int i=1;i<nBins + 1;i++){
 
 //            double _Y_Bp = MPS["YBp_"+std::to_string(p.first)]->mean();
 //            double _Y_Bm = MPS["YBm_"+std::to_string(p.first)]->mean();
-            int bin = p.first;
-            double N_Bp = (*(&F_Bp))[bin] * sum_Bp;
-            double N_Bm = (*(&F_Bm))[bin] * sum_Bm;
-            double E_Bp = (*(&Y_Bp))(bin, (*(&K0)), (*(&Kbar0)),(*(&Z))  ) * sum_Bp;
-            double E_Bm = (*(&Y_Bm))(bin, (*(&K0)), (*(&Kbar0)),(*(&Z)) ) * sum_Bm;
+//            int bin = p.first;
+            double N_Bp = (F_Bp[i] + F_Bp[-i]) * sum_Bp;
+            double N_Bm = (F_Bm[i] + F_Bm[-i]) * sum_Bm;
+            double E_Bp = (Y_Bp(i, K0, Kbar0,Z ) + Y_Bp(-i, K0, Kbar0, Z)) * sum_Bp;
+            double E_Bm = (Y_Bm(i, K0, Kbar0,Z ) + Y_Bm(-i, K0, Kbar0, Z)) * sum_Bm;
             double dN_Bp = std::pow(N_Bp, 0.5);
             //double dE_Bp = std::pow(E_Bp, 0.5);
             //double err_Bp = std::pow(N_Bp + E_Bp, 0.5);
@@ -2597,8 +2599,8 @@ for (auto p : F_Kspipi){
         double dci =  MPS["c_"+std::to_string(i)]->err();
         double si = MPS["s_"+std::to_string(i)]->mean();
         double dsi =  MPS["s_"+std::to_string(i)]->err();
-//        MPS["c_"+std::to_string(i)]->setLimits( ci - dci, ci + dci );
-//        MPS["s_"+std::to_string(i)]->setLimits( si - dsi, si + dsi );
+   //     MPS["c_"+std::to_string(i)]->setLimits( ci - dci, ci + dci );
+   //     MPS["s_"+std::to_string(i)]->setLimits( si - dsi, si + dsi );
 //        MPS["c_"+std::to_string(i)]->fix();
 //        MPS["s_"+std::to_string(i)]->fix();
  
@@ -2619,7 +2621,7 @@ for (auto p : F_Kspipi){
     VBESIII.Write();
     f->Close();
 
-    auto gaussConstraintBESIII = [&MPS, &xBESIII, &VBESIII, &nameBESIII](){
+    auto gaussConstraintBESIIICov = [&MPS, &xBESIII, &VBESIII, &nameBESIII](){
         real_t chi2 = 0;
         for (int i=0;i<xBESIII.size();i++){
             for (int j=0;j<xBESIII.size();j++){
@@ -2633,13 +2635,28 @@ for (auto p : F_Kspipi){
         }
         return chi2;
     };
+    auto gaussConstraintBESIIINoCov = [&MPS, &xBESIII, &nameBESIII](){
+        real_t chi2 = 0;
+        for (int i=0;i<xBESIII.size();i++){
+            real_t param = MPS[nameBESIII[i]]->mean();
+            real_t delta = param - xBESIII[i];
+            real_t sigma = MPS[nameBESIII[i]]->err();
+            chi2 += std::pow(delta, 2)/sigma; 
+        }
+        return chi2;
+    };
 
-    auto chi2_BESIII_LHCb = [&gaussConstraintBESIII, &chi2_B](){
-        return gaussConstraintBESIII() + chi2_B();
+    auto chi2_comb_BESIII_LHCb = [&chi2_BESIII, &chi2_B](){
+        return chi2_BESIII() + chi2_B();
+    };
+ 
+
+    auto chi2_const_BESIII_LHCb = [&gaussConstraintBESIIICov, &chi2_B](){
+        return gaussConstraintBESIIICov() + chi2_B();
     };
     INFO("chi2 = "<<chi2_B());
-    INFO("chi2 = "<<chi2_BESIII_LHCb());
-    Minimiser mini_B(chi2_B, &MPS);
+    INFO("chi2 = "<<chi2_comb_BESIII_LHCb());
+    Minimiser mini_B(chi2_comb_BESIII_LHCb, &MPS);
     mini_B.doFit();
     double my_chi2 = 0;
     for (auto p : F_KK){
