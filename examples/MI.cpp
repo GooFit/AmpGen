@@ -2284,7 +2284,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
 
 
 
-        complex_t zB(MPS["pCoherentSum::x+"]->mean() ,-MPS["pCoherentSum::y+"]->mean());
+        complex_t zB(MPS["pCoherentSum::x+"]->mean() ,MPS["pCoherentSum::y+"]->mean());
 
 
         for (auto p : K ){
@@ -2292,7 +2292,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
 
             complex_t zC =Z[p.first] ;
 
-            double _Y = Kbar[p.first] + K[p.first] *(std::norm(zB)) + 2 * std::pow(K[p.first]  * Kbar[p.first], 0.5  ) * std::real(zC * std::conj(zB));
+            double _Y = Kbar[p.first] + K[p.first] *(std::norm(zB)) + 2 * std::pow(K[p.first]  * Kbar[p.first], 0.5  ) * (std::real(zC) * std::real(zB) - std::imag(zC) * std::imag(zB));//* std::real(std::conj(zC) * std::conj(zB));
             if (_Y < 0){
                 INFO("Y  = "<<_Y);
                 _Y =0 ;
@@ -2307,7 +2307,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
 
 //        complex_t zC(MPS["c_" + std::to_string(std::abs(bin)) ]->mean(), bin/std::abs(bin)  * MPS["s_" + std::to_string(std::abs(bin)) ]->mean());
         complex_t zC = Z[bin];
-        double Y =  (Kbar[bin] + K[bin] *(std::norm(zB)) + 2 * std::pow(K[bin]  * Kbar[bin], 0.5  ) * std::real(zC * std::conj(zB)))/sumY;
+        double Y =  (Kbar[bin] + K[bin] *(std::norm(zB)) + 2 * std::pow(K[bin]  * Kbar[bin], 0.5  )  * (std::real(zC) * std::real(zB) - std::imag(zC) * std::imag(zB)))/sumY; //* std::real(std::conj(zC) * std::conj(zB)))/sumY;
         if (Y<0){
             INFO("Y = "<<Y);
             Y = 0;
@@ -2328,7 +2328,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
             //complex_t zC(MPS["c_" + std::to_string(std::abs(p.first)) ]->mean(), p.first/std::abs(p.first)  * MPS["s_" + std::to_string(std::abs(p.first)) ]->mean());
 
             complex_t zC =Z[p.first] ;
-            double _Y = K[p.first] + Kbar[p.first] *(std::norm(zB)) + 2 * std::pow(K[p.first]  * Kbar[p.first], 0.5  ) * std::real(zC * std::conj(zB));
+            double _Y = K[p.first] + Kbar[p.first] *(std::norm(zB)) + 2 * std::pow(K[p.first]  * Kbar[p.first], 0.5  ) * (std::real(zC) * std::real(zB) + std::imag(zC) * std::imag(zB)); //* std::real(zC * std::conj(zB));
             
             if (_Y < 0){
              ////   INFO("Y  = "<<_Y);
@@ -2345,7 +2345,7 @@ void fitMI(MinuitParameterSet MPS, EventType eventType){
         //complex_t zC(MPS["c_" + std::to_string(std::abs(bin)) ]->mean(), bin/std::abs(bin)  * MPS["s_" + std::to_string(std::abs(bin)) ]->mean());
 
         complex_t zC = Z[bin];
-        double Y =  (K[bin] + Kbar[bin] *(std::norm(zB)) + 2 * std::pow(K[bin]  * Kbar[bin], 0.5  ) * std::real(zC * std::conj(zB)))/sumY;
+        double Y =  (K[bin] + Kbar[bin] *(std::norm(zB)) + 2 * std::pow(K[bin]  * Kbar[bin], 0.5  ) * (std::real(zC) * std::real(zB) + std::imag(zC) * std::imag(zB)))/sumY;//* std::real(zC * std::conj(zB)))/sumY;
         if (Y<0){
             INFO("Y = "<<Y);
             Y = 0;
@@ -2569,26 +2569,39 @@ for (auto p : F_Kspipi){
 //            double _Y_Bp = MPS["YBp_"+std::to_string(p.first)]->mean();
 //            double _Y_Bm = MPS["YBm_"+std::to_string(p.first)]->mean();
 //            int bin = p.first;
-            double N_Bp = (F_Bp[i] + F_Bp[-i]) * sum_Bp;
-            double N_Bm = (F_Bm[i] + F_Bm[-i]) * sum_Bm;
-            double E_Bp = (Y_Bp(i, K0, Kbar0,Z ) + Y_Bp(-i, K0, Kbar0, Z)) * sum_Bp;
-            double E_Bm = (Y_Bm(i, K0, Kbar0,Z ) + Y_Bm(-i, K0, Kbar0, Z)) * sum_Bm;
-            double dN_Bp = std::pow(N_Bp, 0.5);
+            double N_BpPlus = F_Bp[i]  * sum_Bp;
+            double N_BpMinus = F_Bp[-i]  * sum_Bp;
+            double N_BmPlus = F_Bm[i]  * sum_Bm;
+            double N_BmMinus = F_Bm[-i]  * sum_Bm;
+            double E_BpPlus = Y_Bp(i, K0, Kbar0,Z ) * sum_Bp;
+            double E_BpMinus = Y_Bp(-i, K0, Kbar0,Z ) * sum_Bp;
+            double E_BmPlus = Y_Bm(i, K0, Kbar0,Z ) * sum_Bm;
+            double E_BmMinus = Y_Bm(-i, K0, Kbar0,Z ) * sum_Bm;
+
+
+            double dN_BpPlus = std::pow(N_BpPlus, 0.5);
+            double dN_BpMinus = std::pow(N_BpMinus, 0.5);
+            double dN_BmPlus = std::pow(N_BmPlus, 0.5);
+            double dN_BmMinus = std::pow(N_BmMinus, 0.5);
             //double dE_Bp = std::pow(E_Bp, 0.5);
             //double err_Bp = std::pow(N_Bp + E_Bp, 0.5);
 
-            double dN_Bm = std::pow(N_Bm, 0.5);
+
             //double dE_Bm = std::pow(E_Bm, 0.5);
             //double err_Bm = std::pow(N_Bm + E_Bm, 0.5);
             //if (N_Bp!=0)chi2 += std::pow((N_Bp - E_Bp), 2);
-           if (N_Bp!=0)chi2 += std::pow((N_Bp - E_Bp)/dN_Bp, 2);
-            //chi2 += std::pow(N_Bp - E_Bp, 2)/err_Bp;
+           if (N_BpPlus!=0)chi2 += std::pow((N_BpPlus - E_BpPlus)/dN_BpPlus, 2);
+           if (N_BpMinus!=0)chi2 += std::pow((N_BpMinus - E_BpMinus)/dN_BpMinus, 2);
+           if (N_BmPlus!=0)chi2 += std::pow((N_BmPlus - E_BmPlus)/dN_BmPlus, 2);
+           if (N_BmMinus!=0)chi2 += std::pow((N_BmMinus - E_BmMinus)/dN_BmMinus, 2);
+
+            //chi2 += std::pow(N_Bm - E_Bm, 2)/err_Bm;
            // pdf = mu^n/n! e^-mu
            // log pdf = n log mu - log n! - mu
             //chi2 +=  2 * E_Bp - 2 * N_Bp * std::log(E_Bp);// + 2 * std::log(std::tgamma(N_Bp + 1));
             //chi2 +=  2 * E_Bm - 2 * N_Bm * std::log(E_Bm);// + 2 * std::log(std::tgamma(N_Bm + 1));
             //if(N_Bm!=0) chi2 += std::pow((N_Bm - E_Bm)/dN_Bm, 2);
-            if(N_Bm!=0) chi2 += std::pow((N_Bm - E_Bm)/dN_Bm, 2);
+//            if(N_Bm!=0) chi2 += std::pow((N_Bm - E_Bm)/dN_Bm, 2);
             //chi2 += std::pow(N_Bm - E_Bm, 2)/err_Bm; 
             //chi2 +=-2*(-E_Bm + N_Bm * std::log(E_Bm) - std::log(std::tgamma(N_Bm+1)));
         }
@@ -2651,30 +2664,31 @@ for (auto p : F_Kspipi){
     };
  
 
-    auto chi2_const_BESIII_LHCb = [&gaussConstraintBESIIICov, &chi2_B](){
-        return gaussConstraintBESIIICov() + chi2_B();
+    auto chi2_const_BESIII_LHCb = [&gaussConstraintBESIIINoCov, &chi2_B](){
+        return gaussConstraintBESIIINoCov() + chi2_B();
     };
     INFO("chi2 = "<<chi2_B());
     INFO("chi2 = "<<chi2_comb_BESIII_LHCb());
     Minimiser mini_B(chi2_const_BESIII_LHCb, &MPS);
     mini_B.doFit();
     double my_chi2 = 0;
-    for (auto p : F_KK){
-        double N_KK = F_KK[p.first] * sum_KK;
-        double N_Bp = F_Bp[p.first] * sum_Bp;
-        double N_Bm = F_Bm[p.first] * sum_Bm;
-        double N_Kspi0 = F_Kspi0[p.first] * sum_Kspi0;
-        double N_K = K[p.first] * sumK;
-        double N_Kbar = Kbar[p.first] * sumKbar;
-        double Y_KK = Y_CP(p.first, -1, K0, Kbar0) * sum_KK;
-        double YBp = Y_Bp(p.first, K0, Kbar0, Z0) * sum_Bp;
-        double YBm = Y_Bm(p.first, K0, Kbar0, Z0) * sum_Bm;
-        double Y_Kspi0 = Y_CP(p.first, +1, K0, Kbar0) * sum_Kspi0;
+    //for (auto p : F_KK){
+    for (int i=1;i<nBins +1;i++){
+        double N_KK = F_KK[i] * sum_KK;
+        double N_Bp = F_Bp[i] * sum_Bp;
+        double N_Bm = F_Bm[i] * sum_Bm;
+        double N_Kspi0 = F_Kspi0[i] * sum_Kspi0;
+        double N_K = K[i] * sumK;
+        double N_Kbar = Kbar[i] * sumKbar;
+        double Y_KK = Y_CP(i, 1, K0, Kbar0) * sum_KK;
+        double YBp = Y_Bp(i, K0, Kbar0, Z0) * sum_Bp;
+        double YBm = Y_Bm(i, K0, Kbar0, Z0) * sum_Bm;
+        double Y_Kspi0 = Y_CP(i, -1, K0, Kbar0) * sum_Kspi0;
         double pull_Bp = (N_Bp - YBp)/std::pow(N_Bp, 0.5);
         double pull_Bm = (N_Bm - YBm)/std::pow(N_Bm, 0.5);
         my_chi2 += std::pow(pull_Bp, 2) + std::pow(pull_Bm, 2);
-        INFO(p.first<<" "<<N_KK<<" "<<N_Kspi0<<" "<<N_Bp<<" "<<N_Bm<<" "<<N_K<<" "<<N_Kbar);
-        INFO(p.first<<" "<<Y_KK<<" "<<Y_Kspi0<<" "<<YBp<<" "<<YBm<<" "<<pull_Bp<<" "<<pull_Bm);
+        INFO(i<<" "<<N_KK<<" "<<N_Kspi0<<" "<<N_Bp<<" "<<N_Bm<<" "<<N_K<<" "<<N_Kbar);
+        INFO(i<<" "<<(int)Y_KK<<" "<<(int)Y_Kspi0<<" "<<(int)YBp<<" "<<(int)YBm<<" "<<pull_Bp<<" "<<pull_Bm);
         
     }
     INFO(chi2_B()<<" "<<my_chi2);
