@@ -2599,7 +2599,7 @@ for (auto p : F_Kspipi){
         double dci =  MPS["c_"+std::to_string(i)]->err();
         double si = MPS["s_"+std::to_string(i)]->mean();
         double dsi =  MPS["s_"+std::to_string(i)]->err();
-   //     MPS["c_"+std::to_string(i)]->setLimits( ci - dci, ci + dci );
+    //    MPS["c_"+std::to_string(i)]->setLimits( ci - dci, ci + dci );
    //     MPS["s_"+std::to_string(i)]->setLimits( si - dsi, si + dsi );
 //        MPS["c_"+std::to_string(i)]->fix();
 //        MPS["s_"+std::to_string(i)]->fix();
@@ -2656,7 +2656,7 @@ for (auto p : F_Kspipi){
     };
     INFO("chi2 = "<<chi2_B());
     INFO("chi2 = "<<chi2_comb_BESIII_LHCb());
-    Minimiser mini_B(chi2_comb_BESIII_LHCb, &MPS);
+    Minimiser mini_B(chi2_const_BESIII_LHCb, &MPS);
     mini_B.doFit();
     double my_chi2 = 0;
     for (auto p : F_KK){
