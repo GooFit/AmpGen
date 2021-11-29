@@ -2619,10 +2619,16 @@ for (auto p : F_Kspipi){
  
     }
     std::vector<real_t> xBESIII;
+    std::vector<real_t> muBESIII;
+    std::vector<real_t> dxBESIII;
     std::vector<std::string> nameBESIII;
     for (auto& p : MPS){
         if (p->isFree()){
+            double mu = gRandom->Gaus(p->mean(), p->err());
             xBESIII.push_back(p->mean());
+            muBESIII.push_back(mu);
+            dxBESIII.push_back(p->err());
+
             nameBESIII.push_back(p->name());
         }
     }
@@ -2648,12 +2654,13 @@ for (auto p : F_Kspipi){
         }
         return chi2;
     };
-    auto gaussConstraintBESIIINoCov = [&MPS, &xBESIII, &nameBESIII](){
+    auto gaussConstraintBESIIINoCov = [&MPS, &xBESIII, &dxBESIII, &muBESIII ,&nameBESIII](){
         real_t chi2 = 0;
         for (int i=0;i<xBESIII.size();i++){
             real_t param = MPS[nameBESIII[i]]->mean();
             real_t delta = param - xBESIII[i];
-            real_t sigma = MPS[nameBESIII[i]]->err();
+            real_t sigma = dxBESIII[i];
+            //real_t sigma = MPS[nameBESIII[i]]->err();
             chi2 += std::pow(delta, 2)/sigma; 
         }
         return chi2;
