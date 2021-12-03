@@ -705,6 +705,9 @@ break;
             return v;
 
         }
+        void setOrder(size_t order){
+            m_order = order;
+        }
         
 
             

@@ -28,6 +28,8 @@
 #include "AmpGen/pCorrelatedSum.h"
 #include "AmpGen/pCoherentSum.h"
 #include <boost/algorithm/string/replace.hpp>
+#include "AmpGen/Chi2Correlated.h"
+#include "AmpGen/Chi2Estimator.h"
 #include <cmath>
 using namespace AmpGen;
 using namespace std::complex_literals;
@@ -535,11 +537,84 @@ clockNorm.stop();
         }
       }
     }
-    Minimiser mini_BESIII_LHCb(LL_BESIII_LHCb, &MPS);
-    mini_BESIII_LHCb.doFit();
-    FitResult * fr = new FitResult(mini_BESIII_LHCb);
-    fr->writeToFile(logFile);
 
+    Minimiser mini_BESIII_LHCb(LL_BESIII_LHCb, &MPS);
+    FitResult * fr;
+
+
+    bool staggerFit = NamedParameter<bool>("staggerFit", false);
+    
+    if (staggerFit){
+      INFO("Doing Stagger fit");
+      size_t order = NamedParameter<size_t>("PhaseCorrection::Order", 2);
+      for (int i=0;i<order+1;i++){
+        for (int j=0;j<order + 1 -i ;j++){
+          MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->fix();
+        }
+      }
+      std::map<std::string, double> x, dx;
+      for (int o=0;o<order+1;o++){
+        INFO("Fitting "<<o<<" order polynomials");
+        pc.setOrder(o);
+        for (int i=0;i<order+1;i++){
+          for (int j=0;j<order + 1-i;j++){
+            if (i + j == o) MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setFree();
+          }  
+        } 
+
+        Minimiser mini_BESIII_LHCb_Stagger(LL_BESIII_LHCb, &MPS);
+        mini_BESIII_LHCb_Stagger.gradientTest();
+        mini_BESIII_LHCb_Stagger.doFit();
+        fr = new FitResult(mini_BESIII_LHCb_Stagger);
+        for (int i=0;i<order + 1;i++){
+          for (int j=0;j<order + 1-i;j++){
+
+            if (i + j == o){ 
+                x.insert(std::pair<std::string, double>("PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1), MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->mean()));
+                dx.insert(std::pair<std::string, double>("PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1), MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->err()));
+                MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->fix();
+            }
+          }  
+        } 
+      }
+      bool finalFit = NamedParameter<bool>("staggerFit::finalFit", false);
+      if (finalFit){
+        for (int i=0;i<order + 1;i++){
+          for (int j=0;j<order  +1 - i;j++){
+            real_t x = MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->mean();
+            real_t dx = MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->err(); 
+          //  MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setLimits(x - dx, x + dx);
+            MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setFree();
+          }
+        }
+        auto LL_BESIII_LHCb_Gauss_Penalty = [&MPS, &LL_BESIII_LHCb, &x, &dx](){
+            double pen = 0;
+            for (auto p : x){
+                double delta = MPS[p.first]->mean() - x[p.first];
+                double sigma = dx[p.first];
+                pen += std::pow(delta, 2)/sigma;
+            }
+            return LL_BESIII_LHCb() + pen;
+
+
+        };
+        Minimiser mini_BESIII_LHCb_Stagger(LL_BESIII_LHCb_Gauss_Penalty, &MPS);
+        mini_BESIII_LHCb_Stagger.gradientTest();
+        mini_BESIII_LHCb_Stagger.doFit();
+        fr = new FitResult(mini_BESIII_LHCb_Stagger);
+      }
+    }
+    else{
+      mini_BESIII_LHCb.doFit();
+    }
+
+
+
+//    FitResult * fr = new FitResult(mini_BESIII_LHCb);
+
+
+
+    double chi2, chi2_nBins;
         
     size_t nBins = NamedParameter<size_t>("nBins", 100);
     TFile * plotF = TFile::Open(plotFile.c_str(), "RECREATE");
@@ -551,6 +626,12 @@ clockNorm.stop();
       auto sig = BESIIISig[p.first];
       auto tag = BESIIITag[p.first];
       auto tagMC = BESIIITagMC[p.first];
+      auto fcn = [&psi, &mcSig, &tagMC](const Event& sig_event, const Event& tag_event ){
+        return psi.prob(sig_event, tag_event);
+      };
+      Chi2Correlated chi2Corr(sig, tag, mcSig, tagMC, fcn);
+      chi2 += chi2Corr.chi2();
+      chi2_nBins += chi2Corr.nBins();
       real_t norm = psi.norm();
       std::vector<real_t> mcVals;
       INFO("Getting mcVals for "<<name);
@@ -569,6 +650,12 @@ clockNorm.stop();
       auto psi = LHCbAmps[i]; 
       auto sig = LHCbSig[p.first]; 
       real_t norm = psi.norm();
+      auto fcn = [&psi, &mcSig](const Event& evt){
+        return psi.prob(evt);
+      };
+      Chi2Estimator chi2Est(sig, mcSig, fcn);
+      chi2 += chi2Est.chi2();
+      chi2_nBins += chi2Est.nBins();
       std::vector<real_t> mcVals;
 
       INFO("Getting mcVals for "<<name);
@@ -581,6 +668,9 @@ clockNorm.stop();
       make2DProjections(plotFile, mcVals, sig, mcSig, p.first, int(std::pow(nBins, 0.5)));
       i++;
     } 
+    fr->addChi2(chi2, chi2_nBins);
+    fr->print();
+    fr->writeToFile(logFile);
   return 0;
   INFO("Out of loop i = "<<i);
 
