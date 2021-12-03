@@ -629,7 +629,9 @@ clockNorm.stop();
       auto fcn = [&psi, &mcSig, &tagMC](const Event& sig_event, const Event& tag_event ){
         return psi.prob(sig_event, tag_event);
       };
+      INFO("Getting chi2 for "<<name);
       Chi2Correlated chi2Corr(sig, tag, mcSig, tagMC, fcn);
+      
       chi2 += chi2Corr.chi2();
       chi2_nBins += chi2Corr.nBins();
       real_t norm = psi.norm();
@@ -653,6 +655,8 @@ clockNorm.stop();
       auto fcn = [&psi, &mcSig](const Event& evt){
         return psi.prob(evt);
       };
+
+      INFO("Getting chi2 for "<<name);
       Chi2Estimator chi2Est(sig, mcSig, fcn);
       chi2 += chi2Est.chi2();
       chi2_nBins += chi2Est.nBins();
