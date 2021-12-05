@@ -207,6 +207,7 @@ int main( int argc, char* argv[] )
 //    add_CP_conjugate(MPS);
       AddCPConjugate(MPS);
   }
+  int NData = 0;
 
   EventType sigType = EventType(pNames);
   gRandom = &rndmSig;
@@ -244,6 +245,7 @@ int main( int argc, char* argv[] )
     auto tagName = arr_tag[0];
 
     EventList Events = EventList(LHCbDataFile + ":" + tagName, sigType);
+    NData += Events.size();
     LHCbSig.insert(std::pair<std::string, EventList>({tagName, Events}));
   }
   std::vector<pCoherentSum> LHCbAmps(LHCbSig.size());
@@ -293,6 +295,7 @@ int main( int argc, char* argv[] )
     EventType tagType = Particle(arr_tag[1], {}, false).eventType();
     EventList sigEvents = EventList(BESIIIDataFile + ":Signal_" + tagName, sigType);
     EventList tagEvents = EventList(BESIIIDataFile + ":Tag_" + tagName, tagType); 
+    NData += sigEvents.size();
     INFO("Tag Type = "<<tagType);
     
   gRandom = &rndmSig;
@@ -493,7 +496,6 @@ clockNorm.stop();
 
 
 
-
     ProfileClock clockBESIIILL;
     clockBESIIILL.start();
     INFO("LL = "<<LL_BESIII());
@@ -520,29 +522,48 @@ clockNorm.stop();
 
 
     real_t lambda = MPS["LASSO::lambda"]->mean() ;
-    if (lambda != 0){
-      INFO("Doing LASSO Fit with lambda = "<<lambda);
-      Minimiser mini_BESIII_LHCb_LASSO(LL_BESIII_LHCb_LASSO, &MPS);
-      mini_BESIII_LHCb_LASSO.doFit();
-      real_t LASSO_Threshold = NamedParameter<real_t>("LASSO::Threshold", 0.01);
-      for (long unsigned int i=0;i<Order+1;i++){
-        for (long unsigned int j=0;j<Order+1-i;j++){
-            auto p = MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)];
-            if (abs(p->mean())< LASSO_Threshold){
-              MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setCurrentFitVal(0);
-              MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->fix();
-              INFO("Excluding C"<<i<<"_"<<2*j+1<<" from fit");
-            }
+    bool doLASSO = lambda != 0;
 
-        }
-      }
-    }
-
-    Minimiser mini_BESIII_LHCb(LL_BESIII_LHCb, &MPS);
     FitResult * fr;
 
+    auto chi2Comb = [&BESIIISig, &BESIIIAmps, &BESIIITag, &BESIIITagMC, &mcSig, &LHCbSig, &LHCbAmps](double& chi2, double& chi2_nBins){
+      int i =0 ;
+      chi2 = 0;
+      chi2_nBins =0 ;
+    for (auto p : BESIIISig){
+      auto name = p.first;
+      auto psi = BESIIIAmps[i]; 
+      auto sig = BESIIISig[p.first];
+      auto tag = BESIIITag[p.first];
+      auto tagMC = BESIIITagMC[p.first];
+      auto fcn = [&psi, &mcSig, &tagMC](const Event& sig_event, const Event& tag_event ){
+        return std::norm(psi.getValNoCache(sig_event, tag_event))/psi.norm();
+      };
+      INFO("Getting chi2 for "<<name<<" for "<<sig.eventType().dof()<<" and "<<3 * tag.eventType().size());
+      Chi2Correlated chi2Corr(sig, tag, mcSig, tagMC, fcn);
+      
+      chi2 += chi2Corr.chi2();
+      chi2_nBins += chi2Corr.nBins();
+      i++;
+    }
+    i=0;
+    for (auto p : LHCbSig){
+      auto name = p.first;
+      auto psi = LHCbAmps[i]; 
+      auto sig = LHCbSig[p.first]; 
+      real_t norm = psi.norm();
+      auto fcn = [&psi, &mcSig](const Event& evt){
+        return std::norm(psi.getValNoCache(evt))/psi.norm();
+      };
 
+      INFO("Getting chi2 for "<<name);
+      Chi2Estimator chi2Est(sig, mcSig, fcn);
+      chi2 += chi2Est.chi2();
+      chi2_nBins += chi2Est.nBins();
+    }
+    };
     bool staggerFit = NamedParameter<bool>("staggerFit", false);
+    std::vector<std::string> Cij_Exc;
     
     if (staggerFit){
       INFO("Doing Stagger fit");
@@ -562,10 +583,38 @@ clockNorm.stop();
           }  
         } 
 
-        Minimiser mini_BESIII_LHCb_Stagger(LL_BESIII_LHCb, &MPS);
-        mini_BESIII_LHCb_Stagger.gradientTest();
-        mini_BESIII_LHCb_Stagger.doFit();
-        fr = new FitResult(mini_BESIII_LHCb_Stagger);
+        if (doLASSO){
+          INFO("Doing LASSO Fit with lambda = "<<lambda);
+          Minimiser mini_BESIII_LHCb_LASSO(LL_BESIII_LHCb_LASSO, &MPS);
+          mini_BESIII_LHCb_LASSO.doFit();
+          real_t _LASSO_Threshold = NamedParameter<real_t>("LASSO::Threshold", 1);
+          FitResult * frLASSO = new FitResult(mini_BESIII_LHCb_LASSO);
+          int status = frLASSO->status();
+          bool goodFit = status ==1 || status ==0;
+          for (long unsigned int i=0;i<order+1;i++){
+            for (long unsigned int j=0;j<order+1-i;j++){
+              if (i + j == o){
+                  auto p = MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)];
+                  if (abs(p->mean())< _LASSO_Threshold * p->err() && goodFit){
+                    MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setCurrentFitVal(0);
+                    MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->fix();
+                    INFO("Excluding C"<<i<<"_"<<2*j+1<<" from fit");
+                    Cij_Exc.push_back("PhaseCorrection::C"+ std::to_string(i) + "_" + std::to_string(2 * j + 1));
+                }
+                }
+
+            }
+          }
+        }
+        else{
+          Minimiser mini_BESIII_LHCb_Stagger(LL_BESIII_LHCb, &MPS);
+          mini_BESIII_LHCb_Stagger.gradientTest();
+          mini_BESIII_LHCb_Stagger.doFit();
+          double chi2, chi2_nBins;
+          chi2Comb(chi2, chi2_nBins);
+          INFO("chi2 = "<<chi2<<" nBins = "<<chi2_nBins);
+          fr = new FitResult(mini_BESIII_LHCb_Stagger);
+        }
         for (int i=0;i<order + 1;i++){
           for (int j=0;j<order + 1-i;j++){
 
@@ -579,38 +628,139 @@ clockNorm.stop();
       }
       bool finalFit = NamedParameter<bool>("staggerFit::finalFit", false);
       if (finalFit){
-        for (int i=0;i<order + 1;i++){
-          for (int j=0;j<order  +1 - i;j++){
-            real_t x = MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->mean();
-            real_t dx = MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->err(); 
-          //  MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setLimits(x - dx, x + dx);
-            MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setFree();
-          }
-        }
-        auto LL_BESIII_LHCb_Gauss_Penalty = [&MPS, &LL_BESIII_LHCb, &x, &dx](){
-            double pen = 0;
-            for (auto p : x){
-                double delta = MPS[p.first]->mean() - x[p.first];
-                double sigma = dx[p.first];
-                pen += std::pow(delta, 2)/sigma;
+ 
+          for (int i=0;i<order + 1;i++){
+            for (int j=0;j<order  +1 - i;j++){
+              real_t x = MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->mean();
+              real_t dx = MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->err(); 
+            //  MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setLimits(x - dx, x + dx);
+              MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setFree();
             }
-            return LL_BESIII_LHCb() + pen;
+          }
+ 
+
+        if (doLASSO){
+          for (int i=0; i < Cij_Exc.size();i++){
+            MPS[Cij_Exc[i]]->fix();
+            }
+            INFO("Doing LASSO Fit with lambda = "<<lambda);
+            Minimiser mini_BESIII_LHCb_LASSO(LL_BESIII_LHCb_LASSO, &MPS);
+            mini_BESIII_LHCb_LASSO.doFit();
+            FitResult * frLASSO = new FitResult(mini_BESIII_LHCb_LASSO);
+            int status = frLASSO->status();
+            bool goodFit = status ==1 || status ==0;
+
+            real_t LASSO_Threshold = NamedParameter<real_t>("LASSO::Threshold", 1);
+            for (long unsigned int i=0;i<Order+1;i++){
+              for (long unsigned int j=0;j<Order+1-i;j++){
+                  auto p = MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)];
+                  if (abs(p->mean())< LASSO_Threshold * p->err() && goodFit){
+                    MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setCurrentFitVal(0);
+                    MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->fix();
+                    INFO("Excluding C"<<i<<"_"<<2*j+1<<" from fit");
+                  }
+              }
+            }
+       
+          
+
+          Minimiser mini_BESIII_LHCb_AfterLASSO(LL_BESIII_LHCb, &MPS);
+          mini_BESIII_LHCb_AfterLASSO.doFit();
+          fr = new FitResult(mini_BESIII_LHCb_AfterLASSO);
+        }
+        else{
+
+         auto LL_BESIII_LHCb_Gauss_Penalty = [&MPS, &LL_BESIII_LHCb, &x, &dx](){
+              double pen = 0;
+              for (auto p : x){
+                  double delta = MPS[p.first]->mean() - x[p.first];
+                  double sigma = dx[p.first];
+                  pen += std::pow(delta, 2)/sigma;
+              }
+              return LL_BESIII_LHCb() + pen;
 
 
-        };
-        Minimiser mini_BESIII_LHCb_Stagger(LL_BESIII_LHCb_Gauss_Penalty, &MPS);
-        mini_BESIII_LHCb_Stagger.gradientTest();
-        mini_BESIII_LHCb_Stagger.doFit();
-        fr = new FitResult(mini_BESIII_LHCb_Stagger);
+          };
+          Minimiser mini_BESIII_LHCb_Stagger(LL_BESIII_LHCb_Gauss_Penalty, &MPS);
+          mini_BESIII_LHCb_Stagger.gradientTest();
+          mini_BESIII_LHCb_Stagger.doFit();
+          fr = new FitResult(mini_BESIII_LHCb_Stagger);
+        }
       }
     }
     else{
+    if (doLASSO){
+        real_t LASSO_Threshold = NamedParameter<real_t>("LASSO::Threshold", 1);
+        MinuitParameterSet MPS2 = MPS;
+        auto BIC = [&LL_BESIII_LHCb_LASSO, &MPS2, &MPS, &Order, &NData, &LASSO_Threshold](){
+          MPS2["LASSO::lambda"]->setCurrentFitVal(MPS["LASSO::lambda"]->mean());
+          MPS2["LASSO::lambda"]->fix();
+          Minimiser mini_LASSO(LL_BESIII_LHCb_LASSO, &MPS2);
+          mini_LASSO.doFit(); 
+          FitResult * frLASSO = new FitResult(mini_LASSO);
+          int status = frLASSO->status();
+          bool goodFit = status ==1 || status ==0;
+          int nSigParam = 0;
+        
+          for (long unsigned int i=0;i<Order+1;i++){
+              for (long unsigned int j=0;j<Order+1-i;j++){
+                  auto p = MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)];
+                  if (abs(p->mean())< LASSO_Threshold * p->err() && goodFit){
+                      MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setCurrentFitVal(0);
+                      MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->fix();
+                      INFO("Excluding C"<<i<<"_"<<2*j+1<<" from fit");
+                  }
+                  else{
+                    nSigParam++;
+                  }
+              }
+          }
+          double bic = mini_LASSO.FCN() + nSigParam * log(NData);
+          return bic;
+        };
+
+        
+ 
+      
+
+
+
+        INFO("Doing LASSO Fit with lambda = "<<lambda);
+        Minimiser mini_BESIII_LHCb_LASSO(LL_BESIII_LHCb_LASSO, &MPS);
+        mini_BESIII_LHCb_LASSO.doFit();
+        FitResult * frLASSO = new FitResult(mini_BESIII_LHCb_LASSO);
+        int status = frLASSO->status();
+        bool goodFit = status ==1 || status ==0;
+        int nSigParam =0;
+        
+        for (long unsigned int i=0;i<Order+1;i++){
+          for (long unsigned int j=0;j<Order+1-i;j++){
+              auto p = MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)];
+              if (abs(p->mean())< LASSO_Threshold * p->err() && goodFit){
+                MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->setCurrentFitVal(0);
+                MPS["PhaseCorrection::C" + std::to_string(i) + "_" + std::to_string(2 * j + 1)]->fix();
+                INFO("Excluding C"<<i<<"_"<<2*j+1<<" from fit");
+              }
+              else{
+                nSigParam++;
+              }
+
+          }
+        }
+
+          double bic = mini_BESIII_LHCb_LASSO.FCN() + nSigParam * log(NData);
+          INFO("BIC("<<lambda<<") = "<<bic);
+          return 0;
+      }
+     Minimiser mini_BESIII_LHCb(LL_BESIII_LHCb, &MPS);
+
       mini_BESIII_LHCb.doFit();
+      fr = new FitResult(mini_BESIII_LHCb);
     }
 
 
 
-//    FitResult * fr = new FitResult(mini_BESIII_LHCb);
+
 
 
 
@@ -627,9 +777,9 @@ clockNorm.stop();
       auto tag = BESIIITag[p.first];
       auto tagMC = BESIIITagMC[p.first];
       auto fcn = [&psi, &mcSig, &tagMC](const Event& sig_event, const Event& tag_event ){
-        return psi.prob(sig_event, tag_event);
+        return std::norm(psi.getValNoCache(sig_event, tag_event))/psi.norm();
       };
-      INFO("Getting chi2 for "<<name);
+      INFO("Getting chi2 for "<<name<<" for "<<sig.eventType().dof()<<" and "<<3 * tag.eventType().size());
       Chi2Correlated chi2Corr(sig, tag, mcSig, tagMC, fcn);
       
       chi2 += chi2Corr.chi2();
@@ -653,7 +803,7 @@ clockNorm.stop();
       auto sig = LHCbSig[p.first]; 
       real_t norm = psi.norm();
       auto fcn = [&psi, &mcSig](const Event& evt){
-        return psi.prob(evt);
+        return std::norm(psi.getValNoCache(evt))/psi.norm();
       };
 
       INFO("Getting chi2 for "<<name);
@@ -672,9 +822,13 @@ clockNorm.stop();
       make2DProjections(plotFile, mcVals, sig, mcSig, p.first, int(std::pow(nBins, 0.5)));
       i++;
     } 
+    INFO("Out of Loop");
     fr->addChi2(chi2, chi2_nBins);
+    INFO("Added chi2 to FR");
     fr->print();
+    INFO("Printed FR");
     fr->writeToFile(logFile);
+    INFO("Written FR");
   return 0;
   INFO("Out of loop i = "<<i);
 
