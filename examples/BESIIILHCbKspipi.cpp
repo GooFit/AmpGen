@@ -717,6 +717,7 @@ clockNorm.stop();
           }
           double bic = mini_LASSO.FCN() + nSigParam * log(NData);
           return bic;
+
         };
 
         
@@ -750,7 +751,7 @@ clockNorm.stop();
 
           double bic = mini_BESIII_LHCb_LASSO.FCN() + nSigParam * log(NData);
           INFO("BIC("<<lambda<<") = "<<bic);
-          return 0;
+//          return 0;
       }
      Minimiser mini_BESIII_LHCb(LL_BESIII_LHCb, &MPS);
 
