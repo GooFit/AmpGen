@@ -214,6 +214,7 @@ break;
              m_start(NamedParameter<size_t>("PhaseCorrection::Start", 0)),
              m_i(NamedParameter<size_t>("PhaseCorrection::i", 0)),
              m_j(NamedParameter<size_t>("PhaseCorrection::j", 1)),
+             m_constrainTransform(NamedParameter<bool>("PhaseCorrection::constrainTransform", false)),
              m_PolyType(NamedParameter<std::string>("PhaseCorrection::PolyType", "antiSym_legendre")) {
                 size_t i=0;
             for (size_t j=0;j<m_order+1;j++){
@@ -412,6 +413,10 @@ break;
             */
 
                 p = Legendre2D(w1, w2);
+                if (m_constrainTransform){
+                    if (p>M_PI) p = p - 2 * M_PI;
+                    if (p<-M_PI) p = p + 2 * M_PI;
+                }
                 return p;
                 
 
@@ -720,6 +725,7 @@ break;
             size_t m_i;
             size_t m_j;
             bool m_debug;
+            bool m_constrainTransform;
 	    std::string m_PolyType;
             EventList* m_events = {nullptr};
             //std::map< const real_t*, const std::map<std::string, real_t> > m_cache = {};

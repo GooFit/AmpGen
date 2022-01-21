@@ -595,6 +595,8 @@ int main( int argc, char** argv )
   OptionsParser::setArgs( argc, argv );
   int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation" );
   size_t nEvents      = NamedParameter<size_t>     ("nEvents"  , 100, "Total number of events to generate" );
+  size_t nInt      = NamedParameter<size_t>     ("nInt"  , 1e7, "Total number of events to generate" );
+
   auto pNames = NamedParameter<std::string>("EventType" , ""    
       , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
   #ifdef _OPENMP
@@ -605,8 +607,9 @@ int main( int argc, char** argv )
     omp_set_dynamic( 0 );
   #endif 
   EventType sigType( pNames );
-
-  std::string outputFile = NamedParameter<std::string>("Output", "Values.root", "Root Output");
+  std::string inputData = NamedParameter<std::string>("DataSample", "Data.root", "Root Input");
+  std::string outputDataAmp = NamedParameter<std::string>("OutputDataAmp", "Data2Amp.root", "Root Output for Amp values for data");
+  std::string outputNormAmp = NamedParameter<std::string>("OutputNormAmp", "Norm.root", "Root Output");
  
   TRandom3 rndm;
   rndm.SetSeed( seed );
@@ -616,36 +619,53 @@ int main( int argc, char** argv )
   MPS.loadFromStream();
   INFO("Making CP conjugate states");
   AddCPConjugate(MPS);
-  TFile * dFile = TFile::Open(outputFile.c_str(), "RECREATE", "");
-  dFile->cd();
-
-  TNtuple * tup = new TNtuple( "Values","Values",  "aR:aI:cR:cI:dd:s01:s02:f");
-
-
-  EventList events = Generator<>(sigType, &rndm).generate(nEvents);
+  EventList data_events(inputData, sigType);
+  EventList integration_events = Generator<>(sigType, &rndm).generate(nInt);
 
 
   CoherentSum A(sigType, MPS);
   CoherentSum C(sigType.conj(true), MPS);
-  A.setEvents(events);
-  A.setMC(events);
+  A.setEvents(data_events);
+  A.setMC(integration_events);
   A.prepare();
-  C.setEvents(events);
-  C.setMC(events);
+  C.setEvents(data_events);
+  C.setMC(integration_events);
   C.prepare();
   PhaseCorrection pc(MPS);
 
-  for (auto event : events){
+  TFile * dFileData = TFile::Open(outputDataAmp.c_str(), "RECREATE", "");
+  dFileData->cd();
+  TNtuple * tupData = new TNtuple( "Values","Values",  "aR:aI:cR:cI:dd:s01:s02:f");
+  for (auto event : data_events){
     real_t s01 = event.s(0,1);
     real_t s02 = event.s(0,2);
     complex_t a = A.getValNoCache(event);
     complex_t c = C.getValNoCache(event);
     real_t dd = std::arg(a * std::conj(c));
     real_t f = pc.calcCorrL(event); 
-    tup->Fill(std::real(a), std::imag(a),std::real(c), std::imag(c), dd, s01, s02,f);
+    tupData->Fill(std::real(a), std::imag(a),std::real(c), std::imag(c), dd, s01, s02,f);
   }
-  tup->Write();
-  dFile->Close();
+  tupData->Write();
+  dFileData->Close();
+
+
+
+  TFile * dFileNorm = TFile::Open(outputNormAmp.c_str(), "RECREATE", "");
+  dFileNorm->cd();
+  TNtuple * tupNorm = new TNtuple( "Values","Values",  "aR:aI:cR:cI:dd:s01:s02:f");
+  for (auto event : integration_events){
+    real_t s01 = event.s(0,1);
+    real_t s02 = event.s(0,2);
+    complex_t a = A.getValNoCache(event);
+    complex_t c = C.getValNoCache(event);
+    real_t dd = std::arg(a * std::conj(c));
+    real_t f = pc.calcCorrL(event); 
+    tupNorm->Fill(std::real(a), std::imag(a),std::real(c), std::imag(c), dd, s01, s02,f);
+  }
+  tupNorm->Write();
+  dFileNorm->Close();
+
+
   return 0;
 }
   /*
