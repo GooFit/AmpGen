@@ -403,3 +403,9 @@ KeyedFunctors<double(Event)> CoherentSum::componentEvaluator(const EventList_typ
   }
   return rt; 
 }
+
+CoherentSum::~CoherentSum()
+{
+  if( m_ownEvents && m_events !=nullptr ) delete m_events; 
+}
+

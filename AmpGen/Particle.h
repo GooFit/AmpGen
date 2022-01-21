@@ -170,6 +170,8 @@ namespace AmpGen
 
       /// Returns the set of possible spin-orbit couplings allowed by conservation of angular momentum, and if specified parity
       std::vector<std::pair<double,double>> spinOrbitCouplings( const bool& conserveParity = true ) const;
+      
+      void setDaughters(const std::vector<Particle>& particles );
 
       /// Return the additional optional attribute keyed by variable key 
       stdx::optional<std::string> attribute(const std::string& key) const; 
@@ -279,7 +281,11 @@ namespace AmpGen
       /// matches Check the matching between two decay chains, according to the MatchState enum. 
       unsigned int matches( const Particle& other ) const; 
       std::string makeUniqueString();                        ///< Generate the decay descriptor for this decay. 
-      
+      Particle clone() const; 
+      void setDaughter( const unsigned int& index, const Particle& p ); 
+
+      bool expand( const Particle& particle ); 
+
     private:
       std::string m_name                     = {""};         ///< Name of the particle
       const ParticleProperties* m_props      = {nullptr};    ///< Particle Properties from the PDG

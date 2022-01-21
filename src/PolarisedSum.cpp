@@ -324,14 +324,16 @@ void PolarisedSum::updateNorms()
 void PolarisedSum::debug(const Event& evt)
 {
   auto tsize = m_dim.first * m_dim.second;   
-  std::vector<complex_v> this_cache; 
+  std::vector<complex_v> all_cache; 
   for(unsigned j = 0; j != m_matrixElements.size(); ++j)
   {
+    std::vector<complex_v> this_cache; 
     for(unsigned i = 0 ; i != tsize; ++i ) this_cache.emplace_back( m_cache(evt.index() / utils::size<float_v>::value, j*tsize + i) );
     INFO( m_matrixElements[j].decayDescriptor() << " " << vectorToString(this_cache, " ") );
     if( m_debug ) m_matrixElements[j].debug( evt ); 
+    for( auto& t : this_cache ) all_cache.emplace_back( t);
   }   
-  if( m_debug ) m_probExpression.debug(this_cache.data() );
+  if( m_debug ) m_probExpression.debug(all_cache.data() );
   INFO("P(x) = " << getValNoCache(evt) << " " << operator()((const float_v*)nullptr, evt.index() / utils::size<float_v>::value ) );
   INFO("Prod = [" << vectorToString(m_pVector , ", ") <<"]");
 }
@@ -471,6 +473,12 @@ std::vector<FitFraction> PolarisedSum::fitFractions(const LinearErrorPropagator&
   INFO("Returning: " << outputFractions.size() << " fractions");
   return outputFractions;
 }
+
+PolarisedSum::~PolarisedSum()
+{
+  if( m_ownEvents && m_events !=nullptr ) delete m_events; 
+}
+
 
 void PolarisedSum::transferParameters()
 { 

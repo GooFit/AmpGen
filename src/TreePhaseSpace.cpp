@@ -22,7 +22,6 @@ TreePhaseSpace::TreePhaseSpace(const Particle& decayChain, const EventType& type
     m_top.push_back( Vertex::make( p) );
     m_weights.push_back(1);
     double w_max = m_top.rbegin()->maxWeight();
-    std::cout << w_max << " " << m_wmax << std::endl; 
     if( w_max > m_wmax ) m_wmax = w_max;  
   }
   m_wmax = 1./m_wmax; 
@@ -65,37 +64,16 @@ Event TreePhaseSpace::makeEvent()
     j = m_dice(m_gen); 
     m_top[j].generate();
     w = m_top[j].weight() * m_wmax;
+    if( trials++ >= 100000 ){ ERROR("Failed to generate a point with PHSP 100000," << m_wmax) ; break; } 
  //   if( trials++ % 100000 == 0  && trials != 0  ) WARNING("Tried " << trials << " events, still nada, " << w << " " << m_wmax );
   } while ( w < m_rand->Uniform() );
+  //INFO("Made event after ... " << trials << " trials");
   auto event = m_top[j].event(m_type.size());
   event.setGenPdf( genPdf(event) );
   return event; 
 }
 
-void TreePhaseSpace::provideEfficiencyReport(const std::vector<bool>& report)
-{
-//  if( report.size() != m_generatorRecord.size() )
-//  {
-//    WARNING("Report does not match size of generator record...");
-//    return; 
-//  }
-//  std::vector<unsigned> counters( m_top.size() ); 
-//  std::vector<unsigned> totals  ( m_top.size() );
-//  unsigned counter = 0; 
-//  for( unsigned i = 0 ; i != report.size(); ++i )
-//  {
-//    counters[m_generatorRecord[i]] += report[i];
-//    totals[m_generatorRecord[i]]   ++;  
-//    counter += report[i];
-//  }
-//  for( unsigned i = 0 ; i != m_top.size(); ++i )
-//  {
-//    INFO( m_top[i].particle.decayDescriptor() << " " << counters[i] << " / " << totals[i] );
-//    m_weights[i] = double( counters[i] ) / double( counter );
-//  }
-//  m_dice = std::discrete_distribution<>(m_weights.begin(), m_weights.end()); 
-//  m_generatorRecord.clear();
-}
+void TreePhaseSpace::provideEfficiencyReport(const std::vector<bool>& report){}
 
 double rho( const double& s, const double& s1, const double& s2)
 {
@@ -190,7 +168,7 @@ void TreePhaseSpace::Vertex::print(const unsigned& offset) const
   if( type == Type::BW )
     INFO( "phi-range : " << phiMin << " " << phiMax 
         << " s(min) = " << bwMass * bwMass + bwMass * bwWidth * tan(phiMin) 
-        << " s(max) = " << bwMass * bwMass + bwMass * bwWidth * tan(phiMax) );
+        << " s(max) = " << bwMass * bwMass + bwMass * bwWidth * tan(phiMax) << " " << bwMass << " " << bwWidth );
   if( left  != nullptr ) left  -> print( offset + 4 );
   if( right != nullptr ) right -> print( offset + 4 );
 }

@@ -50,7 +50,7 @@ namespace AmpGen
     #endif
     CoherentSum();
     CoherentSum( const EventType& type, const AmpGen::MinuitParameterSet& mps, const std::string& prefix = "" );
-    virtual ~CoherentSum() = default; 
+    virtual ~CoherentSum(); 
 
     std::string prefix() const { return m_prefix; }
     
