@@ -215,6 +215,9 @@ break;
              m_i(NamedParameter<size_t>("PhaseCorrection::i", 0)),
              m_j(NamedParameter<size_t>("PhaseCorrection::j", 1)),
              m_constrainTransform(NamedParameter<bool>("PhaseCorrection::constrainTransform", false)),
+             m_stretchAntiSym(NamedParameter<bool>("PhaseCorrection::stretchAntiSym", false)),
+             m_stretchScale(NamedParameter<real_t>("PhaseCorrection::stretchScale", 2)),
+             m_stretchEpsilon(NamedParameter<real_t>("PhaseCorrection::stretchEpsilon", 0.75)),
              m_PolyType(NamedParameter<std::string>("PhaseCorrection::PolyType", "antiSym_legendre")) {
                 size_t i=0;
             for (size_t j=0;j<m_order+1;j++){
@@ -244,6 +247,10 @@ break;
 
                 auto w1 = m1 * z1 + c1;
                 auto w2 = m2 * z2 + c2;
+
+                if (m_stretchAntiSym){
+                    w2 = m_stretchScale * w2/(w1 + 1 + m_stretchEpsilon);
+                }
 
 
                 /*
@@ -726,6 +733,9 @@ break;
             size_t m_j;
             bool m_debug;
             bool m_constrainTransform;
+            bool m_stretchAntiSym;
+            real_t m_stretchScale;
+            real_t m_stretchEpsilon;
 	    std::string m_PolyType;
             EventList* m_events = {nullptr};
             //std::map< const real_t*, const std::map<std::string, real_t> > m_cache = {};
