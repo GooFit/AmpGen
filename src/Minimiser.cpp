@@ -42,7 +42,7 @@ void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState & state)
     INFO( "Iteration  #  "
         << std::setw(3) << i << " - FCN = " <<  std::setw(16) << state.Fval()
         << " Edm = " <<  std::setw(12) << state.Edm() << " NCalls = " << std::setw(6) << state.NFcn() );
-    if (state.HasCovariance() )
+    if (state.HasCovariance() && m_printLevel >= PrintLevel::VeryVerbose )
       INFO("Error matrix change = " << state.Error().Dcovar() );
   }
   else {
@@ -50,7 +50,7 @@ void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState & state)
         << std::setprecision(13)
         << " - FCN = " <<  std::setw(16) << state.Fval()
         << " Edm = " <<  std::setw(12) << state.Edm() << " NCalls = " << std::setw(6) << state.NFcn() );
-    if (state.HasCovariance() && m_printLevel >= PrintLevel::Verbose )
+    if (state.HasCovariance() && m_printLevel >= PrintLevel::VeryVerbose )
       INFO("Error matrix change = " << state.Error().Dcovar() );
   }
   auto gradient = state.Gradient().Vec().Data(); 
@@ -137,13 +137,11 @@ void Minimiser::prepare()
   m_mapping.clear();
   m_covMatrix.clear();
 
-  /*
   if (m_printLevel >= PrintLevel::VeryVerbose && 
       std::any_of( m_parSet->begin(), m_parSet->end(), [](const auto& p ){ return p->isBlind(); } ) )
   {
     FATAL("Minimiser::PrintLevel is !=0, this is incompatible with having blind parameters.");
   }
-  */
   for(size_t i = 0 ; i < m_parSet->size(); ++i)
   {
     auto par = m_parSet->at(i);
@@ -367,12 +365,10 @@ void Minimiser::setPrintLevel( const PrintLevel& printLevel)
 { 
   m_printLevel = printLevel; 
   if (m_printLevel == PrintLevel::VeryVerbose ){
-    /*
     for (const auto& param : *m_parSet){
       if ( param->isBlind() ) FATAL("Minimiser::PrintLevel is == VeryVerbose, incompatible with having any Blind parameter");
     }
-    */
-    //m_minimiser->SetPrintLevel( 2 );
+    m_minimiser->SetPrintLevel( 2 );
   }
   
 }
