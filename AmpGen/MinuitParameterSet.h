@@ -26,8 +26,6 @@ namespace AmpGen
     MinuitParameterSet( const MinuitParameterSet& other ) = delete;
     ~MinuitParameterSet(); // = default;
 
-    // MinuitParameterSet getFloating();
-
     bool add( MinuitParameter* parPtr );
     MinuitParameter* add(const std::string& name, const Flag& flag, const double& mean, const double& sigma, const double& min = 0, const double& max = 0 );
     bool unregister( MinuitParameter* patPtr );
@@ -56,12 +54,18 @@ namespace AmpGen
     MinuitParameter* operator[]( const size_t& key );
     MinuitParameter* find( const std::string& key ) const;
     double operator()( const std::string& name );
+
+    void setFromMinuit( const double* x ); 
+    void setMapping( const std::vector<unsigned>& m ); 
+    void setFromMinuitIndex(const unsigned index, double v); 
+    double getFromMinuitIndex(const unsigned index); 
   private:
     void tryParameter( const std::vector<std::string>& line );
     void tryAlias( const std::vector<std::string>& line );
     bool addToEnd( MinuitParameter* parPtr );
  
     std::vector<MinuitParameter*>           m_parameters;
+    std::vector<unsigned>                   m_mapping;  
     std::map<std::string, MinuitParameter*> m_keyAccess;
   };
 } // namespace AmpGen
