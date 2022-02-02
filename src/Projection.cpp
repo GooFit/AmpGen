@@ -115,8 +115,12 @@ template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(co
   }
   std::sort( std::begin(hists), std::end(hists), [](auto& h1, auto& h2){ return h1->Integral() < h2->Integral() ; } );
   double total = std::accumulate( std::begin(hists), std::end(hists), 0.0, [](double& t, auto& h){ return t + h->Integral() ; } ); 
-  if( total == 0 ) ERROR("Norm = " << total );
-  else for( auto& h : hists ) h->Scale( norm_sum / total );
+  
+  if( norm_sum != -1 )
+  {
+    if( total == 0 ) ERROR("Norm = " << total );
+    else for( auto& h : hists ) h->Scale( norm_sum / total );
+  }
   stack->SetName( (prefix + name() + "_stack").c_str());
   for( auto& h : hists ){
     stack->Add(h, "C HIST");
@@ -165,8 +169,11 @@ template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(co
   }
   std::sort( std::begin(hists), std::end(hists), [](auto& h1, auto& h2){ return h1->Integral() < h2->Integral() ; } );
   double total = std::accumulate( std::begin(hists), std::end(hists), 0.0, [](double& t, auto& h){ return t + h->Integral() ; } ); 
-  if( total == 0 ) ERROR("Norm = " << total );
-  else for( auto& h : hists ) h->Scale( norm_sum / total );
+  if( norm_sum != -1 )
+  {
+    if( total == 0 ) ERROR("Norm = " << total );
+    else for( auto& h : hists ) h->Scale( norm_sum / total );
+  }
   stack->SetName( (prefix + name() + "_stack").c_str());
   for( auto& h : hists ){
     stack->Add(h, "C HIST");

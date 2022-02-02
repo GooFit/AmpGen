@@ -33,30 +33,42 @@ using namespace std::complex_literals;
 Particle::Particle() = default; 
 
 Particle::Particle( const std::string& name, const Particle& p1, const Particle& p2 ) :
-   m_name{name}
- , m_props{ParticlePropertiesList::get(name)}
- , m_daughters{ std::make_shared<Particle>(p1), std::make_shared<Particle>(p2) }
+  m_name{name}
+  , m_props{ParticlePropertiesList::get(name)}
+  , m_daughters{ std::make_shared<Particle>(p1), std::make_shared<Particle>(p2) }
 {
-  pdgLookup();
+  pdgLookup(true);
   sortDaughters();
   for ( auto& d : m_daughters ) d->setParent( this );
   m_uniqueString = makeUniqueString();
 }
 
 Particle::Particle( const int& pdgID, const Particle& p1, const Particle& p2 ) :
-    m_props{ParticlePropertiesList::get(pdgID)}
+  m_props{ParticlePropertiesList::get(pdgID)}
   , m_daughters{std::make_shared<Particle>(p1) , std::make_shared<Particle>(p2) }
 { 
   if ( m_props != nullptr ) m_name = m_props->name();
-  pdgLookup();
+  pdgLookup(true);
   sortDaughters();
   for ( auto& d : m_daughters ) d->setParent( this );
   m_uniqueString = makeUniqueString();
 }
 
+Particle::Particle(const std::string& name, const std::vector<Particle>& particles ) :
+  m_name{name}
+  , m_props{ParticlePropertiesList::get(name)}
+{
+  for( const auto& p : particles ) m_daughters.push_back( std::make_shared<Particle>(p) ); 
+  pdgLookup(true);
+  sortDaughters(); 
+  for ( auto& d : m_daughters ) d->setParent( this );
+  m_uniqueString = makeUniqueString();
+}
+
+
 Particle::Particle( const std::string& name, const unsigned int& index ) :
-   m_props{ParticlePropertiesList::get( name )}
- , m_index{index}
+  m_props{ParticlePropertiesList::get( name )}
+  , m_index{index}
 {
   pdgLookup();
   m_uniqueString = makeUniqueString();
@@ -162,7 +174,7 @@ double Particle::spin() const { return double( m_props->twoSpin() / 2. ) ; }
 double Particle::S() const { return m_spinConfigurationNumber ; }
 
 
-void Particle::pdgLookup()
+void Particle::pdgLookup(bool quiet)
 {
   if ( m_props == nullptr ) {
     m_isStateGood = false;
@@ -195,10 +207,10 @@ void Particle::pdgLookup()
   int charge = 0; 
   for ( auto& d : m_daughters ){
     d->setParent(this);
-    charge += d->props()->charge();
+    charge += d->props()->charge(); 
   }
-  if( m_minL == 999 ) ERROR("Decay: " << m_name << " does not appear to have an allowed spin-orbit configuration");
-  if( m_daughters.size() != 0 && m_props->charge() != charge && !isNR ) ERROR("Decay: " << m_name << " does not conserve (electric) charge");
+  if( !quiet && m_minL == 999 ) ERROR("Decay: " << m_name << " does not appear to have an allowed spin-orbit configuration");
+  if( !quiet && m_daughters.size() != 0 && m_props->charge() != charge ) ERROR("Decay: " << m_name << " does not conserve (electric) charge");
 }
 
 Tensor Particle::P() const
@@ -212,7 +224,7 @@ Tensor Particle::P() const
             Parameter(index + "_Py"),
             Parameter(index + "_Pz"), 
             Parameter(index + "_E") }) , Tensor::dim(4) );
-//      rt[3] = fcn::sqrt( mass()*mass() + rt[0]*rt[0] + rt[1]*rt[1] + rt[2]*rt[2] ) ;
+      //      rt[3] = fcn::sqrt( mass()*mass() + rt[0]*rt[0] + rt[1]*rt[1] + rt[2]*rt[2] ) ;
       return rt;
     } else ERROR( "Stable particle " << m_index << "is unindexed!" );
   } 
@@ -478,8 +490,8 @@ Tensor Particle::spinTensor( DebugSymbols* db ) const
   else if ( m_daughters.size() == 2 ) {
     auto vname = m_props->spinName() + "_" + m_daughters[0]->m_props->spinName() + m_daughters[1]->m_props->spinName() + "_" + orbitalString();
     return Vertex::Factory::getSpinFactor( P(), Q(), 
-					   daughter(0)->spinTensor(db),
-					   daughter(1)->spinTensor(db), vname, db );
+        daughter(0)->spinTensor(db),
+        daughter(1)->spinTensor(db), vname, db );
   } else if ( m_daughters.size() == 3 ) {
     return Vertex::Factory::getSpinFactorNBody( {
         {daughter(0)->P(), daughter(0)->spinTensor()},
@@ -501,7 +513,7 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
   {
     WARNING("Use the Weyl (helicity) basis for calculations involving photons / neutrinos, as they don't have a rest frame. This will result in ill-defined amplitudes.");
   }
-  
+
   Tensor p        = P();
   Expression pX   = p.get(0);
   Expression pY   = p.get(1);
@@ -541,11 +553,11 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
       Expression aligned = make_cse( Abs(pP + pZ) < 10e-6 ) ;
       xi[0] = Tensor( {make_cse( Ternary(aligned, 1, -zb/n)) , make_cse( Ternary(aligned, 0, (pP+pZ)/n ) ) });
       xi[1] = Tensor( {make_cse( Ternary(aligned, 0, (pP+pZ)/n)), make_cse(Ternary(aligned,1, z/n) )  });
-      
+
       Expression fa = m_props->isNeutrino() ? polState * fcn::sqrt(pE) : polState * fcn::sqrt( pE/m-  1 );
       Expression fb = m_props->isNeutrino() ? fcn::sqrt(pE)            : fcn::sqrt( pE/m + 1 );
       int ind = (id>0 ? polState : -polState) == -1 ? 0 : 1;
-     
+
       return id > 0 ?  Tensor({ - fa * xi[ind][0], - fa * xi[ind][1], fb * xi[ind][0], fb * xi[ind][1] })
         :  -polState * Tensor({   fb * xi[ind][0],   fb * xi[ind][1], fa * xi[ind][0], fa * xi[ind][1] });
     } 
@@ -620,7 +632,7 @@ std::string Particle::texLabel( const bool& printHead, const bool& recurse ) con
   std::string val                 = ""; // m_props->label();
   if( !isHead() )             val  = m_props->label();
   if( printHead && isHead() ) val = m_props->label() + "\\rightarrow ";
-  
+
   if( isHead() || recurse ){
     if ( !isHead() || m_orbital != m_minL ) val += leftBrace;
     for( auto& prod : m_daughters )         val += prod->texLabel(false,recurse) + " ";
@@ -849,6 +861,39 @@ int Particle::C() const
   return prod; 
 }
 
+void Particle::setDaughters( const std::vector<Particle>& particles )
+{
+  m_daughters.clear();
+  for( auto& p : particles ) m_daughters.push_back( std::make_shared<Particle>(p) );
+  for( auto& d : m_daughters ) d->setParent(this); 
+  pdgLookup();  
+  m_uniqueString = makeUniqueString(); 
+}
+
+Particle Particle::clone() const 
+{
+  Particle rt = *this; 
+  for( unsigned int i = 0 ; i != rt.daughters().size(); ++i ) rt.setDaughter(i, this->daughters()[i]->clone()); 
+  return rt; 
+}
+
+void Particle::setDaughter( const unsigned int& index, const Particle& p )
+{
+  m_daughters[index] = std::make_shared<Particle>(p);
+}
+
+bool Particle::expand( const Particle& particle )
+{
+  for( auto& d : m_daughters ) 
+  {
+    if( d->name() == particle.name() && d->isStable() ){ d = std::make_shared<Particle>(particle); return true; }
+    bool worked = d->expand( particle);
+    if( worked ) return true; 
+  }
+  return false ;
+}
+
+
 stdx::optional<std::string> Particle::attribute(const std::string& key) const 
 {
   for( auto& modifier : m_modifiers ){
@@ -864,6 +909,6 @@ std::ostream& AmpGen::operator<<( std::ostream& os, const Particle& particle ){
 
 namespace AmpGen { 
   complete_enum( spinFormalism, Covariant, Canonical )
-  complete_enum( spinBasis    , Dirac    , Weyl ) 
+    complete_enum( spinBasis    , Dirac    , Weyl ) 
 }
 

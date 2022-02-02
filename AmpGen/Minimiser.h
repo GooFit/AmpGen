@@ -12,7 +12,7 @@
 #include <Fit/FitResult.h>
 #include <Minuit2/MinimumState.h>
 #include <Minuit2/MnTraceObject.h>
-
+#include <Math/IFunction.h>
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/enum.h"
 
@@ -38,12 +38,15 @@ namespace AmpGen
   {
   private:
     def_has_function(getVal)
+    def_has_function(grad)
 
   public:
     template <typename TYPE> void setFunction( TYPE& fcn )
     {
       if constexpr( has_getVal<TYPE>::value ) m_theFunction = [&fcn]() { return fcn.getVal(); };
-      else m_theFunction = fcn;
+      else { m_theFunction = fcn; } 
+      
+      if constexpr( std::is_convertible<TYPE*, ROOT::Math::IGradientFunctionMultiDimTempl<double>*>::value ) m_fcnWithGrad = &fcn; 
     }
 
     template <typename TYPE> 
@@ -82,9 +85,9 @@ namespace AmpGen
     void minos( MinuitParameter* param );
     ROOT::Fit::FitResult fitResult() const; 
   private:
-    MinuitParameterSet*         m_parSet       = {nullptr};
-    std::function<double(void)> m_theFunction;
-    ROOT::Minuit2::Minuit2Minimizer*  m_minimiser    = {nullptr};
+    MinuitParameterSet*          m_parSet         = {nullptr};
+    std::function<double(void)>  m_theFunction    = {nullptr};
+    ROOT::Minuit2::Minuit2Minimizer*  m_minimiser = {nullptr};
     std::vector<double>         m_covMatrix    = {0};
     std::vector<unsigned>       m_mapping      = {};
     int        m_status     = {0};
@@ -92,8 +95,8 @@ namespace AmpGen
     PrintLevel m_printLevel = {PrintLevel::Info};
     double     m_ll_zero    = {0};
     bool       m_normalise  = {false};
-    std::vector<ExtendLikelihoodBase*> m_extendedTerms;
-
+    std::vector<ExtendLikelihoodBase*>                  m_extendedTerms;
+    ROOT::Math::IGradientFunctionMultiDimTempl<double>* m_fcnWithGrad = {nullptr};  
   };
 } // namespace AmpGen
 #endif

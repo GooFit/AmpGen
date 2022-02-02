@@ -116,6 +116,9 @@ namespace AmpGen
 
       /// Constructor that takes a decay descriptor as an argument and a list of final state particles to match to the event type. Constructs the entire decay tree.  
       Particle( const std::string& decayString, const std::vector<std::string>& finalStates = {}, const bool& orderDaughters = true );
+      
+      /// Constructor that takes a set of particles 
+      Particle( const std::string& name, const std::vector<Particle>& particles); 
 
       /// (Quasi) Constructor that returns the (quasi)CP conjugated amplitude. The full behaviour of the amplitude is made more complicated by the ordering convention. 
       Particle conj(bool invertHead = true, bool reorder = true);
@@ -167,6 +170,8 @@ namespace AmpGen
 
       /// Returns the set of possible spin-orbit couplings allowed by conservation of angular momentum, and if specified parity
       std::vector<std::pair<double,double>> spinOrbitCouplings( const bool& conserveParity = true ) const;
+      
+      void setDaughters(const std::vector<Particle>& particles );
 
       /// Return the additional optional attribute keyed by variable key 
       stdx::optional<std::string> attribute(const std::string& key) const; 
@@ -276,7 +281,11 @@ namespace AmpGen
       /// matches Check the matching between two decay chains, according to the MatchState enum. 
       unsigned int matches( const Particle& other ) const; 
       std::string makeUniqueString();                        ///< Generate the decay descriptor for this decay. 
-      
+      Particle clone() const; 
+      void setDaughter( const unsigned int& index, const Particle& p ); 
+
+      bool expand( const Particle& particle ); 
+
     private:
       std::string m_name                     = {""};         ///< Name of the particle
       const ParticleProperties* m_props      = {nullptr};    ///< Particle Properties from the PDG
@@ -295,7 +304,7 @@ namespace AmpGen
       std::vector<std::shared_ptr<Particle>> m_daughters;    ///< Array of daughter particles
       std::vector<std::string> m_modifiers;                  ///< Additional modifiers for amplitude
       const Particle*   m_parent             = {nullptr};    ///< Pointer to the parent particle of this particle
-      void pdgLookup();                                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
+      void pdgLookup(bool quiet=false);                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
       bool hasModifier( const std::string& modifier ) const; ///< Check if this particle has a given modifier
       std::string modifierString() const;                    ///< Re-generate modifier string used to create particle
       void sortDaughters();                                  ///< Recursively order the particle's decay products. 

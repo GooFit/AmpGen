@@ -82,17 +82,16 @@ void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState & state)
 
 double Minimiser::operator()( const double* xx )
 {
-  ProfileClock callTime;
   for(size_t i = 0; i < m_mapping.size(); ++i ) {
     m_parSet->at( m_mapping[i] )->setCurrentFitVal( xx[i] );
   }
   double LL = m_theFunction() ;
   for ( auto& extendTerm : m_extendedTerms ) LL -= 2 * (*extendTerm)();
-  callTime.stop();
   return LL - m_ll_zero;
 }
 
-double Minimiser::FCN() const { return m_theFunction(); }
+double Minimiser::FCN() const { return m_theFunction(); } 
+ // fcnWithGrad == nullptr ? m_theFunction() : m_fcnWithGrad->DoEval( m_minimiser->X() ) ; }
 double Minimiser::Edm() const { return m_minimiser->Edm(); }
 double Minimiser::NCalls() const {return m_minimiser->NCalls(); }
 
@@ -155,6 +154,7 @@ void Minimiser::prepare()
     m_mapping.push_back(i);
     if ( m_printLevel == PrintLevel::VeryVerbose )  INFO( *par );
   }
+  m_parSet->setMapping( m_mapping ); 
   m_nParams = m_mapping.size();
   m_covMatrix.resize( m_nParams * m_nParams, 0 );
 }
@@ -191,7 +191,10 @@ bool Minimiser::doFit()
     if ( par->minInit() != 0 || par->maxInit() != 0 )
       m_minimiser->SetVariableLimits( i, par->minInit(), par->maxInit() );
   }
-  m_minimiser->SetFunction( f );
+  
+  if( m_fcnWithGrad == nullptr )  m_minimiser->SetFunction( f );
+  else {  m_minimiser->SetFunction(*m_fcnWithGrad); }  
+
   dynamic_cast< Minuit2::Minuit2Minimizer* >(m_minimiser)->SetTraceObject( *this );
   m_minimiser->Minimize();
   for (size_t i = 0; i < m_nParams; ++i ) {
@@ -319,7 +322,6 @@ ROOT::Minuit2::Minuit2Minimizer* Minimiser::minimiserInternal() { return m_minim
 
 void Minimiser::minos( MinuitParameter* parameter )
 { 
-
   if( m_minimiser == nullptr ) ERROR("No minimiser");
 
   ROOT::Math::Functor f( *this, m_nParams );

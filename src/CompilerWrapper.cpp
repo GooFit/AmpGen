@@ -21,13 +21,13 @@
 #include "AmpGenVersion.h"
 
 using namespace AmpGen;
-#ifdef AMPGEN_CXX
-#pragma message "Using c++ compiler: " AMPGEN_CXX " for JIT"
-#pragma message "Using AMPGENROOT: "       AMPGENROOT
-#pragma message "Using AMPGENROOT_CMAKE: " AMPGENROOT_CMAKE 
-#else
-#pragma warning "No AMPGEN_CXX for JIT set"
-#endif 
+// #ifdef AMPGEN_CXX
+// #pragma message "Using c++ compiler: " AMPGEN_CXX " for JIT"
+// #pragma message "Using AMPGENROOT: "       AMPGENROOT
+// #pragma message "Using AMPGENROOT_CMAKE: " AMPGENROOT_CMAKE 
+// #else
+// #pragma warning "No AMPGEN_CXX for JIT set"
+// #endif 
 
 CompilerWrapper::CompilerWrapper( const bool& verbose ) :
   m_verbose(verbose),

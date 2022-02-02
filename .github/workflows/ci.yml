@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest,  ubuntu-latest]
+        os: [ubuntu-latest]
 
     defaults:
       run:
@@ -26,7 +26,7 @@ jobs:
     - name: Cache Conda
       uses: actions/cache@v2
       env:
-          CACHE_NUMBER: 0
+          CACHE_NUMBER: 1
       with:
         path: ~/conda_pkgs_dir
         key:

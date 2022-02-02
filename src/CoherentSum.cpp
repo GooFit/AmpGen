@@ -195,8 +195,8 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
   stream << CompiledExpression<std::complex<double>(const double*, const int&)>( amplitude  , "AMP", disableBatch() ) << std::endl; 
   stream << CompiledExpression<double(const double*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN", disableBatch() ) << std::endl; 
   if( includePythonBindings ){
-    stream << CompiledExpression<unsigned int(void)>( m_matrixElements.size(), "matrix_elements_n", disableBatch() ) << std::endl;
-    stream << CompiledExpression<double      (void)>( normalisation, "normalization", disableBatch() ) << std::endl;
+    stream << CompiledExpression<int   (void)>( m_matrixElements.size(), "matrix_elements_n", disableBatch() ) << std::endl;
+    stream << CompiledExpression<double(void)>( normalisation, "normalization", disableBatch() ) << std::endl;
     stream << "extern \"C\" const char* matrix_elements(int n) {\n";
     for ( size_t i = 0; i < m_matrixElements.size(); i++ ) {
       stream << "  if(n ==" << i << ") return \"" << m_matrixElements.at(i).progName() << "\" ;\n";
@@ -403,3 +403,9 @@ KeyedFunctors<double(Event)> CoherentSum::componentEvaluator(const EventList_typ
   }
   return rt; 
 }
+
+CoherentSum::~CoherentSum()
+{
+  if( m_ownEvents && m_events !=nullptr ) delete m_events; 
+}
+

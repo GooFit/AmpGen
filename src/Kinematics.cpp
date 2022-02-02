@@ -139,9 +139,7 @@ double AmpGen::phi( const Event& evt, int i, int j, int k, int w )
 void AmpGen::boost( Event& evt, const std::tuple<double, double, double>& n, const double& v )
 {
   double gamma = 1. / sqrt( 1 - v * v );
-  double nx   = std::get<0>( n );
-  double ny   = std::get<1>( n );
-  double nz   = std::get<2>( n );
+  auto& [nx,ny,nz]   = n; 
   double norm = sqrt( nx * nx + ny * ny + nz * nz );
 
   for ( unsigned i = 0; i < evt.size() / 4; ++i ) {

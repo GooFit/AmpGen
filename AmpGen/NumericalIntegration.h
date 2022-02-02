@@ -42,7 +42,7 @@ namespace AmpGen {
     F.params   = const_cast<function_type*>(&fcn);
     gsl_integration_qagi(&F, 0, 1e-5, 1000, w, &result, &error);
     if( ws == nullptr ) gsl_integration_workspace_free (w);
-    std::cout << result << " +/- " << error << std::endl; 
+    //std::cout << result << " +/- " << error << std::endl; 
     return result;
   }
 

@@ -229,3 +229,12 @@ std::vector<std::pair<Particle, TotalCoupling>> AmplitudeRules::expand( const Co
   return rt;
 }
 
+
+      void AmplitudeRules::add_rule( const Particle& p , double coupling ){ 
+        m_rules[p.name()].emplace_back( p, coupling ); 
+      }
+
+Coupling::Coupling(const Particle& particle, double f) :       
+  m_name(particle.decayDescriptor()), 
+        m_expr(new MinuitExpression(particle.decayDescriptor(), f)), 
+        m_particle(particle){}

@@ -50,6 +50,10 @@ namespace AmpGen
     virtual operator double() const { return m_meanResult; }
     virtual ~MinuitParameter() = default;
     
+    void setFromMinuitState( const double* x ){ if( m_minuitIndex != -1 ) m_meanResult = x[m_minuitIndex] ; } 
+    void setMinuitIndex( const int& index ){ m_minuitIndex = index; }  
+    int index() const { return m_minuitIndex; } 
+  
     friend class MinuitParameterSet;
   protected:
     Flag m_flag;
@@ -62,6 +66,7 @@ namespace AmpGen
     double m_errPosResult = {0};
     double m_errNegResult = {0};
     double m_errResult    = {0};
+    int    m_minuitIndex  = {-1}; 
   };
 
   class MinuitProxy

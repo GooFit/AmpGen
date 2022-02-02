@@ -29,6 +29,7 @@ namespace AmpGen
     public:
       Coupling(MinuitParameter* re, MinuitParameter* im);
       Coupling(MinuitExpression* expression);
+      Coupling(const Particle& particle, double f);
       std::string name() const { return m_name; }
       std::string head() const { return m_particle.name(); }
       std::string prefix() const { return m_prefix; }
@@ -74,6 +75,7 @@ namespace AmpGen
     public:
       static const AmplitudeRules* get(); 
       static AmplitudeRules* create( const MinuitParameterSet& mps); 
+      AmplitudeRules() = default;
       AmplitudeRules( const MinuitParameterSet& mps );
       std::vector<Coupling> rulesForDecay(const std::string& head, const std::string& prefix="") const;
       bool hasDecay( const std::string& head ) const;
@@ -82,8 +84,8 @@ namespace AmpGen
           const EventType& type, const std::string& prefix="" );
       std::vector<Coupling> processesThatProduce(const Particle& particle) const; 
 
-
       std::vector<std::pair<Particle, TotalCoupling>> expand( const Coupling& coupling ) const; 
+      void add_rule( const Particle& p , double coupling ) ;
     private:
       std::map<std::string, std::vector<Coupling>> m_rules;
       static AmplitudeRules* gAmplitudeRules;

@@ -248,3 +248,25 @@ MinuitParameterSet::~MinuitParameterSet()
 {
   for( auto& param : m_parameters ) if( param != nullptr ) delete param; 
 }
+
+void MinuitParameterSet::setFromMinuit( const double* xx )
+{ 
+  for(unsigned i = 0; i < m_mapping.size(); ++i ) at( m_mapping[i] )->setCurrentFitVal( xx[i] );
+}
+
+void MinuitParameterSet::setMapping( const std::vector<unsigned>& m ) 
+{ 
+  m_mapping =m ; 
+  for(unsigned i = 0; i < m_mapping.size(); ++i ) at( m_mapping[i] )->setMinuitIndex( i ); 
+} 
+
+
+void  MinuitParameterSet::setFromMinuitIndex(const unsigned index, double v) 
+{ 
+  m_parameters[index]->setCurrentFitVal(v) ; 
+}    
+
+double MinuitParameterSet::getFromMinuitIndex(const unsigned index) 
+{ 
+  return m_parameters[index]->mean(); 
+}

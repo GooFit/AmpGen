@@ -26,9 +26,7 @@ DEFINE_GENERIC_SHAPE( EtaDalitz )
   Expression z   = 1.0 - 1.07 * y;
   Expression amp = Ternary( z > 0.0, sqrt(z), 1 ); 
 
-  if ( lineshapeModifier != "" ){
-    amp = amp * Lineshape::Factory::get(lineshapeModifier, p, dbexpressions);
-  }
+  if ( lineshapeModifier != "" ) amp = amp * Lineshape::Factory::get(lineshapeModifier, p, dbexpressions);
   return amp;
 }
 
