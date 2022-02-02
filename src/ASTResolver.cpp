@@ -165,7 +165,7 @@ std::string ASTResolver::resolvedParameter( const IExpression* param ) const
   auto it = m_resolvedParameters.find(param);
   if( it != m_resolvedParameters.end() ) return it->second; 
   else {
-    ERROR( "Parameter cannot be resolved: [" << this << "]" << param );
+    ERROR( "Parameter cannot be resolved: [" << param <<"]: " << param->to_string() );
     return "";
   }
 }

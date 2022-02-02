@@ -11,6 +11,7 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/MinuitParameter.h"
+#include "AmpGen/MinuitExpression.h"
 #include "AmpGen/ASTResolver.h"
 #include "AmpGen/enum.h"
 #include "AmpGen/NamedParameter.h"
@@ -240,10 +241,14 @@ MinuitParameterLink::MinuitParameterLink( MinuitParameter* param ) : m_parameter
 
 std::string MinuitParameterLink::to_string(const ASTResolver* resolver) const
 {
+  auto as_expression = dynamic_cast<const MinuitExpression*>( this->m_parameter );
+  if( as_expression != nullptr ) return as_expression->expression().to_string(resolver);
+
   if( resolver == nullptr ) return m_parameter->name();
   if( resolver->enableCompileConstants() && m_parameter != nullptr && m_parameter->flag () == Flag::CompileTimeConstant )
-   return std::to_string( m_parameter->mean() ); 
+    return std::to_string( m_parameter->mean() ); 
   return resolver->resolvedParameter(this);
+
 }
 
 std::string MinuitParameterLink::name() const {
@@ -252,6 +257,8 @@ std::string MinuitParameterLink::name() const {
 
 void MinuitParameterLink::resolve( ASTResolver& resolver ) const
 {
+  auto as_expression = dynamic_cast<const MinuitExpression*>( this->m_parameter );
+  if( as_expression != nullptr ) return as_expression->expression().resolve(resolver);
   if( m_parameter->flag() != Flag::CompileTimeConstant ) resolver.resolve(*this);
 }
 

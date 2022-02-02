@@ -18,6 +18,17 @@ namespace AmpGen {
       return *this; 
     }
   };
+  template <typename T> 
+  KahanSum<T> operator+( const KahanSum<T>& l, const T& var )
+  {
+    KahanSum<T> rt; 
+    T y = var - l.cor;
+    T t = l.sum + y;
+    rt.cor = (t-l.sum)-y; 
+    rt.sum = t;
+    return rt;
+  }
+
 }
 
 #endif

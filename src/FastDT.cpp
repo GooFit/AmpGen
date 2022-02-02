@@ -48,6 +48,7 @@ int FastDT::findNode( const double* event ) const
    //  if( node.index -1 < 0 or node.index -1 >= m_dim ) ERROR("Invalid index: " << node.index -1 );
     address = event[node.index-1] > node.cutValue ? node.right : node.left; 
     if( address < 0 ) return std::abs(address) - 1; 
+    if( address >= m_nodes.size() ) FATAL("Fallen out of DT, " << address << " out of " << m_nodes.size() ); 
   }
   FATAL("Fallen out of DT ...");
   return m_nodes[address].left; 
@@ -113,9 +114,9 @@ std::pair<double,double> FastDT::bestCut_ls(const std::vector<double*>& source,
   double maxChi2               = -9999;
   double optPos                = 0;
   double s_w1      = 0;
-  double s_wt      = parallel_accumulate(source.begin(), source.end()              , 0.0, w); //  sum_weights);
-  double t_w1      = parallel_accumulate(target.begin(), target.begin() + minEvents, 0.0, w); //  sum_weights);
-  double t_wt      = parallel_accumulate(target.begin(), target.end()  , 0.0, w);             //  sum_weights);
+  double s_wt      = parallel_accumulate(source.begin(), source.end()              , 0.0, w);
+  double t_w1      = parallel_accumulate(target.begin(), target.begin() + minEvents, 0.0, w);
+  double t_wt      = parallel_accumulate(target.begin(), target.end()  , 0.0, w);            
   unsigned int s_p1 = 0;
   unsigned int s_pt = source.size();
   auto sourceIt = source.begin();

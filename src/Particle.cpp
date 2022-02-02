@@ -179,9 +179,9 @@ void Particle::pdgLookup()
   if( m_defaultModifier != "" && m_lineshape.find(".") == std::string::npos ){
     m_lineshape = m_lineshape + "." + m_defaultModifier.getVal();
   }
-  bool isStrong = quarks() == daughterQuarks();
+  bool isNR = m_name.find("NonRes") != std::string::npos; 
+  bool isStrong = (quarks() == daughterQuarks() ) || isNR;
   if( abs(m_props->pdgID()) == 24 || abs(m_props->pdgID()) == 23 ) isStrong = false; 
-  if ( m_name.find( "NonRes" ) != std::string::npos ) isStrong = true;
   m_minL = m_daughters.size() == 2 ? orbitalRange( isStrong ).first : 0;
   if ( m_daughters.size() == 2 ) {
     DEBUG( "IsStrong ? " << isStrong << " orbital =  " << m_orbital << " minL   =  " << m_minL
@@ -198,7 +198,7 @@ void Particle::pdgLookup()
     charge += d->props()->charge();
   }
   if( m_minL == 999 ) ERROR("Decay: " << m_name << " does not appear to have an allowed spin-orbit configuration");
-  if( m_daughters.size() != 0 && m_props->charge() != charge ) ERROR("Decay: " << m_name << " does not conserve (electric) charge");
+  if( m_daughters.size() != 0 && m_props->charge() != charge && !isNR ) ERROR("Decay: " << m_name << " does not conserve (electric) charge");
 }
 
 Tensor Particle::P() const

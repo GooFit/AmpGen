@@ -207,7 +207,13 @@ double EventList::integral() const
 
 void EventList::add( const EventList& evts )
 {
-  for ( auto& evt : evts ) push_back( evt );
+  unsigned s0 = m_data.size();  
+  m_data.resize(s0 + evts.size() ); 
+  for( unsigned i = 0 ; i != evts.size(); ++i )
+  {
+    m_data[ s0 +i ] = evts[i]; 
+    m_data[ s0 +i ].setIndex( s0+i);
+  }
 }
 
 void EventList::clear() 

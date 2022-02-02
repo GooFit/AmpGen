@@ -42,23 +42,24 @@ void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState & state)
     INFO( "Iteration  #  "
         << std::setw(3) << i << " - FCN = " <<  std::setw(16) << state.Fval()
         << " Edm = " <<  std::setw(12) << state.Edm() << " NCalls = " << std::setw(6) << state.NFcn() );
+    if (state.HasCovariance() )
+      INFO("Error matrix change = " << state.Error().Dcovar() );
   }
   else {
     INFO( "Iteration  #  "
         << std::setprecision(13)
         << " - FCN = " <<  std::setw(16) << state.Fval()
         << " Edm = " <<  std::setw(12) << state.Edm() << " NCalls = " << std::setw(6) << state.NFcn() );
+    if (state.HasCovariance() && m_printLevel >= PrintLevel::Verbose )
+      INFO("Error matrix change = " << state.Error().Dcovar() );
   }
-  // Ensure sync with current parameter value inside Minuit
-  for(size_t j = 0; j < m_mapping.size(); ++j ) {
-    m_parSet->at( m_mapping[j] )->setCurrentFitVal( state.Vec()[j] );
-  }
-
+  auto gradient = state.Gradient().Vec().Data(); 
   // Print parameter values during the minimisation (blind params are shifted by the blinding offset)
   if( m_printLevel >= PrintLevel::Verbose )
-  {
-    for(size_t iii = 0 ; iii < m_parSet->size(); ++iii) {
-      auto par = m_parSet->at(iii);
+  { 
+    INFO( bold_on << "ID  Parameter                                           Value         Step          Gradient" << bold_off ); 
+    for(size_t iii = 0 ; iii < m_mapping.size(); ++iii) {
+      auto par = m_parSet->at(m_mapping[iii]);
       if ( ! (par->isFree() || par->isBlind() )  ) continue;      
       if (par->isBlind()){
         double secretoffset = m_parSet->at(par->name()+"_blind")->mean();
@@ -69,11 +70,12 @@ void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState & state)
         INFO( par->name()<< " " << par->mean() + secretoffset << "(BLIND)" ); 
       }
       else{
-        INFO( par->name()<< " " << par->mean() );
+        double v = state.Vec().Data()[iii]; 
+        if( par->minInit() != 0 || par->maxInit() != 0 ) v = par->minInit() + 0.5 * ( par->maxInit() - par->minInit() ) * ( std::sin( v ) + 1 );  
+        INFO( mysprintf("%-3d %-50s % 2.4e   % 2.4e   % 2.4e", iii, par->name().c_str(), v, state.Gradient().Gstep()[iii], state.Gradient().Vec()[iii] ) ) ;
       }
     }
-    if (state.HasCovariance() )
-      INFO("Error matrix change = " << state.Error().Dcovar() );
+    std::cout << std::endl; 
   }
 }
 
@@ -136,12 +138,13 @@ void Minimiser::prepare()
   m_mapping.clear();
   m_covMatrix.clear();
 
+  /*
   if (m_printLevel >= PrintLevel::VeryVerbose && 
       std::any_of( m_parSet->begin(), m_parSet->end(), [](const auto& p ){ return p->isBlind(); } ) )
   {
     FATAL("Minimiser::PrintLevel is !=0, this is incompatible with having blind parameters.");
   }
-
+  */
   for(size_t i = 0 ; i < m_parSet->size(); ++i)
   {
     auto par = m_parSet->at(i);
@@ -333,7 +336,6 @@ void Minimiser::minos( MinuitParameter* parameter )
   int status =0;
   std::vector<double> init_values ( m_minimiser->X(), m_minimiser->X() + m_nParams); 
   bool paramHasLimits = parameter->minInit() !=0 or parameter->maxInit() !=0;
-  INFO("Getting MINOS error: " << parameter->name() << " : " << parameter->mean() << " +/- " << parameter->err() << " hasLimits: " << paramHasLimits );
   if( paramHasLimits != 0 && ( v0 - parameter->err() < parameter->minInit() ) ) return;  
   if( paramHasLimits != 0 && ( v0 + parameter->err() > parameter->maxInit() ) ) return;  
   
@@ -363,10 +365,14 @@ void Minimiser::setPrintLevel( const PrintLevel& printLevel)
 { 
   m_printLevel = printLevel; 
   if (m_printLevel == PrintLevel::VeryVerbose ){
+    /*
     for (const auto& param : *m_parSet){
       if ( param->isBlind() ) FATAL("Minimiser::PrintLevel is == VeryVerbose, incompatible with having any Blind parameter");
     }
+    */
+    //m_minimiser->SetPrintLevel( 2 );
   }
+  
 }
 
 namespace AmpGen { 

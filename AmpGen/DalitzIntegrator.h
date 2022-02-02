@@ -50,6 +50,8 @@ namespace AmpGen
         #endif
       }
       void setEvent(const sqCo& x, float_v* event, const double& s) const;
+     // void setEvent_scalar(const sqCo& x, AmpGen::Event& event) const;
+      
       void debug() const; 
       void setEvent(const sqCo& x, float_v* event) const;
       void set(const double& s0, const double& s1, const double& s2, const double& s3);

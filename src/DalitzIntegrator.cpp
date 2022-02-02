@@ -70,7 +70,6 @@ void DalitzIntegrator::setEvent( const sqCo& x, float_v* event ) const
   event[10] = pC * cos(M_PI * x.second);
   event[11] = eC;
 }
-
 void DalitzIntegrator::setMother( const double& s )
 {
   m_s0 = s;
