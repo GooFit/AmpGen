@@ -74,7 +74,7 @@ namespace AmpGen
       if constexpr( std::is_same<eventListType, EventListSIMD>::value )
       {
         #pragma omp parallel for
-        for( unsigned block = 0 ; block != m_events->nBlocks(); ++block )
+        for( unsigned block = 0 ; block < m_events->nBlocks(); ++block )
         {
           tmp[block] = m_events->weight(block) * AVX::log(this->operator()(m_events->block(block), block));  
         }
