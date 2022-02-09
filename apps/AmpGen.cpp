@@ -146,36 +146,38 @@ template <typename pdf_t> void generateEvents( EventList& events
 {
   if constexpr( std::is_same<pdf_t, FixedLibPDF>::value )
   {
-    Generator<PhaseSpace, EventList> signalGenerator(events.eventType(), rndm);
+    Generator<PhaseSpace, EventList> signalGenerator(events.eventType()); 
+    signalGenerator.setRandom(rndm); 
     signalGenerator.setBlockSize(blockSize);
     signalGenerator.setNormFlag(normalise);
     signalGenerator.fillEventList(pdf, events, nEvents );
   }
-  else { 
-  if( phsp_type == phspTypes::PhaseSpace )
+  else if( phsp_type == phspTypes::PhaseSpace )
   {
-    Generator<PhaseSpace, EventList_t> signalGenerator(events.eventType(), rndm);
+    Generator<PhaseSpace, EventList_t> signalGenerator(events.eventType());
+    signalGenerator.setRandom(rndm); 
     signalGenerator.setBlockSize(blockSize);
     signalGenerator.setNormFlag(normalise);
     signalGenerator.fillEventList(pdf, events, nEvents );
   }
   else if( phsp_type == phspTypes::RecursivePhaseSpace )
   {
-    Generator<RecursivePhaseSpace, EventList_t> signalGenerator( getTopology(pdf), events.eventType(), rndm );
+    Generator<RecursivePhaseSpace, EventList_t> signalGenerator( getTopology(pdf), events.eventType());
+    signalGenerator.setRandom(rndm); 
     signalGenerator.setBlockSize(blockSize);
     signalGenerator.setNormFlag(normalise);
     signalGenerator.fillEventList(pdf, events, nEvents);
   }
   else if( phsp_type == phspTypes::TreePhaseSpace )
   {
-    Generator<TreePhaseSpace, EventList_t> signalGenerator(getDecayChains(pdf), events.eventType(), rndm);
+    Generator<TreePhaseSpace, EventList_t> signalGenerator(getDecayChains(pdf), events.eventType());
+    signalGenerator.setRandom(rndm); 
     signalGenerator.setBlockSize(blockSize);
     signalGenerator.setNormFlag(normalise);
     signalGenerator.fillEventList(pdf, events, nEvents );
   }
   else {
     FATAL("Phase space configuration: " << phsp_type << " is not supported");
-  }
   }
 }
 
