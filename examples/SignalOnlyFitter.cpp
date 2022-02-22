@@ -169,7 +169,8 @@ FitResult* doFit( likelihoodType&& likelihood, EventList_type& data, EventList_t
   for( const auto& proj : projections )
   {
     proj(mc, evaluator,                                           PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
-    proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
+    if( NamedParameter<bool>("AllComponents",true ) ) 
+      proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
     proj(data, PlotOptions::Prefix("Data") )->Write();
   }
   
