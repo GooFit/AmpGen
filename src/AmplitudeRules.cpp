@@ -36,14 +36,14 @@ Coupling::Coupling(MinuitParameter* re, MinuitParameter* im) :
   coordinateType coord = NamedParameter<coordinateType>("CouplingConstant::Coordinates", coordinateType::cartesian);
   angType degOrRad     = NamedParameter<angType>("CouplingConstant::AngularUnits"      , angType::rad);
   m_isCartesian = true; 
-  
+
   if( coord == coordinateType::polar ) m_isCartesian = false; 
-  
+
   if ( coord == coordinateType::Invalid){
     FATAL("Coordinates for coupling constants must be either cartesian or polar");
   } 
   if ( degOrRad == angType::deg) m_sf = M_PI / 180; 
-  
+
   if ( degOrRad == angType::Invalid ){
     FATAL("TotalCoupling::AngularUnits must be either rad or deg");
   } 
@@ -71,15 +71,14 @@ AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
     }
     else if( name.find("_Im") == std::string::npos ){
       bool isCoupling = Particle::isValidDecayDescriptor( it_re->name() );
-      if( isCoupling ){
-        MinuitExpression* expression = dynamic_cast<MinuitExpression*>( it_re );
-        DEBUG("Constructing: " << expression << " " << it_re->name() );
-        if( expression != nullptr ){
-          Coupling p(expression);
-          m_rules[p.head()].emplace_back(p);
-        } 
+      if( !isCoupling ) continue; 
+      MinuitExpression* expression = dynamic_cast<MinuitExpression*>( it_re );
+      DEBUG("Constructing: " << expression << " " << it_re->name() );
+      if( expression != nullptr ){
+        Coupling p(expression);
+        m_rules[p.head()].emplace_back(p);
       } 
-    }
+    } 
   }
 }
 
@@ -163,7 +162,7 @@ std::vector<std::pair<Particle, TotalCoupling>> AmplitudeRules::getMatchingRules
       if( p.isStateGood() && 
           std::find_if( rt.begin(), rt.end(), [p](const auto& x){ return x.first.decayDescriptor() == p.decayDescriptor(); } )
           == rt.end() 
-          ) rt.emplace_back( p, coupling );
+        ) rt.emplace_back( p, coupling );
     }
   }
   return rt;
@@ -230,11 +229,11 @@ std::vector<std::pair<Particle, TotalCoupling>> AmplitudeRules::expand( const Co
 }
 
 
-      void AmplitudeRules::add_rule( const Particle& p , double coupling ){ 
-        m_rules[p.name()].emplace_back( p, coupling ); 
-      }
+void AmplitudeRules::add_rule( const Particle& p , double coupling ){ 
+  m_rules[p.name()].emplace_back( p, coupling ); 
+}
 
 Coupling::Coupling(const Particle& particle, double f) :       
   m_name(particle.decayDescriptor()), 
-        m_expr(new MinuitExpression(particle.decayDescriptor(), f)), 
-        m_particle(particle){}
+  m_expr(new MinuitExpression(particle.decayDescriptor(), f)), 
+  m_particle(particle){}

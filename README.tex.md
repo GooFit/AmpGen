@@ -214,12 +214,16 @@ Several models for different @f$D^0@f$ decays published by the LHCb collaboratio
 AmpGen.exe options/D02Kpipipi.opt --EventType "D0 K- pi+ pi+ pi-" --nEvents 1000000
 ```
 
-The standalone generator can also be used to only produce the source code that evaluates the amplitude, to be used by other generators such as EvtGen. In this case, the PDF is automatically normalised such that @f$\mathcal{P}_{\text{max}} < 1@f$ . The code can be generated and compiled into a shared library as follows
+AmpGen can also be used to only produce the source code that evaluates the amplitude, to be used by other generators such as EvtGen. 
+The source code is generated if the output extension is (cpp) rather than a root file. 
+The PDF in such cases is automatically normalised such that @f$\mathcal{P}_{\text{max}} < 1@f$ . 
+The code can be generated and compiled into a shared library as follows
 ```shell
 AmpGen.exe MyOpts.opt --Output=MyModel.cpp --SourceOnly
 g++ -Ofast -shared -rdynamic --std=c++14 -fPIC MyModel.cpp -o MyModel.so
 ```
-Decays can also be specified entirely on the command line in order to quickly study the distributions of different decay modes. For example, to generate a sample of 10000  @f$\Lambda_b \to p K^{*-}@f$  decays, 
+Decays can also be specified entirely on the command line in order to quickly study the distributions of different decay modes, and to debug individual decay descriptors. 
+For example, to generate a sample of 10000  @f$\Lambda_b \to p K^{*-}@f$  decays, 
 
 ```shell
 AmpGen.exe --Decay "Lambda(b)0{p+,K*(892)bar-{K-,pi0}}" --nEvents 10000 --Type PolarisedSum 

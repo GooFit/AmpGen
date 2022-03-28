@@ -131,7 +131,7 @@ bool Particle::isValidDecayDescriptor( const std::string& decayDescriptor )
   for( auto token : tokens )
   {
     auto particle_name = token.substr(0, token.find("[") );
-    valid &= ParticleProperties::get( particle_name, true) != nullptr; 
+    valid &= ParticleProperties::get( particle_name) != nullptr; 
   }
   return valid; 
 }

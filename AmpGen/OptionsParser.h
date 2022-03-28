@@ -10,6 +10,7 @@
 
 namespace AmpGen
 {
+
   class OptionsParser
   {
   public:
@@ -31,6 +32,11 @@ namespace AmpGen
     const_iterator end() const;
     std::vector<std::vector<std::string>> getInputOrdered() const; 
   private:
+    struct AllowedArgument { 
+      std::string m_name;
+      std::string m_helpString; 
+    }; 
+    std::vector<std::string>                          m_allowedArguments; 
     std::vector<std::string>                          m_orderedKeys; 
     std::map<std::string, std::vector<std::string>>   m_parsedLines; 
     std::map<std::string, std::function<void(std::vector<std::string>)> > m_keywords;
@@ -43,6 +49,7 @@ namespace AmpGen
     void readStream( std::istream& is );
     std::vector<std::string> makeParsedStrings( const std::string& line, int& braceDepth ) const;
     void addArg(const std::vector<std::string>& tokens );
+  
   };
 } // namespace AmpGen
 #endif
