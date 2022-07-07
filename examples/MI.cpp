@@ -32,7 +32,7 @@ using namespace std::complex_literals;
 
 
 
-
+//Old MI Code
 template <class PDF_TYPE, class PRIOR_TYPE> 
   void GenerateEvents( EventList& events
                        , PDF_TYPE& pdf 
