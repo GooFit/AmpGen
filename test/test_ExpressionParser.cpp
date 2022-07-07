@@ -70,6 +70,8 @@ BOOST_AUTO_TEST_CASE( parametericExpressions ) {
   BOOST_TEST( test("sin(2 * a) + cos(pi / b)"              )      == sin(2 * a) + cos(pi / b)    , tt::tolerance(1e-10));
   BOOST_TEST( test("a - ( b + c ) "                        )      ==  a - ( b + c )              , tt::tolerance(1e-10));
   BOOST_TEST( test("a - b + c - d / b + f - a "            )      ==  a - b + c - (d / b) + f - a, tt::tolerance(1e-10));
+  BOOST_TEST( test("atan2(a , b)") == atan2(a,b), tt::tolerance(1e-10));
+  BOOST_TEST( test("Ternary(a > b , c , d )") == (a > b ? c : d ) );
 }
 
 

@@ -33,30 +33,42 @@ using namespace std::complex_literals;
 Particle::Particle() = default; 
 
 Particle::Particle( const std::string& name, const Particle& p1, const Particle& p2 ) :
-   m_name{name}
- , m_props{ParticlePropertiesList::get(name)}
- , m_daughters{ std::make_shared<Particle>(p1), std::make_shared<Particle>(p2) }
+  m_name{name}
+  , m_props{ParticlePropertiesList::get(name)}
+  , m_daughters{ std::make_shared<Particle>(p1), std::make_shared<Particle>(p2) }
 {
-  pdgLookup();
+  pdgLookup(true);
   sortDaughters();
   for ( auto& d : m_daughters ) d->setParent( this );
   m_uniqueString = makeUniqueString();
 }
 
 Particle::Particle( const int& pdgID, const Particle& p1, const Particle& p2 ) :
-    m_props{ParticlePropertiesList::get(pdgID)}
+  m_props{ParticlePropertiesList::get(pdgID)}
   , m_daughters{std::make_shared<Particle>(p1) , std::make_shared<Particle>(p2) }
 { 
   if ( m_props != nullptr ) m_name = m_props->name();
-  pdgLookup();
+  pdgLookup(true);
   sortDaughters();
   for ( auto& d : m_daughters ) d->setParent( this );
   m_uniqueString = makeUniqueString();
 }
 
+Particle::Particle(const std::string& name, const std::vector<Particle>& particles ) :
+  m_name{name}
+  , m_props{ParticlePropertiesList::get(name)}
+{
+  for( const auto& p : particles ) m_daughters.push_back( std::make_shared<Particle>(p) ); 
+  pdgLookup(true);
+  sortDaughters(); 
+  for ( auto& d : m_daughters ) d->setParent( this );
+  m_uniqueString = makeUniqueString();
+}
+
+
 Particle::Particle( const std::string& name, const unsigned int& index ) :
-   m_props{ParticlePropertiesList::get( name )}
- , m_index{index}
+  m_props{ParticlePropertiesList::get( name )}
+  , m_index{index}
 {
   pdgLookup();
   m_uniqueString = makeUniqueString();
@@ -107,19 +119,32 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
 
 bool Particle::isValidDecayDescriptor( const std::string& decayDescriptor )
 {
-  size_t firstOpen = decayDescriptor.find("{");
-  size_t open  = std::count(decayDescriptor.begin(), decayDescriptor.end(), '{'); 
-  size_t close = std::count(decayDescriptor.begin(), decayDescriptor.end(), '}'); 
-  if( open == 0 || open != close || firstOpen == std::string::npos) return false; 
-  std::string firstState = decayDescriptor.substr(0, firstOpen);
-  auto firstSquare = firstState.find("[");
-  if( firstSquare == std::string::npos ) return ParticleProperties::get( firstState, true ) != nullptr;
-  return ParticleProperties::get( firstState.substr(0, firstSquare), true ) != nullptr; 
+  auto first = decayDescriptor.find("{");
+  auto open  = std::count(decayDescriptor.begin(), decayDescriptor.end(), '{'); 
+  auto close = std::count(decayDescriptor.begin(), decayDescriptor.end(), '}'); 
+  if( open == 0 || open != close || first == std::string::npos){
+    if( open !=0 && open != close ) WARNING("Unmatched braces in possible decay descriptor: " << decayDescriptor);
+    return false; 
+  }
+  auto tokens = split(decayDescriptor, {'{','}',',','_'} );
+  bool valid = true; 
+  for( auto token : tokens )
+  {
+    auto particle_name = token.substr(0, token.find("[") );
+    valid &= ParticleProperties::get( particle_name) != nullptr;
+  }
+  if( !valid ) WARNING("Invalid decay descriptor: " << decayDescriptor );  
+  return valid; 
 }
 
 void Particle::parseModifier( const std::string& mod )
 {
-  if ( Lineshape::Factory::isLineshape(mod) ) m_lineshape = mod;
+  auto tokens = split(mod, '=');
+  if ( tokens.size() == 2 && tokens[0] == "vertex" )
+  {
+    m_vertexName = tokens[1];
+  }
+  else if ( Lineshape::Factory::isLineshape(mod) ) m_lineshape = mod;
   else if( mod.size() == 1 )
   {
     DEBUG( "Modifier = " << mod );
@@ -149,7 +174,8 @@ void Particle::parseModifier( const std::string& mod )
 double Particle::spin() const { return double( m_props->twoSpin() / 2. ) ; }
 double Particle::S() const { return m_spinConfigurationNumber ; }
 
-void Particle::pdgLookup()
+
+void Particle::pdgLookup(bool quiet)
 {
   if ( m_props == nullptr ) {
     m_isStateGood = false;
@@ -162,13 +188,13 @@ void Particle::pdgLookup()
   } 
   else m_usesDefaultLineshape = false;
   m_parity                 = m_props->P();
-  if ( !isdigit( m_props->J()[0] ) ) ERROR( "Spin not recognised! : " << m_name << " J = " << m_props->J() );
+  // if ( !isdigit( m_props->J()[0] ) ) ERROR( "Spin not recognised! : " << m_name << " J = " << m_props->J() );
   if( m_defaultModifier != "" && m_lineshape.find(".") == std::string::npos ){
     m_lineshape = m_lineshape + "." + m_defaultModifier.getVal();
   }
-  bool isStrong = quarks() == daughterQuarks();
-  DEBUG( m_name << " is decaying via " << ( isStrong ? "strong" : "electroweak" ) << " interactions; P = " << props()->P() );
-  if ( m_name.find( "NonRes" ) != std::string::npos ) isStrong = true;
+  bool isNR = m_name.find("NonRes") != std::string::npos; 
+  bool isStrong = (quarks() == daughterQuarks() ) || isNR;
+  if( abs(m_props->pdgID()) == 24 || abs(m_props->pdgID()) == 23 ) isStrong = false; 
   m_minL = m_daughters.size() == 2 ? orbitalRange( isStrong ).first : 0;
   if ( m_daughters.size() == 2 ) {
     DEBUG( "IsStrong ? " << isStrong << " orbital =  " << m_orbital << " minL   =  " << m_minL
@@ -176,13 +202,16 @@ void Particle::pdgLookup()
         << " d1     =  " << m_daughters[1]->name() );
   }
   if ( m_orbital == 0 ) m_orbital = m_minL; // define in ground state unless specified
+  if( m_daughters.size() != 0 ){
+    DEBUG( m_name << " is decaying via " << ( isStrong ? "strong" : "electroweak" ) << " interactions; P = " << props()->P() << "l = " << m_orbital );
+  }
   int charge = 0; 
   for ( auto& d : m_daughters ){
     d->setParent(this);
-    charge += d->props()->charge();
+    charge += d->props()->charge(); 
   }
-  if( m_minL == 999 ) ERROR("Decay: " << m_name << " does not appear to have an allowed spin-orbit configuration");
-  if( m_daughters.size() != 0 && m_props->charge() != charge ) ERROR("Decay: " << m_name << " does not conserve (electric) charge");
+  if( !quiet && m_minL == 999 ) ERROR("Decay: " << m_name << " does not appear to have an allowed spin-orbit configuration");
+  if( !quiet && m_daughters.size() != 0 && m_props->charge() != charge ) ERROR("Decay: " << m_name << " does not conserve (electric) charge");
 }
 
 Tensor Particle::P() const
@@ -194,9 +223,9 @@ Tensor Particle::P() const
       Tensor rt( std::vector<Expression>( {
             Parameter(index + "_Px"), 
             Parameter(index + "_Py"),
-            Parameter(index + "_Pz"), 0 }) , Tensor::dim(4) );
-      rt[3] = make_cse( fcn::sqrt( mass()*mass() + rt[0]*rt[0] + rt[1]*rt[1] + rt[2]*rt[2] ) );
-         //   Parameter( index + "_E" , 0, false, 1 )} ),
+            Parameter(index + "_Pz"), 
+            Parameter(index + "_E") }) , Tensor::dim(4) );
+      //      rt[3] = fcn::sqrt( mass()*mass() + rt[0]*rt[0] + rt[1]*rt[1] + rt[2]*rt[2] ) ;
       return rt;
     } else ERROR( "Stable particle " << m_index << "is unindexed!" );
   } 
@@ -236,6 +265,7 @@ std::shared_ptr<Particle> Particle::daughter( const std::string& name, const int
 
 std::string Particle::orbitalString() const
 {
+  if( m_vertexName != "" ) return m_vertexName; 
   constexpr std::array<char, 7> orbitals = {'S','P','D','F','G','H','I'};
   std::string rt = std::string(1, orbitals[m_orbital] ); 
   if( m_spinConfigurationNumber != 0 ){ 
@@ -372,31 +402,34 @@ Tensor Particle::transitionMatrix( DebugSymbols* db  )
   return spinTensor();
 }
 
-
-
-
-Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index )
+Expression Particle::getExpression( DebugSymbols* db, const std::vector<int>& state)
 {
+  if( state.size() !=0 ) setPolarisationState( state );
   if( db != nullptr && !isStable() ) 
     db->emplace_back( uniqueString() , Parameter( "NULL", 0, true ) );
   Expression total = 0;
   Tensor::Index a;
-  auto finalStateParticles  = getFinalStateParticles();
-  auto orderings            = identicalDaughterOrderings();
+  auto fsp              = getFinalStateParticles();
+  auto orderings        = identicalDaughterOrderings();
   bool doSymmetrisation = !hasModifier("NoSym");
   bool sumAmplitudes    = !hasModifier("Inco");
   bool includeSpin      = !hasModifier("BgSpin0");
   std::vector<int> exchangeParities;
-  std::transform( finalStateParticles.begin(), finalStateParticles.end(), std::back_inserter(exchangeParities), 
+  std::transform(fsp.begin(), fsp.end(), std::back_inserter(exchangeParities), 
       [](const auto& p){ return p->props()->isFermion() ? -1 : 1; } );
+  std::map< std::vector<size_t>, Expression> props; 
+  for( const auto& ordering : orderings ){
+    setOrdering( ordering );
+    props[ordering] = make_cse(propagator(db)); 
+  }
   for(const auto& ordering : orderings){
     auto exchangeParity = minSwaps( ordering, exchangeParities );   
     setOrdering( ordering );
     Expression spinFactor = 1; 
     if( includeSpin && m_spinFormalism == spinFormalism::Covariant ){
       Tensor st = spinTensor(db);
+      st.st();
       if( m_props->twoSpin() == 0 ) spinFactor = st[0];
-
       if( m_props->twoSpin() == 1 ){
         Tensor is = Bar( externalSpinTensor(m_polState) );
         ADD_DEBUG_TENSOR( externalSpinTensor(m_polState), db );
@@ -412,34 +445,34 @@ Expression Particle::getExpression( DebugSymbols* db, const unsigned int& index 
         ADD_DEBUG_TENSOR(is, db );
         spinFactor = dot(is,st);
       }
-      DEBUG(name()<<" spinFactor = "<< spinFactor);
     }
     if ( includeSpin && m_spinFormalism == spinFormalism::Canonical ){
-      TransformSequence t = TransformSequence();
-      spinFactor = helicityAmplitude(*this, t, m_props->isBoson() ? polState() : double(polState())/2.0, db);
-
-      //INFO(name()<<" spinFactor = "<< spinFactor());
+      spinFactor = helicityAmplitude(*this, TransformSequence(), m_props->isBoson() ? polState() : double(polState())/2.0, db);
     }
     if( db != nullptr ){
       std::string finalStateString="";
-      for( auto& fs : finalStateParticles ) 
-        if( fs->spin() != 0 ){
-          finalStateString += std::to_string(fs->polState()) + "_";
-        }
+      for( const auto& fs : fsp)
+        if( fs->spin() != 0 ) finalStateString += std::to_string(fs->polState()) + "_";
       if( finalStateString != "" ) 
         finalStateString = finalStateString.substr(0, finalStateString.size()-1);
       db->emplace_back( "SF_"+std::to_string(polState()) +"_"+ finalStateString , spinFactor );
     }
-    
-    Expression ls = make_cse(propagator(db)) * spinFactor; 
-    //INFO(name()<<" LS = "<<ls());
+    DEBUG( "Got spin matrix element -> calculating lineshape product" );
+    Expression ls = props[ordering] * spinFactor; 
     if(sumAmplitudes) total = total + exchangeParity.second * ls;
     else              total = total + fcn::conj(ls) * ls;
     if(!doSymmetrisation) break;
   }
   ADD_DEBUG( total, db );
   double nPermutations = doSymmetrisation ? orderings.size() : 1;
-  if ( sumAmplitudes ) return total / fcn::sqrt( nPermutations );
+  if ( sumAmplitudes )
+  {
+    if ( is<Constant>(total) ){
+      WARNING("Amplitude is just a constant: " << total << " may cause problems for compiler, making a little bit complex" );
+      total += 1i * 0.00001;
+    }
+    return total / fcn::sqrt( nPermutations );
+  }
   else {
     Expression sqrted = fcn::sqrt( total / nPermutations );
     ADD_DEBUG( sqrted, db );
@@ -457,11 +490,9 @@ Tensor Particle::spinTensor( DebugSymbols* db ) const
   }
   else if ( m_daughters.size() == 2 ) {
     auto vname = m_props->spinName() + "_" + m_daughters[0]->m_props->spinName() + m_daughters[1]->m_props->spinName() + "_" + orbitalString();
-    Tensor value = Vertex::Factory::getSpinFactor( P(), Q(), 
+    return Vertex::Factory::getSpinFactor( P(), Q(), 
         daughter(0)->spinTensor(db),
         daughter(1)->spinTensor(db), vname, db );
-    DEBUG( "Returning spin tensor" );
-    return value;
   } else if ( m_daughters.size() == 3 ) {
     return Vertex::Factory::getSpinFactorNBody( {
         {daughter(0)->P(), daughter(0)->spinTensor()},
@@ -483,7 +514,7 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
   {
     WARNING("Use the Weyl (helicity) basis for calculations involving photons / neutrinos, as they don't have a rest frame. This will result in ill-defined amplitudes.");
   }
-  
+
   Tensor p        = P();
   Expression pX   = p.get(0);
   Expression pY   = p.get(1);
@@ -509,8 +540,8 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
     }
     if( m_spinBasis == spinBasis::Dirac ){
       Expression N = make_cse(1./(m*(pE + m)));
-      if( polState ==  1 ) return -Tensor({1.+ z *pX*N,  1i +  z*pY*N,  z*pZ*N    ,  z*m })/sqrt(2);
-      if( polState == -1 ) return  Tensor({1.+ zb*pX*N, -1i + zb*pY*N, zb*pZ*N    , zb*m })/sqrt(2);
+      if( polState ==  1 ) return -Tensor({1.+ z *pX*N,  1i +  z*pY*N,  z*pZ*N    ,  z/m })/sqrt(2);
+      if( polState == -1 ) return  Tensor({1.+ zb*pX*N, -1i + zb*pY*N, zb*pZ*N    , zb/m })/sqrt(2);
       if( polState ==  0 ) return  Tensor({pX*pZ*N    ,       pY*pZ*N, 1 + pZ*pZ*N, pZ/m });
     } 
   }
@@ -518,19 +549,18 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
   {
     if( m_spinBasis == spinBasis::Weyl )
     {
+      std::array<Tensor,2> xi;
       Expression n       = fcn::sqrt( 2 * pP*(pP+pZ) );
-      double isqrt_two   = 1./sqrt(2);
-      Expression fa      = m_props->isNeutrino() ? 2 : fcn::sqrt(pE/m + 1);
-      Expression fb      = m_props->isNeutrino() ? 0 : fcn::sqrt(pE/m - 1);
       Expression aligned = make_cse( Abs(pP + pZ) < 10e-6 ) ;
-      Expression xi10    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
-      Expression xi11    = make_cse(Ternary( aligned,  0,  z/n ));
-      Expression xi00    = make_cse(Ternary( aligned,  0, -zb/n ));
-      Expression xi01    = make_cse(Ternary( aligned,  1, (pP+pZ)/n ));
-      if(id > 0 && polState ==  1) return isqrt_two * Tensor({ fa*xi10,  fa*xi11,  fb*xi10,  fb*xi11 } );
-      if(id > 0 && polState == -1) return isqrt_two * Tensor({ fa*xi00,  fa*xi01, -fb*xi00, -fb*xi01 } );
-      if(id < 0 && polState ==  1) return isqrt_two * Tensor({ fb*xi00,  fb*xi01,  -fa*xi00,  -fa*xi01 } );
-      if(id < 0 && polState == -1) return isqrt_two * Tensor({ fb*xi10,  fb*xi11, -fa*xi01,  -fa*xi11 } );
+      xi[0] = Tensor( {make_cse( Ternary(aligned, 1, -zb/n)) , make_cse( Ternary(aligned, 0, (pP+pZ)/n ) ) });
+      xi[1] = Tensor( {make_cse( Ternary(aligned, 0, (pP+pZ)/n)), make_cse(Ternary(aligned,1, z/n) )  });
+
+      Expression fa = m_props->isNeutrino() ? polState * fcn::sqrt(pE) : polState * fcn::sqrt( pE/m-  1 );
+      Expression fb = m_props->isNeutrino() ? fcn::sqrt(pE)            : fcn::sqrt( pE/m + 1 );
+      int ind = (id>0 ? polState : -polState) == -1 ? 0 : 1;
+
+      return id > 0 ?  Tensor({ - fa * xi[ind][0], - fa * xi[ind][1], fb * xi[ind][0], fb * xi[ind][1] })
+        :  -polState * Tensor({   fb * xi[ind][0],   fb * xi[ind][1], fa * xi[ind][0], fa * xi[ind][1] });
     } 
     if ( m_spinBasis == spinBasis::Dirac )
     {
@@ -549,18 +579,18 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
 std::pair<size_t, size_t> Particle::orbitalRange( const bool& conserveParity ) const
 {
   if( m_daughters.size() == 0 ) return {0, 0};
-  if( m_daughters.size() == 1 ) return {0,0};
+  if( m_daughters.size() == 1 ) return {0, 0};
   if( m_daughters.size() != 2 ) {
     ERROR( "L not well defined for nDaughters == " << m_daughters.size() );
     return {999, 998};
   }
   const int S  = m_props->twoSpin();
-  const int s1 = daughter( 0 )->props()->twoSpin();
-  const int s2 = daughter( 1 )->props()->twoSpin();
-  int min                                  = std::abs( S - s1 - s2 );
-  if ( std::abs( S + s1 - s2 ) < min ) min = std::abs( S + s1 - s2 );
-  if ( std::abs( S - s1 + s2 ) < min ) min = std::abs( S - s1 + s2 );
-  int max                                  = S + s1 + s2;
+  const int s1 = daughter(0)->props()->twoSpin();
+  const int s2 = daughter(1)->props()->twoSpin();
+  int min = std::abs( S - s1 - s2 );
+  min     = std::min(min, std::abs( S + s1 - s2 ));
+  min     = std::min(min, std::abs( S - s1 + s2 ));
+  int max = S + s1 + s2;
   min /= 2;
   max /= 2;
   DEBUG( "Range = " << min << " -> " << max << " conserving parity ? " << conserveParity << " J = " << S << " s1= " << s1 << " s2= " << s2 );
@@ -603,7 +633,7 @@ std::string Particle::texLabel( const bool& printHead, const bool& recurse ) con
   std::string val                 = ""; // m_props->label();
   if( !isHead() )             val  = m_props->label();
   if( printHead && isHead() ) val = m_props->label() + "\\rightarrow ";
-  
+
   if( isHead() || recurse ){
     if ( !isHead() || m_orbital != m_minL ) val += leftBrace;
     for( auto& prod : m_daughters )         val += prod->texLabel(false,recurse) + " ";
@@ -643,7 +673,7 @@ Particle Particle::conj( bool invertHead , bool reorder )
 
 QuarkContent Particle::quarks() const
 {
-  return m_name.find("NonRes") != std::string::npos ? daughterQuarks() : m_props->netQuarkContent();
+  return m_name.find("NonRes") != std::string::npos ? daughterQuarks() : m_props->quarkContent();
 }
 
 QuarkContent Particle::daughterQuarks() const
@@ -715,7 +745,7 @@ std::string Particle::topologicalString() const
 
 const ParticleProperties* Particle::props() const { return m_props; }
 bool Particle::isHead() const { return m_parent == nullptr; }
-bool Particle::isWeakDecay() const { return quarks() == daughterQuarks(); }
+bool Particle::isWeakDecay() const { return quarks() != daughterQuarks(); }
 bool Particle::isStateGood() const { return m_isStateGood; }
 bool Particle::isStable() const { return m_daughters.size() == 0; }
 
@@ -832,6 +862,39 @@ int Particle::C() const
   return prod; 
 }
 
+void Particle::setDaughters( const std::vector<Particle>& particles )
+{
+  m_daughters.clear();
+  for( auto& p : particles ) m_daughters.push_back( std::make_shared<Particle>(p) );
+  for( auto& d : m_daughters ) d->setParent(this); 
+  pdgLookup();  
+  m_uniqueString = makeUniqueString(); 
+}
+
+Particle Particle::clone() const 
+{
+  Particle rt = *this; 
+  for( unsigned int i = 0 ; i != rt.daughters().size(); ++i ) rt.setDaughter(i, this->daughters()[i]->clone()); 
+  return rt; 
+}
+
+void Particle::setDaughter( const unsigned int& index, const Particle& p )
+{
+  m_daughters[index] = std::make_shared<Particle>(p);
+}
+
+bool Particle::expand( const Particle& particle )
+{
+  for( auto& d : m_daughters ) 
+  {
+    if( d->name() == particle.name() && d->isStable() ){ d = std::make_shared<Particle>(particle); return true; }
+    bool worked = d->expand( particle);
+    if( worked ) return true; 
+  }
+  return false ;
+}
+
+
 stdx::optional<std::string> Particle::attribute(const std::string& key) const 
 {
   for( auto& modifier : m_modifiers ){
@@ -847,6 +910,6 @@ std::ostream& AmpGen::operator<<( std::ostream& os, const Particle& particle ){
 
 namespace AmpGen { 
   complete_enum( spinFormalism, Covariant, Canonical )
-  complete_enum( spinBasis    , Dirac    , Weyl ) 
+    complete_enum( spinBasis    , Dirac    , Weyl ) 
 }
 

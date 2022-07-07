@@ -1,9 +1,11 @@
 #ifndef AMPGEN_ENUM_H
 #define AMPGEN_ENUM_H 1
 #include "AmpGen/MsgService.h"
+#include "AmpGen/Utilities.h"
+#include <string.h>
 
 #define declare_enum(name, ...)  \
-enum class name {__VA_ARGS__};                                     \
+enum class name {__VA_ARGS__, Invalid};                                     \
 template <> name parse(const std::string& word);                   \
 template <> std::string to_string( const name& enumItem );         \
 std::ostream& operator<<( std::ostream& os, const name& np); 
@@ -15,7 +17,7 @@ template <> name lexical_cast(const std::string& word, bool& /*status*/){ return
 std::ostream& operator<<(std::ostream& os, const name& np){ return os << to_string<name>(np);}
 
 #define make_enum(name, ...)                                                                                                                   \
-enum class name {__VA_ARGS__};                                                                                                                 \
+enum class name {__VA_ARGS__, Invalid};                                                                                                                 \
 template <> name parse(const std::string& word){ constexpr auto args = #__VA_ARGS__; return AmpGen::detail::parse<name>(word, args); } \
 template <> std::string to_string( const name& enumItem ){ constexpr auto args = #__VA_ARGS__; return AmpGen::detail::to_string<name>(enumItem, args) ; } \
 template <> name lexical_cast(const std::string& word, bool& /*status*/){ return parse<name>(word); } \
@@ -36,18 +38,21 @@ namespace AmpGen {
       unsigned end   = 0;
       auto compare = [](const char* word, const char* otherWord, const unsigned& nChar)
       {
+        if( strlen(word) != nChar ) return false; 
         for( size_t x = 0; x != nChar ; ++x) if( word[x] != otherWord[x] ) return false;
         return true;
       };
-      for( ; args[begin] != '\0' ; begin++ )
+      bool found = false; 
+      while( args[begin] != '\0' )
       {
         while( args[begin] == ' ' ) begin++;
         for( end=begin; args[end] != '\0'; end++ ) if( args[end] == ',' ) break;
-        if( compare( word.c_str(), args + begin , end-begin ) ) break; 
-        begin = end;
-        counter++; 
+        if( compare( word.c_str(), args + begin , end-begin ) ) { found = true; break; }
+        begin = end+1;
+        counter++;
+        if( args[end] == '\0' ) break;
       }
-      if( args[begin] == '\0' ) return T(counter-1);
+      if(!found) return T::Invalid;
       return T(counter);                                       
     }
     template <class T> std::string to_string(const T& enumItem, const char* args)

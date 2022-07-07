@@ -49,16 +49,19 @@ void invertParity( Event& event, const size_t& nParticles)
 
 template < class FCN > void debug( FCN& sig, EventList& accepted, bool verbose, TRandom3* rndm, MinuitParameterSet& mps ){
   INFO("Debugging: ");
+  unsigned eventToDebug = 0;
   sig.setEvents( accepted );
   sig.prepare();
-  sig.debug( accepted[0] );
-  accepted[0].print();
+  sig.debug( accepted[eventToDebug] );
+  accepted[eventToDebug].print();
 //  if( verbose ) print( accepted[0], sig.matrixElements(), verbose ); 
-  invertParity(accepted[0], accepted.eventType().size() );
-  accepted[0].print();
+  for( unsigned int i = 0 ; i != accepted.size(); ++i ) 
+  invertParity(accepted[i], accepted.eventType().size() );
+  accepted[eventToDebug].print();
   sig.reset();
+  sig.setEvents(accepted);
   sig.prepare();
-  sig.debug( accepted[0] );
+  sig.debug( accepted[eventToDebug] );
 }
 
 int main( int argc, char** argv )
@@ -83,21 +86,27 @@ int main( int argc, char** argv )
     INFO( eventType );
     AddCPConjugate(MPS);
   }
+  if( NamedParameter<bool>( "AddConj", false) == true && NamedParameter<bool>( "conj", false ) == false )
+  {
+    AddCPConjugate(MPS); 
+  }
   INFO( "EventType = " << eventType );
   
   std::string infile = NamedParameter<std::string>("InputFile","");
   EventList accepted = infile == "" ? EventList( eventType ) : EventList( infile, eventType );
   
   std::string input_units = NamedParameter<std::string>("Units","GeV");
-  if( input_units == "MeV" && infile != "") accepted.transform([](auto& event){ for( int i = 0;i<16;++i) event[i]/=1000; } );
+  if( input_units == "MeV" && infile != "") accepted.transform([](auto& event){ for( unsigned i = 0;i< event.size();++i) event[i]/=1000; } );
   if( infile == "" ){
-    Event evt = PhaseSpace( eventType, rndm ).makeEvent();
-
-
-    accepted.push_back(evt);
+    for( unsigned i = 0 ; i != 16; ++i ){
+      Event evt = PhaseSpace( eventType, rndm ).makeEvent();
+      evt.setIndex(i);
+      accepted.push_back(evt);
+    }
   }
-  accepted[0].print();
-
+  std::vector<double> event = NamedParameter<double>("Event",0).getVector();
+  if( event.size() != 1 ) accepted[0].set( event.data() );
+  
   std::string type = NamedParameter<std::string>("Type","CoherentSum");
 
   if( type == "PolarisedSum")

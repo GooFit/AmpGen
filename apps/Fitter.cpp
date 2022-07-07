@@ -17,7 +17,7 @@
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/IncoherentSum.h"
 #include "AmpGen/FitResult.h"
-#include "AmpGen/IExtendLikelihood.h"
+#include "AmpGen/ExtendLikelihoodBase.h"
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/Minimiser.h"
 #include "AmpGen/MinuitParameter.h"
@@ -28,11 +28,18 @@
 #include "AmpGen/ThreeBodyCalculators.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Generator.h"
-#include "AmpGen/Plots.h"
 
 #ifdef _OPENMP
 #include <omp.h>
 #include <thread>
+#endif
+
+#if ENABLE_AVX2
+  #include "AmpGen/EventListSIMD.h"
+  using EventList_type = AmpGen::EventListSIMD;
+#else
+  #include "AmpGen/EventList.h"
+  using EventList_type = AmpGen::EventList; 
 #endif
 
 #include "TFile.h"
@@ -48,7 +55,7 @@ std::vector<ThreeBodyCalculator> threeBodyCalculators( MinuitParameterSet& mps )
   return calculators;
 }
 
-void randomizeStartingPoint( MinuitParameterSet& MPS, TRandom3& rand, bool SplineOnly = false )
+void randomiseStartingPoint( MinuitParameterSet& MPS, TRandom3& rand, bool SplineOnly = false )
 {
   double range = 5;
   for (auto& param : MPS) {
@@ -60,23 +67,15 @@ void randomizeStartingPoint( MinuitParameterSet& MPS, TRandom3& rand, bool Splin
   }
 }
 
-unsigned int count_amplitudes( const AmpGen::MinuitParameterSet& mps )
-{
-  unsigned int counter = 0;
-  for ( auto param = mps.cbegin(); param != mps.cend(); ++param ) {
-    if ( ( *param )->name().find( "_Re" ) != std::string::npos ) counter++;
-  }
-  return counter;
-}
-
 template <typename SIGPDF>
 void addExtendedTerms( Minimiser& mini, SIGPDF& pdf, MinuitParameterSet& mps )
 {
   std::vector<std::string> llConfigs = NamedParameter<std::string>( "LLExtend" ).getVector();
 
-  for ( auto& ll_config : llConfigs ) {
+  for ( const auto& ll_config : llConfigs ) 
+  {
     auto ll_name = split( ll_config, ' ' )[0];
-    auto ll_term = Factory<IExtendLikelihood>::get( ll_name );
+    auto ll_term = Factory<ExtendLikelihoodBase>::get( ll_name );
     if ( ll_term != nullptr ) {
       ll_term->configure( ll_config, pdf, mps );
       mini.addExtendedTerm( ll_term );
@@ -89,7 +88,7 @@ void addExtendedTerms( Minimiser& mini, SIGPDF& pdf, MinuitParameterSet& mps )
 template <typename PDF>
 FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS )
 {
-  INFO( "Type = " << typeof<PDF>() );
+  INFO( "Type = " << type_string<PDF>() );
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time      = std::clock();
   pdf.setEvents( data );
@@ -129,12 +128,11 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
 
   if ( makePlots ) {
     auto ep = fr->getErrorPropagator();
-//    const size_t      NBins    = NamedParameter<size_t>     ("nBins"     , 100         , "Number of bins used for plotting.");
 
     unsigned int counter = 1;
     for_each( pdf.pdfs(), [&]( auto& f ) {
         auto tStartIntegral2 = std::chrono::high_resolution_clock::now();
-        auto mc_plot3 = mc.makeProjections( mc.eventType().defaultProjections(100), WeightFunction(f), Prefix("tMC_Category"+std::to_string(counter) ) );
+        auto mc_plot3 = mc.makeProjections( mc.eventType().defaultProjections(100), WeightFunction(f), PlotOptions::Prefix("tMC_Category"+std::to_string(counter) ) );
         auto tEndIntegral2   = std::chrono::high_resolution_clock::now();
         double t2            = std::chrono::duration<double, std::milli>( tEndIntegral2 - tStartIntegral2 ).count();
         INFO( "Time for plots = " << t2 );
@@ -146,7 +144,7 @@ FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet&
         counter++;
         } );
   }
-  Chi2Estimator chi2( data, mc, pdf, 15 );
+  Chi2Estimator chi2( data, mc, pdf, MinEvents(15) );
   fr->addChi2( chi2.chi2(), chi2.nBins() );
 
   auto twall_end  = std::chrono::high_resolution_clock::now();
@@ -168,13 +166,8 @@ int main( int argc, char* argv[] )
   const std::string logFile  = NamedParameter<std::string>("LogFile"   , "Fitter.log", "Name of the output log file");
   const std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root", "Name of the output plot file");
 
-
-
-
-
-
+  [[maybe_unused]]
   const size_t      nThreads = NamedParameter<size_t>     ("nCores"    , 8           , "Number of threads to use" );
-
 
   const size_t      NBins    = NamedParameter<size_t>     ("nBins"     , 100         , "Number of bins used for plotting.");
   const bool        perturb  = NamedParameter<bool>       ("Perturb"   , 0           , "Flag to randomise starting parameters.");
@@ -225,10 +218,9 @@ int main( int argc, char* argv[] )
   const std::string cut         = NamedParameter<std::string>( "Cut", "1" );
   const std::string simCut      = NamedParameter<std::string>( "SimCut", "1" );
   bool BAR                      = NamedParameter<bool>("Bar",false);
-  size_t defaultCacheSize       = count_amplitudes( MPS );
 
-  EventList events( dataFile, !BAR ? evtType : evtType.conj() , CacheSize(defaultCacheSize), Filter(cut) );
-  EventList eventsMC = mcFile == "" ? EventList( evtType) : EventList( mcFile, !BAR ? evtType : evtType.conj() , CacheSize(defaultCacheSize), Filter(simCut) ) ;
+  EventList events( dataFile, !BAR ? evtType : evtType.conj() , Filter(cut) );
+  EventList eventsMC = mcFile == "" ? EventList( evtType) : EventList( mcFile, !BAR ? evtType : evtType.conj(), Filter(simCut) ) ;
   
     auto scale_transform = [](auto& event){ for( size_t x = 0 ; x < event.size(); ++x ) event[x] /= 1000.; };
   if( NamedParameter<std::string>("Units", "GeV").getVal()  == "MeV") {
@@ -284,7 +276,7 @@ int main( int argc, char* argv[] )
 
   fr->writeToFile( logFile );
   output->cd();
-  auto plots = events.makeDefaultProjections( Prefix( "Data_" ), Bins( NBins ) );
+  auto plots = events.makeDefaultProjections( PlotOptions::Prefix( "Data_" ), PlotOptions::Bins( NBins ) );
   for ( auto& plot : plots ) plot->Write();
 
   output->Write();

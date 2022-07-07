@@ -116,6 +116,9 @@ namespace AmpGen
 
       /// Constructor that takes a decay descriptor as an argument and a list of final state particles to match to the event type. Constructs the entire decay tree.  
       Particle( const std::string& decayString, const std::vector<std::string>& finalStates = {}, const bool& orderDaughters = true );
+      
+      /// Constructor that takes a set of particles 
+      Particle( const std::string& name, const std::vector<Particle>& particles); 
 
       /// (Quasi) Constructor that returns the (quasi)CP conjugated amplitude. The full behaviour of the amplitude is made more complicated by the ordering convention. 
       Particle conj(bool invertHead = true, bool reorder = true);
@@ -167,6 +170,8 @@ namespace AmpGen
 
       /// Returns the set of possible spin-orbit couplings allowed by conservation of angular momentum, and if specified parity
       std::vector<std::pair<double,double>> spinOrbitCouplings( const bool& conserveParity = true ) const;
+      
+      void setDaughters(const std::vector<Particle>& particles );
 
       /// Return the additional optional attribute keyed by variable key 
       stdx::optional<std::string> attribute(const std::string& key) const; 
@@ -258,251 +263,7 @@ namespace AmpGen
       Expression propagator( DebugSymbols* db = nullptr ) const;
 
       /// Calculates the total expression for this particle, including symmetrisation and the current polarisation state
-      Expression getExpression( DebugSymbols* db = nullptr, const unsigned int& index = 0 );
-
-
-      /// Experimental Zemach Code
-      
-      //Factorial function - helper for Zemach
-      int Factorial(int n){
-      	if (n==0){
-      		return 1;
-      	}
-      	else{
-      		return n * Factorial(n-1);
-      	}
-      }
-      
-      Expression LegendreZemach(Expression x, double n){
-      
-      	Expression L = 0;
-      	if (n==0){
-      		L = 1;
-      	}
-      	else if (n==1){
-      		L = x;
-      	}
-      	else{
-      		L = (2 * n -1) * LegendreZemach(x, n-1) - (n-1)*LegendreZemach(x, n-2);
-      		L = L/n;
-      	}
-      	return  L;
-      
-      }
-      
-      Expression cosHel(const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& h){
-      
-      	auto pR = R->P();
-      	auto ph = h->P();
-      	auto R1 = R->daughters()[0];
-      	auto R2 = R->daughters()[1];
-      	auto pR1 = R1->P();
-      	auto pR2 = R2->P();
-      
-      	auto pD = pR + ph;
-      
-      	auto m2D = dot(pD, pD);
-      	auto m2R = dot(pR, pR);
-      	auto m2R1 = dot(pR1, pR1);
-      	auto m2R2 = dot(pR2, pR2);
-      	auto m2h = dot(ph, ph);
-      	auto m2R1h = dot(pR1 + ph, pR1 + ph);
-      
-      	auto EhR = (m2D - m2R - m2h)/(2 * fcn::sqrt(m2R));
-      	auto ER1R = (m2R + m2R1 - m2R2)/(2 * fcn::sqrt(m2R));
-      
-      	auto PR1R = fcn::sqrt(ER1R * ER1R - m2R1);
-      	auto PhR = fcn::sqrt(EhR * EhR - m2h);
-      
-      	auto cosH = (m2R1h - m2R1 - m2h - 2 * ER1R * EhR)/(2 * PR1R * PhR);
-      	return cosH;
-      
-      }
-      
-      Expression pq( const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& h, bool parent){
-      	auto pR = R->P();
-      	auto ph = h->P();
-      	auto R1 = R->daughters()[0];
-      	auto R2 = R->daughters()[1];
-      	auto pR1 = R1->P();
-      	auto pR2 = R2->P();
-      
-      	auto pD = pR + ph;
-      
-      	auto m2D = dot(pD, pD);
-      	auto m2R = dot(pR, pR);
-      	auto m2R1 = dot(pR1, pR1);
-      	auto m2R2 = dot(pR2, pR2);
-      	auto m2h = dot(ph, ph);
-      	auto m2R1h = dot(pR1 + ph, pR1 + ph);
-      
-      	auto EhR = (m2D - m2R - m2h)/(2 * fcn::sqrt(m2R));
-      	auto ER1R = (m2R + m2R1 - m2R2)/(2 * fcn::sqrt(m2R));
-      
-      	auto PR1R = fcn::sqrt(ER1R * ER1R - m2R1);
-      	auto PhR = fcn::sqrt(EhR * EhR - m2h);
-      
-      	auto p = PhR;
-      	auto q = PR1R;
-      
-      	auto EhD = (m2D + m2h - m2R)/(2 * fcn::sqrt(m2D));
-      	auto PhD = fcn::sqrt(EhD * EhD - m2h);
-      	auto pstar = PhD;
-      	if (parent){
-      		return pstar*q;
-      	}
-      	else {
-      		return p*q;
-      	}
-      
-      
-      }
-      
-          //Zemach Tensor stolen from A. Poluektov's TFA package - see ZemachTensor in TensorFlowAnalysis/Kinematics.py
-          //D -> ABC at the moment
-      Expression Zemach(Expression m2ab, Expression m2ac, Expression m2bc, Expression m2d, Expression m2a, Expression m2b, Expression m2c, double spin){
-      	Expression Z = 1;
-      	if (spin==0){
-      		Z = 1;
-      	}
-      	else if(spin==1){
-      		Z = m2ac-m2bc+(m2d-m2c)*(m2b-m2a)/m2ab;
-      	}
-      	else if (spin ==2){
-      		Z = (m2bc-m2ac+(m2d-m2c)*((m2a-m2b)/m2ab) * ((m2a-m2b)/m2ab) -1./3.*(m2ab-2.*(m2d+m2c) + (m2d-m2c) * (m2d-m2c)/m2ab)*(m2ab-2.*(m2a+m2b)+(m2a-m2b)*(m2a - m2b)/m2ab));
-      	}
-      	return Z;
-      	
-      }
-      
-      Expression ZemachLaura(const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& h, double spin, bool parent){
-      	auto pq_ = pq(R, h, parent);
-      	auto cosH = cosHel(R, h);
-      
-      	Expression Z=1;
-      	if (spin == 0){
-      		Z = 1;
-      	}
-      	else {
-      		auto c = pow(-2, spin) * Factorial(spin)/Factorial(Factorial(2 * spin - 1));
-      		Z *= c;
-      		for (int i=0; i < spin; i++){
-      			Z *= pq_;
-      		}
-      		Z*=LegendreZemach(cosH, spin);
-      
-      
-      	}
-      	return Z;
-      }
-      
-      Expression ZemachGooFit(const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& C, double spin){
-      	if (spin==0){
-      		return 1;
-      	}
-      	auto A = R->daughters()[0];
-      	auto B = R->daughters()[1];
-      
-      	auto pA = A->P();
-      	auto pB = B->P();
-      	auto pC = C->P();
-      	auto pD = pA + pB + pC;
-      
-      	Expression mAA = dot(pA + pA, pA + pA);
-      	Expression mBB = dot(pB + pB, pB + pB);
-      	Expression mCC = dot(pC + pC, pC + pC);
-      	Expression mDD = dot(pD + pD, pD + pD);
-      
-      	Expression mAB = dot(pA + pB, pA + pB);
-      	Expression mBC = dot(pB + pC, pB + pC);
-      	Expression mAC = dot(pA + pC, pA + pC);
-      
-      	//Mass Factor
-      	Expression MF = 1/mAB;
-      	
-      	//Spin=1 - also need for spin 2
-      	
-      	Expression spinFactor1 = -1;
-      	spinFactor1 = ((mBC - mAC) + MF * (mDD - mCC) * (mAA - mBB)) * spinFactor1;
-      
-      	if (spin==1){
-      
-      		return spinFactor1;
-      	}
-      
-      	auto spinFactor2 = spinFactor1 * spinFactor1;
-      
-      	auto extraTerm = mAB - 2 * mDD - 2*mCC + MF * (mDD - mCC) * (mDD - mCC);
-      	extraTerm = (mAB - 2*mAA - 2*mBB + MF * (mAA - mBB) * (mAA - mBB)) * extraTerm/3.;
-      
-      	spinFactor2 = spinFactor2 - extraTerm;
-      
-      	if (spin==2){
-      		return spinFactor2;
-      	}
-      
-      	return 1;
-      
-      
-      	
-      
-      }
-      
-      
-      Expression GooFitCMom(Expression m2res, Expression m1, Expression m2){
-      	Expression k1 = 1 - fcn::pow(m1 + m2, 2)/m2res;
-      	Expression k2 = 1 - fcn::pow(m1 - m2, 2)/m2res;
-      	Expression cMom = 1/2 * fcn::sqrt(m2res * k1 * k2);
-      	return cMom;
-      }
-      
-      Expression GooFitDamping(const std::shared_ptr<Particle>& R, const std::shared_ptr<Particle>& C, double spin){
-      	auto A = R->daughters()[0];
-      	auto B = R->daughters()[1];
-      
-      	auto pA = A->P();
-      	auto pB = B->P();
-      	auto pC = C->P();
-      	auto pD = pA + pB + pC;
-      
-      	Expression mAA = dot(pA + pA, pA + pA);
-      	Expression mBB = dot(pB + pB, pB + pB);
-      	Expression mCC = dot(pC + pC, pC + pC);
-      	Expression mDD = dot(pD + pD, pD + pD);
-      
-      	Expression mAB = dot(pA + pB, pA + pB);
-      	Expression mBC = dot(pB + pC, pB + pC);
-      	Expression mAC = dot(pA + pC, pA + pC);
-      
-      	Expression mA = fcn::sqrt(mAA);
-      	Expression mB = fcn::sqrt(mBB);
-      	Expression mC = fcn::sqrt(mCC);
-      	Expression mD = fcn::sqrt(mDD);
-      
-      	Expression rR = 5;
-      
-      	Expression Cmom1 = GooFitCMom(R->massSq(), mA, mB);
-      	Expression Cmom2 = GooFitCMom(mAB, mA, mB);
-      
-      	Expression sq1 = fcn::pow(rR*Cmom1, 2);
-      	Expression sq2 = fcn::pow(rR*Cmom2, 2);
-      
-      	Expression df1 = 1 + sq1;
-      	Expression df2 = 1 + sq2;
-      
-      	if (spin == 2){
-      		df1 = df1 + 8 + 2 * sq1 * sq1;
-      		df2 = df2 + 8 + 2 * sq2 * sq2;
-      	}
-      	return df2/df1;
-      
-      
-      	
-      
-      }
-
-
-
+      Expression getExpression( DebugSymbols* db = nullptr, const std::vector<int>& = {} );
 
       /// Calculate the transition matrix for this decay 
       Tensor transitionMatrix( DebugSymbols* db = nullptr );
@@ -518,13 +279,18 @@ namespace AmpGen
         DifferentPolarisation = ( 1<<4 )
       };
       /// matches Check the matching between two decay chains, according to the MatchState enum. 
-
       unsigned int matches( const Particle& other ) const; 
       std::string makeUniqueString();                        ///< Generate the decay descriptor for this decay. 
+      Particle clone() const; 
+      void setDaughter( const unsigned int& index, const Particle& p ); 
+
+      bool expand( const Particle& particle ); 
+
     private:
       std::string m_name                     = {""};         ///< Name of the particle
       const ParticleProperties* m_props      = {nullptr};    ///< Particle Properties from the PDG
       std::string m_lineshape                = {"BW"};       ///< Propagator to use
+      std::string m_vertexName               = {""};         ///< Name of vertex to use
       std::string m_uniqueString             = {""};         ///< Unique string of particle tree
       int m_parity                           = {0};          ///< Intrinsic parity of particle
       int m_polState                         = {0};          ///< Projection of the spin along the quantisation axis, i.e. 'z'
@@ -538,18 +304,19 @@ namespace AmpGen
       std::vector<std::shared_ptr<Particle>> m_daughters;    ///< Array of daughter particles
       std::vector<std::string> m_modifiers;                  ///< Additional modifiers for amplitude
       const Particle*   m_parent             = {nullptr};    ///< Pointer to the parent particle of this particle
-      void pdgLookup();                                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
+      void pdgLookup(bool quiet=false);                      ///< Lookup information from the PDG database (using ParticlePropertiesList)
       bool hasModifier( const std::string& modifier ) const; ///< Check if this particle has a given modifier
       std::string modifierString() const;                    ///< Re-generate modifier string used to create particle
       void sortDaughters();                                  ///< Recursively order the particle's decay products. 
 
-      NamedParameter<spinFormalism> m_spinFormalism  = {"Particle::SpinFormalism"  ,spinFormalism::Covariant, optionalHelpString("Formalism to use for spin calculations", {  
-             {"Covariant", "[default] Covariant Tensor, based on Rarita-Schwinger constraints on the allowed covariant wavefunctions."}
-           , {"Canonical", "Canonical formulation, based on rotational properties of wavefunctions, i.e. Wigner D-matrices and Clebsch-Gordan for (L,S) expansion."} } ) };
-
-      NamedParameter<spinBasis>     m_spinBasis      = {"Particle::SpinBasis", spinBasis::Dirac, optionalHelpString("Basis to use for calculating external polarisation tensors / spinors.", {
-                      {"Dirac", "[default] Quantises along the z-axis"}
-                    , {"Weyl" , "Quantises along the direction of motion"}} )};
+      NamedParameter<spinFormalism> m_spinFormalism  = {"Particle::SpinFormalism"  ,spinFormalism::Covariant, 
+             optionalHelpString("Formalism to use for spin calculations",  
+                 std::make_pair("Covariant", "[default] Covariant Tensor, based on Rarita-Schwinger constraints on the allowed covariant wavefunctions.")
+           ,    std::make_pair("Canonical", "Canonical formulation, based on rotational properties of wavefunctions, i.e. Wigner D-matrices and Clebsch-Gordan for (L,S) expansion.")  ) };
+      NamedParameter<spinBasis>     m_spinBasis      = {"Particle::SpinBasis", spinBasis::Dirac, 
+        optionalHelpString("Basis to use for calculating external polarisation tensors / spinors.",
+                      std::make_pair("Dirac", "[default] Quantises along the z-axis")
+                    , std::make_pair("Weyl", "Quantises along the direction of motion") )};
       NamedParameter<std::string> m_defaultModifier = {"Particle::DefaultModifier","", "Default modifier to use for lineshapes, for example to use normalised vs unnormalised Blatt-Weisskopf factors."};
   };
   std::ostream& operator<<( std::ostream& os, const Particle& particle );

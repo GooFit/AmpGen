@@ -329,10 +329,6 @@ namespace AmpGen
      */
     DECLARE_LINESHAPE( Poly );
 
-
-
-
-
     /** @ingroup Lineshapes class FOCUS
      *  @brief K matrix amplitudes used for I=1/2 and I=3/2 in the description of the \f$ K\pi \f$ S-wave in the analysis of @f$ D^{+}\rightarrow K^{-}\pi^{+}\pi^{+}@f$ https://arxiv.org/abs/0705.2248
      */
@@ -392,13 +388,6 @@ namespace AmpGen
       */   
     DECLARE_LINESHAPE( EtaDalitz );
 
-
-    DECLARE_LINESHAPE( PhasePoly );
-    DECLARE_LINESHAPE( MagPoly );
-
-
-
-
     /** @ingroup Lineshapes class TD
         @brief (Linear) time dependence
         
@@ -410,10 +399,6 @@ namespace AmpGen
 
       */
     DECLARE_LINESHAPE( TD );
-
-
-
-
 
     DECLARE_LINESHAPE( Photon );
   } // namespace Lineshape

@@ -1,10 +1,6 @@
 #ifndef AMPGEN_DALITZINTEGRATOR_H
 #define AMPGEN_DALITZINTEGRATOR_H
-#include <TAxis.h>
-#include <TH1.h>
-#include <TH2.h>
-#include <TF2.h>
-#include <TRandom3.h>
+
 #include <stddef.h>
 #include <chrono>
 #include <cmath>
@@ -13,6 +9,9 @@
 #include <string>
 #include <utility>
 
+#include "AmpGen/simd/utils.h"
+#include "AmpGen/NumericalIntegration.h"
+#include "AmpGen/ProfileClock.h"
 class TH1D;
 class TH2D;
 
@@ -28,26 +27,33 @@ namespace AmpGen
   class DalitzIntegrator
   {
     public:
-      typedef std::pair<double, double> sqCo;
+      typedef std::pair<float_v, float_v> sqCo;
 
       DalitzIntegrator( const double& s0, const double& s1, const double& s2, const double& s3);
 
-      template <class FCN> double integrate( FCN fcn, const double& s) const;
-
-      template <class FCN> double integrate( FCN fcn ) const
+      template <typename FCN> double integrateDP( FCN&& fcn, const double& s) const;
+      template <typename FCN> double integrateDP( FCN&& fcn ) const
       {
-        return integrate( fcn, m_s0 );
+        return integrateDP( fcn, m_s0 );
       }
-      double getMAB(sqCo coords)   const;
-      double J(const sqCo& coords) const;
-      double getMAB(sqCo coords  , const double& s) const;
-      double J(const sqCo& coords, const double& s) const;
+      float_v getMAB(const sqCo& coords)   const;
+      float_v J(const sqCo& coords) const;
+      float_v getMAB(const sqCo& coords  , const double& s) const;
+      float_v J(const sqCo& coords, const double& s) const;
       double sqDp1(const Event& evt) const;
       double sqDp2(const Event& evt) const;
-      double safe_sqrt(const double& x ) const { return x > 0 ? sqrt(x) : 0; }
-      void setEvent(const sqCo& x, double* event, const double& s) const;
+      float_v safe_sqrt(const float_v& x ) const { 
+        #if ENABLE_AVX 
+        return select( x > 0. , sqrt(x) , 0. ); 
+        #else 
+          return x > 0 ? sqrt(x) : 0;
+        #endif
+      }
+      void setEvent(const sqCo& x, float_v* event, const double& s) const;
+     // void setEvent_scalar(const sqCo& x, AmpGen::Event& event) const;
+      
       void debug() const; 
-      void setEvent(const sqCo& x, double* event) const;
+      void setEvent(const sqCo& x, float_v* event) const;
       void set(const double& s0, const double& s1, const double& s2, const double& s3);
       void setMin();
       void setMother(const double& s);
@@ -67,20 +73,19 @@ namespace AmpGen
       double    m_s1;
       double    m_s2;
       double    m_s3;
-      double integrate_internal( TF2& fcn ) const ;
    
   };
-  template <class FCN>
-  double DalitzIntegrator::integrate( FCN fcn, const double& s) const
+  template <typename FCN>
+  double DalitzIntegrator::integrateDP( FCN&& fcn, const double& s) const
   {
-    double event[12];
-    for(size_t i = 0; i < 12; ++i) event[i] = 0; 
-    TF2 f( "fcn", [&]( double* x, double* p ) {
-      sqCo pos = {x[0], x[1]};
-      setEvent( pos, event, s);
-      return J(pos, s) * std::real( fcn(event) ); }, 0, 1, 0, 1, 0 );
-    return integrate_internal(f) / s;
+    float_v event[12] = {0.};
+    ProfileClock pc1; 
+    auto i1 = integrate<2>(  [&]( const std::array<float_v,2>& x ) {
+      setEvent( *reinterpret_cast<const sqCo*>(&x) , event, s);
+      return J( *reinterpret_cast<const sqCo*>(&x) , s) * real( fcn(event) ); }, std::array<double,2>{0., 0.}, std::array<double, 2>{1.,1.} ) /s;
+    return i1; 
   }
+
 
 } // namespace AmpGen
 

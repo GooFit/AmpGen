@@ -41,14 +41,15 @@ namespace AmpGen
     void resolve(const MinuitParameterSet* mps = nullptr);
     void prepare();
     void compile(const std::string& fname=""); 
+    virtual void compileBatch( std::ostream& stream ) const = 0; 
     void to_stream( std::ostream& stream ) const;
     unsigned int hash() const;
     std::string name() const;
     std::string progName() const;
-    virtual bool link( void* handle              )          = 0;
-    virtual bool link( const std::string& handle )          = 0;
-    virtual void setExternal( const double& value, const unsigned int& address ) = 0;
-    virtual void resizeExternalCache( const size_t& N ) = 0;
+    virtual bool link( void*)              = 0;
+    virtual bool link( const std::string&) = 0;
+    virtual void setExternal(const double&, const unsigned&) = 0;
+    virtual void resizeExternalCache(const size_t&) = 0;
     virtual bool isReady() const               = 0;
     virtual std::string returnTypename() const = 0;
     virtual std::string fcnSignature()   const = 0;
@@ -56,8 +57,11 @@ namespace AmpGen
     virtual void print() const                 = 0;
     virtual ~CompiledExpressionBase();
     virtual unsigned returnTypeSize() const    = 0;    
-    static std::string fcnSignature(const std::vector<std::string>& argList, bool rto); 
-    void use_rto(){ m_rto = true; }
+    static std::string fcnSignature(const std::vector<std::string>&, bool=false, bool=true); 
+    virtual bool use_rto() const     = 0;
+    Expression expression() const { return m_obj; }
+    virtual std::string arg_type( const unsigned& counter) const =0; 
+    std::vector<const CacheTransfer*> orderedCacheFunctors() const;
   protected:
     Expression                                      m_obj;
     std::string                                     m_name;
@@ -67,8 +71,9 @@ namespace AmpGen
     std::vector<std::pair<uint64_t, Expression>>    m_dependentSubexpressions;
     std::vector<std::pair<uint64_t, Expression>>    m_debugSubexpressions; 
     std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;
-    std::shared_ptr<ASTResolver>                    m_resolver;
-    bool                                            m_rto = {false};     
+    std::shared_ptr<ASTResolver>                    m_resolver = {nullptr};
+    std::vector<std::string>                        m_additionalHeaders;
+    bool                                            m_disableBatch = {false}; 
   private:
     void addDebug( std::ostream& stream ) const;
     void addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const;

@@ -21,11 +21,13 @@
 #include "AmpGenVersion.h"
 
 using namespace AmpGen;
-#ifdef AMPGEN_CXX
-#pragma message "Using c++ compiler: " AMPGEN_CXX " for JIT"
-#else
-#pragma warning "No AMPGEN_CXX for JIT set"
-#endif 
+// #ifdef AMPGEN_CXX
+// #pragma message "Using c++ compiler: " AMPGEN_CXX " for JIT"
+// #pragma message "Using AMPGENROOT: "       AMPGENROOT
+// #pragma message "Using AMPGENROOT_CMAKE: " AMPGENROOT_CMAKE 
+// #else
+// #pragma warning "No AMPGEN_CXX for JIT set"
+// #endif 
 
 CompilerWrapper::CompilerWrapper( const bool& verbose ) :
   m_verbose(verbose),
@@ -51,6 +53,10 @@ void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, 
 {
   std::ofstream output( filename );
   for ( auto& include : m_includes ) output << "#include <" << include << ">\n";
+  if( expression.fcnSignature().find("AVX2d")        != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
+  else if( expression.fcnSignature().find("AVX2f")    != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
+  else if( expression.fcnSignature().find("AVX512d") != std::string::npos )  output << "#include \"AmpGen/simd/avx512d_types.h\"\n; using namespace AmpGen::AVX512d;\n;" ;
+  else if( expression.fcnSignature().find("AVX512")  != std::string::npos )  output << "#include \"AmpGen/simd/avx512_types.h\"\n; using namespace AmpGen::AVX512;\n;" ;
   output << expression << std::endl; 
   output.close();
 }
@@ -94,6 +100,14 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();
   if( print_all ) INFO( expression.name() << " " << cname << " Compile time = " << tWall / 1000. << " [size = " << fileSize(cname)/1024 << ", " << fileSize(oname)/1024 << "] kB" );
+/*
+  if( print_all && isClang() )
+  {
+    auto lines = vectorFromFile( cname );
+    for (const auto& line : lines ) 
+      std::cout << line << std::endl; 
+  }
+*/
   return true;
 }
 
@@ -117,32 +131,59 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();
   if( print_all ) INFO( cname << " Compile time = " << tWall / 1000. << " [size = " << fileSize(cname)/1024 << ", " << fileSize(oname)/1024 << "] kB" );
+  /*
+  if( print_all && isClang() )
+  {
+    auto lines = vectorFromFile( cname );
+    for (const auto& line : lines ) 
+      std::cout << line << std::endl; 
+  }
+  */
   return true;
 }
 
-std::string get_cpp_version(){
+bool CompilerWrapper::isClang() const 
+{
+  return m_cxx.find("clang") != std::string::npos || m_cxx.find("llvm-g++") != std::string::npos;
+}
+
+std::string get_cpp_version()
+{
   if( __cplusplus >= 201703L ) return "c++17";
   if( __cplusplus >= 201402L ) return "c++14";
   if( __cplusplus >= 201103L ) return "c++11";
   else return "";
 }
+
 void CompilerWrapper::compileSource( const std::string& fname, const std::string& oname )
 {
   using namespace std::chrono_literals;
-  std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", 
-   {"-Ofast", "--std="+get_cpp_version(),"-march=native"} ); 
+  std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", {"-Ofast", "--std="+get_cpp_version(), "-frename-registers"}); 
+ 
+  #if ENABLE_AVX 
+    compile_flags.push_back("-march=native");
+    compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
+  #endif
+  #if ENABLE_AVX2d 
+    compile_flags.push_back("-mavx2");
+    compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
+  #endif
 
-  std::vector<const char*> argp = { m_cxx.c_str(), 
-    "-shared", 
-    "-rdynamic", 
-    "-fPIC"};
+  if(std::string(AMPGEN_OPENMP_FLAGS) != ""){
+    auto flags = split(AMPGEN_OPENMP_FLAGS, ' ');
+    for( const auto& flag : flags ) compile_flags.push_back(flag); 
+  }
+  std::vector<const char*> argp = { m_cxx.c_str(), "-shared", "-rdynamic", "-fPIC"};
+  
   std::transform( compile_flags.begin(), compile_flags.end(), std::back_inserter(argp), [](const auto& flag ){return flag.c_str() ; } );
-  if( m_cxx.find("clang") != std::string::npos || m_cxx.find("llvm-g++") != std::string::npos)
+  
+  if(isClang())
   {
     argp.push_back( "-Wno-return-type-c-linkage");
     #if __APPLE__
     argp.push_back("-lstdc++");
     #endif
+    argp.push_back( "-march=native");
   }
 
   argp.push_back( fname.c_str() );
@@ -152,7 +193,7 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
   if(NamedParameter<bool>("CompilerWrapper::Verbose", false)) {
     std::string result = std::accumulate(std::begin(argp), std::end(argp),
       std::string(),
-      [](std::string a, const char* b){return a + " " + b;});
+      [](const std::string& a, const char* b){return a + " " + b;});
     INFO("Compiling: " << result);
   }
   argp.push_back( NULL );

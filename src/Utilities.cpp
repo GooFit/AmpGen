@@ -32,8 +32,28 @@ std::vector<std::string> AmpGen::split( const std::string& s, char delim, bool i
   return elems;
 }
 
-std::vector<std::string> AmpGen::split( const std::string& s, const std::vector<char>& delims )
+std::vector<std::string> AmpGen::split( const std::string& s, const std::vector<char>& delims, bool keepDelims )
 {
+  std::vector<std::string> elems;
+  std::string tmp; 
+  for( std::size_t i = 0 ; i != s.size(); ++i )
+  {
+    auto c = s[i]; 
+    bool found = false; 
+    for( const auto& delim : delims )
+    {
+      if( c != delim ) continue; 
+      if( tmp != "") elems.push_back(tmp); 
+      if( keepDelims ) elems.push_back( std::string(1, delim) );
+      tmp   = "";
+      found = true;
+      break; 
+    }
+    if( !found ) tmp += c; 
+  }
+  if( tmp != "" ) elems.push_back(tmp);
+  return elems;
+  /*
   std::vector<std::string> elems;
   std::stringstream ss( s );
   std::string strDelim = std::accumulate( delims.begin(), delims.end(), std::string("") );
@@ -46,8 +66,8 @@ std::vector<std::string> AmpGen::split( const std::string& s, const std::vector<
     }
     if ( prev < line.length() ) elems.push_back( line.substr( prev, std::string::npos ) );
   }
-
-  return elems;
+  return elems; 
+  */
 }
 
 void AmpGen::swapChars(std::string& arg, const char a, const char b)
@@ -114,8 +134,8 @@ std::string AmpGen::replaceAll( const std::string& input, const std::vector<std:
 // the matching delimiter and the Z, A elements.
 
 std::vector<std::string> AmpGen::getItems( const std::string& tree, 
-                                           const std::vector<std::string>& brackets,
-                                           const std::string& seperator )
+    const std::vector<std::string>& brackets,
+    const std::string& seperator )
 {
   auto braces = vecFindAll( tree, brackets ); /// get a vector of positions of the brackets ///
   if ( braces.size() % 2 != 0 ) {
@@ -184,39 +204,29 @@ unsigned int AmpGen::editDistance( const std::string& s1, const std::string& s2 
 std::string AmpGen::round( const double& number, const unsigned int& nsf )
 {
   double value = std::round(number * pow(10, nsf)) / pow(10, nsf);
-  if( nsf != 0 ){ 
-    auto r = mysprintf( ( "%." + std::to_string(nsf) + "f" ).c_str(), value );
-    return r.substr(0,r.size()-1);
-  }
-  else {
-    return std::to_string( (int)value);
-  }
+  return nsf != 0 ? mysprintf( ( "%." + std::to_string(nsf) + "f" ).c_str(), value ) : std::to_string( (int)value);
 }
 
 std::string AmpGen::numberWithError( const double& number, const double& error, const unsigned int& nDigits )
 {
-  return round( number, nDigits ) + "\\pm" + round( error * pow( 10, nDigits ), 0 );
+  return round( number, nDigits ) + "\\pm" + round( error , nDigits);
 }
 
 bool AmpGen::stringMatchesWildcard( const std::string& input, const std::string& wildcard_string,
-                            const char wildcard_character )
+    const char wildcard_character )
 {
   auto pos = wildcard_string.find( wildcard_character ); /// TEST_foobar -> *_foobar
   if ( wildcard_string.size() == 1 && wildcard_string[0] == wildcard_character ) {
-    DEBUG( "Returning true" );
     return true;
   }
   if ( pos == std::string::npos ) {
-    DEBUG( "Returning " << input << " = " << wildcard_string << " ?" );
     return input == wildcard_string;
   }
   if ( pos == wildcard_string.size() - 1 ) {
-    DEBUG( "Returning " << input << " contains " << wildcard_string );
     return input.find( wildcard_string.substr( 0, wildcard_string.size() - 1 ) ) == 0;
   } else {
     const std::string pattern1 = wildcard_string.substr( 0, pos + 1 );
     const std::string pattern2 = wildcard_string.substr( pos + 1 );
-    DEBUG( "Matching " << pattern1 << " to " << input );
     bool match1 = stringMatchesWildcard( input, pattern1, wildcard_character );
     if ( !match1 ) return false;
     auto pos2             = pattern2.find( wildcard_character );
@@ -274,21 +284,29 @@ void AmpGen::printSplash()
   std::cout << "   ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝      ╚═════╝ ╚══════╝╚═╝  ╚═══╝" << std::endl;
   std::cout << "\033[0m\n";
   std::cout << bold_on << 
-               "                      version " << AMPGEN_MAJOR_VERSION << "." << AMPGEN_MINOR_VERSION << std::endl; 
+    "                      version " << AMPGEN_MAJOR_VERSION << "." << AMPGEN_MINOR_VERSION << std::endl; 
   std::cout << "        build: " ;
-  #if defined(__clang__)
-    std::cout << "clang " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__;
-  #elif defined(__llvm__)
-    std::cout<< "llvm ";
-  #elif defined(__ICC) || defined(__INTEL_COMPILER)
-      std::cout << "icc " << __INTEL_COMPILER;
-  #elif defined(__GNUC__) || defined(__GNUG__)
-    std::cout << "gcc " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__;
-  #endif
-  std::cout << "  " << __DATE__ << " " << __TIME__ << bold_off << "\n\n";
+#if defined(__clang__)
+  std::cout << "clang " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__;
+#elif defined(__llvm__)
+  std::cout<< "llvm ";
+#elif defined(__ICC) || defined(__INTEL_COMPILER)
+  std::cout << "icc " << __INTEL_COMPILER;
+#elif defined(__GNUC__) || defined(__GNUG__)
+  std::cout << "gcc " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__;
+#endif
+#if ENABLE_AVX2d
+  std::cout << " (avx2; double)";
+#elif ENABLE_AVX2f
+  std::cout << " (avx2; single)";
+#elif ENABLE_AVX512
+  std::cout << " (avx512; double)";
+#endif
 
-  char* AmpGenRoot = getenv("AMPGENROOT");
-  if( AmpGenRoot != nullptr ) printReleaseNotes( std::string(AmpGenRoot) + "/doc/release.notes"); 
+  std::cout << "  " << __DATE__ << " " << __TIME__ << bold_off << "\n\n";
+#ifdef AMPGENROOT_CMAKE
+  printReleaseNotes( std::string(AMPGENROOT_CMAKE) + "/release.notes"); 
+#endif
 }
 
 bool AmpGen::fileExists( const std::string& name )
@@ -327,16 +345,20 @@ std::string AmpGen::expandGlobals( std::string path )
     } else {
       end_pos       = find_next_of( path, {".", "/"}, pos );
       variable_name = path.substr( pos + 1, end_pos - pos - 1 );
+      end_pos--;
     }
     const char* global_var = getenv( variable_name.c_str() );
-    if ( global_var == nullptr ) {
+    if ( variable_name == "AMPGENROOT" && global_var == nullptr )
+    {
+      global_var = AMPGENROOT; 
+    }
+    else if ( global_var == nullptr ) {
       ERROR( "variable " << variable_name << " not found" );
       break;
     }
     std::string old_path = path;
     size_t len           = end_pos == std::string::npos ? path.length() - pos + 1 : end_pos - pos + 1;
     path                 = path.replace( pos, len, global_var );
-    DEBUG( old_path << " -> " << path );
   } while ( pos != std::string::npos );
 
   return path;
@@ -391,7 +413,7 @@ std::vector<std::string> AmpGen::getListOfFiles( const std::string& directory, c
   return files;
 }
 
-template <>
+  template <>
 double AmpGen::lexical_cast<double>( const std::string& word, bool& status )
 {
   char* p;
@@ -400,7 +422,7 @@ double AmpGen::lexical_cast<double>( const std::string& word, bool& status )
   return number;
 }
 
-template <>
+  template <>
 int AmpGen::lexical_cast<int>( const std::string& word, bool& status )
 {
   char* p;
@@ -408,7 +430,7 @@ int AmpGen::lexical_cast<int>( const std::string& word, bool& status )
   status &= *p == 0;
   return number;
 }
-template <>
+  template <>
 unsigned int AmpGen::lexical_cast<unsigned int>( const std::string& word, bool& status )
 {
   char* p;
@@ -417,13 +439,13 @@ unsigned int AmpGen::lexical_cast<unsigned int>( const std::string& word, bool& 
   return number;
 }
 
-template <>
+  template <>
 std::string AmpGen::lexical_cast<std::string>( const std::string& word, bool& status )
 {
   return word;
 }
 
-template <>
+  template <>
 float AmpGen::lexical_cast<float>( const std::string& word, bool& status )
 {
   char* p;
@@ -432,7 +454,7 @@ float AmpGen::lexical_cast<float>( const std::string& word, bool& status )
   return number;
 }
 
-template <>
+  template <>
 bool AmpGen::lexical_cast<bool>( const std::string& word, bool& status )
 {
   bool value = false;
@@ -446,7 +468,7 @@ bool AmpGen::lexical_cast<bool>( const std::string& word, bool& status )
   return value;
 }
 
-template <>
+  template <>
 long int AmpGen::lexical_cast<long int>( const std::string& word, bool& status )
 {
   char* p;
@@ -455,7 +477,7 @@ long int AmpGen::lexical_cast<long int>( const std::string& word, bool& status )
   return number;
 }
 
-template <>
+  template <>
 unsigned long int AmpGen::lexical_cast<unsigned long int>( const std::string& word, bool& status )
 {
   char* p;

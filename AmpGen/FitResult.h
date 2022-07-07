@@ -1,7 +1,7 @@
 #ifndef AMPGEN_FITRESULT_H
 #define AMPGEN_FITRESULT_H
 
-#include "TMatrixD.h"
+#include <TMatrixD.h>
 
 #include "AmpGen/FitFraction.h"
 #include "AmpGen/MinuitParameter.h"
@@ -15,6 +15,7 @@ namespace AmpGen
   class FitResult
   {
   public:
+    ~FitResult(){};
     FitResult(); 
     explicit FitResult( const FitResult& other );
     explicit FitResult( const std::string& filename );
@@ -33,6 +34,8 @@ namespace AmpGen
 
     double chi2() const;
     double LL()   const;
+    double Edm()   const; 
+    double NCalls()   const;
     double dof()  const;
     double cov(const size_t& x, const size_t& y ) const;
     double cov(const std::string& x, const std::string& y ) const; 
@@ -55,10 +58,13 @@ namespace AmpGen
     TMatrixD getReducedCovariance( const bool& extended = false ) const;
     LinearErrorPropagator getErrorPropagator( const bool& extended = false ) const;
 
+    void writeOptions( const std::string& output, const std::string& input = "" ); 
   private:
-    MinuitParameterSet*                 m_mps;
+    MinuitParameterSet*                 m_mps    = {nullptr};
     double                              m_chi2   = {0};
     double                              m_LL     = {-999};
+    double                              m_Edm    = {-999}; 
+    double                              m_NCalls = {-999}; 
     double                              m_nBins  = {0};
     double                              m_nParam = {0};
     int                                 m_status = {-1};

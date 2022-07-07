@@ -16,6 +16,7 @@
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/Particle.h"
 
 using namespace AmpGen;
 
@@ -26,16 +27,6 @@ MinuitParameterSet::MinuitParameterSet(const std::vector<MinuitParameter*>& para
   for( auto& param : params ) add(param); 
 }
 
-// MinuitParameterSet MinuitParameterSet::getFloating()
-// {
-//   MinuitParameterSet floating;
-//   for ( auto& param : *this ) {
-//     if ( param->isFree() && dynamic_cast<MinuitExpression*>(param) != nullptr ) 
-//       floating.add(param);
-//   }
-//   return floating;
-// }
-
 bool MinuitParameterSet::addToEnd( MinuitParameter* parPtr )
 {
   bool success = true;
@@ -43,8 +34,8 @@ bool MinuitParameterSet::addToEnd( MinuitParameter* parPtr )
   m_parameters.push_back( parPtr );
   if ( m_keyAccess.find( parPtr->name() ) != m_keyAccess.end() ) {
     WARNING( "Parameter with name " << parPtr->name() << " already exists!" );
-    return success;
   }
+  DEBUG( "Adding: " << parPtr->name() ); 
   m_keyAccess[parPtr->name()] = parPtr;
   return success;
 }
@@ -133,6 +124,7 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
     double max  = hasLimits ? lexical_cast<double>( line[5], status ) : 0;
     if( !status ) return; 
     auto   flag = parse<Flag>( line[1] );
+    if( flag == Flag::Invalid ) return; 
     if ( OptionsParser::printHelp() )
       INFO( "MINUIT: Registered " << line[0] << " ( " << to_string<Flag>(flag) << ") = " << mean << ", step=" << step << " ("<< min << "," << max << ")" );
     add( new MinuitParameter( line[0], flag, mean, step, min, max ) ); 
@@ -151,6 +143,7 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
     if ( !status ) return;
     auto flag_re = parse<Flag>(line[1]);
     auto flag_im = parse<Flag>(line[4 + 2*hasLimits]);
+    if( flag_re == Flag::Invalid || flag_im == Flag::Invalid ) return; 
     if ( OptionsParser::printHelp() ) {
       INFO( "MINUIT: Complex " << line[0] << "_Re ( " << to_string<Flag>(flag_re) << ") = " << mean_re << ", step=" << step_re << " (" << min_re << "," << max_re << ")" );
       INFO( "MINUIT: Complex " << line[0] << "_Im ( " << to_string<Flag>(flag_im) << ") = " << mean_im << ", step=" << step_im << " (" << min_im << "," << max_im << ")" );
@@ -163,28 +156,32 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
 void MinuitParameterSet::tryAlias( const std::vector<std::string>& line )
 {
   if ( line.size() < 3 ) return;
-  if ( line[1] == "=" ) {
-    addToEnd( new MinuitExpression(line, this) );
-  }
+  if ( line[1] == "=" ) addToEnd( new MinuitExpression(line, this) );
 }
 
 void MinuitParameterSet::loadFromStream()
 {
-  auto ppfl = OptionsParser::getMe();
+  auto ppfl = OptionsParser::getMe()->getInputOrdered();
   std::vector<std::vector<std::string>> protoAliases;
-  for ( auto it = ppfl->begin(); it != ppfl->end(); ++it ) {
-    tryParameter( it->second );
-    if ( it->second.size() >= 3 && it->second[1] == "=" ) protoAliases.push_back( it->second );
+  for ( const auto& tokens : ppfl )
+  {
+    tryParameter( tokens );
+    if ( tokens.size() >= 3 && tokens[1] == "=" ) protoAliases.push_back( tokens );
+    else if ( tokens[0].find("=") != std::string::npos && ! Particle::isValidDecayDescriptor( tokens[0] ) )
+    {
+      auto expanded = split(tokens[0], '=');
+      WARNING( tokens[0] << " could be an expression, but not separated with white space. Did you mean: " << expanded[0] << " = " << expanded[1]  << " ... ?"); 
+    }
   }
-  for ( auto& alias : protoAliases ) tryAlias( alias );
+  for ( const auto& alias : protoAliases ) tryAlias( alias );
 }
 
 void MinuitParameterSet::loadFromFile( const std::string& file )
 {
   processFile( file, [this]( auto& line ) {
-      this->tryParameter( split( line, {' ', '\t'} ) );
-      this->tryAlias( split( line, {' ', '\t'} ) );
-      } );
+    this->tryParameter( split( line, {' ', '\t'} ) );
+    this->tryAlias( split( line, {' ', '\t'} ) );
+  } );
 }
 
 void MinuitParameterSet::set( const MinuitParameterSet& other )
@@ -246,11 +243,30 @@ double MinuitParameterSet::operator()( const std::string& name )
   }
   return m_keyAccess[name]->mean();
 }
-/*
+
 MinuitParameterSet::~MinuitParameterSet()
 {
-  for( auto& param : m_parameters ) {
-      if( param != nullptr ) delete param;
-      }
+  for( auto& param : m_parameters ) if( param != nullptr ) delete param; 
 }
-*/
+
+void MinuitParameterSet::setFromMinuit( const double* xx )
+{ 
+  for(unsigned i = 0; i < m_mapping.size(); ++i ) at( m_mapping[i] )->setCurrentFitVal( xx[i] );
+}
+
+void MinuitParameterSet::setMapping( const std::vector<unsigned>& m ) 
+{ 
+  m_mapping =m ; 
+  for(unsigned i = 0; i < m_mapping.size(); ++i ) at( m_mapping[i] )->setMinuitIndex( i ); 
+} 
+
+
+void  MinuitParameterSet::setFromMinuitIndex(const unsigned index, double v) 
+{ 
+  m_parameters[index]->setCurrentFitVal(v) ; 
+}    
+
+double MinuitParameterSet::getFromMinuitIndex(const unsigned index) 
+{ 
+  return m_parameters[index]->mean(); 
+}

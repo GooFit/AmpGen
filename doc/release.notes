@@ -1,8 +1,18 @@
-!-----------------------------------------------------------------------------
-! Package     : Gen/AmpGen
-! Responsible : Tim Evans
-! Purpose     : 
-!-----------------------------------------------------------------------------
+!=================== AmpGen v2r3 2021-20-10 =================
+ - Fixes to build system for integration with Gauss
+!=================== AmpGen v2r2 2021-02-08 ==================
+ - Addition of blinded parameters 
+!=================== AmpGen v2r1 2021-12-04 ==================
+ - Addition of radiative vertices S_VV_r{p,m} and S_TV_r{p,m}, and parameterisation of final state density matrix 
+ - Add new keyword 'vertex' for more customisable vertex names 
+ - Improved cmake configuration to allow installation
+ - Consolidation of Generator and ConvertToSourceCode to single executable 'AmpGen'
+!=================== AmpGen v2r0 2020-25-04 ==================
+ - Refactored caching logic away from being computations being stored with event data.
+ - Support for AVX2 for amplitude evaluation / integration single/double precision.
+ - Updated plotting for making component amplitude plots. 
+ - Better thread safety of integration should improve fit stability. 
+ - Add GenericKmatrix lineshape for handling ... Generic K-matrices (L=0 only)  
 !=================== AmpGen v1r2 2019-11-12 ==================
  - New phase space Generator TreePhaseSpace for producing narrow resonances. 
  - Improved handling of CP conjugated amplitudes.
@@ -12,16 +22,13 @@
  - Tagged to match results in Gauss/LbAmpGen v49r14+ 
  - Improved thread support for CoherentSum
  - Add examples/QcGenerator for Ψ(3770) decays 
-! 2019-05-29 - Tim Evans 
  - Updated ExpressionParser with improved stability.
  - Removed unused / untested lineshapes AxialKaon and ObelixRho 
 !=================== AmpGen v1r1 2019-03-22 ==================
-! 2019-03-22 - Tim Evans
  - Added support for fitting more general final states, i.e. with multiple fermions, photons etc.
  - Added example fitter with generic polarisation (see examples/FitterWithPolarisation.cpp).
  - Added published LHCb models of D->K3pi and D->KKpipi to options.
 !=================== AmpGen v1r0 2018-07-25 ==================
-! 2018-07-25 - Tim Evans
  - Units switched to GeV, will break existing options. 
  - Changed parser to use input files rather than streams, i.e. usage becomes Fitter options_file.opt rather than Fitter < options_file.opt.
  - Support for command line arguments, for example: Generator example_file.opt --Seed=12 --nEvents 100000.
@@ -29,8 +36,6 @@
  - Added support for helper strings in NamedParameters, printed if the global flag --help is used. 
  - General cleanup and consolidation of class structure.
 !=============================================================
-! 2016-09-06 - Tim Evans 
  - First import of source, apps, headers
-! 2016-09-02 - Tim Evans
  - Empty structure for the package
 !=============================================================

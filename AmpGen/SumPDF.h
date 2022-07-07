@@ -1,16 +1,21 @@
 #ifndef AMPGEN_SUMPDF_H
 #define AMPGEN_SUMPDF_H
 
-#include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/ProfileClock.h"
-
+#include "AmpGen/KeyedFunctors.h"
+#include "AmpGen/KahanSum.h"
 #include <tuple>
+
+#if ENABLE_AVX
+  #include "AmpGen/simd/utils.h"
+#endif
 
 namespace AmpGen
 {
   class EventList; 
+  class EventListSIMD;
   /** @class SumPDF
       @brief A pdf that contains one or more terms.
 
@@ -33,13 +38,15 @@ namespace AmpGen
       compile time or binary size. It isn't primarily used as PDF, as its primary function is 
       as a likelihood via function getVal(). 
       Typically constructed using either the make_pdf helper function or make_likelihood helper function.  */
+
+  
   template <class eventListType, class... pdfTypes>
   class SumPDF
   {
   private:
     typedef typename eventListType::value_type eventValueType; ///< The value type stored in the eventListType
     std::tuple<pdfTypes...> m_pdfs;                            ///< The tuple of probability density functions
-    eventListType*          m_events = {nullptr};              ///< The event list to evaluate likelihoods on
+    const eventListType*    m_events = {nullptr};              ///< The event list to evaluate likelihoods on
 
   public:
     /// Default Constructor
@@ -49,23 +56,46 @@ namespace AmpGen
     SumPDF( const pdfTypes&... pdfs ) : m_pdfs( std::tuple<pdfTypes...>( pdfs... ) ) {}
 
     /// Returns negative twice the log-likelihood for this PDF and the given dataset.     
+
     double getVal()
     {
-      double LL = 0;
       for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
-      #pragma omp parallel for reduction( +: LL )
-      for ( unsigned int i = 0; i < m_events->size(); ++i ) {
-        auto prob = ((*this))(( *m_events)[i] );
-        LL += log(prob);
+      std::vector<float_v> tmp( m_events->nBlocks() );
+      if constexpr( std::is_same<eventListType,EventList>::value )
+      {
+        #pragma omp parallel for
+        for ( unsigned int i = 0; i < m_events->size(); ++i ) {
+          auto prob = ((*this))(( *m_events)[i] );
+          auto w = (*m_events)[i].weight();
+          tmp[i] = w * log(prob);  
+        }
       }
-      return -2 * LL;
+      #if ENABLE_AVX 
+      if constexpr( std::is_same<eventListType, EventListSIMD>::value )
+      {
+        #pragma omp parallel for
+        for( unsigned block = 0 ; block < m_events->nBlocks(); ++block )
+        {
+          tmp[block] = m_events->weight(block) * AVX::log(this->operator()(m_events->block(block), block));  
+        }
+      }
+      #endif
+      KahanSum<float_v> sum;
+      for( unsigned block = 0 ; block != m_events->nBlocks(); ++block ) sum += tmp[block];
+      return -2 * utils::sum_elements(sum.sum);
+    } 
+    /// Returns the probability for the given event. 
+    float_v operator()( const float_v* evt , const unsigned block)
+    {
+      float_v prob = 0.f;
+      for_each( this->m_pdfs, [&prob, &evt,block]( const auto& f ) { prob += f(evt, block); } );
+      return prob;
     }
-    
     /// Returns the probability for the given event. 
     double operator()( const eventValueType& evt )
     {
       double prob = 0;
-      for_each( this->m_pdfs, [&prob, &evt]( auto& f ) { prob += f(evt); } );
+      for_each( this->m_pdfs, [&prob, &evt]( const auto& f ) { prob += f(evt); } );
       return prob;
     }
 
@@ -81,6 +111,25 @@ namespace AmpGen
 
     /// Returns the tuple of PDFs used by this function
     std::tuple<pdfTypes...> pdfs() const { return m_pdfs; }
+
+    std::function<double(const eventValueType&)> evaluator(const eventListType* events) const
+    {     
+      std::vector<double> values( events->size() );
+      for_each( this->m_pdfs, [events, &values](const auto& pdf ) mutable { 
+        auto eval = pdf.evaluator(events);
+        for( unsigned i = 0; i != events->size(); ++i ) values[i] += eval( events->at(i) ); 
+      } );
+      return arrayToFunctor<double, typename eventListType::value_type>(values);
+    }
+    KeyedFunctors<double(eventValueType)> componentEvaluator(const eventListType* events) const
+    { 
+      KeyedFunctors<double(eventValueType)> view;
+      for_each( this->m_pdfs, [&view, &events]( const auto& pdf) mutable { 
+        auto eval = pdf.evaluator(events);
+        view.add([eval](const auto& event){ return eval(event) ; } , type_string(pdf), "" ); 
+      } );
+      return view; 
+    }
   };
 
   /** @function make_pdf 

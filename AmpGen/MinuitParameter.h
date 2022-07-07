@@ -10,8 +10,7 @@
 namespace AmpGen
 {
   class MinuitParameterSet;
-  declare_enum( Flag, Free, Hide, Fix, CompileTimeConstant )
-
+  declare_enum( Flag, Free, Hide, Fix, CompileTimeConstant, Blind)
   class MinuitParameter
   {
   public: 
@@ -25,6 +24,7 @@ namespace AmpGen
     Flag flag() const;
     bool isFixed() const;
     bool isFree()  const;
+    bool isBlind()  const;
     const std::string& name() const;
 
     double meanInit() const;
@@ -36,32 +36,37 @@ namespace AmpGen
     double errNeg() const;
     double* vp() { return &m_meanResult ; } 
     
-    void setInit( const double& init );
+    void setInit( const double& init, const double& step=-1 );
     void setStepInit( const double& si );
     void setFree() ;
     void scaleStep( const double& sf );
     void fix();
     void setCurrentFitVal( double cfv );
     void setLimits( const double& min, const double& max );
-    void setResult( double fitMean, double fitErr, double fitErrPos, double fitErrNeg );
+    void setResult( double fitMean, double fitErr, double fitErrNeg, double fitErrPos );
     void resetToInit();
     void setName( const std::string& name );
     virtual double mean() const;
     virtual operator double() const { return m_meanResult; }
     virtual ~MinuitParameter() = default;
     
+    void setFromMinuitState( const double* x ){ if( m_minuitIndex != -1 ) m_meanResult = x[m_minuitIndex] ; } 
+    void setMinuitIndex( const int& index ){ m_minuitIndex = index; }  
+    int index() const { return m_minuitIndex; } 
+  
     friend class MinuitParameterSet;
-  private:
+  protected:
     Flag m_flag;
-    std::string m_name;
-    double m_meanInit;
-    double m_stepInit;
-    double m_minInit;
-    double m_maxInit;
-    double m_meanResult;
-    double m_errPosResult;
-    double m_errNegResult;
-    double m_errResult;
+    std::string m_name = {""};
+    double m_meanInit = {0};
+    double m_stepInit = {0};
+    double m_minInit  = {0};
+    double m_maxInit  = {0};
+    double m_meanResult = {0};
+    double m_errPosResult = {0};
+    double m_errNegResult = {0};
+    double m_errResult    = {0};
+    int    m_minuitIndex  = {-1}; 
   };
 
   class MinuitProxy
@@ -69,7 +74,7 @@ namespace AmpGen
   public:
     void update() { if(m_parameter != nullptr ) m_value = m_parameter->mean(); }
     MinuitParameter* ptr() { return m_parameter; }
-    operator double() const { return m_value; }
+    operator double() const { return m_parameter == nullptr ? m_value : m_parameter->mean(); }
     MinuitProxy(MinuitParameter* param = nullptr, const double& value=0) : m_parameter(param), m_value(value) { update(); }
     MinuitParameter* operator->() { return m_parameter; }
     const MinuitParameter* operator->() const { return m_parameter; }

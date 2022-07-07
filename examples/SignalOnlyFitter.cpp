@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "AmpGen/Chi2Estimator.h"
-#include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/IncoherentSum.h"
@@ -22,23 +21,28 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/ErrorPropagator.h"
+
 #ifdef _OPENMP
   #include <omp.h>
   #include <thread>
 #endif
 
+#if ENABLE_AVX
+  #include "AmpGen/EventListSIMD.h"
+  using EventList_type = AmpGen::EventListSIMD;
+#else
+  #include "AmpGen/EventList.h"
+  using EventList_type = AmpGen::EventList; 
+#endif
+
 #include <TH1.h>
 #include <TFile.h>
 #include <TRandom3.h>
+#include <TFitResult.h>
 
 using namespace AmpGen;
 
-template <typename PDF>
-FitResult* doFit( PDF&& pdf, EventList& data, EventList& mc, MinuitParameterSet& MPS, int nBins );
-
-std::map<std::string, std::vector<double> > getParams(MinuitParameterSet & mps);
-std::map<std::string, double > getPulls(std::map<std::string, std::vector<double> > fits, std::map<std::string, std::vector<double> > inits);
-void writePulls(std::string fileName, std::map<std::string, double> pulls);
+template <typename PDF> FitResult* doFit( PDF&& pdf, EventList_type& data, EventList_type& mc, MinuitParameterSet& MPS );
 
 int main( int argc, char* argv[] )
 {
@@ -61,18 +65,13 @@ int main( int argc, char* argv[] )
   auto pNames = NamedParameter<std::string>("EventType" , ""    
               , "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
   
-
-
+  [[maybe_unused]]
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , 8           , "Number of threads to use" );
   size_t      seed     = NamedParameter<size_t>     ("Seed"      , 0           , "Random seed used" );
-  size_t      nEvents  = NamedParameter<size_t>     ("nEvents"   , 10000       , "Number of events to fill in") ;
-  int nBins = NamedParameter<int> ("nBins", 100, "number of bins for projection");
-
-
-
-
+  
+  std::string outOptFile = NamedParameter<std::string>("OutputOptionFile", ""  , "Name of output option file updated with the best-fit parameters");
+  std::string inOptFile = NamedParameter<std::string>("InputOptionFile", ""    , "Name of input option file to use as template for OutputOptionFile");
    
-
   if( dataFile == "" ) FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off );
   if( pNames.size() == 0 ) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
 
@@ -92,9 +91,7 @@ int main( int argc, char* argv[] )
      the parsed options. For historical reasons, this is referred to as loading it from a "Stream" */
   MinuitParameterSet MPS;
   MPS.loadFromStream();
-  
 
-  std::map<std::string, std::vector<double> > inits = getParams(MPS);
   /* An EventType specifies the initial and final state particles as a vector that will be described by the fit. 
      It is typically loaded from the interface parameter EventType. */
   EventType evtType(pNames);
@@ -112,12 +109,12 @@ int main( int argc, char* argv[] )
   /* Events are read in from ROOT files. If only the filename and the event type are specified, 
      the file is assumed to be in the specific format that is defined by the event type, 
      unless the branches to load are specified in the user options */
-  EventList events(dataFile, evtType, Branches(bNames), GetGenPdf(false) );
+  EventList_type events(dataFile, evtType, Branches(bNames), GetGenPdf(false) );
   
   /* Generate events to normalise the PDF with. This can also be loaded from a file, 
      which will be the case when efficiency variations are included. Default number of normalisation events 
      is 5 million. */
-  EventList eventsMC = intFile == "" ? Generator<>(evtType, &rndm).generate(1e7) : EventList(intFile, evtType, GetGenPdf(true));
+  EventList_type eventsMC = intFile == "" ? Generator<>(evtType, &rndm).generate(2.5e6) : EventList_type(intFile, evtType, GetGenPdf(true));
   
   sig.setMC( eventsMC );
 
@@ -125,7 +122,7 @@ int main( int argc, char* argv[] )
   
   /* Do the fit and return the fit results, which can be written to the log and contains the 
      covariance matrix, fit parameters, and other observables such as fit fractions */
-  FitResult* fr = doFit(make_likelihood(events, sig), events, eventsMC, MPS , nBins);
+  FitResult* fr = doFit(make_likelihood(events, sig), events, eventsMC, MPS );
   /* Calculate the `fit fractions` using the signal model and the error propagator (i.e. 
      fit results + covariance matrix) of the fit result, and write them to a file. 
    */
@@ -133,27 +130,13 @@ int main( int argc, char* argv[] )
   
   fr->addFractions( fitFractions );
   fr->writeToFile( logFile );
-       std::map<std::string, std::vector<double> > fits = getParams(MPS);
-    std::map<std::string, double> pulls = getPulls(fits, inits);
-      for(std::map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
-         INFO("Pull = "<<it->first<<" "<<it->second);
-       }
-    writePulls(logFile, pulls);
-
-
-  output->cd();
-  
-  /* Write out the data plots. This also shows the first example of the named arguments 
-     to functions, emulating python's behaviour in this area */
-
-  auto plots = events.makeDefaultProjections(Prefix("Data"), Bins(nBins));
-  for ( auto& plot : plots ) plot->Write();
+  if ( outOptFile != "" ) fr->writeOptions(outOptFile, inOptFile);
 
   output->Close();
 }
 
 template <typename likelihoodType>
-FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, MinuitParameterSet& MPS, int nBins )
+FitResult* doFit( likelihoodType&& likelihood, EventList_type& data, EventList_type& mc, MinuitParameterSet& MPS )
 {
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time      = std::clock();
@@ -161,14 +144,6 @@ FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, M
      that is constructed from an object that defines an operator() that returns a double 
      (i.e. the likielihood, and a set of MinuitParameters. */
   Minimiser mini( likelihood, &MPS );
-
-  auto covar = mini.covMatrix();
-  INFO("Printing Covariant matrix");
-  covar.Print();
-  auto covarFull = mini.covMatrixFull();
-  //INFO("Printing full Covariant matrix");
-  //covarFull.Print();
-  mini.gradientTest();
   mini.doFit();
 
   FitResult* fr = new FitResult(mini);
@@ -178,73 +153,30 @@ FitResult* doFit( likelihoodType&& likelihood, EventList& data, EventList& mc, M
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - time_wall ).count();
   INFO( "Wall time = " << tWall / 1000. );
   INFO( "CPU  time = " << time_cpu );
+  
+  /* Estimate the chi2 using an adaptive / decision tree based binning, 
+     down to a minimum bin population of 15, and add it to the output. */
+  
+  Chi2Estimator chi2( data, mc, likelihood.evaluator(&mc), MinEvents(15), Dim(data.eventType().dof()) );
+  chi2.writeBinningToFile("chi2_binning.txt");
+  fr->addChi2( chi2.chi2(), chi2.nBins() );
 
   /* Make the plots for the different components in the PDF, i.e. the signal and backgrounds. 
      The structure assumed the PDF is some SumPDF<eventListType, pdfType1, pdfType2,... >. */
-  unsigned int counter = 1;
-  for_each(likelihood.pdfs(), [&](auto& pdf){
-    auto pfx = Prefix("Model_cat"+std::to_string(counter));
-    auto mc_plot3 = mc.makeDefaultProjections(WeightFunction(pdf), Bins(nBins), pfx);
-    for( auto& plot : mc_plot3 )
-    {
-      plot->Scale( ( data.integral() * pdf.getWeight() ) / plot->Integral() );
-      plot->Write();
-    }
-    counter++;
-  });
-
-  /* Estimate the chi2 using an adaptive / decision tree based binning, 
-     down to a minimum bin population of 15, and add it to the output. */
-  Chi2Estimator chi2( data, mc, likelihood, 15 );
-  chi2.writeBinningToFile("chi2_binning.txt");
-  fr->addChi2( chi2.chi2(), chi2.nBins() );
+  auto evaluator                 = likelihood.componentEvaluator(&mc);
+  auto evaluator_per_component   = std::get<0>( likelihood.pdfs() ).componentEvaluator(&mc);
+  auto projections               = data.eventType().defaultProjections(100); 
+  for( const auto& proj : projections )
+  {
+    proj(mc, evaluator,                                           PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
+    if( NamedParameter<bool>("AllComponents",true ) ) 
+      proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
+    proj(data, PlotOptions::Prefix("Data") )->Write();
+  }
   
-  fr->print();
+  auto root_fr = mini.fitResult();
+  auto x = new TFitResult(root_fr);
+  x->SetName("FitResult"); 
+  x->Write();
   return fr;
 }
-std::map<std::string, std::vector<double> > getParams(MinuitParameterSet & mps){
-  std::map<std::string, std::vector<double> > out;
-  for (auto& param : mps){
-    std::vector<double> vect = {param->mean(), param->err()};
-    out[param->name()] = vect;
-  }
-  return out;
-}
-
-
-
-
-std::map<std::string, double > getPulls(std::map<std::string, std::vector<double> > fits, std::map<std::string, std::vector<double> > inits)  {
-  std::string output = "";
- std::map<std::string, double> out;
- for(std::map<std::string, std::vector<double> >::iterator init = inits.begin(); init != inits.end(); ++init) {
-  for(std::map<std::string, std::vector<double> >::iterator fit = fits.begin(); fit != fits.end(); ++fit) {
-    std::string initName = init->first;
-    std::vector<double> initParams = init->second;
-    std::string fitName = fit->first;
-    std::vector<double> fitParams = fit->second;
-    if (initName == fitName){
-        double pull = fitParams[0] - initParams[0];
-        if (fitParams[1] != 0){
-          pull /= fitParams[1];
-        }
-        out[fitName] = pull;
-    }
-  }
- }
-  return out;
-
-}
-
-
-void writePulls(std::string fileName, std::map<std::string, double> pulls){
-  std::ofstream outfile;
-  outfile.open(fileName, std::ios_base::app);
-      for(std::map<std::string, double >::iterator it = pulls.begin(); it != pulls.end(); ++it) {
-        outfile<<"Pull "<<it->first<<" "<<it->second<<"\n";
-       }
-
-}
-
-
-

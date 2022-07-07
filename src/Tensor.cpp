@@ -64,7 +64,7 @@ unsigned Tensor::rank() const { return m_dim.size(); }
 int Tensor::metricSgn( const std::vector<unsigned>& coordinates ) const
 {
   return std::accumulate( coordinates.begin(), coordinates.end(), 1, 
-      [](auto& prod, auto& co){ return prod * ( ( co == 3) ? 1 : -1 ) ;} ); 
+      [](const auto& prod, const auto& co){ return prod * ( ( co == 3) ? 1 : -1 ) ;} ); 
 }
 
 int Tensor::metricSgn( const unsigned& index ) const { return metricSgn( coords( index ) ); }
@@ -413,9 +413,6 @@ TensorProxy AmpGen::operator*( const TensorProxy& t1, const TensorProxy& t2 )
   Tensor value( finalTensorRank );
 
   unsigned nElem = value.nElements();
-  DEBUG("Got " << t1_tensor.dims().size() << " x " << t2_tensor.dims().size() << " with " << contractions.size() << " contractions " << nElementsInSum);
-  DEBUG(t1_tensor.dimString() << " x " << t2_tensor.dimString() << " -> " << value.dimString());
-  DEBUG("Contraction matrix = " << "[" << vectorToString(contractionMatrix, ", ") << "]");
 
   for( unsigned elem = 0; elem < nElem; ++elem ) {
     auto coords = Tensor::index_to_coordinates( elem, finalTensorRank );

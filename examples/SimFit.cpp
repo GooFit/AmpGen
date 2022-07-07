@@ -3,7 +3,6 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/SumPDF.h"
 #include "AmpGen/FitResult.h"
-#include "AmpGen/IExtendLikelihood.h"
 #include "AmpGen/Minimiser.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Utilities.h"
@@ -12,8 +11,16 @@
 #include "AmpGen/Kinematics.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/PolarisedSum.h"
+#include "AmpGen/AddCPConjugate.h"
 #ifdef _OPENMP
-#include <omp.h>
+  #include <omp.h>
+#endif
+#if ENABLE_AVX
+  #include "AmpGen/EventListSIMD.h"
+  using EventList_type = AmpGen::EventListSIMD;
+#else
+  #include "AmpGen/EventList.h"
+  using EventList_type = AmpGen::EventList; 
 #endif
 
 #include "TRandom3.h"
@@ -25,9 +32,6 @@ using namespace AmpGen;
 int main(int argc , char* argv[] ){
   OptionsParser::setArgs( argc, argv );
 
-  const auto pEventType      = NamedParameter<std::string>("EventType", std::vector<std::string>(),
-        "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector();
-
   const auto datasets        = NamedParameter<std::string>("Datasets","",
       "List of data/simulated samples to fit, in the format \
       \033[3m data[0] sim[0] data[1] sim[1] ... \033[0m. \nIf a simulated sample is specified FLAT, uniformly generated phase-space events are used for integrals ").getVector();
@@ -37,9 +41,11 @@ int main(int argc , char* argv[] ){
 
   const std::string plotFile = NamedParameter<std::string>("Plots"     , "plots.root",
       "Name of the output plot file");
+  
+  const bool add_conj = NamedParameter<bool>("AddConj", false );
 
-  std::vector<EventList>             data;
-  std::vector<EventList>              mcs;
+  std::vector<EventList_type>             data;
+  std::vector<EventList_type>              mcs;
 
   #ifdef _OPENMP
     size_t hwThreads = std::thread::hardware_concurrency();
@@ -51,27 +57,24 @@ int main(int argc , char* argv[] ){
 
   INFO("Output : " << logFile << " plots = " << plotFile );
 
-  if( pEventType.size() == 0 ) FATAL("Must specify event format as EventType \033[3m parent daughter1 daughter2 ... \033[0m in options");
-
-  const EventType eventType  = EventType( pEventType );
-
   for(size_t i=0;i < datasets.size() ; i+=2 ){
-    data.emplace_back( datasets[i], eventType );
-    if( datasets[i+1] == "FLAT" ) mcs.emplace_back(Generator<>(eventType).generate(1e6));
-    else mcs.emplace_back( datasets[i+1], eventType, GetGenPdf(true) );
+    data.emplace_back( datasets[i] );
+    if( datasets[i+1] == "FLAT" ) mcs.emplace_back(Generator<>(data.rbegin()->eventType() ).generate(1e6));
+    else mcs.emplace_back( datasets[i+1], data.rbegin()->eventType(), GetGenPdf(true) );
   }
 
   std::vector<PolarisedSum>           fcs(data.size());
-  std::vector<SumPDF<EventList, PolarisedSum&>> pdfs;
+  std::vector<SumPDF<EventList_type, PolarisedSum&>> pdfs;
 
   pdfs.reserve(data.size());
 
   SimFit totalLL;
   MinuitParameterSet mps;
   mps.loadFromStream();
+  if( add_conj ) AddCPConjugate(mps);
   for(size_t i = 0; i < data.size(); ++i){
-    fcs[i] = PolarisedSum(eventType, mps);
-    pdfs.emplace_back( make_pdf(fcs[i]) );
+    fcs[i] = PolarisedSum(data[i].eventType(), mps);
+    pdfs.emplace_back( make_pdf<EventList_type>(fcs[i]) );
     pdfs[i].setEvents(data[i]);
     auto& mc = mcs[i];
     for_each( pdfs[i].pdfs(), [&mc](auto& pdf){pdf.setMC(mc);});
@@ -84,19 +87,11 @@ int main(int argc , char* argv[] ){
   for( size_t i = 0 ; i < data.size(); ++i )
   {
     INFO("Making figures for sample: " << i << " ...");
-    auto dataPlots = data[i].makeDefaultProjections( Prefix("Data_"+std::to_string(i)));
-    for( auto& p : dataPlots ) p->Write();
-    size_t counter = 0;
-    for_each(pdfs[i].pdfs(), [&]( auto& f ){
-      auto mc_plots = mcs[i].makeDefaultProjections(WeightFunction(f),
-        Prefix("Model_sample_"+std::to_string(i)+"_cat"+std::to_string(counter)));
-      for( auto& plot : mc_plots )
-      {
-        plot->Scale( ( data[i].integral() * f.getWeight() ) / plot->Integral() );
-        plot->Write();
-      }
-      counter++;
-    } );
+    for( auto proj : data[i].eventType().defaultProjections() )
+    {
+      proj(data[i], PlotOptions::Prefix("Data"+std::to_string(i)), PlotOptions::AutoWrite() );
+      proj(mcs[i]  , pdfs[i].componentEvaluator(&mcs[i]), PlotOptions::Prefix("pdf"+std::to_string(i)), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
+    }    
   }
   output_plots->Close();
 }

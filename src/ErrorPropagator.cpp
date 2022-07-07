@@ -5,6 +5,10 @@
 #include "AmpGen/MinuitParameterSet.h"
 #include "TDecompChol.h"
 #include "TRandom3.h"
+#include "TMatrixD.h"
+#include "TVectorT.h"
+
+typedef TVectorT<double> TVectorD; 
 
 using namespace AmpGen;
 
@@ -13,6 +17,7 @@ GaussErrorPropagator::GaussErrorPropagator( const TMatrixD& reducedCovariance, c
 {
   for ( size_t x = 0; x < params.size(); ++x ) {
     auto p = params[x];
+    // CHECK_BLINDING
     INFO( p->name() << "  " << p->mean() << " +/- " << sqrt( reducedCovariance( x, x ) ) );
     m_startingValues.push_back( p->mean() );
   }
@@ -106,16 +111,13 @@ double LinearErrorPropagator::getError( const std::function<double(void)>& fcn )
   unsigned int N = m_cov.GetNrows();
   TVectorD errorVec( N );
   for ( unsigned int i = 0; i < N; ++i ) {
-
-
-
-    DEBUG( "Perturbing parameter: [" << m_parameters[i]->name() << "] " << startingValue << " by "
-
+    // CHECK_BLINDING
+    DEBUG( "Perturbing parameter: [" << m_parameters[i]->name() << "] " << m_parameters[i]->mean() << " by "
         << sqrt( m_cov( i, i ) ) << " " << m_parameters[i] );
     errorVec(i) = derivative(fcn,i);
     fcn(); 
   }
-  return sqrt( errorVec * ( m_cov * errorVec ) );
+  return sqrt( Dot( errorVec, m_cov * errorVec ) );
 }
 
 std::vector<double> LinearErrorPropagator::getVectorError( const std::function<std::vector<double>(void)>& fcn, size_t RANK ) const
@@ -127,6 +129,7 @@ std::vector<double> LinearErrorPropagator::getVectorError( const std::function<s
     double error         = sqrt( m_cov( i, i ) );
     double min           = m_parameters[i]->mean() - error;
     double max           = m_parameters[i]->mean() + error;
+    // CHECK_BLINDING
     DEBUG( "Perturbing parameter: " << m_parameters[i]->name() << " -> [" << min << ", " << max << "]" );
 
     m_parameters[i]->setCurrentFitVal( max );
@@ -140,7 +143,7 @@ std::vector<double> LinearErrorPropagator::getVectorError( const std::function<s
   }
   fcn();
   std::vector<double> rt( RANK, 0 );
-  for ( unsigned int j = 0; j < RANK; ++j ) rt[j] = sqrt( errorVec[j] * ( m_cov * errorVec[j] ) );
+  for ( unsigned int j = 0; j < RANK; ++j ) rt[j] = sqrt( Dot( errorVec[j] , m_cov * errorVec[j] ) );
   return rt;
 }
 

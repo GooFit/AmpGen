@@ -34,9 +34,9 @@ void DalitzIntegrator::set( const double& s0, const double& s1, const double& s2
 }
 double DalitzIntegrator::sqDp1( const Event& evt ) const
 {
-  TLorentzVector p1( ( evt.address( 0 ) ) );
-  TLorentzVector p2( ( evt.address( 4 ) ) );
-  TLorentzVector p3( ( evt.address( 8 ) ) );
+  TLorentzVector p1( evt.address( 0 ) );
+  TLorentzVector p2( evt.address( 4 ) );
+  TLorentzVector p3( evt.address( 8 ) );
   TLorentzVector pA = p1 + p2;
   auto arg = 2 * ( pA.Mag() - m_min ) / ( m_max - m_min ) - 1;
   if( arg > 1 || arg < -1 ){
@@ -54,14 +54,14 @@ double DalitzIntegrator::sqDp2( const Event& evt ) const
   return acos( dotProduct( p1, p3, pA ) / sqrt( dotProduct( p1, p1, pA ) * dotProduct( p3, p3, pA ) ) ) / M_PI;
 }
 
-void DalitzIntegrator::setEvent( const sqCo& x, double* event ) const
+void DalitzIntegrator::setEvent( const sqCo& x, float_v* event ) const
 {
-  double mAB = getMAB( x );
-  double pA  = safe_sqrt(0.25*mAB*mAB - 0.5*(m_s1 + m_s2) + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB));
-  double eA  = sqrt(pA*pA + m_s1);
-  double eB  = sqrt(pA*pA + m_s2);
-  double eC  = ( m_s0 - m_s3 - mAB * mAB ) / ( 2 * mAB );
-  double pC  = safe_sqrt( eC * eC - m_s3 );
+  auto mAB = getMAB( x );
+  auto pA  = safe_sqrt(0.25*mAB*mAB - 0.5*(m_s1 + m_s2) + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB));
+  auto eA  = sqrt(pA*pA + m_s1);
+  auto eB  = sqrt(pA*pA + m_s2);
+  auto eC  = ( m_s0 - m_s3 - mAB * mAB ) / ( 2 * mAB );
+  auto pC  = safe_sqrt( eC * eC - m_s3 );
   event[2]  = pA;
   event[3]  = eA;
   event[6]  = -pA;
@@ -70,9 +70,6 @@ void DalitzIntegrator::setEvent( const sqCo& x, double* event ) const
   event[10] = pC * cos(M_PI * x.second);
   event[11] = eC;
 }
-
-
-
 void DalitzIntegrator::setMother( const double& s )
 {
   m_s0 = s;
@@ -80,58 +77,57 @@ void DalitzIntegrator::setMother( const double& s )
   m_max = sqrt(m_s0) - sqrt(m_s3);
 }
 
-double DalitzIntegrator::getMAB( sqCo coords ) const
+float_v DalitzIntegrator::getMAB( const sqCo& coords ) const
 {
-  double m = coords.first;
-  return m_min + ( m_max - m_min ) * ( cos( M_PI * m ) + 1 ) / 2;
+  return m_min + ( m_max - m_min ) * ( cos( M_PI * coords.first ) + 1 ) / 2;
 }
 
-double DalitzIntegrator::J( const sqCo& coords ) const
+float_v DalitzIntegrator::J( const sqCo& coords ) const
 {
-  double mAB         = getMAB( coords );
-  double pA          = safe_sqrt( mAB * mAB / 4. - ( m_s1 + m_s2 ) / 2. + ( m_s1 - m_s2 ) * ( m_s1 - m_s2 ) / ( 4 * mAB * mAB ) );
-  double eC          = ( m_s0 - m_s3 - mAB * mAB ) / ( 2 * mAB );
-  double pC          = safe_sqrt( eC * eC - m_s3 );
-  double mPrime_     = coords.first;
-  double thetaPrime_ = coords.second;
-  double deriv1      = ( M_PI / 2. ) * ( m_max - m_min ) * sin( M_PI * mPrime_ );
-  double deriv2      = M_PI * sin( M_PI * thetaPrime_ );
-  double j           = 4 * deriv1 * deriv2 * pA * pC * mAB / (GeV*GeV*GeV); 
+  auto mAB         = getMAB( coords );
+  auto pA          = safe_sqrt( mAB * mAB / 4. - ( m_s1 + m_s2 ) / 2. + ( m_s1 - m_s2 ) * ( m_s1 - m_s2 ) / ( 4 * mAB * mAB ) );
+  auto eC          = ( m_s0 - m_s3 - mAB * mAB ) / ( 2 * mAB );
+  auto pC          = safe_sqrt( eC * eC - m_s3 );
+  auto mPrime_     = coords.first;
+  auto thetaPrime_ = coords.second;
+  auto deriv1      = ( M_PI / 2. ) * ( m_max - m_min ) * sin( M_PI * mPrime_ );
+  auto deriv2      = M_PI * sin( M_PI * thetaPrime_ );
+  auto j           = 4 * deriv1 * deriv2 * pA * pC * mAB;
   return j;
 }
 
-double DalitzIntegrator::J( const sqCo& coords, const double& s ) const
+float_v DalitzIntegrator::J( const sqCo& coords, const double& s ) const
 {
-  double mAB         = getMAB( coords, s);
-  double max         = sqrt(s) - sqrt(m_s3);
-  double min         = sqrt(m_s1) + sqrt(m_s2);
-  double pA          = sqrt( mAB*mAB/4. - (m_s1+m_s2)/2. + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB) );
-  double eC          = ( m_s0 - m_s3 - mAB * mAB ) / (2*mAB);
-  double pC          = safe_sqrt( eC * eC - m_s3 );
-  double mPrime_     = coords.first;
-  double thetaPrime_ = coords.second;
-  double deriv1      = ( M_PI / 2. ) * ( max - min ) * sin( M_PI * mPrime_ );
-  double deriv2      = M_PI * sin( M_PI * thetaPrime_ );
-  double j           = 4 * deriv1 * deriv2 * pA * pC * mAB / (GeV*GeV*GeV); 
+  auto mAB         = getMAB( coords, s);
+  auto max         = sqrt(s)    - sqrt(m_s3);
+  auto min         = sqrt(m_s1) + sqrt(m_s2);
+  auto pA          = sqrt( mAB*mAB/4. - (m_s1+m_s2)/2. + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB) );
+  auto eC          = ( m_s0 - m_s3 - mAB * mAB ) / (2*mAB);
+  auto pC          = safe_sqrt( eC * eC - m_s3 );
+  auto mPrime_     = coords.first;
+  auto thetaPrime_ = coords.second;
+  auto deriv1      = ( M_PI / 2. ) * ( max - min ) * sin( M_PI * mPrime_ );
+  auto deriv2      = M_PI * sin( M_PI * thetaPrime_ );
+  auto j           = 4 * deriv1 * deriv2 * pA * pC * mAB;
   return j;
 }
 
-double DalitzIntegrator::getMAB( sqCo coords, const double& s ) const
+float_v DalitzIntegrator::getMAB( const sqCo& coords, const double& s ) const
 {
-  double m = coords.first;
-  double max         = sqrt(s) - sqrt(m_s3);
-  double min         = sqrt(m_s1) + sqrt(m_s2);
+  auto m = coords.first;
+  auto max         = sqrt(s) - sqrt(m_s3);
+  auto min         = sqrt(m_s1) + sqrt(m_s2);
   return min + ( max - min ) * ( cos( M_PI * m ) + 1 ) / 2;
 }
 
-void DalitzIntegrator::setEvent(const sqCo& x, double* event, const double& s) const
+void DalitzIntegrator::setEvent(const sqCo& x, float_v* event, const double& s) const
 {
-  double mAB = getMAB( x, s );
-  double pA  = sqrt( mAB*mAB/4. - (m_s1+m_s2)/2. + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB) );
-  double eA  = sqrt( pA * pA + m_s1 );
-  double eB  = sqrt( pA * pA + m_s2 );
-  double eC  = ( m_s0 - m_s3 - mAB * mAB ) / ( 2 * mAB );
-  double pC  = sqrt( eC * eC - m_s3 );
+  auto mAB = getMAB( x, s );
+  auto pA  = sqrt( mAB*mAB/4. - (m_s1+m_s2)/2. + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB) );
+  auto eA  = sqrt( pA * pA + m_s1 );
+  auto eB  = sqrt( pA * pA + m_s2 );
+  auto eC  = ( m_s0 - m_s3 - mAB * mAB ) / ( 2 * mAB );
+  auto pC  = sqrt( eC * eC - m_s3 );
   event[2]   = pA;
   event[3]   = eA;
   event[6]   = -pA;
@@ -143,6 +139,7 @@ void DalitzIntegrator::setEvent(const sqCo& x, double* event, const double& s) c
 
 void DalitzIntegrator::debug() const
 {
+  /*
   sqCo pos = { gRandom->Uniform(), gRandom->Uniform()};
   double event[12];
   for ( unsigned int i = 0; i < 12; ++i ) event[i] = 0;
@@ -152,8 +149,10 @@ void DalitzIntegrator::debug() const
   double pA  = safe_sqrt( mAB * mAB / 4. - ( m_s1 + m_s2 ) / 2. + ( m_s1 - m_s2 ) * ( m_s1 - m_s2 ) / ( 4 * mAB * mAB ) );
   std::cout << "pA = " << pA << " mAB = " << mAB << std::endl; 
   for ( unsigned int i = 0; i < 12; ++i ) INFO( "Evt[" << i << "] = " << event[i] );
+  */
 }
 
+/*
 TH1D* DalitzIntegrator::makePlot( const std::function<double(const double*)>& fcn, const Projection& projection,
     const std::string& name, const size_t& nSamples )
 {
@@ -183,15 +182,5 @@ TH2D* DalitzIntegrator::makePlot( const std::function<double(const double*)>& fc
   }
   return plot;
 }
+*/
 
-
-double DalitzIntegrator::integrate_internal( TF2& fcn ) const
-{
-  ROOT::Math::WrappedMultiTF1 wf1( fcn );
-  ROOT::Math::AdaptiveIntegratorMultiDim ig;
-  ig.SetFunction( wf1 );
-  ig.SetRelTolerance( 0.000001 );
-  double xmin[] = {0, 0};
-  double xmax[] = {1, 1};
-  return ig.Integral(xmin,xmax);
-}

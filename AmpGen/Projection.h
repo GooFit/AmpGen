@@ -6,12 +6,13 @@
 #include <string>
 #include <utility>
 
-#include "TH1D.h"
-#include "TH2D.h"
-#include "AmpGen/ArgumentPack.h"
+#include <TH1D.h>
+#include <TH2D.h>
+#include <THStack.h>
 
-class TH1D;
-class TH2D;
+#include "AmpGen/ArgumentPack.h"
+#include "AmpGen/Types.h"
+#include "AmpGen/KeyedFunctors.h"
 
 namespace AmpGen
 {
@@ -21,6 +22,7 @@ namespace AmpGen
 
   class Projection
   {
+    using keyedFunctors = KeyedFunctors<double(Event)>; 
     public:
       Projection();
       template <class FCN>
@@ -31,18 +33,34 @@ namespace AmpGen
           const std::string& xAxisTitle, const size_t& nBins, const double& min, const double& max,
           const std::string& units = "" );
       const std::string name() const; 
-      template <class... ARGS> TH1D* operator()(const EventList& evt, const ARGS... args) const { return projInternal(evt, ArgumentPack(args...) ); } 
-      
+      template <class eventlist_type, class... ARGS> TH1D* operator()(const eventlist_type& evts, const ARGS... args) const 
+      {
+        return projInternal(evts, ArgumentPack(args...) ); 
+      } 
+      template <class eventlist_type, class... ARGS> std::tuple<std::vector<TH1D*>, THStack*> operator()(const eventlist_type& evts, 
+          const keyedFunctors& weightFunction, const ARGS... args ) const 
+      {
+        return projInternal(evts, weightFunction, ArgumentPack(args...) );
+      }
+
       double operator()( const Event& evt ) const;
       
       TH1D* plot(const std::string& prefix="") const;
 
-      std::function<size_t( const Event& evt )> binFunctor() const;
-      void setRange( const double& min, const double& max ){ m_min = (min); m_max = (max) ; }
+      std::function<int( const Event& evt )> binFunctor() const;
+      void setRange( const double& min, const double& max )
+      { 
+        m_min = min; 
+        m_max = max; 
+        m_width = (m_max-m_min)/double(m_nBins);
+      }
 
       friend class Projection2D;
-    private:
-      TH1D* projInternal(const EventList&, const ArgumentPack&) const; 
+  ///  private:
+      template <class eventlist_type> 
+      TH1D* projInternal(const eventlist_type&, const ArgumentPack&) const; 
+      template <class eventlist_type> 
+      std::tuple<std::vector<TH1D*>, THStack*> projInternal(const eventlist_type&, const keyedFunctors&, const ArgumentPack&) const; 
       std::function<double( const Event& )> m_func;
       std::string m_name       = {""};
       std::string m_xAxisTitle = {""};
@@ -66,7 +84,15 @@ namespace AmpGen
 
     std::pair<double, double> operator()( const Event& evt ) const;
   };
-
+  namespace PlotOptions {
+    DECLARE_ARGUMENT(LineColor     , int);
+    DECLARE_ARGUMENT(DrawStyle     , std::string);
+    DECLARE_ARGUMENT(Selection     , std::function<bool( const Event& )>);
+    DECLARE_ARGUMENT(Prefix        , std::string);
+    DECLARE_ARGUMENT(Norm          , double);
+    DECLARE_ARGUMENT(AddTo         , THStack*);
+    DECLARE_ARGUMENT(AutoWrite     , bool);
+  }
 } // namespace AmpGen
 
 #endif

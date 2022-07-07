@@ -5,7 +5,7 @@
 
 #include "AmpGen/Factory.h"
 #include "AmpGen/CoherentSum.h"
-#include "AmpGen/IExtendLikelihood.h"
+#include "AmpGen/ExtendLikelihoodBase.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Utilities.h"
@@ -14,7 +14,7 @@
 
 using namespace AmpGen;
 
-double PartialWidthConstraint::getVal() const
+double PartialWidthConstraint::operator()() const
 {
 
   std::complex<double> numerator( 0, 0 );
@@ -36,19 +36,17 @@ double PartialWidthConstraint::getVal() const
 }
 
 void PartialWidthConstraint::configure( const std::string& configString, 
-                                        const CoherentSum& pdf,
                                         const MinuitParameterSet& mps )
 {
-
-  m_pdf                                = &( pdf );
+  if( m_pdf == nullptr ) FATAL("Trying to configure PartialWidthConstraint with: " << configString << " without first setting the amplitude");
   auto tokens                          = split( configString, ' ' );
   const std::string name               = tokens[1];
   m_weight                             = stod( tokens[2] );
   m_ratio                              = stod( tokens[3] );
   std::vector<std::string> denChannels = NamedParameter<std::string>( name + "_denChannels" ).getVector();
   std::vector<std::string> numChannels = NamedParameter<std::string>( name + "_numChannels" ).getVector();
-  for ( auto& p : denChannels ) m_denComponents.push_back( findIndex(pdf.matrixElements(), p ) );
-  for ( auto& p : numChannels ) m_numComponents.push_back( findIndex(pdf.matrixElements(), p ) );
+  for ( auto& p : denChannels ) m_denComponents.push_back( findIndex(m_pdf->matrixElements(), p ) );
+  for ( auto& p : numChannels ) m_numComponents.push_back( findIndex(m_pdf->matrixElements(), p ) );
   
   INFO( "Constraining ratio of " );
   for ( unsigned int i = 0; i < m_denComponents.size(); ++i )
@@ -58,4 +56,4 @@ void PartialWidthConstraint::configure( const std::string& configString,
     INFO( numChannels[i] << " index = " << m_numComponents[i] );
 }
 
-REGISTER( IExtendLikelihood, PartialWidthConstraint );
+REGISTER( ExtendLikelihoodBase, PartialWidthConstraint );

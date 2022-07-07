@@ -5,8 +5,8 @@
 #include <tuple>
 #include <vector>
 
-#include "TLorentzVector.h"
-#include "TVector3.h"
+#include <TLorentzVector.h>
+#include <TVector3.h>
 
 namespace AmpGen
 {

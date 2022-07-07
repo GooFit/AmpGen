@@ -13,6 +13,7 @@
 #include "AmpGen/ASTResolver.h"
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/Tensor.h"
+#include "AmpGen/simd/utils.h"
 using namespace AmpGen;
 
 CompiledExpressionBase::CompiledExpressionBase() = default; 
@@ -48,6 +49,7 @@ std::string AmpGen::programatic_name( std::string s )
 void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
 {
   if( m_resolver == nullptr ) m_resolver = std::make_shared<ASTResolver>( m_evtMap, mps );
+  if( fcnSignature().find("AVX") != std::string::npos ) m_resolver->setEnableAVX();   
   m_dependentSubexpressions = m_resolver->getOrderedSubExpressions( m_obj ); 
   for ( auto& sym : m_db ){
     auto expressions_for_this = m_resolver->getOrderedSubExpressions( sym.second); 
@@ -57,8 +59,9 @@ void CompiledExpressionBase::resolve(const MinuitParameterSet* mps)
     }
   }
   m_cacheTransfers.clear();
-  for( auto& expression : m_resolver->cacheFunctions() ) 
-    m_cacheTransfers.emplace_back( expression.second ); 
+  for( auto& [expr, fcache] : m_resolver->cacheFunctions() ) 
+    m_cacheTransfers.emplace_back( fcache );
+  DEBUG("Resizing cache to: " << m_resolver->nParams() ); 
   resizeExternalCache( m_resolver->nParams() ); 
   prepare(); 
 }
@@ -75,7 +78,7 @@ void CompiledExpressionBase::prepare()
 void CompiledExpressionBase::addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const
 {
   for ( auto& dep : m_dependentSubexpressions ) {
-    std::string rt = "  auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver.get()) +";"; 
+    std::string rt = "  const auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver.get()) +";"; 
     stream << rt << "\n";
     sizeOfStream += sizeof(char) * rt.size(); /// bytes /// 
   }
@@ -87,26 +90,28 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   stream << "extern \"C\" const char* " << progName() << "_name() {  return \"" << m_name << "\"; } \n";
   bool enable_cuda = NamedParameter<bool>("UseCUDA",false);
   size_t sizeOfStream = 0;
-  if( m_rto )
+  if( use_rto() )
   {
+    
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
-    addDependentExpressions( stream , sizeOfStream );
+    addDependentExpressions( stream , sizeOfStream );\
+    std::string return_type = arg_type(0);
+    return_type = return_type.substr(0,return_type.size()-1);
     if( is<TensorExpression>(m_obj) == false ){
-      stream << "*r = " << m_obj.to_string(m_resolver.get()) << ";\n";
+      stream << "*r = " << return_type << "(" << m_obj.to_string(m_resolver.get()) << ");\n";
      stream << "}\n";
     }
     else {
-      auto as_tensor = cast<TensorExpression>(m_obj).tensor();
+      auto as_tensor = cast<TensorExpression>(m_obj).tensor(); 
       for(unsigned j=0; j != as_tensor.size(); ++j )
-        stream << "r["<<j<<"] = " << as_tensor[j].to_string(m_resolver.get()) << ";\n";
+        stream << "r[s * "<< j<<"] = " << return_type << "(" << as_tensor[j].to_string(m_resolver.get()) << ");\n";
       stream << "}\n";  
     }
   }
   else if( !enable_cuda ){
-//    stream << "#pragma clang diagnostic push\n#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );
-    stream << "return " << m_obj.to_string(m_resolver.get()) << ";\n}\n";
+    stream << "return " << returnTypename() << "(" << m_obj.to_string(m_resolver.get()) << ");\n}\n";
   }
   else {
     stream << "__global__ void " << progName() << "( " << returnTypename() + "* r, const int N, " << fcnSignature() << "){\n"; 
@@ -116,7 +121,6 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   }
 
   if( NamedParameter<bool>("IncludePythonBindings", false) == true && returnTypename().find("complex") != std::string::npos ){
-//    stream << "#pragma clang diagnostic pop\n\n";
     stream << "extern \"C\" void " <<  progName() << "_c" << "(double *real, double *imag, " << fcnSignature() << "){\n";
     stream << "  auto val = " << progName() << "(" << args() << ") ;\n"; 
     stream << "  *real = val.real();\n";
@@ -124,6 +128,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     stream << "}\n";
   }
   if ( m_db.size() != 0 ) addDebug( stream );
+  if( !m_disableBatch ) compileBatch(stream);    
 }
 
 std::ostream& AmpGen::operator<<( std::ostream& os, const CompiledExpressionBase& expression )
@@ -140,7 +145,7 @@ void CompiledExpressionBase::compile(const std::string& fname)
 void CompiledExpressionBase::addDebug( std::ostream& stream ) const
 {
   stream << "#include<string>\n";
-  stream << "extern \"C\" std::vector<std::pair< std::string, std::complex<double>>> " 
+  stream << "extern \"C\" std::vector<std::pair< std::string, " << type_string<complex_v>() << " >> " 
          << m_progName << "_DB(" << fcnSignature() << "){\n";
   for ( auto& dep : m_debugSubexpressions ) {
     std::string rt = "auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver.get()) +";"; 
@@ -152,15 +157,25 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
     const auto expression = m_db[i].second; 
     stream << std::endl << "{\"" << m_db[i].first << "\",";
     if ( expression.to_string(m_resolver.get()) != "NULL" )
-      stream << expression.to_string(m_resolver.get()) << "}" << comma;
-    else stream << "-999}" << comma ;
+      stream << type_string<complex_v>() << "("<< expression.to_string(m_resolver.get()) << ")}" << comma;
+    else stream << type_string<complex_v>() << "(-999.,0.)}" << comma ;
   }
 }
 
-std::string CompiledExpressionBase::fcnSignature(const std::vector<std::string>& argList, bool rto=false)
+std::string CompiledExpressionBase::fcnSignature(const std::vector<std::string>& argList, bool rto, bool includeStagger)
 {
   unsigned counter=0;
   auto fcn = [counter](const auto& str) mutable {return str + " x"+std::to_string(counter++); }; 
-  if( rto ) return argList[0] + " r, " + vectorToString( argList.begin()+1, argList.end(), ", ", fcn );
+  if( rto ) return argList[0] + " r, " + argList[1] + " s, " + vectorToString( argList.begin()+2, argList.end(), ", ", fcn );
   return vectorToString( argList.begin(), argList.end(), ", ", fcn);
+}
+
+std::vector<const CacheTransfer*> CompiledExpressionBase::orderedCacheFunctors() const 
+{ 
+  std::vector<const CacheTransfer*> ordered_cache_functors; 
+  for( const auto& c : m_cacheTransfers ) ordered_cache_functors.push_back( c.get() );
+  std::sort( ordered_cache_functors.begin(),
+                     ordered_cache_functors.end(),
+                     [](auto& c1, auto& c2 ) { return c1->address() < c2->address() ; } );
+  return ordered_cache_functors; 
 }

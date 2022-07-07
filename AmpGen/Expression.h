@@ -49,6 +49,7 @@
 
 #define DEFINE_BINARY_OPERATOR( X ) \
   X::X( const AmpGen::Expression& l, const AmpGen::Expression& r ) : IBinaryExpression(l,r ) {} \
+  X::X( const AmpGen::Expression& expr) : IBinaryExpression(expr) {} \
   X::operator Expression() const { return Expression( std::make_shared<X>(*this) ) ; } 
 
 #define DEFINE_UNARY_OPERATOR( X, F ) \
@@ -56,6 +57,11 @@
   X::operator Expression() const { return Expression( std::make_shared<X>(*this) ) ; } \
   complex_t X::operator()() const { return F( m_expression() ); } \
   std::string X::to_string(const ASTResolver* resolver) const { return std::string(#F)+"("+ m_expression.to_string(resolver)+")";}
+
+#define DEFINE_UNARY_OPERATOR_NO_RESOLVER( X, F ) \
+  X::X( const AmpGen::Expression& expression) : IUnaryExpression(expression) {} \
+  X::operator Expression() const { return Expression( std::make_shared<X>(*this) ) ; } \
+  complex_t X::operator()() const { return F( m_expression() ); }  
 
 /// @ingroup ExpressionEngine macro DECLARE_UNARY_OPERATOR
 /// Macro to declare a unary operator, \ref ExpressionEngine "see IUnaryExpression"
@@ -75,6 +81,7 @@
   class X : public IBinaryExpression {                      \
     public:                                                 \
     X( const Expression& l, const Expression& r );          \
+    X( const Expression& expr);                             \
     virtual std::string to_string(const ASTResolver* resolver=nullptr) const override ;        \
     operator Expression() const ;                           \
     virtual complex_t operator()() const override;          \
@@ -190,6 +197,32 @@ namespace AmpGen
     bool         m_resolved; 
   };
 
+  class ComplexParameter : public IExpression {
+    public:
+    ComplexParameter( const Parameter& real, const Parameter& imag );
+    std::string to_string(const ASTResolver* resolver = nullptr ) const override;
+    void resolve( ASTResolver& resolver ) const override;
+    operator Expression() const ;
+    complex_t operator()() const override;  
+    private:
+    Parameter m_real;
+    Parameter m_imag;
+  };
+  /** @ingroup ExpressionEngine class LambdaExpression
+      @brief Parameter that the value of which is given by some arbitrary C++ function 
+  */
+  class LambdaExpression : public IExpression {
+    public: 
+      template <typename function_type>
+      LambdaExpression( const function_type& function) : m_function(function), m_name(type_string<function_type>()) {}
+      std::string to_string(const ASTResolver* resolver = nullptr) const override; 
+      void resolve( ASTResolver& resolver) const override;
+      operator Expression() const; 
+      complex_t operator()() const override; 
+      std::function<double(void)> m_function; 
+      std::string m_name; 
+  }; 
+
   /** @ingroup ExpressionEngine class Ternary 
       @brief Evaluates the ternary operator.
 
@@ -197,12 +230,14 @@ namespace AmpGen
       \code{.cpp}
       return a ? b : c 
       \endcode */
-  struct Ternary : public IExpression {
+  class Ternary : public IExpression {
+    public:
     Ternary( const Expression& cond, const Expression& v1, const Expression& v2 );
     std::string to_string(const ASTResolver* resolver = nullptr ) const override;
     void resolve( ASTResolver& resolver ) const override;
     operator Expression() const ;
     complex_t operator()() const override { return std::real(m_cond()) ? m_v1() : m_v2(); }
+    private: 
     Expression m_cond;
     Expression m_v1;
     Expression m_v2;
@@ -217,6 +252,7 @@ namespace AmpGen
     complex_t operator()() const override { return m_expression(); }
     uint64_t key() const;
     void setKey( const size_t& new_key ); 
+    Expression expression() const { return m_expression; }
     Expression  m_expression;
     uint64_t    m_key; 
   };
@@ -230,12 +266,41 @@ namespace AmpGen
     std::string m_name;
     std::vector<Expression> m_args;
   };
+  /// @ingroup ExpressionEngine class ExpressionPack
+  /// A group of expressions packed into a single expression 
+  
+  class ExpressionPack : public IExpression {
+    public:
+      explicit ExpressionPack( const std::vector<Expression>& expressions ): m_expressions(expressions) {}
+      ExpressionPack( const Expression& A, const Expression& B );
+      std::string to_string(const ASTResolver* resolver=nullptr) const override;
+      void resolve( ASTResolver& resolver ) const override;
+      complex_t operator()() const override;
+      operator Expression() const ;
+      const std::vector<Expression>& expressions() const { return m_expressions ; }
+    private:
+      std::vector<Expression> m_expressions;
+  };
 
   /// @ingroup ExpressionEngine class IBinaryExpression
   ///  Base class for binary expressions, i.e. those that take a pair of arguments (such as \f$+,-,\times,/\f$)
   class IBinaryExpression : public IExpression {
     public:
     IBinaryExpression( const Expression& l, const Expression& r ) : lval( l ), rval( r ){};
+    IBinaryExpression( const Expression& pack )
+    {
+      auto as_pack = static_cast< const ExpressionPack*>(pack.get() );
+      if( as_pack != nullptr )
+      {
+        auto expr = as_pack->expressions();
+        if( expr.size() != 2 ) FATAL("Wrong number of inputs");
+        lval = expr[0]; 
+        rval = expr[1]; 
+      }
+      else {
+        FATAL("wrong number of inputs" ); 
+      }
+    }
     void resolve( ASTResolver& resolver ) const override;
     complex_t operator()() const override = 0;
     Expression l() const { return lval ; }
@@ -276,10 +341,22 @@ namespace AmpGen
   /// @ingroup ExpressionEngine class GreaterThan
   /// @brief Binary expression that returns \f$l > r\f$
   DECLARE_BINARY_OPERATOR( GreaterThan );
+
+  /// @ingroup ExpressionEngine class LessThanEqualTo
+  /// @brief Binary expression that returns \f$l < r\f$
+  DECLARE_BINARY_OPERATOR( LessThanEqualTo );
   
+  /// @ingroup ExpressionEngine class GreaterThanEqualTo
+  /// @brief Binary expression that returns \f$l > r\f$
+  DECLARE_BINARY_OPERATOR( GreaterThanEqualTo );
+
   /// @ingroup ExpressionEngine class And
   /// @brief Binary expression that returns \f$l \wedge r\f$
   DECLARE_BINARY_OPERATOR( And );
+  
+  /// @ingroup ExpressionEngine class Or
+  /// @brief Binary expression that returns \f$l \wedge r\f$
+  DECLARE_BINARY_OPERATOR( Or );
   DECLARE_BINARY_OPERATOR( Equal );
 
   DECLARE_BINARY_OPERATOR( ATan2 );
@@ -360,6 +437,8 @@ namespace AmpGen
 
   Expression operator<( const Expression& A, const Expression& B );
   Expression operator>( const Expression& A, const Expression& B );
+  Expression operator<=( const Expression& A, const Expression& B );
+  Expression operator>=( const Expression& A, const Expression& B );
 
   Expression operator+( const Expression& A, const Expression& B );
   Expression operator-( const Expression& A, const Expression& B );
@@ -385,6 +464,7 @@ namespace AmpGen
   Expression operator/( const T& A, const Expression& B ){ return Constant(A) / B; }
 
   Expression operator&&( const Expression& A, const Expression& B );
+  Expression operator||( const Expression& A, const Expression& B );
   Expression operator==( const Expression& A, const Expression& B );
   Expression operator==( const Expression& A, const double& B );
   Expression operator==( const double& A, const Expression& B );
@@ -409,7 +489,6 @@ namespace AmpGen
     Expression exp( const Expression& expression );
     Expression log( const Expression& expression );
     Expression atan2( const Expression& y, const Expression& x);
-    Expression legendre( const Expression& x, const int& n);
   }
 
   template < class T > bool is( const Expression& expression ){

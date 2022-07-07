@@ -7,6 +7,7 @@
 
 namespace AmpGen {
   class Particle;
+  using TransformCache = std::map<std::string, TransformSequence>;
 
   Expression wigner_d( const Expression& cb, const double& j, const double& m, const double& n );
   Expression wigner_D( const std::pair<Expression, Expression>& P, const double& J, const double& lA, const double& lB, DebugSymbols* db);
@@ -27,9 +28,14 @@ namespace AmpGen {
     In the case where ve =-1, a second rotation is applied about the x-axis that aligns P to the +ve z-axis. 
     This ensures that singly and doubly primed helicity frames remain orthonormal.
     */
-  TransformSequence wickTransform(const Tensor& P, const Expression& M, const int& ve =1, const bool& handleZeroCase = false);   
+  TransformSequence wickTransform(const Tensor& P, const Particle& p, const int& ve =1, DebugSymbols* db = nullptr );   
 
-  Expression helicityAmplitude(const Particle& particle, TransformSequence& parentFrame, const double& Mz,    DebugSymbols* db , const int sgn=1, std::map<const Particle*, TransformSequence>* cacheptr = nullptr); 
+  Expression helicityAmplitude(const Particle& particle, 
+                               const TransformSequence& parentFrame, 
+                               const double& Mz,    
+                               DebugSymbols* db , 
+                               const int sgn=1, 
+                               TransformCache* cacheptr = nullptr); 
   Tensor basisSpinor(const int& polState, const int& id);
   Tensor basisVector(const int& polState);
 

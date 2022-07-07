@@ -1,18 +1,6 @@
 
-EventType D0 K+ pi- pi- pi+
-
-
-
-#Import Dbar02piKpipi.opt #necessary for K1 couplings / shape parameters 
-
+# Description of DCS amplitude D0 -> K+,pi-,pi-,pi+
 Import $AMPGENROOT/options/Dbar02piKpipi.opt #necessary for K1 couplings / shape parameters 
-
-
-
-
-
-
-
 
 CouplingConstant::Coordinates  polar
 CouplingConstant::AngularUnits deg

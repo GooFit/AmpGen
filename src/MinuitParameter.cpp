@@ -10,7 +10,7 @@
 using namespace AmpGen;
 
 namespace AmpGen {
-  complete_enum( Flag, Free, Hide, Fix, CompileTimeConstant )
+  complete_enum( Flag, Free, Hide, Fix, CompileTimeConstant,  Blind, Invalid )
 }
 
 MinuitParameter::MinuitParameter( const std::string& name, const Flag& fix, const double& mean, const double& step,
@@ -39,6 +39,8 @@ double MinuitParameter::errNeg()           const { return m_errNegResult; }
 double MinuitParameter::err()              const { return m_errResult; }
 bool   MinuitParameter::isFixed()          const { return m_flag == Flag::Fix || m_flag == Flag::CompileTimeConstant; }
 bool   MinuitParameter::isFree()           const { return m_flag == Flag::Free; }
+bool   MinuitParameter::isBlind()          const { return m_flag == Flag::Blind; }
+
 const std::string& MinuitParameter::name() const { return m_name; }
 
 void MinuitParameter::fix() { m_flag = Flag::Fix; }
@@ -57,9 +59,14 @@ void MinuitParameter::setFree() { INFO("Setting parameter: " << m_name << " free
 
 void MinuitParameter::setCurrentFitVal( double cfv ) { m_meanResult = cfv; }
 
-void MinuitParameter::setInit( const double& val ) { m_meanInit = val; }
+void MinuitParameter::setInit( const double& val, const double& step ) 
+{ 
+  m_meanInit   = val; 
+  m_meanResult = val; 
+  if( step != -1 ) m_stepInit = step;
+}
 
-void MinuitParameter::setResult( double fitMean, double fitErr, double fitErrPos, double fitErrNeg )
+void MinuitParameter::setResult( double fitMean, double fitErr, double fitErrNeg, double fitErrPos )
 {
   m_meanResult   = fitMean;
   m_errResult    = fitErr;
@@ -85,10 +92,22 @@ void MinuitParameter::setLimits( const double& min, const double& max )
 
 std::ostream& AmpGen::operator<<( std::ostream& os, const MinuitParameter& par )
 {
-  return os << std::left  << std::setw(60) << par.name() << " = " 
-    << std::right << std::setw(12) << par.mean() << " ± " 
-    << std::left  << std::setw(12) << par.stepInit() 
-    << ( ( par.minInit() != 0 || par.maxInit() != 0 ) ? 
-       ("["+ std::to_string(par.minInit()) + ", " + std::to_string(par.maxInit() ) ) + "]" : "")
-    << " [flag=" << to_string<Flag>(par.flag()) << "]";
+  if (par.isBlind() ){
+    return os << std::left  << std::setw(60) << par.name() << " = " 
+	      << std::right << std::setw(12) << " BLIND ± " 
+	      << std::left  << std::setw(12) << par.stepInit() 
+	      << ( ( par.minInit() != 0 || par.maxInit() != 0 ) ? 
+		   ("["+ std::to_string(par.minInit()) + ", " + std::to_string(par.maxInit() ) ) + "]" : "")
+	      << " [flag=" << to_string<Flag>(par.flag()) << "]";
+
+
+  }
+  else{
+    return os << std::left  << std::setw(60) << par.name() << " = " 
+	      << std::right << std::setw(12) << par.mean() << " ± " 
+	      << std::left  << std::setw(12) << par.stepInit() 
+	      << ( ( par.minInit() != 0 || par.maxInit() != 0 ) ? 
+		   ("["+ std::to_string(par.minInit()) + ", " + std::to_string(par.maxInit() ) ) + "]" : "")
+	      << " [flag=" << to_string<Flag>(par.flag()) << "]";
+  }
 }

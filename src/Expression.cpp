@@ -15,14 +15,20 @@
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Types.h"
-
+#include "AmpGen/simd/utils.h"
+#include "AmpGen/CompiledExpressionBase.h"
 using namespace AmpGen;
+using namespace AmpGen::fcn;
+using namespace std::complex_literals;
 
 DEFINE_CAST(Constant )
+DEFINE_CAST(ExpressionPack)
 DEFINE_CAST(Parameter )
 DEFINE_CAST(SubTree )
 DEFINE_CAST(Ternary )
 DEFINE_CAST(Function )
+DEFINE_CAST(ComplexParameter)
+DEFINE_CAST(LambdaExpression)
 
 Expression::Expression( const std::shared_ptr<IExpression>& expression ) : m_expression( expression ) {}
 
@@ -49,14 +55,18 @@ bool isZero( const complex_t& A ){
 
 std::string Constant::to_string(const ASTResolver* resolver) const {  
   auto rounded_string = [](const double& val ){
-    std::string str = std::to_string (val);
-    str.erase ( str.find_last_not_of('0') + 1, std::string::npos );  
-    return str; 
+    std::string str = mysprintf("%g", val);
+    return  str.find(".") != std::string::npos or str.find("e") != std::string::npos ? str : str + ".";
   };
-  std::string complex_type_string = resolver != nullptr && resolver->enableCuda() ? "ampgen_cuda::complex_t" : typeof<complex_t>() ;
-  std::string literalSuffix = resolver != nullptr && resolver->enableCuda() ? "f" : ""; 
+  std::string complex_type = type_string<complex_t>();
+  std::string literalSuffix = "";
+  if( resolver != nullptr && (resolver->enableCuda() || resolver->enableAVX()) )
+  { 
+    literalSuffix = "f";
+    complex_type = type_string<complex_v>();
+  }
   return std::imag(m_value) == 0 ? "(" + rounded_string(std::real(m_value)) +literalSuffix + ")" : 
-      complex_type_string +"("+rounded_string(std::real(m_value))+literalSuffix+","+rounded_string(std::imag(m_value))+literalSuffix+")";
+      complex_type +"("+rounded_string(std::real(m_value))+literalSuffix+","+rounded_string(std::imag(m_value))+literalSuffix+")";
 }
 
 Expression simplify_constant_addition( const Constant& constant, const Expression& expression )
@@ -149,7 +159,7 @@ Expression AmpGen::operator/( const Expression& A, const Expression& B )
     if( is<Constant>( as_prod.r() ) ) return ( Constant( 1./as_prod.r()() ) * A )/ as_prod.l();
   }
   else if( is<Divide>(B) ) return ( A * cast<Divide>(B).r() ) / cast<Divide>(B).l();
-  else if( is<Sqrt>(B) ) return ( A * fcn::isqrt( cast<Sqrt>(B).arg() ) ); 
+//   else if( is<Sqrt>(B) ) return ( A / fcn::sqrt( cast<Sqrt>(B).arg() ) ); 
   return Expression( Divide( A, B ) );
 }
 Expression AmpGen::operator&&( const Expression& A, const Expression& B ) { return Expression( And( A, B ) ); }
@@ -157,6 +167,10 @@ Expression AmpGen::operator&&( const Expression& A, const Expression& B ) { retu
 Expression AmpGen::operator==( const Expression& A, const Expression& B ){ return Equal(A,B) ; } 
 Expression AmpGen::operator==( const double& A, const Expression& B ){ return Constant(A) == B ; } 
 Expression AmpGen::operator==( const Expression& A, const double& B ){ return A == Constant(B) ; } 
+
+Expression AmpGen::operator||( const Expression& A, const Expression& B){ return Expression( Or(A,B)) ; }
+Expression AmpGen::operator<=( const Expression& A, const Expression& B ){ return LessThanEqualTo(A,B) ; } 
+Expression AmpGen::operator>=( const Expression& A, const Expression& B ){ return GreaterThanEqualTo(A,B) ; } 
 
 Parameter::Parameter( const std::string& name, const double& defaultValue, const bool& resolved)
   : m_name( name )
@@ -203,7 +217,9 @@ Ternary::Ternary( const Expression& cond, const Expression& v1, const Expression
 }
 std::string Ternary::to_string(const ASTResolver* resolver) const
 {
-  return "(" + m_cond.to_string(resolver) + "?" + m_v1.to_string(resolver) + ":" + m_v2.to_string(resolver) + ")";
+  return resolver != nullptr && resolver->enableAVX() ? "select(" + m_cond.to_string(resolver) + ", " +
+    m_v1.to_string(resolver) + ", " + m_v2.to_string(resolver) +")"
+    : "(" + m_cond.to_string(resolver) + "?" + m_v1.to_string(resolver) + ":" + m_v2.to_string(resolver) + ")";
 }
 
 void Ternary::resolve( ASTResolver& resolver ) const
@@ -239,7 +255,6 @@ std::string SubTree::to_string(const ASTResolver* /*resolver*/) const
 void SubTree::resolve( ASTResolver& resolver ) const  
 { 
   resolver.resolve( *this );
-  m_expression.resolve( resolver );
 }
 
 Expression AmpGen::make_cse( const Expression& A , bool simplify )
@@ -295,7 +310,7 @@ Expression AmpGen::fcn::complex_sqrt( const Expression& expression )
 {
   if( is<Constant>(expression ) ) return sqrt( expression() );
   auto st = make_cse(expression);
-  return Ternary( st > 0, Sqrt(st), Constant(0,1)*Sqrt(-st) );
+  return Ternary( st > 0, Sqrt(st), 1i*Sqrt(-st) );
 }
 
 Expression AmpGen::fcn::isqrt( const Expression& expression )
@@ -311,10 +326,69 @@ Expression AmpGen::fcn::fpow( const Expression& x, const int& n){
   return rt;
 }
 
-Expression AmpGen::fcn::legendre(const Expression& x, const int& n){
-  if ( n == 0) return 1;
-  if ( n==1) return x;
-  else {
-    return (2 * n - 1)/n * x * AmpGen::fcn::legendre(x, n - 1) - (n - 1)/n * AmpGen::fcn::legendre(x, n - 2);
-  }
+ComplexParameter::ComplexParameter( const Parameter& real, const Parameter& imag ) 
+ : m_real(real), m_imag(imag) {}
+
+std::string ComplexParameter::to_string(const ASTResolver* resolver) const
+{
+  std::string complex_type = type_string<complex_t>();
+  if( resolver != nullptr && (resolver->enableCuda() || resolver->enableAVX()) ) complex_type = type_string<complex_v>();
+  return complex_type + "(" + m_real.to_string(resolver) + ", " + m_imag.to_string(resolver) +")";
 }
+
+void ComplexParameter::resolve( ASTResolver& resolver ) const
+{
+  m_real.resolve(resolver);
+  m_imag.resolve(resolver);
+}
+
+complex_t ComplexParameter::operator()() const
+{
+  return m_real() + 1i * m_imag();
+}
+
+std::string LambdaExpression::to_string(const ASTResolver* resolver) const 
+{
+  return resolver == nullptr ?programatic_name(m_name) : resolver->resolvedParameter(this);
+}
+
+complex_t LambdaExpression::operator()() const 
+{
+  return m_function();
+}
+
+void LambdaExpression::resolve(ASTResolver& resolver) const {
+  resolver.resolve(*this);
+}
+
+
+ExpressionPack::ExpressionPack( const Expression& A, const Expression& B )
+{
+  auto c1 = dynamic_cast<ExpressionPack*>( A.get() );
+  auto c2 = dynamic_cast<ExpressionPack*>( B.get() );
+  if ( c1 != nullptr ) {
+    for ( auto& expr : c1->m_expressions ) m_expressions.push_back( expr );
+  } else
+    m_expressions.push_back( A );
+  if ( c2 != nullptr ) {
+    for ( auto& expr : c2->m_expressions ) m_expressions.push_back( expr );
+  } else
+    m_expressions.push_back( B );
+}
+
+std::string ExpressionPack::to_string(const ASTResolver* resolver) const
+{
+  std::string rt = "";
+  for ( auto expr : m_expressions ) {
+    rt += expr.to_string(resolver) + ", ";
+  }
+  return rt.substr( 0, rt.length() - 2 );
+}
+
+void ExpressionPack::resolve( ASTResolver& resolver ) const
+{
+  for ( auto& expr : m_expressions ) expr.resolve( resolver );
+}
+
+complex_t ExpressionPack::operator()() const { return 0; }
+

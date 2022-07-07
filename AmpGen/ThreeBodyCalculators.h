@@ -18,12 +18,12 @@ namespace AmpGen
     struct PartialWidth {
       CoherentSum fcs;
       DalitzIntegrator integrator;
-      CompiledExpression< std::complex<double>, const real_t*, const real_t* > totalWidth;
+      CompiledExpression<complex_v(const real_t*, const float_v*) > totalWidth;
       EventType type;
-      std::vector<CompiledExpression< std::complex<double>, const real_t*, const real_t*>> partialWidths; 
+      std::vector<CompiledExpression< complex_v(const real_t*, const float_v*)>> partialWidths; 
       double getWidth( const double& m );
       PartialWidth( const EventType& type, MinuitParameterSet& mps );
-      Expression spinAverageMatrixElement( const std::vector<TransitionMatrix<std::complex<double>>>& elements,
+      Expression spinAverageMatrixElement( const std::vector<std::pair<Particle, TotalCoupling> >& elements,
                                            DebugSymbols* msym );
     };
     Expression calculateSAME( const std::string& particle );
@@ -44,7 +44,7 @@ namespace AmpGen
     TGraph* runningMass( const double& mass, const double& min, const double& max, const size_t& nSteps, const size_t& nSubtractions=2 );
     TGraph* fastRunningMass( const double& mass, const double& min, const double& max, const size_t& nSteps, const size_t& nSubtractions=2 );
 
-    double getWidth( const double& m );
+    double getWidth( const double& );
 
     void updateRunningWidth( MinuitParameterSet& mps, const double& mNorm = 0 );    
     void setNorm( const double& mNorm );

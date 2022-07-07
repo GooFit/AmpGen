@@ -19,13 +19,13 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/MetaUtils.h"
 
-
 namespace AmpGen {
-  template <class it_type, class F>
-    std::string vectorToString( it_type begin,
-                                it_type end,
+  template <typename iterator_type, 
+            typename functor_type>
+    std::string vectorToString( iterator_type begin,
+                                iterator_type end,
                                 const std::string& delim,
-                                F fcn )
+                                functor_type fcn )
     {
       std::stringstream ss;
       if( begin == end ) return "";
@@ -34,13 +34,16 @@ namespace AmpGen {
       ss << fcn(*(end-1));
       return ss.str();
     }
-  template <class T, class F = std::function<T(const T&)> >
-    std::string vectorToString( const std::vector<T>& obj, const std::string& delim = "", F f = [](const T& arg){ return arg; })
+
+  template <typename container_type,
+            typename vtype = typename container_type::value_type,
+            typename functor_type = std::function<vtype(const vtype&)> >
+    std::string vectorToString( const container_type& obj, const std::string& delim = "", const functor_type& f = [](const auto& arg){ return arg; })
     {
-      return vectorToString( std::begin(obj), std::end(obj), delim, f); 
+      return vectorToString( std::begin(obj), std::end(obj), delim, f);
     }
 
-  template <class T> std::vector<std::vector<T>> nCr( const T& n, const T& r )
+  template <typename T> std::vector<std::vector<T>> nCr( const T& n, const T& r )
     {
       std::vector<bool> mask( n );
       std::vector<std::vector<T>> combinations;
@@ -55,8 +58,8 @@ namespace AmpGen {
 
   std::vector<std::string> vectorFromFile( const std::string& filename, const char ignoreLinesThatBeginWith = '#' );
 
-  std::vector<std::string> split( const std::string& s, char delim, bool ignoreWhitespace = true );
-  std::vector<std::string> split( const std::string& s, const std::vector<char>& delims );
+  std::vector<std::string> split( const std::string&, char, bool = true);
+  std::vector<std::string> split( const std::string&, const std::vector<char>&, bool=false );
 
   std::vector<size_t> findAll( const std::string& input, const std::string& ch );
 
@@ -80,13 +83,13 @@ namespace AmpGen {
 
   std::string numberWithError( const double& number, const double& error, const unsigned int& nDigits );
 
-  template <class RETURN_TYPE>
-    RETURN_TYPE lexical_cast( const std::string& word, bool& status )
+  template <typename return_type>
+    return_type lexical_cast( const std::string& word, bool& status )
     {
-      WARNING( "Only use specialised versions of this template (word = " << word << ", type = " << AmpGen::typeof<RETURN_TYPE>()
+      WARNING( "Only use specialised versions of this template (word = " << word << ", type = " << AmpGen::type_string<return_type>()
           << ")  " );
       status = 0;
-      return RETURN_TYPE();
+      return return_type();
     }
 
   template <class ...ARGS>
@@ -108,15 +111,15 @@ namespace AmpGen {
   template <> unsigned long int lexical_cast( const std::string& word, bool& status );
   template <> long int          lexical_cast( const std::string& word, bool& status );
 
-  template <class FCN>
-    void processFile( const std::string& filename, FCN&& toDo, const char ignoreLinesThatBeginWith = '#' )
+  template <typename functor_type>
+    void processFile( const std::string& filename, functor_type&& toDo, const char ignoreLinesThatBeginWith = '#' )
     {
       std::string tmp;
       std::ifstream inFile( filename.c_str() );
       while ( inFile.good() ) {
         std::getline( inFile, tmp );
         tmp.erase( std::remove_if( tmp.begin(), tmp.end(), [](const char c){ return c == '\r'; }), tmp.end() );
-        if ( tmp.size() == 0 || tmp[0] == ignoreLinesThatBeginWith ) continue;
+        if ( ignoreLinesThatBeginWith != '\0' && ( tmp.size() == 0 || tmp[0] == ignoreLinesThatBeginWith ) ) continue;
         toDo( tmp );
       }
       inFile.close();
@@ -162,6 +165,30 @@ namespace AmpGen {
         }
         return total;
       }
+  template <typename return_type, typename contained_type> std::function<return_type(const contained_type&)> 
+              arrayToFunctor( const std::vector<return_type>& values)
+  {
+    return [values](const contained_type& event) -> return_type {return *(values.data() + event.index()); }; 
+  }
+
+  template <typename T> std::vector<std::vector<T>> all_combinations( const std::vector< std::vector<T>>& elements )
+  {
+    int nc = 1; 
+    for( const auto & s : elements ) nc *= s.size(); 
+    std::vector< std::vector<T>> comb (nc, std::vector<T>(elements.size(), 0));
+    for( int i = 0 ; i != comb.size(); ++i )
+    {
+      int counter = i; 
+      for( int j = elements.size()-1 ; j >= 0; --j )
+      {
+        int t    = counter % elements[j].size();
+        counter  = ( counter - t ) / elements[j].size();
+        comb[i][j] = elements[j][t];
+      }
+    }
+    return comb; 
+  }
+
 
   template<class iterator>
     void parallel_sort(iterator begin, 

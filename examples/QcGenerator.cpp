@@ -1,10 +1,3 @@
-
-//#include "AmpGen/Psi3770.h"
-
-
-
-
-
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/EventType.h"
@@ -25,7 +18,6 @@
 
 using namespace AmpGen;
 using namespace std::complex_literals;
-void add_CP_conjugate( MinuitParameterSet& mps );
 
 class FixedLibPdf 
 {
@@ -58,7 +50,7 @@ struct DTEvent
   AmpGen::Event signal;
   AmpGen::Event    tag;
   double prob;
-  DTEvent() : signal(0,0,0), tag(0,0,0) {};
+  DTEvent() : signal(0,0), tag(0,0) {};
   DTEvent( const AmpGen::Event& signal, const AmpGen::Event& tag ) : signal(signal), tag(tag) {};
   void set( const AmpGen::Event& s1, const AmpGen::Event& s2 ) { signal.set(s1); tag.set(s2); };
   void invertParity(){
@@ -110,7 +102,7 @@ template <class PDF> struct normalised_pdf {
     norm = sqrt(yc.bf(type)/n);
     if( it != nullptr ) norm *= exp( 1i * it->mean() * M_PI/180. );
     pc.stop();
-    INFO(type << " Time to construct: " << pc << "[ms], norm = " << norm  << " " << typeof<PDF>() );
+    INFO(type << " Time to construct: " << pc << "[ms], norm = " << norm  << " " << type_string<PDF>() );
   }
   complex_t operator()(const Event& event){ return norm * pdf.getValNoCache(event); }
 };
@@ -151,7 +143,7 @@ template <class T1, class T2> class Psi3770 {
       {
         double n1(0), n2(0), zR(0), zI(0);
         auto normEvents = Generator<PhaseSpace>(type).generate(m_blockSize);
-#pragma omp parallel for reduction(+:zR,zI,n1,n2)
+        #pragma omp parallel for reduction(+:zR,zI,n1,n2)
         for(size_t i = 0; i < m_blockSize; ++i){
           auto p1 = t1(normEvents[i]);
           auto p2 = t2(normEvents[i]);
@@ -192,7 +184,7 @@ template <class T1, class T2> class Psi3770 {
     DTEventList generate( const size_t& N )
     {
       DTEventList output( m_signalType, m_tagType );
-      ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__));
+      ProgressBar pb(60, detail::trimmedString(__PRETTY_FUNCTION__));
       auto tStartTotal = std::chrono::high_resolution_clock::now();
       int currentSize  = 0;
       double norm      = -1;
@@ -247,7 +239,6 @@ template <class T1, class T2> class Psi3770 {
     }
 };
 
-
 int main( int argc, char** argv )
 {
   OptionsParser::setArgs( argc, argv, "Toy simulation for Quantum Correlated Ψ(3770) decays");
@@ -265,13 +256,6 @@ int main( int argc, char** argv )
       , "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(); 
   auto tags           = NamedParameter<std::string>("TagTypes" , std::string(), "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.").getVector();
 
-  bool debug          = NamedParameter<bool>("Debug", false, "Flag to print out debug information");
-  std::string valFolder      = NamedParameter<std::string>("valFolder", "values", "Folder to put the .csv files for the amplitude values");
-  bool makeCPConj = NamedParameter<bool>("makeCPConj", false, "Makes CP conjugates");
-  //if (valFolder == "") FATAL("Refusing to make a folder in the root directory");
-
-
-
   gRandom = new TRandom3(seed);
 #ifdef _OPENMP
   omp_set_num_threads( nThreads );
@@ -283,57 +267,16 @@ int main( int argc, char** argv )
   AddCPConjugate(MPS);
   EventType signalType( pNames );
   TFile* f = TFile::Open( output.c_str() ,"RECREATE");
-
-  f->cd();
-
-
   auto yc = DTYieldCalculator(crossSection);
   if( nEvents == 0 ) 
     INFO("Generating events using PDG/efficiencies with luminosity = " << luminosity << " pb⁻¹; σ = " << crossSection << " pb" );
   else INFO("Generating " << nEvents << " per sample");
   ModelStore models(&MPS, yc); 
   for( auto& tag : tags ){
-
-
     auto tokens       = split(tag, ' ');
-    INFO("tag = "<<tokens[0]);
-    std::ostringstream outFolderStr(valFolder);
-    outFolderStr<<valFolder<<"/"<<tokens[0];
-    auto outFolder = outFolderStr.str();
-
-    INFO("Output folder = "<<outFolder);
-
-
-    std::ostringstream cmd;
-    cmd<<"mkdir -p "<<outFolder;
-    auto cmdStr = cmd.str();
-    INFO("Calling "<<cmdStr);
-    system(cmdStr.c_str());
-
-
     auto tagParticle  = Particle(tokens[1], {}, false);
     EventType    type = tagParticle.eventType();
     double yield_noQC = yc(luminosity,signalType,type,true);
-    auto generator    = Psi3770<CoherentSum,CoherentSum>(models, signalType, type) ; 
-    double rho        = generator.rho();
-//    std::complex<double> fSig = generator.fSig()
-    double yield = nEvents; 
-    if( nEvents == 0 && poissonYield  )  yield = gRandom->Poisson(yield_noQC*rho); 
-    if( nEvents == 0 && !poissonYield ) yield = yield_noQC*rho;  
-    //INFO( "Tag = " << type << " Expected Yield [incoherent] = " << yield_noQC << " rho = " << rho << " requested = " << yield );
-   // DTEventList evtlist = generator.generate(yield);
-   // evtlist.tree(tokens[0])->Write();
-   // int n_evtList = evtlist.size();
-    //TFile * fsigVal = TFile::Open("sigVal.root", "RECREATE");
-    
-
-   
-  
-// generator.generate(yield).tree(tokens[0])->Write();
-
-
-   
-
     std::string flib         = NamedParameter<std::string>( type.decayDescriptor() +"::lib", "");
     if( flib == "" ){
       auto generator    = Psi3770<CoherentSum,CoherentSum>(models, signalType, type); 
@@ -353,7 +296,6 @@ int main( int argc, char** argv )
       INFO( "Tag = " << type << " Expected Yield [incoherent] = " << yield_noQC << " rho = " << rho << " requested = " << yield );
       generator.generate(yield).tree(tokens[0])->Write();
     }
-
   }
   f->Close(); 
   auto twall_end  = std::chrono::high_resolution_clock::now();
@@ -391,13 +333,11 @@ void add_CP_conjugate( MinuitParameterSet& mps )
       }
     }
     if( mps.find( new_name ) == nullptr ){
-      tmp.push_back( new MinuitParameter(new_name, Flag::Fix, sgn * param->mean(), param->err(), 0, 0));
+      tmp.push_back( new MinuitParameter(new_name, Flag::Free, sgn * param->mean(), param->err(), 0, 0));
     }
   }
   for( auto& p : tmp ) mps.add( p );
 }
-
-
 
 std::map<std::string, double> DTYieldCalculator::getKeyed(const std::string& name)
 {
@@ -501,7 +441,6 @@ TTree* DTEventList::tree(const std::string& name)
 
   return outputTree;
 }    
-
 
 template <> normalised_pdf<CoherentSum>& ModelStore::find(const EventType& type){ return get<CoherentSum>(type, genericModels); }
 template <> normalised_pdf<FixedLibPdf>& ModelStore::find(const EventType& type){ return get<FixedLibPdf>(type, flibModels); }

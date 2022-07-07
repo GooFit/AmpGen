@@ -38,10 +38,11 @@ namespace AmpGen
         bool operator==( const Tensor::Index& other ) const { return m_ptr.get() == other.m_ptr.get(); }
         bool operator!=( const Tensor::Index& other ) const { return m_ptr.get() != other.m_ptr.get(); }
         bool isUpper() const { return m_isUpper; };
-        explicit Index( bool isUpper = false ) : m_ptr( new int() ), m_isUpper( isUpper ) {}
+        explicit Index( bool isUpper = false ) : m_ptr( std::make_shared<int>() ), m_isUpper( isUpper ) {}
         Index( const std::shared_ptr<int>& index, bool isUpper = false ) : m_ptr( index ), m_isUpper( isUpper ) {}
         Index operator-() const { return Index( m_ptr, !m_isUpper ); }
         friend std::ostream& operator <<( std::ostream& out, const Index& index );  
+        uint64_t ptr() const { return uint64_t(m_ptr.get()); }
     };
 
     Tensor();

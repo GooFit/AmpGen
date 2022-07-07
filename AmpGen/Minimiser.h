@@ -8,7 +8,13 @@
 #include <iostream>
 #include <vector>
 
-#include "TMatrixTSym.h"
+#include <TMatrixTSym.h>
+#include <Fit/FitResult.h>
+#include <Minuit2/MinimumState.h>
+#include <Minuit2/MnTraceObject.h>
+#include <Math/IFunction.h>
+#include "AmpGen/MetaUtils.h"
+#include "AmpGen/enum.h"
 
 /** @cond PRIVATE */
 namespace ROOT
@@ -23,32 +29,24 @@ class TGraph;
 
 namespace AmpGen
 {
-
-  class IExtendLikelihood;
+  declare_enum ( PrintLevel, Quiet, Info, Verbose, VeryVerbose ) 
+  class ExtendLikelihoodBase;
   class MinuitParameter;
   class MinuitParameterSet;
 
-  class Minimiser
+  class Minimiser : public ROOT::Minuit2::MnTraceObject 
   {
   private:
-  template <typename T>
-  struct HasGetVal
-  {
-    typedef char YesType[1];
-    typedef char NoType[2]; 
-    template <typename C> static YesType& test( decltype(&C::getVal) ) ;
-    template <typename C> static NoType& test(...);
-    enum { value = sizeof(test<T>(0)) == sizeof(YesType) };
-  };
-  
+    def_has_function(getVal)
+    def_has_function(grad)
+
   public:
-    template <typename TYPE> typename std::enable_if_t<HasGetVal<TYPE>::value, void> setFunction( TYPE& fcn )
+    template <typename TYPE> void setFunction( TYPE& fcn )
     {
-      m_theFunction = [&fcn]() { return fcn.getVal(); };
-    }
-    template <typename TYPE> typename std::enable_if_t<!HasGetVal<TYPE>::value, void> setFunction(TYPE& fcn)
-    {
-      m_theFunction = [&fcn](){ return fcn() ; } ;
+      if constexpr( has_getVal<TYPE>::value ) m_theFunction = [&fcn]() { return fcn.getVal(); };
+      else { m_theFunction = fcn; } 
+      
+      if constexpr( std::is_convertible<TYPE*, ROOT::Math::IGradientFunctionMultiDimTempl<double>*>::value ) m_fcnWithGrad = &fcn; 
     }
 
     template <typename TYPE> 
@@ -71,29 +69,34 @@ namespace AmpGen
     void prepare();
     void gradientTest();
     bool doFit();
-    void setTolerance(double tolerance);
     TGraph* scan( MinuitParameter* param, const double& min, const double& max, const double& step );
-    void addExtendedTerm( IExtendLikelihood* term );
+    void addExtendedTerm( ExtendLikelihoodBase* term );
     TMatrixTSym<double> covMatrix() const;
     TMatrixTSym<double> covMatrixFull() const;
     double operator()( const double* par );
+    void operator()(int i, const ROOT::Minuit2::MinimumState & state)  override;
     double FCN() const;
+    double Edm() const;
+    double NCalls() const;  
     MinuitParameterSet* parSet() const;
     int status() const;
     ROOT::Minuit2::Minuit2Minimizer* minimiserInternal();
+    void setPrintLevel( const PrintLevel& printLevel);
+    void minos( MinuitParameter* param );
+    ROOT::Fit::FitResult fitResult() const; 
   private:
-    MinuitParameterSet*         m_parSet       = {nullptr};
-    std::function<double(void)> m_theFunction;
-    ROOT::Minuit2::Minuit2Minimizer*  m_minimiser    = {nullptr};
+    MinuitParameterSet*          m_parSet         = {nullptr};
+    std::function<double(void)>  m_theFunction    = {nullptr};
+    ROOT::Minuit2::Minuit2Minimizer*  m_minimiser = {nullptr};
     std::vector<double>         m_covMatrix    = {0};
     std::vector<unsigned>       m_mapping      = {};
-    int      m_status     = {0};
-    unsigned m_nParams    = {0};
-    unsigned m_printLevel = {0};
-    double   m_ll_zero    = {0};
-    bool     m_normalise  = {false};
-    bool     m_debug      = {false};
-    std::vector<IExtendLikelihood*> m_extendedTerms;
+    int        m_status     = {0};
+    unsigned   m_nParams    = {0};
+    PrintLevel m_printLevel = {PrintLevel::Info};
+    double     m_ll_zero    = {0};
+    bool       m_normalise  = {false};
+    std::vector<ExtendLikelihoodBase*>                  m_extendedTerms;
+    ROOT::Math::IGradientFunctionMultiDimTempl<double>* m_fcnWithGrad = {nullptr};  
   };
 } // namespace AmpGen
 #endif
