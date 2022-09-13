@@ -16,15 +16,16 @@
 using namespace AmpGen;
 using namespace std::complex_literals;
 
-
-static const Tensor::Index mu    = Tensor::Index();
-static const Tensor::Index nu    = Tensor::Index();
-static const Tensor::Index alpha = Tensor::Index();
-static const Tensor::Index beta  = Tensor::Index();
-static const Tensor::Index a     = Tensor::Index();
-static const Tensor::Index b     = Tensor::Index(); 
-static const Tensor::Index c     = Tensor::Index(); 
-static const Tensor::Index d     = Tensor::Index(); 
+namespace { 
+  static const Tensor::Index mu    = Tensor::Index();
+  static const Tensor::Index nu    = Tensor::Index();
+  static const Tensor::Index alpha = Tensor::Index();
+  static const Tensor::Index beta  = Tensor::Index();
+  static const Tensor::Index a     = Tensor::Index();
+  static const Tensor::Index b     = Tensor::Index(); 
+  static const Tensor::Index c     = Tensor::Index(); 
+  static const Tensor::Index d     = Tensor::Index(); 
+}
 
 template <> Factory<AmpGen::Vertex::Base>* Factory<AmpGen::Vertex::Base>::gImpl = nullptr;
 

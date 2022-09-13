@@ -1,7 +1,7 @@
 #include <Math/AllIntegrationTypes.h>
 #include <Math/IFunctionfwd.h>
 #include <Math/ParamFunctor.h>
-#include <Math/GSLIntegrator.h>
+//#include <Math/GSLIntegrator.h>
 #include <Math/WrappedTF1.h>
 #include <TH2.h>
 #include <TF1.h>
@@ -44,10 +44,13 @@ using namespace AmpGen;
 
 template <class FCN> double dispersive( FCN& fcn , const double& s, double min , double max )
 {
+  /*
   TF1 fcn_tf1 = TF1( "fcn_tf1",fcn, min, max, 0 );
   ROOT::Math::GSLIntegrator ig(ROOT::Math::IntegrationOneDim::kADAPTIVE, 0.0001);
   ig.SetFunction( ROOT::Math::WrappedTF1(fcn_tf1) );
   return ig.IntegralCauchy(min,max,s);
+  */
+  return 0; 
 }
 
 TGraph* ThreeBodyCalculator::runningMass(

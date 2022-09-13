@@ -124,6 +124,8 @@ TransformSequence AmpGen::wickTransform( const Tensor& P,
   return TransformSequence(sequence); 
 }
 
+/// spherical coordinates are paramterised as {z=cos(theta), e^(iphi)}, as this avoids any trigonometric functions
+
 std::pair<Expression, Expression> angCoordinates(const Tensor& P, DebugSymbols* db)
 {
   Expression pz = make_cse( P[2] / sqrt( P[0]*P[0] + P[1] * P[1] + P[2]*P[2] ) );  
@@ -131,7 +133,7 @@ std::pair<Expression, Expression> angCoordinates(const Tensor& P, DebugSymbols* 
   Expression px = P[0] / sqrt(pt2);
   Expression py = P[1] / sqrt(pt2);
   return {pz, make_cse(px + 1i*py)};
-} /// spherical coordinates are paramterised as {z=cos(theta), e^(iphi)}, as this avoids any trigonometric functions
+} 
 
 Expression AmpGen::wigner_D(const std::pair<Expression, Expression>& P, 
     const double& J, 
