@@ -232,7 +232,7 @@ int main( int argc, char* argv[] )
   INFO( "Data events: " << events.size() );  
   INFO( "MC events  : " << eventsMC.size() );
   if( mcFile == "" ){
-    Generator<>( evtType, &rndm ).fillEventListPhaseSpace( eventsMC, 5e6 );
+    eventsMC = Generator<>( evtType, &rndm ).generate(5e6);
     INFO("Generated: " << eventsMC.size() << " events for integrals" );
   }
   

@@ -235,7 +235,10 @@ void EventList::reserve( const size_t& size )
 void EventList::resize ( const size_t& size ) 
 { 
   m_data.resize(size); 
-  for( unsigned int i = 0 ; i != size; ++i ) m_data[i].setIndex(i) ; 
+  for( unsigned int i = 0 ; i != size; ++i ){
+    m_data[i] = Event( 4 * m_eventType.size() ); 
+    m_data[i].setIndex(i) ; 
+  }
 } 
 
 void EventList::push_back( const Event& evt ) 

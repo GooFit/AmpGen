@@ -56,13 +56,9 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
     tp.enqueue( [i,this,&mps,&amplitudes]{
        auto& [p, c] = amplitudes[i];
-        DebugSymbols db;
-        m_matrixElements[i] = 
-          TransitionMatrix<complex_v>(p, c, 
-          CompiledExpression<complex_v(const real_t*, const float_v*)>( p.getExpression(m_dbThis ? &db : nullptr), p.decayDescriptor(),
-            this->m_evtType.getEventFormat(), db, &mps ) );
-        CompilerWrapper().compile( m_matrixElements[i], this->m_objCache); 
-      } ); 
+       m_matrixElements[i] = MatrixElement(p, c, mps, this->m_evtType.getEventFormat(), m_dbThis); 
+       CompilerWrapper().compile( m_matrixElements[i], this->m_objCache); 
+    } ); 
   }
 }
 
@@ -111,6 +107,7 @@ void CoherentSum::updateNorms()
 
 void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
 {
+  /*
   prepare();
   INFO("Weight = " << evt.weight() << " genPDF = " << evt.genPdf() );
 
@@ -124,6 +121,7 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
   }
   if( m_dbThis ) for ( auto& me : m_matrixElements ) me.debug( evt) ;
   INFO( "A(x) = " << getVal(evt) << " without cache: " << getValNoCache(evt) );
+  */
 }
 
 std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& linProp)
@@ -248,7 +246,7 @@ complex_t CoherentSum::getValNoCache( const Event& evt ) const
   return utils::get<0>( complex_v(std::accumulate( m_matrixElements.begin(), 
           m_matrixElements.end(), 
           complex_v(0,0), 
-          [&evt]( const auto& a, const auto& b ){ return a + b.coefficient * b(evt);} )) );
+          [&evt]( const auto& a, const auto& b ){ return a + b.coefficient * b(evt)[0];} )) );
 }
 
 void CoherentSum::reset( bool resetEvents )
@@ -310,6 +308,7 @@ void CoherentSum::transferParameters()
 
 void CoherentSum::printVal(const Event& evt)
 {
+  /*
   for ( auto& mE : m_matrixElements ) {
     unsigned int address = std::distance( &mE , &m_matrixElements[0] );
     std::cout << mE.decayTree.decayDescriptor() << " = " << mE.coefficient << " x " << m_cache( evt.index() / utils::size<float_v>::value, address )
@@ -320,6 +319,7 @@ void CoherentSum::printVal(const Event& evt)
       std::cout << "================================" << std::endl;
     }
   }
+  */
 }
 
 complex_t CoherentSum::getVal( const Event& evt ) const

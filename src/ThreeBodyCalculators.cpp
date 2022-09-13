@@ -186,9 +186,9 @@ ThreeBodyCalculator::ThreeBodyCalculator( const std::string& head, MinuitParamet
       if ( std::find( finalStates.begin(), finalStates.end(), type ) == finalStates.end() ) finalStates.push_back(type);
     }
   }
-  if( finalStates.size() == 0 ) FATAL("Particle: " << head << " has no integrable decay path");
-  for ( auto& type : finalStates ) m_widths.emplace_back( type, mps );
-  if( nKnots != 999) setAxis( nKnots, min, max ); 
+  if ( finalStates.size() == 0 ) FATAL("Particle: " << head << " has no integrable decay path");
+  for( auto& type : finalStates ) m_widths.emplace_back( type, mps );
+  if ( nKnots != 999) setAxis( nKnots, min, max ); 
 }
 
 void ThreeBodyCalculator::setAxis( const size_t& nKnots, const double& min, const double& max )
@@ -238,6 +238,7 @@ ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitPar
   , integrator(1, evt.mass(0)*evt.mass(0), evt.mass(1)*evt.mass(1) , evt.mass(2)*evt.mass(2) )
   , type(evt)
 {
+  INFO( evt << " " << fcs.matrixElements().size() ); 
   DebugSymbols msym;
   std::vector<std::pair<Particle,TotalCoupling>> unpacked; 
   for( auto& p : fcs.matrixElements() ) unpacked.emplace_back( p.decayTree, p.coupling );

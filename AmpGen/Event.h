@@ -54,6 +54,7 @@ namespace AmpGen {
       real_t s( const unsigned& index1, const unsigned& index2, const unsigned& index3 ) const;
       real_t s( const std::vector<unsigned>& indices ) const ;
       void reorder( const std::vector<unsigned>& addresses); 
+      const std::vector<real_t>& data() const { return m_event; }
     private:
       std::vector<real_t>    m_event; 
       real_t                 m_genPdf = {1};

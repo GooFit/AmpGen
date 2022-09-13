@@ -64,10 +64,10 @@ namespace AmpGen
       complex_t norm(const size_t&, const size_t&, Integrator* = nullptr); 
       real_t getValNoCache(const Event&) const;
       std::vector<FitFraction> fitFractions(const LinearErrorPropagator&);
-      std::vector<TransitionMatrix<void>> matrixElements() const;
+      std::vector<MatrixElement> matrixElements() const;
       void transferParameters(); 
       Tensor transitionMatrix() const;
-      const TransitionMatrix<void>& operator[](const size_t& i) const { return m_matrixElements[i] ; } 
+      const MatrixElement& operator[](const size_t& i) const { return m_matrixElements[i] ; } 
       std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
       KeyedFunctors<double(Event)> componentEvaluator(const EventList_type* = nullptr) const;     
       EventType eventType() const{ return m_eventType; }
@@ -93,7 +93,7 @@ namespace AmpGen
       std::vector<complex_t>        m_rho;
       std::vector<size_t>           m_integIndex; 
       std::pair<unsigned, unsigned> m_dim; 
-      std::vector<TransitionMatrix<void>>                          m_matrixElements;  
+      std::vector<MatrixElement>                                   m_matrixElements;  
       CompiledExpression<float_v(const real_t*, const complex_v*)> m_probExpression; 
   };
 } // namespace AmpGen

@@ -174,6 +174,7 @@ namespace AmpGen
       complex_t operator()() const override;
       operator Expression() const;
       Tensor tensor() const { return m_tensor;}
+      unsigned size() const { return m_tensor.size(); }
     private:
       Tensor m_tensor; 
   };

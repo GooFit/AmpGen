@@ -64,6 +64,7 @@ namespace AmpGen {
       template <typename T> unsigned find( const T& t ) const { return m_index.find( t.name() )->second.first; }
 
       inline size_t size()         const { return m_nEntries; }
+      inline size_t size_raw()     const { return m_store.size(); }
       inline size_t nBlocks()      const { return m_nBlocks; }
       inline size_t nFields()      const { return m_nFields; }
       inline size_t aligned_size() const { return m_nBlocks * utils::size<stored_type>::value ; }
@@ -129,7 +130,6 @@ namespace AmpGen {
       {  
         auto f = m_index.find( fcn.name() ); 
         if( f == m_index.end() ) FATAL("Expression: " << fcn.name() << " is not registed");
-        //auto& [p0, s] = f->second; /// bug in the C++ standard. Such fun. 
         auto p0 = f->second.first;
         auto s  = f->second.second; 
         DEBUG("Updating: " << fcn.name() << " index = " << p0 << " size_of = " << s << " on store: " << size() << " blocks = " << nBlocks() << " fields = " << nFields () ); 
@@ -155,8 +155,7 @@ namespace AmpGen {
           {
             auto tmp = fcn( events[evt].address() );
             store( evt, p0, &tmp, s);
-          }
-        }
+          }       }
       }
 
     private:

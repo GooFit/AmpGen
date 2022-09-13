@@ -50,6 +50,7 @@ int main( int argc, char* argv[] )
   std::vector<std::string> branchFormat    = NamedParameter<std::string>("BranchFormat"  , std::vector<std::string>() ).getVector();
   std::vector<std::string> friends         = NamedParameter<std::string>("Friends"       , std::vector<std::string>() ).getVector();
   std::vector<std::string> idBranches      = NamedParameter<std::string>("IdBranches"    , std::vector<std::string>() ).getVector(); 
+  std::string units                        = NamedParameter<std::string>("Units", "MeV");
   bool usePIDCalib                         = NamedParameter<bool>("usePIDCalib"             , false);
   bool rejectMultipleCandidates            = NamedParameter<bool>("rejectMultipleCandidates", true );
   auto cuts                                = NamedParameter<std::string>("Cut","").getVector(); 
@@ -135,7 +136,7 @@ int main( int argc, char* argv[] )
                                     ApplySym(true) , 
                                     ExtraBranches(monitorBranches),
                                     IdBranches(idBranches), 
-                                    InputUnits(Units::MeV) );
+                                    InputUnits(units == "MeV" ? Units::MeV : Units::GeV ) );
 
   INFO( "Branches = ["<< vectorToString(branches, ", " ) << "]" );
 

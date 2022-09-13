@@ -65,7 +65,7 @@ namespace AmpGen
     const float_v* block(const unsigned& p) const { return m_data.data() + p * m_data.nFields(); }
           float_v* block(const unsigned& p)       { return m_data.data() + p * m_data.nFields(); }
     float_v weight(const unsigned& p) const { return m_weights[p]; }
-    float_v genPDF(const unsigned& p) const { return m_genPDF[p]; }
+    float_v genPDF(const unsigned& p) const { return m_genPDF [p]; }
     
     void setWeight( const unsigned& block, const float_v& w, const float_v& g=1.f)
     {
@@ -78,7 +78,7 @@ namespace AmpGen
     } 
     void resize( const unsigned nEvents )
     {
-      m_data = Store<float_v, Alignment::AoS>( nEvents, m_eventType.eventSize() );
+      m_data = Store<float_v, Alignment::AoS>(nEvents, m_eventType.eventSize());
       m_weights.resize( aligned_size(), 1.f);
       m_genPDF.resize( aligned_size(), 1.f );
     }

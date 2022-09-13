@@ -32,8 +32,8 @@ namespace AmpGen
       size_t size() const { return m_nt; }               ///< Return the number of decay products
       Event makeEvent();                                 ///< Make an event in this phase space. 
       EventType eventType() const;                       ///< Returns the EventType that this phase space is generating
-
-      void provideEfficiencyReport(const std::vector<bool>& report){}
+      void fill( double* output, unsigned stagger = 1 );
+      void debug( const Event& ) {}; 
     private:
       size_t       m_nt        = {0};                    ///< Number of particles in the final state
       double       m_mass[18]  = {0};                    ///< Masses of particles in the final state

@@ -34,16 +34,13 @@ double PhaseSpace::q( double m, double m1, double m2 ) const
   return 0.5 * sqrt( m*m - 2*m1*m1 - 2*m2*m2 + (m1*m1-m2*m2)*(m1*m1-m2*m2)/(m*m) );
 }
 
-Event PhaseSpace::makeEvent()
+void PhaseSpace::fill( double* output, unsigned width  )
 {
   std::array<double, kMAXP> rno;
   std::array<double, kMAXP> pd;
   std::array<double, kMAXP> invMas; 
-  Event rt(4*m_nt + m_type.isTimeDependent());
-
   rno[0] = 0;
   size_t n;
-
   double wt = m_wtMax;
   do {
     wt     = m_wtMax;
@@ -61,32 +58,41 @@ Event PhaseSpace::makeEvent()
       wt *= pd[n];
     }
   } while ( wt < m_rand->Rndm() );
-  rt[0] = 0;
-  rt[1] = pd[0];
-  rt[2] = 0;
-  rt[3] = sqrt( pd[0] * pd[0] + m_mass[0] * m_mass[0] );
+  output[0*width] = 0;
+  output[1*width] = pd[0];
+  output[2*width] = 0;
+  output[3*width] = sqrt( pd[0] * pd[0] + m_mass[0] * m_mass[0] );
   for(size_t i = 1 ; i != m_nt ; ++i ){  
-    rt.set( i, { 0, -pd[i-1], 0, sqrt( pd[i-1] * pd[i-1] + m_mass[i] * m_mass[i] ) } );
-    double cZ   = 2 * m_rand->Rndm() - 1;
-    double sZ   = sqrt( 1 - cZ * cZ );
-    double angY = 2 * M_PI * m_rand->Rndm();
-    double cY   = cos(angY);
-    double sY   = sin(angY);
-    double beta  = (i == m_nt-1) ? 0 : pd[i] / sqrt( pd[i] * pd[i] + invMas[i] * invMas[i] );
-    double gamma = (i == m_nt-1) ? 1 : 1./sqrt( 1 - beta*beta);    
+    output[(4*i+0)*width] = 0;
+    output[(4*i+1)*width] = -pd[i-1];
+    output[(4*i+2)*width] = 0;
+    output[(4*i+3)*width] = sqrt( pd[i-1] * pd[i-1] + m_mass[i] * m_mass[i] );
+    const auto cZ   = 2 * m_rand->Rndm() - 1;
+    const auto sZ   = sqrt( 1 - cZ * cZ );
+    const auto angY = 2 * M_PI * m_rand->Rndm();
+    const auto cY   = cos(angY);
+    const auto sY   = sin(angY);
+    const auto beta  = (i == m_nt-1) ? 0 : pd[i] / sqrt( pd[i] * pd[i] + invMas[i] * invMas[i] );
+    const auto gamma = (i == m_nt-1) ? 1 : 1./sqrt( 1 - beta*beta);    
     for (size_t j = 0; j <= i; j++ ) {
-      double x          = rt[4*j+0];
-      double y          = rt[4*j+1];
-      double z          = rt[4*j+2];
-      double E          = rt[4*j+3];
-      rt[4*j+0] = cY * (cZ * x - sZ * y ) - sY * z;
-      rt[4*j+1] = gamma*( sZ * x + cZ * y + beta * E );
-      rt[4*j+2] = sY * (cZ * x - sZ * y )  + cY * z;
-      rt[4*j+3] = gamma*( E + beta * (sZ *x + cZ*y) );
+      const auto x          = output[(4*j+0)*width];
+      const auto y          = output[(4*j+1)*width];
+      const auto z          = output[(4*j+2)*width];
+      const auto E          = output[(4*j+3)*width];
+      output[(4*j+0)*width] = cY * (cZ * x - sZ * y ) - sY * z;
+      output[(4*j+1)*width] = gamma*( sZ * x + cZ * y + beta * E );
+      output[(4*j+2)*width] = sY * (cZ * x - sZ * y )  + cY * z;
+      output[(4*j+3)*width] = gamma*( E + beta * (sZ *x + cZ*y) );
     }
   }
-  rt.setGenPdf( 1 );
-  if ( m_type.isTimeDependent() ) rt.set( 4 * m_nt, m_rand->Exp( m_decayTime ) );
+  if ( m_type.isTimeDependent() ) output[4 * m_nt * width] = m_rand->Exp( m_decayTime );
+}
+
+Event PhaseSpace::makeEvent()
+{
+  Event rt(4*m_nt + m_type.isTimeDependent());
+  fill( rt.address()  );
+  rt.setGenPdf( 1 ); 
   return rt;
 }
 

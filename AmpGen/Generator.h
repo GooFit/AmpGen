@@ -2,8 +2,13 @@
 #define AMPGEN_GENERATOR_H
 
 #include "AmpGen/EventList.h"
+#if USE_SIMD 
+  #include "AmpGen/EventListSIMD.h"
+#endif
+#include "AmpGen/simd/utils.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/PhaseSpace.h"
+#include "AmpGen/TreePhaseSpace.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/ProgressBar.h"
@@ -12,9 +17,15 @@
 
 namespace AmpGen
 {
-  template <typename phaseSpace_t = PhaseSpace, typename eventListInternal_t = EventList>
+  template <typename phaseSpace_t = PhaseSpace>
     class Generator
     {
+        #if USE_SIMD 
+          using eventlist_t = EventListSIMD;
+        #else
+          using eventlist_t = EventList;
+        #endif
+
       private:
         EventType    m_eventType;
         phaseSpace_t m_gps;
@@ -27,7 +38,6 @@ namespace AmpGen
         {
           m_eventType = m_gps.eventType();
           if( m_rnd != gRandom ) setRandom( m_rnd );
-          DEBUG("Creating generator, using: " << type_string<phaseSpace_t>() << " and internal store type: " << type_string<eventListInternal_t>() ); 
         }
   
         phaseSpace_t phsp() { return m_gps; }
@@ -40,38 +50,42 @@ namespace AmpGen
         void setBlockSize( const size_t& blockSize ) { m_generatorBlock = blockSize; }
         void setNormFlag( const bool& normSetting )  { m_normalise = normSetting; }
 
-        template <typename cut_t=std::nullptr_t> void fillEventListPhaseSpace( eventListInternal_t& events, const size_t& N, [[maybe_unused]] cut_t cut = nullptr)
+        void fillEventListPhaseSpace( eventlist_t& events, const size_t& N)
         {
-          events.resize(N);
-          auto it = events.begin();
-          while( it != events.end() )
+          if constexpr( std::is_same<phaseSpace_t, PhaseSpace>::value )
           {
-            *it = m_gps.makeEvent();
-            if constexpr( ! std::is_same<cut_t, std::nullptr_t>::value ) 
+            constexpr auto w = utils::size<float_v>::value; 
+            for( unsigned i = 0 ; i != N ; ++i ){
+              double* addr = reinterpret_cast<double*>( events.block( i/w  ))+ i % w;
+              m_gps.fill(addr, w);     
+            }     
+          }
+          else {
+            auto it = events.begin();
+            while( it != events.end() )
             {
-              if( ! cut(*it ) ) continue; 
+              *it = m_gps.makeEvent();
+              ++it;
             }
-            if constexpr( std::is_same<eventListInternal_t, EventList>::value ) it->setIndex( it - events.begin() );
-            ++it;
           }
         }
-        template <typename eventList_t, typename pdf_t> void fillEventList( pdf_t& pdf, eventList_t& list, const size_t& N )
-        {
-          fillEventList( pdf, list, N, nullptr);
-        }
-        template <typename pdf_t> double getMax(const pdf_t& pdf, const eventListInternal_t& events) const 
+        template <typename pdf_t> double getMax(const pdf_t& pdf, const eventlist_t& events) const 
         {
           double max = 0.;
           for ( const auto& evt : events ) 
           {
-            auto value             = evt.genPdf() ; // pdf(evt) / evt.genPdf();
-            if ( value > max ) max = value;
+            auto value             = evt.genPdf();
+            if( std::isnan(value) ){ 
+              ERROR( value );
+              evt.print(); 
+            }
+            else if ( value > max ) max = value;
           }
           DEBUG( "Returning normalisation constant = " << max ); 
           return max;
         }
 
-        template <typename eventList_t, typename pdf_t, typename cut_t> void fillEventList( pdf_t& pdf, eventList_t& list, const size_t& N, cut_t cut )
+        template <typename eventList_t, typename pdf_t> void fillEventList( pdf_t& pdf, eventList_t& list, const size_t& N)
         {
           if ( m_rnd == nullptr ) 
           {
@@ -84,24 +98,28 @@ namespace AmpGen
           pdf.reset( true );
           ProgressBar pb(60, detail::trimmedString(__PRETTY_FUNCTION__) );
           ProfileClock t_phsp, t_eval, t_acceptReject, t_total;
-          std::vector<bool> efficiencyReport(m_generatorBlock,false); 
-          eventListInternal_t mc( m_eventType );
+          std::vector<bool> efficiencyReport(m_generatorBlock, false); 
+
           while ( list.size() - size0 < N ) {
+            eventlist_t mc( m_eventType );
+            mc.resize(m_generatorBlock);
             t_phsp.start();
-            fillEventListPhaseSpace(mc, m_generatorBlock, cut);
+            fillEventListPhaseSpace(mc, m_generatorBlock);
             t_phsp.stop();
             t_eval.start();
-            pdf.setEvents( mc );
+            pdf.setEvents(mc);
             pdf.prepare();
             auto previousSize = list.size();
             #ifdef _OPENMP
             #pragma omp parallel for
             #endif
             for ( size_t block=0; block < mc.nBlocks(); ++block )
-            { 
+            {
               mc.setGenPDF(block, pdf(mc.block(block), block) / mc.genPDF(block) );
             }
             maxProb = maxProb == 0 ? 1.5 * getMax(pdf, mc) : maxProb; 
+            DEBUG( "Norm: " << maxProb );            
+           // if constexpr ( std::is_same<phaseSpace_t, TreePhaseSpace>::value ) m_gps.recalculate_weights(mc); 
 
             t_eval.stop();
             t_acceptReject.start(); 
@@ -111,6 +129,7 @@ namespace AmpGen
               if ( event.genPdf()  > maxProb ) {
                 std::cout << std::endl; 
                 WARNING( "PDF value exceeds norm value: " << event.genPdf() << " > " << maxProb );
+                event.print();
               }
               if ( event.genPdf() > maxProb * m_rnd->Rndm() ){
                 list.push_back(event);
@@ -120,9 +139,8 @@ namespace AmpGen
               else efficiencyReport[event.index()] = false; 
               if ( list.size() - size0 == N ) break; 
             }
+            /// if constexpr ( std::is_same<phaseSpace_t, TreePhaseSpace>::value ) maxProb = 0; 
             t_acceptReject.stop(); 
-
-            // m_gps.provideEfficiencyReport( efficiencyReport );
             double efficiency = 100. * ( list.size() - previousSize ) / (double)m_generatorBlock;
             pb.print( double(list.size()) / double(N), " ε[gen] = " + mysprintf("%.4f",efficiency) + "% , " + std::to_string(int(t_total.count()/1000.))  + " seconds" );
             if ( list.size() == previousSize ) {
@@ -141,15 +159,20 @@ namespace AmpGen
         template <typename pdf_t, typename = typename std::enable_if<!std::is_integral<pdf_t>::value>::type>
           EventList generate(pdf_t& pdf, const size_t& nEvents )
           {
-            EventList evts( m_eventType );
+            eventlist_t evts( m_eventType );
             fillEventList( pdf, evts, nEvents );
-            return evts;
+            EventList output( m_eventType );
+            for( const auto& event : evts ) output.emplace_back( event );
+            return output; 
           }
         EventList generate(const size_t& nEvents)
         {
-          EventList evts( m_eventType );
+          eventlist_t evts( m_eventType );
+          evts.resize( nEvents ); 
           fillEventListPhaseSpace( evts, nEvents);
-          return evts;
+          EventList output( m_eventType );
+          for( const auto& event : evts ) output.emplace_back( event );
+          return output; 
         }
     };
 

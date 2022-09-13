@@ -488,15 +488,13 @@ DEFINE_VERTEX( S_VV_rp ){
 
   Tensor P1 = 0.5 * (P+Q);//Pkres
   Tensor P2 = 0.5 * (P-Q);//Pgamma
-
   auto pP = fcn::sqrt(P2[0]*P2[0] + P2[1]*P2[1] + P2[2]*P2[2]);
   Tensor helOp = 1i* (SO3[0]*P2[0] + SO3[1]*P2[1] + SO3[2]*P2[2]) / pP; //helicity operator iL.p
   Tensor helOpV2 = helOp(mu,nu)*V2(nu);
-
+  helOpV2.st(); 
   Tensor dot1 = Tensor( {dot(V2,V1) * dot(P1,P2)} );
   Tensor dot2 = Tensor( {dot(V2,P1) * dot(V1,P2)} );
-  Tensor prod = Tensor( {LeviCivita()(-mu,-nu,-alpha,-beta)*helOpV2(mu)*V1(nu)*P1(alpha)*P2(beta)},{1} );
-  
+  Tensor prod = Tensor( {LeviCivita()(-mu,-nu,-alpha,-beta)*helOpV2(mu)*V1(nu)*P1(alpha)*P2(beta)} , {1} ); 
   return -1i*prod + (dot1-dot2);
 } 
 
@@ -510,6 +508,7 @@ DEFINE_VERTEX( S_VV_rm ){
   auto pP = fcn::sqrt(P2[0]*P2[0] + P2[1]*P2[1] + P2[2]*P2[2]);
   Tensor helOp = 1i* (SO3[0]*P2[0] + SO3[1]*P2[1] + SO3[2]*P2[2]) / pP; //helicity operator iL.p
   Tensor helOpV2 = helOp(mu,nu)*V2(nu);
+  helOpV2.st();
 
   Tensor dot1 = Tensor( {dot(helOpV2,V1) * dot(P1,P2)} );
   Tensor dot2 = Tensor( {dot(helOpV2,P1) * dot(V1,P2)} );

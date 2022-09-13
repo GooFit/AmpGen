@@ -13,14 +13,15 @@
 
 #include "AmpGen/EventType.h"
 #include "AmpGen/Particle.h"
-
+#include "AmpGen/DiscreteDistribution.h"
 #include <TRandom3.h>
-#include <TLorentzVector.h>
 
 namespace AmpGen
 {
   class Particle;
   class Event; 
+  class DecayChainStackBase; 
+  class EventListSIMD; 
   /** @class TreePhaseSpace
     @brief Generator of events where the phase space is decomposed into a series of subtrees.  
     @decription Generates events using the decomposition of the phase space 
@@ -35,63 +36,26 @@ namespace AmpGen
     */
   class TreePhaseSpace
   {
-    
-    public:
-      struct Vertex 
-      {
-        enum Type { BW, Flat, Stable, QuasiStable};
-        Vertex() = default; 
-        Vertex(const Particle& particle, const double& min);
-        Vertex(const Particle& particle, const double& min, const double& max); 
-        double p() const; 
-        double weight() const; 
-        double genPdf(const Event& event) const; 
-        void generate();
-        void print(const unsigned& offset = 0) const;
-        void place(Event& event);
-        Event event(const unsigned& eventSize);
-        void generateFullEvent();
-        void setRandom(TRandom3* rnd);
-        static Vertex make(const Particle& particle, Vertex* parent = nullptr); 
-        Particle    particle;
-        double min      = {0};
-        double max      = {0}; 
-        double phiMin   = {0};
-        double phiMax   = {0}; 
-        Type   type     = {Type::BW};
-        unsigned index  = {999};
-        double bwMass   = {0};
-        double bwWidth  = {0};
-        double s        = {0};
-        std::shared_ptr<Vertex> left    = {nullptr}; 
-        std::shared_ptr<Vertex> right   = {nullptr};
-        TRandom3* rand  = {nullptr};
-        std::vector<unsigned> indices; 
-        TLorentzVector mom;
-        double maxWeight() const; 
-      };
-      
+    public: 
       explicit TreePhaseSpace(const EventType& type);
       TreePhaseSpace(const Particle& decayChain, const EventType& type, TRandom* rndm = nullptr );
       TreePhaseSpace(const std::vector<Particle>& decayChains, const EventType& type, TRandom* rndm = nullptr);
+      ~TreePhaseSpace(); 
 
       void setRandom( TRandom* rand );
       Event makeEvent();
       size_t size() const;
       EventType eventType() const ;
-      double genPdf( const Event& event) const ; 
-      const Vertex& operator[](const unsigned i) const { return m_top[i]; }      
-
-      void provideEfficiencyReport(const std::vector<bool>& report);
+      const DecayChainStackBase* operator[](const unsigned i) const { return m_gen[i]; }      
+      void recalculate_weights( const EventListSIMD& events); 
     private:
-      std::vector<Vertex>   m_top;
-      TRandom3*             m_rand      = {nullptr}; 
+      void initialise_weights(); 
+      std::vector<DecayChainStackBase*> m_gen; 
+      TRandom3*             m_rand   {nullptr}; 
       EventType             m_type;         ///< EventType to generate
-      std::discrete_distribution<> m_dice;  ///< 
-      std::vector<double>   m_weights; 
+      DiscreteDistribution  m_dice;  
       std::vector<unsigned> m_generatorRecord;  
-      std::mt19937          m_gen  {0};
-      double                m_wmax = {0}; 
+      double                m_wmax   {0}; 
   };
 } // namespace AmpGen
 

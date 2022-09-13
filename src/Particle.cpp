@@ -441,9 +441,10 @@ Expression Particle::getExpression( DebugSymbols* db, const std::vector<int>& st
         else spinFactor = is(a) * st(a) ;
       }
       if( m_props->twoSpin() == 2 ){
-        Tensor is  = externalSpinTensor(m_polState).conjugate();
-        ADD_DEBUG_TENSOR(is, db );
-        spinFactor = dot(is,st);
+        auto ve = externalSpinTensor(m_polState); 
+        ve.st(); 
+        ADD_DEBUG_TENSOR(ve.conjugate(), db);
+        spinFactor = dot( ve.conjugate(), st);
       }
     }
     if ( includeSpin && m_spinFormalism == spinFormalism::Canonical ){
@@ -486,13 +487,16 @@ Tensor Particle::spinTensor( DebugSymbols* db ) const
   if ( m_daughters.size() == 0 ){
     auto S = externalSpinTensor(m_polState, db);
     if( S.size() != 1 ) ADD_DEBUG_TENSOR_NAMED( S, db, "S("+name()+")" );
+    S.st();
     return S;
   }
   else if ( m_daughters.size() == 2 ) {
     auto vname = m_props->spinName() + "_" + m_daughters[0]->m_props->spinName() + m_daughters[1]->m_props->spinName() + "_" + orbitalString();
-    return Vertex::Factory::getSpinFactor( P(), Q(), 
+    auto rt = Vertex::Factory::getSpinFactor( P(), Q(), 
         daughter(0)->spinTensor(db),
-        daughter(1)->spinTensor(db), vname, db );
+        daughter(1)->spinTensor(db), vname, db ); 
+    rt.st();
+    return rt; 
   } else if ( m_daughters.size() == 3 ) {
     return Vertex::Factory::getSpinFactorNBody( {
         {daughter(0)->P(), daughter(0)->spinTensor()},
