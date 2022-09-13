@@ -191,14 +191,12 @@ target_compile_definitions(libAmpGen PUBLIC
   "ENABLE_FITTING=${ENABLE_FITTING}"
 )
 
-
 target_compile_definitions(libAmpGen PRIVATE
   "AMPGENROOT_CMAKE=\"${AMPGENROOT_CMAKE}\""
   "AMPGENROOT=\"${AMPGENROOT}\""
   "AMPGEN_CXX=\"${AMPGEN_CXX}\""
   $<$<BOOL:${AMPGEN_DEBUG}>:DEBUGLEVEL=1>
   $<$<BOOL:${AMPGEN_TRACE}>:TRACELEVEL=1>)
-
 
 target_compile_options(libAmpGen
   INTERFACE
@@ -209,20 +207,20 @@ target_compile_options(libAmpGen
 
 if ( ${USE_SIMD} MATCHES "AVX2d" )
   message(STATUS "Enabling AVX2 [double precision]")
-  target_compile_definitions(AmpGen PUBLIC "USE_SIMD=1" "ENABLE_AVX=1" "ENABLE_AVX2d=1") 
-  target_compile_options(AmpGen PUBLIC -ftree-vectorize -mfma -mavx2 -ffast-math -fno-finite-math-only -DHAVE_AVX2_INSTRUCTIONS)
+  target_compile_definitions(libAmpGen PUBLIC "USE_SIMD=1" "ENABLE_AVX=1" "ENABLE_AVX2d=1") 
+  target_compile_options(libAmpGen PUBLIC -ftree-vectorize -mfma -mavx2 -ffast-math -fno-finite-math-only -DHAVE_AVX2_INSTRUCTIONS)
 elseif ( ${USE_SIMD} MATCHES "AVX2f" )
   message(STATUS "Enabling AVX2 [single precision]")
-  target_compile_definitions(AmpGen PUBLIC "USE_SIMD=1" "ENABLE_AVX=1" "ENABLE_AVX2f=1") 
-  target_compile_options(AmpGen PUBLIC -ftree-vectorize -mfma -mavx2 -ffast-math -fno-finite-math-only -DHAVE_AVX2_INSTRUCTIONS)
+  target_compile_definitions(libAmpGen PUBLIC "USE_SIMD=1" "ENABLE_AVX=1" "ENABLE_AVX2f=1") 
+  target_compile_options(libAmpGen PUBLIC -ftree-vectorize -mfma -mavx2 -ffast-math -fno-finite-math-only -DHAVE_AVX2_INSTRUCTIONS)
 elseif ( ${USE_SIMD} MATCHES "AVX512d" )
   message(STATUS "Enabling AVX512 [double precision]")
-  target_compile_definitions(AmpGen PUBLIC "USE_SIMD=1" "ENABLE_AVX=1" "ENABLE_AVX512=1") 
+  target_compile_definitions(libAmpGen PUBLIC "USE_SIMD=1" "ENABLE_AVX=1" "ENABLE_AVX512=1") 
   message(WARNING "AVX512 implementation not tested: proceed with caution")
   target_compile_options(libAmpGen PUBLIC -ftree-vectorize -mfma -mavx512f -ffast-math -DHAVE_AVX512_INSTRUCTIONS)
 else()
-  target_compile_definitions(AmpGen PUBLIC "USE_SIMD=0" "ENABLE_AVX=0")
-  target_compile_options(AmpGen PUBLIC -march=x86-64)
+  target_compile_definitions(libAmpGen PUBLIC "USE_SIMD=0" "ENABLE_AVX=0")
+  target_compile_options(libAmpGen PUBLIC -march=x86-64)
   message(STATUS "SIMD disabled, resorting to scalar build : ${USE_SIMD}")
 endif()
 

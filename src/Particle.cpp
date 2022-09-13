@@ -97,7 +97,7 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
   DEBUG( "Building particle from decay string = " << decayString << " name = " << m_name << " "<< m_props->name() );
   std::vector<bool> hasUsedFinalState( finalStates.size(), 0 );
   for ( auto d : fs ) {
-    for ( unsigned int i = 0; i < finalStates.size(); ++i ) {
+    for ( unsigned i = 0; i < finalStates.size(); ++i ) {
       if ( hasUsedFinalState[i] || d->name() != finalStates[i] ) continue;
       DEBUG( "HEAD = " << name() << " " << d << " name = " << d->name() << " setting index = " << i );
       d->setIndex( i, true );
@@ -110,9 +110,9 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
   if ( !isStateGood() ) {
     ERROR( "Amplitude " << decayString << " not configured correctly" );
   }
-  if ( finalStates.size() == fs.size() ) {
-    m_isStateGood = std::all_of( hasUsedFinalState.begin(), hasUsedFinalState.end(),[](const auto& b){return b;} );
-  }
+//  if ( finalStates.size() == fs.size() ) {
+  m_isStateGood = std::all_of(hasUsedFinalState.begin(), hasUsedFinalState.end(), [](const auto& b){return b;} );
+//  }
   m_uniqueString = makeUniqueString();
 }
 
