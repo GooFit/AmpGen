@@ -83,15 +83,13 @@ PolarisedSum::PolarisedSum(const EventType& type,
         DebugSymbols syms;      
         for(unsigned j = 0; j != polStates.size(); ++j) 
           thisExpression[j] = make_cse( p.getExpression(j == 0 ? &syms: nullptr, polStates[j] ) );         
-          //thisExpression[j] = make_cse( p.getExpression(&syms, polStates[j] ) );         
         ptr->m_matrixElements[i] = MatrixElement( 
             p, c,
-            CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>(
+            CompiledExpression<void(complex_v*, const size_t*, const real_t*, const float_v*)>(
             TensorExpression(thisExpression), p.decayDescriptor(), &mps,
             ptr->m_eventType.getEventFormat(), ptr->m_debug ? syms : DebugSymbols() ) );
         
         CompilerWrapper().compile( ptr->m_matrixElements[i] );
-       // ptr->m_matrixElements[i].size = thisExpression.size();
       });
     }
   }
@@ -111,7 +109,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
         thisExpression[1] = i < r1.size() ? 0 : make_cse( p.getExpression(&syms) ); 
         this->m_matrixElements[i] = MatrixElement( 
             p, coupling, 
-            CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>(
+            CompiledExpression<void(complex_v*, const size_t*, const real_t*, const float_v*)>(
             TensorExpression(thisExpression), p.decayDescriptor(), this->m_mps,
             this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ) );
           CompilerWrapper().compile( m_matrixElements[i] );
@@ -332,9 +330,14 @@ void PolarisedSum::debug(const Event& evt)
     INFO( m_matrixElements[j].decayDescriptor() << " " << vectorToString(this_cache, " ") );
     if( m_debug ) m_matrixElements[j].debug( evt ); 
     for( auto& t : this_cache ) all_cache.emplace_back( t);
-  }   
+  }
+  INFO("Doing ... stuff"); 
   if( m_debug ) m_probExpression.debug(all_cache.data() );
-  INFO("P(x) = " << getValNoCache(evt) << " " << operator()((const float_v*)nullptr, evt.index() / utils::size<float_v>::value ) );
+  INFO("Evaluating without cache...");
+  INFO("P(x) = " << getValNoCache(evt) );
+  INFO("P(x) = " << operator()((const float_v*)nullptr, evt.index() / utils::size<float_v>::value ) );
+  
+
   INFO("Prod = [" << vectorToString(m_pVector , ", ") <<"]");
 }
 
