@@ -148,7 +148,7 @@ Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(
     auto perm = particle.identicalDaughterOrderings();
     for ( auto& p : perm ) {
       particle.setOrdering(p);
-      if( particle.lineshape().find("EFF") or particle.lineshape().find("ExpFF") )
+      if( particle.lineshape().find("EFF") != std::string::npos or particle.lineshape().find("ExpFF") != std::string::npos )
         particle.setLineshape( "ExpFF" );
       else particle.setLineshape("FormFactor");
       Expression prop = make_cse( c.to_expression() ) * make_cse( particle.propagator( msym ) );
@@ -164,7 +164,7 @@ Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(
   }
   Expression total;
   for ( auto& j_a : currents ) {
-    for ( auto& j_b : currents ) total = total + dot( j_a, j_b.conjugate() );
+    for ( auto& j_b : currents ) total += dot( j_a, j_b.conjugate() );
   }
   ADD_DEBUG( total, msym );
   return pow(-1, ParticlePropertiesList::get(type.mother())->twoSpin() /2. ) * total;
@@ -245,7 +245,6 @@ ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitPar
   DebugSymbols msym;
   std::vector<std::pair<Particle,TotalCoupling>> unpacked; 
   for( auto& p : fcs.matrixElements() ) unpacked.emplace_back( p.decayTree, p.coupling );
-
   Expression matrixElementTotal = spinAverageMatrixElement(unpacked, &msym );
   auto evtFormat = evt.getEventFormat();
   for ( auto& p : unpacked ) {
