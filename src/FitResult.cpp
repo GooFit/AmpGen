@@ -76,10 +76,10 @@ bool FitResult::readFile( const std::string& fname )
     std::vector<double> rt; 
     std::transform(begin, end, std::back_inserter(rt), [](const auto& str){ return stod(str); } ); 
     return rt; };
-  auto to_parameter = [&](auto& tokens) -> MinuitParameter* {
+    auto to_parameter = [&](auto& tokens) -> MinuitParameter* {
     if( tokens.size() != 9 )
     {
-      FATAL("Unrecognised number of tokens: " << tokens.size() );
+      WARNING("Unrecognised number of tokens: " << tokens.size() );
       return nullptr;
     }
     auto args = to_vector_of_doubles( tokens.begin() + 3, tokens.end() ); 
@@ -93,7 +93,10 @@ bool FitResult::readFile( const std::string& fname )
   processFile( fname, [&isInCovariance, &j, this, to_parameter, to_vector_of_doubles, &covarianceLines](auto& line ) mutable {
     const auto tokens = split( line, ' ' );
     const auto name = tokens[0]; 
-    if ( name == "Parameter" ){ this->m_mps->add( to_parameter(tokens)); this->m_covMapping[tokens[1]] = j++; } 
+    if ( name == "Parameter" ){ 
+      auto param = to_parameter(tokens); 
+      if( param != nullptr ) { this->m_mps->add( param ); this->m_covMapping[tokens[1]] = j++; }
+    } 
     else if ( name == "FitQuality"  )  this->setFitQuality( line );
     else if ( name == "FitFraction" )  this->m_fitFractions.emplace_back(line);
     else if ( name == "Observable"  )  this->addToObservables( line );

@@ -54,10 +54,9 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , std::thread::hardware_concurrency(), "Number of threads to use" );
   ThreadPool tp(nThreads);
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
-    tp.enqueue( [i,this,&mps,&amplitudes]{
-       auto& [p, c] = amplitudes[i];
-       m_matrixElements[i] = MatrixElement(p, c, mps, this->m_evtType.getEventFormat(), m_dbThis); 
-       CompilerWrapper().compile( m_matrixElements[i], this->m_objCache); 
+    tp.enqueue( [i, this, &mps, &amplitudes]() mutable {
+      m_matrixElements[i] = MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), m_dbThis); 
+      CompilerWrapper().compile( m_matrixElements[i], this->m_objCache); 
     } ); 
   }
 }
@@ -107,21 +106,19 @@ void CoherentSum::updateNorms()
 
 void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
 {
-  /*
   prepare();
   INFO("Weight = " << evt.weight() << " genPDF = " << evt.genPdf() );
 
   for ( auto& me : m_matrixElements ) {
     auto A = me(evt);
     INFO( std::setw(70) << me.decayTree.uniqueString() 
-        << " A = [ "  << utils::get<0>(A.real())             << " " << utils::get<0>(A.imag())
+        << " A = [ "  << A[0].real()             << " " << A[0].imag()
         << " ] g = [ "<< me.coupling().real() << " " << me.coupling().imag() << " ] "
         << m_cache( evt.index(), std::distance(&m_matrixElements[0], &me ) )
         << me.decayTree.CP() );
   }
   if( m_dbThis ) for ( auto& me : m_matrixElements ) me.debug( evt) ;
   INFO( "A(x) = " << getVal(evt) << " without cache: " << getValNoCache(evt) );
-  */
 }
 
 std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& linProp)

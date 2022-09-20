@@ -98,12 +98,12 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     return_type = return_type.substr(0,return_type.size()-1);
     if( is<TensorExpression>(m_obj) == false )
     {
-      stream << "*r = " << return_type << "(" << m_obj.to_string(m_resolver.get()) << ");\n";
+      stream << "r[s[0]] = " << return_type << "(" << m_obj.to_string(m_resolver.get()) << ");\n";
     }
     else {
       auto as_tensor = cast<TensorExpression>(m_obj).tensor(); 
       for(unsigned j=0; j != as_tensor.size(); ++j )
-        stream << "r[s * "<< j<<"] = " << return_type << "(" << as_tensor[j].to_string(m_resolver.get()) << ");\n";
+        stream << "r[s[ "<< j<<"]] = " << return_type << "(" << as_tensor[j].to_string(m_resolver.get()) << ");\n";
     }
     stream << "}\n";
   }

@@ -25,13 +25,13 @@ namespace AmpGen {
       template <typename functor_type> 
       void addFunctor( const functor_type& functor )
       {
-        if( m_index.count(functor.name()) == 0 )
-        {
-          auto vsize = functor.returnTypeSize() / sizeof(stored_type);
-          DEBUG("Registering: " << functor.name() << " field = " << m_nFields << " " << functor.returnTypeSize() << " / " << sizeof(stored_type)  ); 
-          m_index[ functor.name() ] = std::make_pair(m_nFields, vsize);
-          m_nFields += vsize;
-        }
+        if( m_index.count(functor.name()) != 0 ) return; 
+        unsigned vsize = functor.returnTypeSize() / sizeof(stored_type);
+        DEBUG("Registering: " << functor.name() << " field: " << m_nFields << " " << functor.returnTypeSize() << " / " << sizeof(stored_type)  ); 
+        std::vector<unsigned> offsets ( vsize ) ;
+        for ( unsigned i = 0 ; i != vsize; ++i ) offsets[i] = m_nFields + i; 
+        m_index[ functor.name() ] = offsets; 
+        m_nFields += vsize;
       }
       template <typename functor_type> void allocate( const size_t& nEntries, const std::vector<functor_type>& functors)
       {
@@ -61,7 +61,7 @@ namespace AmpGen {
 
       inline stored_type operator[]( const size_t& index ) const { return m_store[index]; }
       inline stored_type& operator[]( const size_t& index ) { return m_store[index]; }
-      template <typename T> unsigned find( const T& t ) const { return m_index.find( t.name() )->second.first; }
+      template <typename T> unsigned find( const T& t ) const { return m_index.find( t.name() )->second[0]; }
 
       inline size_t size()         const { return m_nEntries; }
       inline size_t size_raw()     const { return m_store.size(); }
@@ -109,34 +109,42 @@ namespace AmpGen {
       {
         auto f = m_index.find( fcn.name() ); 
         if( f == m_index.end() ) FATAL("Expression: " << fcn.name() << " is not registed");
-        auto [p0, s] = f->second;
-        DEBUG("Updating: " << fcn.name() << " index = " << p0 << " size_of = " << s << " on store: " << is.size() << " blocks = " << is.nBlocks() << " fields = " << is.nFields () ); 
-        if constexpr( align == Alignment::AoS )
+        DEBUG("Updating: "  << fcn.name() 
+           << " index: {"    << vectorToString( f->second, ",")  <<"}"
+           << " on store: " << is.size() 
+           << " blocks: "   << is.nBlocks() 
+           << " fields: "   << is.nFields () ); 
+        auto stagger      = align == Alignment::AoS ? 1 : m_nBlocks;
+        auto fieldStagger = align == Alignment::AoS ? m_nFields : 1;
+        std::vector<size_t> offsets( f->second.size() );
+        for( unsigned int i = 0 ; i != offsets.size(); ++i ) offsets[i] = f->second[i] * stagger; 
+        
+        if constexpr( std::is_same< typename functor_type::return_type, void >::value )
         {
-          if constexpr( std::is_same< typename functor_type::return_type, void >::value )
-            fcn.batch(aligned_size(), is.nFields(), m_nFields, nullptr,  m_store.data() + p0, 1, fcn.externBuffer().data(), is.data());  
-          if constexpr( ! std::is_same< typename functor_type::return_type, void >::value )
-            fcn.batch(aligned_size(), is.nFields(), m_nFields         , m_store.data()  + p0   , fcn.externBuffer().data(), is.data());
+          fcn.batch(aligned_size(), 
+                    is.nFields(), 
+                    fieldStagger,
+                    nullptr, 
+                    m_store.data(), 
+                    offsets.data(),
+                    fcn.externBuffer().data(), 
+                    is.data());  
         }
         else 
         {
-          if constexpr( std::is_same< typename functor_type::return_type, void >::value)
-            fcn.batch(aligned_size(), is.nFields(), 1, nullptr, m_store.data() + p0*m_nBlocks, m_nBlocks, fcn.externBuffer().data(), is.data() ); 
-          else 
-            fcn.batch(aligned_size(), is.nFields(), 1         , m_store.data() + p0*m_nBlocks           , fcn.externBuffer().data(), is.data() ); 
+          fcn.batch(aligned_size(), is.nFields(), fieldStagger, m_store.data() + f->second[0] *stagger, fcn.externBuffer().data(), is.data() ); 
         }
       }
       template <typename functor_type> void update( const EventList& events, const functor_type& fcn )
       {  
         auto f = m_index.find( fcn.name() ); 
         if( f == m_index.end() ) FATAL("Expression: " << fcn.name() << " is not registed");
-        auto p0 = f->second.first;
-        auto s  = f->second.second; 
+        auto p0 = f->second[0];
+        auto s  = f->second.size(); 
         DEBUG("Updating: " << fcn.name() << " index = " << p0 << " size_of = " << s << " on store: " << size() << " blocks = " << nBlocks() << " fields = " << nFields () ); 
         
         if constexpr( std::is_same< typename functor_type::return_type, void >::value ) 
-        {
-          
+        {          
           #ifdef _OPENMP
           #pragma omp parallel for
           #endif
@@ -155,15 +163,16 @@ namespace AmpGen {
           {
             auto tmp = fcn( events[evt].address() );
             store( evt, p0, &tmp, s);
-          }       }
+          }       
+        }
       }
 
     private:
-      size_t m_nEntries{0}; /// Number of entries, i.e. number of events 
-      size_t m_nBlocks {0}; /// Number of blocks, i.e. number of entries aligned to the size, divided by block size. 
-      size_t m_nFields {0}; /// Number of fields per entry 
-      std::vector<stored_type> m_store; 
-      std::map<std::string, std::pair<unsigned, unsigned>> m_index; 
+      size_t m_nEntries{0};                                 ///< Number of entries, i.e. number of events 
+      size_t m_nBlocks {0};                                 ///< Number of blocks, i.e. number of entries aligned to the size, divided by block size. 
+      size_t m_nFields {0};                                 ///< Number of fields per entry 
+      std::vector<stored_type> m_store;                     ///< Actual store of values  
+      std::map<std::string, std::vector<unsigned>> m_index; ///< Index between name of functors and the stored values 
   };
 }
 #if DEBUG_LEVEL ==1 

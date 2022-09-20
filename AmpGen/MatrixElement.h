@@ -6,10 +6,10 @@
 #include "AmpGen/Particle.h"
 
 namespace AmpGen {
-  class MatrixElement : public CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>
+  class MatrixElement : public CompiledExpression<void(complex_v*, const size_t*, const real_t*, const float_v*)>
   {
     public:
-      using amp_type    = CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>;
+      using amp_type    = CompiledExpression<void(complex_v*, const size_t*, const real_t*, const float_v*)>;
       MatrixElement() = default;
       MatrixElement(const Particle& dt, const TotalCoupling& coupling, const amp_type& amp); 
       MatrixElement(const Particle& dt, 
@@ -19,11 +19,9 @@ namespace AmpGen {
           const bool& debugThis=false);
 
       const std::vector<complex_v> operator()(const Event& event) const; 
-
       template <class... arg_types> auto operator()(arg_types... args ) const { return amp_type::operator()(args...) ; }
-      void debug( const Event& event ) const; 
+      void debug( const Event& event )    const; 
       const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
-
       Particle                                            decayTree;
       TotalCoupling                                       coupling;
       complex_t                                           coefficient;
