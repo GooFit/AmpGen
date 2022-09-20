@@ -27,14 +27,16 @@ DEFINE_LINESHAPE( GSpline )
   Expression radius = Parameter( particleName + "_radius", props->radius() ) * GeV ;
   Expression width0 = Parameter( particleName + "_width", props->width() ) * GeV;
 
-  const Expression q2     = Abs( Q2( s, s1, s2 ) );
+  const Expression q2     = fcn::abs( Q2( s, s1, s2 ) );
   const Expression sInGeV = s / ( GeV * GeV );
 
   bool useEFF            = lineshapeModifier.find( "EFF" ) != std::string::npos;
   bool useDispersiveTerm = lineshapeModifier.find( "Dis" ) != std::string::npos;
   bool useGFF            = lineshapeModifier.find( "GFF" ) != std::string::npos;
+  bool useBL             = lineshapeModifier.find( "BL"  ) != std::string::npos; 
 
-  Expression BF = fcn::sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) ) ;
+  Expression BF = fcn::sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
+  if( useBL )  BF  = fcn::sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
   if( useEFF ) BF =  fcn::exp( -q2 * radius * radius / 2. );
   if ( useGFF ) {
     WARNING("Gaussian form factors in running width are depreciated (as they don't make much sense)");
