@@ -346,21 +346,23 @@ Expression Particle::propagator( DebugSymbols* db ) const
 {
   if ( db != nullptr && !isStable() ) db->emplace_back( uniqueString() +" lineshape", Parameter( "NULL", 0, true ) );
   if ( m_daughters.size() == 0 ) return 1;
+  
+  DEBUG( "Getting lineshape " << m_lineshape << " for " << m_name << " " << m_daughters.size()  );
 
-  Expression total( 1. );
-  DEBUG( "Getting lineshape " << m_lineshape << " for " << m_name );
-  Expression s = massSq();
-  Expression prop = 1; 
+  Expression s     = massSq();
+  Expression total = 1.;
+  Expression prop  = 1.;
   if ( m_daughters.size() == 2 ) 
     prop = Lineshape::Factory::get(m_lineshape, s, daughter(0)->massSq(), daughter(1)->massSq(), m_name, m_orbital, db);
   else if ( m_daughters.size() >= 3 )
     prop = Lineshape::Factory::get(m_lineshape == "BW" ? "SBW" : m_lineshape, *this, db );
-  else if ( m_daughters.size() == 1 && m_lineshape != "BW" && m_lineshape != "FormFactor" )
+  else if ( m_daughters.size() == 1 && m_lineshape.find("BW") != std::string::npos && 
+                                       m_lineshape.find("FormFactor") != std::string::npos )
   { 
     prop = Lineshape::Factory::get(m_lineshape, *this, db );
   } 
-  total = total * make_cse(prop);
-  for(auto& d : m_daughters) total = total*make_cse(d->propagator(db));
+  total *= make_cse(prop);
+  for(auto& d : m_daughters) total *= make_cse(d->propagator(db));
   if(db != nullptr) db->emplace_back("A("+uniqueString()+")", total);
   return total;
 }
