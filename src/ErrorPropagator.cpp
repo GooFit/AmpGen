@@ -264,6 +264,36 @@ const std::vector<MinuitParameter*>& LinearErrorPropagator::params() const { ret
 
 NonlinearErrorPropagator::NonlinearErrorPropagator( Minimiser* mini ) : m_mini(mini) {}
 
+template <typename target_t, typename proposal_t> 
+class MetropolisHastings {
+  public:
+
+    MetropolisHastings( const target_t& target, const proposal_t& proposal, const TVectorD& errors )
+      : target(target), proposal(proposal),errors(errors) {}
+  
+  TVectorD operator() () const
+  {
+    auto x = proposal(); 
+    for( int i = 0 ; i != 500; ++i )
+    {
+      auto N = x.GetNrows();
+      auto x_prime = TVectorD( x.GetNrows() ); 
+      for( int i = 0 ; i != N; ++i ) x_prime(i) = x(i) + errors(i) * gRandom->Gaus(); 
+      auto r = target( x_prime ) /target(x);
+      x = r > gRandom->Uniform() ? x_prime : x; 
+    }
+    return x; 
+  }
+
+  target_t target;
+  proposal_t proposal;
+  TVectorD errors;
+};
+
+template <typename target_t, typename proposal_t> MetropolisHastings<target_t, proposal_t> make_sampler ( const target_t& target, const proposal_t& proposal, const TVectorD& err)
+{
+  return MetropolisHastings<target_t, proposal_t> ( target, proposal, err);
+}
 
 TMatrixD NonlinearErrorPropagator::correlationMatrix( const std::vector<std::function<double(void)>>& functions, TRandom3* rnd, const unsigned& nSamples) 
 {
@@ -295,39 +325,55 @@ TMatrixD NonlinearErrorPropagator::correlationMatrix( const std::vector<std::fun
   const unsigned int N = decomposedCholesky.GetNrows();  
   double weight = 1 ;
   TTree* tree = nullptr; 
-  //  TFile* file = TFile::Open("test.root","RECREATE");
-//    tree = new TTree("t","t");
-// for( size_t i = 0 ; i != functions.size(); ++i ) tree->Branch( "f_"+std::to_string(i),  &f_prime[i] ); 
-//  for( unsigned int i = 0 ; i != N; ++i ) t->Branch( parameters[i].first->name().c_str(), &parameters_v[i] ); 
-//  tree->Branch("weight", &wt);
-
-  TMatrixD rt( functions.size(), functions.size() );
-  double w_sum = 0; 
-  for( unsigned sample = 0 ; sample != nSamples ; ++sample )
+  TFile* file = TFile::Open("test.root","RECREATE");
+  tree = new TTree("t","t");
+  
+  for( size_t i = 0 ; i != functions.size(); ++i ) tree->Branch( ("f_"+std::to_string(i)).c_str(),  &f_prime[i] ); 
+  
+  for( unsigned int i = 0 ; i != N; ++i ) tree->Branch( parameters[i].first->name().c_str(), &parameters_v[i] ); 
+  TVectorD p0(N);
+  TVectorD err(N);
+  for(unsigned i = 0 ; i != N; ++i ){
+    p0(i) = parameters[i].second; 
+    err(i) = parameters[i].first->err(); 
+  }
+  auto proposal_distribution = [&]()
   {
     TVectorD e( N );
     for ( unsigned i = 0; i != N; ++i ) e[i] = rnd->Gaus( 0, 1 );
-    TVectorD p = decomposedCholesky * e; 
-    TMatrixD pm( 1, N ) ;
-    for ( unsigned i = 0 ; i != N; ++i ){
-      parameters[i].first->setCurrentFitVal( parameters[i].second + p(i) );
-      pm(0,i) = p(i);
-      parameters_v[i] = parameters[i].second + p(i); 
-    }
-    for( unsigned i = 0 ; i != functions.size(); ++i ) f_prime.push_back( functions[i]() ); 
+    return p0 + decomposedCholesky * e;
+  };
+  auto target_distribution = [&]( TVectorD& state )
+  {
+    for( unsigned int i = 0 ; i!= N; ++i ) parameters[i].first->setCurrentFitVal( state(i ) );
+    return exp( -0.5*(m_mini->FCN() -L0 ) );
+  };
+
+  TMatrixD rt( functions.size(), functions.size() );
+  double w_sum = 0; 
+  auto mh = make_sampler(target_distribution, proposal_distribution, err);    
+  for( unsigned sample = 0 ; sample != nSamples ; ++sample )
+  {
+    if( sample % 100 == 0 ) INFO( sample << " / " << nSamples << " completed"); 
+    auto p = mh(); 
+    for( unsigned int i = 0 ; i!= N; ++i ) parameters[i].first->setCurrentFitVal( p(i ) );
+    for( unsigned int i = 0 ; i!= N; ++i ) parameters_v[i] = p(i);
+     
+    for( unsigned i = 0 ; i != functions.size(); ++i ) f_prime[i] = ( functions[i]() ); 
+
     for( unsigned i = 0 ; i != functions.size(); ++i ) 
     {
       for( unsigned j = 0 ; j != functions.size(); ++j )
       {
-        weight = exp( -0.5*( m_mini->FCN() - L0 ) ) / exp( -0.5 * Q(pm, invCovariance) );
+        weight = 1; 
         rt(i,j) += weight * ( f_prime[i] - function_averages[i] ) * ( f_prime[j] - function_averages[j] ); 
         w_sum += weight; 
       }
     }
     if( tree != nullptr ) tree->Fill();
   }
- // t->Write();
- // file->Close();
+  tree->Write();
+  file->Close();
   rt *= 1./w_sum; 
   return rt; 
 }

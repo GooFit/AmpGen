@@ -50,7 +50,6 @@ namespace AmpGen
     virtual double mean() const;
     virtual operator double() const { return m_meanResult; }
     virtual ~MinuitParameter() = default;
-    
     void setFromMinuitState( const double* x ){ if( m_minuitIndex != -1 ) m_meanResult = x[m_minuitIndex] ; } 
     void setMinuitIndex( const int& index ){ m_minuitIndex = index; }  
     int index() const { return m_minuitIndex; } 
