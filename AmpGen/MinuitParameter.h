@@ -43,6 +43,7 @@ namespace AmpGen
     void fix();
     void setCurrentFitVal( double cfv );
     void setLimits( const double& min, const double& max );
+    void setVal( const double& val ) { m_meanResult = val; } 
     void setResult( double fitMean, double fitErr, double fitErrNeg, double fitErrPos );
     void resetToInit();
     void setName( const std::string& name );

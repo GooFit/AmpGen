@@ -3,10 +3,13 @@
 #include <ostream>
 
 #include "AmpGen/MinuitParameterSet.h"
+#include "AmpGen/Minimiser.h"
 #include "TDecompChol.h"
 #include "TRandom3.h"
 #include "TMatrixD.h"
 #include "TVectorT.h"
+#include "TFile.h"
+#include "TTree.h"
 
 typedef TVectorT<double> TVectorD; 
 
@@ -17,8 +20,6 @@ GaussErrorPropagator::GaussErrorPropagator( const TMatrixD& reducedCovariance, c
 {
   for ( size_t x = 0; x < params.size(); ++x ) {
     auto p = params[x];
-    // CHECK_BLINDING
-    INFO( p->name() << "  " << p->mean() << " +/- " << sqrt( reducedCovariance( x, x ) ) );
     m_startingValues.push_back( p->mean() );
   }
   TDecompChol decomposed( reducedCovariance );
@@ -64,6 +65,15 @@ LinearErrorPropagator::LinearErrorPropagator( const std::vector<MinuitParameter*
   m_cov.ResizeTo( m_parameters.size(), m_parameters.size() );
   for( size_t i = 0 ; i < m_parameters.size(); ++i ) 
     m_cov(i,i) = m_parameters[i]->err() * m_parameters[i]->err();
+}
+
+LinearErrorPropagator::LinearErrorPropagator( Minimiser* mini )
+  : m_cov( mini->covMatrix() ) 
+{
+  for( auto& param : *mini->parSet() ){
+    if( !param->isFree() ) continue;
+    m_parameters.push_back( param );
+  }
 }
 
 LinearErrorPropagator::LinearErrorPropagator( const MinuitParameterSet& mps )
@@ -251,3 +261,75 @@ TMatrixD LinearErrorPropagator::correlationMatrix(const std::vector<std::functio
 }
 
 const std::vector<MinuitParameter*>& LinearErrorPropagator::params() const { return m_parameters; }
+
+NonlinearErrorPropagator::NonlinearErrorPropagator( Minimiser* mini ) : m_mini(mini) {}
+
+
+TMatrixD NonlinearErrorPropagator::correlationMatrix( const std::vector<std::function<double(void)>>& functions, TRandom3* rnd, const unsigned& nSamples) 
+{
+  std::vector<std::pair<MinuitParameter*, double>> parameters;
+  std::vector<double> function_averages; 
+  for( auto& function : functions ) function_averages.push_back(  function() );
+
+  for ( auto& param : *m_mini->parSet() )
+  {
+    if( param->isFree() ) parameters.emplace_back(param, param->mean());  
+  }
+  double L0 = m_mini->FCN(); 
+
+  auto reducedCovariance = m_mini->covMatrix(); 
+  TMatrixD invCovariance     = reducedCovariance;
+  invCovariance.Invert(); 
+  TDecompChol decomposed( reducedCovariance );
+  decomposed.Decompose();
+  auto decomposedCholesky = decomposed.GetU();
+  for ( int i = 0; i < decomposedCholesky.GetNrows(); ++i ) {
+    for ( int j = i + 1; j < decomposedCholesky.GetNrows(); ++j ){
+      std::swap( decomposedCholesky(i, j), decomposedCholesky(j, i)  );
+    }
+  }
+  auto Q = []( const auto& x, const auto& A ){ return ( x * A * TMatrixD( TMatrixD::kTransposed , x ) )(0,0); };
+  std::vector<double> f_prime(functions.size());
+  
+  std::vector<double> parameters_v( parameters.size() );
+  const unsigned int N = decomposedCholesky.GetNrows();  
+  double weight = 1 ;
+  TTree* tree = nullptr; 
+  //  TFile* file = TFile::Open("test.root","RECREATE");
+//    tree = new TTree("t","t");
+// for( size_t i = 0 ; i != functions.size(); ++i ) tree->Branch( "f_"+std::to_string(i),  &f_prime[i] ); 
+//  for( unsigned int i = 0 ; i != N; ++i ) t->Branch( parameters[i].first->name().c_str(), &parameters_v[i] ); 
+//  tree->Branch("weight", &wt);
+
+  TMatrixD rt( functions.size(), functions.size() );
+  double w_sum = 0; 
+  for( unsigned sample = 0 ; sample != nSamples ; ++sample )
+  {
+    TVectorD e( N );
+    for ( unsigned i = 0; i != N; ++i ) e[i] = rnd->Gaus( 0, 1 );
+    TVectorD p = decomposedCholesky * e; 
+    TMatrixD pm( 1, N ) ;
+    for ( unsigned i = 0 ; i != N; ++i ){
+      parameters[i].first->setCurrentFitVal( parameters[i].second + p(i) );
+      pm(0,i) = p(i);
+      parameters_v[i] = parameters[i].second + p(i); 
+    }
+    for( unsigned i = 0 ; i != functions.size(); ++i ) f_prime.push_back( functions[i]() ); 
+    for( unsigned i = 0 ; i != functions.size(); ++i ) 
+    {
+      for( unsigned j = 0 ; j != functions.size(); ++j )
+      {
+        weight = exp( -0.5*( m_mini->FCN() - L0 ) ) / exp( -0.5 * Q(pm, invCovariance) );
+        rt(i,j) += weight * ( f_prime[i] - function_averages[i] ) * ( f_prime[j] - function_averages[j] ); 
+        w_sum += weight; 
+      }
+    }
+    if( tree != nullptr ) tree->Fill();
+  }
+ // t->Write();
+ // file->Close();
+  rt *= 1./w_sum; 
+  return rt; 
+}
+
+
