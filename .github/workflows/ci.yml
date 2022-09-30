@@ -48,10 +48,8 @@ jobs:
         simd: [0, 1]
 
     steps:
-    - name: check environment 
-      run: ls /usr/share/miniconda3/envs/my-env
     - name: activate environment 
-      run: mamba activate /usr/share/miniconda3/envs/my-env
+      run: /usr/share/miniconda3/condabin/mamba activate /usr/share/miniconda3/envs/my-env
     - name: Configure
       run: cmake -S . -B build -DENABLE_INSTALL=0 -DUSE_SIMD=${{matrix.simd}}
     - name: Build
