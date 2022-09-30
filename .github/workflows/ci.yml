@@ -16,21 +16,27 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-      - uses: actions/checkout@v1
-      - name: Cache Conda
-        uses: actions/cache@v2
-        env:
-            CACHE_NUMBER: 1
+      - uses: actions/checkout@v2
+
+      - name: Setup Mambaforge
+        uses: conda-incubator/setup-miniconda@v2
         with:
-          path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-${{ env.CACHE_NUMBER }}-${{hashFiles('.github/etc/env.yml') }}
-      - uses: conda-incubator/setup-miniconda@v2
+            miniforge-variant: Mambaforge
+            miniforge-version: latest
+            activate-environment: my-env
+            use-mamba: true
+
+      - name: Set Environment
+        run:  echo "ENVIRONMENT=.github/etc/env.yml"
+      - uses: actions/cache@v2
         with:
-            auto-update-conda: false
-            activate-environment: miniconda-env
-            channel-priority: strict
-            environment-file: .github/etc/env.yml
-            use-only-tar-bz2: true
+          path: /usr/share/miniconda3/envs/my-env
+          key:  ubuntu-latest-conda-${{ hashFiles('${{env.ENVIRONMENT}}') }}-${{ env.CACHE_NUMBER }}
+        id: cache
+
+      - name: Update environment
+        run: mamba env update -n my-env -f ${{env.ENVIRONMENT}}
+        if: steps.cache.outputs.cache-hit != 'true'
 
   build-and-test:
     name: build-and-test
