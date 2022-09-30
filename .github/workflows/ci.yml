@@ -12,7 +12,7 @@ jobs:
   setup-environment: 
     name: setup-environment
     runs-on: ${{matrix.os}}
-    stategy:
+    strategy:
       matrix:
         os: [ubuntu-latest]
         simd: [0, 1]
@@ -42,7 +42,7 @@ jobs:
     name: build-and-test
     needs: setup-environment
     runs-on: ${{matrix.os}}
-    stategy:
+    strategy:
       matrix:
         os: [ubuntu-latest]
         simd: [0, 1]
@@ -80,7 +80,7 @@ jobs:
 
   publish-test-results:
     name: "Publish Unit Tests Results"
-    needs: build-and-test
+    needs: [setup-environment, build-and-test]
     runs-on: ubuntu-latest
     # the build-and-test job might be skipped, we don't need to run this job then
     if: success() || failure()
