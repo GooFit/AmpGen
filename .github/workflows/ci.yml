@@ -1,11 +1,11 @@
 name: CI 
 on:
   push: 
-    branches: 
+  branches: 
       - master
       - v* 
   pull_request: 
-    branches: 
+  branches: 
       - master 
 env:
   CACHE_NUMBER: 0
@@ -21,18 +21,18 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
-    
+
     steps:
       - uses: actions/checkout@v2
         with:
-           clean: false 
+          clean: false 
       - name: Setup Mambaforge
         uses: conda-incubator/setup-miniconda@v2
         with:
-            miniforge-variant: Mambaforge
-            miniforge-version: latest
-            activate-environment: my-env
-            use-mamba: true
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          activate-environment: my-env
+          use-mamba: true
       - uses: actions/cache@v2
         with:
           path: /usr/share/miniconda3/envs/my-env
@@ -42,7 +42,6 @@ jobs:
         run: mamba env update -n my-env -f .github/etc/env.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
-    steps:
     - name: Configure
       run: cmake -S . -B build -DENABLE_INSTALL=0 -DUSE_SIMD=${{matrix.simd}}
     - name: Build
@@ -59,9 +58,9 @@ jobs:
       run: |
         mkdir xml 
         for x in build/bin/test/test_*; do 
-          name=$(basename $x); $x --log_level=all --log_format=JUNIT > xml/${name}.xml 
-          sed -n '/^<?xml version="1.0" encoding="UTF-8"?>$/,$p' xml/${name}.xml > xml/${name}.xml-i
-          mv xml/${name}.xml-i xml/${name}.xml
+        name=$(basename $x); $x --log_level=all --log_format=JUNIT > xml/${name}.xml 
+        sed -n '/^<?xml version="1.0" encoding="UTF-8"?>$/,$p' xml/${name}.xml > xml/${name}.xml-i
+        mv xml/${name}.xml-i xml/${name}.xml
         done
 
     - name: Upload Unit Test Results
@@ -75,16 +74,16 @@ jobs:
     runs-on: ubuntu-latest 
     needs: build-and-test
     # the build-and-test job might be skipped, we don't need to run this job then
-    if: success() || failure()
+  if: success() || failure()
 
-    steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v2
-        with:
-          path: artifacts
-      - name: check files
-        run: find . -name '*.xml'
-      - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        with:
-          files: artifacts/**/*.xml
+  steps:
+    - name: Download Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        path: artifacts
+    - name: check files
+      run: find . -name '*.xml'
+    - name: Publish Unit Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      with:
+        files: artifacts/**/*.xml
