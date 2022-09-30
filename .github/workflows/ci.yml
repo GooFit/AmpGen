@@ -31,7 +31,6 @@ jobs:
             channel-priority: strict
             environment-file: .github/etc/env.yml
             use-only-tar-bz2: true
-            os: ${{matrix.os}}
 
   build-and-test:
     name: build-and-test
@@ -40,11 +39,13 @@ jobs:
     strategy:
       matrix:
         simd: [0, 1]
-    defaults:
-      run:
-        shell: bash -l {0}
 
-    steps: 
+    steps:
+    - name: check 
+      run: |
+       pwd
+       ls
+       ls ../ 
     - name: Configure
       run: cmake -S . -B build -DENABLE_INSTALL=0 -DUSE_SIMD=${{matrix.simd}}
     - name: Build
