@@ -41,6 +41,11 @@ jobs:
   build-and-test:
     name: build-and-test
     needs: setup-environment
+    runs-on: ${{matrix.os}}
+    stategy:
+      matrix:
+        os: [ubuntu-latest]
+        simd: [0, 1]
     defaults:
       run:
         shell: bash -l {0}
