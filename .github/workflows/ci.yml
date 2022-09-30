@@ -45,7 +45,8 @@ jobs:
         simd: [0, 1]
 
     steps:
-    - uses: actions/checkout@v2
+    -name: 
+    run: mamba activate /usr/share/miniconda3/envs/my-env
     - name: check 
       run: |
        pwd
