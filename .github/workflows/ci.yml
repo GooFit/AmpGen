@@ -28,7 +28,6 @@ jobs:
             miniforge-version: latest
             activate-environment: my-env
             use-mamba: true
-
       - uses: actions/cache@v2
         with:
           path: /usr/share/miniconda3/envs/my-env
@@ -37,6 +36,8 @@ jobs:
       - name: Update environment
         run: mamba env update -n my-env -f .github/etc/env.yml
         if: steps.cache.outputs.cache-hit != 'true'
+      - name: check_env
+        run: which mamba
 
   build-and-test:
     name: build-and-test
@@ -47,6 +48,8 @@ jobs:
         simd: [0, 1]
 
     steps:
+    - name: check environment 
+      run: ls /usr/share/miniconda3/envs/my-env
     - name: activate environment 
       run: mamba activate /usr/share/miniconda3/envs/my-env
     - name: Configure
