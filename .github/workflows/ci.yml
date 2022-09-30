@@ -23,7 +23,8 @@ jobs:
         shell: bash -l {0}
 
     steps:
-      - uses: actions/checkout@v2
+      - name: checkout
+        uses: actions/checkout@v2
         with:
           clean: false 
       - name: Setup Mambaforge
@@ -33,7 +34,8 @@ jobs:
           miniforge-version: latest
           activate-environment: my-env
           use-mamba: true
-      - uses: actions/cache@v2
+      - name: load cache
+        uses: actions/cache@v2
         with:
           path: /usr/share/miniconda3/envs/my-env
           key:  ubuntu-latest-conda-${{ hashFiles('.github/etc/env.yml') }}-${{ env.CACHE_NUMBER }}
@@ -42,32 +44,32 @@ jobs:
         run: mamba env update -n my-env -f .github/etc/env.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
-    - name: Configure
-      run: cmake -S . -B build -DENABLE_INSTALL=0 -DUSE_SIMD=${{matrix.simd}}
-    - name: Build
-      run: cmake --build build -j "$(getconf _NPROCESSORS_ONLN)"
-    - name: Run
-      run: ./build/bin/AmpGen options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 10000
-    - name: Fit
-      run: |
-        ./build/bin/AmpGen options/example_kspipi.opt --nEvents 100000 --Output KsPiPi.root
-        ./build/bin/SignalOnlyFitter options/example_kspipi.opt --DataSample KsPiPi.root 
-      env:
-        CTEST_OUTPUT_ON_FAILURE: true
-    - name: Unit tests
-      run: |
-        mkdir xml 
-        for x in build/bin/test/test_*; do 
-        name=$(basename $x); $x --log_level=all --log_format=JUNIT > xml/${name}.xml 
-        sed -n '/^<?xml version="1.0" encoding="UTF-8"?>$/,$p' xml/${name}.xml > xml/${name}.xml-i
-        mv xml/${name}.xml-i xml/${name}.xml
-        done
+      - name: Configure
+        run: cmake -S . -B build -DENABLE_INSTALL=0 -DUSE_SIMD=${{matrix.simd}}
+      - name: Build
+        run: cmake --build build -j "$(getconf _NPROCESSORS_ONLN)"
+      - name: Run
+        run: ./build/bin/AmpGen options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 10000
+      - name: Fit
+        run: |
+          ./build/bin/AmpGen options/example_kspipi.opt --nEvents 100000 --Output KsPiPi.root
+          ./build/bin/SignalOnlyFitter options/example_kspipi.opt --DataSample KsPiPi.root 
+        env:
+          CTEST_OUTPUT_ON_FAILURE: true
+      - name: Unit tests
+        run: |
+          mkdir xml 
+          for x in build/bin/test/test_*; do 
+            name=$(basename $x); $x --log_level=all --log_format=JUNIT > xml/${name}.xml 
+            sed -n '/^<?xml version="1.0" encoding="UTF-8"?>$/,$p' xml/${name}.xml > xml/${name}.xml-i
+            mv xml/${name}.xml-i xml/${name}.xml
+          done
 
-    - name: Upload Unit Test Results
-      uses: actions/upload-artifact@v2
-      with:
-        name: Results (${{ runner.os }})
-        path: xml
+      - name: Upload Unit Test Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: Results (${{ runner.os }})
+          path: xml
 
   publish-test-results:
     name: "Publish Unit Tests Results"
