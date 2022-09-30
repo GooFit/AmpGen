@@ -9,36 +9,44 @@ on:
       - master 
 
 jobs:
+  setup-environment: 
+    name: setup-environment
+    runs-on: ${{matrix.os}}
+    stategy:
+      matrix:
+        os: [ubuntu-latest]
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v1
+      - name: Cache Conda
+        uses: actions/cache@v2
+        env:
+            CACHE_NUMBER: 1
+        with:
+          path: ~/conda_pkgs_dir
+          key:
+              ${{ runner.os }}-${{ env.CACHE_NUMBER }}-${{
+              hashFiles('.github/etc/env.yml') }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+            auto-update-conda: false
+            activate-environment: miniconda-env
+            channel-priority: strict
+            environment-file: .github/etc/env.yml
+            use-only-tar-bz2: true
 
   build-and-test:
     name: build-and-test
-    runs-on: ${{ matrix.os }}
+    needs: setup-environment
     strategy:
-      matrix:
-        os: [ubuntu-latest]
         simd: [0, 1]
     defaults:
       run:
         shell: bash -l {0}
 
     steps: 
-    - uses: actions/checkout@v1
-    - name: Cache Conda
-      uses: actions/cache@v2
-      env:
-          CACHE_NUMBER: 1
-      with:
-        path: ~/conda_pkgs_dir
-        key:
-            ${{ runner.os }}-${{ env.CACHE_NUMBER }}-${{
-            hashFiles('.github/etc/env.yml') }}
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-          auto-update-conda: false
-          activate-environment: miniconda-env
-          channel-priority: strict
-          environment-file: .github/etc/env.yml
-          use-only-tar-bz2: true
     - name: Configure
       run: cmake -S . -B build -DENABLE_INSTALL=0 -DUSE_SIMD=${{matrix.simd}}
     - name: Build
