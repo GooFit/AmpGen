@@ -45,6 +45,10 @@ jobs:
       run: cmake --build build -j "$(getconf _NPROCESSORS_ONLN)"
     - name: Run
       run: ./build/bin/AmpGen options/example_b2kstarll.opt --CompilerWrapper::Verbose --nEvents 10000
+    - name: Fit
+      run: |
+        ./build/bin/AmpGen options/example_kspipi.opt --nEvents 100000 --Output KsPiPi.root
+        ./build/bin/SignalOnlyFitter options/example_kspipi.opt --DataSample KsPiPi.root 
       env:
         CTEST_OUTPUT_ON_FAILURE: true
     - name: Unit tests
