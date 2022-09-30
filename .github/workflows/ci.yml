@@ -32,8 +32,6 @@ jobs:
           path: /usr/share/miniconda3/envs/my-env
           key:  ubuntu-latest-conda-${{ hashFiles('.github/etc/env.yml') }}-${{ env.CACHE_NUMBER }}
         id: cache
-      - name: check_key 
-        run: echo hashFiles('.github/etc/env.yml')
       - name: Update environment
         run: mamba env update -n my-env -f .github/etc/env.yml
         if: steps.cache.outputs.cache-hit != 'true'
