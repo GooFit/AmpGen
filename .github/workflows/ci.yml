@@ -15,6 +15,7 @@ jobs:
     stategy:
       matrix:
         os: [ubuntu-latest]
+        simd: [0, 1]
     defaults:
       run:
         shell: bash -l {0}
@@ -40,8 +41,6 @@ jobs:
   build-and-test:
     name: build-and-test
     needs: setup-environment
-    strategy:
-        simd: [0, 1]
     defaults:
       run:
         shell: bash -l {0}
