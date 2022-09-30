@@ -19,6 +19,8 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
+        with:
+           clean: false 
       - name: Setup Mambaforge
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -45,13 +47,8 @@ jobs:
         simd: [0, 1]
 
     steps:
-    -name: 
-    run: mamba activate /usr/share/miniconda3/envs/my-env
-    - name: check 
-      run: |
-       pwd
-       ls
-       ls ../ 
+    - name: activate environment 
+      run: mamba activate /usr/share/miniconda3/envs/my-env
     - name: Configure
       run: cmake -S . -B build -DENABLE_INSTALL=0 -DUSE_SIMD=${{matrix.simd}}
     - name: Build
