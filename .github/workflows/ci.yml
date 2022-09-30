@@ -46,6 +46,9 @@ jobs:
     strategy:
       matrix:
         simd: [0, 1]
+    defaults:
+      run:
+        shell: bash -l {0}
 
     steps:
     - name: check environment 
