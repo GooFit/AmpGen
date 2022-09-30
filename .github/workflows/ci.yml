@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-
+        simd: [0, 1]
     defaults:
       run:
         shell: bash -l {0}
@@ -40,7 +40,7 @@ jobs:
           environment-file: .github/etc/env.yml
           use-only-tar-bz2: true
     - name: Configure
-      run: cmake -S . -B build -DENABLE_INSTALL=0
+      run: cmake -S . -B build -DENABLE_INSTALL=0 -DUSE_SIMD=${{matrix.simd}}
     - name: Build
       run: cmake --build build -j "$(getconf _NPROCESSORS_ONLN)"
     - name: Run
