@@ -97,7 +97,7 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
   DEBUG( "Building particle from decay string = " << decayString << " name = " << m_name << " "<< m_props->name() );
   std::vector<bool> hasUsedFinalState( finalStates.size(), 0 );
   for ( auto d : fs ) {
-    for ( unsigned int i = 0; i < finalStates.size(); ++i ) {
+    for ( unsigned i = 0; i < finalStates.size(); ++i ) {
       if ( hasUsedFinalState[i] || d->name() != finalStates[i] ) continue;
       DEBUG( "HEAD = " << name() << " " << d << " name = " << d->name() << " setting index = " << i );
       d->setIndex( i, true );
@@ -110,9 +110,9 @@ Particle::Particle( const std::string& decayString, const std::vector<std::strin
   if ( !isStateGood() ) {
     ERROR( "Amplitude " << decayString << " not configured correctly" );
   }
-  if ( finalStates.size() == fs.size() ) {
-    m_isStateGood = std::all_of( hasUsedFinalState.begin(), hasUsedFinalState.end(),[](const auto& b){return b;} );
-  }
+//  if ( finalStates.size() == fs.size() ) {
+  m_isStateGood = std::all_of(hasUsedFinalState.begin(), hasUsedFinalState.end(), [](const auto& b){return b;} );
+//  }
   m_uniqueString = makeUniqueString();
 }
 
@@ -346,21 +346,23 @@ Expression Particle::propagator( DebugSymbols* db ) const
 {
   if ( db != nullptr && !isStable() ) db->emplace_back( uniqueString() +" lineshape", Parameter( "NULL", 0, true ) );
   if ( m_daughters.size() == 0 ) return 1;
+  
+  DEBUG( "Getting lineshape " << m_lineshape << " for " << m_name << " " << m_daughters.size()  );
 
-  Expression total( 1. );
-  DEBUG( "Getting lineshape " << m_lineshape << " for " << m_name );
-  Expression s = massSq();
-  Expression prop = 1; 
+  Expression s     = massSq();
+  Expression total = 1.;
+  Expression prop  = 1.;
   if ( m_daughters.size() == 2 ) 
     prop = Lineshape::Factory::get(m_lineshape, s, daughter(0)->massSq(), daughter(1)->massSq(), m_name, m_orbital, db);
   else if ( m_daughters.size() >= 3 )
     prop = Lineshape::Factory::get(m_lineshape == "BW" ? "SBW" : m_lineshape, *this, db );
-  else if ( m_daughters.size() == 1 && m_lineshape != "BW" && m_lineshape != "FormFactor" )
+  else if ( m_daughters.size() == 1 && m_lineshape.find("BW") != std::string::npos && 
+                                       m_lineshape.find("FormFactor") != std::string::npos )
   { 
     prop = Lineshape::Factory::get(m_lineshape, *this, db );
   } 
-  total = total * make_cse(prop);
-  for(auto& d : m_daughters) total = total*make_cse(d->propagator(db));
+  total *= make_cse(prop);
+  for(auto& d : m_daughters) total *= make_cse(d->propagator(db));
   if(db != nullptr) db->emplace_back("A("+uniqueString()+")", total);
   return total;
 }
@@ -441,9 +443,10 @@ Expression Particle::getExpression( DebugSymbols* db, const std::vector<int>& st
         else spinFactor = is(a) * st(a) ;
       }
       if( m_props->twoSpin() == 2 ){
-        Tensor is  = externalSpinTensor(m_polState).conjugate();
-        ADD_DEBUG_TENSOR(is, db );
-        spinFactor = dot(is,st);
+        auto ve = externalSpinTensor(m_polState); 
+        ve.st(); 
+        ADD_DEBUG_TENSOR(ve.conjugate(), db);
+        spinFactor = dot( ve.conjugate(), st);
       }
     }
     if ( includeSpin && m_spinFormalism == spinFormalism::Canonical ){
@@ -486,13 +489,16 @@ Tensor Particle::spinTensor( DebugSymbols* db ) const
   if ( m_daughters.size() == 0 ){
     auto S = externalSpinTensor(m_polState, db);
     if( S.size() != 1 ) ADD_DEBUG_TENSOR_NAMED( S, db, "S("+name()+")" );
+    S.st();
     return S;
   }
   else if ( m_daughters.size() == 2 ) {
     auto vname = m_props->spinName() + "_" + m_daughters[0]->m_props->spinName() + m_daughters[1]->m_props->spinName() + "_" + orbitalString();
-    return Vertex::Factory::getSpinFactor( P(), Q(), 
+    auto rt = Vertex::Factory::getSpinFactor( P(), Q(), 
         daughter(0)->spinTensor(db),
-        daughter(1)->spinTensor(db), vname, db );
+        daughter(1)->spinTensor(db), vname, db ); 
+    rt.st();
+    return rt; 
   } else if ( m_daughters.size() == 3 ) {
     return Vertex::Factory::getSpinFactorNBody( {
         {daughter(0)->P(), daughter(0)->spinTensor()},

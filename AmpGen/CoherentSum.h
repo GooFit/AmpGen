@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "AmpGen/AmplitudeRules.h"
+#include "AmpGen/MatrixElement.h"
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventListSIMD.h"
@@ -101,7 +102,7 @@ namespace AmpGen
     KeyedFunctors<double(Event)> componentEvaluator(const EventList_type* = nullptr) const; 
     EventType eventType() const { return m_evtType; } 
   protected:
-    std::vector<TransitionMatrix<complex_v>> m_matrixElements; ///< Vector of matrix elements
+    std::vector<MatrixElement> m_matrixElements; ///< Vector of matrix elements
     Bilinears        m_normalisations;                         ///< Normalisation integrals
      
     Integrator       m_integrator;                             ///< Tool to calculate integrals 

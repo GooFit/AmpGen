@@ -136,7 +136,7 @@ namespace AmpGen
         bool hasExternalsChanged() { return m_hasExternalsChanged; }
         void resetExternals() { m_hasExternalsChanged = false; }
 
-        Expression& expression() { return m_obj; }
+        const Expression& expression() const { return m_obj; }
 
         void compileDetails( std::ostream& stream ) const
         {

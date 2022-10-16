@@ -54,15 +54,10 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , std::thread::hardware_concurrency(), "Number of threads to use" );
   ThreadPool tp(nThreads);
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
-    tp.enqueue( [i,this,&mps,&amplitudes]{
-       auto& [p, c] = amplitudes[i];
-        DebugSymbols db;
-        m_matrixElements[i] = 
-          TransitionMatrix<complex_v>(p, c, 
-          CompiledExpression<complex_v(const real_t*, const float_v*)>( p.getExpression(m_dbThis ? &db : nullptr), p.decayDescriptor(),
-            this->m_evtType.getEventFormat(), db, &mps ) );
-        CompilerWrapper().compile( m_matrixElements[i], this->m_objCache); 
-      } ); 
+    tp.enqueue( [i, this, &mps, &amplitudes]() mutable {
+      m_matrixElements[i] = MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), m_dbThis); 
+      CompilerWrapper().compile( m_matrixElements[i], this->m_objCache); 
+    } ); 
   }
 }
 
@@ -117,7 +112,7 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
   for ( auto& me : m_matrixElements ) {
     auto A = me(evt);
     INFO( std::setw(70) << me.decayTree.uniqueString() 
-        << " A = [ "  << utils::get<0>(A.real())             << " " << utils::get<0>(A.imag())
+        << " A = [ "  << A[0].real()             << " " << A[0].imag()
         << " ] g = [ "<< me.coupling().real() << " " << me.coupling().imag() << " ] "
         << m_cache( evt.index(), std::distance(&m_matrixElements[0], &me ) )
         << me.decayTree.CP() );
@@ -248,7 +243,7 @@ complex_t CoherentSum::getValNoCache( const Event& evt ) const
   return utils::get<0>( complex_v(std::accumulate( m_matrixElements.begin(), 
           m_matrixElements.end(), 
           complex_v(0,0), 
-          [&evt]( const auto& a, const auto& b ){ return a + b.coefficient * b(evt);} )) );
+          [&evt]( const auto& a, const auto& b ){ return a + b.coefficient * b(evt)[0];} )) );
 }
 
 void CoherentSum::reset( bool resetEvents )
@@ -310,6 +305,7 @@ void CoherentSum::transferParameters()
 
 void CoherentSum::printVal(const Event& evt)
 {
+  /*
   for ( auto& mE : m_matrixElements ) {
     unsigned int address = std::distance( &mE , &m_matrixElements[0] );
     std::cout << mE.decayTree.decayDescriptor() << " = " << mE.coefficient << " x " << m_cache( evt.index() / utils::size<float_v>::value, address )
@@ -320,6 +316,7 @@ void CoherentSum::printVal(const Event& evt)
       std::cout << "================================" << std::endl;
     }
   }
+  */
 }
 
 complex_t CoherentSum::getVal( const Event& evt ) const

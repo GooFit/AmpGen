@@ -176,7 +176,7 @@ int main( int argc, char* argv[] )
   /* Generate events to normalise the PDF with. This can also be loaded from a file,
      which will be the case when efficiency variations are included. */
   EventList_type eventsMC = simFile == ""
-   ? EventList_type(Generator<RecursivePhaseSpace, EventList>(sig.matrixElements()[0].decayTree.quasiStableTree(), events.eventType(), &rndm).generate(nev_MC))
+   ? EventList_type(Generator<RecursivePhaseSpace>(sig.matrixElements()[0].decayTree.quasiStableTree(), events.eventType(), &rndm).generate(nev_MC))
    : EventList_type(simFile, evtType, Branches(MCbNames), WeightBranch(mc_weight_branch), ExtraBranches(std::vector<std::string>{mcidbranch}));
 
   /* Transform data if we have an ID brach. That branch indicates that we operate on a sample with particles+antiparticles mixed.

@@ -1,7 +1,7 @@
 #include <Math/AllIntegrationTypes.h>
 #include <Math/IFunctionfwd.h>
 #include <Math/ParamFunctor.h>
-#include <Math/GSLIntegrator.h>
+//#include <Math/GSLIntegrator.h>
 #include <Math/WrappedTF1.h>
 #include <TH2.h>
 #include <TF1.h>
@@ -44,10 +44,13 @@ using namespace AmpGen;
 
 template <class FCN> double dispersive( FCN& fcn , const double& s, double min , double max )
 {
+  /*
   TF1 fcn_tf1 = TF1( "fcn_tf1",fcn, min, max, 0 );
   ROOT::Math::GSLIntegrator ig(ROOT::Math::IntegrationOneDim::kADAPTIVE, 0.0001);
   ig.SetFunction( ROOT::Math::WrappedTF1(fcn_tf1) );
   return ig.IntegralCauchy(min,max,s);
+  */
+  return 0; 
 }
 
 TGraph* ThreeBodyCalculator::runningMass(
@@ -145,7 +148,7 @@ Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(
     auto perm = particle.identicalDaughterOrderings();
     for ( auto& p : perm ) {
       particle.setOrdering(p);
-      if( particle.lineshape().find("EFF") or particle.lineshape().find("ExpFF") )
+      if( particle.lineshape().find("EFF") != std::string::npos or particle.lineshape().find("ExpFF") != std::string::npos )
         particle.setLineshape( "ExpFF" );
       else particle.setLineshape("FormFactor");
       Expression prop = make_cse( c.to_expression() ) * make_cse( particle.propagator( msym ) );
@@ -161,7 +164,7 @@ Expression ThreeBodyCalculator::PartialWidth::spinAverageMatrixElement(
   }
   Expression total;
   for ( auto& j_a : currents ) {
-    for ( auto& j_b : currents ) total = total + dot( j_a, j_b.conjugate() );
+    for ( auto& j_b : currents ) total += dot( j_a, j_b.conjugate() );
   }
   ADD_DEBUG( total, msym );
   return pow(-1, ParticlePropertiesList::get(type.mother())->twoSpin() /2. ) * total;
@@ -186,9 +189,9 @@ ThreeBodyCalculator::ThreeBodyCalculator( const std::string& head, MinuitParamet
       if ( std::find( finalStates.begin(), finalStates.end(), type ) == finalStates.end() ) finalStates.push_back(type);
     }
   }
-  if( finalStates.size() == 0 ) FATAL("Particle: " << head << " has no integrable decay path");
-  for ( auto& type : finalStates ) m_widths.emplace_back( type, mps );
-  if( nKnots != 999) setAxis( nKnots, min, max ); 
+  if ( finalStates.size() == 0 ) FATAL("Particle: " << head << " has no integrable decay path");
+  for( auto& type : finalStates ) m_widths.emplace_back( type, mps );
+  if ( nKnots != 999) setAxis( nKnots, min, max ); 
 }
 
 void ThreeBodyCalculator::setAxis( const size_t& nKnots, const double& min, const double& max )
@@ -238,10 +241,10 @@ ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitPar
   , integrator(1, evt.mass(0)*evt.mass(0), evt.mass(1)*evt.mass(1) , evt.mass(2)*evt.mass(2) )
   , type(evt)
 {
+  INFO( evt << " " << fcs.matrixElements().size() ); 
   DebugSymbols msym;
   std::vector<std::pair<Particle,TotalCoupling>> unpacked; 
   for( auto& p : fcs.matrixElements() ) unpacked.emplace_back( p.decayTree, p.coupling );
-
   Expression matrixElementTotal = spinAverageMatrixElement(unpacked, &msym );
   auto evtFormat = evt.getEventFormat();
   for ( auto& p : unpacked ) {

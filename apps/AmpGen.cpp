@@ -80,7 +80,7 @@ template <class T> void generateSource(T& pdf, const std::string& sourceFile, Mi
   unsigned d_i = pdf.eventType().dim().first;
   Generator<PhaseSpace> phsp(pdf.eventType());
   phsp.setRandom(&rnd);
-  EventList normEvents = phsp.generate(nEvents);
+  EventList_t normEvents = phsp.generate(nEvents);
   if constexpr( std::is_same<T, CoherentSum>::value ) pdf.prepare();
 
   double norm = 1; 
@@ -144,37 +144,33 @@ template <typename pdf_t> void generateEvents( EventList& events
                        , TRandom* rndm
                        , const bool& normalise = true )
 {
+  auto fill = [&]( auto& generator ) mutable 
+  {
+    generator.setRandom(rndm); 
+    generator.setBlockSize(blockSize);
+    generator.setNormFlag(normalise);
+    generator.fillEventList(pdf, events, nEvents );
+  };
+
   if constexpr( std::is_same<pdf_t, FixedLibPDF>::value )
   {
-    Generator<PhaseSpace, EventList> signalGenerator(events.eventType()); 
-    signalGenerator.setRandom(rndm); 
-    signalGenerator.setBlockSize(blockSize);
-    signalGenerator.setNormFlag(normalise);
-    signalGenerator.fillEventList(pdf, events, nEvents );
+    Generator<PhaseSpace> signalGenerator(events.eventType()); 
+    fill( signalGenerator ); 
   }
   else if( phsp_type == phspTypes::PhaseSpace )
   {
-    Generator<PhaseSpace, EventList_t> signalGenerator(events.eventType());
-    signalGenerator.setRandom(rndm); 
-    signalGenerator.setBlockSize(blockSize);
-    signalGenerator.setNormFlag(normalise);
-    signalGenerator.fillEventList(pdf, events, nEvents );
+    Generator<PhaseSpace> signalGenerator(events.eventType());
+    fill( signalGenerator );
   }
   else if( phsp_type == phspTypes::RecursivePhaseSpace )
   {
-    Generator<RecursivePhaseSpace, EventList_t> signalGenerator( getTopology(pdf), events.eventType());
-    signalGenerator.setRandom(rndm); 
-    signalGenerator.setBlockSize(blockSize);
-    signalGenerator.setNormFlag(normalise);
-    signalGenerator.fillEventList(pdf, events, nEvents);
+    Generator<RecursivePhaseSpace> signalGenerator( getTopology(pdf), events.eventType());
+    fill( signalGenerator );
   }
   else if( phsp_type == phspTypes::TreePhaseSpace )
   {
-    Generator<TreePhaseSpace, EventList_t> signalGenerator(getDecayChains(pdf), events.eventType());
-    signalGenerator.setRandom(rndm); 
-    signalGenerator.setBlockSize(blockSize);
-    signalGenerator.setNormFlag(normalise);
-    signalGenerator.fillEventList(pdf, events, nEvents );
+    Generator<TreePhaseSpace> signalGenerator(getDecayChains(pdf), events.eventType());
+    fill( signalGenerator );
   }
   else {
     FATAL("Phase space configuration: " << phsp_type << " is not supported");
@@ -277,10 +273,12 @@ int main( int argc, char** argv )
     PolarisedSum pdf(eventType, MPS);
     generateEvents( accepted, pdf, phspType, nEvents, blockSize, &rand );
   }
+  /*
   else if ( pdfType == pdfTypes::FixedLib ){
     FixedLibPDF pdf(lib);
     generateEvents( accepted, pdf, phspType, nEvents, blockSize, &rand, false );
   }
+  */
   else {
     FATAL("Did not recognise configuration: " << pdfType );
   }

@@ -72,7 +72,7 @@ namespace AmpGen
     size_t aligned_size()                         const { return m_data.size() ; }
     size_t nBlocks()                              const { return m_data.size() ; }
     double integral()                             const;
-    const double* block(const unsigned pos) const { return m_data[pos].address(); }
+    double* block(const unsigned pos)  { return m_data[pos].address(); }
     real_t weight( const size_t& pos)             const { return m_data[pos].weight(); }
     real_t genPDF( const size_t& pos)             const { return m_data[pos].genPdf(); }
     unsigned key(const std::string& key)          const 

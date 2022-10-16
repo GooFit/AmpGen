@@ -901,6 +901,20 @@ namespace AmpGen{
             return max;
         }
 
+
+        template <typename eventList_t, typename ps_t=PhaseSpace> void fillEventListPhaseSpaceQMI( eventList_t& events, const size_t& N, ps_t ps)
+        {
+          events.resize(N);
+          auto it = events.begin();
+          while( it != events.end() )
+          {
+            *it = ps.makeEvent();
+            if constexpr( std::is_same<eventList_t, EventList>::value ) it->setIndex( it - events.begin() );
+            ++it;
+          }
+        }
+ 
+
         template <typename eventList_t, typename pdf_t> void generatePsi3770( pdf_t& pdf, eventList_t& list1, eventList_t& list2, const size_t& N, size_t seed, size_t generatorBlock )
         {    
             TRandom3 rndm(seed);
@@ -914,13 +928,19 @@ namespace AmpGen{
             ProgressBar pb(60, detail::trimmedString(__PRETTY_FUNCTION__) );
             ProfileClock t_phsp, t_eval, t_acceptReject, t_total;
             std::vector<bool> efficiencyReport(generatorBlock,false); 
-            EventList mc1( list1.eventType() );
-            EventList mc2( list2.eventType() );
-            INFO("Start generation of "<<N<<" "<<mc1.eventType()<<" vs "<<mc2.eventType()<<" events");
+            INFO("Start generation of "<<N<<" "<<list1.eventType()<<" vs "<<list2.eventType()<<" events");
+            PhaseSpace ps1(list1.eventType(), &rndm);
+            PhaseSpace ps2(list2.eventType(), &rndm);
+
             while ( list1.size() - size0 < N ) {
+
+                eventList_t mc1( list1.eventType() );
+                eventList_t mc2( list2.eventType() );
+                mc1.resize(generatorBlock);
+                mc2.resize(generatorBlock);
                 t_phsp.start();
-                g1.fillEventListPhaseSpace(mc1, generatorBlock);
-                g2.fillEventListPhaseSpace(mc2, generatorBlock);
+                fillEventListPhaseSpaceQMI(mc1, generatorBlock, ps1);
+                fillEventListPhaseSpaceQMI(mc2, generatorBlock, ps2);
                 t_phsp.stop();
                 t_eval.start();
             //    pdf.setEvents( mc1 );
@@ -996,11 +1016,14 @@ namespace AmpGen{
             ProgressBar pb(60, detail::trimmedString(__PRETTY_FUNCTION__) );
             ProfileClock t_phsp, t_eval, t_acceptReject, t_total;
             std::vector<bool> efficiencyReport(generatorBlock,false); 
-            EventList mc( list.eventType() );
-            INFO("Start generation of "<<N<<" "<<mc.eventType());
+            PhaseSpace ps(list.eventType(), &rndm);
+            
+            INFO("Start generation of "<<N<<" "<<list.eventType());
             while ( list.size() - size0 < N ) {
+                eventList_t mc ( list.eventType() );
+                mc.resize(generatorBlock);
                 t_phsp.start();
-                g.fillEventListPhaseSpace(mc, generatorBlock);
+                fillEventListPhaseSpaceQMI(mc, generatorBlock, ps);
                 t_phsp.stop();
                 t_eval.start();
             //    pdf.setEvents( mc1 );

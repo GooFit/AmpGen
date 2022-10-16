@@ -83,15 +83,13 @@ PolarisedSum::PolarisedSum(const EventType& type,
         DebugSymbols syms;      
         for(unsigned j = 0; j != polStates.size(); ++j) 
           thisExpression[j] = make_cse( p.getExpression(j == 0 ? &syms: nullptr, polStates[j] ) );         
-          //thisExpression[j] = make_cse( p.getExpression(&syms, polStates[j] ) );         
-        ptr->m_matrixElements[i] = TransitionMatrix<void>( 
+        ptr->m_matrixElements[i] = MatrixElement( 
             p, c,
-            CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>(
+            CompiledExpression<void(complex_v*, const size_t*, const real_t*, const float_v*)>(
             TensorExpression(thisExpression), p.decayDescriptor(), &mps,
             ptr->m_eventType.getEventFormat(), ptr->m_debug ? syms : DebugSymbols() ) );
         
         CompilerWrapper().compile( ptr->m_matrixElements[i] );
-        ptr->m_matrixElements[i].size = thisExpression.size();
       });
     }
   }
@@ -109,9 +107,9 @@ PolarisedSum::PolarisedSum(const EventType& type,
         auto& [p,coupling] = i < r1.size() ? r1[i] : r2[i-r1.size()];
         thisExpression[0] = i < r1.size() ? make_cse( p.getExpression(&syms) ) : 0;
         thisExpression[1] = i < r1.size() ? 0 : make_cse( p.getExpression(&syms) ); 
-        this->m_matrixElements[i] = TransitionMatrix<void>( 
+        this->m_matrixElements[i] = MatrixElement( 
             p, coupling, 
-            CompiledExpression<void(complex_v*, const size_t&, const real_t*, const float_v*)>(
+            CompiledExpression<void(complex_v*, const size_t*, const real_t*, const float_v*)>(
             TensorExpression(thisExpression), p.decayDescriptor(), this->m_mps,
             this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ) );
           CompilerWrapper().compile( m_matrixElements[i] );
@@ -165,7 +163,7 @@ std::vector<complex_t> densityMatrix(const unsigned& dim, const std::vector<Minu
 }
 
 
-std::vector<TransitionMatrix<void>> PolarisedSum::matrixElements() const
+std::vector<MatrixElement> PolarisedSum::matrixElements() const
 {
   return m_matrixElements;  
 }
@@ -332,9 +330,14 @@ void PolarisedSum::debug(const Event& evt)
     INFO( m_matrixElements[j].decayDescriptor() << " " << vectorToString(this_cache, " ") );
     if( m_debug ) m_matrixElements[j].debug( evt ); 
     for( auto& t : this_cache ) all_cache.emplace_back( t);
-  }   
+  }
+  INFO("Doing ... stuff"); 
   if( m_debug ) m_probExpression.debug(all_cache.data() );
-  INFO("P(x) = " << getValNoCache(evt) << " " << operator()((const float_v*)nullptr, evt.index() / utils::size<float_v>::value ) );
+  INFO("Evaluating without cache...");
+  INFO("P(x) = " << getValNoCache(evt) );
+  INFO("P(x) = " << operator()((const float_v*)nullptr, evt.index() / utils::size<float_v>::value ) );
+  
+
   INFO("Prod = [" << vectorToString(m_pVector , ", ") <<"]");
 }
 
@@ -546,7 +549,7 @@ KeyedFunctors<double(Event)> PolarisedSum::componentEvaluator(const EventList_ty
       auto ci = this->m_matrixElements[i].coefficient;
       auto cj = this->m_matrixElements[j].coefficient;
       double s = (i==j) ? 1 : 2 ;
-      auto name = programatic_name(mi.decayTree.decayDescriptor()) + "_" + programatic_name( mj.decayTree.decayDescriptor() );
+      auto name = programatic_name(mi.decayDescriptor()) + "_" + programatic_name( mj.decayDescriptor() );
       rt.add( [ci,cj,i,j,s, cache, this](const Event& event){  
         auto [s1,s2] = this->m_dim;
         auto R = s1 * s2; 

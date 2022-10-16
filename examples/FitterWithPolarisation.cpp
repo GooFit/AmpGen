@@ -114,7 +114,7 @@ int main( int argc, char* argv[] )
   /* Generate events to normalise the PDF with. This can also be loaded from a file, 
      which will be the case when efficiency variations are included. Default number of normalisation events 
      is 2 million. */
-  Generator<RecursivePhaseSpace, EventList> signalGenerator( getTopology(sig), events.eventType(), &rndm );
+  Generator<RecursivePhaseSpace> signalGenerator( getTopology(sig), events.eventType(), &rndm );
   auto events_l = signalGenerator.generate(1e6);
   EventList_type eventsMC = simFile == "" ? EventList_type(events_l) : EventList_type(simFile, evtType);
   

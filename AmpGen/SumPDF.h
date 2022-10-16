@@ -61,13 +61,21 @@ namespace AmpGen
     {
       for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
       std::vector<float_v> tmp( m_events->nBlocks() );
+      fill_likelihood( tmp.data() ); 
+      KahanSum<float_v> sum;
+      for( unsigned block = 0 ; block != m_events->nBlocks(); ++block ) sum += tmp[block];
+      return -2 * utils::sum_elements(sum.sum);
+    } 
+    void fill_likelihood( float_v* output )
+    {
+      for_each(m_pdfs, []( auto& f ) { f.prepare(); });
       if constexpr( std::is_same<eventListType,EventList>::value )
       {
         #pragma omp parallel for
         for ( unsigned int i = 0; i < m_events->size(); ++i ) {
           auto prob = ((*this))(( *m_events)[i] );
           auto w = (*m_events)[i].weight();
-          tmp[i] = w * log(prob);  
+          output[i] = w * log(prob);  
         }
       }
       #if ENABLE_AVX 
@@ -76,14 +84,12 @@ namespace AmpGen
         #pragma omp parallel for
         for( unsigned block = 0 ; block < m_events->nBlocks(); ++block )
         {
-          tmp[block] = m_events->weight(block) * AVX::log(this->operator()(m_events->block(block), block));  
+          output[block] = m_events->weight(block) * AVX::log(this->operator()(m_events->block(block), block));  
         }
       }
       #endif
-      KahanSum<float_v> sum;
-      for( unsigned block = 0 ; block != m_events->nBlocks(); ++block ) sum += tmp[block];
-      return -2 * utils::sum_elements(sum.sum);
-    } 
+    }
+    
     /// Returns the probability for the given event. 
     float_v operator()( const float_v* evt , const unsigned block)
     {

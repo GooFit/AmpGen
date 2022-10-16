@@ -43,13 +43,13 @@ namespace AmpGen
     void fix();
     void setCurrentFitVal( double cfv );
     void setLimits( const double& min, const double& max );
+    void setVal( const double& val ) { m_meanResult = val; } 
     void setResult( double fitMean, double fitErr, double fitErrNeg, double fitErrPos );
     void resetToInit();
     void setName( const std::string& name );
     virtual double mean() const;
     virtual operator double() const { return m_meanResult; }
     virtual ~MinuitParameter() = default;
-    
     void setFromMinuitState( const double* x ){ if( m_minuitIndex != -1 ) m_meanResult = x[m_minuitIndex] ; } 
     void setMinuitIndex( const int& index ){ m_minuitIndex = index; }  
     int index() const { return m_minuitIndex; } 
