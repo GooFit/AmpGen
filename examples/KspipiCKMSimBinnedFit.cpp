@@ -152,16 +152,22 @@ real_t logPoisson(real_t x, real_t m){
 
 //    y = -m + x * std::log(m) - std::lgamma(x + 1);
 //  y = -0.5*std::pow(m - x, 2)/m - 0.5*std::log(M_PI * 2) - 0.5*std::log(m);
- if (x != 0){
- //y = -0.5* std::pow(m - x,2)/x;///(m + x);
- y = - std::pow(m - x,2)/(x);///(m + x);
- 
-//    y = -m + x * std::log(m) - std::lgamma(x + 1);
- }
- else{
+ real_t d = x;
 
- y = - std::pow(m - x,2);///(m + x);
+ if (d==0) {
+     y = 0;
+     //y = - std::pow(m - x,2)/(1);///(m + x);
  }
+ //y = -0.5* std::pow(m - x,2)/x;///(m + x);
+ else{
+ y = - std::pow(m - x,2)/(d);///(m + x);
+ }
+//    y = -m + x * std::log(m) - std::lgamma(x + 1);
+
+
+
+
+
 
  //y = - std::pow(m - x,2)/(x);///(m + x);
 //  y = -0.5*std::pow(m - x,2)/(m);
@@ -645,7 +651,7 @@ auto min_Kppim = [&binnedEvents, &MPS, &totalKppim, &totalKmpip](){
       real_t nm = binnedEvents["Bp2DKp"][-i];
       ll += logPoisson(n, E);
       ll += logPoisson(nm, Em);
-      //ll += logPoisson(n+ nm, E + Em);
+ //     ll += logPoisson(n+ nm, E + Em);
       
     }
     return -2 * ll;

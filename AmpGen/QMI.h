@@ -116,8 +116,11 @@ namespace AmpGen{
             Expression z2 = (Phi[1] - Phi[0])/2;
             Expression w1 = m1 * z1 + c1;
             Expression w2 = m2 * z2 + c2;
-            if (NamedParameter<bool>("PhaseCorrection::stretchAntiSym", false)){
-                    w2 = Expression(NamedParameter<real_t>("PhaseCorrection::stretchAntiSym_A", 2)) * w2/(w1 + 1 - Expression(NamedParameter<real_t>("PhaseCorrection::stretchAntiSym_epsilon", 0.01)));
+            if (NamedParameter<bool>("PhaseCorrection::stretchAntiSym", true)){
+                auto antiSym_scale = Expression(NamedParameter<real_t>("PhaseCorrection::stretchAntiSym_scale", 2));
+                auto antiSym_offset = Expression(NamedParameter<real_t>("PhaseCorrection::stretchAntiSym_offset", 2));
+            //        w2 = * w2/(w1 + 1 - Expression(NamedParameter<real_t>("PhaseCorrection::stretchAntiSym_epsilon", 0.01)));
+                w2 = antiSym_scale * w2/(antiSym_offset + w1);
             }
             if (NamedParameter<bool>("PhaseCorrection::useSquareDalitz", false)){
                     z1 = Phi[2];
@@ -161,6 +164,12 @@ namespace AmpGen{
 
             return num;
         }
+        Expression chebyshev(Expression& x, size_t n){
+            if (n==0) return 1;
+            if (n==1) return x;
+            return 2 * x * chebyshev(x, n-1) - chebyshev(x, n-2);
+        }
+
 
         //template <class ce=CompiledExpression<real_t(const real_t*, const real_t*)> >
         Expression Pij(EventType& type, size_t i, size_t j, std::string polyType){
@@ -175,6 +184,11 @@ namespace AmpGen{
             if (polyType=="antiSym_simple"){
                 Pi = fcn::pow(w[0], i);
                 Pj = fcn::pow(w[1], j);
+            }
+            if (polyType=="antiSym_chebyshev"){
+                Pi = chebyshev(w[0], i);
+                Pj = chebyshev(w[1], j);
+
             }
  
             return Pi * Pj;
@@ -297,12 +311,41 @@ namespace AmpGen{
         real_t sigmaminus(MPS["PhaseCorrection::Gauss::sigma_-"]->mean());
         real_t s01(evt.s(0, 1));
         real_t s02(evt.s(0, 2));
+        real_t s12(evt.s(1, 2));
         real_t c2 = -9.54231895051727e-05;
         real_t m2 = 0.8051636393861085;
         real_t z2 = (s01 - s02)/2;
         real_t w2 = m2 * z2 + c2;
 
+        //Particle mother(evt.EventType().decayDescriptor(), evt.EventType().finalStates());
+        //real_t M0 = 1.86484;
+        //real_t M1 =0.493677;// mother.daughter(0)->mass();
+        //real_t M2 = 0.13957018;//mother.daughter(1)->mass();
+        //real_t M3 = M3; //mother.daughter(2)->mass();
+        real_t M1 = std::sqrt(evt.s(0,0)/2);// mother.daughter(0)->mass();
+        real_t M2 = std::sqrt(evt.s(1,1)/2);//mother.daughter(1)->mass();
+        real_t M3 = std::sqrt(evt.s(2,2)/2); //mother.daughter(2)->mass();
 
+        real_t M0 = std::sqrt(s01 + s02 + s12 - M1 * M1 - M2 * M2 - M3 * M3);
+
+
+        real_t E1 = (std::pow(M1, 2) + M0 * M0 - s12)/(2 * M0);
+        real_t E2 = (std::pow(M2, 2) + M0 * M0 - s02)/(2 * M0);
+        real_t E3 = (std::pow(M3, 2) + M0 * M0 - s01)/(2 * M0);
+//        real_t theta23 = std::acos(cos23);
+        real_t cos01 = (2 * E1 * E2 - (s01 - std::pow(M1, 2) - std::pow(M2, 2)))/(2 * std::sqrt( std::pow(E1, 2) - std::pow(M1, 2)) * std::sqrt(std::pow(E2, 2) - std::pow(M2, 2)));
+        real_t cos02 = (2 * E1 * E3 - (s02 - std::pow(M1, 2) - std::pow(M3, 2)))/(2 * std::sqrt( std::pow(E1, 2) - std::pow(M1, 2)) * std::sqrt(std::pow(E3, 2) - std::pow(M3, 2)));
+        //Expression cos02 = (2 * E1 * E3 - (s12 - fcn::pow(M1, 2) - fcn::pow(M3, 2)))/(2 * fcn::sqrt(P1 * P3));
+        real_t theta = (std::acos(cos01) - std::acos(cos02))/M_PI;
+        //INFO("theta = "<<theta);
+        //
+        if(std::isnan(theta)) {
+            theta = 0;
+            if (s01>s02) theta  = 1;
+            if (s01<s02) theta  = -1; 
+        }
+
+                    //z2 = Phi[3];
         real_t gauss_pp = std::pow(s01 - muplus, 2);
         real_t gauss_pm = std::pow(s01 - muminus, 2);
         real_t gauss_mm = std::pow(s02 - muminus, 2);
@@ -319,8 +362,10 @@ namespace AmpGen{
 
         real_t g = 0;
         if (s01>s02) g = A*std::erf(w2/w_0)*exp_pp * exp_mm;
+//        if (s01>s02) g = A*std::erf(theta/w_0)*exp_pp * exp_mm;
 //        if (s01>s02) g = A*exp_pp * exp_mm;
         if (s01<s02) g = A*std::erf(w2/w_0)*exp_pm * exp_mp;
+        //if (s01<s02) g = A*std::erf(theta/w_0)*exp_pm * exp_mp;
        // if (s01<s02) g = -A*exp_pm * exp_mp;
         return g;
         }
@@ -363,6 +408,7 @@ namespace AmpGen{
         real_t sigmaminus2(MPS["PhaseCorrection::Gauss2::sigma2_-"]->mean());
         real_t s01(evt.s(0, 1));
         real_t s02(evt.s(0, 2));
+        real_t s12(evt.s(1, 2));
         real_t c2 = -9.54231895051727e-05;
         real_t m2 = 0.8051636393861085;
         real_t z2 = (s01 - s02)/2;
@@ -396,8 +442,31 @@ namespace AmpGen{
         real_t exp_mm2 = std::exp(-z_mm2);
 
 
+//        real_t M0 = 1.86484;
+        real_t M1 = std::sqrt(evt.s(0,0)/2);// mother.daughter(0)->mass();
+        real_t M2 = std::sqrt(evt.s(1,1)/2);//mother.daughter(1)->mass();
+        real_t M3 = std::sqrt(evt.s(2,2)/2); //mother.daughter(2)->mass();
+
+        real_t M0 = std::sqrt(s01 + s02 + s12 - M1 * M1 - M2 * M2 - M3 * M3);
+
+        real_t E1 = (std::pow(M1, 2) + M0 * M0 - s12)/(2 * M0);
+        real_t E2 = (std::pow(M2, 2) + M0 * M0 - s02)/(2 * M0);
+        real_t E3 = (std::pow(M3, 2) + M0 * M0 - s01)/(2 * M0);
+//        real_t theta23 = std::acos(cos23);
+        real_t cos01 = (2 * E1 * E2 - (s01 - std::pow(M1, 2) - std::pow(M2, 2)))/(2 * std::sqrt( std::pow(E1, 2) - std::pow(M1, 2)) * std::sqrt(std::pow(E2, 2) - std::pow(M2, 2)));
+        real_t cos02 = (2 * E1 * E3 - (s02 - std::pow(M1, 2) - std::pow(M3, 2)))/(2 * std::sqrt( std::pow(E1, 2) - std::pow(M1, 2)) * std::sqrt(std::pow(E3, 2) - std::pow(M3, 2)));
+        //Expression cos02 = (2 * E1 * E3 - (s12 - fcn::pow(M1, 2) - fcn::pow(M3, 2)))/(2 * fcn::sqrt(P1 * P3));
+        real_t theta = (std::acos(cos01) - std::acos(cos02))/M_PI;
+        //INFO("theta = "<<theta);
+        //
 
 
+
+        if(std::isnan(theta)) {
+            theta = 0;
+            if (s01>s02) theta  = 1;
+            if (s01<s02) theta  = -1; 
+        }
 
         real_t g1 = 0;
         real_t g2 = 0;
@@ -1263,7 +1332,15 @@ namespace AmpGen{
 //            if (dofTag<=0 || dofTag > 100) dofTag = 0;
 //            size_t minEvents = datSig.size()/100;
 //            if (minEvents < 15) minEvents = 15;
-            BinDT binnedDataSig(datSig, MinEvents(NamedParameter<size_t>("QMI::corrchi2::minEvents", 15)), Dim(dofSig));
+            size_t nFree =0;
+            for (auto& p : MPS){
+                if (p->isFree()) nFree++;
+            }
+//            real_t minEvents = (real_t)datSig.size()/(NamedParameter<size_t>("MinEvents", 4) * (real_t)nFree);
+//            INFO("minEvents = "<<minEvents);
+            size_t minEvents = 15;
+            //BinDT binnedDataSig(datSig, MinEvents(NamedParameter<size_t>("MinEvents", 1)), Dim(dofSig));
+            BinDT binnedDataSig(datSig, MinEvents((size_t)minEvents), Dim(dofSig));
 //            BinDT binnedDataSig(datSig, Dim(dofSig));
 //            BinDT binnedDataTag(datTag, MinEvents(NamedParameter<size_t>("minEvents", 15)));//, Dim(dofTag));
 //

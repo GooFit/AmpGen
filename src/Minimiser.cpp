@@ -117,8 +117,10 @@ void Minimiser::prepare()
 {
   std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse");
   size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
+  size_t maxIterations       = NamedParameter<size_t>( "Minimiser::MaxIterations"  , 100000);
   double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 0.01);
   m_printLevel          = NamedParameter<PrintLevel>( "Minimiser::PrintLevel", PrintLevel::Info); 
+  int minStrategy       = NamedParameter<int>("Minimiser::Strategy", 3);
   unsigned printLevelMinuit2 = NamedParameter<unsigned>("Minimiser::Minuit2MinimizerPrintLevel", m_printLevel == PrintLevel::VeryVerbose ? 3 : 0 );
   if( m_printLevel == PrintLevel::Invalid )
   {
@@ -129,9 +131,9 @@ void Minimiser::prepare()
   m_minimiser = new Minuit2::Minuit2Minimizer(algorithm.c_str() );
   DEBUG( "Error definition = " << m_minimiser->ErrorDef() );
   m_minimiser->SetMaxFunctionCalls( maxCalls );
-  m_minimiser->SetMaxIterations( 100000 );
+  m_minimiser->SetMaxIterations( maxIterations );
   m_minimiser->SetTolerance( tolerance );
-  m_minimiser->SetStrategy( 3 );
+  m_minimiser->SetStrategy( minStrategy );
   //  m_minimiser->SetPrecision(std::numeric_limits<double>::epsilon());
   m_minimiser->SetPrintLevel( printLevelMinuit2 ); // turn off minuit printing 
   m_mapping.clear();

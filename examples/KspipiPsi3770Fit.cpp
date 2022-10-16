@@ -252,14 +252,21 @@ int main(int argc , char* argv[] ){
 
      
   Minimiser mini(LL_BESIII, &MPS);
+
+  bool doFit = NamedParameter<bool>("doFit", true);
+  
+  if (doFit)
+  {
   mini.gradientTest();
-  mini.doFit();
+      mini.doFit();
+  }
   FitResult fr(mini);
 
   std::vector<real_t> chi2(dataSigBESIII.size());
   std::vector<real_t> nBins(dataSigBESIII.size());
   real_t totalChi2 = 0;
   real_t totalnBins = 0;
+
   TFile * tOutFile = TFile::Open(plotFile.c_str(), "RECREATE");
   tOutFile->cd();
   size_t i=0;
@@ -438,7 +445,7 @@ int main(int argc , char* argv[] ){
 
   
 
-
+ 
   auto root_fr = new TFitResult(mini.fitResult());
   root_fr->SetName("FitResult");
   root_fr->Write();
@@ -454,6 +461,7 @@ int main(int argc , char* argv[] ){
   QMI::writeValues(mcSig, my_corr, "corr");
 
   QMI::writeDalitz(mcSig);
+
 
 
 

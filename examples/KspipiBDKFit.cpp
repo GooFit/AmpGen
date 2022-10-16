@@ -216,6 +216,8 @@ int main(int argc , char* argv[] ){
   TFitResult * root_fr;
   TFile * tOutFile = TFile::Open(plotFile.c_str(), "RECREATE");
   tOutFile->cd();
+ bool doFit = NamedParameter<bool>("doFit", true);   
+ bool writeTuple = NamedParameter<bool>("writeTuple", true);   
 
  if (psi3770Log != ""){
    INFO("Getting mu/sigma for parameters");
@@ -234,10 +236,16 @@ int main(int argc , char* argv[] ){
 
 //   mini = Minimiser(LL_LHCb_Constrained, &MPS); 
     Minimiser mini(LL_LHCb_Constrained, &MPS);
-    mini.gradientTest();
-    mini.doFit();
+    
+    if (doFit){ 
+        
+mini.gradientTest();
+mini.doFit();
     fr = new FitResult(mini);
+    
     root_fr = new TFitResult(mini.fitResult());
+   
+    }
 
 
     
@@ -248,19 +256,30 @@ int main(int argc , char* argv[] ){
  }
   else{
     Minimiser mini(LL_LHCb, &MPS);
-    mini.gradientTest();
-    mini.doFit();
-    fr = new FitResult (mini);
+    if (doFit){
+mini.gradientTest();
+        mini.doFit();
 
-    root_fr = new TFitResult(mini.fitResult());
+  
+
+
+
 //    fr.print();
 //    fr.writeToFile(logFile);
 //    fr(_fr);
   }
+fr = new FitResult (mini);
+    root_fr = new TFitResult(mini.fitResult());
+  }
+  
+
+
     root_fr->SetName("FitResult");
     root_fr->Write();
+    
   std::vector<real_t> chi2(dataLHCb.size());
   std::vector<real_t> nBins(dataLHCb.size());
+
   auto my_dd = [&A, &Abar](Event& evt){
     return QMI::dd(evt, A, Abar);
   };
@@ -296,7 +315,7 @@ int main(int argc , char* argv[] ){
           return QMI::probCKM_unnorm(evt, A, Abar, MPS, compiledPoly, gammaSigns[i]);///norm;
     };
     INFO("Doing Chi2");
-    Chi2Estimator chi2Est(dataLHCb[i], mcSig, psi, MinEvents(15), Dim(dataLHCb[i].eventType().dof()) );
+    Chi2Estimator chi2Est(dataLHCb[i], mcSig, psi, MinEvents(NamedParameter<size_t>("MinEvents", 1)), Dim(dataLHCb[i].eventType().dof()) );
     _chi2 = chi2Est.chi2();
     _nBins = chi2Est.nBins();
       int nFree = 0;

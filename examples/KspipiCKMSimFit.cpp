@@ -29,7 +29,7 @@
 #include "TTree.h"
 #include "TFitResult.h"
 #include "AmpGen/QMI.h"
-
+#include <fstream>
 
 using namespace AmpGen;
 
@@ -338,9 +338,25 @@ int main(int argc , char* argv[] ){
  // INFO("LL = "<<LL_BESIII_LHCb_Total());
 
   Minimiser mini(LL_BESIII_LHCb_Total, &MPS);
-  mini.gradientTest();
-  mini.doFit();
-  FitResult fr(mini);
+  
+  bool doFit = NamedParameter<bool>("doFit", true);
+
+  if (doFit){
+    mini.gradientTest();
+    mini.doFit();
+
+  }
+//  for (auto&p : MPS){
+//      if (p->isFree()) mini.minos(p);
+//  }
+//
+if (NamedParameter<bool>("MinosCKM", false)){
+  mini.minos(MPS["CKM::x+"]);
+  mini.minos(MPS["CKM::y+"]);
+  mini.minos(MPS["CKM::x-"]);
+  mini.minos(MPS["CKM::y-"]);
+}
+
   TFile * tOutFile = TFile::Open(plotFile.c_str(), "RECREATE");
   tOutFile->cd();
   std::function<real_t(Event&)> my_dd = [&A, &Abar](Event& evt){
@@ -358,13 +374,14 @@ int main(int argc , char* argv[] ){
 
 
 
+
   std::vector<real_t> chi2(dataSigBESIII.size() + dataLHCb.size());
   std::vector<real_t> nBins(dataSigBESIII.size() + dataLHCb.size());
   real_t totalChi2 = 0;
   real_t totalnBins = 0;
 //  TFile * tOutFile = TFile::Open(plotFile.c_str(), "RECREATE");
 //  tOutFile->cd();
-  size_t i=0;
+      size_t i=0;
   for (auto tag : tags){
       INFO("tag = "<<tag);
       auto a = split(tag, ' ');
@@ -423,13 +440,29 @@ int main(int argc , char* argv[] ){
 
 
           ArgumentPack s01_args_fit(PlotOptions::Prefix("Fit"),
-          QMI::QMIPlotOptions::name("s01_" + a[1]),
+          QMI::QMIPlotOptions::name("s01_" + a[0]),
           QMI::QMIPlotOptions::posXFunction([](Event evt){return evt.s(0, 1);} ),
           PlotOptions::Bins(plot_nBins),
           PlotOptions::Norm(dataSigBESIII[i].size())
            );
+          ArgumentPack s02_args_fit(PlotOptions::Prefix("Fit"),
+          QMI::QMIPlotOptions::name("s02_" + a[0]),
+          QMI::QMIPlotOptions::posXFunction([](Event evt){return evt.s(0, 2);} ),
+          PlotOptions::Bins(plot_nBins),
+          PlotOptions::Norm(dataSigBESIII[i].size())
+           );
+
+          ArgumentPack s12_args_fit(PlotOptions::Prefix("Fit"),
+          QMI::QMIPlotOptions::name("s12_" + a[0]),
+          QMI::QMIPlotOptions::posXFunction([](Event evt){return evt.s(1, 2);} ),
+          PlotOptions::Bins(plot_nBins),
+          PlotOptions::Norm(dataSigBESIII[i].size())
+           );
+
+
+
           ArgumentPack s01_vs_s02_args_fit(PlotOptions::Prefix("Fit"),
-          QMI::QMIPlotOptions::name("s01_vs_s02_" + a[1]),
+          QMI::QMIPlotOptions::name("s01_vs_s02_" + a[0]),
           QMI::QMIPlotOptions::posXFunction([](Event evt){return evt.s(0, 1);} ),
           QMI::QMIPlotOptions::posYFunction([](Event evt){return evt.s(0, 2);} ),
           PlotOptions::Bins(plot_nBins),
@@ -439,9 +472,12 @@ int main(int argc , char* argv[] ){
          INFO("Start data Projections");
          auto data_projection_s01 = dataSigBESIII[i].eventType().projection(plot_nBins, {0, 1});
          auto data_projection_s02 = dataSigBESIII[i].eventType().projection(plot_nBins, {0, 2});
-         auto data_projection_s01_vs_s02 = dataSigBESIII[i].makeProjection(Projection2D(data_projection_s01, data_projection_s02), PlotOptions::Prefix(("Data_s01_vs_s02_" + a[1]).c_str()));
+         auto data_projection_s12 = dataSigBESIII[i].eventType().projection(plot_nBins, {1, 2});
+         auto data_projection_s01_vs_s02 = dataSigBESIII[i].makeProjection(Projection2D(data_projection_s01, data_projection_s02), PlotOptions::Prefix(("Data_s01_vs_s02_" + a[0]).c_str()));
          INFO("Done data Projections");
           auto mc_projection_s01 = QMI::proj_1D_psi3770(mcSig, mcTag, psi, s01_args_fit);
+          auto mc_projection_s02 = QMI::proj_1D_psi3770(mcSig, mcTag, psi, s02_args_fit);
+          auto mc_projection_s12 = QMI::proj_1D_psi3770(mcSig, mcTag, psi, s12_args_fit);
           auto mc_projection_s01_vs_s02 = QMI::proj_2D_psi3770(mcSig, mcTag, psi, s01_vs_s02_args_fit);
           
           //auto histProj = QMI::proj_1D_psi3770(dataSigBESIII[i], dataTagBESIII[i], psi, PlotOptions::Prefix("Data"));
@@ -449,14 +485,18 @@ int main(int argc , char* argv[] ){
           INFO("_nBins = "<<_nBins);
           totalChi2 += _chi2;
           totalnBins += _nBins;
-          TH1D* data_hist_s01 = dataSigBESIII[i].makeProjection(data_projection_s01, PlotOptions::Prefix(("Data_s01_" + a[1]).c_str()));
-          TH1D* data_hist_s02 = dataSigBESIII[i].makeProjection(data_projection_s02, PlotOptions::Prefix(("Data_s02_" + a[1]).c_str()));
+          TH1D* data_hist_s01 = dataSigBESIII[i].makeProjection(data_projection_s01, PlotOptions::Prefix(("Data_s01_" + a[0]).c_str()));
+          TH1D* data_hist_s02 = dataSigBESIII[i].makeProjection(data_projection_s02, PlotOptions::Prefix(("Data_s02_" + a[0]).c_str()));
+          TH1D* data_hist_s12 = dataSigBESIII[i].makeProjection(data_projection_s02, PlotOptions::Prefix(("Data_s12_" + a[0]).c_str()));
 
           data_hist_s01->Write();
           data_hist_s02->Write();
+          data_hist_s12->Write();
  
           data_projection_s01_vs_s02->Write();
           mc_projection_s01->Write();
+          mc_projection_s02->Write();
+          mc_projection_s12->Write();
           mc_projection_s01_vs_s02->Write();
 
 
@@ -473,13 +513,27 @@ int main(int argc , char* argv[] ){
           };
           QMI::do_chi2_corr(dataSigBESIII[i], dataTagBESIII[i], mcSig, mcTag, psi, MPS, _chi2, _nBins);
           ArgumentPack s01_args_fit(PlotOptions::Prefix("Fit"),
-          QMI::QMIPlotOptions::name("s01_" + a[1]),
+          QMI::QMIPlotOptions::name("s01_" + a[0]),
           QMI::QMIPlotOptions::posXFunction([](Event evt){return evt.s(0, 1);} ),
           PlotOptions::Bins(plot_nBins),
           PlotOptions::Norm(dataSigBESIII[i].size())
            );
+          ArgumentPack s02_args_fit(PlotOptions::Prefix("Fit"),
+          QMI::QMIPlotOptions::name("s02_" + a[0]),
+          QMI::QMIPlotOptions::posXFunction([](Event evt){return evt.s(0, 2);} ),
+          PlotOptions::Bins(plot_nBins),
+          PlotOptions::Norm(dataSigBESIII[i].size())
+           );
+ 
+          ArgumentPack s12_args_fit(PlotOptions::Prefix("Fit"),
+          QMI::QMIPlotOptions::name("s12_" + a[0]),
+          QMI::QMIPlotOptions::posXFunction([](Event evt){return evt.s(1, 2);} ),
+          PlotOptions::Bins(plot_nBins),
+          PlotOptions::Norm(dataSigBESIII[i].size())
+           );
+ 
           ArgumentPack s01_vs_s02_args_fit(PlotOptions::Prefix("Fit"),
-          QMI::QMIPlotOptions::name("s01_vs_s02_" + a[1]),
+          QMI::QMIPlotOptions::name("s01_vs_s02_" + a[0]),
           QMI::QMIPlotOptions::posXFunction([](Event evt){return evt.s(0, 1);} ),
           QMI::QMIPlotOptions::posYFunction([](Event evt){return evt.s(0, 2);} ),
           PlotOptions::Bins(plot_nBins),
@@ -490,17 +544,24 @@ int main(int argc , char* argv[] ){
          INFO("Start data Projections");
          auto data_projection_s01 = dataSigBESIII[i].eventType().projection(plot_nBins, {0, 1});
          auto data_projection_s02 = dataSigBESIII[i].eventType().projection(plot_nBins, {0, 2});
-         auto data_projection_s01_vs_s02 = dataSigBESIII[i].makeProjection(Projection2D(data_projection_s01, data_projection_s02), PlotOptions::Prefix(("Data_s01_vs_s02_" + a[1]).c_str()));
+         auto data_projection_s12 = dataSigBESIII[i].eventType().projection(plot_nBins, {1, 2});
+         auto data_projection_s01_vs_s02 = dataSigBESIII[i].makeProjection(Projection2D(data_projection_s01, data_projection_s02), PlotOptions::Prefix(("Data_s01_vs_s02_" + a[0]).c_str()));
          INFO("Done data Projections");
           auto mc_projection_s01 = QMI::proj_1D_psi3770(mcSig, mcTag, psi, s01_args_fit);
+          auto mc_projection_s02 = QMI::proj_1D_psi3770(mcSig, mcTag, psi, s02_args_fit);
+          auto mc_projection_s12 = QMI::proj_1D_psi3770(mcSig, mcTag, psi, s12_args_fit);
           auto mc_projection_s01_vs_s02 = QMI::proj_2D_psi3770(mcSig, mcTag, psi, s01_vs_s02_args_fit);
-          TH1D* data_hist_s01 = dataSigBESIII[i].makeProjection(data_projection_s01, PlotOptions::Prefix(("Data_s01_" + a[1]).c_str()));
-          TH1D* data_hist_s02 = dataSigBESIII[i].makeProjection(data_projection_s02, PlotOptions::Prefix(("Data_s02_" + a[1]).c_str()));
+          TH1D* data_hist_s01 = dataSigBESIII[i].makeProjection(data_projection_s01, PlotOptions::Prefix(("Data_s01_" + a[0]).c_str()));
+          TH1D* data_hist_s02 = dataSigBESIII[i].makeProjection(data_projection_s02, PlotOptions::Prefix(("Data_s02_" + a[0]).c_str()));
+          TH1D* data_hist_s12 = dataSigBESIII[i].makeProjection(data_projection_s02, PlotOptions::Prefix(("Data_s12_" + a[0]).c_str()));
 
           data_hist_s01->Write();
           data_hist_s02->Write();
+          data_hist_s12->Write();
           data_projection_s01_vs_s02->Write();
           mc_projection_s01->Write();
+          mc_projection_s02->Write();
+          mc_projection_s12->Write();
           mc_projection_s01_vs_s02->Write();
 
 
@@ -546,6 +607,16 @@ int main(int argc , char* argv[] ){
           return QMI::probCKM_unnorm(evt, A, Abar, MPS, compiledPoly, gammaSigns[i]);///norm;
     };
     INFO("Doing Chi2");
+    ///size_t my_nFree =0;
+    //for (auto& p : MPS){
+    //    if (p->isFree()) my_nFree++;
+    //}
+    //real_t minEvents = (real_t)dataLHCb.size()/(NamedParameter<size_t>("MinEvents", 4) * (real_t)my_nFree);
+    //INFO("MinEvents = "<<minEvents);
+    //if (minEvents < 1){
+    //    minEvents = 1;
+    //}
+    //Chi2Estimator chi2Est(dataLHCb[i], mcSig, psi, MinEvents(NamedParameter<size_t>("MinEvents", 1)), Dim(dataLHCb[i].eventType().dof()) );
     Chi2Estimator chi2Est(dataLHCb[i], mcSig, psi, MinEvents(15), Dim(dataLHCb[i].eventType().dof()) );
     _chi2 = chi2Est.chi2();
     _nBins = chi2Est.nBins();
@@ -575,10 +646,12 @@ int main(int argc , char* argv[] ){
     INFO("Doing Data Proj");
     auto data_projection_s01 = dataLHCb[i].eventType().projection(plot_nBins, {0, 1});
     auto data_projection_s02 = dataLHCb[i].eventType().projection(plot_nBins, {0, 2});
+    auto data_projection_s12 = dataLHCb[i].eventType().projection(plot_nBins, {1, 2});
     auto data_projection_s01_vs_s02 = dataLHCb[i].makeProjection(Projection2D(data_projection_s01, data_projection_s02), PlotOptions::Prefix(("Data_s01_vs_s02_" + a[0]).c_str()));
     data_projection_s01_vs_s02->Write();
     TH1D* data_hist_s01 = dataLHCb[i].makeProjection(data_projection_s01, PlotOptions::Prefix(("Data_s01_" + a[0]).c_str()));
     TH1D* data_hist_s02 = dataLHCb[i].makeProjection(data_projection_s02, PlotOptions::Prefix(("Data_s02_" + a[0]).c_str()));
+    TH1D* data_hist_s12 = dataLHCb[i].makeProjection(data_projection_s12, PlotOptions::Prefix(("Data_s12_" + a[0]).c_str()));
     data_hist_s01->Write();
     data_hist_s02->Write();
     INFO("Doing MC Proj");
@@ -588,9 +661,14 @@ int main(int argc , char* argv[] ){
     ArgumentPack s02_args_fit(PlotOptions::Prefix("Fit_s02_" + a[0]),
                               PlotOptions::Norm(dataLHCb[i].size()),
                               WeightFunction(psi));
+    ArgumentPack s12_args_fit(PlotOptions::Prefix("Fit_s12_" + a[0]),
+                              PlotOptions::Norm(dataLHCb[i].size()),
+                              WeightFunction(psi));
+
+
 
       ArgumentPack s01_vs_s02_args_fit(PlotOptions::Prefix("Fit"),
-          QMI::QMIPlotOptions::name("s01_vs_s02_" + a[1]),
+          QMI::QMIPlotOptions::name("s01_vs_s02_" + a[0]),
           QMI::QMIPlotOptions::posXFunction([](Event evt){return evt.s(0, 1);} ),
           QMI::QMIPlotOptions::posYFunction([](Event evt){return evt.s(0, 2);} ),
           PlotOptions::Bins(plot_nBins),
@@ -600,22 +678,38 @@ int main(int argc , char* argv[] ){
 
     auto mc_plot_s01 = data_projection_s01(mcSig, s01_args_fit);
     auto mc_plot_s02 = data_projection_s02(mcSig, s02_args_fit);
+    auto mc_plot_s12 = data_projection_s12(mcSig, s12_args_fit);
     auto mc_plot_s01_vs_s02 = QMI::proj_2D_BDK(mcSig, psi, s01_vs_s02_args_fit);
     mc_plot_s01->Write();
     mc_plot_s02->Write();
+    mc_plot_s12->Write();
     mc_plot_s01_vs_s02->Write();
 
 
 
     i++;
   }
-
+  if (doFit){
+  FitResult fr(mini);
   fr.addChi2(totalChi2, totalnBins);
   fr.print();
   fr.writeToFile(logFile);
+  
+  
   auto root_fr = new TFitResult(mini.fitResult());
   root_fr->SetName("FitResult");
   root_fr->Write();
+  }
+  else{
+      std::ofstream myfile;
+      myfile.open(logFile.c_str());
+      for (auto&p : MPS){
+          myfile << p->name() << " " <<p->flag() << " "<<p->mean() <<" " <<p->err()<<"\n";
+      }
+
+  }
+
+
 
   tOutFile->Close();
 
