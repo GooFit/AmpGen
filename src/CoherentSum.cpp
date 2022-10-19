@@ -43,12 +43,12 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
     , m_prefix   (prefix)
     , m_mps(&mps) 
 {
-  auto rules = AmplitudeRules::create(mps);
+  auto rules = AmplitudeRules::create(mps,prefix);
   auto amplitudes      = rules->getMatchingRules( m_evtType, prefix);
   if( amplitudes.size() == 0 ){
     WARNING("The defined amplitudes don't seem to be able to be able to generate eventType: " << type);
   }
-  for( auto& amp : amplitudes ) INFO( amp.first.decayDescriptor() );
+  for( auto& amp : amplitudes ) INFO( prefix + amp.first.decayDescriptor() );
   m_matrixElements.resize( amplitudes.size() );
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() ); 
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , std::thread::hardware_concurrency(), "Number of threads to use" );

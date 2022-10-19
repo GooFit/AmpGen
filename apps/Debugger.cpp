@@ -128,8 +128,7 @@ int main( int argc, char** argv )
   }
   else if( type == "IncoherentSum" )
   {
-    //IncoherentSum sig(eventType, MPS,"Inco"); \\ prefix logic seems broken?
-    IncoherentSum sig(eventType, MPS,"");
+    IncoherentSum sig(eventType, MPS,"Inco"); 
     sig.setMC(accepted);
     sig.prepare();
     debug(sig, accepted, verbose, rndm, MPS);  
