@@ -126,12 +126,22 @@ bool Particle::isValidDecayDescriptor( const std::string& decayDescriptor )
     if( open !=0 && open != close ) WARNING("Unmatched braces in possible decay descriptor: " << decayDescriptor);
     return false; 
   }
-  auto tokens = split(decayDescriptor, {'{','}',',','_'} );
+  auto tokens = split(decayDescriptor, {'{','}',','} );
   bool valid = true; 
-  for( auto token : tokens )
+  for( const auto& token : tokens )
   {
-    auto particle_name = token.substr(0, token.find("[") );
-    valid &= ParticleProperties::get( particle_name) != nullptr;
+    // INFO( token << " " << ( token.find("_") != std::string::npos) << " " << (&token == &*tokens.begin()) << " " << &token << " " << &*tokens.begin() ); 
+    if( token.find("_") != std::string::npos and 
+        &token == &*tokens.begin() ) /// name has a prefix
+    {
+      auto without_prefix = token.substr(token.find("_")+1);
+      auto particle_name = without_prefix.substr(0, without_prefix.find("[") );
+      valid &= ParticleProperties::get(particle_name) != nullptr;
+    }
+    else {
+      auto particle_name = token.substr(0, token.find("[") );
+      valid &= ParticleProperties::get(particle_name) != nullptr;
+    }
   }
   if( !valid ) WARNING("Invalid decay descriptor: " << decayDescriptor );  
   return valid; 
