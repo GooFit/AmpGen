@@ -3,6 +3,7 @@ EventType D- K- pi+ pi- gamma0
 Type PolarisedSum
 CouplingConstant::Coordinates  polar
 CouplingConstant::AngularUnits   deg
+Particle::SpinBasis Weyl 
 
 K(1)(1270)bar-{rho(770)0{pi+,pi-},K-}                              2              1.000          0.000          2                 0.0         0.0              
 K(1)(1270)bar-{rho(1450)0{pi+,pi-},K-}                             0              2.016          0.026          0              -119.5         0.9      

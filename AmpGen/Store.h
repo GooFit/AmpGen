@@ -95,14 +95,10 @@ namespace AmpGen {
         m_index.clear();
       }
       void clear() { m_store.clear(); m_index.clear() ; }
-      void store( const size_t& event0, const size_t& index0, const stored_type* item, const unsigned N = 1 )
+      void store( const size_t& event0, const unsigned* index, const stored_type* item, const unsigned N = 1 )
       {
-        if constexpr( align == Alignment::AoS ) 
-          std::memcpy( &(*this)(event0, index0) , item, N * sizeof( stored_type ) );
-        else 
-        {
-          for( unsigned i = 0 ; i != N ; ++i ) (*this)(event0, index0 +i ) = item[i];
-        }   
+        for( unsigned i = 0 ; i != N; ++i )
+          (*this)(event0, index[i] ) = item[i]; 
       }
 
       template <typename functor_type, typename input_type> void update(const Store<input_type, Alignment::AoS>& is, const functor_type& fcn)
@@ -141,8 +137,10 @@ namespace AmpGen {
         if( f == m_index.end() ) FATAL("Expression: " << fcn.name() << " is not registed");
         auto p0 = f->second[0];
         auto s  = f->second.size(); 
+        auto stagger      = align == Alignment::AoS ? 1 : m_nBlocks;
+        std::vector<size_t> offsets( s );
+        std::iota( offsets.begin(), offsets.end(), 0 );
         DEBUG("Updating: " << fcn.name() << " index = " << p0 << " size_of = " << s << " on store: " << size() << " blocks = " << nBlocks() << " fields = " << nFields () ); 
-        
         if constexpr( std::is_same< typename functor_type::return_type, void >::value ) 
         {          
           #ifdef _OPENMP
@@ -151,8 +149,8 @@ namespace AmpGen {
           for ( size_t evt = 0; evt < events.size(); ++evt )
           { 
             std::vector<stored_type> buffer(s);
-            fcn(buffer.data(), 1, fcn.externBuffer().data(), events[evt].address() ); 
-            store(evt, p0, buffer.data(), s ); 
+            fcn(buffer.data(), offsets.data(), fcn.externBuffer().data(), events[evt].address() ); 
+            store(evt, f->second.data(), buffer.data(), s ); 
           }
         }
         else {
@@ -162,7 +160,7 @@ namespace AmpGen {
           for ( size_t evt = 0; evt < events.size(); ++evt )
           {
             auto tmp = fcn( events[evt].address() );
-            store( evt, p0, &tmp, s);
+            store( evt, f->second.data(), &tmp, s);
           }       
         }
       }
