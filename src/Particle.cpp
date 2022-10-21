@@ -130,10 +130,12 @@ bool Particle::isValidDecayDescriptor( const std::string& decayDescriptor )
   bool valid = true; 
   for( const auto& token : tokens )
   {
-    // INFO( token << " " << ( token.find("_") != std::string::npos) << " " << (&token == &*tokens.begin()) << " " << &token << " " << &*tokens.begin() ); 
+    if( token == "_Re" or token == "_Im") continue; 
+   // INFO( token << " " << ( token.find("_") != std::string::npos) << " " << (&token == &*tokens.begin()) << " " << &token << " " << &*tokens.begin() ); 
     if( token.find("_") != std::string::npos and 
         &token == &*tokens.begin() ) /// name has a prefix
     {
+      INFO("Checking: " << token ); 
       auto without_prefix = token.substr(token.find("_")+1);
       auto particle_name = without_prefix.substr(0, without_prefix.find("[") );
       valid &= ParticleProperties::get(particle_name) != nullptr;
