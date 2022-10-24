@@ -19,7 +19,7 @@ IncoherentSum::IncoherentSum( const EventType& finalStates,
                               const std::string& prefix ) : 
   CoherentSum( finalStates, mps, prefix )
 {
-  m_normalisations.resize( size(), 1 );
+  //m_normalisations.resize( size(), 1 );
 }
 
 double IncoherentSum::norm() const
@@ -31,14 +31,14 @@ double IncoherentSum::norm( const Bilinears& norms ) const
 {
   double norm( 0 ); // (0,0);
   for ( unsigned int i = 0; i < size(); ++i ) {
-    double val = norms.get( i, 0 ).real() * std::norm( m_matrixElements[i].coefficient );
+    double val = norms.get( i, i ).real() * std::norm( m_matrixElements[i].coefficient );
     norm += val;
   }
   return norm; //.real();
 }
 
-void IncoherentSum::prepare()
-{
+//void IncoherentSum::prepare()
+//{
   /*
   if ( m_isConstant && m_prepareCalls != 0 ) return;
   transferParameters();
@@ -65,7 +65,8 @@ void IncoherentSum::prepare()
   m_norm = norm();
   INFO( "norm = " << m_norm << " weight = " << m_weight );
   */
-}
+//}
+
 
 std::vector<FitFraction> IncoherentSum::fitFractions( const LinearErrorPropagator& linProp )
 {
@@ -75,9 +76,14 @@ std::vector<FitFraction> IncoherentSum::fitFractions( const LinearErrorPropagato
   FitFractionCalculator<IncoherentSum> calc(this, normSet ); 
   for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) 
     calc.emplace_back(m_matrixElements[i].decayDescriptor(), std::vector<size_t>({i}));
+
+  auto fractions = calc(m_evtType.mother(), linProp);
+  for(auto& f : fractions) outputFractions.push_back(f); 
+
   for ( auto& p : outputFractions ) INFO(p);
   return outputFractions;
 }
+
 
 double IncoherentSum::prob( const Event& evt ) const 
 { 
@@ -87,8 +93,105 @@ double IncoherentSum::prob( const Event& evt ) const
 double IncoherentSum::prob_unnormalised( const Event& evt ) const 
 { 
   double value( 0. );
-  //for ( auto& mE : m_matrixElements ) {
-  //  value += std::norm( mE.coefficient * m_events->cache(evt.index(), mE.addressData ) );
-  //}
-  return value;
+  for (unsigned int i = 0 ; i != m_matrixElements.size(); ++i ) {
+      value = value + std::norm( m_matrixElements[i].coefficient * m_cache(evt.index() / utils::size<float_v>::value, i ) );
+  }
+  #if ENABLE_AVX
+    return value.at(evt.index() % utils::size<float_v>::value );
+  #else 
+    return value;
+  #endif      
 }
+
+
+float_v IncoherentSum::operator()( const float_v* /*evt*/, const unsigned block ) const 
+{
+  float_v value( 0. );
+  for ( const auto& mE : m_matrixElements ) 
+  {
+    unsigned address = &mE - &m_matrixElements[0];
+    value = value + utils::norm( mE.coefficient * m_cache(block, address) ); 
+  }
+  return (m_weight/m_norm ) * value; 
+}
+
+#if ENABLE_AVX
+double IncoherentSum::operator()( const double* /*evt*/, const unsigned block ) const 
+{
+  return operator()((const float_v*)nullptr, block / utils::size<float_v>::value ).at( block % utils::size<float_v>::value );
+}
+#endif
+
+
+real_t IncoherentSum::prob_unnormalisedNoCache( const Event& evt ) const
+{
+  return utils::get<0>( real_t(std::accumulate( m_matrixElements.begin(), 
+          m_matrixElements.end(), 
+          real_t(0), 
+          [&evt]( const auto& a, const auto& b ){ return a + std::norm(b.coefficient * b(evt)[0]);} )) );
+}
+
+void IncoherentSum::debug( const Event& evt, const std::string& nameMustContain )
+{
+  prepare();
+  INFO("Weight = " << evt.weight() << " genPDF = " << evt.genPdf() );
+
+  for ( auto& me : m_matrixElements ) {
+    auto A = me(evt);
+    INFO( std::setw(70) << me.decayTree.uniqueString() 
+        << " A = [ "  << A[0].real()             << " " << A[0].imag()
+        << " ] g = [ "<< me.coupling().real() << " " << me.coupling().imag() << " ] "
+        << m_cache( evt.index(), std::distance(&m_matrixElements[0], &me ) )
+        << me.decayTree.CP() );
+  }
+  if( m_dbThis ) for ( auto& me : m_matrixElements ) me.debug( evt) ;
+  INFO( "A(x) = " << prob_unnormalised(evt) << " without cache: " << prob_unnormalisedNoCache(evt) );
+}
+
+std::function<real_t(const Event&)> IncoherentSum::evaluator(const EventList_type* ievents) const 
+{
+  auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
+  Store<complex_v, Alignment::AoS> store( events->size(), m_matrixElements);
+  for( auto& me : m_matrixElements ) store.update(events->store(), me );
+  
+  std::vector<double> values( events->aligned_size() );
+  #ifdef _OPENMP
+  #pragma omp parallel for
+  #endif
+  for( unsigned int block = 0 ; block < events->nBlocks(); ++block )
+  {
+    real_t amp(0.);
+    for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ) 
+      amp = amp + utils::norm( m_matrixElements[j].coefficient * store(block, j) );
+    utils::store( values.data() + block * utils::size<float_v>::value,  (m_weight/m_norm) * amp  );
+  }
+  return arrayToFunctor<double, typename EventList_type::value_type>(values);
+}
+
+KeyedFunctors<double(Event)> IncoherentSum::componentEvaluator(const EventList_type* ievents) const 
+{
+  using store_t = Store<complex_v, Alignment::SoA>; 
+  auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
+  KeyedFunctors<double(Event)> rt; 
+  std::shared_ptr<const store_t> cache;
+  if( events != m_integrator.events<EventList_type>() )
+  {
+    cache = std::make_shared<const store_t>(events->size(), m_matrixElements);
+    for( auto& me : m_matrixElements ) const_cast<store_t*>(cache.get())->update(events->store(), me);
+  }
+  else cache = std::shared_ptr<const store_t>( & m_integrator.cache(), [](const store_t* t){} ); 
+  /// this little slice of weirdness allows either a new cache to be instantiated, or one to just get a pointer to the one used for the integration. 
+
+  for( unsigned i = 0 ; i != m_matrixElements.size(); ++i )
+  {
+      auto mi = m_matrixElements[i]; 
+      auto ci = this->m_matrixElements[i].coefficient;
+      auto name = programatic_name(mi.decayTree.decayDescriptor());
+      
+      auto functor = [ci,i,cache](const Event& event){ return std::norm( ci * cache->get<complex_t>( event.index(), i )  ) ;};
+      rt.add(functor, name, "");
+
+  }
+  return rt; 
+}
+
