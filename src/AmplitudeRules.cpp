@@ -54,7 +54,7 @@ Coupling::Coupling(MinuitExpression* expression) :
   m_expr(expression),
   m_particle(m_name){}
 
-AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps, const std::string&  prefix )
+AmplitudeRules::AmplitudeRules(const MinuitParameterSet& mps)
 {
   for ( auto& it_re : mps ) {
     auto& name = it_re->name(); 
@@ -65,9 +65,7 @@ AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps, const std::string
         ERROR("Cannot find matching imaginary part / phase for: " <<  it_re->name() );
         continue; 
       }
-      auto decayDescriptor = name.substr(0, name.find("_Re"));
-      if(prefix != "") decayDescriptor = replaceAll( decayDescriptor, prefix, "");
-      if( ! Particle::isValidDecayDescriptor(decayDescriptor) ) continue;       
+      if( ! Particle::isValidDecayDescriptor(name.substr(0, name.find("_Re"))) ) continue;       
       Coupling p(it_re, it_im);
       m_rules[p.head()].emplace_back(p);
     }
@@ -102,6 +100,7 @@ std::vector<Coupling> AmplitudeRules::rulesForDecay(const std::string& head, con
   if( prefix == "" ) return m_rules.find(head)->second;
   std::vector<Coupling> rt = m_rules.find(head)->second;
   rt.erase( std::remove_if( std::begin(rt), std::end(rt), [&prefix](auto& p){ return p.prefix() != prefix; } ), rt.end() );
+  
   return rt;
 }
 
@@ -182,14 +181,14 @@ bool TotalCoupling::contains( const std::string& label ) const
 
 AmplitudeRules* AmplitudeRules::gAmplitudeRules = nullptr; 
 
-AmplitudeRules* AmplitudeRules::create( const MinuitParameterSet& mps, const std::string& prefix)
+AmplitudeRules* AmplitudeRules::create( const MinuitParameterSet& mps)
 {
   if( gAmplitudeRules != nullptr )
   {
     WARNING("Recreating ruleset");
     delete gAmplitudeRules; 
   }
-  gAmplitudeRules = new AmplitudeRules(mps,prefix);
+  gAmplitudeRules = new AmplitudeRules(mps);
   return gAmplitudeRules; 
 }
 
