@@ -43,7 +43,7 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
     , m_prefix   (prefix)
     , m_mps(&mps) 
 {
-  auto rules = AmplitudeRules::create(mps,prefix);
+  auto rules = AmplitudeRules::create(mps);
   auto amplitudes      = rules->getMatchingRules( m_evtType, prefix);
   if( amplitudes.size() == 0 ){
     WARNING("The defined amplitudes don't seem to be able to be able to generate eventType: " << type);
