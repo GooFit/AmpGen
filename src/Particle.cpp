@@ -614,7 +614,6 @@ std::pair<size_t, size_t> Particle::orbitalRange( const bool& conserveParity ) c
 
   for(int i=min_s12;i<=max_s12;i++){
       min = std::min(min, std::abs( S - i ));
-      max = std::max(max, std::abs( S + i ));
   }        
   min /= 2;
   max /= 2;
