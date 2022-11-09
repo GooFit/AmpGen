@@ -1,0 +1,25 @@
+EventType D0 K- pi+ pi+ pi- 
+####################
+
+#fPDF     1 #fraction of signal events 
+#fComb    0.0 #fraction of combinatoric events
+
+fPDF     2 0. 0 #fraction of signal events 
+fComb    2 1.  0 #fraction of combinatoric events
+fMisID   2 0. 0
+
+nCores 4 #number of cores to use
+"CoherentSum::Debug"         true
+
+#Inco_D0[BgSpin0]{K*(892)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Re                                2  0.0249322       0.1
+#Inco_D0[BgSpin0]{K*(892)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Im                                2  -0.0177434      0.1
+#Inco_D0[BgSpin0]{K-,pi+,pi+,pi-}_Re                                                        0  -0.00731429     0.1
+#Inco_D0[BgSpin0]{K-,pi+,pi+,pi-}_Im                                                        2  0.00765727      0.1
+
+D0[BgSpin0]{K*(892)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Re                                2  0.0249322       0.1
+D0[BgSpin0]{K*(892)bar0{K-,pi+},rho(770)0{pi+,pi-}}_Im                                2  -0.0177434      0.1
+D0[BgSpin0]{K-,pi+,pi+,pi-}_Re                                                        0  -0.00731429     0.1
+D0[BgSpin0]{K-,pi+,pi+,pi-}_Im                                                        2  0.00765727      0.1
+
+#D0{K-,pi+,pi+,pi-}                                                  2 1.0 0.0 2 0.0 0.1
+#D0{K*(892)bar0{K-,pi+},rho(770)0{pi+,pi-}}                             0  0.0249322       0.1  0  -0.0177434      0.1

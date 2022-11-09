@@ -28,6 +28,7 @@
 
 #include "AmpGen/EventType.h"
 #include "AmpGen/CoherentSum.h"
+#include "AmpGen/IncoherentSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/Kinematics.h"
 #include "AmpGen/MinuitParameterSet.h"
@@ -124,6 +125,14 @@ int main( int argc, char** argv )
     debug(sig, accepted, verbose, rndm, MPS);
     // print(accepted[0], sig.matrixElements() , false);
     INFO( "A(x) = " << sig.getValNoCache( accepted[0] ) );
+  }
+  else if( type == "IncoherentSum" )
+  {
+    IncoherentSum sig(eventType, MPS,"Inco"); 
+    sig.setMC(accepted);
+    sig.prepare();
+    debug(sig, accepted, verbose, rndm, MPS);  
+    INFO("norm = " << sig.norm() );   
   }
   else {
     ERROR( "Type: " << type << " is not recognised");
