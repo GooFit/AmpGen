@@ -45,6 +45,10 @@ namespace AmpGen {
       std::array<double, 4> to_array() const { std::array<double, 4> b; store( &b[0] ); return b; }
       double at(const unsigned i) const { return to_ptr()[i]; }
       operator __m256d() const { return data ; }
+      inline real_v operator+=(const real_v& rhs );
+      inline real_v operator-=(const real_v& rhs );
+      inline real_v operator*=(const real_v& rhs );
+      inline real_v operator/=(const real_v& rhs );
     };
 
     inline real_v operator+( const real_v& lhs, const real_v& rhs ) { return _mm256_add_pd(lhs, rhs); }
@@ -55,10 +59,6 @@ namespace AmpGen {
     inline real_v operator&( const real_v& lhs, const real_v& rhs ) { return _mm256_and_pd( lhs, rhs ); }
     inline real_v operator|( const real_v& lhs, const real_v& rhs ) { return _mm256_or_pd( lhs, rhs ); }
     inline real_v operator^( const real_v& lhs, const real_v& rhs ) { return _mm256_xor_pd( lhs, rhs ); }
-    inline real_v operator+=(real_v& lhs, const real_v& rhs ){ lhs = lhs + rhs; return lhs; }
-    inline real_v operator-=(real_v& lhs, const real_v& rhs ){ lhs = lhs - rhs; return lhs; }
-    inline real_v operator*=(real_v& lhs, const real_v& rhs ){ lhs = lhs * rhs; return lhs; }
-    inline real_v operator/=(real_v& lhs, const real_v& rhs ){ lhs = lhs / rhs; return lhs; }
     inline real_v operator&&( const real_v& lhs, const real_v& rhs ) { return _mm256_and_pd( lhs, rhs ); }
     inline real_v operator||( const real_v& lhs, const real_v& rhs ) { return _mm256_or_pd( lhs, rhs ); }
     inline real_v operator!( const real_v& x ) { return x ^ _mm256_castsi256_pd( _mm256_set1_epi32( -1 ) ); }
@@ -69,6 +69,10 @@ namespace AmpGen {
     inline real_v operator==( const real_v& lhs, const real_v& rhs ){ return _mm256_cmp_pd( lhs, rhs, _CMP_EQ_OS ); }
     inline real_v sqrt( const real_v& v ) { return _mm256_sqrt_pd(v); }
     inline real_v abs ( const real_v& v ) { return _mm256_andnot_pd(_mm256_set1_pd(-0.), v);  }
+    inline real_v real_v::operator+=(const real_v& rhs ){ *this = *this + rhs; return *this; }
+    inline real_v real_v::operator-=(const real_v& rhs ){ *this = *this - rhs; return *this; }
+    inline real_v real_v::operator*=(const real_v& rhs ){ *this = *this * rhs; return *this; }
+    inline real_v real_v::operator/=(const real_v& rhs ){ *this = *this / rhs; return *this; }
     libmvec_alias( sin )
     libmvec_alias( cos )
     libmvec_alias( exp )

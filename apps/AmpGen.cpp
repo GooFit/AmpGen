@@ -42,7 +42,7 @@
 using namespace AmpGen;
 
 namespace AmpGen { 
-  make_enum(pdfTypes, CoherentSum, PolarisedSum, FixedLib)
+  make_enum(pdfTypes, CoherentSum, IncoherentSum, PolarisedSum, FixedLib)
   make_enum(phspTypes, PhaseSpace, RecursivePhaseSpace, TreePhaseSpace)
 }  
 
@@ -253,6 +253,11 @@ int main( int argc, char** argv )
       CoherentSum pdf( eventType, MPS);
       generateSource(pdf, outfile, MPS);
     }
+    if ( pdfType == pdfTypes::IncoherentSum )
+    {
+      CoherentSum pdf( eventType, MPS, "Inco");
+      generateSource(pdf, outfile, MPS);
+    }
     else if ( pdfType == pdfTypes::PolarisedSum )
     {
       PolarisedSum pdf(eventType, MPS);
@@ -267,6 +272,10 @@ int main( int argc, char** argv )
 
   if ( pdfType == pdfTypes::CoherentSum ){
     CoherentSum pdf( eventType, MPS);
+    generateEvents(accepted, pdf, phspType , nEvents, blockSize, &rand );
+  }
+  if ( pdfType == pdfTypes::IncoherentSum ){
+    CoherentSum pdf( eventType, MPS, "Inco");
     generateEvents(accepted, pdf, phspType , nEvents, blockSize, &rand );
   }
   else if ( pdfType == pdfTypes::PolarisedSum ){

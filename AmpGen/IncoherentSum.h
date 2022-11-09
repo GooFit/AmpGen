@@ -44,6 +44,10 @@ namespace AmpGen
       /// Evaluates the normalised probability for an event.
       real_t prob( const Event& evt ) const;
       real_t operator()(const Event& evt) const { return prob(evt) ; }
+      float_v operator()(const float_v*, const unsigned) const; 
+      #if ENABLE_AVX 
+      double operator()(const double*, const unsigned) const;
+      #endif
 
       /// Calculates the unnormalised probability for an event. 
       real_t prob_unnormalised( const Event& evt ) const;
@@ -54,12 +58,18 @@ namespace AmpGen
           @f]
           where the sum is over a simulated sample, generated with PDF @f$\mathcal{P}^\prime(\psi)@f$. */
       real_t norm() const;
-      complex_t norm(const size_t& i, const size_t& j){ return i==j ? m_normalisations.get(i, 0) : 0; }
-      complex_t norm(const size_t& i) { return m_normalisations.get(i, 0); }
+      complex_t norm(const size_t& i, const size_t& j){ return i==j ? m_normalisations.get(i, i) : 0; }
+      complex_t norm(const size_t& i) { return m_normalisations.get(i, i); }
       real_t norm( const Bilinears& norms ) const;
       std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
       
-      void prepare();
+      real_t prob_unnormalisedNoCache( const Event& evt ) const; 
+      void debug( const Event& evt, const std::string& nameMustContain="");
+       
+      std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
+      KeyedFunctors<double(Event)> componentEvaluator(const EventList_type* = nullptr) const; 
+      
+      //void prepare();
   };
 } // namespace AmpGen
 

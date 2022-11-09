@@ -293,7 +293,7 @@ if( ENABLE_INSTALL )
                  DESTINATION ${CMAKE_INSTALL_DATADIR}/AmpGen/cmake)
   
   install(
-    TARGETS ${PROJECT_NAME}
+    TARGETS libAmpGen
     EXPORT AmpGenTargets
     LIBRARY DESTINATION lib
     PUBLIC_HEADER DESTINATION AmpGen

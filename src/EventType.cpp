@@ -146,8 +146,7 @@ std::string EventType::mother() const { return m_mother; }
 std::string EventType::operator[]( const unsigned& index ) const { return m_particleNames[index]; }
 std::string EventType::label( const unsigned& index, bool isRoot ) const
 {
-  const std::string label = ParticlePropertiesList::get( m_particleNames[index] )->label();
-  return isRoot ? convertTeXtoROOT( label ) : label;
+  return ParticlePropertiesList::get( m_particleNames[index] )->label();
 }
 
 std::string EventType::label( const std::vector<unsigned>& index, bool isRoot ) const
