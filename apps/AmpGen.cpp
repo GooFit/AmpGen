@@ -274,7 +274,7 @@ int main( int argc, char** argv )
     CoherentSum pdf( eventType, MPS);
     generateEvents(accepted, pdf, phspType , nEvents, blockSize, &rand );
   }
-  if ( pdfType == pdfTypes::IncoherentSum ){
+  else if ( pdfType == pdfTypes::IncoherentSum ){
     CoherentSum pdf( eventType, MPS, "Inco");
     generateEvents(accepted, pdf, phspType , nEvents, blockSize, &rand );
   }
