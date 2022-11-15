@@ -62,7 +62,7 @@ char QuarkState::nameFromPosition( int i ) const
 }
 int QuarkState::positionFromName( char c ) const
 {
-  std::map<char, int>::const_iterator it = gPositions.find( c );
+  auto it = gPositions.find( c );
   return gPositions.end() == it ? -9999 : it->second; 
 }
 
