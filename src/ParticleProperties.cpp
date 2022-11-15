@@ -59,6 +59,10 @@ std::string ParticleProperties::J() const
 
 ParticleProperties::ParticleProperties( const std::string& pdg_string )
 {
+  auto is_fundamental = []( unsigned pdgID)
+  {
+    return pdgID == 22 or pdgID == 24 or pdgID == 23 or (pdgID >= 11 and pdgID <=16 );
+  };
   m_isValid = false;
   if ( pdg_string == "" || pdg_string.empty() ) return;
   if ( pdg_string[0] == '*' ) return;
@@ -87,6 +91,11 @@ ParticleProperties::ParticleProperties( const std::string& pdg_string )
   m_Aformat      = s[11].size() == 1 ? s[11][0] : ' ';
   m_chargeString = s[13];
   m_quarkContent = QuarkContent( s[17] );
+  if( !is_fundamental(m_pdgID) && (s[17] == "??" or s[17] == "non-qQ" or  s[17] == "" ) )
+  {
+    WARNING("Quark content for: " << m_name << " not valid -> will be assumed to decay weakly"); 
+  }
+
   bool spin_status = 1;
   if( s[8] == "?" ) m_twoSpin = -1;
   else if( s[8].find("/") != std::string::npos ){
