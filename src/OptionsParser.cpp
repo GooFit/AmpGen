@@ -14,9 +14,10 @@ OptionsParser* OptionsParser::gOptionsParser = nullptr;
 
 OptionsParser::OptionsParser()
 {
-  m_keywords["Import"]             = [this](const auto& tokens){ if( tokens.size() != 2 ) return; this->import(expandGlobals(tokens[1] ) ) ; };
-  m_keywords["ParticleProperties"] = [](const auto& tokens){ ParticlePropertiesList::getMutable()->addParticle( tokens ); };
-  m_keywords["ParticlePropertiesList::Alias"] = [](const auto& tokens){ if( tokens.size() !=3 ) return; ParticlePropertiesList::getMutable()->makeAlias( tokens[1], tokens[2] ); };
+  m_keywords["Import"]                         = [this](const auto& tokens){ if( tokens.size() != 2) return; this->import(expandGlobals(tokens[1] ) ) ; };
+  m_keywords["ParticleProperties"]             = [this](const auto& tokens){ ParticlePropertiesList::getMutable()->addParticle( tokens ); };
+  m_keywords["ParticlePropertiesList::Alias"]  = [this](const auto& tokens){ if( tokens.size() != 3) return; ParticlePropertiesList::getMutable()->makeAlias( tokens[1], tokens[2] ); };
+  m_keywords["ParticlePropertiesList::Import"] = [this](const auto& tokens){ if( tokens.size() != 2) return; ParticlePropertiesList::getMutable()->readFile( tokens[1] ); }; 
 }
 
 OptionsParser* OptionsParser::getMe()
