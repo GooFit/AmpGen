@@ -771,7 +771,7 @@ std::string Particle::topologicalString() const
 
 const ParticleProperties* Particle::props() const { return m_props; }
 bool Particle::isHead() const { return m_parent == nullptr; }
-bool Particle::isWeakDecay() const { return quarks() != daughterQuarks(); }
+bool Particle::isWeakDecay() const { return m_name.find("NonRes") == std::string::npos or quarks() != daughterQuarks(); }
 bool Particle::isStateGood() const { return m_isStateGood; }
 bool Particle::isStable() const { return m_daughters.size() == 0; }
 
@@ -936,6 +936,6 @@ std::ostream& AmpGen::operator<<( std::ostream& os, const Particle& particle ){
 
 namespace AmpGen { 
   complete_enum( spinFormalism, Covariant, Canonical )
-    complete_enum( spinBasis    , Dirac    , Weyl ) 
+  complete_enum( spinBasis    , Dirac    , Weyl ) 
 }
 
