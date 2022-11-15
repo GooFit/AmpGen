@@ -298,8 +298,7 @@ if( ENABLE_INSTALL )
     PUBLIC_HEADER DESTINATION AmpGen
   )
   
-  install(
-    TARGETS AmpGen${EXEC_EXTENSION}
+  install(TARGETS AmpGen${EXEC_EXTENSION}
     DESTINATION bin
   )
   

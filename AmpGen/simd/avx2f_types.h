@@ -44,6 +44,10 @@ namespace AmpGen {
       const float* to_ptr() const { return reinterpret_cast<const double*>( &data ) ; }
       float at(const unsigned i) const { return to_ptr()[i] ; }       
       operator __m256() const { return data ; } 
+      inline real_v operator+=(const real_v& rhs ){ *this = *this + rhs; return *this; }
+      inline real_v operator-=(const real_v& rhs ){ *this = *this - rhs; return *this; }
+      inline real_v operator*=(const real_v& rhs ){ *this = *this * rhs; return *this; }
+      inline real_v operator/=(const real_v& rhs ){ *this = *this / rhs; return *this; }
     };
     
     inline real_v operator+( const real_v& lhs, const real_v& rhs ) { return _mm256_add_ps(lhs, rhs); }
@@ -54,10 +58,6 @@ namespace AmpGen {
     inline real_v operator&( const real_v& lhs, const real_v& rhs ) { return _mm256_and_ps( lhs, rhs ); }
     inline real_v operator|( const real_v& lhs, const real_v& rhs ) { return _mm256_or_ps( lhs, rhs ); }
     inline real_v operator^( const real_v& lhs, const real_v& rhs ) { return _mm256_xor_ps( lhs, rhs ); }
-    inline real_v operator+=(real_v& lhs, const real_v& rhs ){ lhs = lhs + rhs; return lhs; }
-    inline real_v operator-=(real_v& lhs, const real_v& rhs ){ lhs = lhs - rhs; return lhs; }
-    inline real_v operator*=(real_v& lhs, const real_v& rhs ){ lhs = lhs * rhs; return lhs; }
-    inline real_v operator/=(real_v& lhs, const real_v& rhs ){ lhs = lhs / rhs; return lhs; }
     inline real_v operator&&( const real_v& lhs, const real_v& rhs ) { return _mm256_and_ps( lhs, rhs ); }
     inline real_v operator||( const real_v& lhs, const real_v& rhs ) { return _mm256_or_ps( lhs, rhs ); }
     inline real_v operator!( const real_v& x ) { return x ^ _mm256_castsi256_ps( _mm256_set1_epi32( -1 ) ); }

@@ -54,7 +54,7 @@ Coupling::Coupling(MinuitExpression* expression) :
   m_expr(expression),
   m_particle(m_name){}
 
-AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
+AmplitudeRules::AmplitudeRules(const MinuitParameterSet& mps)
 {
   for ( auto& it_re : mps ) {
     auto& name = it_re->name(); 
@@ -65,7 +65,7 @@ AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
         ERROR("Cannot find matching imaginary part / phase for: " <<  it_re->name() );
         continue; 
       }
-      if( ! Particle::isValidDecayDescriptor( name.substr(0, name.find("_Re") ) ) ) continue; 
+      if( ! Particle::isValidDecayDescriptor(name.substr(0, name.find("_Re"))) ) continue;       
       Coupling p(it_re, it_im);
       m_rules[p.head()].emplace_back(p);
     }
@@ -100,6 +100,7 @@ std::vector<Coupling> AmplitudeRules::rulesForDecay(const std::string& head, con
   if( prefix == "" ) return m_rules.find(head)->second;
   std::vector<Coupling> rt = m_rules.find(head)->second;
   rt.erase( std::remove_if( std::begin(rt), std::end(rt), [&prefix](auto& p){ return p.prefix() != prefix; } ), rt.end() );
+  
   return rt;
 }
 
@@ -151,7 +152,7 @@ void TotalCoupling::print() const
 
 std::vector<std::pair<Particle, TotalCoupling>> AmplitudeRules::getMatchingRules(const EventType& type, const std::string& prefix )
 {
-  auto rules        = rulesForDecay( type.mother() );
+  auto rules        = rulesForDecay( type.mother(), prefix );
   std::vector<std::pair<Particle, TotalCoupling>> rt; 
   for ( const auto& rule : rules ) {
     if ( rule.prefix() != prefix ) continue;

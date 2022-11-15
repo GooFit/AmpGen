@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest 
     strategy:
       matrix:
-        simd: [0, 1]
+        simd: [0, AVX2d]
     defaults:
       run:
         shell: bash -l {0}
