@@ -605,13 +605,21 @@ std::pair<size_t, size_t> Particle::orbitalRange( const bool& conserveParity ) c
   const int S  = m_props->twoSpin();
   const int s1 = daughter(0)->props()->twoSpin();
   const int s2 = daughter(1)->props()->twoSpin();
-  int min = std::abs( S - s1 - s2 );
-  min     = std::min(min, std::abs( S + s1 - s2 ));
-  min     = std::min(min, std::abs( S - s1 + s2 ));
-  int max = S + s1 + s2;
+    
+  int min_s12 = std::abs( s1 - s2 );
+  int max_s12 = std::abs( s1 + s2 );
+          
+  int min = std::abs( S - min_s12 );
+  int max = std::abs( S + max_s12 );
+
+  for(int i=min_s12;i<=max_s12;i++){
+      min = std::min(min, std::abs( S - i ));
+  }        
   min /= 2;
   max /= 2;
-  DEBUG( "Range = " << min << " -> " << max << " conserving parity ? " << conserveParity << " J = " << S << " s1= " << s1 << " s2= " << s2 );
+
+  DEBUG( "Name = " << m_name <<  " Range = " << min << " -> " << max << " conserving parity ? " << conserveParity << " 2J = " << S << " 2s1= " << s1 << " 2s2= " << s2 );
+    
   if ( conserveParity == false ) return {min, max}; 
   int l = min;
   for ( ; l < max + 1; ++l ) if( conservesParity(l) ) break;
