@@ -299,7 +299,7 @@ void AmpGen::printSplash()
   std::cout << " (avx2; double)";
 #elif INSTRUCTION_SET == INSTRUCTION_SET_AVX2f
   std::cout << " (avx2; single)";
-#elif INSTRUCTION_SET ++ INSTRUCTION_SET_AVX512d
+#elif INSTRUCTION_SET == INSTRUCTION_SET_AVX512d
   std::cout << " (avx512; double)";
 #endif
 
