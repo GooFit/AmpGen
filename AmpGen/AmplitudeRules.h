@@ -14,9 +14,6 @@
 #include "AmpGen/Event.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/ExpressionParser.h"
-#if ENABLE_AVX 
-  #include "AmpGen/EventListSIMD.h"
-#endif
 
 namespace AmpGen
 {

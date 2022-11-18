@@ -6,8 +6,8 @@
 #include "AmpGen/MetaUtils.h"
 
 namespace AmpGen { 
+  #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d 
 
-  #if ENABLE_AVX2d
   template<unsigned dim, typename fcn> std::tuple<double, double, unsigned> integrate_fp_avx2d( const fcn& F, const std::array<double,dim>& ctr, const std::array<double, dim>& wth )
   {
     static_assert( utils::size<float_v>::value == 4, "Not using AVX2");

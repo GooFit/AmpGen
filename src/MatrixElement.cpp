@@ -1,4 +1,9 @@
 #include "AmpGen/MatrixElement.h"
+#if ENABLE_AVX 
+  #include "AmpGen/EventListSIMD.h"
+#else
+  #include "AmpGen/EventList.h"
+#endif
 
 using namespace AmpGen; 
 

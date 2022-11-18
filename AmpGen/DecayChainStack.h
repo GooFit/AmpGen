@@ -192,7 +192,6 @@ namespace AmpGen {
       return g;    
     }
     */
-    //#if USE_SIMD 
     template <typename T>
     T genPdf(const T* event) const
     {
@@ -203,7 +202,6 @@ namespace AmpGen {
       }
       return g;    
     }
-    //#endif
     template <typename T> 
     T s(const T* event, 
         const SmallVector<unsigned, N>& lfs, 

@@ -5,45 +5,56 @@
 #include <complex>
 
 namespace AmpGen {
+  
   namespace AVX2d  { class real_v; class complex_v; }
   namespace AVX2f  { class real_v; class complex_v; }
   namespace AVX512 { class real_v; class complex_v; }
+  namespace scalar { using real_v = double; using complex_v = std::complex<double>; }
 }
 
-#if ENABLE_AVX512
-  #include "AmpGen/simd/avx512d_types.h"
-#elif ENABLE_AVX2d
-  #include "AmpGen/simd/avx2d_types.h"
-#elif ENABLE_AVX2f
+#define INSTRUCTION_SET_SCALAR  0 
+#define INSTRUCTION_SET_AVX2f   1 
+#define INSTRUCTION_SET_AVX2d   2 
+#define INSTRUCTION_SET_AVX512d 3 
+
+
+
+#if INSTRUCTION_SET == INSTRUCTION_SET_SCALAR
+#elif INSTRUCTION_SET == INSTRUCTION_SET_AVX2f
+//  #pragma message("Enable AVX2f")
   #include "AmpGen/simd/avx2f_types.h"
+#elif INSTRUCTION_SET == INSTRUCTION_SET_AVX2d
+//  #pragma message("Enable AVX2d")
+  #include "AmpGen/simd/avx2d_types.h"
+#elif INSTRUCTION_SET == INSTRUCTION_SET_AVX512d
+//  #pragma message("Enable AVX512d")
+  #include "AmpGen/simd/avx512d_types.h"
 #endif
 
 namespace AmpGen {
-#if ENABLE_AVX512 
-  namespace AVX        = AVX512d;  
-#elif ENABLE_AVX2d
+
+#if INSTRUCTION_SET == INSTRUCTION_SET_AVX512d
+  namespace AVX        = AVX512d;
+#elif INSTRUCTION_SET == INSTRUCTION_SET_AVX2d
   namespace AVX        = AVX2d;
-#elif ENABLE_AVX2f
+#elif INSTRUCTION_SET == INSTRUCTION_SET_AVX2f
   namespace AVX        = AVX2f;
+#elif INSTRUCTION_SET == INSTRUCTION_SET_SCALAR
+  namespace AVX        = scalar; 
 #endif
 
-#if ENABLE_AVX
-  using float_v      = AVX::real_v;
-  using complex_v    = AVX::complex_v;
-#else 
-  using float_v      = double;
-  using complex_v    = std::complex<double>;
-#endif
-
+  using real_v      = AVX::real_v;
+  using complex_v   = AVX::complex_v;
+  using float_v     = AVX::real_v; // this should be removed - as float has a more specific meaning
   namespace utils {
 
     template <typename T> struct is_vector_type : std::false_type {}; 
     template <typename T> struct size           { static constexpr unsigned value = 1; } ;
 #if ENABLE_AVX
-    template <>        struct is_vector_type <AVX::complex_v> : std::true_type {}; 
-    template <>        struct is_vector_type <AVX::real_v  >  : std::true_type {}; 
-    template <>        struct size           <AVX::complex_v>{ static constexpr unsigned value = AVX::complex_v::size; }; 
-    template <>        struct size           <AVX::real_v>   { static constexpr unsigned value = AVX::real_v::size; };
+    template <>        struct is_vector_type <complex_v> : std::true_type {}; 
+    template <>        struct is_vector_type <real_v  >  : std::true_type {}; 
+    template <>        struct size           <complex_v>{ static constexpr unsigned value = complex_v::size; }; 
+    template <>        struct size           <real_v>   { static constexpr unsigned value = real_v::size; };
 #endif
     template <typename simd_type, typename container_type, typename functor_type> simd_type gather(
         const container_type& container, const functor_type& functor, unsigned offset=0, typename simd_type::scalar_type df =0.)
@@ -103,10 +114,8 @@ namespace AmpGen {
     }
     template <typename ctype> auto norm( const ctype& v )
     {
-      #if ENABLE_AVX 
-      if constexpr(   is_vector_type<ctype>::value ) return AVX::norm(v);
-      #endif 
-      if constexpr( ! is_vector_type<ctype>::value ) return std::norm(v);
+      if constexpr(   is_vector_type<ctype>::value ) { return v.norm(); }
+      if constexpr( ! is_vector_type<ctype>::value ) { return std::norm(v); }
     }
     template <typename type, typename store_type> void store( store_type* container, const type& v)
     {

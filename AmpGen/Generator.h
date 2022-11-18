@@ -2,7 +2,7 @@
 #define AMPGEN_GENERATOR_H
 
 #include "AmpGen/EventList.h"
-#if USE_SIMD 
+#if ENABLE_AVX 
   #include "AmpGen/EventListSIMD.h"
 #endif
 #include "AmpGen/simd/utils.h"
@@ -20,7 +20,7 @@ namespace AmpGen
   template <typename phaseSpace_t = PhaseSpace>
     class Generator
     {
-        #if USE_SIMD 
+        #if ENABLE_AVX
           using eventlist_t = EventListSIMD;
         #else
           using eventlist_t = EventList;

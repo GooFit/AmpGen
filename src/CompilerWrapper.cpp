@@ -164,7 +164,7 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     compile_flags.push_back("-march=native");
     compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
   #endif
-  #if ENABLE_AVX2d 
+  #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d 
     compile_flags.push_back("-mavx2");
     compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
   #endif

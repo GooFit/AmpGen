@@ -295,11 +295,11 @@ void AmpGen::printSplash()
 #elif defined(__GNUC__) || defined(__GNUG__)
   std::cout << "gcc " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__;
 #endif
-#if ENABLE_AVX2d
+#if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d
   std::cout << " (avx2; double)";
-#elif ENABLE_AVX2f
+#elif INSTRUCTION_SET == INSTRUCTION_SET_AVX2f
   std::cout << " (avx2; single)";
-#elif ENABLE_AVX512
+#elif INSTRUCTION_SET ++ INSTRUCTION_SET_AVX512d
   std::cout << " (avx512; double)";
 #endif
 
