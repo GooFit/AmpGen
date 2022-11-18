@@ -250,7 +250,7 @@ ThreeBodyCalculator::PartialWidth::PartialWidth( const EventType& evt, MinuitPar
   for ( auto& p : unpacked ) {
     partialWidths.emplace_back( spinAverageMatrixElement( {p}, &msym ), p.first.decayDescriptor(), &mps, evtFormat);
   }
-  totalWidth = CompiledExpression< complex_v(const real_t*, const float_v*) > ( matrixElementTotal, "width", &mps, evtFormat);
+  totalWidth = CompiledExpression< complex_v(const real_t*, const real_v*) > ( matrixElementTotal, "width", &mps, evtFormat);
   CompilerWrapper(true).compile( totalWidth, "");
 }
 
@@ -292,7 +292,7 @@ void ThreeBodyCalculator::debug( const double& m, const double& theta )
   for( auto& width : m_widths )
   {
     Event event(12);
-    width.integrator.setEvent({float_v(m),float_v(theta)},event);
+    width.integrator.setEvent({real_v(m),real_v(theta)},event);
     event.print();
     width.totalWidth.debug( event.address() );
   }

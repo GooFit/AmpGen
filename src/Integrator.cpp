@@ -38,8 +38,8 @@ void Integrator::integrateBlock()
 {
   #pragma omp parallel for
   for ( size_t roll = 0; roll < m_counter; ++roll ) {
-    float_v re( 0.f );
-    float_v im( 0.f );
+    real_v re( 0.f );
+    real_v im( 0.f );
     auto b1 = m_cache.data() + m_integrals[roll].i * m_cache.nBlocks();
     auto b2 = m_cache.data() + m_integrals[roll].j * m_cache.nBlocks();
     for ( size_t i = 0; i < m_cache.nBlocks(); ++i ) {
@@ -74,7 +74,7 @@ void Integrator::flush()
 #if ENABLE_AVX2
 template <> complex_t Integrator::get( const unsigned& index, const unsigned& evt ) const 
 {
-  return utils::at( m_cache( evt/utils::size<float_v>::value, index), evt % utils::size<float_v>::value ); 
+  return utils::at( m_cache( evt/utils::size<real_v>::value, index), evt % utils::size<real_v>::value ); 
 }
 #endif
 

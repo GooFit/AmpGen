@@ -71,7 +71,7 @@ namespace AmpGen {
   template<unsigned dim, typename fcn> std::tuple<double, double, unsigned> integrate_fp( const fcn& F, const std::array<double,dim>& ctr, const std::array<double, dim>& wth )
   {
     #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d
-    if constexpr( is_functor<fcn, double(const std::array<float_v, dim>&)>::value and utils::size<float_v>::value == 4 )
+    if constexpr( is_functor<fcn, double(const std::array<real_v, dim>&)>::value and utils::size<real_v>::value == 4 )
     {
       return AmpGen::integrate_fp_avx2d<dim>(F, ctr, wth);
     }

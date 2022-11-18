@@ -92,21 +92,21 @@ double IncoherentSum::prob( const Event& evt ) const
 
 double IncoherentSum::prob_unnormalised( const Event& evt ) const 
 { 
-  float_v value( 0. );
+  real_v value( 0. );
   for (unsigned int i = 0 ; i != m_matrixElements.size(); ++i ) {
-    value += utils::norm( m_matrixElements[i].coefficient * m_cache(evt.index() / utils::size<float_v>::value, i ) );
+    value += utils::norm( m_matrixElements[i].coefficient * m_cache(evt.index() / utils::size<real_v>::value, i ) );
   }
   #if ENABLE_AVX
-    return value.at(evt.index() % utils::size<float_v>::value );
+    return value.at(evt.index() % utils::size<real_v>::value );
   #else 
     return value;
   #endif      
 }
 
 
-float_v IncoherentSum::operator()( const float_v* /*evt*/, const unsigned block ) const 
+real_v IncoherentSum::operator()( const real_v* /*evt*/, const unsigned block ) const 
 {
-  float_v value( 0. );
+  real_v value( 0. );
   for ( const auto& mE : m_matrixElements ) 
   {
     unsigned address = &mE - &m_matrixElements[0];
@@ -118,7 +118,7 @@ float_v IncoherentSum::operator()( const float_v* /*evt*/, const unsigned block 
 #if ENABLE_AVX
 double IncoherentSum::operator()( const double* /*evt*/, const unsigned block ) const 
 {
-  return operator()((const float_v*)nullptr, block / utils::size<float_v>::value ).at( block % utils::size<float_v>::value );
+  return operator()((const real_v*)nullptr, block / utils::size<real_v>::value ).at( block % utils::size<real_v>::value );
 }
 #endif
 
@@ -161,10 +161,10 @@ std::function<real_t(const Event&)> IncoherentSum::evaluator(const EventList_typ
   #endif
   for( unsigned int block = 0 ; block < events->nBlocks(); ++block )
   {
-    float_v amp(0.);
+    real_v amp(0.);
     for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ) 
       amp = amp + utils::norm( m_matrixElements[j].coefficient * store(block, j) );
-    utils::store( values.data() + block * utils::size<float_v>::value,  (m_weight/m_norm) * amp  );
+    utils::store( values.data() + block * utils::size<real_v>::value,  (m_weight/m_norm) * amp  );
   }
   return arrayToFunctor<double, typename EventList_type::value_type>(values);
 }

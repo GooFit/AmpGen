@@ -109,15 +109,15 @@ void EventListSIMD::loadFromTree( TTree* tree, const ArgumentPack& args )
   }
   bool hasEventList    = entryList.size() != 0;
   size_t nEvents       = hasEventList ? entryList.size() : tree->GetEntries();
-  std::array<Event, float_v::size> buffer;
+  std::array<Event, real_v::size> buffer;
   
   resize( nEvents ); 
   auto symmetriser = m_eventType.symmetriser();
   for ( unsigned int block = 0; block < m_data.nBlocks(); ++block ) 
   {
-    for( unsigned k = 0 ; k != float_v::size; ++k )
+    for( unsigned k = 0 ; k != real_v::size; ++k )
     {
-      auto evt = k + block * float_v::size; 
+      auto evt = k + block * real_v::size; 
       if(evt  < m_data.size() )
       {
         tr.getEntry( hasEventList ? entryList[evt] : evt );
@@ -139,9 +139,9 @@ EventListSIMD::EventListSIMD( const EventList& other ) : EventListSIMD( other.ev
   for( unsigned block = 0 ; block != m_data.nBlocks(); block++ )
   {
     for( unsigned j = 0 ; j != m_data.nFields(); ++j ) 
-      m_data(block, j) = utils::gather<float_v>(other, [j](const auto& event){ return event[j]; } , block * float_v::size );
-    m_weights[block] = utils::gather<float_v>(other,  [](const auto& event){ return event.weight(); }, block * float_v::size, 0);
-    m_genPDF [block] = utils::gather<float_v>(other,  [](const auto& event){ return event.genPdf(); }, block * float_v::size, 1);
+      m_data(block, j) = utils::gather<real_v>(other, [j](const auto& event){ return event[j]; } , block * real_v::size );
+    m_weights[block] = utils::gather<real_v>(other,  [](const auto& event){ return event.weight(); }, block * real_v::size, 0);
+    m_genPDF [block] = utils::gather<real_v>(other,  [](const auto& event){ return event.genPdf(); }, block * real_v::size, 1);
   }
 } 
 
@@ -209,8 +209,8 @@ void EventListSIMD::clear()
 
 const Event EventListSIMD::operator[]( const size_t& pos ) const 
 { 
-  unsigned p = pos / float_v::size; 
-  unsigned q = pos % float_v::size; 
+  unsigned p = pos / real_v::size; 
+  unsigned q = pos % real_v::size; 
   Event tempEvent( eventSize() );
   for( unsigned i = 0 ; i !=  tempEvent.size(); ++i ) 
     tempEvent[i] = m_data(p, i).at(q);
@@ -220,13 +220,13 @@ const Event EventListSIMD::operator[]( const size_t& pos ) const
   return tempEvent; 
 }
 
-std::array<Event, AmpGen::float_v::size> EventListSIMD::scatter( unsigned pos ) const
+std::array<Event, AmpGen::real_v::size> EventListSIMD::scatter( unsigned pos ) const
 {
-  unsigned p = pos / float_v::size;
-  std::array<Event, float_v::size> rt;
+  unsigned p = pos / real_v::size;
+  std::array<Event, real_v::size> rt;
   auto vw = m_weights[p].to_array();
   auto vg = m_genPDF[p].to_array();
-  for( unsigned evt = 0 ; evt != float_v::size; ++evt ){
+  for( unsigned evt = 0 ; evt != real_v::size; ++evt ){
     rt[evt] = Event( m_data.nFields() );
     rt[evt].setWeight(vw[evt]); 
     rt[evt].setGenPdf(vg[evt]); 
@@ -234,17 +234,17 @@ std::array<Event, AmpGen::float_v::size> EventListSIMD::scatter( unsigned pos ) 
   }
   for( unsigned field = 0 ; field != m_data.nFields(); ++field){
     auto v = m_data(p, field).to_array();
-    for( unsigned evt = 0; evt != float_v::size; ++evt ) rt[evt][field] = v[evt]; 
+    for( unsigned evt = 0; evt != real_v::size; ++evt ) rt[evt][field] = v[evt]; 
   }
   return rt;
 }
 
-void EventListSIMD::gather( const std::array<Event, float_v::size>& data, unsigned pos )
+void EventListSIMD::gather( const std::array<Event, real_v::size>& data, unsigned pos )
 {
   for( unsigned field = 0; field != m_data.nFields(); ++field ) 
-    m_data(pos, field) = utils::gather<float_v>(data, [field](auto& event){ return event[field]; } );
-  m_weights[pos] = utils::gather<float_v>(data, [](auto& event){ return event.weight() ; } );
-  m_genPDF[pos]  = utils::gather<float_v>(data, [](auto& event){ return event.genPdf(); } );
+    m_data(pos, field) = utils::gather<real_v>(data, [field](auto& event){ return event[field]; } );
+  m_weights[pos] = utils::gather<real_v>(data, [](auto& event){ return event.weight() ; } );
+  m_genPDF[pos]  = utils::gather<real_v>(data, [](auto& event){ return event.genPdf(); } );
 }
 
 #endif

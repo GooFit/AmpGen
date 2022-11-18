@@ -34,7 +34,7 @@ namespace AmpGen
       }
       m_cache = Store<complex_v, Alignment::SoA>(events->size(), expressions);
       m_weight.resize( events->nBlocks() );
-      float_v norm_acc = 0.;
+      real_v norm_acc = 0.;
       for( size_t i = 0 ; i < events->nBlocks(); ++i )
       {
         m_weight[i] = events->weight(i) / events->genPDF(i);
@@ -67,7 +67,7 @@ namespace AmpGen
     size_t                              m_counter = {0};  ///
     std::array<QueuedIntegral, N>       m_integrals;
     const void*                         m_events  = {nullptr};
-    std::vector<float_v>                m_weight; 
+    std::vector<real_v>                m_weight; 
     Store<complex_v, Alignment::SoA>    m_cache;      
     double                              m_norm    = {0};
     void integrateBlock();

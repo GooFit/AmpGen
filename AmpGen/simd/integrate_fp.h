@@ -10,7 +10,7 @@ namespace AmpGen {
 
   template<unsigned dim, typename fcn> std::tuple<double, double, unsigned> integrate_fp_avx2d( const fcn& F, const std::array<double,dim>& ctr, const std::array<double, dim>& wth )
   {
-    static_assert( utils::size<float_v>::value == 4, "Not using AVX2");
+    static_assert( utils::size<real_v>::value == 4, "Not using AVX2");
     static const double xl2 = 0.358568582800318073;//lambda_2
     static const double xl4 = 0.948683298050513796;//lambda_4
     static const double xl5 = 0.688247201611685289;//lambda_5
@@ -71,7 +71,7 @@ namespace AmpGen {
 
 
     unsigned idvaxn =0;
-    std::array<float_v, dim> z; 
+    std::array<real_v, dim> z; 
     double rgnvol = get_power<2,dim>::value; 
     for (unsigned j=0; j<dim; j++){
       z[j] = ctr[j]; 
@@ -84,9 +84,9 @@ namespace AmpGen {
     double sum5 = 0;
 
     double difmax = 0;
-    static const float_v xl(   -xl4, -xl2, +xl2, +xl4);
-    static const float_v dxp ( -xl4, +xl4, -xl4, +xl4);
-    static const float_v dxp2( -xl4, -xl4, +xl4, +xl4);
+    static const real_v xl(   -xl4, -xl2, +xl2, +xl4);
+    static const real_v dxp ( -xl4, +xl4, -xl4, +xl4);
+    static const real_v dxp2( -xl4, -xl4, +xl4, +xl4);
 
     //loop over coordinates
     for (unsigned j=0; j != dim; j++)
@@ -106,7 +106,7 @@ namespace AmpGen {
     }
     for( int j = 0 ; j < get_power<2, dim>::value; j+=4 )
     {
-      for( int k = 0; k != dim; ++k ) z[k] = float_v( 
+      for( int k = 0; k != dim; ++k ) z[k] = real_v( 
           ctr[k] + ( 0x1 & ( (j+0) >> k ) ? +1 : -1 ) * xl5*wth[k], 
           ctr[k] + ( 0x1 & ( (j+1) >> k ) ? +1 : -1 ) * xl5*wth[k], 
           ctr[k] + ( 0x1 & ( (j+2) >> k ) ? +1 : -1 ) * xl5*wth[k], 

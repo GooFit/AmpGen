@@ -90,9 +90,9 @@ template <unsigned N> void fill_event(Event& event,
 }
 
 template <unsigned N>
-float_v get_gen_pdf( const float_v* value, const std::vector<DecayChainStackBase*>& phsp, const DiscreteDistribution& weight_distribution )
+real_v get_gen_pdf( const real_v* value, const std::vector<DecayChainStackBase*>& phsp, const DiscreteDistribution& weight_distribution )
 {
-  float_v genPdf = 0;  
+  real_v genPdf = 0;  
   for( unsigned j = 0 ; j != phsp.size(); ++j )
     genPdf += weight_distribution.probabilities()[j] * static_cast<const DecayChainStack<N>*>(phsp[j])->genPdf(value); 
   return genPdf; 
@@ -103,7 +103,7 @@ template <unsigned N> std::vector<double> calculate_weights(const EventListSIMD&
                                                             const DiscreteDistribution& weight_distribution)
 {
   // procedure proposed in: https://arxiv.org/pdf/hep-ph/9405257.pdf
-  std::vector<float_v> weights( phsp.size(), 0 );
+  std::vector<real_v> weights( phsp.size(), 0 );
   for( unsigned block = 0 ; block < events.nBlocks(); ++block )
   {
     auto genPdf = get_gen_pdf<N>( events.block(block), phsp, weight_distribution );    

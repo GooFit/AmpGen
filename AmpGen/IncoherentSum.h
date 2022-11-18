@@ -44,7 +44,7 @@ namespace AmpGen
       /// Evaluates the normalised probability for an event.
       real_t prob( const Event& evt ) const;
       real_t operator()(const Event& evt) const { return prob(evt) ; }
-      float_v operator()(const float_v*, const unsigned) const; 
+      real_v operator()(const real_v*, const unsigned) const; 
       #if ENABLE_AVX 
       double operator()(const double*, const unsigned) const;
       #endif

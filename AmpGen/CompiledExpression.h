@@ -164,7 +164,7 @@ namespace AmpGen
           #if USE_OPENMP
           stream << "#pragma omp parallel for\n";
           #endif
-          stream << "for( size_t i = 0; i < N/" << utils::size<float_v>::value << "; ++i ){\n";
+          stream << "for( size_t i = 0; i < N/" << utils::size<real_v>::value << "; ++i ){\n";
           if( use_rto() ) stream << progName() + "( r + cacheSize * i, s, x0, x1 +  i * eventSize);";
           else            stream << " rt[cacheSize*i] = " << progName() + "( x0, x1 +  i * eventSize);";
           stream << "}\n}";

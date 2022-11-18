@@ -60,13 +60,13 @@ namespace AmpGen
     double getVal()
     {
       for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
-      std::vector<float_v> tmp( m_events->nBlocks() );
+      std::vector<real_v> tmp( m_events->nBlocks() );
       fill_likelihood( tmp.data() ); 
-      KahanSum<float_v> sum;
+      KahanSum<real_v> sum;
       for( unsigned block = 0 ; block != m_events->nBlocks(); ++block ) sum += tmp[block];
       return -2 * utils::sum_elements(sum.sum);
     } 
-    void fill_likelihood( float_v* output )
+    void fill_likelihood( real_v* output )
     {
       for_each(m_pdfs, []( auto& f ) { f.prepare(); });
       if constexpr( std::is_same<eventListType,EventList>::value )
@@ -91,9 +91,9 @@ namespace AmpGen
     }
     
     /// Returns the probability for the given event. 
-    float_v operator()( const float_v* evt , const unsigned block)
+    real_v operator()( const real_v* evt , const unsigned block)
     {
-      float_v prob = 0.f;
+      real_v prob = 0.f;
       for_each( this->m_pdfs, [&prob, &evt,block]( const auto& f ) { prob += f(evt, block); } );
       return prob;
     }

@@ -33,9 +33,9 @@ namespace AmpGen
   class EventListSIMD
   {
   private:
-    Store<float_v, Alignment::AoS>   m_data      {};
-    std::vector<float_v>             m_weights   {};
-    std::vector<float_v>             m_genPDF    {};
+    Store<real_v, Alignment::AoS>   m_data      {};
+    std::vector<real_v>             m_weights   {};
+    std::vector<real_v>             m_genPDF    {};
     EventType                        m_eventType {};
   public:
     typedef Event value_type;
@@ -58,37 +58,37 @@ namespace AmpGen
       loadFromTree( tree, ArgumentPack(args...) );
     }
     EventListSIMD( const EventList& other );     
-    const float_v* data() const { return m_data.data(); }
-    operator Store<float_v, Alignment::AoS> () const { return m_data ; }
+    const real_v* data() const { return m_data.data(); }
+    operator Store<real_v, Alignment::AoS> () const { return m_data ; }
     const auto& store()                     const { return m_data; }    
     const Event at(const unsigned& p)       const { return EventListSIMD::operator[](p) ; }
-    const float_v* block(const unsigned& p) const { return m_data.data() + p * m_data.nFields(); }
-          float_v* block(const unsigned& p)       { return m_data.data() + p * m_data.nFields(); }
-    float_v weight(const unsigned& p) const { return m_weights[p]; }
-    float_v genPDF(const unsigned& p) const { return m_genPDF [p]; }
+    const real_v* block(const unsigned& p) const { return m_data.data() + p * m_data.nFields(); }
+          real_v* block(const unsigned& p)       { return m_data.data() + p * m_data.nFields(); }
+    real_v weight(const unsigned& p) const { return m_weights[p]; }
+    real_v genPDF(const unsigned& p) const { return m_genPDF [p]; }
     
-    void setWeight( const unsigned& block, const float_v& w, const float_v& g=1.f)
+    void setWeight( const unsigned& block, const real_v& w, const real_v& g=1.f)
     {
       m_weights[block] = w;
       m_genPDF[block] = g;
     } 
-    void setGenPDF( const unsigned& block, const float_v& g)
+    void setGenPDF( const unsigned& block, const real_v& g)
     {
       m_genPDF[block] = g;
     } 
     void resize( const unsigned nEvents )
     {
-      m_data = Store<float_v, Alignment::AoS>(nEvents, m_eventType.eventSize());
+      m_data = Store<real_v, Alignment::AoS>(nEvents, m_eventType.eventSize());
       m_weights.resize( aligned_size(), 1.f);
       m_genPDF.resize( aligned_size(), 1.f );
     }
     const Event operator[]( const size_t&) const;
-    std::array<Event, utils::size<float_v>::value> scatter(unsigned) const;
-    void gather(const std::array<Event, utils::size<float_v>::value>&, unsigned);   
-    auto begin() const { return make_scatter_iterator<utils::size<float_v>::value>(0,this); }
-    auto   end() const { return make_scatter_iterator<utils::size<float_v>::value>(size(), (const EventListSIMD*)(nullptr) ); } 
-    auto begin()       { return make_scatter_iterator<utils::size<float_v>::value, true>(0, this); }
-    auto   end()       { return make_scatter_iterator<utils::size<float_v>::value, true>(size(), (EventListSIMD*)(nullptr) ); }
+    std::array<Event, utils::size<real_v>::value> scatter(unsigned) const;
+    void gather(const std::array<Event, utils::size<real_v>::value>&, unsigned);   
+    auto begin() const { return make_scatter_iterator<utils::size<real_v>::value>(0,this); }
+    auto   end() const { return make_scatter_iterator<utils::size<real_v>::value>(size(), (const EventListSIMD*)(nullptr) ); } 
+    auto begin()       { return make_scatter_iterator<utils::size<real_v>::value, true>(0, this); }
+    auto   end()       { return make_scatter_iterator<utils::size<real_v>::value, true>(size(), (EventListSIMD*)(nullptr) ); }
     EventType eventType()                         const { return m_eventType; }
     size_t aligned_size()                         const { return m_data.aligned_size(); }
     double integral()                             const;
@@ -139,9 +139,9 @@ namespace AmpGen
       for ( auto& event : *this ) fcn( event );
       return *this;
     }
-    static std::vector<float_v> makeEvent( const Event& event )
+    static std::vector<real_v> makeEvent( const Event& event )
     {
-      std::vector<float_v> rt( event.size() );
+      std::vector<real_v> rt( event.size() );
       for( unsigned i = 0 ; i != event.size(); ++i ) rt[i] = event[i];
       return rt;
     }

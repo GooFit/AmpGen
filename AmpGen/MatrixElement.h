@@ -6,10 +6,10 @@
 #include "AmpGen/Particle.h"
 
 namespace AmpGen {
-  class MatrixElement : public CompiledExpression<void(complex_v*, const size_t*, const real_t*, const float_v*)>
+  class MatrixElement : public CompiledExpression<void(complex_v*, const size_t*, const real_t*, const real_v*)>
   {
     public:
-      using amp_type    = CompiledExpression<void(complex_v*, const size_t*, const real_t*, const float_v*)>;
+      using amp_type    = CompiledExpression<void(complex_v*, const size_t*, const real_t*, const real_v*)>;
       MatrixElement() = default;
       MatrixElement(const Particle& dt, const TotalCoupling& coupling, const amp_type& amp); 
       MatrixElement(const Particle& dt, 

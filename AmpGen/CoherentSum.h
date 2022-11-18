@@ -86,7 +86,7 @@ namespace AmpGen
       double operator()(const double*, const unsigned) const; 
     #endif
 
-    float_v operator()(const float_v*, const unsigned) const; 
+    real_v operator()(const real_v*, const unsigned) const; 
     real_t  operator()(const Event& evt )              const { return m_weight*std::norm(getVal(evt))/m_norm; }
 
     void debug( const Event& evt, const std::string& nameMustContain="");

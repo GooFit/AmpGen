@@ -54,7 +54,7 @@ double DalitzIntegrator::sqDp2( const Event& evt ) const
   return acos( dotProduct( p1, p3, pA ) / sqrt( dotProduct( p1, p1, pA ) * dotProduct( p3, p3, pA ) ) ) / M_PI;
 }
 
-void DalitzIntegrator::setEvent( const sqCo& x, float_v* event ) const
+void DalitzIntegrator::setEvent( const sqCo& x, real_v* event ) const
 {
   auto mAB = getMAB( x );
   auto pA  = safe_sqrt(0.25*mAB*mAB - 0.5*(m_s1 + m_s2) + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB));
@@ -77,12 +77,12 @@ void DalitzIntegrator::setMother( const double& s )
   m_max = sqrt(m_s0) - sqrt(m_s3);
 }
 
-float_v DalitzIntegrator::getMAB( const sqCo& coords ) const
+real_v DalitzIntegrator::getMAB( const sqCo& coords ) const
 {
   return m_min + ( m_max - m_min ) * ( cos( M_PI * coords.first ) + 1 ) / 2;
 }
 
-float_v DalitzIntegrator::J( const sqCo& coords ) const
+real_v DalitzIntegrator::J( const sqCo& coords ) const
 {
   auto mAB         = getMAB( coords );
   auto pA          = safe_sqrt( mAB * mAB / 4. - ( m_s1 + m_s2 ) / 2. + ( m_s1 - m_s2 ) * ( m_s1 - m_s2 ) / ( 4 * mAB * mAB ) );
@@ -96,7 +96,7 @@ float_v DalitzIntegrator::J( const sqCo& coords ) const
   return j;
 }
 
-float_v DalitzIntegrator::J( const sqCo& coords, const double& s ) const
+real_v DalitzIntegrator::J( const sqCo& coords, const double& s ) const
 {
   auto mAB         = getMAB( coords, s);
   auto max         = sqrt(s)    - sqrt(m_s3);
@@ -112,7 +112,7 @@ float_v DalitzIntegrator::J( const sqCo& coords, const double& s ) const
   return j;
 }
 
-float_v DalitzIntegrator::getMAB( const sqCo& coords, const double& s ) const
+real_v DalitzIntegrator::getMAB( const sqCo& coords, const double& s ) const
 {
   auto m = coords.first;
   auto max         = sqrt(s) - sqrt(m_s3);
@@ -120,7 +120,7 @@ float_v DalitzIntegrator::getMAB( const sqCo& coords, const double& s ) const
   return min + ( max - min ) * ( cos( M_PI * m ) + 1 ) / 2;
 }
 
-void DalitzIntegrator::setEvent(const sqCo& x, float_v* event, const double& s) const
+void DalitzIntegrator::setEvent(const sqCo& x, real_v* event, const double& s) const
 {
   auto mAB = getMAB( x, s );
   auto pA  = sqrt( mAB*mAB/4. - (m_s1+m_s2)/2. + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB) );

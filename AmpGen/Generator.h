@@ -54,7 +54,7 @@ namespace AmpGen
         {
           if constexpr( std::is_same<phaseSpace_t, PhaseSpace>::value )
           {
-            constexpr auto w = utils::size<float_v>::value; 
+            constexpr auto w = utils::size<real_v>::value; 
             for( unsigned i = 0 ; i != N ; ++i ){
               double* addr = reinterpret_cast<double*>( events.block( i/w  ))+ i % w;
               m_gps.fill(addr, w);     

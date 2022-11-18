@@ -45,7 +45,6 @@ namespace AmpGen {
 
   using real_v      = AVX::real_v;
   using complex_v   = AVX::complex_v;
-  using float_v     = AVX::real_v; // this should be removed - as float has a more specific meaning
   namespace utils {
 
     template <typename T> struct is_vector_type : std::false_type {}; 

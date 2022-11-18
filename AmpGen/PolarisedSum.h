@@ -49,7 +49,7 @@ namespace AmpGen
         void setMC(EventList& evts){ setMC( *new EventList_type(evts)) ; };
         double operator()(const double*, const unsigned) const; 
       #endif
-      float_v operator()(const float_v*, const unsigned) const; 
+      real_v operator()(const real_v*, const unsigned) const; 
       real_t  operator()(const Event& evt) const;
       void reset(const bool& = false);
       void debug(const Event&);
@@ -77,7 +77,7 @@ namespace AmpGen
       real_t                        m_norm        = {1};
       EventList_type*               m_events      = {nullptr};
       Store<complex_v, Alignment::AoS> m_cache    = {};
-      Store<float_v  , Alignment::SoA> m_pdfCache = {}; 
+      Store<real_v  , Alignment::SoA> m_pdfCache = {}; 
       bool                          m_ownEvents   = {false};
       MinuitParameterSet*           m_mps         = {nullptr};
       MinuitProxy                   m_weight      = {nullptr,1}; 
@@ -94,7 +94,7 @@ namespace AmpGen
       std::vector<size_t>           m_integIndex; 
       std::pair<unsigned, unsigned> m_dim; 
       std::vector<MatrixElement>                                   m_matrixElements;  
-      CompiledExpression<float_v(const real_t*, const complex_v*)> m_probExpression; 
+      CompiledExpression<real_v(const real_t*, const complex_v*)> m_probExpression; 
   };
 } // namespace AmpGen
 

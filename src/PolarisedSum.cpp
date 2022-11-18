@@ -85,7 +85,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
           thisExpression[j] = make_cse( p.getExpression(j == 0 ? &syms: nullptr, polStates[j] ) );         
         ptr->m_matrixElements[i] = MatrixElement( 
             p, c,
-            CompiledExpression<void(complex_v*, const size_t*, const real_t*, const float_v*)>(
+            CompiledExpression<void(complex_v*, const size_t*, const real_t*, const real_v*)>(
             TensorExpression(thisExpression), p.decayDescriptor(), &mps,
             ptr->m_eventType.getEventFormat(), ptr->m_debug ? syms : DebugSymbols() ) );
         
@@ -109,7 +109,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
         thisExpression[1] = i < r1.size() ? 0 : make_cse( p.getExpression(&syms) ); 
         this->m_matrixElements[i] = MatrixElement( 
             p, coupling, 
-            CompiledExpression<void(complex_v*, const size_t*, const real_t*, const float_v*)>(
+            CompiledExpression<void(complex_v*, const size_t*, const real_t*, const real_v*)>(
             TensorExpression(thisExpression), p.decayDescriptor(), this->m_mps,
             this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ) );
           CompilerWrapper().compile( m_matrixElements[i] );
@@ -132,7 +132,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
   DebugSymbols db;
   auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector,[](auto& p){ return Parameter(p->name());} ), 
                                                  convertProxies(m_pfVector,[](auto& p){ return Parameter(p->name());} ), m_debug ? &db : nullptr);
-  m_probExpression = make_expression<float_v, real_t, complex_v>( prob, "prob_unnormalised", m_mps, this->m_debug ? db : DebugSymbols() );
+  m_probExpression = make_expression<real_v, real_t, complex_v>( prob, "prob_unnormalised", m_mps, this->m_debug ? db : DebugSymbols() );
 }
 
 std::vector<complex_t> densityMatrix(const unsigned& dim, const std::vector<MinuitProxy>& pv )
@@ -189,7 +189,7 @@ void   PolarisedSum::prepare()
   m_nCalls++; 
 }
 
-float_v PolarisedSum::operator()( const float_v*, const unsigned index ) const 
+real_v PolarisedSum::operator()( const real_v*, const unsigned index ) const 
 { 
   return ( m_weight / m_norm ) * m_pdfCache[index];
 }
@@ -197,7 +197,7 @@ float_v PolarisedSum::operator()( const float_v*, const unsigned index ) const
 #if ENABLE_AVX
 double PolarisedSum::operator()( const double*, const unsigned index ) const 
 { 
-  return operator()((const float_v*)nullptr, index / utils::size<float_v>::value ).at( index % utils::size<float_v>::value );
+  return operator()((const real_v*)nullptr, index / utils::size<real_v>::value ).at( index % utils::size<real_v>::value );
 }
 #endif
 
@@ -258,7 +258,7 @@ Tensor PolarisedSum::transitionMatrix() const
 
 real_t PolarisedSum::operator()(const Event& evt) const 
 {   
-  return (m_weight/m_norm) * utils::at( m_pdfCache[ evt.index() / utils::size<float_v>::value ], evt.index() % utils::size<float_v>::value );
+  return (m_weight/m_norm) * utils::at( m_pdfCache[ evt.index() / utils::size<real_v>::value ], evt.index() % utils::size<real_v>::value );
 }
 
 double PolarisedSum::norm() const 
@@ -326,7 +326,7 @@ void PolarisedSum::debug(const Event& evt)
   for(unsigned j = 0; j != m_matrixElements.size(); ++j)
   {
     std::vector<complex_v> this_cache; 
-    for(unsigned i = 0 ; i != tsize; ++i ) this_cache.emplace_back( m_cache(evt.index() / utils::size<float_v>::value, j*tsize + i) );
+    for(unsigned i = 0 ; i != tsize; ++i ) this_cache.emplace_back( m_cache(evt.index() / utils::size<real_v>::value, j*tsize + i) );
     INFO( m_matrixElements[j].decayDescriptor() << " " << vectorToString(this_cache, " ") );
     if( m_debug ) m_matrixElements[j].debug( evt ); 
     for( auto& t : this_cache ) all_cache.emplace_back( t);
@@ -335,7 +335,7 @@ void PolarisedSum::debug(const Event& evt)
   if( m_debug ) m_probExpression.debug(all_cache.data() );
   INFO("Evaluating without cache...");
   INFO("P(x) = " << getValNoCache(evt) );
-  INFO("P(x) = " << operator()((const float_v*)nullptr, evt.index() / utils::size<float_v>::value ) );
+  INFO("P(x) = " << operator()((const real_v*)nullptr, evt.index() / utils::size<real_v>::value ) );
   
 
   INFO("Prod = [" << vectorToString(m_pVector , ", ") <<"]");
@@ -522,7 +522,7 @@ std::function<real_t(const Event&)> PolarisedSum::evaluator(const EventList_type
   #endif
   for( unsigned int block = 0 ; block < events->nBlocks(); ++block )
   {
-    utils::store(values.data() + utils::size<float_v>::value * block, (m_weight/m_norm) * m_probExpression(&store(block,0)) ); 
+    utils::store(values.data() + utils::size<real_v>::value * block, (m_weight/m_norm) * m_probExpression(&store(block,0)) ); 
   }
   return arrayToFunctor<double, Event>(values);
 }

@@ -308,7 +308,7 @@ void CoherentSum::printVal(const Event& evt)
   /*
   for ( auto& mE : m_matrixElements ) {
     unsigned int address = std::distance( &mE , &m_matrixElements[0] );
-    std::cout << mE.decayTree.decayDescriptor() << " = " << mE.coefficient << " x " << m_cache( evt.index() / utils::size<float_v>::value, address )
+    std::cout << mE.decayTree.decayDescriptor() << " = " << mE.coefficient << " x " << m_cache( evt.index() / utils::size<real_v>::value, address )
       << " address = " << address << " " << mE( evt ) << std::endl;
     if( mE.coupling.size() != 1 ){
       std::cout << "CouplingConstants: " << std::endl;
@@ -323,16 +323,16 @@ complex_t CoherentSum::getVal( const Event& evt ) const
 {
   complex_v value( 0., 0. );
   for (unsigned int i = 0 ; i != m_matrixElements.size(); ++i ) {
-    value = value + m_matrixElements[i].coefficient * m_cache(evt.index() / utils::size<float_v>::value, i );
+    value = value + m_matrixElements[i].coefficient * m_cache(evt.index() / utils::size<real_v>::value, i );
   }
 #if ENABLE_AVX
-  return value.at(evt.index() % utils::size<float_v>::value );
+  return value.at(evt.index() % utils::size<real_v>::value );
 #else 
   return value;
 #endif
 }
 
-float_v CoherentSum::operator()( const float_v* /*evt*/, const unsigned block ) const 
+real_v CoherentSum::operator()( const real_v* /*evt*/, const unsigned block ) const 
 {
   complex_v value( 0., 0. );
   for ( const auto& mE : m_matrixElements ) 
@@ -346,7 +346,7 @@ float_v CoherentSum::operator()( const float_v* /*evt*/, const unsigned block ) 
 #if ENABLE_AVX
 double CoherentSum::operator()( const double* /*evt*/, const unsigned block ) const 
 {
-  return operator()((const float_v*)nullptr, block / utils::size<float_v>::value ).at( block % utils::size<float_v>::value );
+  return operator()((const real_v*)nullptr, block / utils::size<real_v>::value ).at( block % utils::size<real_v>::value );
 }
 #endif
 
@@ -365,7 +365,7 @@ std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type*
     complex_v amp(0.,0.);
     for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ) 
       amp = amp + m_matrixElements[j].coefficient * store(block, j);
-    utils::store( values.data() + block * utils::size<float_v>::value,  (m_weight/m_norm) * utils::norm(amp)  );
+    utils::store( values.data() + block * utils::size<real_v>::value,  (m_weight/m_norm) * utils::norm(amp)  );
   }
   return arrayToFunctor<double, typename EventList_type::value_type>(values);
 }
