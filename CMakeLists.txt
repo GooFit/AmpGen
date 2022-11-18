@@ -292,15 +292,13 @@ if( ENABLE_INSTALL )
                  ${CMAKE_CURRENT_BINARY_DIR}/AmpGenVersion.cmake
                  DESTINATION ${CMAKE_INSTALL_DATADIR}/AmpGen/cmake)
   
-  install(
-    TARGETS libAmpGen
+  install(TARGETS libAmpGen
     EXPORT AmpGenTargets
     LIBRARY DESTINATION lib
     PUBLIC_HEADER DESTINATION AmpGen
   )
   
-  install(
-    TARGETS AmpGen${EXEC_EXTENSION}
+  install(TARGETS AmpGen${EXEC_EXTENSION}
     DESTINATION bin
   )
   

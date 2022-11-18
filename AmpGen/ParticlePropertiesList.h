@@ -27,9 +27,9 @@ namespace AmpGen
 
   protected:
     const std::vector<std::string> dirList() const;
-    bool readFile( const std::string& fname );
 
   public:
+    bool readFile( const std::string& fname );
     static const ParticlePropertiesList* getMe();
     static ParticlePropertiesList* getMutable();
     static const ParticleProperties* get( const std::string& name, const bool& quiet = false );

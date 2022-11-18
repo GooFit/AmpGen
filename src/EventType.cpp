@@ -23,7 +23,6 @@
 #include "AmpGen/OptionsParser.h"
 
 using namespace AmpGen;
-std::string convertTeXtoROOT(std::string input);
 
 EventType::EventType( const std::vector<std::string>& particleNames, const bool& isTD ) : m_timeDependent( isTD )
 {
@@ -152,9 +151,7 @@ std::string EventType::label( const unsigned& index, bool isRoot ) const
 std::string EventType::label( const std::vector<unsigned>& index, bool isRoot ) const
 {
   std::string thing = "";
-  for ( auto& x : index ) {
-    thing += label(x, isRoot) +" ";
-  }
+  for ( auto& x : index ) thing += label(x, isRoot) +" ";
   return thing;
 }
 
@@ -293,16 +290,6 @@ bool EventType::isTimeDependent() const { return m_timeDependent; }
 unsigned EventType::eventSize() const { return 4 * size() + m_timeDependent; }
 
 std::pair<unsigned, unsigned> EventType::dim() const { return m_dim; }
-
-std::string convertTeXtoROOT( std::string input )
-{
-  input = replaceAll( input, "\\mathrm{K}", "K" );
-  input = replaceAll( input, "\\", "#" );
-  input = replaceAll( input, "#xspace", "" );
-  input = replaceAll( input, "#kern0.2em#overline{#kern-0.2em", "#bar{" );
-  input = replaceAll( input, "^*", "^{*}" );
-  return input;
-}
 
 std::string EventType::decayDescriptor() const
 {
