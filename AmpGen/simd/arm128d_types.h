@@ -1,7 +1,7 @@
-#ifndef AMPGEN_AVXd_TYPES
-#define AMPGEN_AVXd_TYPES 1
+#ifndef AMPGEN_ARM128d_TYPES
+#define AMPGEN_ARM128d_TYPES 1
 
-#include <immintrin.h>
+#include <arm_neon.h>
 #include <array>
 #include <iostream>
 #include <complex>
@@ -10,65 +10,68 @@
 #endif
 #include <math.h>
 
-#if USE_MVEC
-extern "C" void    _ZGVdN4vvv_sincos(__m256d x, __m256i ptrs, __m256i ptrc);
-#endif
 
 #if USE_MVEC
+  extern "C" void    _ZGVdN4vvv_sincos(__m256d x, __m256i ptrs, __m256i ptrc);
 #define libmvec_alias( function_name) \
   extern "C" __m256d _ZGVcN4v_##function_name(__m256d x);                                    \
   inline real_v function_name( const real_v& v ){ return _ZGVcN4v_##function_name (v) ; }
 #else
 #define libmvec_alias( F ) \
-  inline real_v F( const real_v& v ){ auto arr = v.to_ptr(); return real_v( std::F(arr[0]), std::F(arr[1]), std::F(arr[2]), std::F(arr[3])) ; }
+  inline real_v F( const real_v& v ){ auto arr = v.to_ptr(); return real_v( std::F(arr[0]), std::F(arr[1]) ); }
 #endif
 
 namespace AmpGen {
-  namespace AVX2d {
+  namespace ARM128d {
 
     struct real_v {
-      __m256d data;
-      static constexpr unsigned size = 4;
+      float64x2_t data;
+      static constexpr unsigned size = 2;
       typedef double scalar_type;
       real_v() = default;
-      real_v(__m256d data ) : data(data) {}
-      real_v(const double& f ) : data( _mm256_set1_pd( f )) {}
-      real_v(const double& x0, const double& x1, const double& x2, const double& x3 )
+      real_v(float64x2_t data ) : data(data) {}
+      real_v(const scalar_type& f ) : data(vmovq_n_f64(f)) {}
+      real_v(const scalar_type& x0, const scalar_type& x1 )
       {
-        data = _mm256_set_pd(x3,x2,x1,x0);
+        data = vsetq_lane_f64(x0, data, 0 );
+        data = vsetq_lane_f64(x1, data, 1 ); 
       }
-      explicit real_v(const double* f ) : data( _mm256_loadu_pd( f ) ) {}
-      real_v(const std::array<double,4> f ) : data( _mm256_loadu_pd( f.data() ) ) {}
-      void store( double* ptr ) const { _mm256_storeu_pd( ptr, data ); }
-      const double* to_ptr() const { return reinterpret_cast<const double*>( &data ) ; }
-            double* to_ptr()       { return reinterpret_cast<double*>( &data ) ; }
-      std::array<double, 4> to_array() const { std::array<double, 4> b; store( &b[0] ); return b; }
+      explicit real_v(const scalar_type* f ) : data(  vld1q_f64( f ) ) {}
+      real_v(const std::array<scalar_type, size> f ) : data(  vld1q_f64( f.data() ) ) {}
+      void store( scalar_type* ptr ) const { vst1q_f64(ptr, data); }
+      const scalar_type* to_ptr() const { return reinterpret_cast<const scalar_type*>( &data ) ; }
+            scalar_type* to_ptr()       { return reinterpret_cast<scalar_type*>( &data ) ; }
+      std::array<scalar_type, size> to_array() const { std::array<scalar_type, size> b; store( &b[0] ); return b; }
       double at(const unsigned i) const { return to_ptr()[i]; }
-      operator __m256d() const { return data ; }
+      operator float64x2_t() const { return data ; }
       inline real_v operator+=(const real_v& rhs );
       inline real_v operator-=(const real_v& rhs );
       inline real_v operator*=(const real_v& rhs );
       inline real_v operator/=(const real_v& rhs );
     };
 
-    inline real_v operator+( const real_v& lhs, const real_v& rhs ) { return _mm256_add_pd(lhs, rhs); }
-    inline real_v operator-( const real_v& lhs, const real_v& rhs ) { return _mm256_sub_pd(lhs, rhs); }
-    inline real_v operator*( const real_v& lhs, const real_v& rhs ) { return _mm256_mul_pd(lhs, rhs); }
-    inline real_v operator/( const real_v& lhs, const real_v& rhs ) { return _mm256_div_pd(lhs, rhs); }
+    inline real_v operator+( const real_v& lhs, const real_v& rhs ) { return  vaddq_f64(lhs, rhs); }
+    inline real_v operator-( const real_v& lhs, const real_v& rhs ) { return  vsubq_f64(lhs, rhs); }
+    inline real_v operator*( const real_v& lhs, const real_v& rhs ) { return  vmulq_f64(lhs, rhs); }
+    inline real_v operator/( const real_v& lhs, const real_v& rhs ) { return  vdivq_f64(lhs, rhs); }
     inline real_v operator-( const real_v& x ) { return -1.f * x; }
+    /*
     inline real_v operator&( const real_v& lhs, const real_v& rhs ) { return _mm256_and_pd( lhs, rhs ); }
     inline real_v operator|( const real_v& lhs, const real_v& rhs ) { return _mm256_or_pd( lhs, rhs ); }
     inline real_v operator^( const real_v& lhs, const real_v& rhs ) { return _mm256_xor_pd( lhs, rhs ); }
     inline real_v operator&&( const real_v& lhs, const real_v& rhs ) { return _mm256_and_pd( lhs, rhs ); }
     inline real_v operator||( const real_v& lhs, const real_v& rhs ) { return _mm256_or_pd( lhs, rhs ); }
     inline real_v operator!( const real_v& x ) { return x ^ _mm256_castsi256_pd( _mm256_set1_epi32( -1 ) ); }
-    inline real_v operator<( const real_v& lhs, const real_v& rhs ) { return _mm256_cmp_pd( lhs, rhs, _CMP_LT_OS ); }
-    inline real_v operator>( const real_v& lhs, const real_v& rhs ) { return _mm256_cmp_pd( lhs, rhs, _CMP_GT_OS ); }
+    */
+    inline real_v operator<( const real_v& lhs, const real_v& rhs ) { return vcvtq_f64_u64(vcltq_f64(lhs,rhs)); }
+    inline real_v operator>( const real_v& lhs, const real_v& rhs ) { return vcvtq_f64_u64(vcgtq_f64(lhs,rhs)); }
+    /*
     inline real_v operator<=( const real_v& lhs, const real_v& rhs ) { return _mm256_cmp_pd( lhs, rhs, _CMP_LE_OS ); }
     inline real_v operator>=( const real_v& lhs, const real_v& rhs ) { return _mm256_cmp_pd( lhs, rhs, _CMP_GE_OS ); }
-    inline real_v operator==( const real_v& lhs, const real_v& rhs ){ return _mm256_cmp_pd( lhs, rhs, _CMP_EQ_OS ); }
-    inline real_v sqrt( const real_v& v ) { return _mm256_sqrt_pd(v); }
-    inline real_v abs ( const real_v& v ) { return _mm256_andnot_pd(_mm256_set1_pd(-0.), v);  }
+    */
+    inline real_v operator==( const real_v& lhs, const real_v& rhs ){ return vcvtq_f64_u64( vceqq_f64( lhs, rhs) ); }
+    inline real_v sqrt( const real_v& v ) { return vsqrtq_f64(v); }
+    inline real_v abs ( const real_v& v ) { return vabsq_f64(v); } 
     inline real_v real_v::operator+=(const real_v& rhs ){ *this = *this + rhs; return *this; }
     inline real_v real_v::operator-=(const real_v& rhs ){ *this = *this - rhs; return *this; }
     inline real_v real_v::operator*=(const real_v& rhs ){ *this = *this * rhs; return *this; }
@@ -77,17 +80,10 @@ namespace AmpGen {
     libmvec_alias( cos )
     libmvec_alias( exp )
     libmvec_alias( log )
-    //inline real_v log( const real_v& v ){ auto arr = v.to_array(); return real_v( std::log(arr[0]), std::log(arr[1]), std::log(arr[2]), std::log(arr[3])) ; }
     inline void sincos( const real_v& v, real_v& s, real_v& c )
     {
-#if USE_MVEC
-      __m256i sp = _mm256_add_epi64(_mm256_set1_epi64x((uint64_t)&s),_mm256_set_epi64x(24,16,8,0));
-      __m256i cp = _mm256_add_epi64(_mm256_set1_epi64x((uint64_t)&c),_mm256_set_epi64x(24,16,8,0));
-      _ZGVdN4vvv_sincos(v,sp,cp);
-#else
       s = sin(v);
       c = cos(v);
-#endif
     }
     inline std::pair<real_v, real_v> sincos( const real_v& v )
     {
@@ -101,50 +97,31 @@ namespace AmpGen {
       return s / c ;
     }
 
-    inline real_v select(const real_v& mask, const real_v& a, const real_v& b ) { return _mm256_blendv_pd( b, a, mask ); }
-    inline real_v select(const bool& mask   , const real_v& a, const real_v& b ) { return mask ? a : b; }
+    inline real_v select(const real_v& mask, const real_v& a, const real_v& b ) { return vbslq_f64(vcvtaq_u64_f64(mask), a, b); }
+    inline real_v select(const bool& mask  , const real_v& a, const real_v& b ) { return mask ? a : b; }
     inline real_v sign  ( const real_v& v){ return select( v > 0., +1., -1. ); }
     inline real_v atan2( const real_v& y, const real_v& x ){
       const double* bx = x.to_ptr();
       const double* by = y.to_ptr(); 
-      return real_v (
-          std::atan2(   by[0], bx[0])
-          , std::atan2( by[1], bx[1])
-          , std::atan2( by[2], bx[2])
-          , std::atan2( by[3], bx[3]) );
-    }
-    inline __m256i udouble_to_uint( const real_v& x )
-    {
-      auto xr = _mm256_round_pd(x, _MM_FROUND_TO_NEG_INF);
-      // based on:  https://stackoverflow.com/questions/41144668/how-to-efficiently-perform-double-int64-conversions-with-sse-avx
-      return _mm256_sub_epi64(_mm256_castpd_si256(_mm256_add_pd(xr, _mm256_set1_pd(0x0018000000000000))),
-             _mm256_castpd_si256(_mm256_set1_pd(0x0018000000000000)));
+      return real_v ( std::atan2(   by[0], bx[0]), std::atan2( by[1], bx[1]) ); 
     }
     inline real_v gather( const double* base_addr, const real_v& offsets)
     {
-     return _mm256_i64gather_pd(base_addr, udouble_to_uint(offsets),sizeof(double));
-    }
-    inline real_v conj( const real_v& v )
-    {
-      return v;
+      auto offsets_p = offsets.to_ptr();
+      return real_v ( base_addr[ unsigned(*(offsets_p +0))], base_addr[unsigned(*offsets_p+1)] ); 
     }
     inline real_v fmadd( const real_v& a, const real_v& b, const real_v& c )
     {
-      return _mm256_fmadd_pd(a, b, c);
+      return vmlaq_f64(a, b, c);
     }
+    /*
     inline real_v remainder( const real_v& a, const real_v& b ){ return a - real_v(_mm256_round_pd(a/b, _MM_FROUND_TO_NEG_INF)) * b; }
     inline real_v fmod( const real_v& a, const real_v& b )
     {
       auto r = remainder( abs(a), abs(b) );
       return select( a > 0., r, -r );
     }
-
-    inline std::ostream& operator<<( std::ostream& os, const real_v& obj ) {
-      auto data = obj.to_ptr();
-      for( unsigned i = 0 ; i != 4; ++i ) os << data[i] << " ";
-      return os;
-    }
-    
+    */
     using complex_v = std::complex<real_v>; 
     inline complex_v operator+( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.real() + rhs, lhs.imag()); }
     inline complex_v operator-( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.real() - rhs, lhs.imag()); }
@@ -179,7 +156,7 @@ namespace AmpGen {
 	omp_out = omp_out + omp_in)
     #pragma omp declare reduction(+: complex_v: \
 	omp_out = omp_out + omp_in)
-
+    
   }
 }
 

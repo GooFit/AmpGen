@@ -13,6 +13,7 @@
 #include <utility>
 #include <numeric>
 #include "AmpGen/MsgService.h"
+#include "AmpGen/simd/utils.h"
 
 std::vector<std::string> AmpGen::vectorFromFile( const std::string& filename, const char ignoreLinesThatBeginWith )
 {
@@ -295,6 +296,7 @@ void AmpGen::printSplash()
 #elif defined(__GNUC__) || defined(__GNUG__)
   std::cout << "gcc " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__;
 #endif
+
 #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d
   std::cout << " (avx2; double)";
 #elif INSTRUCTION_SET == INSTRUCTION_SET_AVX2f

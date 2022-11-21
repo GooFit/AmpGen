@@ -94,7 +94,7 @@ double IncoherentSum::prob_unnormalised( const Event& evt ) const
 { 
   real_v value( 0. );
   for (unsigned int i = 0 ; i != m_matrixElements.size(); ++i ) {
-    value += utils::norm( m_matrixElements[i].coefficient * m_cache(evt.index() / utils::size<real_v>::value, i ) );
+    value += std::norm( complex_v(m_matrixElements[i].coefficient) * m_cache(evt.index() / utils::size<real_v>::value, i ) );
   }
   #if ENABLE_AVX
     return value.at(evt.index() % utils::size<real_v>::value );
@@ -110,7 +110,7 @@ real_v IncoherentSum::operator()( const real_v* /*evt*/, const unsigned block ) 
   for ( const auto& mE : m_matrixElements ) 
   {
     unsigned address = &mE - &m_matrixElements[0];
-    value += utils::norm( mE.coefficient * m_cache(block, address) ); 
+    value += std::norm( complex_v( mE.coefficient) * m_cache(block, address) ); 
   }
   return (m_weight/m_norm ) * value; 
 }
@@ -163,7 +163,7 @@ std::function<real_t(const Event&)> IncoherentSum::evaluator(const EventList_typ
   {
     real_v amp(0.);
     for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ) 
-      amp = amp + utils::norm( m_matrixElements[j].coefficient * store(block, j) );
+      amp = amp + std::norm( complex_v(m_matrixElements[j].coefficient) * store(block, j) );
     utils::store( values.data() + block * utils::size<real_v>::value,  (m_weight/m_norm) * amp  );
   }
   return arrayToFunctor<double, typename EventList_type::value_type>(values);

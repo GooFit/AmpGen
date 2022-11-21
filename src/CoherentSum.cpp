@@ -240,10 +240,11 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
 
 complex_t CoherentSum::getValNoCache( const Event& evt ) const
 {
-  return utils::get<0>( complex_v(std::accumulate( m_matrixElements.begin(), 
+  auto v = complex_v(std::accumulate( m_matrixElements.begin(), 
           m_matrixElements.end(), 
           complex_v(0,0), 
-          [&evt]( const auto& a, const auto& b ){ return a + b.coefficient * b(evt)[0];} )) );
+          [&evt]( const auto& a, const auto& b ){ return a + complex_v(b.coefficient) * b(evt)[0];} ));
+  return complex_t( utils::get<0>(std::real(v)), utils::get<0>(std::imag(v)) ); 
 }
 
 void CoherentSum::reset( bool resetEvents )
@@ -323,10 +324,10 @@ complex_t CoherentSum::getVal( const Event& evt ) const
 {
   complex_v value( 0., 0. );
   for (unsigned int i = 0 ; i != m_matrixElements.size(); ++i ) {
-    value = value + m_matrixElements[i].coefficient * m_cache(evt.index() / utils::size<real_v>::value, i );
+    value = value + complex_v( m_matrixElements[i].coefficient ) * m_cache(evt.index() / utils::size<real_v>::value, i );
   }
 #if ENABLE_AVX
-  return value.at(evt.index() % utils::size<real_v>::value );
+  return utils::at(value, evt.index() % utils::size<real_v>::value);
 #else 
   return value;
 #endif
@@ -338,9 +339,9 @@ real_v CoherentSum::operator()( const real_v* /*evt*/, const unsigned block ) co
   for ( const auto& mE : m_matrixElements ) 
   {
     unsigned address = &mE - &m_matrixElements[0];
-    value = value + mE.coefficient * m_cache(block, address); 
+    value = value + complex_v(mE.coefficient) * m_cache(block, address); 
   }
-  return (m_weight/m_norm ) * utils::norm(value); 
+  return (m_weight/m_norm ) * std::norm(value); 
 }
 
 #if ENABLE_AVX
@@ -364,8 +365,8 @@ std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type*
   {
     complex_v amp(0.,0.);
     for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ) 
-      amp = amp + m_matrixElements[j].coefficient * store(block, j);
-    utils::store( values.data() + block * utils::size<real_v>::value,  (m_weight/m_norm) * utils::norm(amp)  );
+      amp = amp + complex_v(m_matrixElements[j].coefficient) * store(block, j);
+    utils::store( values.data() + block * utils::size<real_v>::value,  (m_weight/m_norm) * std::norm(amp)  );
   }
   return arrayToFunctor<double, typename EventList_type::value_type>(values);
 }

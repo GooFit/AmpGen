@@ -27,6 +27,7 @@ namespace AmpGen
   class DalitzIntegrator
   {
     public:
+
       typedef std::pair<real_v, real_v> sqCo;
 
       DalitzIntegrator( const double& s0, const double& s1, const double& s2, const double& s3);
@@ -50,7 +51,6 @@ namespace AmpGen
         #endif
       }
       void setEvent(const sqCo& x, real_v* event, const double& s) const;
-     // void setEvent_scalar(const sqCo& x, AmpGen::Event& event) const;
       
       void debug() const; 
       void setEvent(const sqCo& x, real_v* event) const;
@@ -78,12 +78,17 @@ namespace AmpGen
   template <typename FCN>
   double DalitzIntegrator::integrateDP( FCN&& fcn, const double& s) const
   {
+    #if INSTRUCTION_SET != INSTRUCTION_SET_AVX2d
+    #pragma message("WARNING: DalitzIntegrator only supports AVX2d instruction set")
+    #else 
     real_v event[12] = {0.};
     ProfileClock pc1; 
     auto i1 = integrate<2>(  [&]( const std::array<real_v,2>& x ) {
       setEvent( *reinterpret_cast<const sqCo*>(&x) , event, s);
       return J( *reinterpret_cast<const sqCo*>(&x) , s) * real( fcn(event) ); }, std::array<double,2>{0., 0.}, std::array<double, 2>{1.,1.} ) /s;
     return i1; 
+#endif 
+    return 0; 
   }
 
 

@@ -52,9 +52,7 @@ std::string Abs::to_string( const ASTResolver* resolver ) const
 
 std::string Conj::to_string( const ASTResolver* resolver ) const
 {
-  return resolver != nullptr && resolver->enableAVX() ? 
-    "conj(" + m_expression.to_string(resolver) +")" :
-    "std::conj("+m_expression.to_string(resolver) +")";
+  return "std::conj("+m_expression.to_string(resolver) +")";
 }
 
 std::string Norm::to_string( const ASTResolver* resolver ) const

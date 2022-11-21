@@ -212,7 +212,7 @@ void PolarisedSum::debug_norm()
   INFO("Norm: " << std::setprecision(10) << "bilinears=" << m_norm << "; Slow="   << norm_slow << "; d = "     << m_norm - norm_slow);
 }
 
-void   PolarisedSum::setEvents( EventList_type& events )
+void   PolarisedSum::setEvents( PolarisedSum::EventList_type& events )
 { 
   reset();
   if( m_events != nullptr && m_ownEvents ) delete m_events; 
@@ -221,7 +221,7 @@ void   PolarisedSum::setEvents( EventList_type& events )
   m_pdfCache . allocate( m_events->size(), m_probExpression);
 }
 
-void   PolarisedSum::setMC( EventList_type& events )
+void   PolarisedSum::setMC( PolarisedSum::EventList_type& events )
 {
   m_nCalls = 0;
   m_integrator = Integrator(&events, m_matrixElements, m_dim.first * m_dim.second );
