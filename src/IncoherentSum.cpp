@@ -129,7 +129,7 @@ real_t IncoherentSum::prob_unnormalisedNoCache( const Event& evt ) const
           m_matrixElements.end(), 
           real_t(0), 
           [&evt]( const auto& a, const auto& b ){ auto amp = utils::at(b(evt)[0], 0);
-          return a + std::norm(b.coefficient * amp);} )) );
+          return a + std::norm(b.coefficient * complex_t(amp));} )) );
 }
 
 void IncoherentSum::debug( const Event& evt, const std::string& nameMustContain )

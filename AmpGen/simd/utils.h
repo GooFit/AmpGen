@@ -83,8 +83,7 @@ namespace AmpGen {
       if constexpr( size<simd_type>::value == 1 ) return obj;
       #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d
         return _mm256_movemask_pd( obj ) == 0xF;
-      #endif
-      #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2f
+      #elif INSTRUCTION_SET == INSTRUCTION_SET_AVX2f
         return _mm256_movemask_ps( obj ) == 0xFF;
       #endif
       return false; 

@@ -49,6 +49,13 @@ namespace AmpGen {
       inline real_v operator-=(const real_v& rhs );
       inline real_v operator*=(const real_v& rhs );
       inline real_v operator/=(const real_v& rhs );
+      inline __m256i to_int() const
+      {
+        // based on:  https://stackoverflow.com/questions/41144668/how-to-efficiently-perform-double-int64-conversions-with-sse-avx
+        auto xr = _mm256_round_pd(data, _MM_FROUND_TO_NEG_INF);
+        return _mm256_sub_epi64(_mm256_castpd_si256(_mm256_add_pd(xr, _mm256_set1_pd(0x0018000000000000))),
+               _mm256_castpd_si256(_mm256_set1_pd(0x0018000000000000)));
+      }
     };
 
     inline real_v operator+( const real_v& lhs, const real_v& rhs ) { return _mm256_add_pd(lhs, rhs); }
@@ -89,6 +96,13 @@ namespace AmpGen {
       c = cos(v);
 #endif
     }
+    inline std::array<int64_t, real_v::size> store( const __m256i& v )
+    {
+      alignas(32) std::array<int64_t, real_v::size> rt; 
+       _mm256_store_si256( (__m256i*)&rt[0], v);
+       return rt; 
+    }
+
     inline std::pair<real_v, real_v> sincos( const real_v& v )
     {
       std::pair<real_v, real_v> rt;
@@ -104,29 +118,16 @@ namespace AmpGen {
     inline real_v select(const real_v& mask, const real_v& a, const real_v& b ) { return _mm256_blendv_pd( b, a, mask ); }
     inline real_v select(const bool& mask   , const real_v& a, const real_v& b ) { return mask ? a : b; }
     inline real_v sign  ( const real_v& v){ return select( v > 0., +1., -1. ); }
+    inline real_v conj( const real_v& v ) { return v; }
+    
     inline real_v atan2( const real_v& y, const real_v& x ){
       const double* bx = x.to_ptr();
       const double* by = y.to_ptr(); 
-      return real_v (
-          std::atan2(   by[0], bx[0])
-          , std::atan2( by[1], bx[1])
-          , std::atan2( by[2], bx[2])
-          , std::atan2( by[3], bx[3]) );
-    }
-    inline __m256i udouble_to_uint( const real_v& x )
-    {
-      auto xr = _mm256_round_pd(x, _MM_FROUND_TO_NEG_INF);
-      // based on:  https://stackoverflow.com/questions/41144668/how-to-efficiently-perform-double-int64-conversions-with-sse-avx
-      return _mm256_sub_epi64(_mm256_castpd_si256(_mm256_add_pd(xr, _mm256_set1_pd(0x0018000000000000))),
-             _mm256_castpd_si256(_mm256_set1_pd(0x0018000000000000)));
+      return real_v (std::atan2(by[0], bx[0]), std::atan2( by[1], bx[1]), std::atan2( by[2], bx[2]), std::atan2( by[3], bx[3]) );
     }
     inline real_v gather( const double* base_addr, const real_v& offsets)
     {
-     return _mm256_i64gather_pd(base_addr, udouble_to_uint(offsets),sizeof(double));
-    }
-    inline real_v conj( const real_v& v )
-    {
-      return v;
+      return _mm256_i64gather_pd(base_addr, offsets.to_int(),sizeof(double));
     }
     inline real_v fmadd( const real_v& a, const real_v& b, const real_v& c )
     {
