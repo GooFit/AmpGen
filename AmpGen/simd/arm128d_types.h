@@ -160,4 +160,19 @@ namespace AmpGen {
   }
 }
 
+inline bool isnan( const AmpGen::ARM128d::real_v& v )
+{
+  auto to_arr = v.to_ptr();
+  bool is_nan = false; 
+  for( unsigned int i = 0 ; i != AmpGen::ARM128d::real_v::size ; ++i ) is_nan &= isnan( to_arr[i] );
+  return is_nan; 
+}
+inline bool isinf( const AmpGen::ARM128d::real_v& v )
+{
+  auto to_arr = v.to_ptr();
+  bool is_nan = false; 
+  for( unsigned int i = 0 ; i != AmpGen::ARM128d::real_v::size ; ++i ) is_nan &= isinf( to_arr[i] );
+  return is_nan; 
+}
+
 #endif

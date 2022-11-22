@@ -324,7 +324,7 @@ complex_t CoherentSum::getVal( const Event& evt ) const
 {
   complex_v value( 0., 0. );
   for (unsigned int i = 0 ; i != m_matrixElements.size(); ++i ) {
-    value = value + complex_v( m_matrixElements[i].coefficient ) * m_cache(evt.index() / utils::size<real_v>::value, i );
+    value += complex_v( m_matrixElements[i].coefficient ) * m_cache(evt.index() / utils::size<real_v>::value, i );
   }
 #if ENABLE_AVX
   return utils::at(value, evt.index() % utils::size<real_v>::value);
@@ -339,7 +339,7 @@ real_v CoherentSum::operator()( const real_v* /*evt*/, const unsigned block ) co
   for ( const auto& mE : m_matrixElements ) 
   {
     unsigned address = &mE - &m_matrixElements[0];
-    value = value + complex_v(mE.coefficient) * m_cache(block, address); 
+    value += complex_v(mE.coefficient) * m_cache(block, address); 
   }
   return (m_weight/m_norm ) * std::norm(value); 
 }
