@@ -12,7 +12,7 @@
 
 
 #if INSTRUCTION_SET == INSTRUCTION_SET_SCALAR
-  namespace scalar { using real_v = double; } 
+  namespace scalar { using real_v = double; using complex_v = std::complex<double>; } 
 #elif INSTRUCTION_SET == INSTRUCTION_SET_AVX2f
 //  #pragma message("Enable AVX2f")
   #include "AmpGen/simd/avx2f_types.h"
@@ -43,7 +43,7 @@ namespace AmpGen {
 #endif
 
   using real_v      = AVX::real_v;
-  using complex_v   = std::complex<AVX::real_v>; 
+  using complex_v   = AVX::complex_v; 
   namespace utils {
 
     template <typename T> struct is_vector_type : std::false_type {}; 
@@ -102,7 +102,7 @@ namespace AmpGen {
     template <unsigned p=0, typename vtype> auto get( vtype v )
     { 
       if constexpr (  is_vector_type<vtype>::value ) return v.at(p); 
-      if constexpr ( std::is_same<vtype, complex_v>::value ) return std::complex( get<p>(std::real(v)), get<p>(std::imag(v)) );
+      if constexpr ( std::is_same<vtype, complex_v>::value ) return std::complex( get<p>(v.real()), get<p>(v.imag()) );
       if constexpr ( !is_vector_type<vtype>::value ) return v; 
     }
     template < typename vtype> auto at( vtype v, const unsigned p=0 )
@@ -110,7 +110,7 @@ namespace AmpGen {
       if constexpr ( is_vector_type<vtype>::value )
       {
         if constexpr ( std::is_same<vtype, real_v>::value ) return v.at(p);
-        if constexpr ( std::is_same<vtype, complex_v>::value ) return std::complex( at( std::real(v), p), at(std::imag(v), p) );
+        if constexpr ( std::is_same<vtype, complex_v>::value ) return std::complex( at( v.real(), p), at( v.imag(), p) );
       }
       else return v; 
     }

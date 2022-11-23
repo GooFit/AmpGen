@@ -244,7 +244,7 @@ complex_t CoherentSum::getValNoCache( const Event& evt ) const
           m_matrixElements.end(), 
           complex_v(0,0), 
           [&evt]( const auto& a, const auto& b ){ return a + complex_v(b.coefficient) * b(evt)[0];} ));
-  return complex_t( utils::get<0>(std::real(v)), utils::get<0>(std::imag(v)) ); 
+  return complex_t( utils::get<0>(v.real()), utils::get<0>(v.imag()) ); 
 }
 
 void CoherentSum::reset( bool resetEvents )
@@ -341,7 +341,7 @@ real_v CoherentSum::operator()( const real_v* /*evt*/, const unsigned block ) co
     unsigned address = &mE - &m_matrixElements[0];
     value += complex_v(mE.coefficient) * m_cache(block, address); 
   }
-  return (m_weight/m_norm ) * std::norm(value); 
+  return (m_weight/m_norm ) * value.norm();
 }
 
 #if ENABLE_AVX
@@ -366,7 +366,7 @@ std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type*
     complex_v amp(0.,0.);
     for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ) 
       amp = amp + complex_v(m_matrixElements[j].coefficient) * store(block, j);
-    utils::store( values.data() + block * utils::size<real_v>::value,  (m_weight/m_norm) * std::norm(amp)  );
+    utils::store( values.data() + block * utils::size<real_v>::value,  (m_weight/m_norm) * amp.norm()  );
   }
   return arrayToFunctor<double, typename EventList_type::value_type>(values);
 }
