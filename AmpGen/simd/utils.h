@@ -114,6 +114,14 @@ namespace AmpGen {
       }
       else return v; 
     }
+    template <typename>   struct is_std__complex : std::false_type{};
+    template <typename T> struct is_std__complex<std::complex<T>> : std::true_type {} ; 
+
+    template <typename T> inline auto norm( T&& value ){ 
+      if constexpr( is_std__complex<std::remove_reference_t<T>> ::value ){ return std::norm(value); }
+      else { return value.norm(); }
+    }
+
     template <typename type, typename store_type> void store( store_type* container, const type& v)
     {
       if constexpr( is_vector_type<type>::value ) 

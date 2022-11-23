@@ -54,9 +54,10 @@ void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, 
   std::ofstream output( filename );
   for ( auto& include : m_includes ) output << "#include <" << include << ">\n";
   if( expression.fcnSignature().find("AVX2d")        != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
-  else if( expression.fcnSignature().find("AVX2f")    != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
+  else if( expression.fcnSignature().find("AVX2f")   != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
   else if( expression.fcnSignature().find("AVX512d") != std::string::npos )  output << "#include \"AmpGen/simd/avx512d_types.h\"\n; using namespace AmpGen::AVX512d;\n;" ;
   else if( expression.fcnSignature().find("AVX512")  != std::string::npos )  output << "#include \"AmpGen/simd/avx512_types.h\"\n; using namespace AmpGen::AVX512;\n;" ;
+  else if( expression.fcnSignature().find("ARM128d") != std::string::npos )  output << "#include \"AmpGen/simd/arm128d_types.h\"\n; using namespace AmpGen::ARM128d;\n;" ;
   output << expression << std::endl; 
   output.close();
 }
@@ -89,7 +90,7 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
     name = name == "" ? generateFilename() : expandGlobals( name );
   
   std::string cname = name +"_"+std::to_string(expression.hash())+".cpp";
-  std::string oname = name +"_"+std::to_string(expression.hash())+".so";
+  std::string oname = name +"_"+std::to_string(expression.hash())+"." + m_extension;
   if( NamedParameter<bool>("CompilerWrapper::ForceRebuild", false )  == false 
       && fileSize(oname) != -1 && expression.link( oname )) return true;
   if( print_all ) INFO("Generating source: " << cname );
@@ -119,7 +120,7 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
   std::string name = fname;
   if ( name == "" ) name = name == "" ? generateFilename() : expandGlobals( name );
   std::string cname = name +".cpp";
-  std::string oname = name +".so";
+  std::string oname = name +"." + m_extension;
   if( print_all ) INFO("Generating source: " << cname );
   auto twall_begin  = std::chrono::high_resolution_clock::now();
   std::ofstream output( cname );
@@ -160,15 +161,16 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
   using namespace std::chrono_literals;
   std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", {"-Ofast", "--std="+get_cpp_version(), "-frename-registers"}); 
  
-  #if ENABLE_AVX 
-    compile_flags.push_back("-march=native");
+  #if INSTRUCTION_SET != 0
     compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
+    #if INSTRUCTION_SET < 10
+        compile_flags.push_back("-march=native");
+      #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d 
+        compile_flags.push_back("-mavx2");
+        compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
+      #endif
+    #endif
   #endif
-  #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d 
-    compile_flags.push_back("-mavx2");
-    compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
-  #endif
-
   if(std::string(AMPGEN_OPENMP_FLAGS) != ""){
     auto flags = split(AMPGEN_OPENMP_FLAGS, ' ');
     for( const auto& flag : flags ) compile_flags.push_back(flag); 

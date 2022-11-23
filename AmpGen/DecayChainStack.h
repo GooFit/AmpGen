@@ -19,6 +19,7 @@ namespace AmpGen {
     public:
       DecayChainStackBase() = default;
       DecayChainStackBase( const Particle& particle ); 
+      virtual ~DecayChainStackBase(){};
       virtual Event makeEvent(TRandom3* rndm) const = 0; 
       virtual double maxWeight() const = 0; 
       virtual unsigned NP()      const = 0; 

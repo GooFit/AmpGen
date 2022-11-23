@@ -42,7 +42,6 @@ BOOST_AUTO_TEST_CASE( test_log, *utf::tolerance(scalar_t(50*precision) ) )
 
 BOOST_AUTO_TEST_CASE( test_complex_log, *utf::tolerance(scalar_t(precision)) )
 {
-  std::complex<scalar_t> i(0.,1.);
   std::array<scalar_t, 8> rv = {0.3, 0.5, 10, -4.0, -7.0, -.5, 0.5, 0.5}; 
   std::array<scalar_t, 8> iv = {-3.0, -4.0, 3, 1.0, 0.1, -4.0, -4.0, -4.0};
   test_simd_complex( simd::log, std::log, simd::complex_v(real_v(rv.data()), real_v(iv.data())) ); 

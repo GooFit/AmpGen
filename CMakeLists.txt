@@ -71,6 +71,7 @@ set(CMAKE_TEST_OUTPUT_DIRECTORY            "${CMAKE_BINARY_DIR}/bin/test")
 include(CMakeDependentOption)
 include(CMakePrintHelpers)
 include(GNUInstallDirs)
+include(CheckCXXCompilerFlag)
 
 option(AMPGEN_DEBUG "AmpGen Debug printout")
 option(AMPGEN_TRACE "AmpGen Trace printout")
@@ -229,8 +230,9 @@ else()
   message(STATUS "SIMD disabled, resorting to scalar build : ${USE_SIMD}")
 endif()
 
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "AppleClang" OR 
-    ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" )
+check_cxx_compiler_flag(-mfma supports_fma)
+
+if(${supports_fma} AND ( ${CMAKE_CXX_COMPILER_ID} MATCHES "AppleClang" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" ) )
   target_compile_options(libAmpGen PUBLIC -mfma)
 endif()
 
