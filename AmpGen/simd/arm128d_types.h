@@ -116,14 +116,15 @@ namespace AmpGen {
     }
     inline real_v gather( const double* base_addr, const real_v& offsets)
     {
-      auto offsets_p = offsets.to_ptr();
-      return real_v ( base_addr[ unsigned(*(offsets_p +0))], base_addr[unsigned(*offsets_p+1)] ); 
+      std::array<int64_t, real_v::size> offsets_p; 
+      vst1q_s64( offsets_p.data(), offsets.to_int() ); 
+      return real_v ( base_addr[offsets_p[0]], base_addr[offsets_p[1]] ); 
     }
     inline real_v fmadd( const real_v& a, const real_v& b, const real_v& c )
     {
       return vmlaq_f64(a, b, c);
     }
-    inline real_v remainder( const real_v& a, const real_v& b ){ return a - b * real_v(vcvtq_u64_f64(a/b)) * b; }
+    inline real_v remainder( const real_v& a, const real_v& b ){ return a - b * real_v(vcvtq_u64_f64(a/b)); }
     inline real_v fmod( const real_v& a, const real_v& b ){ return remainder( abs(a), abs(b) ) * sign(a); }
 
     struct complex_v {
