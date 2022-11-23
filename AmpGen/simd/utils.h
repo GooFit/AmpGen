@@ -12,6 +12,7 @@
 
 
 #if INSTRUCTION_SET == INSTRUCTION_SET_SCALAR
+  namespace scalar { using real_v = double; } 
 #elif INSTRUCTION_SET == INSTRUCTION_SET_AVX2f
 //  #pragma message("Enable AVX2f")
   #include "AmpGen/simd/avx2f_types.h"
