@@ -99,9 +99,9 @@ namespace AmpGen {
       auto [s,c] = sincos( v );
       return s / c ;
     }
-    inline std::array<int64_t, real_v::size> store( const int_v& v )
+    inline std::array<uint64_t, real_v::size> store( const int_v& v )
     {
-      std::array<int64_t, real_v::size> rt;
+      std::array<uint64_t, real_v::size> rt;
       vst1q_u64( rt.data(), v );
       return rt; 
     }
