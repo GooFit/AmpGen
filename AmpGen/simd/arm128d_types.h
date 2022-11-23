@@ -30,6 +30,8 @@ namespace AmpGen {
       typedef double scalar_type;
       real_v() = default;
       real_v(float64x2_t data ) : data(data) {}
+      explicit real_v( uint64x2_t&& data ) : data( vcvtq_f64_u64(data) ) {}
+      explicit real_v(  int64x2_t&& data ) : data( vcvtq_f64_s64(data) ) {}
       real_v(const scalar_type& f ) : data(vmovq_n_f64(f)) {}
       real_v(const scalar_type& x0, const scalar_type& x1 )
       {
@@ -42,6 +44,7 @@ namespace AmpGen {
       const scalar_type* to_ptr() const { return reinterpret_cast<const scalar_type*>( &data ) ; }
             scalar_type* to_ptr()       { return reinterpret_cast<scalar_type*>( &data ) ; }
       std::array<scalar_type, size> to_array() const { std::array<scalar_type, size> b; store( &b[0] ); return b; }
+      int64x2_t to_int() const { return vcvtq_s64_f64(data); }
       double at(const unsigned i) const { return to_ptr()[i]; }
       operator float64x2_t() const { return data ; }
       inline real_v operator+=(const real_v& rhs );
@@ -49,27 +52,27 @@ namespace AmpGen {
       inline real_v operator*=(const real_v& rhs );
       inline real_v operator/=(const real_v& rhs );
     };
+    struct int_v { int_v( uint64x2_t&& data) : data(data){}; uint64x2_t data; operator uint64x2_t() const { return data;} };
+
 
     inline real_v operator+( const real_v& lhs, const real_v& rhs ) { return  vaddq_f64(lhs, rhs); }
     inline real_v operator-( const real_v& lhs, const real_v& rhs ) { return  vsubq_f64(lhs, rhs); }
     inline real_v operator*( const real_v& lhs, const real_v& rhs ) { return  vmulq_f64(lhs, rhs); }
     inline real_v operator/( const real_v& lhs, const real_v& rhs ) { return  vdivq_f64(lhs, rhs); }
     inline real_v operator-( const real_v& x ) { return -1.f * x; }
-    /*
-    inline real_v operator&( const real_v& lhs, const real_v& rhs ) { return _mm256_and_pd( lhs, rhs ); }
-    inline real_v operator|( const real_v& lhs, const real_v& rhs ) { return _mm256_or_pd( lhs, rhs ); }
-    inline real_v operator^( const real_v& lhs, const real_v& rhs ) { return _mm256_xor_pd( lhs, rhs ); }
-    inline real_v operator&&( const real_v& lhs, const real_v& rhs ) { return _mm256_and_pd( lhs, rhs ); }
-    inline real_v operator||( const real_v& lhs, const real_v& rhs ) { return _mm256_or_pd( lhs, rhs ); }
-    inline real_v operator!( const real_v& x ) { return x ^ _mm256_castsi256_pd( _mm256_set1_epi32( -1 ) ); }
-    */
-    inline real_v operator<( const real_v& lhs, const real_v& rhs ) { return vcvtq_f64_u64(vcltq_f64(lhs,rhs)); }
-    inline real_v operator>( const real_v& lhs, const real_v& rhs ) { return vcvtq_f64_u64(vcgtq_f64(lhs,rhs)); }
-    /*
-    inline real_v operator<=( const real_v& lhs, const real_v& rhs ) { return _mm256_cmp_pd( lhs, rhs, _CMP_LE_OS ); }
-    inline real_v operator>=( const real_v& lhs, const real_v& rhs ) { return _mm256_cmp_pd( lhs, rhs, _CMP_GE_OS ); }
-    */
-    inline real_v operator==( const real_v& lhs, const real_v& rhs ){ return vcvtq_f64_u64( vceqq_f64( lhs, rhs) ); }
+    
+    // inline real_v operator&( const real_v& lhs, const real_v& rhs ) { return real_v( vceqq_f64( lhs, rhs ) ); }
+    // inline real_v operator|( const real_v& lhs, const real_v& rhs ) { return _mm256_or_pd( lhs, rhs ); }
+    // inline real_v operator^( const real_v& lhs, const real_v& rhs ) { return _mm256_xor_pd( lhs, rhs ); }
+    inline int_v operator&&( const int_v& lhs, const int_v& rhs ) { return vandq_u64( lhs, rhs ); }
+    inline int_v operator||( const int_v& lhs, const int_v& rhs ) { return vorrq_u64( lhs, rhs ); }
+    // inline real_v operator!( const real_v& x ) { return x ^ _mm256_castsi256_pd( _mm256_set1_epi32( -1 ) ); }
+    
+    inline int_v operator<( const real_v& lhs, const real_v& rhs ) { return vcltq_f64(lhs,rhs); }
+    inline int_v operator>( const real_v& lhs, const real_v& rhs ) { return vcgtq_f64(lhs,rhs); }
+    inline int_v operator<=( const real_v& lhs, const real_v& rhs ){ return vcleq_f64( lhs, rhs ); }
+    inline int_v operator>=( const real_v& lhs, const real_v& rhs ){ return vcleq_f64( lhs, rhs ); }
+    inline int_v operator==( const real_v& lhs, const real_v& rhs ){ return vceqq_f64( lhs, rhs); }
     inline real_v sqrt( const real_v& v ) { return vsqrtq_f64(v); }
     inline real_v abs ( const real_v& v ) { return vabsq_f64(v); } 
     inline real_v real_v::operator+=(const real_v& rhs ){ *this = *this + rhs; return *this; }
@@ -96,14 +99,20 @@ namespace AmpGen {
       auto [s,c] = sincos( v );
       return s / c ;
     }
+    inline std::array<int64_t, real_v::size> store( const int_v& v )
+    {
+      std::array<int64_t, real_v::size> rt;
+      vst1q_u64( rt.data(), v );
+      return rt; 
+    }
 
-    inline real_v select(const real_v& mask, const real_v& a, const real_v& b ) { return vbslq_f64(vcvtaq_u64_f64(mask), a, b); }
+    inline real_v select(const int_v& mask, const real_v& a, const real_v& b ) { return vbslq_f64(mask, a, b); }
     inline real_v select(const bool& mask  , const real_v& a, const real_v& b ) { return mask ? a : b; }
-    inline real_v sign  ( const real_v& v){ return select( v > 0., +1., -1. ); }
+    inline real_v sign  ( const real_v& v){ return select( v > real_v(0.), +1., -1. ); }
     inline real_v atan2( const real_v& y, const real_v& x ){
       const double* bx = x.to_ptr();
       const double* by = y.to_ptr(); 
-      return real_v ( std::atan2(   by[0], bx[0]), std::atan2( by[1], bx[1]) ); 
+      return real_v ( std::atan2(by[0], bx[0]), std::atan2( by[1], bx[1]) ); 
     }
     inline real_v gather( const double* base_addr, const real_v& offsets)
     {
@@ -114,14 +123,8 @@ namespace AmpGen {
     {
       return vmlaq_f64(a, b, c);
     }
-    /*
-    inline real_v remainder( const real_v& a, const real_v& b ){ return a - real_v(_mm256_round_pd(a/b, _MM_FROUND_TO_NEG_INF)) * b; }
-    inline real_v fmod( const real_v& a, const real_v& b )
-    {
-      auto r = remainder( abs(a), abs(b) );
-      return select( a > 0., r, -r );
-    }
-    */
+    inline real_v remainder( const real_v& a, const real_v& b ){ return a - b * real_v(vcvtq_u64_f64(a/b)) * b; }
+    inline real_v fmod( const real_v& a, const real_v& b ){ return remainder( abs(a), abs(b) ) * sign(a); }
     using complex_v = std::complex<real_v>; 
     inline complex_v operator+( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.real() + rhs, lhs.imag()); }
     inline complex_v operator-( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.real() - rhs, lhs.imag()); }
@@ -133,9 +136,9 @@ namespace AmpGen {
     inline complex_v operator/( const real_v& lhs, const complex_v& rhs ) { return complex_v( lhs * rhs.real() , -lhs *rhs.imag()) / (rhs.real() * rhs.real() + rhs.imag() * rhs.imag() ); }
     inline real_v abs( const complex_v& v ) { return sqrt( v.real() * v.real() + v.imag() * v.imag() ) ; }
     inline real_v norm( const complex_v& v ) { return  ( v.real() * v.real() + v.imag() * v.imag() ) ; }
-    inline complex_v select(const real_v& mask, const complex_v& a, const complex_v& b ) { return complex_v( select(mask, a.real(), b.real()), select(mask, a.imag(), b.imag() ) ) ; }
-    inline complex_v select(const real_v& mask, const real_v&   a, const complex_v& b ) { return complex_v( select(mask, a   , b.real()), select(mask, 0.f, b.imag()) ); }
-    inline complex_v select(const real_v& mask, const complex_v& a, const real_v& b   ) { return complex_v( select(mask, a.real(), b )  , select(mask, a.imag(), 0.f) ); }
+    inline complex_v select(const int_v& mask, const complex_v& a, const complex_v& b ) { return complex_v( select(mask, a.real(), b.real()), select(mask, a.imag(), b.imag() ) ) ; }
+    inline complex_v select(const int_v& mask, const real_v&   a, const complex_v& b ) { return complex_v( select(mask, a   , b.real()), select(mask, 0.f, b.imag()) ); }
+    inline complex_v select(const int_v& mask, const complex_v& a, const real_v& b   ) { return complex_v( select(mask, a.real(), b )  , select(mask, a.imag(), 0.f) ); }
     inline complex_v select(const bool& mask   , const complex_v& a, const complex_v& b ) { return mask ? a : b; }
     inline complex_v exp( const complex_v& v ){
       auto [s,c] = sincos( v.imag());
@@ -158,21 +161,6 @@ namespace AmpGen {
 	omp_out = omp_out + omp_in)
     
   }
-}
-
-inline bool isnan( const AmpGen::ARM128d::real_v& v )
-{
-  auto to_arr = v.to_ptr();
-  bool is_nan = false; 
-  for( unsigned int i = 0 ; i != AmpGen::ARM128d::real_v::size ; ++i ) is_nan &= isnan( to_arr[i] );
-  return is_nan; 
-}
-inline bool isinf( const AmpGen::ARM128d::real_v& v )
-{
-  auto to_arr = v.to_ptr();
-  bool is_nan = false; 
-  for( unsigned int i = 0 ; i != AmpGen::ARM128d::real_v::size ; ++i ) is_nan &= isinf( to_arr[i] );
-  return is_nan; 
 }
 
 #endif

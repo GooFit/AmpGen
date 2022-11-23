@@ -64,7 +64,6 @@ BOOST_AUTO_TEST_CASE( test_fmod, *utf::tolerance(scalar_t(precision)) )
   }
 }
 
-#if INSTRUCTION_SET != INSTRUCTION_SET_ARM128d
 BOOST_AUTO_TEST_CASE( test_double_to_int )
 { 
   std::vector<scalar_t> a = {17.4, 19.8, 12.1, 4007.3, 12.0, 14.0, -7.0, 623.};
@@ -81,7 +80,6 @@ BOOST_AUTO_TEST_CASE( test_gather )
   for( int i = 0 ; i != real_v::size; ++i ){ BOOST_TEST( v[i] == scalar_t( data[int(addr[i])]) ); }
   
 }
-#endif
 
 BOOST_AUTO_TEST_CASE( test_trig, *utf::tolerance(scalar_t(50*precision)) )
 {
