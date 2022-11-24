@@ -230,9 +230,7 @@ else()
   message(STATUS "SIMD disabled, resorting to scalar build : ${USE_SIMD}")
 endif()
 
-check_cxx_compiler_flag(-mfma supports_fma)
-
-if(${supports_fma} AND ( ${CMAKE_CXX_COMPILER_ID} MATCHES "AppleClang" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" ) )
+if( supports_fma AND ( ${CMAKE_CXX_COMPILER_ID} MATCHES "AppleClang" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" ) )
   target_compile_options(libAmpGen PUBLIC -mfma)
 endif()
 
