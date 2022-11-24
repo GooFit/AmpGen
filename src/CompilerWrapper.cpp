@@ -53,7 +53,7 @@ CompilerWrapper::CompilerWrapper( const bool& verbose ) :
 void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, const std::string& filename )
 {
   std::ofstream output( filename );
-  for ( auto& include : m_includes ) output << "#include <" << include << ">\n";
+  preamble(output);
   if( expression.fcnSignature().find("AVX2d")        != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
   else if( expression.fcnSignature().find("AVX2f")   != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
   else if( expression.fcnSignature().find("AVX512d") != std::string::npos )  output << "#include \"AmpGen/simd/avx512d_types.h\"\n; using namespace AmpGen::AVX512d;\n;" ;
@@ -226,10 +226,10 @@ void CompilerWrapper::preamble( std::ostream& os ) const
   #endif
   os << '\n';
   os << "*/\n";
-  #if __APPLE__
+//  #if __APPLE__
   os << "#define __MATH_H__ 1\n";
   os << "#define __MATH__ 1\n";
-  #endif
+  //#endif
 
   for ( auto& include : m_includes ) os << "#include <" << include << ">\n";
 }
