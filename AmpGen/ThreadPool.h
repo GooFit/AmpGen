@@ -50,7 +50,7 @@ namespace AmpGen
     public:
       explicit ThreadPool(const size_t& nt);
       ~ThreadPool();
-      template<class F, class... Args> auto enqueue(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type>;
+      template<typename F, typename... Args> auto enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result_t<F, Args...>>;
       void waitForStoppedThreads(); 
 
     private:
@@ -61,9 +61,9 @@ namespace AmpGen
       bool                              m_stop={false};
   };
 
-  template<class F, class... Args> auto ThreadPool::enqueue(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type>
+  template<typename F, typename... Args> auto ThreadPool::enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result_t<F,Args...>>
   {
-    using return_type = typename std::result_of<F(Args...)>::type;
+    using return_type = typename std::invoke_result_t<F, Args...>;
     auto task = std::make_shared< std::packaged_task<return_type()> >( f, args... );
     std::future<return_type> res = task->get_future();
     {
