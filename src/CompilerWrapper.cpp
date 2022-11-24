@@ -19,6 +19,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/CompiledExpressionBase.h"
 #include "AmpGenVersion.h"
+#include "AmpGen/simd/utils.h"
 
 using namespace AmpGen;
 // #ifdef AMPGEN_CXX
@@ -199,7 +200,7 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     INFO("Compiling: " << result);
   }
   argp.push_back( NULL );
-  pid_t childPID = vfork();
+  pid_t childPID = fork();
   if( childPID == 0 )
   {
     execv( argp[0], const_cast<char**>( &argp[0] ) );
@@ -225,5 +226,10 @@ void CompilerWrapper::preamble( std::ostream& os ) const
   #endif
   os << '\n';
   os << "*/\n";
+  #if __APPLE__
+  os << "#define __MATH_H__ 1\n";
+  os << "#define __MATH__ 1\n";
+  #endif
+
   for ( auto& include : m_includes ) os << "#include <" << include << ">\n";
 }

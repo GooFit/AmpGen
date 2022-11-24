@@ -1,7 +1,7 @@
 #include "AmpGen/Wigner.h"
 
 #include <memory.h>
-#include <math.h>
+#include <cmath>
 #include <stddef.h>
 #include <algorithm>
 #include <numeric>

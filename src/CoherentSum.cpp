@@ -165,7 +165,7 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
   stream << std::setprecision( 10 );
   stream << "#include <complex>\n";
   stream << "#include <vector>\n";
-  stream << "#include <math.h>\n";
+  stream << "#include <cmath>\n";
   if ( add_mt ) stream << "#include <thread>\n";
   bool includePythonBindings = NamedParameter<bool>("IncludePythonBindings",false);
 

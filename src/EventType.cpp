@@ -1,4 +1,4 @@
-#include <math.h>
+#include <cmath>
 #include <stddef.h>
 #include <algorithm>
 #include <functional>
