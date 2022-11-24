@@ -8,7 +8,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include <math.h>
+#include <cmath>
 
 
 #if USE_MVEC

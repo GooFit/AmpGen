@@ -6,7 +6,7 @@
 #include <iostream>
 #include <complex>
 #include <omp.h>
-
+#include <cmath>
 
 #if USE_MVEC 
   extern "C" void    _ZGVdN8vvv_sincos(__m256 x, __m256i ptrs, __m256i ptrc);

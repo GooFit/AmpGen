@@ -8,7 +8,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include <math.h>
+#include <cmath>
 
 #if USE_MVEC
 extern "C" void    _ZGVdN4vvv_sincos(__m256d x, __m256i ptrs, __m256i ptrc);

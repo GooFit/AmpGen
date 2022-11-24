@@ -6,6 +6,7 @@
 #include <iostream>
 #include <complex>
 #include <omp.h>
+#include <cmath>
 
 namespace AmpGen {
   namespace AVX512d {
