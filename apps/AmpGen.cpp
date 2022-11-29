@@ -71,10 +71,10 @@ struct FixedLibPDF
 
 template <class T> void generateSource(T& pdf, const std::string& sourceFile, MinuitParameterSet& mps)
 {
-  bool normalise      = NamedParameter<bool>("Normalise",true);
-  double safetyFactor = NamedParameter<double>( "SafetyFactor", 3 );
-  int seed            = NamedParameter<int>("Seed", 1);
-  size_t nEvents      = NamedParameter<size_t>( "NormEvents", 1000000 );
+  bool normalise      = NamedParameter<bool>  ("Normalise"   ,true);
+  double safetyFactor = NamedParameter<double>("SafetyFactor", 3);
+  int seed            = NamedParameter<int>   ("Seed"        , 1);
+  size_t nEvents      = NamedParameter<size_t>("NormEvents"  , 1000000);
   
   TRandom3 rnd(seed);
   unsigned d_i = pdf.eventType().dim().first;

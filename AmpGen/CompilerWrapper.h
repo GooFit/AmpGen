@@ -29,7 +29,7 @@ namespace AmpGen
     std::string              m_cxx;
     std::string generateFilename();
     bool isClang() const; 
-    std::string              m_extension; 
+    std::string              m_extension{"so"}; 
   };
 } // namespace AmpGen
 #endif
