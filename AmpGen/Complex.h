@@ -31,14 +31,14 @@ namespace AmpGen {
   template<typename real_t> inline Complex<real_t>   conj(const Complex<real_t>& arg ){ return Complex<real_t>(arg.re, -arg.im) ; }
   
 
-  template<typename real_t> inline Complex<real_t> operator+( const Complex<real_t>& lhs, const real_t& rhs ) { return Complex<real_t>(lhs.re + rhs, lhs.im); }
-  template<typename real_t> inline Complex<real_t> operator-( const Complex<real_t>& lhs, const real_t& rhs ) { return Complex<real_t>(lhs.re - rhs, lhs.im); }
-  template<typename real_t> inline Complex<real_t> operator*( const Complex<real_t>& lhs, const real_t& rhs ) { return Complex<real_t>(lhs.re*rhs, lhs.im*rhs); }
-  template<typename real_t> inline Complex<real_t> operator/( const Complex<real_t>& lhs, const real_t& rhs ) { return Complex<real_t>(lhs.re/rhs, lhs.im/rhs); }
-  template<typename real_t> inline Complex<real_t> operator+( const real_t& lhs, const Complex<real_t>& rhs ) { return Complex<real_t>(lhs + rhs.re,  rhs.im); }
-  template<typename real_t> inline Complex<real_t> operator-( const real_t& lhs, const Complex<real_t>& rhs ) { return Complex<real_t>(lhs - rhs.re, - rhs.im); }
-  template<typename real_t> inline Complex<real_t> operator*( const real_t& lhs, const Complex<real_t>& rhs ) { return Complex<real_t>(lhs*rhs.re, lhs*rhs.im); }
-  template<typename real_t> inline Complex<real_t> operator/( const real_t& lhs, const Complex<real_t>& rhs ) { return Complex<real_t>( lhs * rhs.re , -lhs *rhs.im) / (rhs.re * rhs.re + rhs.im * rhs.im ); }
+  template<typename real_t, typename R2_t> inline Complex<real_t> operator+( const Complex<real_t>& lhs, const R2_t& rhs ) { return Complex<real_t>(lhs.re + real_t(rhs), lhs.im); }
+  template<typename real_t, typename R2_t> inline Complex<real_t> operator-( const Complex<real_t>& lhs, const R2_t& rhs ) { return Complex<real_t>(lhs.re - real_t(rhs), lhs.im); }
+  template<typename real_t, typename R2_t> inline Complex<real_t> operator*( const Complex<real_t>& lhs, const R2_t& rhs ) { return Complex<real_t>(lhs.re*real_t(rhs), lhs.im*real_t(rhs)); }
+  template<typename real_t, typename R2_t> inline Complex<real_t> operator/( const Complex<real_t>& lhs, const R2_t& rhs ) { return Complex<real_t>(lhs.re/real_t(rhs), lhs.im/real_t(rhs)); }
+  template<typename real_t, typename R2_t> inline Complex<real_t> operator+( const R2_t& lhs, const Complex<real_t>& rhs ) { return Complex<real_t>(real_t(lhs) + rhs.re,  rhs.im); }
+  template<typename real_t, typename R2_t> inline Complex<real_t> operator-( const R2_t& lhs, const Complex<real_t>& rhs ) { return Complex<real_t>(real_t(lhs) - rhs.re, - rhs.im); }
+  template<typename real_t, typename R2_t> inline Complex<real_t> operator*( const R2_t& lhs, const Complex<real_t>& rhs ) { return Complex<real_t>(real_t(lhs)*rhs.re, lhs*rhs.im); }
+  template<typename real_t, typename R2_t> inline Complex<real_t> operator/( const R2_t& lhs, const Complex<real_t>& rhs ) { return Complex<real_t>( real_t(lhs) * rhs.re , -real_t(lhs) *rhs.im) / (rhs.re * rhs.re + rhs.im * rhs.im ); }
   template<typename real_t> inline Complex<real_t> operator+( const Complex<real_t>& lhs, const Complex<real_t>& rhs ) { return Complex<real_t>(lhs.re + rhs.re, lhs.im + rhs.im); }
   template<typename real_t> inline Complex<real_t> operator-( const Complex<real_t>& lhs, const Complex<real_t>& rhs ) { return Complex<real_t>(lhs.re - rhs.re, lhs.im - rhs.im); }
   template<typename real_t> inline Complex<real_t> operator*( const Complex<real_t>& lhs, const Complex<real_t>& rhs ) { return Complex<real_t>(lhs.re*rhs.re - lhs.im*rhs.im, lhs.re*rhs.im  + lhs.im*rhs.re); }

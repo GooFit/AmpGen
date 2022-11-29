@@ -17,10 +17,8 @@ std::vector<double> AmpGen::detail::solve_pade(const std::function<double(const 
 
   std::vector<double> samples(2*N+1, 0);
   std::vector<double> rest( 2*N+1, 0);
-  if( strat < 4 ){
-    for(unsigned eq = 0 ; eq < 2*N+1; ++eq) 
-      samples[eq] = std::pow( eq/double(2*N), strat + 1);
-  }
+  for(unsigned eq = 0 ; eq < 2*N+1; ++eq) 
+    samples[eq] = std::pow( eq/double(2*N), strat + 1);
   for( unsigned eq = 0 ; eq < 2*N+1; ++eq ){
     rest[eq] = fcn( samples[eq]*(max-min) + min);
     for(unsigned i = 0; i <= N; ++i) gsl_matrix_set(solver, eq, i, std::pow(samples[eq],i) );
