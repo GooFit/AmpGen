@@ -13,6 +13,7 @@
 #include <map>
 #include <utility>
 #include <numeric>
+#include <filesystem>
 
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/MsgService.h"
@@ -65,8 +66,8 @@ void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, 
 
 std::string CompilerWrapper::generateFilename()
 {
-  char buffer[] = "/tmp/libAmpGen-XXXXXX";
-  int status    = mkstemp( buffer );
+  char buffer[] = "/tmp/libAmpGen-XXXXXX.cpp";
+  int status    = mkstemps( buffer, 4);
   if ( status == -1 ) {
     ERROR( "Failed to generate temporary filename " << status );
   }
@@ -85,13 +86,10 @@ int64_t fileSize(const std::string& filename)
 bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::string& fname )
 {
   bool print_all = m_verbose || NamedParameter<bool>("CompilerWrapper::Verbose",false);
-
   std::string name = fname; 
-  if ( name == "" ) 
-    name = name == "" ? generateFilename() : expandGlobals( name );
-  
+  if ( name == "" ) name = generateFilename();  
   std::string cname = name +"_"+std::to_string(expression.hash())+".cpp";
-  std::string oname = name +"_"+std::to_string(expression.hash())+"." + m_extension;
+  std::string oname = std::filesystem::path(cname).replace_extension(m_extension);
   if( NamedParameter<bool>("CompilerWrapper::ForceRebuild", false )  == false 
       && fileSize(oname) != -1 && expression.link( oname )) return true;
   if( print_all ) INFO("Generating source: " << cname );
@@ -109,11 +107,9 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
 bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions, const std::string& fname )
 {
   bool print_all = m_verbose || NamedParameter<bool>("CompilerWrapper::Verbose",false);
-
-  std::string name = fname;
-  if ( name == "" ) name = name == "" ? generateFilename() : expandGlobals( name );
-  std::string cname = name +".cpp";
-  std::string oname = name +"." + m_extension;
+  std::string cname = expandGlobals(fname);
+  if ( cname == "" ) cname = generateFilename();
+  std::string oname = std::filesystem::path(cname).replace_extension(m_extension);
   if( print_all ) INFO("Generating source: " << cname );
   auto twall_begin  = std::chrono::high_resolution_clock::now();
   std::ofstream output( cname );
