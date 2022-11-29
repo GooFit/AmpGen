@@ -173,7 +173,7 @@ namespace AmpGen
           stream << "}\n}";
         }
 
-        void compileWithParameters( std::ostream& stream ) const
+        void compileWithParameters( std::ostream& stream ) const override
         {
           DEBUG( "Compiling " << name() << " = " << hash() );
           stream << "extern \"C\" " << returnTypename() << " " << progName() << "_wParams"
