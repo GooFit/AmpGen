@@ -144,7 +144,7 @@ std::string get_cpp_version()
 void CompilerWrapper::compileSource( const std::string& fname, const std::string& oname )
 {
   using namespace std::chrono_literals;
-  std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", {"-Ofast", "--std="+get_cpp_version(), "-frename-registers"}); 
+  std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", {"-Ofast", "--std="+get_cpp_version()}); 
  
   #if INSTRUCTION_SET != 0
     compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
@@ -172,6 +172,9 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     argp.push_back("-isystem"); 
     #endif
     argp.push_back( "-march=native");
+  }
+  else {
+    argp.push_back("-frename-registers");
   }
   auto tokens = split( std::string( AMPGEN_CXX_FLAGS ), ' ' );
   for( auto& token : tokens ) argp.push_back( token.c_str() );
