@@ -50,12 +50,12 @@ struct FixedLibPDF
 {
   void* lib = {nullptr};
   DynamicFCN<double( const double*, int )> PDF;
-  void debug( const Event& event) {};
+  void debug( const Event& /*event*/) {};
   void prepare(){};
-  void setEvents( AmpGen::EventList& evts ){};
-  void setEvents( AmpGen::EventListSIMD& evts ){};
+  void setEvents( AmpGen::EventList& /*evts*/ ){};
+  void setEvents( AmpGen::EventListSIMD& /*evts*/ ){};
   double operator()( const AmpGen::Event& evt ) const { return PDF( evt, 1 ); }
-  double operator()( const double* evt, const unsigned& index )
+  double operator()( const double* evt, const unsigned& /*index*/ )
   {
     return PDF(evt, 1 ); 
   } 
@@ -66,7 +66,7 @@ struct FixedLibPDF
     PDF = DynamicFCN<double( const double*, int )>( handle, "FCN" );
   }
   size_t size() { return 0; }
-  void reset( const bool& flag = false ){};
+  void reset( const bool&  ){};
 };
 
 template <class T> void generateSource(T& pdf, const std::string& sourceFile, MinuitParameterSet& mps)

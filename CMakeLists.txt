@@ -205,7 +205,7 @@ target_compile_definitions(libAmpGen PRIVATE
 target_compile_options(libAmpGen
   INTERFACE
   -Wall -Wextra -Wpedantic -g3
-  -Wno-unused-parameter
+  #  -Wno-unused-parameter
   -Wno-unknown-pragmas
   $<$<CONFIG:Release>:-O3>)
 

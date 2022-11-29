@@ -243,7 +243,7 @@ namespace AmpGen
 
   template <typename return_type> 
     CompiledExpression<void(return_type*, const double*, const double*)> 
-    make_rto_expression( const Expression& expression, const std::string& name , const bool& verbose=false)
+    make_rto_expression( const Expression& expression, const std::string& name)
     {
       CompiledExpression<void(return_type*, const double*, const double*)> rt(expression,name);
       rt.compile();
@@ -252,7 +252,7 @@ namespace AmpGen
     }
 
   template <typename return_type> CompiledExpression<return_type(const double*, const double*)> 
-    make_expression( const Expression& expression, const std::string& name , const bool& verbose=false)
+    make_expression( const Expression& expression, const std::string& name)
     {
       CompiledExpression<return_type(const double*, const double*)> rt(expression,name);
       rt.compile();

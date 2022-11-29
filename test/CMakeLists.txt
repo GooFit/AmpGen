@@ -6,6 +6,7 @@ if ( Boost_FOUND )
   foreach(testSrc ${TEST_SRCS})
     get_filename_component(testName ${testSrc} NAME_WE)
     add_executable(${testName} ${testSrc})
+    target_compile_options(${testName} PRIVATE -Wno-deprecated-builtins -Wno-deprecated-declarations -Wno-unused-but-set-variable )
     set_target_properties(${testName} 
       PROPERTIES 
       RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_TEST_OUTPUT_DIRECTORY}" 

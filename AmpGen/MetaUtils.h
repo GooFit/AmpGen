@@ -25,7 +25,7 @@ namespace AmpGen
     return name; 
   }
 
-  template <class TYPE> std::string type_string( const TYPE& t ) { return type_string<TYPE>(); }
+  template <class TYPE> std::string type_string( const TYPE& ) { return type_string<TYPE>(); }
 
   namespace detail {
     template<typename T, typename... args> struct zeroType { typedef T type; };
