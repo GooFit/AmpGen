@@ -41,6 +41,7 @@ set(USE_ROOT           TRUE    CACHE BOOL   "Flag to use root (required for fitt
 set(USE_TBB           FALSE    CACHE BOOL   "USE_TBB")     # flag to use TBB (only used internally by ROOT, but linkage seems unreliable)
 set(EXEC_EXTENSION     "" CACHE STRING "EXEC_EXTENSION")
 set(PACKED_CMAKE_PREFIX_PATH "" CACHE STRING "PACKED_CMAKE_PREFIX_PATH")
+set(AMPGEN_CXX_FLAGS   "" CACHE STRING "") 
 set(CMAKE_SHARED_LIBRARY_PREFIX "") # such that we can have libAmpGen as a target AND AmpGen i.e. the application
 
 if( NOT PACKED_CMAKE_PREFIX_PATH STREQUAL "" )
@@ -196,6 +197,7 @@ target_compile_definitions(libAmpGen PRIVATE
   "AMPGENROOT_CMAKE=\"${AMPGENROOT_CMAKE}\""
   "AMPGENROOT=\"${AMPGENROOT}\""
   "AMPGEN_CXX=\"${AMPGEN_CXX}\""
+  "AMPGEN_CXX_FLAGS=\"${AMPGEN_CXX_FLAGS}\""
   $<$<BOOL:${AMPGEN_DEBUG}>:DEBUGLEVEL=1>
   $<$<BOOL:${AMPGEN_TRACE}>:TRACELEVEL=1>)
 

@@ -102,14 +102,6 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();
   if( print_all ) INFO( expression.name() << " " << cname << " Compile time = " << tWall / 1000. << " [size = " << fileSize(cname)/1024 << ", " << fileSize(oname)/1024 << "] kB" );
-/*
-  if( print_all && isClang() )
-  {
-    auto lines = vectorFromFile( cname );
-    for (const auto& line : lines ) 
-      std::cout << line << std::endl; 
-  }
-*/
   return true;
 }
 
@@ -133,14 +125,6 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();
   if( print_all ) INFO( cname << " Compile time = " << tWall / 1000. << " [size = " << fileSize(cname)/1024 << ", " << fileSize(oname)/1024 << "] kB" );
-  /*
-  if( print_all && isClang() )
-  {
-    auto lines = vectorFromFile( cname );
-    for (const auto& line : lines ) 
-      std::cout << line << std::endl; 
-  }
-  */
   return true;
 }
 
@@ -185,9 +169,12 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     argp.push_back( "-Wno-return-type-c-linkage");
     #if __APPLE__
     argp.push_back("-lstdc++");
+    argp.push_back("-isystem"); 
     #endif
     argp.push_back( "-march=native");
   }
+  auto tokens = split( std::string( AMPGEN_CXX_FLAGS ), ' ' );
+  for( auto& token : tokens ) argp.push_back( token.c_str() );
 
   argp.push_back( fname.c_str() );
   argp.push_back( "-o");
@@ -226,10 +213,6 @@ void CompilerWrapper::preamble( std::ostream& os ) const
   #endif
   os << '\n';
   os << "*/\n";
-//  #if __APPLE__
-  os << "#define __MATH_H__ 1\n";
-  os << "#define __MATH__ 1\n";
-  //#endif
 
   for ( auto& include : m_includes ) os << "#include <" << include << ">\n";
 }

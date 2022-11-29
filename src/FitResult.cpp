@@ -307,7 +307,7 @@ double FitResult::correlation( const std::string& x, const std::string& y ) cons
     ERROR("Parameter not found: " << x << ", " << y );
     return -1;
   }
-  return cov(tx->second, ty->second)/sqrt(cov(tx->second, tx->second)*cov(ty->second, ty->second));
+  return cov(tx->second, ty->second)/std::sqrt(cov(tx->second, tx->second)*cov(ty->second, ty->second));
 }
 
 void FitResult::writeOptions( const std::string& output, const std::string& input)

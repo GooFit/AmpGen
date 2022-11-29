@@ -1,6 +1,7 @@
 #include <complex>
 #include <string>
 #include <vector>
+#include <cmath>
 
 #include "AmpGen/Factory.h"
 #include "AmpGen/CoherentSum.h"
@@ -15,7 +16,7 @@ double LASSO::operator()() const
   double sum( 0 );
   for ( unsigned int i = 0; i < m_pdf->size(); ++i ) {
     std::complex<double> c_i = (*m_pdf)[i].coefficient;
-    sum += sqrt( std::norm(c_i) * m_pdf->norm(i, i).real() );
+    sum += std::sqrt( std::norm(c_i) * m_pdf->norm(i, i).real() );
   }
   return m_lambda * sum;
 }

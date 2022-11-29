@@ -71,17 +71,12 @@ namespace AmpGen {
   template<unsigned dim, typename fcn> std::tuple<double, double, unsigned> integrate_fp( const fcn& F, const std::array<double,dim>& ctr, const std::array<double, dim>& wth )
   {
     #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d
-    if constexpr( is_functor<fcn, double(const std::array<real_v, dim>&)>::value and utils::size<real_v>::value == 4 )
-    {
-      return AmpGen::integrate_fp_avx2d<dim>(F, ctr, wth);
-    }
-    else 
-    {
-      return integrate_fp_scalar<dim>(F, ctr, wth );
-    }
-    #else 
-      return integrate_fp_scalar<dim>(F, ctr, wth );
+      return integrate_fp<dim, 4>(F, ctr, wth);
     #endif
+    if constexpr( is_functor<fcn, double(const std::array<double, dim>&)>::value )
+    {
+      return integrate_fp_scalar<dim>(F, ctr, wth);
+    }
   }
 
   template <unsigned dim, typename fcn> double integrate(const fcn& F, const std::array<double, dim> xmin, const std::array<double, dim>&  xmax)
@@ -107,7 +102,7 @@ namespace AmpGen {
     }
     else {
 
-      double epsrel = 5e-10;  //specified relative accuracy
+      double epsrel = 1e-10;  //specified relative accuracy
       double epsabs = 0.; //specified relative accuracy
       //output parameters
       double relerr = 0 ; //an estimation of the relative accuracy of the result
@@ -123,7 +118,7 @@ namespace AmpGen {
 
       constexpr unsigned irlcls = get_power<2,dim>::value +2*dim*(dim+1)+1; // number of function evaluations per iteration
       constexpr unsigned minpts = get_power<2,dim>::value +2*dim*(dim+1)+1; // minimum number of function evaluations
-      constexpr unsigned maxpts = 100000;                                   // maximum number of function evaluations
+      constexpr unsigned maxpts = 1000000;                                   // maximum number of function evaluations
 
       std::array<integral<dim>, ( 1 + maxpts/irlcls)/2 > partial_integrals; 
 
@@ -190,7 +185,7 @@ namespace AmpGen {
         if ((relerr < epsrel && aresult < epsabs) or 
             ( ( relerr < epsrel || abserr < epsabs ) && ifncls > minpts) ){ status = 0; break ; }
         if (( isbrgs >= partial_integrals.size()-1) or ( ifncls+2*irlcls > maxpts ) )  { status = 2; break; }
-        //        std::cout << "#calls: " << ifncls << ", #cycles: " << isbrgs << " / " << ( 1 + maxpts/irlcls)/2 << std::endl; 
+       // std::cout << "#calls: " << ifncls << ", #cycles: " << isbrgs << " / " << ( 1 + maxpts/irlcls)/2 << " " << abserr << std::endl; 
         ldv = true;
         isbrgn  = 1;
         current_integral = &( partial_integrals[isbrgn] );

@@ -398,15 +398,15 @@ Expression PolarisedSum::probExpression(const Tensor& T_matrix, const std::vecto
     auto Txy = p[5];
     auto Txz = p[6];
     auto Tyz = p[7];
-    rho(0,0) = 1 + 1.5 * pz + sqrt(1.5)*Tzz;
-    rho(1,0) = sqrt(0.375)*(px+1i*py) + sqrt(3.)*(Txz+1i*Tyz);
-    rho(2,0) = -sqrt(1.5)*( Tzz + 2.*Tyy - 2.*1i*Txy); 
-    rho(0,1) = sqrt(0.375)*(px-1i*py) + sqrt(3.)*(Txz-1i*Tyz);
-    rho(1,1) = 1 - sqrt(6.)*Tzz;
-    rho(2,1) = sqrt(0.375)*(px+1i*py) - sqrt(3.)*(Txz+1i*Tyz);
-    rho(0,2) = -sqrt(1.5)*( Tzz + 2.*Tyy + 2.*1i*Txy); 
-    rho(1,2) = sqrt(0.375)*(px-1i*py) - sqrt(3)*(Txz-1i*Tyz);
-    rho(2,2) = 1. - 1.5*pz + sqrt(1.5)*Tzz;
+    rho(0,0) = 1 + 1.5 * pz + std::sqrt(1.5)*Tzz;
+    rho(1,0) = std::sqrt(0.375)*(px+1i*py) + std::sqrt(3.)*(Txz+1i*Tyz);
+    rho(2,0) = -std::sqrt(1.5)*( Tzz + 2.*Tyy - 2.*1i*Txy); 
+    rho(0,1) = std::sqrt(0.375)*(px-1i*py) + std::sqrt(3.)*(Txz-1i*Tyz);
+    rho(1,1) = 1 - std::sqrt(6.)*Tzz;
+    rho(2,1) = std::sqrt(0.375)*(px+1i*py) - std::sqrt(3.)*(Txz+1i*Tyz);
+    rho(0,2) = -std::sqrt(1.5)*( Tzz + 2.*Tyy + 2.*1i*Txy); 
+    rho(1,2) = std::sqrt(0.375)*(px-1i*py) - std::sqrt(3)*(Txz-1i*Tyz);
+    rho(2,2) = 1. - 1.5*pz + std::sqrt(1.5)*Tzz;
   }
   Tensor TT;
   //final state density matrix implementation for states with 2 polarisations

@@ -4,7 +4,8 @@
 #include <immintrin.h>
 #include <array>
 #include <iostream>
-#include <complex>
+#include "AmpGen/Complex.h"
+// #include <complex>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -145,38 +146,14 @@ namespace AmpGen {
       for( unsigned i = 0 ; i != 4; ++i ) os << data[i] << " ";
       return os;
     }
-    
-    using complex_v = std::complex<real_v>; 
-    inline complex_v operator+( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.real() + rhs, lhs.imag()); }
-    inline complex_v operator-( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.real() - rhs, lhs.imag()); }
-    inline complex_v operator*( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.real()*rhs, lhs.imag()*rhs); }
-    inline complex_v operator/( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.real()/rhs, lhs.imag()/rhs); }
-    inline complex_v operator+( const real_v& lhs, const complex_v& rhs ) { return complex_v(lhs + rhs.real(),  rhs.imag()); }
-    inline complex_v operator-( const real_v& lhs, const complex_v& rhs ) { return complex_v(lhs - rhs.real(), - rhs.imag()); }
-    inline complex_v operator*( const real_v& lhs, const complex_v& rhs ) { return complex_v(lhs*rhs.real(), lhs*rhs.imag()); }
-    inline complex_v operator/( const real_v& lhs, const complex_v& rhs ) { return complex_v( lhs * rhs.real() , -lhs *rhs.imag()) / (rhs.real() * rhs.real() + rhs.imag() * rhs.imag() ); }
-    inline real_v abs( const complex_v& v ) { return sqrt( v.real() * v.real() + v.imag() * v.imag() ) ; }
-    inline real_v norm( const complex_v& v ) { return  ( v.real() * v.real() + v.imag() * v.imag() ) ; }
+  
+    using complex_v = Complex<real_v>;   
     inline complex_v select(const real_v& mask, const complex_v& a, const complex_v& b ) { return complex_v( select(mask, a.real(), b.real()), select(mask, a.imag(), b.imag() ) ) ; }
     inline complex_v select(const real_v& mask, const real_v&   a, const complex_v& b ) { return complex_v( select(mask, a   , b.real()), select(mask, 0.f, b.imag()) ); }
     inline complex_v select(const real_v& mask, const complex_v& a, const real_v& b   ) { return complex_v( select(mask, a.real(), b )  , select(mask, a.imag(), 0.f) ); }
     inline complex_v select(const bool& mask   , const complex_v& a, const complex_v& b ) { return mask ? a : b; }
-    inline complex_v exp( const complex_v& v ){
-      auto [s,c] = sincos( v.imag());
-      return exp(v.real()) * complex_v(c, s);
-    }
-    inline complex_v sqrt( const complex_v& v )
-    {
-      auto r = abs(v);
-      return complex_v ( sqrt( 0.5 * (r + v.real()) ), sign(v.imag()) * sqrt( 0.5*( r - v.real() ) ) );
-    }
-    inline complex_v log( const complex_v& v )
-    {
-      return complex_v( 0.5 * log( norm(v) ) , atan2(v.imag(), v.real()) );
-    }
 
-    inline std::ostream& operator<<( std::ostream& os, const complex_v& obj ) { return os << "( "<< obj.real() << ") (" << obj.imag() << ")"; }
-    #pragma omp declare reduction(+: real_v: \
+#pragma omp declare reduction(+: real_v: \
 	omp_out = omp_out + omp_in)
     #pragma omp declare reduction(+: complex_v: \
 	omp_out = omp_out + omp_in)

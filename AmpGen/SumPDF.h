@@ -75,7 +75,7 @@ namespace AmpGen
         for ( unsigned int i = 0; i < m_events->size(); ++i ) {
           auto prob = ((*this))(( *m_events)[i] );
           auto w = (*m_events)[i].weight();
-          output[i] = w * log(prob);  
+          output[i] = w * std::log(prob);  
         }
       }
       #if ENABLE_AVX 
