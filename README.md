@@ -96,7 +96,7 @@ which requires the following steps
 cmake -B build -DCMAKE_CXX_COMPILER=`which clang++`
 cmake --build build
 ```
-The Neon (SIMD) instruction set can be enabled using the USE_SIMD flag ARM128d at the cmake step: 
+The Neon (SIMD) instruction set used by the ARM architecture (M1/M2) can be enabled using the USE_SIMD flag ARM128d at the cmake step: 
 ``` 
 cmake -B build -DCMAKE_CXX_COMPILER=`which clang++` -DUSE_SIMD=ARM128d
 ```
