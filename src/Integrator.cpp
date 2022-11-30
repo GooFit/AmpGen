@@ -52,7 +52,7 @@ void Integrator::integrateBlock()
       im = im + m_weight[i] * imag(c); 
       #endif
     }
-    *m_integrals[roll].result = complex_t(utils::sum_elements( complex_v(re, im) )) / m_norm;
+    *m_integrals[roll].result = complex_t(utils::sum_elements(re), utils::sum_elements(im)) / m_norm;
   }
   m_counter = 0;
 }

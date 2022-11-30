@@ -1,7 +1,7 @@
 #ifndef AMPGEN_PROFILECLOCK_H
 #define AMPGEN_PROFILECLOCK_H 1
 #include <chrono>
-#include <math.h>
+#include <cmath>
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
 

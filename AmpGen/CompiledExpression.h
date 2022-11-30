@@ -29,7 +29,8 @@ namespace AmpGen
     template <>           struct size_of<void> { static constexpr unsigned value = 0; } ;
   }
   DECLARE_ARGUMENT(disableBatch, bool);
-  
+  DECLARE_ARGUMENT(includeParameters, bool); 
+
   template <typename ret_type, typename... arg_types> class CompiledExpression; 
   
 
@@ -43,7 +44,6 @@ namespace AmpGen
         DynamicFCN<std::vector<std::pair<std::string, complex_v>>(arg_types...)>      m_fdb;
         std::vector<real_t>  m_externals             = {};
         bool                 m_hasExternalsChanged   = {false};
-        
       public:
         typedef ret_type return_type;
         unsigned m_outputSize = {0};
@@ -66,6 +66,9 @@ namespace AmpGen
             else if constexpr( std::is_convertible<decltype(arg), disableBatch>::value ) {
               DEBUG("Disabling bulk evaluation: did you do this on purpose?");
               m_disableBatch = true; 
+            }
+            else if constexpr( std::is_convertible<decltype(arg), includeParameters>::value ) {
+              m_includeParameters = true; 
             }
             else ERROR("Unrecognised argument: " << type_string(arg) ); 
           }; 
@@ -170,7 +173,7 @@ namespace AmpGen
           stream << "}\n}";
         }
 
-        void compileWithParameters( std::ostream& stream ) const
+        void compileWithParameters( std::ostream& stream ) const override
         {
           DEBUG( "Compiling " << name() << " = " << hash() );
           stream << "extern \"C\" " << returnTypename() << " " << progName() << "_wParams"
@@ -240,7 +243,7 @@ namespace AmpGen
 
   template <typename return_type> 
     CompiledExpression<void(return_type*, const double*, const double*)> 
-    make_rto_expression( const Expression& expression, const std::string& name , const bool& verbose=false)
+    make_rto_expression( const Expression& expression, const std::string& name)
     {
       CompiledExpression<void(return_type*, const double*, const double*)> rt(expression,name);
       rt.compile();
@@ -249,7 +252,7 @@ namespace AmpGen
     }
 
   template <typename return_type> CompiledExpression<return_type(const double*, const double*)> 
-    make_expression( const Expression& expression, const std::string& name , const bool& verbose=false)
+    make_expression( const Expression& expression, const std::string& name)
     {
       CompiledExpression<return_type(const double*, const double*)> rt(expression,name);
       rt.compile();

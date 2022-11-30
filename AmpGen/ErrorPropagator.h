@@ -78,12 +78,12 @@ namespace AmpGen
       template <class FCN> double derivative( FCN fcn, const size_t& i ) const
       {
         double startingValue = m_parameters[i]->mean();
-        m_parameters[i]->setCurrentFitVal( startingValue + sqrt( m_cov( i, i ) ) );
+        m_parameters[i]->setCurrentFitVal( startingValue + std::sqrt( m_cov( i, i ) ) );
         double plus_variation = fcn();
-        m_parameters[i]->setCurrentFitVal( startingValue - sqrt( m_cov( i, i ) ) );
+        m_parameters[i]->setCurrentFitVal( startingValue - std::sqrt( m_cov( i, i ) ) );
         double minus_variation = fcn();
         m_parameters[i]->setCurrentFitVal( startingValue );
-        return ( plus_variation - minus_variation ) / ( 2 * sqrt( m_cov( i, i ) ) );
+        return ( plus_variation - minus_variation ) / ( 2 * std::sqrt( m_cov( i, i ) ) );
       }
   };
 

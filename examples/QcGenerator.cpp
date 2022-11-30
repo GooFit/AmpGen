@@ -23,7 +23,7 @@ class FixedLibPdf
 {
   public: 
     FixedLibPdf() = default; 
-    FixedLibPdf(const EventType& type, MinuitParameterSet& mps) : 
+    FixedLibPdf(const EventType& type, MinuitParameterSet&) : 
       FixedLibPdf(NamedParameter<std::string>(type.decayDescriptor()+"::lib").getVal()) 
     {
       INFO("Constructing: " << type << " flib = " <<type.decayDescriptor()+"::lib" );
@@ -36,11 +36,11 @@ class FixedLibPdf
       amp = AmpGen::DynamicFCN<complex_t( const double*, const int& )>( handle, "AMP" );
     }
     void prepare(){};
-    void setEvents( AmpGen::EventList& evts ){};
+    void setEvents( AmpGen::EventList& ){};
     double prob_unnormalised( const AmpGen::Event& evt ) const { return std::norm(getValNoCache(evt)); }
     complex_t getValNoCache( const AmpGen::Event& evt ) const { return amp(evt,+1); }
     size_t size() { return 0; }
-    void reset( const bool& flag = false ){};
+    void reset( const bool& ){};
   private:
     AmpGen::DynamicFCN<complex_t( const double*, const int& )> amp;
 };
@@ -189,7 +189,7 @@ template <class T1, class T2> class Psi3770 {
       int currentSize  = 0;
       double norm      = -1;
       while( output.size() < N ){
-        auto events = generatePHSP(m_blockSize);
+        auto events = generatePHSP();
         if(norm == -1 ){
           for(auto& event : events) if(event.prob > norm ) norm = event.prob;
           norm *= 1.5;
@@ -217,7 +217,7 @@ template <class T1, class T2> class Psi3770 {
       INFO("Requested: " << N << " events t=" << time/1000 << "[ms]");
       return output;
     }
-    DTEventList generatePHSP(const size_t& N, const bool& eval=true){
+    DTEventList generatePHSP(){
       DTEventList output( m_signalType, m_tagType );
       for(size_t x = 0 ; x < m_blockSize; ++x) output.emplace_back( generatePhaseSpace() ); 
 #pragma omp parallel for
@@ -228,7 +228,7 @@ template <class T1, class T2> class Psi3770 {
       if( m_ignoreQc ) return 1;
       double withQC=0;
       double withoutQC =0;
-      DTEventList evts = generatePHSP(m_blockSize, false); 
+      DTEventList evts = generatePHSP(); 
 #pragma omp parallel for reduction(+:withQC,withoutQC)
       for( size_t x = 0; x<m_blockSize; ++x ){
         auto event   = evts[x]; 

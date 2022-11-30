@@ -160,24 +160,16 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
 
 void CoherentSum::generateSourceCode(const std::string& fname, const double& normalisation, bool add_mt)
 {
-  std::ofstream stream( fname );
   transferParameters();
-  stream << std::setprecision( 10 );
-  stream << "#include <complex>\n";
-  stream << "#include <vector>\n";
-  stream << "#include <math.h>\n";
-  if ( add_mt ) stream << "#include <thread>\n";
   bool includePythonBindings = NamedParameter<bool>("IncludePythonBindings",false);
 
-  for ( auto& p : m_matrixElements ){
-    auto expr = CompiledExpression<complex_t(const real_t*, const real_t*)>(
+  std::vector<CompiledExpressionBase*> functions; 
+  
+  for ( const auto& p : m_matrixElements ){
+    functions.push_back( new CompiledExpression<complex_t(const real_t*, const real_t*)>(
           p.expression(), 
           p.decayDescriptor(),
-          m_evtType.getEventFormat(), DebugSymbols(), disableBatch(), m_mps );
-    expr.prepare();
-    stream << expr << std::endl;
-    expr.compileWithParameters( stream );
-    if( includePythonBindings ) p.compileDetails( stream );
+          m_evtType.getEventFormat(), DebugSymbols(), disableBatch(), includeParameters(), m_mps ) );
   }
   Expression event = Parameter("x0",0,true);
   Expression pa    = Parameter("double(x1)",0,true);
@@ -187,8 +179,16 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
     Expression this_amplitude = p.coupling() * Function( programatic_name( p.name() ) + "_wParams", {event} ); 
     amplitude = amplitude + ( p.decayTree.finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
   }
-  stream << CompiledExpression<std::complex<double>(const double*, const int&)>( amplitude  , "AMP", disableBatch() ) << std::endl; 
-  stream << CompiledExpression<double(const double*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN", disableBatch() ) << std::endl; 
+  functions.push_back( new CompiledExpression<complex_t(const real_t*, const int&)>( amplitude  , "AMP", disableBatch() ) );
+  functions.push_back( new CompiledExpression<real_t(const real_t*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN", disableBatch() ) ); 
+  CompilerWrapper().compile( functions, fname );
+
+  for( auto& function : functions ) delete function;  
+
+
+  //stream << CompiledExpression<std::complex<double>(const double*, const int&)>( amplitude  , "AMP", disableBatch() ) << std::endl; 
+  // stream << CompiledExpression<double(const double*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN", disableBatch() ) << std::endl; 
+  /*
   if( includePythonBindings ){
     stream << CompiledExpression<int   (void)>( m_matrixElements.size(), "matrix_elements_n", disableBatch() ) << std::endl;
     stream << CompiledExpression<double(void)>( normalisation, "normalization", disableBatch() ) << std::endl;
@@ -197,32 +197,6 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
       stream << "  if(n ==" << i << ") return \"" << m_matrixElements.at(i).progName() << "\" ;\n";
     }
     stream << "  return 0;\n}\n";
-
-    /*
-    stream << "extern \"C\" void FCN_all(double* out, double* events, unsigned int size, int parity, double* amps){\n";
-    stream << "  double local_amps [] = {\n";
-    for ( unsigned int i = 0; i < size(); ++i ) {
-      auto& p = m_matrixElements[i];
-      stream << "    " << p.coupling().real() << ", " << p.coupling().imag() << ( i + 1 == size() ? "" : "," ) << "\n";
-    }
-    stream << "  };\n";
-    stream << "  if(amps == nullptr)\n";
-    stream << "    amps = local_amps;\n\n";
-    stream << "  for(unsigned int i=0; i<size; i++) {\n";
-    stream << "    double* E = events + i*" << ( *this->m_events )[0].size() << ";\n";
-
-    stream << "  std::complex<double> amplitude = \n";
-    for ( unsigned int i = 0; i < size(); ++i ) {
-      stream << "    ";
-      auto& p    = m_matrixElements[i];
-      int parity = p.decayTree.finalStateParity();
-      if ( parity == -1 ) stream << "double(parity) * ";
-      stream << "std::complex<double>(amps[" << i * 2 << "],amps[" << i * 2 + 1 << "]) * ";
-      stream << programatic_name( p.name() )<< "_wParams( E )";
-      stream << ( i == size() - 1 ? ";" : " +" ) << "\n";
-    }
-    stream << "  out[i] =  std::norm(amplitude) / " << normalisation << ";\n  }\n}\n";
-    */
     stream << "extern \"C\" std::complex<double> coefficients(int n, int parity){\n";
     for ( size_t i = 0; i < size(); i++ ) {
       auto& p    = m_matrixElements[i];
@@ -230,20 +204,21 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
       stream << "  if(n == " << i << ") return ";
       if ( parity == -1 ) stream << "double(parity) * "; 
       stream << p.coupling() << ";\n";
-//      stream << "(which==0 ? " << p.coupling().real() << " : " << p.coupling().imag() << ");\n";
     }
     stream << "  return 0;\n}\n";
   }
+  */
   INFO("Generating source-code for PDF: " << fname << " include MT symbols? " << add_mt << " normalisation = " << normalisation );
-  stream.close();
+  //stream.close();
 }
 
 complex_t CoherentSum::getValNoCache( const Event& evt ) const
 {
-  return utils::get<0>( complex_v(std::accumulate( m_matrixElements.begin(), 
+  auto v = complex_v(std::accumulate( m_matrixElements.begin(), 
           m_matrixElements.end(), 
           complex_v(0,0), 
-          [&evt]( const auto& a, const auto& b ){ return a + b.coefficient * b(evt)[0];} )) );
+          [&evt]( const auto& a, const auto& b ){ return a + complex_v(b.coefficient) * b(evt)[0];} ));
+  return complex_t( utils::get<0>(v.real()), utils::get<0>(v.imag()) ); 
 }
 
 void CoherentSum::reset( bool resetEvents )
@@ -323,10 +298,10 @@ complex_t CoherentSum::getVal( const Event& evt ) const
 {
   complex_v value( 0., 0. );
   for (unsigned int i = 0 ; i != m_matrixElements.size(); ++i ) {
-    value = value + m_matrixElements[i].coefficient * m_cache(evt.index() / utils::size<real_v>::value, i );
+    value += complex_v( m_matrixElements[i].coefficient ) * m_cache(evt.index() / utils::size<real_v>::value, i );
   }
 #if ENABLE_AVX
-  return value.at(evt.index() % utils::size<real_v>::value );
+  return utils::at(value, evt.index() % utils::size<real_v>::value);
 #else 
   return value;
 #endif
@@ -338,9 +313,9 @@ real_v CoherentSum::operator()( const real_v* /*evt*/, const unsigned block ) co
   for ( const auto& mE : m_matrixElements ) 
   {
     unsigned address = &mE - &m_matrixElements[0];
-    value = value + mE.coefficient * m_cache(block, address); 
+    value += complex_v(mE.coefficient) * m_cache(block, address); 
   }
-  return (m_weight/m_norm ) * utils::norm(value); 
+  return (m_weight/m_norm ) * utils::norm(value);
 }
 
 #if ENABLE_AVX
@@ -364,7 +339,7 @@ std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type*
   {
     complex_v amp(0.,0.);
     for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ) 
-      amp = amp + m_matrixElements[j].coefficient * store(block, j);
+      amp = amp + complex_v(m_matrixElements[j].coefficient) * store(block, j);
     utils::store( values.data() + block * utils::size<real_v>::value,  (m_weight/m_norm) * utils::norm(amp)  );
   }
   return arrayToFunctor<double, typename EventList_type::value_type>(values);

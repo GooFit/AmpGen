@@ -42,6 +42,7 @@ namespace AmpGen
     void prepare();
     void compile(const std::string& fname=""); 
     virtual void compileBatch( std::ostream& stream ) const = 0; 
+    virtual void compileWithParameters( std::ostream& stream) const = 0; 
     void to_stream( std::ostream& stream ) const;
     unsigned int hash() const;
     std::string name() const;
@@ -63,17 +64,18 @@ namespace AmpGen
     virtual std::string arg_type( const unsigned& counter) const =0; 
     std::vector<const CacheTransfer*> orderedCacheFunctors() const;
   protected:
-    Expression                                      m_obj;
-    std::string                                     m_name;
-    std::string                                     m_progName; 
-    DebugSymbols                                    m_db;
-    std::map<std::string, unsigned>                 m_evtMap;
-    std::vector<std::pair<uint64_t, Expression>>    m_dependentSubexpressions;
-    std::vector<std::pair<uint64_t, Expression>>    m_debugSubexpressions; 
-    std::vector<std::shared_ptr<CacheTransfer>>     m_cacheTransfers;
-    std::shared_ptr<ASTResolver>                    m_resolver = {nullptr};
-    std::vector<std::string>                        m_additionalHeaders;
-    bool                                            m_disableBatch = {false}; 
+    Expression                                   m_obj;
+    std::string                                  m_name;
+    std::string                                  m_progName; 
+    DebugSymbols                                 m_db;
+    std::map<std::string, unsigned>              m_evtMap;
+    std::vector<std::pair<uint64_t, Expression>> m_dependentSubexpressions;
+    std::vector<std::pair<uint64_t, Expression>> m_debugSubexpressions; 
+    std::vector<std::shared_ptr<CacheTransfer>>  m_cacheTransfers;
+    std::shared_ptr<ASTResolver>                 m_resolver = {nullptr};
+    std::vector<std::string>                     m_additionalHeaders;
+    bool                                         m_disableBatch = {false}; 
+    bool                                         m_includeParameters = {false};         
   private:
     void addDebug( std::ostream& stream ) const;
     void addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const;

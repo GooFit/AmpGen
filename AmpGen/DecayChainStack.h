@@ -19,6 +19,7 @@ namespace AmpGen {
     public:
       DecayChainStackBase() = default;
       DecayChainStackBase( const Particle& particle ); 
+      virtual ~DecayChainStackBase(){};
       virtual Event makeEvent(TRandom3* rndm) const = 0; 
       virtual double maxWeight() const = 0; 
       virtual unsigned NP()      const = 0; 
@@ -172,7 +173,7 @@ namespace AmpGen {
       }
       for( auto& node : m_nodes ) node.print();
       if( m_rhoMax <= 0 ) ERROR("RhoMax^2 < 0! " << m_rhoMax );
-      m_rhoMax = sqrt(m_rhoMax);
+      m_rhoMax = std::sqrt(m_rhoMax);
     }
     virtual double maxWeight() const { return m_rhoMax; }
     virtual unsigned NP() const { return N; } 
@@ -256,10 +257,10 @@ namespace AmpGen {
         const auto& s  = state[i+N];
         const auto& sl = state[m_nodes[i].l];
         const auto& sr = state[m_nodes[i].r];
-        double v = rho_2(s, sl, sr) * ( s > sl + sr + 2 * sqrt(sl*sr) ); 
+        double v = rho_2(s, sl, sr) * ( s > sl + sr + 2 * std::sqrt(sl*sr) ); 
         weight  = v < 0 ? 0 : v * weight; 
       }
-      weight = sqrt( weight ); 
+      weight = std::sqrt( weight ); 
       return rt; 
     }
 
@@ -273,27 +274,20 @@ namespace AmpGen {
         const auto& s  = state[ &(*n) - &(*m_nodes.begin()) + N ];
         const auto nz  = 2 *  rndm->Rndm() - 1;
         const auto phi = 2*M_PI*rndm->Rndm();      
-        const auto p   = 0.5 * sqrt( s * rho_2(s, sl, sr ) ); 
+        const auto p   = 0.5 * std::sqrt( s * rho_2(s, sl, sr ) ); 
         const auto sZ  = std::sqrt( 1  - nz*nz ); 
         const auto nx  = sZ * std::cos(phi); 
         const auto ny  = sZ * std::sin(phi); 
-        const auto gl  = sqrt( 1 + p*p/sl);  
-        const auto vgl =  p / sqrt(sl); 
-        const auto gr  = sqrt( 1 + p*p/sr);  
-        const auto vgr =  p / sqrt(sr); 
+        const auto gl  = std::sqrt( 1 + p*p/sl);  
+        const auto vgl =  p / std::sqrt(sl); 
+        const auto gr  = std::sqrt( 1 + p*p/sr);  
+        const auto vgr =  p / std::sqrt(sr); 
         
-        if( n->lfs.size == 1 ) set( event + 4 * n->lfs[0], p*nx, p*ny, p*nz, sqrt( sl + p*p ) );  
-        else 
-        for( const auto& l : n->lfs ) boost(event + 4 *l,  nx , ny,  nz, gl, vgl );
+        if( n->lfs.size == 1 ) set( event + 4 * n->lfs[0], p*nx, p*ny, p*nz, std::sqrt( sl + p*p ) );  
+        else for( const auto& l : n->lfs ) boost(event + 4 *l,  nx , ny,  nz, gl, vgl );
         
-        if( n->rfs.size == 1 ) set( event + 4 *n->rfs[0], -p*nx, -p*ny, -p*nz, sqrt( sr + p*p ) );        
-        else  
-        for( const auto& l : n->rfs ) boost(event + 4 *l, -nx, -ny, -nz, gr, vgr ); 
-       
-       /* 
-        AmpGen::Event event_tmp( event, 4 * N );
-        event_tmp.print();
-      */
+        if( n->rfs.size == 1 ) set( event + 4 *n->rfs[0], -p*nx, -p*ny, -p*nz, std::sqrt( sr + p*p ) );        
+        else for( const auto& l : n->rfs ) boost(event + 4 *l, -nx, -ny, -nz, gr, vgr ); 
       }
     }
 

@@ -69,7 +69,7 @@ namespace AmpGen
             }
           }
         }
-        template <typename pdf_t> double getMax(const pdf_t& pdf, const eventlist_t& events) const 
+        double getMax(const eventlist_t& events) const 
         {
           double max = 0.;
           for ( const auto& evt : events ) 
@@ -117,7 +117,7 @@ namespace AmpGen
             {
               mc.setGenPDF(block, pdf(mc.block(block), block) / mc.genPDF(block) );
             }
-            maxProb = maxProb == 0 ? 1.5 * getMax(pdf, mc) : maxProb; 
+            maxProb = maxProb == 0 ? 1.5 * getMax(mc) : maxProb; 
             DEBUG( "Norm: " << maxProb );            
            // if constexpr ( std::is_same<phaseSpace_t, TreePhaseSpace>::value ) m_gps.recalculate_weights(mc); 
 

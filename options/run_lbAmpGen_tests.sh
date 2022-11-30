@@ -1,4 +1,4 @@
-branch=mstahl_AmpGen
+branch=v49r22
 
 tmp_dir=$(mktemp -d -t ci-XXXXXXXXXX)
 echo "TMPDIR=$tmp_dir"
@@ -15,8 +15,8 @@ for model in $top/Gen/LbAmpGen/models/*.opt ; do
      [ $without_ext == "DtopiKpipi_v1" ] || 
      [ $without_ext == "DtoKKpipi_v1"  ] ; then continue ; fi  # these are old models that kept for backwards compatability, dont expect to be able reproduce exactly
   mkdir -p build/$without_ext
-  $AMPGENROOT/build/bin/ConvertToSourceCode $model --Output build/$without_ext/new.cpp  >> /dev/null
+  $AMPGENROOT/build/bin/AmpGen $model --Output build/$without_ext/new.cpp  >> /dev/null
   g++ -Ofast -shared -rdynamic --std=c++11 -fPIC build/$without_ext/new.cpp -o build/$without_ext/new.so
   g++ -Ofast -shared -rdynamic --std=c++11 -fPIC $top/Gen/LbAmpGen/src/${without_ext}.cpp -o build/$without_ext/gaussUpdate.so
-  $AMPGENROOT/build/bin/lib_diff    $model --Lib=build/$without_ext/new.so --RefLib=build/$without_ext/gaussUpdate.so
+  $AMPGENROOT/build/bin/LibDiff $model --Lib=build/$without_ext/new.so --RefLib=build/$without_ext/gaussUpdate.so
 done

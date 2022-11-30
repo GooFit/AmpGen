@@ -6,6 +6,7 @@
 #include <iostream>
 #include <complex>
 #include <omp.h>
+#include <cmath>
 
 namespace AmpGen {
   namespace AVX512d {
@@ -128,85 +129,48 @@ namespace AmpGen {
       auto r = remainder( abs(a), abs(b) );
       return select( a > 0., r, -r );
     }
-
-    struct complex_v {
-      real_v re;
-      real_v im;
-      static constexpr unsigned size = 8;
-      typedef std::complex<double> scalar_type;
-
-      real_v real() const { return re; }
-      real_v imag() const { return im; }
-      real_v norm() const { return re*re + im *im ; }
-      complex_v() = default; 
-      complex_v( const real_v& re, const real_v& im) : re(re), im(im) {}
-      complex_v( const float&   re, const float& im) : re(re), im(im) {}
-      complex_v( const std::complex<double>& f ) : re( f.real() ), im( f.imag() ) {}
-      complex_v( const std::complex<float>& f  ) : re( f.real() ), im( f.imag() ) {}
-      explicit complex_v( const real_v& arg ) : re(arg) {};
-      explicit complex_v( const double& arg ) : re(arg) {};
-      const std::complex<double> at(const unsigned i) const { return std::complex<float>(re.to_array()[i], im.to_array()[i]) ; }       
-      void store( double* sre, double* sim ){ re.store(sre); im.store(sim);  } 
-      void store( scalar_type* r ) const { 
-        auto re_arr = re.to_array();
-        auto im_arr = im.to_array();
-        for( unsigned i = 0 ; i != re_arr.size(); ++i ) r[i] = scalar_type( re_arr[i], im_arr[i] ); 
-      }
-      auto to_array() const 
-      {
-        std::array<scalar_type, 8> rt;
-        store( rt.data() );
-        return rt;
-      }
-    };
-   
+ 
     inline std::ostream& operator<<( std::ostream& os, const real_v& obj ) { 
       auto buffer = obj.to_array();
       for( unsigned i = 0 ; i != 8; ++i ) os << buffer[i] << " ";
       return os; 
     }
-    inline real_v     real(const complex_v& arg ){ return arg.re ; }
-    inline real_v     imag(const complex_v& arg ){ return arg.im ; }
-    inline complex_v   conj(const complex_v& arg ){ return complex_v(arg.re, -arg.im) ; }
-    inline real_v     conj(const real_v& arg ){ return arg ; } 
-    inline complex_v operator+( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.re + rhs, lhs.im); }
-    inline complex_v operator-( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.re - rhs, lhs.im); }
-    inline complex_v operator*( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.re*rhs, lhs.im*rhs); }
-    inline complex_v operator/( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.re/rhs, lhs.im/rhs); }
-    inline complex_v operator+( const real_v& lhs, const complex_v& rhs ) { return complex_v(lhs + rhs.re,  rhs.im); }
-    inline complex_v operator-( const real_v& lhs, const complex_v& rhs ) { return complex_v(lhs - rhs.re, - rhs.im); }
-    inline complex_v operator*( const real_v& lhs, const complex_v& rhs ) { return complex_v(lhs*rhs.re, lhs*rhs.im); }
-    inline complex_v operator/( const real_v& lhs, const complex_v& rhs ) { return complex_v( lhs * rhs.re , -lhs *rhs.im) / (rhs.re * rhs.re + rhs.im * rhs.im ); }
-    inline complex_v operator+( const complex_v& lhs, const complex_v& rhs ) { return complex_v(lhs.re + rhs.re, lhs.im + rhs.im); }
-    inline complex_v operator-( const complex_v& lhs, const complex_v& rhs ) { return complex_v(lhs.re - rhs.re, lhs.im - rhs.im); }
-    inline complex_v operator*( const complex_v& lhs, const complex_v& rhs ) { return complex_v(lhs.re*rhs.re - lhs.im*rhs.im, lhs.re*rhs.im  + lhs.im*rhs.re); }
-    inline complex_v operator/( const complex_v& lhs, const complex_v& rhs ) { return complex_v(lhs.re*rhs.re + lhs.im*rhs.im, -lhs.re*rhs.im  + lhs.im*rhs.re) / (rhs.re * rhs.re + rhs.im * rhs.im ); }
-    inline complex_v operator-( const complex_v& x ) { return -1.f * x; }
-    inline real_v abs( const complex_v& v ) { return sqrt( v.re * v.re + v.im * v.im ) ; }
-    inline real_v norm( const complex_v& v ) { return  ( v.re * v.re + v.im * v.im ) ; }
-    inline complex_v select(const __mmask8& mask, const complex_v& a, const complex_v& b ) { return complex_v( select(mask, a.re, b.re), select(mask, a.im, b.im ) ) ; }
-    inline complex_v select(const __mmask8& mask, const real_v&   a, const complex_v& b ) { return complex_v( select(mask, a   , b.re), select(mask, 0.f, b.im) ); }
-    inline complex_v select(const __mmask8& mask, const complex_v& a, const real_v& b   ) { return complex_v( select(mask, a.re, b )  , select(mask, a.im, 0.f) ); }
+  
+    using complex_v = std::complex<real_v>; 
+    inline complex_v operator+( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.real() + rhs, lhs.imag()); }
+    inline complex_v operator-( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.real() - rhs, lhs.imag()); }
+    inline complex_v operator*( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.real()*rhs, lhs.imag()*rhs); }
+    inline complex_v operator/( const complex_v& lhs, const real_v& rhs ) { return complex_v(lhs.real()/rhs, lhs.imag()/rhs); }
+    inline complex_v operator+( const real_v& lhs, const complex_v& rhs ) { return complex_v(lhs + rhs.real(),  rhs.imag()); }
+    inline complex_v operator-( const real_v& lhs, const complex_v& rhs ) { return complex_v(lhs - rhs.real(), - rhs.imag()); }
+    inline complex_v operator*( const real_v& lhs, const complex_v& rhs ) { return complex_v(lhs*rhs.real(), lhs*rhs.imag()); }
+    inline complex_v operator/( const real_v& lhs, const complex_v& rhs ) { return complex_v( lhs * rhs.real() , -lhs *rhs.imag()) / (rhs.real() * rhs.real() + rhs.imag() * rhs.imag() ); }
+    inline real_v abs( const complex_v& v ) { return sqrt( v.real() * v.real() + v.imag() * v.imag() ) ; }
+    inline real_v norm( const complex_v& v ) { return  ( v.real() * v.real() + v.imag() * v.imag() ) ; }
+    inline complex_v select(const __mmask8& mask, const complex_v& a, const complex_v& b ) { return complex_v( select(mask, a.real(), b.real()), select(mask, a.imag(), b.imag() ) ) ; }
+    inline complex_v select(const __mmask8& mask, const real_v&   a, const complex_v& b ) { return complex_v( select(mask, a   , b.real()), select(mask, 0.f, b.imag()) ); }
+    inline complex_v select(const __mmask8& mask, const complex_v& a, const real_v& b   ) { return complex_v( select(mask, a.real(), b )  , select(mask, a.imag(), 0.f) ); }
     inline complex_v select(const bool& mask   , const complex_v& a, const complex_v& b ) { return mask ? a : b; }
-    inline complex_v exp( const complex_v& v ){ 
-      return exp( v.re) * complex_v( cos( v.im ), sin( v.im ) );
+    inline complex_v exp( const complex_v& v ){
+      auto [s,c] = sincos( v.imag());
+      return exp(v.real()) * complex_v(c, s);
     }
     inline complex_v sqrt( const complex_v& v )
     {
       auto r = abs(v);
-      return complex_v ( sqrt( 0.5 * (r + v.re) ), sign(v.im) * sqrt( 0.5*( r - v.re ) ) );
+      return complex_v ( sqrt( 0.5 * (r + v.real()) ), sign(v.imag()) * sqrt( 0.5*( r - v.real() ) ) );
     }
     inline complex_v log( const complex_v& v )
     {
-      return complex_v( log( v.re ) , atan2(v.im, v.re) );
-    } 
+      return complex_v( 0.5 * log( norm(v) ) , atan2(v.imag(), v.real()) );
+    }
 
-    inline std::ostream& operator<<( std::ostream& os, const complex_v& obj ) { return os << "( "<< obj.re << ") (" << obj.im << ")"; }
+    inline std::ostream& operator<<( std::ostream& os, const complex_v& obj ) { return os << "( "<< obj.real() << ") (" << obj.imag() << ")"; }
     #pragma omp declare reduction(+: real_v: \
-	omp_out = omp_out + omp_in) 
+	omp_out = omp_out + omp_in)
     #pragma omp declare reduction(+: complex_v: \
-	omp_out = omp_out + omp_in) 
-  
+	omp_out = omp_out + omp_in)
+
   }  
 }
 

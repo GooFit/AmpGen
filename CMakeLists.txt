@@ -41,6 +41,7 @@ set(USE_ROOT           TRUE    CACHE BOOL   "Flag to use root (required for fitt
 set(USE_TBB           FALSE    CACHE BOOL   "USE_TBB")     # flag to use TBB (only used internally by ROOT, but linkage seems unreliable)
 set(EXEC_EXTENSION     "" CACHE STRING "EXEC_EXTENSION")
 set(PACKED_CMAKE_PREFIX_PATH "" CACHE STRING "PACKED_CMAKE_PREFIX_PATH")
+set(AMPGEN_CXX_FLAGS   "" CACHE STRING "") 
 set(CMAKE_SHARED_LIBRARY_PREFIX "") # such that we can have libAmpGen as a target AND AmpGen i.e. the application
 
 if( NOT PACKED_CMAKE_PREFIX_PATH STREQUAL "" )
@@ -71,6 +72,7 @@ set(CMAKE_TEST_OUTPUT_DIRECTORY            "${CMAKE_BINARY_DIR}/bin/test")
 include(CMakeDependentOption)
 include(CMakePrintHelpers)
 include(GNUInstallDirs)
+include(CheckCXXCompilerFlag)
 
 option(AMPGEN_DEBUG "AmpGen Debug printout")
 option(AMPGEN_TRACE "AmpGen Trace printout")
@@ -159,6 +161,7 @@ if( USE_OPENMP )
     target_compile_definitions(libAmpGen PRIVATE "AMPGEN_OPENMP_FLAGS=\"-L${libpath} ${OpenMP_CXX_FLAGS}\"")
   else()
     message(STATUS "OpenMP not found for CXX")
+    target_compile_definitions(libAmpGen PRIVATE "AMPGEN_OPENMP_FLAGS=\"\"")
   endif()
 else()
   target_compile_definitions(libAmpGen PRIVATE "AMPGEN_OPENMP_FLAGS=\"\"")
@@ -195,13 +198,14 @@ target_compile_definitions(libAmpGen PRIVATE
   "AMPGENROOT_CMAKE=\"${AMPGENROOT_CMAKE}\""
   "AMPGENROOT=\"${AMPGENROOT}\""
   "AMPGEN_CXX=\"${AMPGEN_CXX}\""
+  "AMPGEN_CXX_FLAGS=\"${AMPGEN_CXX_FLAGS}\""
   $<$<BOOL:${AMPGEN_DEBUG}>:DEBUGLEVEL=1>
   $<$<BOOL:${AMPGEN_TRACE}>:TRACELEVEL=1>)
 
 target_compile_options(libAmpGen
   INTERFACE
   -Wall -Wextra -Wpedantic -g3
-  -Wno-unused-parameter
+  #  -Wno-unused-parameter
   -Wno-unknown-pragmas
   $<$<CONFIG:Release>:-O3>)
 
@@ -218,14 +222,18 @@ elseif ( ${USE_SIMD} MATCHES "AVX512d" )
   target_compile_definitions(libAmpGen PUBLIC "ENABLE_AVX=1" "INSTRUCTION_SET=3") 
   message(WARNING "AVX512 implementation not tested: proceed with caution")
   target_compile_options(libAmpGen PUBLIC -ftree-vectorize -mfma -mavx512f -ffast-math -DHAVE_AVX512_INSTRUCTIONS)
+elseif( ${USE_SIMD} MATCHES "ARM128d" )
+  message(STATUS "Enabling ARM128d [double precision]")
+  target_compile_definitions(libAmpGen PUBLIC "ENABLE_AVX=1" "INSTRUCTION_SET=10") 
+  message(WARNING "ARM128 (double precision) implementation not tested: proceed with caution")
+  target_compile_options(libAmpGen PUBLIC -march=armv8.5-a  )
 else()
   target_compile_definitions(libAmpGen PUBLIC "ENABLE_AVX=0" "INSTRUCTION_SET=0")
-  target_compile_options(libAmpGen PUBLIC -march=x86-64)
+  target_compile_options(libAmpGen PUBLIC -march=native)
   message(STATUS "SIMD disabled, resorting to scalar build : ${USE_SIMD}")
 endif()
 
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "AppleClang" OR 
-    ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" )
+if( supports_fma AND ( ${CMAKE_CXX_COMPILER_ID} MATCHES "AppleClang" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" ) )
   target_compile_options(libAmpGen PUBLIC -mfma)
 endif()
 

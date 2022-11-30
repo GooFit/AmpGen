@@ -96,8 +96,8 @@ namespace AmpGen {
     std::string mysprintf(const std::string& format,
         ARGS&&... args){
       auto size = std::snprintf(nullptr, 0, format.c_str(), std::forward<ARGS>(args)...);
-      std::string output(size+1,'\0');
-      std::sprintf(&output[0],format.c_str(), std::forward<ARGS>(args)...);
+      std::string output (size+1,'\0');
+      std::snprintf(&output[0],size+1, format.c_str(), std::forward<ARGS>(args)...);
       return output.substr(0, output.size()-1);
     }
 

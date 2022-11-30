@@ -48,14 +48,13 @@ void invertParity( Event& event, const size_t& nParticles)
   }
 }
 
-template < class FCN > void debug( FCN& sig, EventList& accepted, bool verbose, TRandom3* rndm, MinuitParameterSet& mps ){
+template < class FCN > void debug( FCN& sig, EventList& accepted){
   INFO("Debugging: ");
   unsigned eventToDebug = 0;
   sig.setEvents( accepted );
   sig.prepare();
   sig.debug( accepted[eventToDebug] );
   accepted[eventToDebug].print();
-//  if( verbose ) print( accepted[0], sig.matrixElements(), verbose ); 
   for( unsigned int i = 0 ; i != accepted.size(); ++i ) 
   invertParity(accepted[i], accepted.eventType().size() );
   accepted[eventToDebug].print();
@@ -115,14 +114,14 @@ int main( int argc, char** argv )
     PolarisedSum sig( eventType, MPS );  
     sig.setEvents( accepted );
     sig.prepare();
-    debug( sig, accepted, verbose, rndm , MPS );
+    debug( sig, accepted);
     sig.setMC(accepted);
     INFO("norm = " << sig.norm() );   
   }
   else if( type == "CoherentSum" )
   {
     CoherentSum sig(eventType, MPS);
-    debug(sig, accepted, verbose, rndm, MPS);
+    debug(sig, accepted);
     // print(accepted[0], sig.matrixElements() , false);
     INFO( "A(x) = " << sig.getValNoCache( accepted[0] ) );
   }
@@ -131,7 +130,7 @@ int main( int argc, char** argv )
     IncoherentSum sig(eventType, MPS,"Inco"); 
     sig.setMC(accepted);
     sig.prepare();
-    debug(sig, accepted, verbose, rndm, MPS);  
+    debug(sig, accepted);  
     INFO("norm = " << sig.norm() );   
   }
   else {

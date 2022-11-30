@@ -1,5 +1,5 @@
 #include <memory.h>
-#include <math.h>
+#include <cmath>
 #include <complex>
 #include <iosfwd>
 #include <limits>

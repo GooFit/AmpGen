@@ -50,7 +50,7 @@ namespace AmpGen
       Event makeEvent();
       size_t size() const;
       EventType eventType() const ;
-      void debug( const Event& event ) {}; 
+      void debug( const Event& /*event*/ ) {}; 
     private:
       PhaseSpace   m_phsp;
       unsigned     m_totalSize = {0};

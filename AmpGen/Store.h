@@ -137,7 +137,7 @@ namespace AmpGen {
         if( f == m_index.end() ) FATAL("Expression: " << fcn.name() << " is not registed");
         auto p0 = f->second[0];
         auto s  = f->second.size(); 
-        auto stagger      = align == Alignment::AoS ? 1 : m_nBlocks;
+        // auto stagger      = align == Alignment::AoS ? 1 : m_nBlocks;
         std::vector<size_t> offsets( s );
         std::iota( offsets.begin(), offsets.end(), 0 );
         DEBUG("Updating: " << fcn.name() << " index = " << p0 << " size_of = " << s << " on store: " << size() << " blocks = " << nBlocks() << " fields = " << nFields () ); 

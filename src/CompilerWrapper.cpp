@@ -13,12 +13,14 @@
 #include <map>
 #include <utility>
 #include <numeric>
+#include <filesystem>
 
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/CompiledExpressionBase.h"
 #include "AmpGenVersion.h"
+#include "AmpGen/simd/utils.h"
 
 using namespace AmpGen;
 // #ifdef AMPGEN_CXX
@@ -52,19 +54,20 @@ CompilerWrapper::CompilerWrapper( const bool& verbose ) :
 void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, const std::string& filename )
 {
   std::ofstream output( filename );
-  for ( auto& include : m_includes ) output << "#include <" << include << ">\n";
+  preamble(output);
   if( expression.fcnSignature().find("AVX2d")        != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
-  else if( expression.fcnSignature().find("AVX2f")    != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
+  else if( expression.fcnSignature().find("AVX2f")   != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
   else if( expression.fcnSignature().find("AVX512d") != std::string::npos )  output << "#include \"AmpGen/simd/avx512d_types.h\"\n; using namespace AmpGen::AVX512d;\n;" ;
   else if( expression.fcnSignature().find("AVX512")  != std::string::npos )  output << "#include \"AmpGen/simd/avx512_types.h\"\n; using namespace AmpGen::AVX512;\n;" ;
+  else if( expression.fcnSignature().find("ARM128d") != std::string::npos )  output << "#include \"AmpGen/simd/arm128d_types.h\"\n; using namespace AmpGen::ARM128d;\n;" ;
   output << expression << std::endl; 
   output.close();
 }
 
 std::string CompilerWrapper::generateFilename()
 {
-  char buffer[] = "/tmp/libAmpGen-XXXXXX";
-  int status    = mkstemp( buffer );
+  char buffer[] = "/tmp/libAmpGen-XXXXXX.cpp";
+  int status    = mkstemps( buffer, 4);
   if ( status == -1 ) {
     ERROR( "Failed to generate temporary filename " << status );
   }
@@ -83,13 +86,10 @@ int64_t fileSize(const std::string& filename)
 bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::string& fname )
 {
   bool print_all = m_verbose || NamedParameter<bool>("CompilerWrapper::Verbose",false);
-
   std::string name = fname; 
-  if ( name == "" ) 
-    name = name == "" ? generateFilename() : expandGlobals( name );
-  
+  if ( name == "" ) name = generateFilename();  
   std::string cname = name +"_"+std::to_string(expression.hash())+".cpp";
-  std::string oname = name +"_"+std::to_string(expression.hash())+".so";
+  std::string oname = std::filesystem::path(cname).replace_extension(m_extension);
   if( NamedParameter<bool>("CompilerWrapper::ForceRebuild", false )  == false 
       && fileSize(oname) != -1 && expression.link( oname )) return true;
   if( print_all ) INFO("Generating source: " << cname );
@@ -100,14 +100,6 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();
   if( print_all ) INFO( expression.name() << " " << cname << " Compile time = " << tWall / 1000. << " [size = " << fileSize(cname)/1024 << ", " << fileSize(oname)/1024 << "] kB" );
-/*
-  if( print_all && isClang() )
-  {
-    auto lines = vectorFromFile( cname );
-    for (const auto& line : lines ) 
-      std::cout << line << std::endl; 
-  }
-*/
   return true;
 }
 
@@ -115,11 +107,9 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
 bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions, const std::string& fname )
 {
   bool print_all = m_verbose || NamedParameter<bool>("CompilerWrapper::Verbose",false);
-
-  std::string name = fname;
-  if ( name == "" ) name = name == "" ? generateFilename() : expandGlobals( name );
-  std::string cname = name +".cpp";
-  std::string oname = name +".so";
+  std::string cname = expandGlobals(fname);
+  if ( cname == "" ) cname = generateFilename();
+  std::string oname = std::filesystem::path(cname).replace_extension(m_extension);
   if( print_all ) INFO("Generating source: " << cname );
   auto twall_begin  = std::chrono::high_resolution_clock::now();
   std::ofstream output( cname );
@@ -131,14 +121,6 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();
   if( print_all ) INFO( cname << " Compile time = " << tWall / 1000. << " [size = " << fileSize(cname)/1024 << ", " << fileSize(oname)/1024 << "] kB" );
-  /*
-  if( print_all && isClang() )
-  {
-    auto lines = vectorFromFile( cname );
-    for (const auto& line : lines ) 
-      std::cout << line << std::endl; 
-  }
-  */
   return true;
 }
 
@@ -158,17 +140,18 @@ std::string get_cpp_version()
 void CompilerWrapper::compileSource( const std::string& fname, const std::string& oname )
 {
   using namespace std::chrono_literals;
-  std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", {"-Ofast", "--std="+get_cpp_version(), "-frename-registers"}); 
+  std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", {"-Ofast", "--std="+get_cpp_version()}); 
  
-  #if ENABLE_AVX 
-    compile_flags.push_back("-march=native");
+  #if INSTRUCTION_SET != 0
     compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
+    #if INSTRUCTION_SET < 10
+        compile_flags.push_back("-march=native");
+      #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d 
+        compile_flags.push_back("-mavx2");
+        compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
+      #endif
+    #endif
   #endif
-  #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d 
-    compile_flags.push_back("-mavx2");
-    compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
-  #endif
-
   if(std::string(AMPGEN_OPENMP_FLAGS) != ""){
     auto flags = split(AMPGEN_OPENMP_FLAGS, ' ');
     for( const auto& flag : flags ) compile_flags.push_back(flag); 
@@ -182,9 +165,15 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     argp.push_back( "-Wno-return-type-c-linkage");
     #if __APPLE__
     argp.push_back("-lstdc++");
+    argp.push_back("-isystem"); 
     #endif
     argp.push_back( "-march=native");
   }
+  else {
+    argp.push_back("-frename-registers");
+  }
+  auto tokens = split( std::string( AMPGEN_CXX_FLAGS ), ' ' );
+  for( auto& token : tokens ) argp.push_back( token.c_str() );
 
   argp.push_back( fname.c_str() );
   argp.push_back( "-o");
@@ -197,7 +186,7 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
     INFO("Compiling: " << result);
   }
   argp.push_back( NULL );
-  pid_t childPID = vfork();
+  pid_t childPID = fork();
   if( childPID == 0 )
   {
     execv( argp[0], const_cast<char**>( &argp[0] ) );
@@ -223,5 +212,6 @@ void CompilerWrapper::preamble( std::ostream& os ) const
   #endif
   os << '\n';
   os << "*/\n";
+
   for ( auto& include : m_includes ) os << "#include <" << include << ">\n";
 }

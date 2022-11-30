@@ -1,9 +1,8 @@
 #include "AmpGen/DalitzIntegrator.h"
 
 #include <TLorentzVector.h>
-#include <Math/AdaptiveIntegratorMultiDim.h>
-#include <Math/WrappedMultiTF1.h>
 #include <iostream>
+#include <cmath>
 
 #include "AmpGen/Kinematics.h"
 #include "AmpGen/Units.h"
@@ -51,16 +50,16 @@ double DalitzIntegrator::sqDp2( const Event& evt ) const
   TLorentzVector p2( evt.address( 4 ) );
   TLorentzVector p3( evt.address( 8 ) );
   TLorentzVector pA = p1 + p2;
-  return acos( dotProduct( p1, p3, pA ) / sqrt( dotProduct( p1, p1, pA ) * dotProduct( p3, p3, pA ) ) ) / M_PI;
+  return std::acos( dotProduct( p1, p3, pA ) / std::sqrt( dotProduct( p1, p1, pA ) * dotProduct( p3, p3, pA ) ) ) / M_PI;
 }
 
 void DalitzIntegrator::setEvent( const sqCo& x, real_v* event ) const
 {
   auto mAB = getMAB( x );
-  auto pA  = safe_sqrt(0.25*mAB*mAB - 0.5*(m_s1 + m_s2) + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB));
+  auto pA  = safe_sqrt(0.25*mAB*mAB - 0.5*(m_s1 + m_s2) + (m_s1-m_s2)*(m_s1-m_s2)/(4.*mAB*mAB));
   auto eA  = sqrt(pA*pA + m_s1);
   auto eB  = sqrt(pA*pA + m_s2);
-  auto eC  = ( m_s0 - m_s3 - mAB * mAB ) / ( 2 * mAB );
+  auto eC  = ( m_s0 - m_s3 - mAB * mAB ) / ( 2. * mAB );
   auto pC  = safe_sqrt( eC * eC - m_s3 );
   event[2]  = pA;
   event[3]  = eA;
@@ -73,34 +72,36 @@ void DalitzIntegrator::setEvent( const sqCo& x, real_v* event ) const
 void DalitzIntegrator::setMother( const double& s )
 {
   m_s0 = s;
-  m_min = sqrt(m_s1) + sqrt(m_s2); 
-  m_max = sqrt(m_s0) - sqrt(m_s3);
+  using namespace std;
+  m_min = std::sqrt(m_s1) + std::sqrt(m_s2); 
+  m_max = std::sqrt(m_s0) - std::sqrt(m_s3);
 }
 
 real_v DalitzIntegrator::getMAB( const sqCo& coords ) const
 {
-  return m_min + ( m_max - m_min ) * ( cos( M_PI * coords.first ) + 1 ) / 2;
+  return m_min + ( m_max - m_min ) * ( cos( M_PI * coords.first ) + 1 ) / 2.;
 }
 
 real_v DalitzIntegrator::J( const sqCo& coords ) const
 {
   auto mAB         = getMAB( coords );
-  auto pA          = safe_sqrt( mAB * mAB / 4. - ( m_s1 + m_s2 ) / 2. + ( m_s1 - m_s2 ) * ( m_s1 - m_s2 ) / ( 4 * mAB * mAB ) );
-  auto eC          = ( m_s0 - m_s3 - mAB * mAB ) / ( 2 * mAB );
+  auto pA          = safe_sqrt( mAB * mAB / 4. - ( m_s1 + m_s2 ) / 2. + ( m_s1 - m_s2 ) * ( m_s1 - m_s2 ) / ( 4. * mAB * mAB ) );
+  auto eC          = ( m_s0 - m_s3 - mAB * mAB ) / ( 2. * mAB );
   auto pC          = safe_sqrt( eC * eC - m_s3 );
   auto mPrime_     = coords.first;
   auto thetaPrime_ = coords.second;
   auto deriv1      = ( M_PI / 2. ) * ( m_max - m_min ) * sin( M_PI * mPrime_ );
   auto deriv2      = M_PI * sin( M_PI * thetaPrime_ );
-  auto j           = 4 * deriv1 * deriv2 * pA * pC * mAB;
+  auto j           = 4. * deriv1 * deriv2 * pA * pC * mAB;
   return j;
 }
 
 real_v DalitzIntegrator::J( const sqCo& coords, const double& s ) const
 {
+  using namespace std; 
   auto mAB         = getMAB( coords, s);
-  auto max         = sqrt(s)    - sqrt(m_s3);
-  auto min         = sqrt(m_s1) + sqrt(m_s2);
+  auto max         = std::sqrt(s)    - std::sqrt(m_s3);
+  auto min         = std::sqrt(m_s1) + std::sqrt(m_s2);
   auto pA          = sqrt( mAB*mAB/4. - (m_s1+m_s2)/2. + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB) );
   auto eC          = ( m_s0 - m_s3 - mAB * mAB ) / (2*mAB);
   auto pC          = safe_sqrt( eC * eC - m_s3 );
@@ -108,15 +109,14 @@ real_v DalitzIntegrator::J( const sqCo& coords, const double& s ) const
   auto thetaPrime_ = coords.second;
   auto deriv1      = ( M_PI / 2. ) * ( max - min ) * sin( M_PI * mPrime_ );
   auto deriv2      = M_PI * sin( M_PI * thetaPrime_ );
-  auto j           = 4 * deriv1 * deriv2 * pA * pC * mAB;
-  return j;
+  return 4 * deriv1 * deriv2 * pA * pC * mAB;
 }
 
 real_v DalitzIntegrator::getMAB( const sqCo& coords, const double& s ) const
 {
-  auto m = coords.first;
-  auto max         = sqrt(s) - sqrt(m_s3);
-  auto min         = sqrt(m_s1) + sqrt(m_s2);
+  auto m           = coords.first;
+  auto max         = std::sqrt(s) - std::sqrt(m_s3);
+  auto min         = std::sqrt(m_s1) + std::sqrt(m_s2);
   return min + ( max - min ) * ( cos( M_PI * m ) + 1 ) / 2;
 }
 

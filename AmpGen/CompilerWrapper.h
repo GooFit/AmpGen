@@ -24,11 +24,12 @@ namespace AmpGen
     void addHeader(const std::string& include ) { m_includes.push_back(include); } 
   
   private:
-    std::vector<std::string> m_includes = {"array","complex","math.h","vector"}; 
+    std::vector<std::string> m_includes = {"complex","cmath","vector"}; 
     bool                     m_verbose;
     std::string              m_cxx;
     std::string generateFilename();
     bool isClang() const; 
+    std::string              m_extension{"so"}; 
   };
 } // namespace AmpGen
 #endif
