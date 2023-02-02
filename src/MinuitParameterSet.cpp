@@ -17,7 +17,7 @@
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Particle.h"
-
+#include "AmpGen/ParticlePropertiesList.h"
 using namespace AmpGen;
 
 MinuitParameterSet::MinuitParameterSet() = default;
@@ -174,6 +174,22 @@ void MinuitParameterSet::loadFromStream()
     }
   }
   for ( const auto& alias : protoAliases ) tryAlias( alias );
+
+  /// adds default CP conjugates for masses, widths and radii if they have not already been defined
+  std::vector<MinuitExpression*> tmp;
+  for( const auto& param : *this )
+  {
+    auto tokens = split(param->name(), '_');
+    if( tokens.size() == 2 and ( tokens[1] == "mass" or tokens[1] == "width" or tokens[1] == "radius") )
+    {
+      auto props = ParticlePropertiesList::get( tokens[0], true);
+      if( props == nullptr )  continue; 
+      auto conj_name = ParticlePropertiesList::get( -1 * props->pdgID(), true )->name() +  + "_" + tokens[1]; 
+      if( find( conj_name ) != nullptr ) continue; 
+      tmp.push_back( new MinuitExpression( conj_name, MinuitParameterLink(param) ) );
+    }
+  }
+  for( auto& p : tmp ) add( p ); 
 }
 
 void MinuitParameterSet::loadFromFile( const std::string& file )
