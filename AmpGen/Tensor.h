@@ -44,11 +44,19 @@ namespace AmpGen
         friend std::ostream& operator <<( std::ostream& out, const Index& index );  
         uint64_t ptr() const { return uint64_t(m_ptr.get()); }
     };
+    struct Dim : public std::vector<unsigned> {
+      Dim( unsigned a ) : std::vector<unsigned>({a}) {}
+      Dim( unsigned a , unsigned b) : std::vector<unsigned>({a,b}) {}
+      Dim( unsigned a , unsigned b, unsigned c) : std::vector<unsigned>({a,b,c}) {}
+      Dim( unsigned a , unsigned b, unsigned c, unsigned d ) : std::vector<unsigned>({a,b,c,d}) {}
+       
+    };
 
     Tensor();
     explicit Tensor(const std::vector<Expression>& elements);
     explicit Tensor(const std::vector<unsigned>& dim);
-
+    explicit Tensor(const Tensor::Dim& dim) : Tensor( std::vector<unsigned>(dim) ) {};
+  
     template <class TYPE> Tensor(const std::initializer_list<TYPE>& elements, 
                                  const std::vector<unsigned>& dim) : m_dim(dim)
     {
