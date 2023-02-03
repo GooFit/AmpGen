@@ -43,11 +43,13 @@ const std::vector<complex_v> MatrixElement::operator()(const Event& event) const
   std::vector<complex_v> rt(size); 
   std::vector<size_t> offsets(size);
   for( int i = 0 ; i != size; ++i ) offsets[i] = i;
-#if ENABLE_AVX 
-  amp_type::operator()(rt.data(), offsets.data(), externBuffer().data(), EventListSIMD::makeEvent(event).data());
-#else
-  amp_type::operator()(rt.data(), offsets.data(), externBuffer().data(), event.address()); 
-#endif
+  amp_type::operator()(rt.data(), offsets.data(), externBuffer().data(), 
+      #if ENABLE_AVX 
+      EventListSIMD::makeEvent(event).data()
+      #else
+      event.address() 
+      #endif 
+      ); 
   return rt;
 }
 
