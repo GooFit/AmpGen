@@ -9,7 +9,7 @@
 using namespace AmpGen; 
 
 Array::Array( const Expression& top, 
-    const size_t&     size,
+    const int&     size,
     const Expression& address)
   : m_top(top),
   m_address(address),
@@ -19,7 +19,11 @@ Array::Array( const Expression& top,
 
 std::string Array::to_string(const ASTResolver* resolver) const {
   auto head   = m_top.to_string(resolver);
-  auto offset = Ternary( m_address >= 0  && m_address < m_size, m_address, 0.).to_string(resolver);
+  std::string offset = "";
+  if( m_size != -1 ) offset = Ternary( m_address >= 0  && m_address < m_size, m_address, 0.).to_string(resolver);
+  else if ( is<Constant>(m_address) ) offset = std::to_string( int( m_address().real() ) );
+  else offset = m_address.to_string(resolver) ; 
+  
   if( resolver != nullptr && resolver->enableAVX() ) return " gather( &(" + head + "), " + offset + ")";  
   if( head.find("[") == std::string::npos ) return head + "[int("+offset+")]";
   else return " * ( & (" + head + ") + int("+offset+") )";
