@@ -22,17 +22,17 @@ CompiledExpressionBase::CompiledExpressionBase( const std::string& name ) :
   m_name( name ),
   m_progName( programatic_name(name) ) {}
 
-CompiledExpressionBase::CompiledExpressionBase( const Expression& expression, 
-    const std::string& name, 
-    const DebugSymbols& db,
-    const std::map<std::string, unsigned>& evtMapping ) : 
-  m_obj( expression ), 
-  m_name( name ),
-  m_progName( programatic_name(name) ),
-  m_db(db),
-  m_evtMap(evtMapping) {}
+  CompiledExpressionBase::CompiledExpressionBase( const Expression& expression, 
+      const std::string& name, 
+      const DebugSymbols& db,
+      const std::map<std::string, unsigned>& evtMapping ) : 
+    m_obj( expression ), 
+    m_name( name ),
+    m_progName( programatic_name(name) ),
+    m_db(db),
+    m_evtMap(evtMapping) {}
 
-CompiledExpressionBase::~CompiledExpressionBase() {}
+    CompiledExpressionBase::~CompiledExpressionBase() {}
 
 std::string AmpGen::programatic_name( std::string s )
 {
@@ -94,7 +94,7 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
   { 
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );\
-    std::string return_type = arg_type(0);
+      std::string return_type = arg_type(0);
     return_type = return_type.substr(0,return_type.size()-1);
     if( is<TensorExpression>(m_obj) == false )
     {
@@ -121,7 +121,13 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
 
   if( NamedParameter<bool>("IncludePythonBindings", false) == true && returnTypename().find("complex") != std::string::npos ){
     stream << "extern \"C\" void " <<  progName() << "_c" << "(double *real, double *imag, " << fcnSignature() << "){\n";
-    stream << "  auto val = " << progName() << "(" << args() << ") ;\n"; 
+    unsigned counter = 0; 
+    stream << "  auto val = " << progName() << "("; 
+    for( unsigned int i = 0 ; i != types().size(); ++i ){   
+      stream <<  " x"+std::to_string(i) ;
+      if( i != types().size() - 1 ) stream << ", ";
+    }
+    stream << ") ;\n"; 
     stream << "  *real = val.real();\n";
     stream << "  *imag = val.imag();\n";
     stream << "}\n";
@@ -146,7 +152,7 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
 {
   stream << "#include<string>\n";
   stream << "extern \"C\" std::vector<std::pair< std::string, " << type_string<complex_v>() << " >> " 
-         << m_progName << "_DB(" << fcnSignature() << "){\n";
+    << m_progName << "_DB(" << fcnSignature() << "){\n";
   for ( auto& dep : m_debugSubexpressions ) {
     std::string rt = "auto v" + std::to_string(dep.first) + " = " + dep.second.to_string(m_resolver.get()) +";"; 
     stream << rt << "\n";
@@ -162,8 +168,9 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
   }
 }
 
-std::string CompiledExpressionBase::fcnSignature(const std::vector<std::string>& argList, bool rto, bool includeStagger)
+std::string CompiledExpressionBase::fcnSignature(const std::vector<std::string>& argList) const 
 {
+  auto rto = use_rto();
   unsigned counter=0;
   auto fcn = [counter](const auto& str) mutable {return str + " x"+std::to_string(counter++); }; 
   if( rto ) return argList[0] + " r, " + argList[1] + " s, " + vectorToString( argList.begin()+2, argList.end(), ", ", fcn );
@@ -175,7 +182,54 @@ std::vector<const CacheTransfer*> CompiledExpressionBase::orderedCacheFunctors()
   std::vector<const CacheTransfer*> ordered_cache_functors; 
   for( const auto& c : m_cacheTransfers ) ordered_cache_functors.push_back( c.get() );
   std::sort( ordered_cache_functors.begin(),
-                     ordered_cache_functors.end(),
-                     [](auto& c1, auto& c2 ) { return c1->address() < c2->address() ; } );
+      ordered_cache_functors.end(),
+      [](auto& c1, auto& c2 ) { return c1->address() < c2->address() ; } );
   return ordered_cache_functors; 
+}
+
+
+void CompiledExpressionBase::compileBatch( std::ostream& stream ) const 
+{
+#if USE_OPENMP
+  stream << "#include <omp.h>\n";
+#endif
+  stream << "extern \"C\" void " << progName() 
+    << "_batch(";
+  stream << " const size_t& N, " 
+    << " const size_t& eventSize, " 
+    << " const size_t& cacheSize, ";
+  stream << returnTypename() << " * rt, ";
+  stream << fcnSignature() << ") {\n";
+#if USE_OPENMP
+  stream << "#pragma omp parallel for\n";
+#endif
+  stream << "for( size_t i = 0; i < N/" << utils::size<real_v>::value << "; ++i ){\n";
+  if( use_rto() ) stream << progName() + "( r + cacheSize * i, s, x0, x1 +  i * eventSize);";
+  else            stream << " rt[cacheSize*i] = " << progName() + "( x0, x1 +  i * eventSize);";
+  stream << "}\n}";
+}
+
+void CompiledExpressionBase::compileDetails( std::ostream& stream ) const
+{
+/*
+  stream << "extern \"C\" int " << progName() << "_pSize () {\n"
+    << "  return " << m_externals.size() << ";\n";
+  stream << "}\n";
+
+  stream << "extern \"C\" double " << progName() << "_pVal (int n) {\n";
+  for ( size_t i = 0; i < m_externals.size(); i++ )
+    stream << "  if(n == " << i << ") return  " << m_externals.at( i ) << ";\n";
+  stream << "  return 0;\n}\n";
+*/
+}
+
+void CompiledExpressionBase::compileWithParameters( std::ostream& stream ) const 
+{
+  DEBUG( "Compiling " << name() << " = " << hash() );
+  auto tl = types(); 
+  tl.erase(tl.begin() + ( use_rto() ? 2 : 0 ) ); 
+  stream << "extern \"C\" " << returnTypename() << " " << progName() << "_wParams" << "(" << fcnSignature(tl) << " ){" << std::endl;
+  auto buf = externBuffer(); 
+  stream << "  double externalParameters [] = {" << (buf.size() == 0 ? "0" : vectorToString(buf,", ", [](auto& line){ return std::to_string(line); }) ) <<"};\n" ;
+  stream << "  return " << progName() << "( externalParameters, x0 ); \n}\n";
 }

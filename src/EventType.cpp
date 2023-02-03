@@ -21,7 +21,7 @@
 #include "AmpGen/Units.h"
 #include "AmpGen/Event.h"
 #include "AmpGen/OptionsParser.h"
-
+#include "AmpGen/PhaseSpace.h"
 using namespace AmpGen;
 
 EventType::EventType( const std::vector<std::string>& particleNames, const bool& isTD ) : m_timeDependent( isTD )
@@ -294,4 +294,9 @@ std::pair<unsigned, unsigned> EventType::dim() const { return m_dim; }
 std::string EventType::decayDescriptor() const
 {
   return mother()+"{" + vectorToString(m_particleNames,",") +"}" ;
+}
+
+Event EventType::makeEvent() const 
+{
+  return PhaseSpace( *this ).makeEvent(); 
 }
