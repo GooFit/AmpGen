@@ -26,6 +26,7 @@
 #include "AmpGen/ThreadPool.h"
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/simd/utils.h"
+#include "AmpGen/Array.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -53,6 +54,14 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() ); 
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , std::thread::hardware_concurrency(), "Number of threads to use" );
   ThreadPool tp(nThreads);
+  
+  auto head_rules = rules->rulesForDecay(m_evtType.mother(), m_prefix);
+  for( const auto& rule : head_rules )
+  {
+    auto indices = findIndices(m_matrixElements, rule.particle().decayDescriptor() );
+    INFO( rule.particle() << " " << vectorToString(indices, " ") ); 
+  }
+
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
     tp.enqueue( [i, this, &mps, &amplitudes]() mutable {
       m_matrixElements[i] = MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), m_dbThis); 
@@ -160,56 +169,29 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
 
 void CoherentSum::generateSourceCode(const std::string& fname, const double& normalisation, bool add_mt)
 {
-  transferParameters();
-  bool includePythonBindings = NamedParameter<bool>("IncludePythonBindings",false);
-
   std::vector<CompiledExpressionBase*> functions; 
-  
-  for ( const auto& p : m_matrixElements ){
-    functions.push_back( new CompiledExpression<complex_t(const real_t*, const real_t*)>(
-          p.expression(), 
-          p.decayDescriptor(),
-          m_evtType.getEventFormat(), DebugSymbols(), disableBatch(), includeParameters(), m_mps ) );
-  }
+  transferParameters();
+  Tensor rt( std::vector<unsigned>{unsigned(m_matrixElements.size())} ); 
   Expression event = Parameter("x0",0,true);
   Expression pa    = Parameter("double(x1)",0,true);
   Expression amplitude;
+  for( unsigned i = 0 ; i != size(); ++i ) rt[i] = m_matrixElements[i].expression(); 
+  functions.push_back( new CompiledExpression<std::vector<complex_t>( const real_t*, const real_t* )>(TensorExpression(rt), "all_amplitudes", m_evtType.getEventFormat(), includeParameters(), m_mps, disableBatch() ) );  
+  auto ampTensor = Array( make_cse(Function("all_amplitudes_wParams", {event} )), -1 ); 
   for( unsigned int i = 0 ; i < size(); ++i ){
     auto& p = m_matrixElements[i];
-    Expression this_amplitude = p.coupling() * Function( programatic_name( p.name() ) + "_wParams", {event} ); 
-    amplitude = amplitude + ( p.decayTree.finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
+    Expression this_amplitude = p.coupling() * ampTensor[i];
+    amplitude += ( p.decayTree.finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
+    functions.push_back( new CompiledExpression<complex_t( const real_t*)>( ampTensor[i], p.decayDescriptor() + "_wParams", m_evtType.getEventFormat(), disableBatch() ) );  
   }
   functions.push_back( new CompiledExpression<complex_t(const real_t*, const int&)>( amplitude  , "AMP", disableBatch() ) );
   functions.push_back( new CompiledExpression<real_t(const real_t*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN", disableBatch() ) ); 
+  
   CompilerWrapper().compile( functions, fname );
 
   for( auto& function : functions ) delete function;  
 
-
-  //stream << CompiledExpression<std::complex<double>(const double*, const int&)>( amplitude  , "AMP", disableBatch() ) << std::endl; 
-  // stream << CompiledExpression<double(const double*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN", disableBatch() ) << std::endl; 
-  /*
-  if( includePythonBindings ){
-    stream << CompiledExpression<int   (void)>( m_matrixElements.size(), "matrix_elements_n", disableBatch() ) << std::endl;
-    stream << CompiledExpression<double(void)>( normalisation, "normalization", disableBatch() ) << std::endl;
-    stream << "extern \"C\" const char* matrix_elements(int n) {\n";
-    for ( size_t i = 0; i < m_matrixElements.size(); i++ ) {
-      stream << "  if(n ==" << i << ") return \"" << m_matrixElements.at(i).progName() << "\" ;\n";
-    }
-    stream << "  return 0;\n}\n";
-    stream << "extern \"C\" std::complex<double> coefficients(int n, int parity){\n";
-    for ( size_t i = 0; i < size(); i++ ) {
-      auto& p    = m_matrixElements[i];
-      int parity = p.decayTree.finalStateParity();
-      stream << "  if(n == " << i << ") return ";
-      if ( parity == -1 ) stream << "double(parity) * "; 
-      stream << p.coupling() << ";\n";
-    }
-    stream << "  return 0;\n}\n";
-  }
-  */
   INFO("Generating source-code for PDF: " << fname << " include MT symbols? " << add_mt << " normalisation = " << normalisation );
-  //stream.close();
 }
 
 complex_t CoherentSum::getValNoCache( const Event& evt ) const

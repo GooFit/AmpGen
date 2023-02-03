@@ -343,42 +343,43 @@ void PolarisedSum::debug(const Event& evt)
 
 void PolarisedSum::generateSourceCode(const std::string& fname, const double& normalisation, bool add_mt)
 {
-  INFO("Generating sourceCode -> " << fname );
-  std::ofstream stream( fname );
-  size_t size = m_dim.first * m_dim.second; 
-  CompilerWrapper().preamble( stream );
-  Expression event = Parameter("x0",0,true); 
-  std::vector<Expression> expressions(size);
-  for( auto& p : m_matrixElements ){
-    auto expr = CompiledExpression<std::vector<complex_t>(const real_t*, const real_t*)>(
-          p.expression(), 
-          p.decayDescriptor(),
-          m_eventType.getEventFormat(), DebugSymbols(), m_mps, disableBatch() ) ;
-    expr.prepare();
-    expr.to_stream( stream );
-    expr.compileWithParameters( stream );
-    Array z( make_cse( Function( programatic_name( p.name()) + "_wParams", {event} ) ), size );
-    INFO( p.decayDescriptor() << " coupling = " << p.coupling() );
-    for( unsigned int j = 0 ; j < size; ++j ) expressions[j] = expressions[j] + p.coupling() * z[j];
+  std::vector<CompiledExpressionBase*> functions; 
+  unsigned size = m_dim.first * m_dim.second; 
+  Tensor rt( Tensor::Dim(size * m_matrixElements.size()) ); 
+  for( int i = 0 ; i != m_matrixElements.size(); ++i)
+  {
+    auto z = m_matrixElements[i].expression();
+    for( int j = 0 ; j != size; ++j ) rt[i*size +j] = cast<TensorExpression>(z).tensor()[j]; 
   }
-  Tensor T_matrix( expressions, {m_dim.first, m_dim.second} );
+  functions.push_back( new CompiledExpression<std::vector<complex_t>( const real_t*, const real_t* )>(TensorExpression(rt), "all_amplitudes", m_eventType.getEventFormat(), includeParameters(), m_mps, disableBatch() ) );  
+
+  Expression event = Parameter("x0",0,true); 
+  Tensor T_matrix( Tensor::Dim(m_dim.first, m_dim.second) ); 
+  auto ampTensor = Array( make_cse( Function("all_amplitudes_wParams", {event}) ), -1); 
+  std::cout << "Calculating matrix element ... " << std::endl; 
+  for( unsigned int i = 0 ; i != m_matrixElements.size() ; ++i )
+  {
+    auto& p = m_matrixElements[i];
+    Tensor this_amp = Tensor(Tensor::Dim(unsigned(size))); 
+    for( unsigned j = 0 ; j != size; ++j ){ 
+      T_matrix[j] += p.coupling() * ampTensor[i*size + j];
+      this_amp[j] = ampTensor[i*size + j];
+    }
+    functions.push_back( new CompiledExpression<std::vector<complex_t>( const real_t*)>( TensorExpression(this_amp), p.decayDescriptor() + "_wParams", m_eventType.getEventFormat(), disableBatch() ) );  
+  }
+  
   T_matrix.st();
   auto amp        = probExpression(T_matrix, convertProxies(m_pVector, [](auto& proxy) -> Expression{ return double(proxy);} ), 
                                              convertProxies(m_pfVector, [](auto& proxy) -> Expression{ return double(proxy);} )); 
-  stream << CompiledExpression<double(
-                               const double*, 
-                               const int&)>( amp / normalisation, "FCN", m_mps, disableBatch() ) << std::endl ;
+  functions.push_back( new CompiledExpression<double(const double*,  const int&)>( amp / normalisation, "FCN", m_mps, disableBatch() ) ); 
 
   if( m_dim.first > 1 ) {
     auto amp_extPol = probExpression(T_matrix, {Parameter("x2",0,true), Parameter("x3",0,true), Parameter("x4",0,true)}, {} );  
-    stream << CompiledExpression<double(
-					const double*, 
-					const int&, 
-					const double&, 
-					const double&, 
-					const double&)>(amp_extPol / normalisation, "FCN_extPol", m_mps, disableBatch() ) << std::endl;
+    functions.push_back( new CompiledExpression<double(const double*, const int&, const double&, const double&, const double&)>(amp_extPol / normalisation, "FCN_extPol", m_mps, disableBatch() ) );
   }
-  stream.close();
+  CompilerWrapper().compile( functions, fname );
+
+  for( auto& function : functions ) delete function ; 
 }
 
 Expression PolarisedSum::probExpression(const Tensor& T_matrix, const std::vector<Expression>& p, const std::vector<Expression>& pf, DebugSymbols* db) const 
