@@ -23,18 +23,6 @@ namespace AmpGen
   declare_enum(coordinateType, cartesian, polar)
   declare_enum(angType, deg, rad)
   
-  class MinuitParameterLink : public IExpression {
-    public:
-      explicit MinuitParameterLink( MinuitParameter* param ) ;
-      std::string to_string(const ASTResolver* resolver=nullptr) const override ;
-      void resolve( ASTResolver& resolver ) const override ;
-      complex_t operator()() const override ;
-      operator Expression() const ;
-      std::string name() const;
-      const MinuitParameter& param() const;
-    private: 
-      MinuitParameter* m_parameter;
-  };
   template <typename arg_type> void set_tuple_from_expression( arg_type& arg, const Expression& expr )
   {
     if constexpr( std::is_same<arg_type, Expression>::value ){ arg = expr ; } 

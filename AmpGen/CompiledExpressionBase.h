@@ -41,24 +41,27 @@ namespace AmpGen
     void resolve(const MinuitParameterSet* mps = nullptr);
     void prepare();
     void compile(const std::string& fname=""); 
-    virtual void compileBatch( std::ostream& stream ) const = 0; 
-    virtual void compileWithParameters( std::ostream& stream) const = 0; 
+    void compileBatch( std::ostream& stream) const; 
+    void compileDetails( std::ostream& stream) const; 
+    void compileWithParameters( std::ostream& stream) const; 
     void to_stream( std::ostream& stream ) const;
     unsigned int hash() const;
     std::string name() const;
     std::string progName() const;
+    std::string fcnSignature() const { return fcnSignature(types()); } 
+    std::string fcnSignature(const std::vector<std::string>& argList ) const;
     virtual bool link( void*)              = 0;
     virtual bool link( const std::string&) = 0;
     virtual void setExternal(const double&, const unsigned&) = 0;
     virtual void resizeExternalCache(const size_t&) = 0;
     virtual bool isReady() const               = 0;
     virtual std::string returnTypename() const = 0;
-    virtual std::string fcnSignature()   const = 0;
-    virtual std::string args()           const = 0;
+ //   virtual std::string args()           const = 0;
     virtual void print() const                 = 0;
     virtual ~CompiledExpressionBase();
     virtual unsigned returnTypeSize() const    = 0;    
-    static std::string fcnSignature(const std::vector<std::string>&, bool=false, bool=true); 
+    virtual std::vector<std::string> types() const = 0; 
+    virtual std::vector<real_t> externBuffer() const = 0; 
     virtual bool use_rto() const     = 0;
     Expression expression() const { return m_obj; }
     virtual std::string arg_type( const unsigned& counter) const =0; 

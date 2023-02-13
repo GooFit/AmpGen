@@ -8,7 +8,7 @@
 #include "AmpGen/Array.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/ExpressionParser.h"
+#include "AmpGen/MinuitExpression.h"
 
 using namespace AmpGen;
 

@@ -6,11 +6,11 @@
 #include <map>
 #include <vector>
 #include <initializer_list>
+#include "AmpGen/Event.h"
 
 namespace AmpGen
 {
   class Projection;
-  class Event;
   /**@class EventType
      Deals with final state configuration of events,
      specifically dealing with the ordering of particles in trees.
@@ -68,7 +68,8 @@ namespace AmpGen
       std::pair<unsigned, unsigned> dim() const;
   
       friend std::ostream& AmpGen::operator<<( std::ostream& os, const EventType& type );
-
+      
+      Event makeEvent() const; 
     private:
       std::string               m_mother;               ///< name of decaying particle
       double                    m_motherMass;           ///< mass of decaying particle

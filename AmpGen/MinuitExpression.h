@@ -25,6 +25,19 @@ namespace AmpGen
   private:
     Expression m_expression;
   };
+  
+  class MinuitParameterLink : public IExpression {
+    public:
+      explicit MinuitParameterLink( MinuitParameter* param ) ;
+      std::string to_string(const ASTResolver* resolver=nullptr) const override ;
+      void resolve( ASTResolver& resolver ) const override ;
+      complex_t operator()() const override ;
+      operator Expression() const ;
+      std::string name() const;
+      const MinuitParameter& param() const;
+    private: 
+      MinuitParameter* m_parameter;
+  };
 } // namespace AmpGen
 
 #endif

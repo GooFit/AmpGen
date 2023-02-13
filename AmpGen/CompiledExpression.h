@@ -32,8 +32,6 @@ namespace AmpGen
   DECLARE_ARGUMENT(includeParameters, bool); 
 
   template <typename ret_type, typename... arg_types> class CompiledExpression; 
-  
-
   template <typename ret_type, typename... arg_types>
     class CompiledExpression<ret_type(arg_types...)> : public CompiledExpressionBase
     {
@@ -86,31 +84,11 @@ namespace AmpGen
         }
 
         CompiledExpression( const std::string& name = "" ) : CompiledExpressionBase( name ) { m_outputSize = detail::size_of<ret_type>::value; };
-        std::vector<real_t> externBuffer() const { return m_externals ; } 
+        std::vector<real_t> externBuffer() const override { return m_externals ; } 
         std::string returnTypename() const override { return type_string<ret_type>(); }
-        std::string fcnSignature() const override
-        {
-          return CompiledExpressionBase::fcnSignature(typelist<arg_types...>(), use_rto());
-        }
-        bool use_rto() const override {
-          return std::is_same<ret_type, void>::value;   
-        }
-        std::string args() const override 
-        {
-          std::string signature; 
-          auto argTypes = typelist<arg_types...>();
-          for( unsigned int i = 0 ; i < argTypes.size(); ++i )
-          {
-            signature += " x"+std::to_string(i) ;
-            if( i != argTypes.size() - 1 ) signature += ", ";
-          }
-          return signature;
-        }
-
-        void resolve( const MinuitParameterSet* mps=nullptr )
-        {
-          CompiledExpressionBase::resolve(mps);
-        }
+        bool use_rto() const override { return std::is_same<ret_type, void>::value; }
+        std::vector<std::string> types() const override { return typelist<arg_types...>();}
+        void resolve( const MinuitParameterSet* mps=nullptr ){ CompiledExpressionBase::resolve(mps); }
         void setExternals( const std::vector<double>& external ) { m_externals = external; }
 
         unsigned int getNParams() const { return m_externals.size(); }
@@ -140,59 +118,15 @@ namespace AmpGen
         void resetExternals() { m_hasExternalsChanged = false; }
 
         const Expression& expression() const { return m_obj; }
-
-        void compileDetails( std::ostream& stream ) const
-        {
-          stream << "extern \"C\" int " << progName() << "_pSize () {\n"
-            << "  return " << m_externals.size() << ";\n";
-          stream << "}\n";
-
-          stream << "extern \"C\" double " << progName() << "_pVal (int n) {\n";
-          for ( size_t i = 0; i < m_externals.size(); i++ )
-            stream << "  if(n == " << i << ") return  " << m_externals.at( i ) << ";\n";
-          stream << "  return 0;\n}\n";
-        }
-        void compileBatch( std::ostream& stream ) const override  
-        {
-          #if USE_OPENMP
-          stream << "#include <omp.h>\n";
-          #endif
-          stream << "extern \"C\" void " << progName() 
-                 << "_batch(";
-          stream << " const size_t& N, " 
-                 << " const size_t& eventSize, " 
-                 << " const size_t& cacheSize, ";
-          stream <<  type_string<ret_type>() << " * rt, ";
-          stream << CompiledExpressionBase::fcnSignature(typelist<arg_types...>(), use_rto(), false) << ") {\n";
-          #if USE_OPENMP
-          stream << "#pragma omp parallel for\n";
-          #endif
-          stream << "for( size_t i = 0; i < N/" << utils::size<real_v>::value << "; ++i ){\n";
-          if( use_rto() ) stream << progName() + "( r + cacheSize * i, s, x0, x1 +  i * eventSize);";
-          else            stream << " rt[cacheSize*i] = " << progName() + "( x0, x1 +  i * eventSize);";
-          stream << "}\n}";
-        }
-
-        void compileWithParameters( std::ostream& stream ) const override
-        {
-          DEBUG( "Compiling " << name() << " = " << hash() );
-          stream << "extern \"C\" " << returnTypename() << " " << progName() << "_wParams"
-            << "( const double*__restrict__ E ){" << std::endl;
-          stream << "  double externalParameters [] = {" << 
-            (m_externals.size() == 0 ? "0" : vectorToString(m_externals,", ", [](auto& line){ return std::to_string(line); }) ) <<"};\n" ;
-          stream << "  return " << progName() << "( externalParameters, E ); // E is P \n}\n";
-        }
-
         bool isReady()          const override { return m_fcn.isLinked(); }
         bool isLinked()         const { return m_fcn.isLinked() ; } 
 
         unsigned returnTypeSize() const override { return m_outputSize; }
 
-        template < typename T > 
-          ret_type operator()( const T* event ) const
-          {
-            return m_fcn( m_externals.data(), event );
-          }
+        template < typename T > ret_type operator()( const T* event ) const
+        {
+          return m_fcn( m_externals.data(), event );
+        }
         ret_type operator()( const arg_types&... args ) const 
         {
           return m_fcn( args... );
