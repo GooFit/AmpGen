@@ -99,6 +99,7 @@ namespace AmpGen
     Bilinears norms() const { return m_normalisations ; }
       
     std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
+    std::function<complex_t(const Event&)> amplitudeEvaluator(const EventList_type* = nullptr) const; 
     KeyedFunctors<double(Event)> componentEvaluator(const EventList_type* = nullptr) const; 
     EventType eventType() const { return m_evtType; } 
   protected:

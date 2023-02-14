@@ -324,8 +324,32 @@ std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type*
       amp = amp + complex_v(m_matrixElements[j].coefficient) * store(block, j);
     utils::store( values.data() + block * utils::size<real_v>::value,  (m_weight/m_norm) * utils::norm(amp)  );
   }
-  return arrayToFunctor<double, typename EventList_type::value_type>(values);
+  return arrayToFunctor<real_t, typename EventList_type::value_type>(values);
 }
+
+std::function<complex_t(const Event&)> CoherentSum::amplitudeEvaluator(const EventList_type* ievents) const 
+{
+  auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
+  Store<complex_v, Alignment::AoS> store( events->size(), m_matrixElements);
+  for( auto& me : m_matrixElements ) store.update(events->store(), me );
+  std::vector<complex_t> values( events->aligned_size() );
+  #ifdef _OPENMP
+  #pragma omp parallel for
+  #endif
+  for( unsigned int block = 0 ; block < events->nBlocks(); ++block )
+  {
+    complex_v amp(0.,0.);
+    for( unsigned j = 0 ; j != m_matrixElements.size(); ++j ) 
+      amp = amp + complex_v(m_matrixElements[j].coefficient) * store(block, j);
+    for( unsigned k = 0; k != utils::size<complex_v>::value; ++k )
+    {
+      values[ block * utils::size<complex_v>::value + k] = utils::at( amp, k ); 
+    }
+  }
+  return arrayToFunctor<complex_t, typename EventList_type::value_type>(values);
+}
+
+
 
 KeyedFunctors<double(Event)> CoherentSum::componentEvaluator(const EventList_type* ievents) const 
 {
