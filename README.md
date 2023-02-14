@@ -46,9 +46,10 @@ It is recommended to use a build directory to keep the source tree clean.
 
 ```shell
 mkdir build
-cmake -B build 
-cmake --build build -j <n-cores>
-cmake --build build --target install ## optional 
+cd build
+cmake ..
+make 
+make install #optional# 
 ```
 This will build the shared library, several standalone test applications, and a set of unit tests. 
 
@@ -61,8 +62,15 @@ to the users root login script
   gSystem->Load("path_to_ampgen/build/lib/libAmpGen.so");
   gROOT->ProcessLine(".include path_to_ampgen");
 ```
+##### LLVM
+You can also build AmpGen with LLVM. The only change you might want when using Apple LLVM
+is to specifically specify the location of the build tool for AmpGen's JIT:
 
-#### Usage with CVMFS
+```shell
+-DAMPGEN_CXX=$(which c++)
+```
+
+##### LXPLUS
 
 A valid development environment is required to build the library on LXPLUS and similar. The easiest way to provide this is via cvmfs views where available, as this provides the necessary versions of gcc in addition to the ROOT libraries in a coherent manner, which can be used as
 
@@ -84,21 +92,6 @@ to cmake. This tells AmpGen that code should be generated using the AVX2 instruc
 
 ```
 -DUSE_SIMD=0
-```
-
-#### Installation on OSX
-
-AmpGen can be installed on OSX, including support for OpenMP and the NEON instruction set(s). 
-Compilation requires the clang compiler. 
-It is recommended to use the version distributed by brew, as the support for OpenMP using other versions is limited. 
-which requires the following steps
-``` 
-cmake -B build -DCMAKE_CXX_COMPILER=`which clang++`
-cmake --build build
-```
-The Neon (SIMD) instruction set used by the ARM architecture (M1/M2) can be enabled using the USE_SIMD flag ARM128d at the cmake step: 
-``` 
-cmake -B build -DCMAKE_CXX_COMPILER=`which clang++` -DUSE_SIMD=ARM128d
 ```
 
 ### Options files and decay descriptors
