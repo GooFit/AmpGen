@@ -10,11 +10,11 @@ namespace AmpGen {
     real_t im;
     Complex() = default;
     Complex( const real_t& re, const real_t& im) : re(re), im(im) {}
-    Complex( const float&   re, const float& im) : re(re), im(im) {}
+    // Complex( const float&   re, const float& im) : re(re), im(im) {}
     Complex( const std::complex<double>& f ) : re( f.real() ), im( f.imag() ) {}
     Complex( const std::complex<float>& f  ) : re( f.real() ), im( f.imag() ) {}
     explicit Complex( const real_t& arg ) : re(arg) {};
-    explicit Complex( const double& arg ) : re(arg) {};
+    // explicit Complex( const double& arg ) : re(arg) {};
     inline Complex operator+=(const Complex& rhs ); 
     inline Complex operator-=(const Complex& rhs ); 
     inline Complex operator*=(const Complex& rhs ); 

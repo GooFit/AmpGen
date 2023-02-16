@@ -62,7 +62,7 @@ std::string Constant::to_string(const ASTResolver* resolver) const {
   std::string literalSuffix = "";
   if( resolver != nullptr && (resolver->enableCuda() || resolver->enableAVX()) )
   { 
-    literalSuffix = "f";
+  //  literalSuffix = "f";
     complex_type = type_string<complex_v>();
   }
   return std::imag(m_value) == 0 ? "(" + rounded_string(std::real(m_value)) +literalSuffix + ")" : 

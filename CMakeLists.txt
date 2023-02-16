@@ -42,6 +42,7 @@ set(USE_TBB           FALSE    CACHE BOOL   "USE_TBB")     # flag to use TBB (on
 set(EXEC_EXTENSION     "" CACHE STRING "EXEC_EXTENSION")
 set(PACKED_CMAKE_PREFIX_PATH "" CACHE STRING "PACKED_CMAKE_PREFIX_PATH")
 set(AMPGEN_CXX_FLAGS   "" CACHE STRING "") 
+set(EXTERNAL_MINUIT2   FALSE CACHE BOOL "EXTERNAL_MINUIT2")
 set(CMAKE_SHARED_LIBRARY_PREFIX "") # such that we can have libAmpGen as a target AND AmpGen i.e. the application
 
 if( NOT PACKED_CMAKE_PREFIX_PATH STREQUAL "" )
@@ -86,7 +87,7 @@ if( USE_ROOT AND NOT DEFINED ROOT_LIBRARIES )
   if(DEFINED ENV{ROOTSYS})
     list(APPEND CMAKE_MODULE_PATH "$ENV{ROOTSYS}/etc/cmake/")
   endif()
-  find_package(ROOT COMPONENTS Matrix MathCore Gpad Tree Graf)
+  find_package(ROOT COMPONENTS Matrix MathCore Gpad Tree Graf Minuit)
 endif() 
 
 if ( NOT DEFINED GSL_LIBRARIES )
@@ -122,7 +123,7 @@ else()
 endif()
 
 if( ENABLE_FITTING AND USE_ROOT )
-  if( ( NOT TARGET ROOT::Minuit2 AND NOT TARGET Minuit2 ) OR "${extern_minuit2}" )
+  if( ( NOT TARGET ROOT::Minuit2 AND NOT TARGET Minuit2 ) OR "${EXTERNAL_MINUIT2}" )
     message( STATUS "Use external Minuit2")
     add_subdirectory("extern/Minuit2")
     set_target_properties(Minuit2     PROPERTIES FOLDER extern)

@@ -84,8 +84,8 @@ namespace AmpGen {
     libmvec_alias( sin )
     libmvec_alias( cos )
     libmvec_alias( exp )
-    libmvec_alias( log )
-    //inline real_v log( const real_v& v ){ auto arr = v.to_array(); return real_v( std::log(arr[0]), std::log(arr[1]), std::log(arr[2]), std::log(arr[3])) ; }
+    // libmvec_alias( log )
+    inline real_v log( const real_v& v ){ return real_v( std::log(v.at(0)), std::log(v.at(1)), std::log(v.at(2)), std::log(v.at(3))) ; }
     inline void sincos( const real_v& v, real_v& s, real_v& c )
     {
 #if USE_MVEC

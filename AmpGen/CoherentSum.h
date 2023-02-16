@@ -83,11 +83,11 @@ namespace AmpGen
       void setMC    ( const EventList& list) { 
         WARNING("Setting integration events from a AoS container, will need to make a copy");
         setMC( *(new EventListSIMD(list)) ) ; } 
-      double operator()(const double*, const unsigned) const; 
+      //double operator()(const double*, const unsigned) const; 
     #endif
 
     real_v operator()(const real_v*, const unsigned) const; 
-    real_t  operator()(const Event& evt )              const { return m_weight*std::norm(getVal(evt))/m_norm; }
+    real_t operator()(const Event& evt )             const { return m_weight*std::norm(getVal(evt))/m_norm; }
 
     void debug( const Event& evt, const std::string& nameMustContain="");
     void generateSourceCode( const std::string& fname, const double& normalisation = 1, bool add_mt = false );
@@ -107,7 +107,7 @@ namespace AmpGen
      
     Integrator       m_integrator;                            ///< Tool to calculate integrals 
     const EventList_type*  m_events       = {nullptr};        ///< Data events to evaluate PDF on
-    Store<complex_v, Alignment::AoS> m_cache;                 ///< Store of intermediate values for the PDF calculation 
+    FunctionCache<EventList_type, complex_v, Alignment::AoS> m_cache; ///< Store of intermediate values for the PDF calculation 
 
     bool             m_ownEvents    = {false};                ///< Flag as to whether events are owned by this PDF or not  
     EventType        m_evtType;                               ///< Final state for this amplitude

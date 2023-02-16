@@ -66,7 +66,7 @@ namespace AmpGen
           real_v* block(const unsigned& p)       { return m_data.data() + p * m_data.nFields(); }
     real_v weight(const unsigned& p) const { return m_weights[p]; }
     real_v genPDF(const unsigned& p) const { return m_genPDF [p]; }
-    
+    const auto nFields() const { return m_data.nFields(); }    
     void setWeight( const unsigned& block, const real_v& w, const real_v& g=1.f)
     {
       m_weights[block] = w;

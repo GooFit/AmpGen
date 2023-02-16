@@ -37,12 +37,12 @@ CoherentSum::CoherentSum() = default;
 
 CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
   :   m_evtType  (type)
-    , m_printFreq(NamedParameter<size_t>(     "CoherentSum::PrintFrequency", 100)  )
-    , m_dbThis   (NamedParameter<bool>(       "CoherentSum::Debug"         , false))
-    , m_verbosity(NamedParameter<bool>(       "CoherentSum::Verbosity"     , 0)    )
-    , m_objCache (NamedParameter<std::string>("CoherentSum::ObjectCache"   ,"")    )
-    , m_prefix   (prefix)
-    , m_mps(&mps) 
+      , m_printFreq(NamedParameter<size_t>(     "CoherentSum::PrintFrequency", 100)  )
+      , m_dbThis   (NamedParameter<bool>(       "CoherentSum::Debug"         , false))
+      , m_verbosity(NamedParameter<bool>(       "CoherentSum::Verbosity"     , 0)    )
+  , m_objCache (NamedParameter<std::string>("CoherentSum::ObjectCache"   ,"")    )
+  , m_prefix   (prefix)
+      , m_mps(&mps) 
 {
   auto rules = AmplitudeRules::create(mps);
   auto amplitudes      = rules->getMatchingRules( m_evtType, prefix);
@@ -54,19 +54,19 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() ); 
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , std::thread::hardware_concurrency(), "Number of threads to use" );
   ThreadPool tp(nThreads);
-  
   auto head_rules = rules->rulesForDecay(m_evtType.mother(), m_prefix);
+  /*
   for( const auto& rule : head_rules )
   {
     auto indices = findIndices(m_matrixElements, rule.particle().decayDescriptor() );
-    INFO( rule.particle() << " " << vectorToString(indices, " ") ); 
+    INFO( rule.particle() << " [" << vectorToString(indices, " ") << "]" ); 
   }
-
+  */
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
     tp.enqueue( [i, this, &mps, &amplitudes]() mutable {
-      m_matrixElements[i] = MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), m_dbThis); 
-      CompilerWrapper().compile( m_matrixElements[i], this->m_objCache); 
-    } ); 
+        m_matrixElements[i] = MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), m_dbThis); 
+        CompilerWrapper().compile( m_matrixElements[i], this->m_objCache); 
+        } ); 
   }
 }
 
@@ -76,8 +76,9 @@ void CoherentSum::prepare()
   ProfileClock clockEval; 
   for (auto& t : m_matrixElements ) {
     t.prepare();
+
     if ( m_prepareCalls != 0 && !t.hasExternalsChanged() ) continue;
-    if ( m_events != nullptr ) m_cache.update(m_events->store(), t );
+    if ( m_events != nullptr ) m_cache.update(t);
     m_integrator.updateCache(t);
     t.resetExternals();
     t.workToDo = true; 
@@ -93,7 +94,11 @@ void CoherentSum::prepare()
         << ", Integral = " << clockIntegral << " ms"
         << ", Total = "    << clockEval + clockIntegral << " ms; normalisation = "  << m_norm );
     m_lastPrint = m_prepareCalls;
+    
   }
+  // for( int i = 0 ; i != m_cache.nFields(); ++i ) 
+  //   INFO( m_matrixElements[i].name() << " " <<  std::setprecision(15) << m_cache(0, m_cache.find(m_matrixElements[i].name())[0] ));
+  // INFO( (*this)( nullptr, 0 )  << " " << m_norm ); 
   for( auto& t : m_matrixElements ) t.workToDo = false; 
   m_prepareCalls++;
 }
@@ -103,10 +108,12 @@ void CoherentSum::updateNorms()
   if(std::any_of(m_matrixElements.begin(),m_matrixElements.end(), [](auto& me){ return me.workToDo; } ))
   {
     for ( unsigned i = 0; i != m_matrixElements.size(); ++i )
+    {
       for ( size_t j = i; j < size(); ++j ){
         if( m_matrixElements[i].workToDo || m_matrixElements[j].workToDo ) 
           m_normalisations.get(i, j, &m_integrator, i, j);
       }
+    }
   }
   m_integrator.flush();
   m_normalisations.resetCalculateFlags();
@@ -186,7 +193,7 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
   }
   functions.push_back( new CompiledExpression<complex_t(const real_t*, const int&)>( amplitude  , "AMP", disableBatch() ) );
   functions.push_back( new CompiledExpression<real_t(const real_t*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN", disableBatch() ) ); 
-  
+
   CompilerWrapper().compile( functions, fname );
 
   for( auto& function : functions ) delete function;  
@@ -197,9 +204,9 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
 complex_t CoherentSum::getValNoCache( const Event& evt ) const
 {
   auto v = complex_v(std::accumulate( m_matrixElements.begin(), 
-          m_matrixElements.end(), 
-          complex_v(0,0), 
-          [&evt]( const auto& a, const auto& b ){ return a + complex_v(b.coefficient) * b(evt)[0];} ));
+        m_matrixElements.end(), 
+        complex_v(0,0), 
+        [&evt]( const auto& a, const auto& b ){ return a + complex_v(b.coefficient) * b(evt)[0];} ));
   return complex_t( utils::get<0>(v.real()), utils::get<0>(v.imag()) ); 
 }
 
@@ -220,7 +227,7 @@ void CoherentSum::setEvents( const EventList_type& list )
   for( auto& me : m_matrixElements ){ DEBUG("Registering: " << me.name() ) ; }
   if( m_ownEvents && m_events != nullptr ) delete m_events; 
   m_events = &list;
-  m_cache . allocate( m_events->size(), m_matrixElements );   
+  m_cache.allocate(m_events, m_matrixElements); 
 }
 
 
@@ -241,9 +248,8 @@ real_t CoherentSum::norm(const Bilinears& norms) const
   complex_t acc(0, 0);
   for ( size_t i = 0; i < size(); ++i ) {
     for ( size_t j = 0; j < size(); ++j ) {
-      acc += m_matrixElements[i].coefficient 
-        * std::conj(m_matrixElements[j].coefficient)
-        * ( i > j ? std::conj(norm(j,i)) : norm(i,j) );
+      // INFO( i << " " << j << " " << m_matrixElements[i].coefficient * std::conj(m_matrixElements[j].coefficient) << " " <<  ( i > j ? std::conj(norm(j,i)) : norm(i,j) ) );
+      acc += m_matrixElements[i].coefficient * std::conj(m_matrixElements[j].coefficient)* ( i > j ? std::conj(norm(j,i)) : norm(i,j) );
     }
   }
   return acc.real();
@@ -263,17 +269,17 @@ void CoherentSum::transferParameters()
 void CoherentSum::printVal(const Event& evt)
 {
   /*
-  for ( auto& mE : m_matrixElements ) {
-    unsigned int address = std::distance( &mE , &m_matrixElements[0] );
-    std::cout << mE.decayTree.decayDescriptor() << " = " << mE.coefficient << " x " << m_cache( evt.index() / utils::size<real_v>::value, address )
-      << " address = " << address << " " << mE( evt ) << std::endl;
-    if( mE.coupling.size() != 1 ){
-      std::cout << "CouplingConstants: " << std::endl;
-      mE.coupling.print();
-      std::cout << "================================" << std::endl;
-    }
-  }
-  */
+     for ( auto& mE : m_matrixElements ) {
+     unsigned int address = std::distance( &mE , &m_matrixElements[0] );
+     std::cout << mE.decayTree.decayDescriptor() << " = " << mE.coefficient << " x " << m_cache( evt.index() / utils::size<real_v>::value, address )
+     << " address = " << address << " " << mE( evt ) << std::endl;
+     if( mE.coupling.size() != 1 ){
+     std::cout << "CouplingConstants: " << std::endl;
+     mE.coupling.print();
+     std::cout << "================================" << std::endl;
+     }
+     }
+     */
 }
 
 complex_t CoherentSum::getVal( const Event& evt ) const
@@ -301,18 +307,19 @@ real_v CoherentSum::operator()( const real_v* /*evt*/, const unsigned block ) co
 }
 
 #if ENABLE_AVX
-double CoherentSum::operator()( const double* /*evt*/, const unsigned block ) const 
-{
-  return operator()((const real_v*)nullptr, block / utils::size<real_v>::value ).at( block % utils::size<real_v>::value );
-}
+
+//double CoherentSum::operator()( const double* /*evt*/, const unsigned block ) const 
+//{
+//  return operator()((const real_v*)nullptr, block / utils::size<real_v>::value ).at( block % utils::size<real_v>::value );
+//}
 #endif
 
 std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type* ievents) const 
 {
   auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
-  Store<complex_v, Alignment::AoS> store( events->size(), m_matrixElements);
-  for( auto& me : m_matrixElements ) store.update(events->store(), me );
-  
+  FunctionCache<EventList_type, complex_v, Alignment::AoS> store(events, m_matrixElements);
+  for( auto& me : m_matrixElements ) store.update(me);
+
   std::vector<double> values( events->aligned_size() );
   #ifdef _OPENMP
   #pragma omp parallel for
@@ -329,14 +336,14 @@ std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type*
 
 KeyedFunctors<double(Event)> CoherentSum::componentEvaluator(const EventList_type* ievents) const 
 {
-  using store_t = Store<complex_v, Alignment::SoA>; 
+  using store_t = FunctionCache<EventList_type, complex_v, Alignment::SoA>; 
   auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
   KeyedFunctors<double(Event)> rt; 
   std::shared_ptr<const store_t> cache;
   if( events != m_integrator.events<EventList_type>() )
   {
-    cache = std::make_shared<const store_t>(events->size(), m_matrixElements);
-    for( auto& me : m_matrixElements ) const_cast<store_t*>(cache.get())->update(events->store(), me);
+    cache = std::make_shared<const store_t>(events, m_matrixElements);
+    for( auto& me : m_matrixElements ) const_cast<store_t*>(cache.get())->update(me);
   }
   else cache = std::shared_ptr<const store_t>( & m_integrator.cache(), [](const store_t* t){} ); 
   /// this little slice of weirdness allows either a new cache to be instantiated, or one to just get a pointer to the one used for the integration. 
@@ -355,6 +362,7 @@ KeyedFunctors<double(Event)> CoherentSum::componentEvaluator(const EventList_typ
       rt.add(functor, name, "");
     }
   }
+  INFO("Returning ... "); 
   return rt; 
 }
 
@@ -362,4 +370,3 @@ CoherentSum::~CoherentSum()
 {
   if( m_ownEvents && m_events !=nullptr ) delete m_events; 
 }
-

@@ -93,7 +93,7 @@ int main( int argc, char* argv[] )
      the parsed options. For historical reasons, this is referred to as loading it from a "Stream" */
   MinuitParameterSet MPS;
   MPS.loadFromStream();
-  // for( auto& p : MPS ) if( p->flag() == Flag::Free ) p->setResult( gRandom->Gaus( p->mean(), p->err() ), p->err(), 0,0 );
+//  for( auto& p : MPS ) if( p->flag() == Flag::Free ) p->setResult( gRandom->Gaus( p->mean(), p->err() ), p->err(), 0,0 );
 
   /* An EventType specifies the initial and final state particles as a vector that will be described by the fit. 
      It is typically loaded from the interface parameter EventType. */
@@ -114,7 +114,8 @@ int main( int argc, char* argv[] )
   /* Generate events to normalise the PDF with. This can also be loaded from a file, 
      which will be the case when efficiency variations are included. Default number of normalisation events 
      is 2 million. */
-  Generator<RecursivePhaseSpace> signalGenerator( getTopology(sig), events.eventType(), &rndm );
+//  Generator<RecursivePhaseSpace> signalGenerator( getTopology(sig), events.eventType(), &rndm );
+  Generator<> signalGenerator(events.eventType(), &rndm );
   auto events_l = signalGenerator.generate(1e6);
   EventList_type eventsMC = simFile == "" ? EventList_type(events_l) : EventList_type(simFile, evtType);
   
@@ -168,8 +169,6 @@ FitResult* doFit( PDF&& pdf, EventList_type& data, EventList_type& mc, MinuitPar
   auto evaluator     = pdf.componentEvaluator(&mc);
   auto projections   = data.eventType().defaultProjections(100); 
   
-  /* Write out the data plots. This also shows the first example of the named arguments 
-     to functions, emulating python's behaviour in this area */
   auto evaluator_per_component = std::get<0>( pdf.pdfs() ).componentEvaluator();
   for( const auto& proj : projections )
   {

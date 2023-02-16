@@ -15,7 +15,8 @@
 #include <Math/IFunction.h>
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/enum.h"
-
+#include <TFile.h>
+#include <TGraph.h>
 /** @cond PRIVATE */
 namespace ROOT
 {
@@ -80,14 +81,13 @@ namespace AmpGen
     double NCalls() const;  
     MinuitParameterSet* parSet() const;
     int status() const;
-    ROOT::Minuit2::Minuit2Minimizer* minimiserInternal();
     void setPrintLevel( const PrintLevel& printLevel);
     void minos( MinuitParameter* param );
     ROOT::Fit::FitResult fitResult() const; 
   private:
     MinuitParameterSet*          m_parSet         = {nullptr};
     std::function<double(void)>  m_theFunction    = {nullptr};
-    ROOT::Minuit2::Minuit2Minimizer*  m_minimiser = {nullptr};
+    ROOT::Math::Minimizer*      m_minimiser = {nullptr};
     std::vector<double>         m_covMatrix    = {0};
     std::vector<unsigned>       m_mapping      = {};
     int        m_status     = {0};

@@ -26,8 +26,6 @@ namespace AmpGen
   class LinearErrorPropagator;
   class MinuitParameterSet;
   class FitFraction;
-  class Event;
-  class EventList;
   class MinuitProxy; 
 
   class PolarisedSum
@@ -76,8 +74,8 @@ namespace AmpGen
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};
       EventList_type*               m_events      = {nullptr};
-      Store<complex_v, Alignment::AoS> m_cache    = {};
-      Store<real_v  , Alignment::SoA> m_pdfCache = {}; 
+      FunctionCache<EventList_type, complex_v, Alignment::AoS> m_cache    = {};
+      FunctionCache<FunctionCache<EventList_type, complex_v, Alignment::AoS>, real_v, Alignment::AoS>  m_pdfCache = {}; 
       bool                          m_ownEvents   = {false};
       MinuitParameterSet*           m_mps         = {nullptr};
       MinuitProxy                   m_weight      = {nullptr,1}; 
@@ -94,7 +92,8 @@ namespace AmpGen
       std::vector<size_t>           m_integIndex; 
       std::pair<unsigned, unsigned> m_dim; 
       std::vector<MatrixElement>                                   m_matrixElements;  
-      CompiledExpression<real_v(const real_t*, const complex_v*)> m_probExpression; 
+//      CompiledExpression<void(real_t*, const std::size_t*, const real_t*, const complex_v*)>  m_probExpression; 
+      CompiledExpression<real_v(const real_t*, const complex_v*)>  m_probExpression; 
   };
 } // namespace AmpGen
 

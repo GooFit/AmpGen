@@ -31,12 +31,12 @@
 #include "AmpGen/Simplify.h"
 #include "AmpGen/enum.h"
 #include "AmpGen/simd/utils.h"
-
+#include "AmpGen/KahanSum.h"
 using namespace AmpGen;
 using namespace std::complex_literals; 
 
 #if DEBUGLEVEL == 1  
-  ENABLE_DEBUG( PolarisedSum )
+ENABLE_DEBUG( PolarisedSum )
 #endif
 
 namespace AmpGen { make_enum(spaceType, spin, flavour) }
@@ -168,14 +168,12 @@ std::vector<MatrixElement> PolarisedSum::matrixElements() const
   return m_matrixElements;  
 }
 
-
 void   PolarisedSum::prepare()
 {
   auto resetFlags  = [](auto& t){ t.workToDo = false; t.resetExternals() ; };
   auto flagUpdate  = [this](auto& t){ t.workToDo = this->m_nCalls == 0 || t.hasExternalsChanged(); };
-  auto updateData  = [this](auto& t) mutable { if( t.workToDo && this->m_events != nullptr ) this->m_cache.update(this->m_events->store(), t) ; };
+  auto updateData  = [this](auto& t) mutable { if( t.workToDo && this->m_events != nullptr ){ this->m_cache.update(t); }; };
   auto updateInteg = [this](auto& t) mutable { if( t.workToDo ) this->m_integrator.updateCache(t) ; };
-
   transferParameters();
   for_each_sequence(m_matrixElements.begin(), m_matrixElements.end(), flagUpdate, updateData, updateInteg); 
   if( m_integrator.isReady() ) updateNorms();
@@ -184,8 +182,8 @@ void   PolarisedSum::prepare()
   {
     if( m_nCalls % 10000 == 0 ) debug_norm();
   }
-  m_pdfCache.update(m_cache, m_probExpression); 
-  DEBUG( "m_pdfCache[0] = " << utils::at(m_pdfCache[0],0) << " w/o caching = " << getValNoCache(m_events->at(0)) << " w = " << m_weight << " N = " << m_norm );
+  m_pdfCache.update(m_probExpression); 
+ // INFO( std::setprecision(15) << " " << m_norm << " " << m_pdfCache[0] );
   m_nCalls++; 
 }
 
@@ -209,7 +207,8 @@ void PolarisedSum::debug_norm()
   for( auto& evt : *m_integrator.events<EventList_type>() ) 
     norm_slow += evt.weight() * getValNoCache(evt) / evt.genPdf();
   norm_slow /= m_integrator.norm();
-  INFO("Norm: " << std::setprecision(10) << "bilinears=" << m_norm << "; Slow="   << norm_slow << "; d = "     << m_norm - norm_slow);
+    
+  INFO("Norm: " << std::setprecision(10) << "bilinears=" << m_norm << "; Slow="   << norm_slow << "; d = "     << m_norm - norm_slow << " norm: " << m_integrator.norm() );
 }
 
 void   PolarisedSum::setEvents( PolarisedSum::EventList_type& events )
@@ -217,14 +216,14 @@ void   PolarisedSum::setEvents( PolarisedSum::EventList_type& events )
   reset();
   if( m_events != nullptr && m_ownEvents ) delete m_events; 
   m_events = &events;
-  m_cache    . allocate( m_events->size(), m_matrixElements);
-  m_pdfCache . allocate( m_events->size(), m_probExpression);
+  m_cache.allocate( m_events, m_matrixElements); 
+  m_pdfCache.allocate(&m_cache, m_probExpression); 
 }
 
 void   PolarisedSum::setMC( PolarisedSum::EventList_type& events )
 {
   m_nCalls = 0;
-  m_integrator = Integrator(&events, m_matrixElements, m_dim.first * m_dim.second );
+  m_integrator = Integrator(&events, m_matrixElements);
   m_integIndex.clear();
   for( auto& i : m_matrixElements )
     m_integIndex.push_back( m_integrator.getCacheIndex(i) );
@@ -294,7 +293,7 @@ complex_t PolarisedSum::norm(const size_t& i, const size_t& j, Integrator* integ
       }
     }
     else{
-      total          += m_rho[psiIndex] * m_norms[x].get(i, j, integ, ai+m1*s2+f, aj+m2*s2+f);
+      total += m_rho[psiIndex] * m_norms[x].get(i, j, integ, ai+m1*s2+f, aj+m2*s2+f);
     }
   }
   return total; 
@@ -310,10 +309,11 @@ void PolarisedSum::updateNorms()
   }
   m_integrator.flush();
   }
-  complex_t z = 0;
+  complex_t z(0,0);
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
     for(size_t j = 0; j < m_matrixElements.size(); ++j){
-       z += m_matrixElements[i].coupling()*std::conj(m_matrixElements[j].coupling()) * ( i > j ? std::conj(norm(j,i)) : norm(i,j) );
+      DEBUG( i << " " << j << " " << m_matrixElements[i].coupling()*std::conj(m_matrixElements[j].coupling()) << " " << ( i > j ? std::conj(norm(j,i)) : norm(i,j) ) ); 
+      z += m_matrixElements[i].coupling()*std::conj(m_matrixElements[j].coupling()) * ( i > j ? std::conj(norm(j,i)) : norm(i,j) );
     }
   }
   m_norm = std::real(z); 
@@ -322,23 +322,22 @@ void PolarisedSum::updateNorms()
 void PolarisedSum::debug(const Event& evt)
 {
   auto tsize = m_dim.first * m_dim.second;   
-  std::vector<complex_v> all_cache; 
-  for(unsigned j = 0; j != m_matrixElements.size(); ++j)
+  std::vector<complex_v> all_cache;
+   
+  for(const auto& me : m_matrixElements)
   {
     std::vector<complex_v> this_cache; 
-    for(unsigned i = 0 ; i != tsize; ++i ) this_cache.emplace_back( m_cache(evt.index() / utils::size<real_v>::value, j*tsize + i) );
-    INFO( m_matrixElements[j].decayDescriptor() << " " << vectorToString(this_cache, " ") );
-    if( m_debug ) m_matrixElements[j].debug( evt ); 
+    auto indices = m_cache.find( me.name() ); 
+    for( const auto& index : indices ) 
+      this_cache.emplace_back( m_cache(evt.index() / utils::size<real_v>::value, index) ); 
+    INFO( me.decayDescriptor() << " " << me.coupling() << " " << vectorToString(this_cache, " ") );
+    if( m_debug ) me.debug( evt ); 
     for( auto& t : this_cache ) all_cache.emplace_back( t);
   }
-  INFO("Doing ... stuff"); 
-  if( m_debug ) m_probExpression.debug(all_cache.data() );
-  INFO("Evaluating without cache...");
-  INFO("P(x) = " << getValNoCache(evt) );
-  INFO("P(x) = " << operator()((const real_v*)nullptr, evt.index() / utils::size<real_v>::value ) );
-  
-
-  INFO("Prod = [" << vectorToString(m_pVector , ", ") <<"]");
+  if( m_debug ) m_probExpression.debug(all_cache.data()); 
+  INFO("P(x) = " << getValNoCache(evt)  );
+  INFO("P(x) = " << (m_norm / m_weight) * utils::at( operator()((const real_v*)nullptr, evt.index() / utils::size<real_v>::value ),  evt.index() % utils::size<real_v>::value ) );
+  if( m_pVector.size() != 0 ) INFO("Prod = [" << vectorToString(m_pVector , ", ") <<"]");
 }
 
 void PolarisedSum::generateSourceCode(const std::string& fname, const double& normalisation, bool add_mt)
@@ -514,8 +513,8 @@ double PolarisedSum::getWeight() const { return m_weight ; }
 std::function<real_t(const Event&)> PolarisedSum::evaluator(const EventList_type* ievents) const 
 {
   auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
-  Store<complex_v, Alignment::AoS> store(events->size(), m_matrixElements);
-  for( auto& me : m_matrixElements ) store.update(events->store(), me );
+  FunctionCache<EventList_type, complex_v, Alignment::AoS> store(events, m_matrixElements);
+  for( auto& me : m_matrixElements ) store.update(me);
 
   std::vector<double> values( events->aligned_size() );
   #ifdef _OPENMP
@@ -531,13 +530,13 @@ std::function<real_t(const Event&)> PolarisedSum::evaluator(const EventList_type
 
 KeyedFunctors<double(Event)> PolarisedSum::componentEvaluator(const EventList_type* ievents) const 
 {
-  using store_t = Store<complex_v, Alignment::SoA>; 
+  using store_t = FunctionCache<EventList_type, complex_v, Alignment::SoA>; 
   auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;
   std::shared_ptr<const store_t> cache;
   if( events != m_integrator.events<EventList_type>() )
   {
-    cache = std::make_shared<const store_t>(events->size(), m_matrixElements);
-    for( auto& me : m_matrixElements ) const_cast<store_t*>(cache.get())->update(events->store(), me);
+    cache = std::make_shared<const store_t>(events, m_matrixElements);
+    for( auto& me : m_matrixElements ) const_cast<store_t*>(cache.get())->update(me);
   }
   else cache = std::shared_ptr<const store_t>( & m_integrator.cache(), [](const store_t* t){} ); 
 

@@ -11,6 +11,7 @@
 #include <Minuit2/MinimumState.h>
 #include <Minuit2/MnPrint.h>
 #include <Minuit2/MinimumParameters.h>
+#include <TMinuitMinimizer.h>
 #include <Fit/FitConfig.h>
 #include <Math/Factory.h>
 #include <Math/Functor.h>
@@ -24,6 +25,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/ProfileClock.h"
 
+#include <TH2D.h>
 using namespace AmpGen;
 using namespace ROOT;
 
@@ -91,7 +93,6 @@ double Minimiser::operator()( const double* xx )
 }
 
 double Minimiser::FCN() const { return m_theFunction(); } 
- // fcnWithGrad == nullptr ? m_theFunction() : m_fcnWithGrad->DoEval( m_minimiser->X() ) ; }
 double Minimiser::Edm() const { return m_minimiser->Edm(); }
 double Minimiser::NCalls() const {return m_minimiser->NCalls(); }
 
@@ -115,24 +116,28 @@ void Minimiser::gradientTest()
 
 void Minimiser::prepare()
 {
-  std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Hesse");
+  std::string minimiser = NamedParameter<std::string>("Minimiser::Minimiser", "Minuit2"); 
+  std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Migrad");
   size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
-  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 0.01);
+  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 1.0);
   m_printLevel          = NamedParameter<PrintLevel>( "Minimiser::PrintLevel", PrintLevel::Info); 
   unsigned printLevelMinuit2 = NamedParameter<unsigned>("Minimiser::Minuit2MinimizerPrintLevel", m_printLevel == PrintLevel::VeryVerbose ? 3 : 0 );
   if( m_printLevel == PrintLevel::Invalid )
   {
     FATAL("Requested print level is not valid");
   }
-  m_normalise           = NamedParameter<bool>(   "Minimiser::Normalise",false);
+  m_normalise           = NamedParameter<bool>("Minimiser::Normalise",false);
   if ( m_minimiser != nullptr ) delete m_minimiser;
-  m_minimiser = new Minuit2::Minuit2Minimizer(algorithm.c_str() );
+  if( minimiser == "Minuit2")
+    m_minimiser = new Minuit2::Minuit2Minimizer( algorithm.c_str());
+  else 
+    m_minimiser = new TMinuitMinimizer( ROOT::Minuit::kMigrad );
   DEBUG( "Error definition = " << m_minimiser->ErrorDef() );
   m_minimiser->SetMaxFunctionCalls( maxCalls );
   m_minimiser->SetMaxIterations( 100000 );
   m_minimiser->SetTolerance( tolerance );
-  m_minimiser->SetStrategy( 3 );
-  //  m_minimiser->SetPrecision(std::numeric_limits<double>::epsilon());
+  m_minimiser->SetPrecision( 1e-10 );
+  m_minimiser->SetStrategy( 2 );
   m_minimiser->SetPrintLevel( printLevelMinuit2 ); // turn off minuit printing 
   m_mapping.clear();
   m_covMatrix.clear();
@@ -181,31 +186,49 @@ std::string minuitStatusString( ROOT::Minuit2::Minuit2Minimizer* mini )
 
 bool Minimiser::doFit()
 {
+//   auto m_monitoring = TFile::Open("debug.root","RECREATE");
+  auto& t = *this; 
+  ROOT::Math::Functor f(t, m_nParams );
+  
+  if( m_fcnWithGrad == nullptr )  m_minimiser->SetFunction( f );
+  else m_minimiser->SetFunction(*m_fcnWithGrad);  
+
   if( m_normalise ) m_ll_zero = m_theFunction();
-  ROOT::Math::Functor f( *this, m_nParams );
   for (size_t i = 0; i < m_mapping.size(); ++i ) {
     MinuitParameter* par = m_parSet->at( m_mapping[i] );
     m_minimiser->SetVariable( i, par->name(), par->mean(), par->stepInit() );
     if ( par->minInit() != 0 || par->maxInit() != 0 )
       m_minimiser->SetVariableLimits( i, par->minInit(), par->maxInit() );
   }
-  
-  if( m_fcnWithGrad == nullptr )  m_minimiser->SetFunction( f );
-  else {  m_minimiser->SetFunction(*m_fcnWithGrad); }  
-
-  dynamic_cast< Minuit2::Minuit2Minimizer* >(m_minimiser)->SetTraceObject( *this );
+  if( dynamic_cast<Minuit2::Minuit2Minimizer*>(m_minimiser) != nullptr ) 
+    dynamic_cast<Minuit2::Minuit2Minimizer* >(m_minimiser)->SetTraceObject( *this );
   m_minimiser->Minimize();
+  //TH2D* cor_matrix = new TH2D("cor_matrix","", m_nParams, -0.5, double(m_nParams)-0.5, m_nParams, -0.5, double(m_nParams)-0.5 );
   for (size_t i = 0; i < m_nParams; ++i ) {
     auto par = m_parSet->at( m_mapping[i] );
     double error = *( m_minimiser->Errors() + i );
     par->setResult( *( m_minimiser->X() + i ), error, error, error );
     for ( unsigned int j = 0; j < m_nParams; ++j ) {
       m_covMatrix[i + m_nParams * j] = m_minimiser->CovMatrix( i, j );
+    //  cor_matrix->SetBinContent(i+1,j+1, m_minimiser->CovMatrix( i, j ) / sqrt( m_minimiser->CovMatrix( i, i ) * m_minimiser->CovMatrix( j, j ) )  );
     }
   }
+  /* 
+  cor_matrix->Write();
+  
+  for( unsigned i = 0 ; i != m_nParams; ++i )
+  {
+    auto p = m_parSet->at( m_mapping[i] );
+    auto g = scan(p, p->mean() - 0.1 * p->err(), p->mean() + 0.1 * p->err(), p->err() / 1000.); 
+    std::cout << p->name() << std::endl; 
+    g->SetName( (p->name() + "_scan").c_str() );
+    g->Write();
+  }
+  */
   m_status = m_minimiser->Status();
-
-  INFO("Minuit2Minimize: " << minuitStatusString(m_minimiser) << ", covariance matrix: " << covMatrixStatusString( m_minimiser ) ); 
+  
+  // m_monitoring->Close();
+  // INFO("Minuit2Minimize: " << minuitStatusString(m_minimiser) << ", covariance matrix: " << covMatrixStatusString( m_minimiser ) ); 
   INFO("Status = " << m_status ); 
   INFO("FVAL   = " << FCN() );
   INFO("Edm    = " << Edm() );
@@ -267,19 +290,19 @@ bool Minimiser::doFit()
 
 TGraph* Minimiser::scan( MinuitParameter* param, const double& min, const double& max, const double& step )
 {
-
   double secretoffset = 0.;
   if ( param->isBlind() ){ 
     secretoffset =  m_parSet->at( param->name()+"_blind")->mean();
   }
-
-  param->fix();
+//   param->fix();
   TGraph* rt = new TGraph();
+  double mu = param->mean();
   for ( double sv = min; sv < max; sv += step ) {
     param->setCurrentFitVal( sv - secretoffset);
-    doFit();
+ //   doFit();
     rt->SetPoint( rt->GetN(), sv, FCN() );
   }
+  param->setCurrentFitVal(mu); 
   return rt;
 }
 
@@ -315,8 +338,6 @@ void Minimiser::addExtendedTerm( ExtendLikelihoodBase* m_term )
 {
   m_extendedTerms.push_back( m_term );
 }
-
-ROOT::Minuit2::Minuit2Minimizer* Minimiser::minimiserInternal() { return m_minimiser; }
 
 void Minimiser::minos( MinuitParameter* parameter )
 { 
@@ -382,7 +403,7 @@ namespace AmpGen {
           fErrors.resize(nParams);
           fParams.resize(nParams); 
           fParNames.resize(nParams); }
-        void set( ROOT::Minuit2::Minuit2Minimizer* mini, int status, double fcn)
+        void set( ROOT::Math::Minimizer* mini, int status, double fcn)
         {
           fNdf       = NPar();
           unsigned it= 0;

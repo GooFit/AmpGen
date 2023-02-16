@@ -67,7 +67,7 @@ int main( int argc, char* argv[] )
   
   [[maybe_unused]]
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , 8           , "Number of threads to use" );
-  size_t      seed     = NamedParameter<size_t>     ("Seed"      , 0           , "Random seed used" );
+  size_t      seed     = NamedParameter<size_t>     ("Seed"      , 1           , "Random seed used" );
   
   std::string outOptFile = NamedParameter<std::string>("OutputOptionFile", ""  , "Name of output option file updated with the best-fit parameters");
   std::string inOptFile = NamedParameter<std::string>("InputOptionFile", ""    , "Name of input option file to use as template for OutputOptionFile");
@@ -76,7 +76,7 @@ int main( int argc, char* argv[] )
   if( pNames.size() == 0 ) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
 
   TRandom3 rndm;
-  rndm.SetSeed( seed );
+  rndm.SetSeed( seed ) ; 
   gRandom = &rndm;
 
   INFO("LogFile: " << logFile << "; Plots: " << plotFile );
@@ -131,7 +131,7 @@ int main( int argc, char* argv[] )
   fr->addFractions( fitFractions );
   fr->writeToFile( logFile );
   if ( outOptFile != "" ) fr->writeOptions(outOptFile, inOptFile);
-
+  INFO("Writing file..");  
   output->Close();
 }
 
@@ -156,7 +156,6 @@ FitResult* doFit( likelihoodType&& likelihood, EventList_type& data, EventList_t
   
   /* Estimate the chi2 using an adaptive / decision tree based binning, 
      down to a minimum bin population of 15, and add it to the output. */
-  
   Chi2Estimator chi2( data, mc, likelihood.evaluator(&mc), MinEvents(15), Dim(data.eventType().dof()) );
   chi2.writeBinningToFile("chi2_binning.txt");
   fr->addChi2( chi2.chi2(), chi2.nBins() );
@@ -173,7 +172,6 @@ FitResult* doFit( likelihoodType&& likelihood, EventList_type& data, EventList_t
       proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite() );
     proj(data, PlotOptions::Prefix("Data") )->Write();
   }
-  
   auto root_fr = mini.fitResult();
   auto x = new TFitResult(root_fr);
   x->SetName("FitResult"); 

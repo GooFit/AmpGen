@@ -152,8 +152,8 @@ void IncoherentSum::debug( const Event& evt, const std::string& nameMustContain 
 std::function<real_t(const Event&)> IncoherentSum::evaluator(const EventList_type* ievents) const 
 {
   auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
-  Store<complex_v, Alignment::AoS> store( events->size(), m_matrixElements);
-  for( auto& me : m_matrixElements ) store.update(events->store(), me );
+  FunctionCache<EventList_type, complex_v, Alignment::AoS> store( events, m_matrixElements);
+  for( auto& me : m_matrixElements ) store.update(me);
   
   std::vector<double> values( events->aligned_size() );
   #ifdef _OPENMP
@@ -171,14 +171,14 @@ std::function<real_t(const Event&)> IncoherentSum::evaluator(const EventList_typ
 
 KeyedFunctors<double(Event)> IncoherentSum::componentEvaluator(const EventList_type* ievents) const 
 {
-  using store_t = Store<complex_v, Alignment::SoA>; 
+  using store_t = FunctionCache<EventList_type, complex_v, Alignment::SoA>; 
   auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
   KeyedFunctors<double(Event)> rt; 
   std::shared_ptr<const store_t> cache;
   if( events != m_integrator.events<EventList_type>() )
   {
-    cache = std::make_shared<const store_t>(events->size(), m_matrixElements);
-    for( auto& me : m_matrixElements ) const_cast<store_t*>(cache.get())->update(events->store(), me);
+    cache = std::make_shared<const store_t>(events, m_matrixElements);
+    for( auto& me : m_matrixElements ) const_cast<store_t*>(cache.get())->update(me);
   }
   else cache = std::shared_ptr<const store_t>( & m_integrator.cache(), [](const store_t* t){} ); 
   /// this little slice of weirdness allows either a new cache to be instantiated, or one to just get a pointer to the one used for the integration. 

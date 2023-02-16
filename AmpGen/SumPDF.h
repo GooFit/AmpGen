@@ -7,7 +7,6 @@
 #include "AmpGen/KeyedFunctors.h"
 #include "AmpGen/KahanSum.h"
 #include <tuple>
-
 #if ENABLE_AVX
   #include "AmpGen/simd/utils.h"
 #endif
@@ -59,16 +58,16 @@ namespace AmpGen
 
     double getVal()
     {
-      for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
       std::vector<real_v> tmp( m_events->nBlocks() );
-      fill_likelihood( tmp.data() ); 
-      KahanSum<real_v> sum;
-      for( unsigned block = 0 ; block != m_events->nBlocks(); ++block ) sum += tmp[block];
-      return -2 * utils::sum_elements(sum.sum);
+      fill_likelihood( tmp.data() );
+      KahanSum<real_v> sum; 
+      for(unsigned block = 0 ; block != tmp.size(); ++block ) sum += tmp[block]; 
+      auto rt = -2 * utils::sum_elements(sum());
+      return rt; 
     } 
     void fill_likelihood( real_v* output )
     {
-      for_each(m_pdfs, []( auto& f ) { f.prepare(); });
+      for_each( m_pdfs, []( auto& f ) { f.prepare(); } );
       if constexpr( std::is_same<eventListType,EventList>::value )
       {
         #pragma omp parallel for
@@ -84,7 +83,7 @@ namespace AmpGen
         #pragma omp parallel for
         for( unsigned block = 0 ; block < m_events->nBlocks(); ++block )
         {
-          output[block] = m_events->weight(block) * AVX::log(this->operator()(m_events->block(block), block));  
+          output[block] = m_events->weight(block) * AVX::log(this->operator()(nullptr, block));  
         }
       }
       #endif
@@ -93,15 +92,15 @@ namespace AmpGen
     /// Returns the probability for the given event. 
     real_v operator()( const real_v* evt , const unsigned block)
     {
-      real_v prob = 0.f;
-      for_each( this->m_pdfs, [&prob, &evt,block]( const auto& f ) { prob += f(evt, block); } );
+      real_v prob = 0.;
+      for_each( this->m_pdfs, [&prob, &evt, block]( const auto& f ) mutable { prob += f(evt, block); } );
       return prob;
     }
     /// Returns the probability for the given event. 
     double operator()( const eventValueType& evt )
     {
       double prob = 0;
-      for_each( this->m_pdfs, [&prob, &evt]( const auto& f ) { prob += f(evt); } );
+      for_each( this->m_pdfs, [&prob, &evt]( const auto& f ) mutable { prob += f(evt); } );
       return prob;
     }
 

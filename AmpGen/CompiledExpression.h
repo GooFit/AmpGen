@@ -105,8 +105,8 @@ namespace AmpGen
 
         void setExternal( const double& value, const unsigned int& address ) override
         {
-          DEBUG( "Setting external " << address << " / " << m_externals.size() << " to value = " << value << " ; current = " << m_externals[address] );
           if ( m_externals[address] == value ) return;
+          DEBUG( "Setting external " << address << " / " << m_externals.size() << " to value = " << value << " ; current = " << m_externals[address] );
           m_externals[address]  = value;
           m_hasExternalsChanged = true;
         }

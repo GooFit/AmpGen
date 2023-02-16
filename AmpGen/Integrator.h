@@ -14,6 +14,11 @@ namespace AmpGen
 { 
   class Integrator
   {
+    #if ENABLE_AVX 
+    using EventList_t = EventListSIMD;
+    #else 
+    using EventList_t = EventList; 
+    #endif
     struct QueuedIntegral 
     {
       QueuedIntegral() = default; 
@@ -26,14 +31,14 @@ namespace AmpGen
     public:
     Integrator() = default; 
 
-    template <typename EventList_type, typename T> Integrator( const EventList_type* events, const std::vector<T>& expressions ={}, const size_t& size_of =0) : m_events(events)
+    template <typename EventList_type, typename T> Integrator( const EventList_type* events, const std::vector<T>& expressions ={}) : m_events(events)
     {
       if( events == nullptr ) {
         WARNING("No events specified, returning");
         return; 
       }
-      m_cache = Store<complex_v, Alignment::SoA>(events->size(), expressions);
-      m_weight.resize( events->nBlocks() );
+      m_cache.allocate(events, expressions); 
+      m_weight.resize(events->nBlocks() );
       real_v norm_acc = 0.;
       for( size_t i = 0 ; i < events->nBlocks(); ++i )
       {
@@ -48,27 +53,20 @@ namespace AmpGen
     void flush();
     
     template <class return_type> return_type get( const unsigned& index, const unsigned& evt ) const ;
-    template <class T> unsigned getCacheIndex( const T& t ) const { return m_cache.find(t) ; }
+    template <class T> unsigned getCacheIndex( const T& t ) const { return m_cache.find(t.name())[0] ; }
     double norm() const { return m_norm; }
 
-    template <class T> void updateCache(const T& expression)
-    {
-      #if ENABLE_AVX
-      if( m_events != nullptr ) m_cache.update( static_cast<const EventListSIMD*>(m_events)->store(), expression );
-      #else
-      if( m_events != nullptr ) m_cache.update( static_cast<const EventList*>(m_events)->store(), expression );
-      #endif
-    }
-    template <class T> const T* events() const { return static_cast<const T*>(m_events) ; }
+    template <class T> void updateCache(const T& expression){ if( isReady() ) m_cache.update(expression); }
+    template <class T> const T* events() const { return static_cast<const T*>(m_events); }
 
-    const Store<complex_v, Alignment::SoA>& cache() const { return m_cache; }
+    const auto& cache() const { return m_cache; }
     private:
     static constexpr size_t             N         = {8}; ///unroll factor
     size_t                              m_counter = {0};  ///
     std::array<QueuedIntegral, N>       m_integrals;
     const void*                         m_events  = {nullptr};
-    std::vector<real_v>                m_weight; 
-    Store<complex_v, Alignment::SoA>    m_cache;      
+    std::vector<real_v>                 m_weight; 
+    FunctionCache<EventList_t, complex_v, Alignment::SoA>    m_cache;      
     double                              m_norm    = {0};
     void integrateBlock();
   };
