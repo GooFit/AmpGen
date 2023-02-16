@@ -337,8 +337,8 @@ std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type*
 std::function<complex_t(const Event&)> CoherentSum::amplitudeEvaluator(const EventList_type* ievents) const 
 {
   auto events = ievents == nullptr ? m_integrator.events<EventList_type>() : ievents;  
-  Store<complex_v, Alignment::AoS> store( events->size(), m_matrixElements);
-  for( auto& me : m_matrixElements ) store.update(events->store(), me );
+  FunctionCache<EventList_type, complex_v, Alignment::AoS> store(events, m_matrixElements);
+  for( auto& me : m_matrixElements ) store.update( me );
   std::vector<complex_t> values( events->aligned_size() );
   #ifdef _OPENMP
   #pragma omp parallel for

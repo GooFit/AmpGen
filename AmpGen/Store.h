@@ -97,34 +97,6 @@ namespace AmpGen {
 
       template <typename functor_type> void update( const EventList& events, const functor_type& fcn )
       {  
-        auto& f =  find( fcn.name() ); 
-        auto p0 = f[0]; 
-        auto s  = f.size(); 
-        std::vector<size_t> offsets( s );
-        std::iota( offsets.begin(), offsets.end(), 0 );
-        DEBUG("Updating: " << fcn.name() << " index = " << p0 << " size_of = " << s << " on store: " << size() << " blocks = " << nBlocks() << " fields = " << nFields () ); 
-        if constexpr( std::is_same< typename functor_type::return_type, void >::value ) 
-        {          
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-          for ( size_t evt = 0; evt < events.size(); ++evt )
-          { 
-            std::vector<stored_type> buffer(s);
-            fcn(buffer.data(), offsets.data(), fcn.externBuffer().data(), events[evt].address() ); 
-            store(evt, f->second.data(), buffer.data(), s ); 
-          }
-        }
-        else {
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-          for ( size_t evt = 0; evt < events.size(); ++evt )
-          {
-            auto tmp = fcn( events[evt].address() );
-            store( evt, f->second.data(), &tmp, s);
-          }       
-        }
       }
       void resize( std::size_t entries ) 
       {
@@ -176,10 +148,10 @@ namespace AmpGen {
       }
       template <typename functor_type> void update(const functor_type& fcn)
       {
+        const auto& f            = Store<stored_type, align>::find( fcn.name() ); 
+        DEBUG("Updating: " << fcn.name() << " -> " << f[0] ); 
         if constexpr( ! std::is_same_v<input_type,EventList> )
         {
-          auto f            = Store<stored_type, align>::find( fcn.name() ); 
-          DEBUG("Updating: " << fcn.name() << " -> " << f[0] ); 
           auto stagger      = align == Alignment::AoS ? 1 : Store<stored_type,align>::m_nBlocks;
           auto fieldStagger = align == Alignment::AoS ? Store<stored_type, align>::m_nFields : 1;
           std::vector<size_t> offsets( f.size() );
@@ -200,21 +172,39 @@ namespace AmpGen {
           else 
           {
             DEBUG("Evaluating bulk function on [no-rto] : stagger:" << stagger << " Input Fields: " << m_input->nFields() << " field stagger: " << fieldStagger  << " input: " << m_input->data()[0] ); 
-            
+
             fcn.batch(Store<stored_type,align>::aligned_size(), 
                 m_input->nFields(), 
                 fieldStagger, 
                 Store<stored_type, align>::data() + f[0] *stagger, 
                 fcn.externBuffer().data(), 
                 m_input->data() ); 
-            
+
+          }
+        }
+        else { 
+          auto p0 = f[0]; 
+          auto s  = f.size(); 
+          std::vector<size_t> offsets( s );
+          std::iota( offsets.begin(), offsets.end(), 0 );
+          #ifdef _OPENMP
+          #pragma omp parallel for
+          #endif
+          for ( size_t evt = 0; evt < m_input->size(); ++evt )
+          { 
+            if constexpr( std::is_same< typename functor_type::return_type, void >::value ) 
+            {          
+              std::vector<stored_type> buffer(s);
+              fcn(buffer.data(), offsets.data(), fcn.externBuffer().data(), m_input->at(evt).address() ); 
+              store(evt, f->second.data(), buffer.data(), s ); 
+            } else {
+              auto tmp = fcn( m_input->at(evt).address() );
+              store( evt, f->second.data(), &tmp, s);
+            }
           }
         }
       }
-
       const input_type*               m_input{nullptr};
-
-
   }; 
 }
 #if DEBUG_LEVEL ==1 
