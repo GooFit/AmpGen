@@ -118,7 +118,6 @@ namespace AmpGen
         void resetExternals() { m_hasExternalsChanged = false; }
 
         const Expression& expression() const { return m_obj; }
-
         bool isReady()          const override { return m_fcn.isLinked(); }
         bool isLinked()         const { return m_fcn.isLinked() ; } 
 
