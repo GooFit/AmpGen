@@ -196,10 +196,10 @@ namespace AmpGen {
             {          
               std::vector<stored_type> buffer(s);
               fcn(buffer.data(), offsets.data(), fcn.externBuffer().data(), m_input->at(evt).address() ); 
-              store(evt, f->second.data(), buffer.data(), s ); 
+              Store<stored_type,align>::store(evt, f.data(), buffer.data(), s ); 
             } else {
               auto tmp = fcn( m_input->at(evt).address() );
-              store( evt, f->second.data(), &tmp, s);
+              Store<stored_type,align>::store( evt, f.data(), &tmp, s);
             }
           }
         }
