@@ -8,6 +8,8 @@
 #include "AmpGen/Particle.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/CoupledChannel.h"
+#include "AmpGen/Pade.h"
+#include "AmpGen/NumericalIntegration.h"
 
 using namespace AmpGen;
 using namespace AmpGen::fcn; 
@@ -16,16 +18,16 @@ using namespace std::complex_literals;
 // ENABLE_DEBUG( Lineshape::CoupledChannel );
 
 Expression H(const Expression& x, 
-             const Expression& y, 
-             const Expression& z )
+    const Expression& y, 
+    const Expression& z )
 {
   auto k = ( x*x + y*y + z*z - 2.*x*y - 2.*x*z - 2.*z*y) ; 
   return Ternary( Imag(sqrt(k)) > 0 , sqrt(k) , -sqrt(k) ); /// change the branch of the sqrt
 }
 
 Expression Hr(const Expression& x, 
-              const Expression& y, 
-              const Expression& z )
+    const Expression& y, 
+    const Expression& z )
 {
   auto k = ( x*x + y*y + z*z - 2.*x*y - 2.*x*z - 2.*z*y) ; 
   return complex_sqrt(k);
@@ -37,14 +39,14 @@ Expression rho_twoBody( const Expression& s, const Expression& s1, const Express
 }
 
 Expression rho_threeBody( const Expression& s, 
-                          const Particle& resonance, 
-                          const Particle& bachelor ) 
+    const Particle& resonance, 
+    const Particle& bachelor ) 
 {
   const ParticleProperties& is = *resonance.props();
   const ParticleProperties& p1 = *bachelor.props();
   const ParticleProperties& p2 = *resonance.daughter(0)->props();
   const ParticleProperties& p3 = *resonance.daughter(1)->props();
-    
+
   Expression s1 = p1.mass() * p1.mass();
   Expression s2 = p2.mass() * p2.mass();
   Expression s3 = p3.mass() * p3.mass();
@@ -59,9 +61,61 @@ Expression rho_threeBody( const Expression& s,
   auto K   = Hz*HsT + z*(sT-s-s1) + (s-s1)*(s-s1) - sT*(s+s1);
 
   return    Ternary( s23_max > sT, Imag( 
-      z * log( (s+s1 -HsT -sT)/(2*sqrt(s*s1)) ) 
-      -  Hz * log( K/(2.*sqrt(s*s1)*(sT-z) ) )
-      ) / (16.*M_PI*M_PI*s) , 0 );
+        z * log( (s+s1 -HsT -sT)/(2*sqrt(s*s1)) ) 
+        -  Hz * log( K/(2.*sqrt(s*s1)*(sT-z) ) )
+        ) / (16.*M_PI*M_PI*s) , 0 );
+}
+
+namespace {
+  template <typename fcn_type> auto analytic_continuation( fcn_type&& functor, const double& s_thresh )
+  { 
+    return [functor, s_thresh]( const double& s )
+    {
+      double epsilon=1e-9;
+      auto real = (s-s_thresh) * integrate_1d_cauchy( [=](const double& s){ return functor(s) / (s-s_thresh) ; } , s, s_thresh +  epsilon, 100000 ) / M_PI; 
+      return 16 * M_PI * std::complex<double>( real, s > s_thresh ? functor(s) : 0 ); 
+    };
+  }
+
+  template <typename fcn_type> auto real( fcn_type&& functor )
+  {
+    return [functor]( const double& s){ return std::real(functor(s)); }; 
+  }
+
+  template <typename fcn_type> auto imag( fcn_type&& functor )
+  {
+    return [functor]( const double& s){ return std::imag(functor(s)); }; 
+  }
+
+  template <unsigned L, typename expression_type> expression_type blatt_weisskopf_sq( const expression_type& z )
+  {
+    if constexpr( L == 0 )      return expression_type(1);
+    else if constexpr( L == 1 ) return expression_type( 2 * z / ( 1 + z )  ); 
+    else if constexpr( L == 2 ) return expression_type( 13 * z * z / ( z*z + 3*z * 9 ) ); 
+    else if constexpr( L == 3 ) return expression_type( 277  * z * z * z  / (z*(z-15)*(z-15) + 9* ( 2 * z - 5 ) * (2*z-5 ) ) );  
+    else {
+      std::cout << "error, blatt weisskopf not implemented for L> 3 (if you are trying to calculate dispersive corrections in such a case, good luck to ya" << std::endl; 
+      return 0; 
+    }
+  }
+  template <typename T, typename T2>
+  T q2( const T& s, const T2& s1, const T2& s2 )
+  {
+    return 0.25 * (s - 2*(s1+s2) + ( s1-s2)*(s1-s2)/s );
+  }
+
+  template <unsigned N> Expression rho_pade(const Expression& s, const Particle& p )
+  {
+    double m1 = p.daughter(0)->props()->mass();
+    double m2 = p.daughter(1)->props()->mass();
+    double s_thresh = (m1+m2)*(m1+m2);
+    double R  = p.props()->radius(); 
+    auto CM_num = analytic_continuation( [=](const double& s){ 
+      return blatt_weisskopf_sq<N>(q2(s,m1*m1,m2*m2) * R *R ) * sqrt( q2(s,m1*m1,m2*m2) / s ) / ( 8 * M_PI ); }, s_thresh ); 
+    Pade <4, double> cm_pade_lo( real(CM_num), 0.0, s_thresh );
+    Pade <4, double> cm_pade_hi( real(CM_num), s_thresh, 5 );
+    return Ternary( s >= s_thresh, cm_pade_hi(s) + 1i * blatt_weisskopf_sq<N>(q2(s,m1*m1,m2*m2) * R * R ) * 2 * sqrt( Q2(s,m1*m1,m2*m2) / s ),  cm_pade_lo(s) )/ 1i;
+  }
 }
 
 Expression AmpGen::phaseSpace(const Expression& s, const Particle& p, const size_t& l)
@@ -83,9 +137,9 @@ Expression AmpGen::phaseSpace(const Expression& s, const Particle& p, const size
     }
     else if( phsp_parameterisation == std::string("CM") )
     {
-      if( l != 0 ){
-        WARNING("Chew-Mandelstam only implemented for l=0");
-      }
+      if( l == 1 ) return rho_pade<1>(s, p); 
+      if( l == 2 ) return rho_pade<2>(s, p); 
+      if( l == 3 ) return rho_pade<3>(s, p); 
       auto m1 = p.daughter(0)->mass();
       auto m2 = p.daughter(1)->mass();
       Expression s1 = m1*m1;
@@ -121,17 +175,17 @@ DEFINE_LINESHAPE( CoupledChannel )
     Particle p( channels[i] ); 
     DEBUG( "Adding channel ... " << p.uniqueString() << " coupling = " << NamedParameter<std::string>( channels[i+1]  ) );
     Expression coupling = Parameter(channels[i+1], 0);
-    totalWidth       = totalWidth       + coupling * phaseSpace(s        , p, p.L());
-    totalWidthAtPole = totalWidthAtPole + coupling * phaseSpace(mass*mass, p, p.L());    
+    totalWidth       += coupling * phaseSpace(s        , p, p.L());
+    totalWidthAtPole += coupling * phaseSpace(mass*mass, p, p.L());    
     ADD_DEBUG(coupling, dbexpressions);
     ADD_DEBUG(phaseSpace(s,p,p.L() ), dbexpressions);
     ADD_DEBUG(phaseSpace(mass*mass,p,p.L() ), dbexpressions);
   }
   ADD_DEBUG(totalWidth, dbexpressions);
   ADD_DEBUG(totalWidthAtPole, dbexpressions);
-  const Expression q2  = make_cse(abs(Q2(s, s1, s2)));
-  Expression formFactor                        = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
-  if ( lineshapeModifier == "BL" )  formFactor = sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
+  const Expression q2  = make_cse(fcn::abs(Q2(s, s1, s2)));
+  Expression formFactor                        = fcn::sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
+  if ( lineshapeModifier == "BL" )  formFactor = fcn::sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
   const Expression widthNorm = lineshapeModifier == "norm" ? width / totalWidthAtPole : 1; 
   const Expression D  = mass*mass - Constant(0,1)*mass*totalWidth*widthNorm; 
   const Expression BW = 1. / ( D - s ); 

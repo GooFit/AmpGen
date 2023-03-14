@@ -1,5 +1,6 @@
 #include "AmpGen/Expression.h"
 #include "AmpGen/Particle.h"
+#include "AmpGen/Lineshapes.h"
 
 namespace AmpGen { 
 
