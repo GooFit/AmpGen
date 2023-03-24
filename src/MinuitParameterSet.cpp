@@ -166,6 +166,7 @@ void MinuitParameterSet::loadFromStream()
   for ( const auto& tokens : ppfl )
   {
     tryParameter( tokens );
+    INFO( tokens[0] );
     if ( tokens.size() >= 3 && tokens[1] == "=" ) protoAliases.push_back( tokens );
     else if ( tokens[0].find("=") != std::string::npos && ! Particle::isValidDecayDescriptor( tokens[0] ) )
     {
@@ -183,7 +184,8 @@ void MinuitParameterSet::loadFromStream()
     if( tokens.size() == 2 and ( tokens[1] == "mass" or tokens[1] == "width" or tokens[1] == "radius") )
     {
       auto props = ParticlePropertiesList::get( tokens[0], true);
-      if( props == nullptr )  continue; 
+      if( props == nullptr or ! props->hasDistinctAnti() )  continue; 
+
       auto conj_name = ParticlePropertiesList::get( -1 * props->pdgID(), true )->name() +  + "_" + tokens[1]; 
       if( find( conj_name ) != nullptr ) continue; 
       tmp.push_back( new MinuitExpression( conj_name, MinuitParameterLink(param) ) );
