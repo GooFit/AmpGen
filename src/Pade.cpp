@@ -36,5 +36,35 @@ std::vector<double> AmpGen::detail::solve_pade(const std::function<double(const 
   gsl_permutation_free(p);
   gsl_matrix_free(solver); 
   gsl_matrix_free(inverse); 
+/*  
+  std::vector<double> co_f( N + 1);
+  std::vector<double> co_g( N ); 
+  for( int i = 0 ; i != N; ++i )
+  {
+    co_f[i] = rv[i];
+    co_g[i] = rv[i+(N+1)];
+  }
+  co_f[N] = rv[N];
+
+  auto test_fcn = [co_f, co_g, max, min, N ]( double s )
+  {
+    auto range = 1/(max-min);
+    auto x = ( s -min ) * range; 
+    auto f = 0.;
+    auto g = 1.;
+    auto acc = 1.;
+    for(unsigned i = 0; i < N; ++i){
+      f += co_f[i] * acc;
+      acc *= x;
+      g += co_g[i] * acc;
+    }
+    return (f + co_f[N]*acc)/g;
+  };
+  for( int j = 0 ; j != 2*N+1; ++j )
+  {
+    double s = samples[j] * ( max - min ) + min;
+    std::cout << j << " " << s << " " << test_fcn(s) - fcn(s) << std::endl; 
+  }
+  */
   return rv;
 }

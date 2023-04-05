@@ -159,7 +159,7 @@ namespace AmpGen {
           if constexpr( std::is_same< typename functor_type::return_type, void >::value )
           {
             DEBUG("Evaluating bulk functor on: " << stagger << " " << m_input->nFields() << " " << fieldStagger  << " " << m_input->data()[0]  ); 
-            fcn.batch(Store<stored_type, align>::aligned_size(), 
+            fcn.batch(Store<stored_type, align>::nBlocks(), 
                 m_input->nFields(), 
                 fieldStagger,
                 nullptr, 
@@ -173,7 +173,7 @@ namespace AmpGen {
           {
             DEBUG("Evaluating bulk function on [no-rto] : stagger:" << stagger << " Input Fields: " << m_input->nFields() << " field stagger: " << fieldStagger  << " input: " << m_input->data()[0] ); 
 
-            fcn.batch(Store<stored_type,align>::aligned_size(), 
+            fcn.batch(Store<stored_type,align>::nBlocks(), 
                 m_input->nFields(), 
                 fieldStagger, 
                 Store<stored_type, align>::data() + f[0] *stagger, 

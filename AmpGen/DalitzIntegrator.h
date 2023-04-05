@@ -45,7 +45,7 @@ namespace AmpGen
       double sqDp2(const Event& evt) const;
       real_v safe_sqrt(const real_v& x ) const { 
         #if ENABLE_AVX 
-        return select( x > 0. , sqrt(x) , 0. ); 
+        return select( x > 0. , sqrt(x) , real_v(0.) ); 
         #else 
           return x > 0 ? sqrt(x) : 0;
         #endif

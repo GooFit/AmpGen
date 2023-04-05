@@ -162,8 +162,14 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
     std::string comma = (i!=m_db.size()-1)?", " :"};\n}\n";
     const auto expression = m_db[i].second; 
     stream << std::endl << "{\"" << m_db[i].first << "\",";
-    if ( expression.to_string(m_resolver.get()) != "NULL" )
-      stream << type_string<complex_v>() << "("<< expression.to_string(m_resolver.get()) << ")}" << comma;
+    if ( expression.to_string(m_resolver.get()) != "NULL" ){
+      if( is<Constant>(expression) and std::imag( expression() ) == 0 )
+      {
+        stream << type_string<complex_v>()   <<  "("<< expression.to_string(m_resolver.get()) << ", 0.)}" << comma;
+      }
+      else 
+      stream << type_string<complex_v>()   <<  "("<< expression.to_string(m_resolver.get()) << ")}" << comma;
+    }
     else stream << type_string<complex_v>() << "(-999.,0.)}" << comma ;
   }
 }
@@ -203,7 +209,7 @@ void CompiledExpressionBase::compileBatch( std::ostream& stream ) const
 #if USE_OPENMP
   stream << "#pragma omp parallel for\n";
 #endif
-  stream << "for( size_t i = 0; i < N/" << utils::size<real_v>::value << "; ++i ){\n";
+  stream << "for( size_t i = 0; i < N; ++i ){\n";
   if( use_rto() ) stream << progName() + "( r + cacheSize * i, s, x0, x1 +  i * eventSize);";
   else            stream << " rt[cacheSize*i] = " << progName() + "( x0, x1 +  i * eventSize);";
   stream << "}\n}";

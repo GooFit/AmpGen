@@ -187,10 +187,10 @@ std::string ParticleProperties::spinName() const {
     if( m_twoSpin == 6 ) return "H"; 
   }
   else {
-    if( m_twoSpin == 1 ) return "f";
-    if( m_twoSpin == 3 ) return "r";
-    if( m_twoSpin == 5 ) return "e";
-    if( m_twoSpin == 7 ) return "c";
+    if( m_twoSpin == 1 ) return m_pdgID > 0 ? "f" : "F";
+    if( m_twoSpin == 3 ) return m_pdgID > 0 ? "r" : "R";
+    if( m_twoSpin == 5 ) return m_pdgID > 0 ? "e" : "E";
+    if( m_twoSpin == 7 ) return m_pdgID > 0 ? "c" : "C";
   }
   WARNING("Spin name not implemented for " << m_twoSpin );
   return "?";

@@ -159,13 +159,42 @@ namespace AmpGen
     DECLARE_VERTEX( f_rS_P );
     DECLARE_VERTEX( f_rS_D );
     DECLARE_VERTEX( f_rS_P1 );
+    
+    DECLARE_VERTEX( F_FS_S );
+    DECLARE_VERTEX( F_FS_S1 );
+    DECLARE_VERTEX( F_FS_P );
+    DECLARE_VERTEX( F_FS_P1 );
 
-    DECLARE_VERTEX( S_ff_S );
-    DECLARE_VERTEX( S_ff_S1 );
-    DECLARE_VERTEX( V_ff_S );
-    DECLARE_VERTEX( V_ff_S1 );  
-    DECLARE_VERTEX( V_ff_PL );  
-    DECLARE_VERTEX( V_ff_PR );  
+    DECLARE_VERTEX( F_VF_S );
+    DECLARE_VERTEX( F_VF_S1 );
+    DECLARE_VERTEX( F_VF_P );
+    DECLARE_VERTEX( F_VF_P1 );
+    DECLARE_VERTEX( F_VF_P2 );
+    DECLARE_VERTEX( F_VF_P3 );
+    
+    DECLARE_VERTEX( F_FS_SL );
+    DECLARE_VERTEX( F_FS_SR );
+
+    DECLARE_VERTEX( F_VF_SL );
+    DECLARE_VERTEX( F_VF_SR );
+
+    DECLARE_VERTEX( F_VF_D );
+    DECLARE_VERTEX( F_VF_D1 );
+    
+    DECLARE_VERTEX( F_TF_P );
+    
+    DECLARE_VERTEX( R_FS_P );
+    DECLARE_VERTEX( R_FS_D );
+    DECLARE_VERTEX( F_RS_P );
+    DECLARE_VERTEX( F_RS_D );
+    DECLARE_VERTEX( F_RS_P1 );
+
+    DECLARE_VERTEX( S_fF_S );
+    DECLARE_VERTEX( S_fF_S1 );
+    DECLARE_VERTEX( V_fF_S );
+    DECLARE_VERTEX( V_fF_S1 );  
+    DECLARE_VERTEX( V_fF_PL );  
+    DECLARE_VERTEX( V_fF_PR );      
 
     DECLARE_VERTEX( S_VV_rp);
     DECLARE_VERTEX( S_VV_rm);
@@ -222,6 +251,8 @@ namespace AmpGen
     */
   Tensor Spin1hProjector( const Tensor& B );
   Tensor Spin3hProjector( const Tensor& A );
+  Tensor Spin1hbProjector( const Tensor& B );
+  Tensor Spin3hbProjector( const Tensor& A );
 
   Tensor gamma_twiddle( const Tensor& P );
   Tensor Gamma4Vec();

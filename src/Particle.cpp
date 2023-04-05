@@ -568,25 +568,41 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
     if( m_spinBasis == spinBasis::Weyl )
     {
       std::array<Tensor,2> xi;
-      Expression n       = fcn::sqrt( 2 * pP*(pP+pZ) );
-      Expression aligned = make_cse( Abs(pP + pZ) < 10e-6 ) ;
+      Expression aligned = make_cse( fcn::abs(pP + pZ) < 1e-6 ) ;
+      Expression n       = 1/fcn::sqrt( 2 * pP*(pP+pZ) );
+      xi[0] = Tensor( { Ternary( aligned, 1, n * ( pP + pZ ) ) ,  Ternary( aligned, 0, n * ( pX + 1i * pY) ) } ); 
+      xi[1] = Tensor( { Ternary( aligned, 0, n * ( -pX + 1i * pY )) , Ternary( aligned, 1, n * ( pP + pZ ) ) } ); 
+      Expression N = make_cse( fcn::sqrt((pE+m)/(2*m) ));
+      Tensor sigma_dot_p = ( Sigma[0] * pX + Sigma[1] * pY + Sigma[2] * pZ ) / ( pE + m ) ;
+      std::array<Tensor,2> xi_prime;
+      Tensor::Index a,b; 
+      xi_prime[0] = sigma_dot_p( a, b) * xi[0](b);
+      xi_prime[1] = sigma_dot_p( a, b) * xi[1](b);
+
+      if(id > 0 && polState ==  1 ) return N * Tensor({ xi[0][0]        , xi[0][1]      , xi_prime[0][0], xi_prime[0][1]   }, Tensor::dim(4));
+      if(id > 0 && polState == -1 ) return N * Tensor({ xi[1][0]        , xi[1][1]      , xi_prime[1][0], xi_prime[1][1]   }, Tensor::dim(4)); 
+      if(id < 0 && polState == +1 ) return N * Tensor({ xi_prime[1][0]  , xi_prime[1][1], xi[1][0]      , xi[1][1] }, Tensor::dim(4));
+      if(id < 0 && polState == -1 ) return N * Tensor({ xi_prime[0][0]  , xi_prime[0][1], xi[0][0]      , xi[0][1] }, Tensor::dim(4));
+
+      /*
       xi[0] = Tensor( {make_cse( Ternary(aligned, 1, -zb/n)) , make_cse( Ternary(aligned, 0, (pP+pZ)/n ) ) });
       xi[1] = Tensor( {make_cse( Ternary(aligned, 0, (pP+pZ)/n)), make_cse(Ternary(aligned,1, z/n) )  });
-
       Expression fa = m_props->isNeutrino() ? polState * fcn::sqrt(pE) : polState * fcn::sqrt( fcn::abs( pE/m -  1 ) );
       Expression fb = m_props->isNeutrino() ? fcn::sqrt(pE)            : fcn::sqrt( pE/m + 1 );
       int ind = (id>0 ? polState : -polState) == -1 ? 0 : 1;
 
       return id > 0 ?  Tensor({ - fa * xi[ind][0], - fa * xi[ind][1], fb * xi[ind][0], fb * xi[ind][1] })
         :  -polState * Tensor({   fb * xi[ind][0],   fb * xi[ind][1], fa * xi[ind][0], fa * xi[ind][1] });
+*/
+
     } 
     if ( m_spinBasis == spinBasis::Dirac )
     {
       Expression N = make_cse( fcn::sqrt((pE+m)/(2*m) ));
       if(id > 0 && polState ==  1 ) return N * Tensor({ 1        ,0          , pZ/(pE+m),  z/(pE+m)  });
       if(id > 0 && polState == -1 ) return N * Tensor({ 0        ,1          , zb/(pE+m), -pZ/(pE+m) }); 
-      if(id < 0 && polState == -1 ) return N * Tensor({ pZ/(pE+m),  z/(pE+m) , 1        ,0           });
-      if(id < 0 && polState ==  1 ) return N * Tensor({ zb/(pE+m),-pZ/(pE+m) , 0        ,1           }); 
+      if(id < 0 && polState == +1 ) return N * Tensor({ pZ/(pE+m),  z/(pE+m) , 1        ,0           });
+      if(id < 0 && polState == -1 ) return N * Tensor({ zb/(pE+m),-pZ/(pE+m) , 0        ,1           }); 
     }
   }
   std::string js = m_props->isBoson() ? std::to_string(m_props->twoSpin()/2) : std::to_string(m_props->twoSpin()) +"/2";

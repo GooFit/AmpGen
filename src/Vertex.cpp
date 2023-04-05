@@ -27,7 +27,7 @@ namespace {
   static const Tensor::Index d     = Tensor::Index(); 
 }
 
-template <> Factory<AmpGen::Vertex::Base>* Factory<AmpGen::Vertex::Base>::gImpl = nullptr;
+// template <> Factory<AmpGen::Vertex::Base>* Factory<AmpGen::Vertex::Base>::gImpl = nullptr;
 
 bool Vertex::Factory::isVertex( const std::string& hash ) { return get( hash ) != nullptr; }
 
@@ -130,6 +130,25 @@ Tensor AmpGen::Spin3hProjector( const Tensor& P )
   Ps.st();
   Tensor g = gamma_twiddle(Ps);
   Tensor F = Spin1hProjector(Ps);
+  Tensor S = Spin1Projector(Ps);
+  S.imposeSymmetry(0,1);
+  Tensor rt = (-1.) * S(mu,nu) * F(a,b) + (1./3.) * F(a,c) * g(mu,c,d) * g(nu,d,b);
+  rt.st(true);
+  return rt;
+}
+
+Tensor AmpGen::Spin1hbProjector( const Tensor& P )
+{
+  Expression m = make_cse( fcn::sqrt( dot( P, P ) ) );
+  return 0.5 * ( - slash(P)/m + Identity() );
+}
+
+Tensor AmpGen::Spin3hbProjector( const Tensor& P )
+{
+  Tensor Ps = P;
+  Ps.st();
+  Tensor g = gamma_twiddle(Ps);
+  Tensor F = Spin1hbProjector(Ps);
   Tensor S = Spin1Projector(Ps);
   S.imposeSymmetry(0,1);
   Tensor rt = (-1.) * S(mu,nu) * F(a,b) + (1./3.) * F(a,c) * g(mu,c,d) * g(nu,d,b);
@@ -279,191 +298,15 @@ DEFINE_VERTEX( V_TS_D )
   return coupling( -mu, -nu ) * V1( nu, alpha ) * L( -alpha );
 }
 
-DEFINE_VERTEX( f_fS_S )
-{
-  Tensor f_fS_Sv = Spin1hProjector(P)(a,b) * V1(b) * V2[0];
-  ADD_DEBUG_TENSOR( f_fS_Sv, db);
-  return f_fS_Sv; 
-}
+DEFINE_VERTEX( S_fF_S ) { return Bar(V2)(a) * V1(a); }
 
-DEFINE_VERTEX( f_fS_P )
-{
-  Tensor proj   = Spin1hProjector(P);
-  Tensor L      = Orbital_PWave(P,Q);
-  ADD_DEBUG_TENSOR( P, db );
-  ADD_DEBUG_TENSOR( Q, db );
-  ADD_DEBUG_TENSOR( L, db );
-  Tensor t      = proj(a, b) * Gamma[4](b,c) * slash(L)(c,d) * V1(d);
-  return t; 
-}
+DEFINE_VERTEX( S_fF_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * V1(b); }
 
-DEFINE_VERTEX( f_Vf_S )
-{
-  Tensor proj   = Spin1hProjector(P);
-  return proj(a, b) * Gamma[4](b,c) * gamma_twiddle(P)(mu,c,d) * V2(d) * V1(-mu);
-}
+DEFINE_VERTEX( V_fF_S ) { return Spin1Projector(P)(mu, nu) * Bar(V2)(a) * Gamma4Vec()(-nu,a,b) * V1(b); }
 
-DEFINE_VERTEX( f_Vf_P ) /// = A3 
-{
-  Tensor proj   = Spin1hProjector(P);
-  auto L = Orbital_PWave(P,Q);
-  return proj( alpha, beta ) * V2(beta) * dot( V1, L );
-}
+DEFINE_VERTEX( V_fF_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * Gamma4Vec()(mu,b,c) * V1(c); }
 
-DEFINE_VERTEX( f_Vf_P1 ) //// = A6
-{
-  Tensor proj   = Spin1hProjector(P);
-  Tensor L = Orbital_PWave(P,Q);
-  Tensor t = LeviCivita()(mu,nu,alpha,beta) * V1(-nu) * L(-alpha) * P(-beta); 
-  t.st();
-  return proj( a, b ) * Gamma[4](b,c) * gamma_twiddle(P)(mu,c,d) * V2(d) * t(-mu);
-}
-
-DEFINE_VERTEX( f_Vf_D ) //// = A8 
-{
-  Tensor proj   = Spin1hProjector(P);
-  Tensor gt     = gamma_twiddle(P);
-  Tensor L      = Orbital_DWave(P,Q)(-mu,-nu) * V1(nu); 
-  return proj( a, b ) * Gamma[4](b,c) * gt(mu,c,d) * V2(d) * L(-mu);
-}
-
-DEFINE_VERTEX( f_Vf_S1 )
-{
-  Tensor proj   = Spin1hProjector(P);
-  Tensor vSlash = gamma_twiddle(P)(mu,a,b) * V1(-mu);
-  return proj( a, b ) * vSlash(b,c) * V2(c);
-}
-
-DEFINE_VERTEX( f_Vf_SL )
-{ 
-  Tensor proj = Spin1hProjector(P);
-  return proj(a, b) * Gamma4Vec()(mu,b,c) * ( Identity(4) - Gamma[4] )(c,d)* V2(d) * V1(-mu);
-}
-
-DEFINE_VERTEX( f_Vf_SR )
-{ 
-  Tensor proj = Spin1hProjector(P);
-  return proj(a, b) * Gamma4Vec()(mu,b,c) * ( Identity(4) + Gamma[4] )(c,d)* V2(d) * V1(-mu);
-}
-
-DEFINE_VERTEX( f_fS_SL )
-{ 
-  Tensor proj = Spin1hProjector(P);
-  return proj(a, b) * ( Identity(4) - Gamma[4] )(b,c)* V2(c);
-}
-
-
-DEFINE_VERTEX( f_fS_SR )
-{ 
-  Tensor proj = Spin1hProjector(P);
-  return proj(a, b) * ( Identity(4) + Gamma[4] )(b,c)* V2(c);
-}
-
-DEFINE_VERTEX( f_fS_S1 ){ return Spin1hProjector(P)(a,b) * Gamma[4](b,c) * V1(c) * V2[0];}
-
-DEFINE_VERTEX( f_fS_P1 )
-{
-  return Spin1hProjector(P)(a, b) * slash(Orbital_PWave(P,Q))(b,c) * V1(c) * V2[0];
-}
-
-DEFINE_VERTEX( f_Tf_P )
-{
-  Tensor proj   = Spin1hProjector(P);
-  Tensor T = V1;
-  T.imposeSymmetry(0,1);
-  T.st();
-  return proj( a, b ) * gamma_twiddle(P)(mu,b,c) * V2(c) * T(-mu,-nu) * Orbital_PWave(P,Q)(nu);
-}
-
-DEFINE_VERTEX( f_Vf_P2 ) //A4 
-{
-  Tensor proj   = Spin1hProjector(P);
-  return proj( alpha, beta ) * Gamma[4](beta,nu) * V2(nu) * dot( V1, Orbital_PWave( P, Q ) );
-}
-
-DEFINE_VERTEX( f_Vf_P3 ) //A5
-{
-  Tensor proj   = Spin1hProjector(P);
-  Tensor L = Orbital_PWave(P,Q);
-  Tensor t = LeviCivita()(-mu,-nu,-alpha,-beta) * L(nu) * V1(alpha) * P(beta); 
-  t.st();
-  return proj( a, b ) * gamma_twiddle(P)(mu,b,c) * V2(c) * t(-mu); 
-}
-
-
-DEFINE_VERTEX( f_Vf_D1 )
-{
-  Tensor proj   = Spin1hProjector(P);
-  Tensor gt     = gamma_twiddle(P);
-  Tensor L      = Orbital_DWave(P,Q)(-mu,-nu) * V1(nu); 
-  return proj( a, b ) * gt(mu,b,c) * L(-mu) * V2(c) ;
-}
-
-
-DEFINE_VERTEX( r_fS_P )
-{
-  Tensor L = Orbital_PWave(P,Q);
-  L.st();
-  Tensor F = Spin1hProjector(P);
-  Tensor V = ( (-1) * L(nu) * F(a,d) + (1./3.) * F(a,b) * gamma_twiddle(P)(nu,b,c) * slash(L)(c,d) ) * V1(d); 
-  V.st();
-  return V;
-}
-
-DEFINE_VERTEX( r_fS_D )
-{
-  Tensor::Index e;
-  Tensor L = Orbital_PWave(P,Q);
-  Tensor F = Spin1hProjector(P);
-  L.st(true);
-  Expression L2 = make_cse(dot(L,L));
-  Tensor gt = gamma_twiddle(P);
-  Tensor rt =  ( L(mu) * F(a,b) * slash(L)(b,c) - (L2/3.) * F(a,b) * gt(mu,b,c) ) * Gamma[4](c,d) * V1(d); 
-  rt.st();
-  return rt;
-}
-
-
-DEFINE_VERTEX( f_rS_D )
-{
-  Tensor F = Spin1hProjector(P)(a,b) 
-    * Gamma[4](b,d) 
-    * gamma_twiddle(P)(mu,d,c)
-    * V1(alpha,c) 
-    * Orbital_DWave(P,Q)(-mu,-alpha) 
-    * V2[0];
-  F.st();
-  return F;
-}
-
-DEFINE_VERTEX( f_rS_P )
-{
-  auto L = Orbital_PWave(P,Q);
-  Tensor F = Spin1hProjector(P)(a,b)                 * V1(-mu,b) * L(mu) * V2[0];
-  ADD_DEBUG_TENSOR( V1, db );
-  ADD_DEBUG_TENSOR( L , db );
-  ADD_DEBUG_TENSOR( F , db );
-  F.st();
-  return F;
-}
-
-DEFINE_VERTEX( f_rS_P1 )
-{
-  auto L = Orbital_PWave(P,Q);
-  Tensor F = Spin1hProjector(P)(a,b) * Gamma[4](b,c) * V1(-mu,c) * L(mu) * V2[0]; 
-  F.st();
-  return F;
-}
-
-DEFINE_VERTEX( S_ff_S ) { return Bar(V2)(a) * V1(a); }
-
-DEFINE_VERTEX( S_ff_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * V1(b); }
-
-DEFINE_VERTEX( V_ff_S ) { return Bar(V2)(a) * Gamma4Vec()(mu,a,b) * V1(b); }
-
-DEFINE_VERTEX( V_ff_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * Gamma4Vec()(mu,b,c) * V1(c); }
-
-DEFINE_VERTEX( V_ff_PL )
+DEFINE_VERTEX( V_fF_PL )
 { 
   Tensor proj = Spin1Projector(P);
   auto pl = 0.5 * ( Identity(4) - Gamma[4] ); 
@@ -472,7 +315,7 @@ DEFINE_VERTEX( V_ff_PL )
   return proj(mu, nu) * Bar(V1)(a) * Gamma4Vec()(-nu,a,b) * ( Identity(4) - Gamma[4] )(b,c)* V2(c); 
 }
 
-DEFINE_VERTEX( V_ff_PR )
+DEFINE_VERTEX( V_fF_PR )
 { 
   Tensor proj = Spin1Projector(P);
   ADD_DEBUG_TENSOR( (Identity(4) + Gamma[4] )(b,c)* V2(c), db );
@@ -536,7 +379,6 @@ DEFINE_VERTEX( S_TV_rp ){
   return -1i*LeviCivita()(-mu,-nu,-alpha,-beta)*V2(mu)*res(nu)*P1(alpha)*P2(beta) 
       + helOpV2(mu)*(V1(-mu,-nu)*dot0-P1(-mu)*res(-nu))*P2(nu);
 } 
-
 
 DEFINE_VERTEX( S_TV_rm ){
   // Implementation for B to Kres gamma with 2- Kres spin-parity 
