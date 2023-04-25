@@ -77,6 +77,10 @@ Particle::Particle( const std::string& name, const unsigned int& index ) :
 Particle::Particle( const std::string& decayString, const std::vector<std::string>& finalStates,
     const bool& orderDaughters )
 {
+  if( m_spinBasis == spinBasis::Invalid )
+  {
+    FATAL("Unrecognised spin basis!"); 
+  }
   auto items = getItems( decayString );
   if ( items.size() == 0 ) {
     ERROR( "Failed to parse string" << decayString );
@@ -374,7 +378,7 @@ Expression Particle::propagator( DebugSymbols* db ) const
     prop = Lineshape::Factory::get(m_lineshape, *this, db );
   } 
   total *= make_cse(prop);
-  for(auto& d : m_daughters) total *= make_cse(d->propagator(db));
+  for(auto& d : m_daughters) total *= make_cse(d->propagator(/*db*/));
   if(db != nullptr) db->emplace_back("A("+uniqueString()+")", total);
   return total;
 }
@@ -570,31 +574,13 @@ Tensor Particle::externalSpinTensor(const int& polState, DebugSymbols* db ) cons
       std::array<Tensor,2> xi;
       Expression aligned = make_cse( fcn::abs(pP + pZ) < 1e-6 ) ;
       Expression n       = 1/fcn::sqrt( 2 * pP*(pP+pZ) );
-      xi[0] = Tensor( { Ternary( aligned, 1, n * ( pP + pZ ) ) ,  Ternary( aligned, 0, n * ( pX + 1i * pY) ) } ); 
-      xi[1] = Tensor( { Ternary( aligned, 0, n * ( -pX + 1i * pY )) , Ternary( aligned, 1, n * ( pP + pZ ) ) } ); 
+      xi[0] = Tensor( { Ternary( aligned, 1, n * ( pP + pZ ) )      , Ternary( aligned, 0, n * ( pX + 1i * pY) ) } );
+      xi[1] = Tensor( { Ternary( aligned, 0, n * ( -pX + 1i * pY )) , Ternary( aligned, 1, n * ( pP + pZ ) ) } );
       Expression N = make_cse( fcn::sqrt((pE+m)/(2*m) ));
-      Tensor sigma_dot_p = ( Sigma[0] * pX + Sigma[1] * pY + Sigma[2] * pZ ) / ( pE + m ) ;
-      std::array<Tensor,2> xi_prime;
-      Tensor::Index a,b; 
-      xi_prime[0] = sigma_dot_p( a, b) * xi[0](b);
-      xi_prime[1] = sigma_dot_p( a, b) * xi[1](b);
-
-      if(id > 0 && polState ==  1 ) return N * Tensor({ xi[0][0]        , xi[0][1]      , xi_prime[0][0], xi_prime[0][1]   }, Tensor::dim(4));
-      if(id > 0 && polState == -1 ) return N * Tensor({ xi[1][0]        , xi[1][1]      , xi_prime[1][0], xi_prime[1][1]   }, Tensor::dim(4)); 
-      if(id < 0 && polState == +1 ) return N * Tensor({ xi_prime[1][0]  , xi_prime[1][1], xi[1][0]      , xi[1][1] }, Tensor::dim(4));
-      if(id < 0 && polState == -1 ) return N * Tensor({ xi_prime[0][0]  , xi_prime[0][1], xi[0][0]      , xi[0][1] }, Tensor::dim(4));
-
-      /*
-      xi[0] = Tensor( {make_cse( Ternary(aligned, 1, -zb/n)) , make_cse( Ternary(aligned, 0, (pP+pZ)/n ) ) });
-      xi[1] = Tensor( {make_cse( Ternary(aligned, 0, (pP+pZ)/n)), make_cse(Ternary(aligned,1, z/n) )  });
-      Expression fa = m_props->isNeutrino() ? polState * fcn::sqrt(pE) : polState * fcn::sqrt( fcn::abs( pE/m -  1 ) );
-      Expression fb = m_props->isNeutrino() ? fcn::sqrt(pE)            : fcn::sqrt( pE/m + 1 );
-      int ind = (id>0 ? polState : -polState) == -1 ? 0 : 1;
-
-      return id > 0 ?  Tensor({ - fa * xi[ind][0], - fa * xi[ind][1], fb * xi[ind][0], fb * xi[ind][1] })
-        :  -polState * Tensor({   fb * xi[ind][0],   fb * xi[ind][1], fa * xi[ind][0], fa * xi[ind][1] });
-*/
-
+      Expression k = pP * polState / ( pE + m );
+      int ind = polState == +1 ? 0 : 1;
+      if(id > 0 ) return N * Tensor({ xi[ind][0]    ,     xi[ind][1], k * xi[ind][0], k * xi[ind][1]});
+      if(id < 0 ) return N * 1i * Tensor({ k * xi[ind][0], k * xi[ind][1], xi[ind][0]    , xi[ind][1]    });
     } 
     if ( m_spinBasis == spinBasis::Dirac )
     {
@@ -951,7 +937,7 @@ std::ostream& AmpGen::operator<<( std::ostream& os, const Particle& particle ){
 }
 
 namespace AmpGen { 
-  complete_enum( spinFormalism, Covariant, Canonical )
-  complete_enum( spinBasis    , Dirac    , Weyl ) 
+  complete_enum( spinFormalism, Covariant, Canonical)
+  complete_enum( spinBasis, Dirac, Weyl) 
 }
 

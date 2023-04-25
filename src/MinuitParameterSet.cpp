@@ -166,7 +166,6 @@ void MinuitParameterSet::loadFromStream()
   for ( const auto& tokens : ppfl )
   {
     tryParameter( tokens );
-    INFO( tokens[0] );
     if ( tokens.size() >= 3 && tokens[1] == "=" ) protoAliases.push_back( tokens );
     else if ( tokens[0].find("=") != std::string::npos && ! Particle::isValidDecayDescriptor( tokens[0] ) )
     {

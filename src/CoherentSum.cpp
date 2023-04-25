@@ -64,9 +64,10 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   */
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
     tp.enqueue( [i, this, &mps, &amplitudes]() mutable {
-        m_matrixElements[i] = MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), m_dbThis); 
-        CompilerWrapper().compile( m_matrixElements[i], this->m_objCache); 
-        } ); 
+        this->m_matrixElements[i] = 
+          MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), this->m_dbThis);  
+        CompilerWrapper().compile( this->m_matrixElements[i], this->m_objCache); 
+    } ); 
   }
 }
 
@@ -75,8 +76,10 @@ void CoherentSum::prepare()
   transferParameters(); 
   ProfileClock clockEval; 
   for (auto& t : m_matrixElements ) {
+    if( not t.isReady() )
+      FATAL( t.decayDescriptor() << " not ready, fix me"); 
     t.prepare();
-
+    
     if ( m_prepareCalls != 0 && !t.hasExternalsChanged() ) continue;
     if ( m_events != nullptr ) m_cache.update(t);
     m_integrator.updateCache(t);

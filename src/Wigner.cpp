@@ -319,7 +319,10 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
     auto h1   = helicityAmplitude(d1, myFrame, coupling.m1, db, +1, cachePtr);
     auto h2   = helicityAmplitude(d2, myFrame, coupling.m2, db, -1, cachePtr);
     if( db != nullptr ){ 
+      
       db->emplace_back( "coupling" , coupling.factor );
+      db->emplace_back( "m1", coupling.m1 );
+      db->emplace_back( "m2", coupling.m2 );
       if( coupling.factor != 1 ) db->emplace_back( "C x DD'", coupling.factor * term * h1 * h2 );
     }
     total = total + coupling.factor * term * h1 * h2;

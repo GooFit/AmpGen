@@ -13,6 +13,7 @@ MatrixElement::MatrixElement(const Particle& dt,
   amp_type(amp),
   decayTree(dt), 
   coupling(coupling) {
+        
     if( is<TensorExpression>(amp.expression() ) )
     {
       size = cast<TensorExpression>( amp.expression() ) . size() ; 
@@ -24,10 +25,12 @@ MatrixElement::MatrixElement(const Particle& dt,
     const MinuitParameterSet& mps,
     const std::map<std::string, unsigned>& evtFormat, 
     const bool& debugThis) :
-  amp_type(Particle(dt).getExpression(debugThis ? &db : nullptr ), dt.decayDescriptor(), evtFormat, db, &mps ),
+  amp_type(dt.decayDescriptor()),
   decayTree(dt),
   coupling(coupling)
-{}
+{
+  this->set(Particle(dt).getExpression(debugThis ? &db : nullptr ), dt.decayDescriptor(), evtFormat, db, &mps );
+}
 
 std::vector<size_t> AmpGen::processIndex(const std::vector<MatrixElement>& tm, const std::string& label)
 {

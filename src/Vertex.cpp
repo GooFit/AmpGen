@@ -302,7 +302,14 @@ DEFINE_VERTEX( S_fF_S ) { return Bar(V2)(a) * V1(a); }
 
 DEFINE_VERTEX( S_fF_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * V1(b); }
 
-DEFINE_VERTEX( V_fF_S ) { return Spin1Projector(P)(mu, nu) * Bar(V2)(a) * Gamma4Vec()(-nu,a,b) * V1(b); }
+DEFINE_VERTEX( V_fF_S ) { 
+  auto V_fF_S = Bar(V2)(a) * gamma_twiddle(P)(-nu,a,b) * V1(b); 
+  ADD_DEBUG_TENSOR(V1, db); 
+  ADD_DEBUG_TENSOR(V2, db);
+  ADD_DEBUG_TENSOR(P, db );
+  ADD_DEBUG_TENSOR(V_fF_S, db);
+  return V_fF_S; 
+}
 
 DEFINE_VERTEX( V_fF_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * Gamma4Vec()(mu,b,c) * V1(c); }
 

@@ -22,10 +22,10 @@ namespace AmpGen {
       template <class... arg_types> auto operator()(arg_types... args ) const { return amp_type::operator()(args...) ; }
       void debug( const Event& event )    const; 
       const std::string decayDescriptor() const { return decayTree.decayDescriptor() ; }  
+      DebugSymbols                                        db; 
       Particle                                            decayTree;
       TotalCoupling                                       coupling;
       complex_t                                           coefficient;
-      DebugSymbols                                        db; 
       bool                                                workToDo    = {false};
       unsigned                                            size        = {1}; // size of the returned object 
   };

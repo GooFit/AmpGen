@@ -46,13 +46,23 @@ namespace AmpGen
         typedef ret_type return_type;
         unsigned m_outputSize = {0};
 
-        template <typename... namedArgs> 
-        CompiledExpression( const Expression& expression, const std::string& name, const namedArgs&... args ) : CompiledExpressionBase(expression, name) 
+        template <typename... namedArgs> CompiledExpression( const Expression& expression, const std::string& name, const namedArgs&... args ) : 
+          CompiledExpressionBase(expression, name) 
         {
+          set(expression,name, args...); 
+        }
+
+        template <typename... namedArgs> void set( const Expression& expression, const std::string& name, const namedArgs&... args )  
+        {
+          m_obj = expression; 
+          m_name = name; 
           const MinuitParameterSet* mps = nullptr; 
           auto process_argument = [this, &mps]( const auto& arg ) mutable
-          { 
-            if constexpr( std::is_convertible<decltype(arg), DebugSymbols>::value  ) this->m_db = arg;
+          {
+            DEBUG( type_string(arg) ); 
+            if constexpr( std::is_convertible<decltype(arg), DebugSymbols>::value  ){
+              this->m_db = arg;
+            }
             else if constexpr( std::is_convertible<decltype(arg), std::map<std::string, unsigned>>::value ) this->m_evtMap = arg;
             else if constexpr( std::is_convertible<decltype(arg), const MinuitParameterSet*>::value or 
                                std::is_convertible<decltype(arg), const AmpGen::MinuitParameterSet*>::value or
@@ -82,8 +92,11 @@ namespace AmpGen
           }
           else m_outputSize = detail::size_of<ret_type>::value; 
         }
-
+        
         CompiledExpression( const std::string& name = "" ) : CompiledExpressionBase( name ) { m_outputSize = detail::size_of<ret_type>::value; };
+        
+        void setDebug( const DebugSymbols& db ){ m_db = db; } 
+        
         std::vector<real_t> externBuffer() const override { return m_externals ; } 
         std::string returnTypename() const override { return type_string<ret_type>(); }
         bool use_rto() const override { return std::is_same<ret_type, void>::value; }

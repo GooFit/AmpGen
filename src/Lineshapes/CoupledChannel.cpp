@@ -17,20 +17,30 @@ using namespace std::complex_literals;
 
 // ENABLE_DEBUG( Lineshape::CoupledChannel );
 
-Expression H(const Expression& x, 
-    const Expression& y, 
-    const Expression& z )
+template <typename T>  struct complexified { using value_t = std::complex<T>; };
+template <> struct complexified<Expression> { using value_t = Expression ; }; 
+
+template <typename T,
+          typename T1,
+          typename T2,
+          typename T3> T H(const T1& x, const T2& y, const T3& z )
 {
   auto k = ( x*x + y*y + z*z - 2.*x*y - 2.*x*z - 2.*z*y) ; 
-  return Ternary( Imag(sqrt(k)) > 0 , sqrt(k) , -sqrt(k) ); /// change the branch of the sqrt
+  if constexpr( std::is_same_v<T, Expression> ){
+    return Ternary( Imag(sqrt(k)) > 0 , sqrt(k) , -sqrt(k) );
+  }
+  else { 
+    return std::imag(sqrt(k)) > 0 ? sqrt(k) : -sqrt(k); 
+  }
 }
 
-Expression Hr(const Expression& x, 
-    const Expression& y, 
-    const Expression& z )
+template <typename T, typename RT = typename complexified<T>::value_t>  RT Hr(const T& x, const T& y, const T& z )
 {
   auto k = ( x*x + y*y + z*z - 2.*x*y - 2.*x*z - 2.*z*y) ; 
-  return complex_sqrt(k);
+  if constexpr( std::is_same_v<T, Expression>  ){
+    return complex_sqrt(k);
+  }
+  else { return k > 0 ? RT( sqrt(k), 0 ) : RT(0, sqrt(-k) ) ; }
 }
 
 Expression rho_twoBody( const Expression& s, const Expression& s1, const Expression& s2)
@@ -38,7 +48,9 @@ Expression rho_twoBody( const Expression& s, const Expression& s1, const Express
   return Hr(s,s1,s2)/(16*M_PI*s);
 }
 
-Expression rho_threeBody( const Expression& s, 
+
+template <typename T>
+T rho_threeBody( const T& s, 
     const Particle& resonance, 
     const Particle& bachelor ) 
 {
@@ -46,20 +58,17 @@ Expression rho_threeBody( const Expression& s,
   const ParticleProperties& p1 = *bachelor.props();
   const ParticleProperties& p2 = *resonance.daughter(0)->props();
   const ParticleProperties& p3 = *resonance.daughter(1)->props();
-
-  Expression s1 = p1.mass() * p1.mass();
-  Expression s2 = p2.mass() * p2.mass();
-  Expression s3 = p3.mass() * p3.mass();
-  Expression sT =  s2 + s3 + 2*sqrt(s2*s3); 
-  Expression s23_max =  s  + s1 - 2*sqrt(s*s1);
-  Expression i = Constant(0,1);
-  Expression m = is.mass();
-  Expression G = is.width();
-  auto z   = is.mass() * ( is.mass() - i * is.width() ); 
-  auto Hz  = H(s,z,s1);
-  auto HsT = Hr(s,sT,s1);
+  auto s1 = p1.mass() * p1.mass();
+  auto s2 = p2.mass() * p2.mass();
+  auto s3 = p3.mass() * p3.mass();
+  auto sT =  s2 + s3 + 2*sqrt(s2*s3); 
+  auto s23_max =  s  + s1 - 2*sqrt(s*s1);
+  auto m = is.mass();
+  auto G = is.width();
+  auto z   = is.mass() * ( is.mass() - 1i * is.width() ); 
+  auto Hz  = H<T>(s, z, T(s1));
+  auto HsT = Hr<T>(s, T(sT), T(s1));
   auto K   = Hz*HsT + z*(sT-s-s1) + (s-s1)*(s-s1) - sT*(s+s1);
-
   return    Ternary( s23_max > sT, Imag( 
         z * log( (s+s1 -HsT -sT)/(2*sqrt(s*s1)) ) 
         -  Hz * log( K/(2.*sqrt(s*s1)*(sT-z) ) )
