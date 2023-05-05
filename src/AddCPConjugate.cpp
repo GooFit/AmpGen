@@ -34,7 +34,14 @@ void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
     
     if( tokens.size() == 1 && Particle::isValidDecayDescriptor(tokens[0]) )
     {
-      tmp.push_back( new MinuitExpression( Particle(tokens[0] ).conj().decayDescriptor(), fcn::conj( MinuitParameterLink(param)) ) );
+      auto particle = Particle(tokens[0]); 
+      if( std::count( forbidden.begin(), forbidden.end(), particle.name() ) == 0 ){
+        //DEBUG( particle.name() << "->" << particle );   [ to do: fix DEBUG for free functions ] 
+        tmp.push_back( new MinuitExpression( particle.conj().decayDescriptor(), fcn::conj( MinuitParameterLink(param)) ) );
+      }
+      else {
+        //DEBUG("Skipping: " << particle ); 
+      }
       continue; 
     }
     std::string reOrIm = *tokens.rbegin();
@@ -43,7 +50,9 @@ void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
     int sgn=1;
     if ( reOrIm == "Re" || reOrIm == "Im" ){
       auto test_particle = Particle(pname);
+      //DEBUG( test_particle.name() << "->" << test_particle ); 
       if( std::count( forbidden.begin(), forbidden.end(), test_particle.name() ) != 0 ){
+        //DEBUG("Skipping: " << test_particle ); 
         continue; 
       } 
       Particle test = Particle(test_particle).conj();
