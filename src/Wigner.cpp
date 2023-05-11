@@ -105,9 +105,12 @@ TransformSequence AmpGen::wickTransform( const Tensor& P,
   Tensor x({1,0,0}, Tensor::dim(3));
   Tensor y({0,1,0}, Tensor::dim(3));
   Tensor z({0,0,1}, Tensor::dim(3));
-  Expression cos_theta = P[2] / fcn::sqrt( P[0]*P[0] + P[1]*P[1] + P[2]*P[2] );
-  Expression cos_phi   = P[0] / fcn::sqrt( P[0]*P[0] + P[1]*P[1] );
-  Expression sin_phi   = P[1] / fcn::sqrt( P[0]*P[0] + P[1]*P[1] );
+  auto pT = make_cse(  P[0]*P[0] + P[1] *P[1]  );
+  auto pP = make_cse(  P[0]*P[0] + P[1] *P[1] + P[2] * P[2] ); 
+
+  Expression cos_theta = Ternary( pP > 1e-15, P[2] / fcn::sqrt( pP ), 1 ); 
+  Expression cos_phi   = Ternary( pT > 1e-15, P[0] / fcn::sqrt( pT ), 1 );
+  Expression sin_phi   = Ternary( pT > 1e-15, P[1] / fcn::sqrt( pT ), 0 ); 
     
   Transform rot  = ve == + 1 ? Transform( cos_theta,  sin_phi*x - cos_phi*y, Transform::Type::Rotate) :
                                Transform(-cos_theta, -sin_phi*x + cos_phi*y, Transform::Type::Rotate) ;
@@ -246,7 +249,10 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   auto key = index_string(particle);
   if( cachePtr->count(key) == 0 )
   {
-    if( ! particle.isHead() || NamedParameter<bool>("helicityAmplitude::MovingParent", false) )
+    bool is_head = particle.isHead() or 
+                   particle.parent()->daughters().size() == 1 and particle.parent()->isHead() ;
+
+    if( ! is_head || NamedParameter<bool>("helicityAmplitude::MovingParent", false) )
     {
       (*cachePtr)[key] = TransformSequence(parentFrame, wickTransform(pInParentFrame, particle, sgn, db) );
     }
