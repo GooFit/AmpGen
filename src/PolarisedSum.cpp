@@ -77,19 +77,17 @@ PolarisedSum::PolarisedSum(const EventType& type,
       auto [lp, lc] = protoAmps[i];
       auto & p = lp;
       auto & c = lc;
-      PolarisedSum* ptr = this; 
-      tp.enqueue( [i, p=lp, c=lc, polStates, &mps, ptr] () mutable {
+      tp.enqueue( [i, p=lp, c=lc, polStates, &mps, this] () mutable {
         Tensor thisExpression( Tensor::dim(polStates.size()) );
         DebugSymbols syms;      
         for(unsigned j = 0; j != polStates.size(); ++j) 
           thisExpression[j] = make_cse( p.getExpression(j == 0 ? &syms: nullptr, polStates[j] ) );         
-        ptr->m_matrixElements[i] = MatrixElement( 
-            p, c,
+          this->m_matrixElements[i] = MatrixElement( p, c,
             CompiledExpression<void(complex_v*, const size_t*, const real_t*, const real_v*)>(
             TensorExpression(thisExpression), p.decayDescriptor(), &mps,
-            ptr->m_eventType.getEventFormat(), ptr->m_debug ? syms : DebugSymbols() ) );
+            this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ) );
         
-        CompilerWrapper().compile( ptr->m_matrixElements[i] );
+        CompilerWrapper().compile( this->m_matrixElements[i] );
       });
     }
   }
