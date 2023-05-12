@@ -96,14 +96,13 @@ namespace AmpGen {
         bwMass = props->mass();
         if( particle->isStable() ) type = Type::Stable; 
         else if( particle->isQuasiStable() ) type = Type::QuasiStable; 
-        else if( particle->lineshape().find("BW")      != std::string::npos or 
-                 particle->lineshape().find("GSpline") != std::string::npos 
-            ){
+        else if( particle->lineshapeContains({"FormFactor", "None","TD"}) ) type == Type::Flat; 
+        else { 
           type = Type::BW; 
           phi_range.first  = atan((range.first  - bwMass*bwMass)/(bwMass*bwWidth));
           phi_range.second = atan((range.second - bwMass*bwMass)/(bwMass*bwWidth));
         }
-        else type = Type::Flat;
+  //      else type = Type::Flat;
       }
       bool operator==( const Node& other ) const 
       {
