@@ -222,6 +222,9 @@ namespace AmpGen
       /// Return the eventType for this decay (i.e. the initial and final state particles) 
       EventType eventType() const;
 
+      /// Returns the parent of the particle 
+      const Particle* parent() const { return m_parent; } 
+      
       /// Returns the indexth decay product of this particle
       std::shared_ptr<Particle> daughter( const size_t& index );
       
