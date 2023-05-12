@@ -378,7 +378,7 @@ Expression Particle::propagator( DebugSymbols* db ) const
     prop = Lineshape::Factory::get(m_lineshape, *this, db );
   } 
   total *= make_cse(prop);
-  for(auto& d : m_daughters) total *= make_cse(d->propagator(/*db*/));
+  for(auto& d : m_daughters) total *= make_cse(d->propagator(db));
   if(db != nullptr) db->emplace_back("A("+uniqueString()+")", total);
   return total;
 }
