@@ -21,7 +21,7 @@
 
 using namespace AmpGen;
 using namespace AmpGen::fcn;
-namespace AmpGen{ make_enum(PA_TYPE, PVec, QVec); }
+namespace AmpGen{ make_enum(PA_TYPE, PVec, QVec, ZVec); }
 
 DEFINE_LINESHAPE(GenericKmatrix)
 {
@@ -123,6 +123,20 @@ DEFINE_LINESHAPE(GenericKmatrix)
     }
     //TODO: implement higher orbital angular momentum
     return F_0;
+  }
+  else if(pa_type==PA_TYPE::ZVec){
+    auto tokens = split( lineshapeModifier, '.' );
+    if( tokens[0] == "pole")
+    {
+      unsigned channel = stoi(tokens[2])-1; 
+      unsigned pTerm = stoi(tokens[1])-1;  
+      auto pole = poleConfigs[pTerm];
+      Expression M;
+      for ( unsigned int i = 0; i < pole.couplings.size(); ++i ) {
+        M += propagator[{channel, i}] * pole.couplings[i];
+      }
+      return M; 
+    }
   }
   else if(pa_type==PA_TYPE::QVec){
     INFO("Using Q-vector approach to build the production amplitude");
