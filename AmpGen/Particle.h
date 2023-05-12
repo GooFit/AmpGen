@@ -268,6 +268,11 @@ namespace AmpGen
       /// Calculates the total expression for this particle, including symmetrisation and the current polarisation state
       Expression getExpression( DebugSymbols* db = nullptr, const std::vector<int>& = {} );
 
+      /// Check if lineshape contains a substring 
+      bool lineshapeContains( const std::vector<std::string>& container ) const {
+        for( auto& st : container ) if ( m_lineshape.find(st) ) return true; 
+        return false;
+      } 
       /// Calculate the transition matrix for this decay 
       Tensor transitionMatrix( DebugSymbols* db = nullptr );
       bool operator<( const Particle& other );
