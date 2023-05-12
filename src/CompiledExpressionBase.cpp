@@ -163,15 +163,7 @@ void CompiledExpressionBase::addDebug( std::ostream& stream ) const
     const auto expression = m_db[i].second; 
     stream << std::endl << "{\"" << m_db[i].first << "\",";
     if ( expression.to_string(m_resolver.get()) != "NULL" ){
-      if( is<Constant>(expression) and std::imag( expression() ) == 0 ){
-        stream << type_string<complex_v>()   <<  "("<< expression.to_string(m_resolver.get()) << ", 0.)}" << comma;
-      }
-      else if ( is<Parameter>(expression ) ){
-        stream << type_string<complex_v>()   <<  "("<< expression.to_string(m_resolver.get()) << ", 0.)}" << comma;
-      }
-      else { 
-        stream << type_string<complex_v>()   <<  "("<< expression.to_string(m_resolver.get()) << ")}" << comma;
-      }
+      stream << "AmpGen::detail::make_complex<" << type_string<complex_v>()  << ">(" << expression.to_string(m_resolver.get()) << ")}" << comma; 
     }
     else stream << type_string<complex_v>() << "(-999.,0.)}" << comma ;
   }
