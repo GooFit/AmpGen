@@ -8,12 +8,14 @@ namespace AmpGen {
   struct Complex {
     real_t re;
     real_t im;
+    using rt = real_t; 
     Complex() = default;
     Complex( const real_t& re, const real_t& im) : re(re), im(im) {}
     // Complex( const float&   re, const float& im) : re(re), im(im) {}
     Complex( const std::complex<double>& f ) : re( f.real() ), im( f.imag() ) {}
     Complex( const std::complex<float>& f  ) : re( f.real() ), im( f.imag() ) {}
     explicit Complex( const real_t& arg ) : re(arg) {};
+    Complex(const real_t& re, const double& im  ) : re(re), im(im) {} 
     // explicit Complex( const double& arg ) : re(arg) {};
     inline Complex operator+=(const Complex& rhs ); 
     inline Complex operator-=(const Complex& rhs ); 
@@ -23,7 +25,20 @@ namespace AmpGen {
     real_t imag() const { return im; }
     real_t norm() const { return re*re + im *im ; }
   };
-  
+  namespace detail {
+    
+    template <typename complex_t, typename real_t> complex_t make_complex( const real_t& re, const real_t& im ){
+      return complex_t(re, im ); 
+    }
+    template <typename complex_t> complex_t make_complex( const typename complex_t::rt& re){
+      using real_t = typename complex_t::rt;
+      return complex_t(re, real_t(0.) ); 
+    }
+    template <typename complex_t> complex_t make_complex( const complex_t& cmplx ){
+      return cmplx; 
+    }
+  }
+
   template<typename real_t> inline real_t            real(const Complex<real_t>& arg ){ return arg.re ; }
   template<typename real_t> inline real_t            imag(const Complex<real_t>& arg ){ return arg.im ; }
   template<typename real_t> inline real_t             abs(const Complex<real_t>& v ) { return sqrt( v.re * v.re + v.im * v.im ) ; }
