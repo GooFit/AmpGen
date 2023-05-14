@@ -369,7 +369,7 @@ Expression Particle::propagator( DebugSymbols* db ) const
   Expression total = 1.;
   Expression prop  = 1.;
   if ( m_daughters.size() == 2 ) 
-    prop = Lineshape::Factory::get(m_lineshape, s, daughter(0)->massSq(), daughter(1)->massSq(), m_name, m_orbital, db);
+    prop = Lineshape::Factory::get(m_lineshape, *this, db); // m_lineshape, s, daughter(0)->massSq(), daughter(1)->massSq(), m_name, m_orbital, db);
   else if ( m_daughters.size() >= 3 )
     prop = Lineshape::Factory::get(m_lineshape == "BW" ? "SBW" : m_lineshape, *this, db );
   else if ( m_daughters.size() == 1 && m_lineshape.find("BW") != std::string::npos && 
@@ -857,7 +857,7 @@ void Particle::setPolarisationState( const std::vector<int>& state )
 unsigned int Particle::matches( const Particle& other ) const 
 {
   unsigned int rt=0;
-  if( name() != other.name() ) return MatchState::None;
+  if( name() != other.name() ) return MatchState::None; 
   if( (other.daughters().size() == 0 && daughters().size() != 0 ) || 
       (other.daughters().size() != 0 && daughters().size() == 0 ) ) return MatchState::PartialExpansion; 
   if( other.daughters().size() != daughters().size() ) return MatchState::None;
@@ -935,6 +935,12 @@ stdx::optional<std::string> Particle::attribute(const std::string& key) const
 std::ostream& AmpGen::operator<<( std::ostream& os, const Particle& particle ){
   return os << particle.decayDescriptor();
 }
+
+
+const Particle* Particle::parent() const { 
+  WARNING("Pointer to parent can be invalidated by copying / moving, proceed with care.."); 
+  return m_parent; 
+} 
 
 namespace AmpGen { 
   complete_enum( spinFormalism, Covariant, Canonical)

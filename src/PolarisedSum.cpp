@@ -70,24 +70,23 @@ PolarisedSum::PolarisedSum(const EventType& type,
     for(unsigned i=0; i != type.size(); ++i) pols.push_back( ParticleProperties::get(type[i])->polarisations() ); 
     auto polStates = all_combinations( pols ); 
     auto protoAmps       = rules->getMatchingRules(m_eventType);
-    for(const auto& m : protoAmps ) INFO( m.first.uniqueString() ); 
+    for(const auto& [p,c] : protoAmps ) INFO( p.uniqueString() ); 
     m_matrixElements.resize( protoAmps.size() );
     for(unsigned i = 0; i < m_matrixElements.size(); ++i)
     {
-      auto [lp, lc] = protoAmps[i];
-      auto & p = lp;
-      auto & c = lc;
-      tp.enqueue( [i, p=lp, c=lc, polStates, &mps, this] () mutable {
-        Tensor thisExpression( Tensor::dim(polStates.size()) );
+      auto [p, c] = protoAmps[i];
+      tp.enqueue( [i, p, c, polStates, &mps, ptr = this] () mutable {
+        Tensor thisExpression(Tensor::dim(polStates.size()));
         DebugSymbols syms;      
-        for(unsigned j = 0; j != polStates.size(); ++j) 
-          thisExpression[j] = make_cse( p.getExpression(j == 0 ? &syms: nullptr, polStates[j] ) );         
-          this->m_matrixElements[i] = MatrixElement( p, c,
+        for(unsigned j = 0; j != polStates.size(); ++j){ 
+          auto this_express = make_cse( p.getExpression(&syms, polStates[j] ) );
+          thisExpression[j] = this_express;         
+        }
+        ptr->m_matrixElements[i] = MatrixElement( p, c,
             CompiledExpression<void(complex_v*, const size_t*, const real_t*, const real_v*)>(
             TensorExpression(thisExpression), p.decayDescriptor(), &mps,
-            this->m_eventType.getEventFormat(), this->m_debug ? syms : DebugSymbols() ) );
-        
-        CompilerWrapper().compile( this->m_matrixElements[i] );
+            ptr->m_eventType.getEventFormat(), ptr->m_debug ? syms : DebugSymbols() ) );
+        CompilerWrapper().compile( ptr->m_matrixElements[i] );
       });
     }
   }

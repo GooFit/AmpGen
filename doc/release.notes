@@ -1,3 +1,8 @@
+!=================== AmpGen v2r5 2023-05-12 ==================
+ - Fixes to debugger for SIMD builds
+ - Fixes to threading for some builds (OSX, containers)
+ - Improved handling of antifermions
+ - Add Chew-Mandelstam phase-space factors for L>0
 !=================== AmpGen v2r4 2023-02-16 ==================
  - Significant reduction in exported source code size
  - Add support for OSX + Neon architecture

@@ -235,6 +235,7 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
                                      int sgn,
                                      TransformCache* cachePtr )
 {  
+  //INFO("Calling helicity amplitude for: " << particle);
   if( cachePtr == nullptr ) cachePtr = new TransformCache();
   if( particle.daughters().size() > 2 ) {
     WARNING( particle << " has more than two decay products: helicity amplitude is ill-defined - setting spin matrix element to 1" );
@@ -249,9 +250,8 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   auto key = index_string(particle);
   if( cachePtr->count(key) == 0 )
   {
-    bool is_head = particle.isHead() or 
-                   particle.parent()->daughters().size() == 1 and particle.parent()->isHead() ;
-
+    //INFO("Checking if is head: " << particle.isHead() << " " << particle.parent() ); 
+    bool is_head = particle.isHead();
     if( ! is_head || NamedParameter<bool>("helicityAmplitude::MovingParent", false) )
     {
       (*cachePtr)[key] = TransformSequence(parentFrame, wickTransform(pInParentFrame, particle, sgn, db) );

@@ -223,8 +223,7 @@ namespace AmpGen
       EventType eventType() const;
 
       /// Returns the parent of the particle 
-      const Particle* parent() const { return m_parent; } 
-      
+      const Particle* parent() const;       
       /// Returns the indexth decay product of this particle
       std::shared_ptr<Particle> daughter( const size_t& index );
       
@@ -284,7 +283,7 @@ namespace AmpGen
         Exact                 = ( 1<<1 ), 
         PartialExpansion      = ( 1<<2 ), 
         DifferentOrbital      = ( 1<<3 ), 
-        DifferentPolarisation = ( 1<<4 )
+        DifferentPolarisation = ( 1<<4 ),
       };
       /// matches Check the matching between two decay chains, according to the MatchState enum. 
       unsigned int matches( const Particle& other ) const; 
