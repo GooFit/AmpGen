@@ -30,8 +30,7 @@ namespace {
     for( unsigned int i = 0 ; i != channels.size(); ++i )
     {
       auto match_state = particle.matches( channels[i] );
-      if( match_state == Particle::MatchState::Exact or 
-          match_state == Particle::MatchState::DifferentHead ) return i;
+      if( match_state == Particle::MatchState::Exact ) return i;  
     } 
     FATAL( particle << " not found amongst channels"); 
     return 999; 
