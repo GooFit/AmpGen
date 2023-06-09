@@ -152,7 +152,7 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix)
       auto pole = poleConfigs[pTerm];
       Expression M;
       for ( unsigned int i = 0; i < pole.couplings.size(); ++i ) {
-        M += propagator[{channel, i}] * pole.couplings[i];
+        M += propagator[{channel, i}] * pole.couplings[i] / (pole.s - s);
       }
       return M; 
     }
