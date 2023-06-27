@@ -40,6 +40,7 @@ namespace AmpGen {
   }
 
   template<typename real_t> inline real_t            real(const Complex<real_t>& arg ){ return arg.re ; }
+  template<typename real_t> inline real_t            real(const real_t& arg ){ return arg; }
   template<typename real_t> inline real_t            imag(const Complex<real_t>& arg ){ return arg.im ; }
   template<typename real_t> inline real_t             abs(const Complex<real_t>& v ) { return sqrt( v.re * v.re + v.im * v.im ) ; }
   template<typename real_t> inline real_t            norm(const Complex<real_t>& v ) { return  ( v.re * v.re + v.im * v.im ) ; }

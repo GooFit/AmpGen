@@ -10,6 +10,7 @@
 namespace AmpGen
 {
   class CompiledExpressionBase; 
+  
 
   class CompilerWrapper
   {
@@ -24,12 +25,23 @@ namespace AmpGen
     void addHeader(const std::string& include ) { m_includes.push_back(include); } 
   
   private:
-    std::vector<std::string> m_includes = {"complex","cmath","vector"}; 
+    std::vector<std::string> m_includes = {"AmpGen/Complex.h","cmath"}; 
     bool                     m_verbose;
     std::string              m_cxx;
     std::string generateFilename();
     bool isClang() const; 
     std::string              m_extension{"so"}; 
+    
+    class Cleaner {
+      static Cleaner instance;
+      Cleaner(Cleaner const&) = delete;             // Copy construct
+      Cleaner(Cleaner&&) = delete;                  // Move construct
+      Cleaner& operator=(Cleaner const&) = delete;  // Copy assign
+      Cleaner& operator=(Cleaner &&) = delete;      // Move assign
+      ~Cleaner(){
+        std::cout << "Cleaning up objects..." << std::endl; 
+      }
+    };
   };
 } // namespace AmpGen
 #endif
