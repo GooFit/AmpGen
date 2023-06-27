@@ -69,15 +69,17 @@ namespace AmpGen
             }
           }
         }
-        double getMax(const eventlist_t& events) const 
+        template <typename pdf_t> 
+        double getMax(const eventlist_t& events, pdf_t& pdf ) const 
         {
           double max = 0.;
           for ( const auto& evt : events ) 
           {
             auto value             = evt.genPdf();
             if( std::isnan(value) ){ 
-              ERROR( value );
+              ERROR( "PDF for event is nan: " << value  );
               evt.print(); 
+              pdf.debug( evt ); 
             }
             else if ( value > max ) max = value;
           }
@@ -117,7 +119,7 @@ namespace AmpGen
             {
               mc.setGenPDF(block, pdf(mc.block(block), block) / mc.genPDF(block) );
             }
-            maxProb = maxProb == 0 ? 1.5 * getMax(mc) : maxProb; 
+            maxProb = maxProb == 0 ? 1.5 * getMax(mc, pdf) : maxProb; 
             DEBUG( "Norm: " << maxProb );            
            // if constexpr ( std::is_same<phaseSpace_t, TreePhaseSpace>::value ) m_gps.recalculate_weights(mc); 
 
