@@ -1,4 +1,5 @@
 !=================== AmpGen v2r5 2023-05-12 ==================
+ - New application [OptionsFromFitResult] to generate new options file from previous fit 
  - Fixes to debugger for SIMD builds
  - Fixes to threading for some builds (OSX, containers)
  - Improved handling of antifermions
