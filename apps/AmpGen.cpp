@@ -272,14 +272,17 @@ int main( int argc, char** argv )
 
   if ( pdfType == pdfTypes::CoherentSum ){
     CoherentSum pdf( eventType, MPS);
+    if( pdf.size() == 0 ) FATAL("Requested model has no amplitudes") ;
     generateEvents(accepted, pdf, phspType , nEvents, blockSize, &rand );
   }
   else if ( pdfType == pdfTypes::IncoherentSum ){
     CoherentSum pdf( eventType, MPS, "Inco");
+    if( pdf.size() == 0 ) FATAL("Requested model has no amplitudes") ;
     generateEvents(accepted, pdf, phspType , nEvents, blockSize, &rand );
   }
   else if ( pdfType == pdfTypes::PolarisedSum ){
     PolarisedSum pdf(eventType, MPS);
+    if( pdf.size() == 0 ) FATAL("Requested model has no amplitudes") ;
     generateEvents( accepted, pdf, phspType, nEvents, blockSize, &rand );
   }
   /*
