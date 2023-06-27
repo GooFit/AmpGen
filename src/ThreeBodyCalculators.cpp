@@ -277,10 +277,10 @@ void ThreeBodyCalculator::makePlots(const double& mass, const size_t& x, const s
   auto& evtType = m_widths[0].type;
   auto& fcs     = m_widths[0].totalWidth;
   auto projection_operators = evtType.defaultProjections( 500 );
-  int points = NamedParameter<int>( "nPoints", 50000000 );
   sq.setMother( evtType.motherMass() );
   prepare();
   /*
+  int points = NamedParameter<int>( "nPoints", 50000000 );
   auto fcn = [&](const double* evt) { return std::real(fcs(evt)); };
   sq.makePlot( fcn, Projection2D( projection_operators[x], projection_operators[y] ), "s01_vs_s02", points )->Write();
   */
