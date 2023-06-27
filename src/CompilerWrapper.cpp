@@ -31,6 +31,8 @@ using namespace AmpGen;
 // #pragma warning "No AMPGEN_CXX for JIT set"
 // #endif 
 
+// Cleaner Cleaner::instance instance;
+
 CompilerWrapper::CompilerWrapper( const bool& verbose ) :
   m_verbose(verbose),
   m_cxx(getenv("AMPGEN_CXX") != nullptr ? std::string( getenv( "AMPGEN_CXX" ) ) : "")
@@ -55,6 +57,7 @@ void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, 
 {
   std::ofstream output( filename );
   preamble(output);
+  output << "using namespace AmpGen;\n"; 
   if( expression.fcnSignature().find("AVX2d")        != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
   else if( expression.fcnSignature().find("AVX2f")   != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
   else if( expression.fcnSignature().find("AVX512d") != std::string::npos )  output << "#include \"AmpGen/simd/avx512d_types.h\"\n; using namespace AmpGen::AVX512d;\n;" ;
