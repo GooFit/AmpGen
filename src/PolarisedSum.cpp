@@ -74,8 +74,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
     m_matrixElements.resize( protoAmps.size() );
     for(unsigned i = 0; i < m_matrixElements.size(); ++i)
     {
-      auto [p, c] = protoAmps[i];
-      tp.enqueue( [i, p, c, polStates, &mps, ptr = this] () mutable {
+      tp.enqueue( [i, p=protoAmps[i].first, c=protoAmps[i].second, polStates, &mps, ptr = this] () mutable {
         Tensor thisExpression(Tensor::dim(polStates.size()));
         DebugSymbols syms;      
         for(unsigned j = 0; j != polStates.size(); ++j){ 
@@ -318,7 +317,6 @@ void PolarisedSum::updateNorms()
 
 void PolarisedSum::debug(const Event& evt)
 {
-  auto tsize = m_dim.first * m_dim.second;   
   std::vector<complex_v> all_cache;
    
   for(const auto& me : m_matrixElements)
@@ -412,7 +410,6 @@ Expression PolarisedSum::probExpression(const Tensor& T_matrix, const std::vecto
     TT = T_matrix(a,b) * T_conj(c,b);
   }
   else { 
-    size_t it_rhof = T_matrix.dims()[1] * T_conj.dims()[1];
     auto polfrac = pf[0];
     std::vector<Expression> polfracvals = {polfrac,0.,0., 1 - polfrac};
     Tensor rhof(polfracvals,{T_matrix.dims()[1],T_conj.dims()[1]});
