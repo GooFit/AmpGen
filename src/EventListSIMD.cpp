@@ -71,7 +71,7 @@ void EventListSIMD::loadFromTree( TTree* tree, const ArgumentPack& args )
     INFO("Attempted automatic deduction of eventType: " << m_eventType );
   } 
   auto filter       = args.getArg<Filter>(std::string("")).val;
-  auto getGenPdf    = args.getArg<GetGenPdf>(false).val;
+  auto getGenPdf    = args.getArg<GetGenPdf>(true).val;
   auto weightBranch = args.getArg<WeightBranch>(std::string("")).val;
   auto branches     = args.getArg<Branches>().val;
   auto applySym     = args.getArg<ApplySym>(false).val;
