@@ -144,23 +144,19 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
 {
   using namespace std::chrono_literals;
   std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", {"-Ofast", "--std="+get_cpp_version()}); 
- 
-  #if INSTRUCTION_SET != 0
-    compile_flags.push_back( std::string("-I") + AMPGENROOT) ; 
-    #if INSTRUCTION_SET < 10
-        compile_flags.push_back("-march=native");
-      #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d 
-        compile_flags.push_back("-mavx2");
-        compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
-      #endif
+  compile_flags.push_back( std::string("-I") + AMPGENROOT) ;  
+  #if INSTRUCTION_SET < 10
+      compile_flags.push_back("-march=native");
+    #if INSTRUCTION_SET == INSTRUCTION_SET_AVX2d 
+      compile_flags.push_back("-mavx2");
+      compile_flags.push_back("-DHAVE_AVX2_INSTRUCTIONS");
     #endif
   #endif
   if(std::string(AMPGEN_OPENMP_FLAGS) != ""){
     auto flags = split(AMPGEN_OPENMP_FLAGS, ' ');
     for( const auto& flag : flags ) compile_flags.push_back(flag); 
   }
-  std::vector<const char*> argp = { m_cxx.c_str(), "-shared", "-rdynamic", "-fPIC"};
-  
+  std::vector<const char*> argp = { m_cxx.c_str(), "-shared", "-rdynamic", "-fPIC"};  
   std::transform( compile_flags.begin(), compile_flags.end(), std::back_inserter(argp), [](const auto& flag ){return flag.c_str() ; } );
   
   if(isClang())
