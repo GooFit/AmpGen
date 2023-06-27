@@ -50,7 +50,7 @@ void invertParity( Event& event, const size_t& nParticles)
 
 template < class FCN > void debug( FCN& sig, EventList& accepted){
   INFO("Debugging: ");
-  unsigned eventToDebug = 0;
+  unsigned eventToDebug = 2;
   sig.setEvents( accepted );
   sig.prepare();
   sig.debug( accepted[eventToDebug] );
@@ -107,6 +107,7 @@ int main( int argc, char** argv )
   std::vector<double> event = NamedParameter<double>("Event",0).getVector();
   if( event.size() != 1 ) accepted[0].set( event.data() );
   
+
   std::string type = NamedParameter<std::string>("Type","CoherentSum");
 
   if( type == "PolarisedSum")
