@@ -59,6 +59,7 @@ namespace AmpGen
     LinearErrorPropagator getErrorPropagator( const bool& extended = false ) const;
 
     void writeOptions( const std::string& output, const std::string& input = "" ); 
+    void writeOptions( std::ostream&, const std::string& input = ""); 
   private:
     MinuitParameterSet*                 m_mps    = {nullptr};
     double                              m_chi2   = {0};

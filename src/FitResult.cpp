@@ -310,10 +310,15 @@ double FitResult::correlation( const std::string& x, const std::string& y ) cons
   return cov(tx->second, ty->second)/std::sqrt(cov(tx->second, tx->second)*cov(ty->second, ty->second));
 }
 
-void FitResult::writeOptions( const std::string& output, const std::string& input)
+void FitResult::writeOptions( const std::string& output, const std::string& input )
+{
+  std::ofstream output_stream( output);
+  writeOptions(output_stream, input); 
+}
+
+void FitResult::writeOptions( std::ostream& output_stream, const std::string& input)
 {
   std::set<std::string> keys;
-  std::ofstream output_stream( output );
   auto print_param = [&](auto& param) mutable {
     std::string rt= mysprintf( " %-7s %-12lf %-12lf", to_string<Flag>(param->flag()).c_str(), param->mean(), param->err() );
     if( param->minInit() != 0. && param->maxInit() != 0. ) rt += mysprintf(" %-12lf %-12lf", param->minInit(), param->maxInit()); 
