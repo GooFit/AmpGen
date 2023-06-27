@@ -55,7 +55,7 @@ void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState & state)
     if (state.HasCovariance() && m_printLevel >= PrintLevel::VeryVerbose )
       INFO("Error matrix change = " << state.Error().Dcovar() );
   }
-  auto gradient = state.Gradient().Vec().Data(); 
+  //auto gradient = state.Gradient().Vec().Data(); 
   // Print parameter values during the minimisation (blind params are shifted by the blinding offset)
   if( m_printLevel >= PrintLevel::Verbose )
   { 
