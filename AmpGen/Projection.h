@@ -76,11 +76,16 @@ namespace AmpGen
     friend class Projection;
     Projection xAxis;
     Projection yAxis;
+    template <typename eventlist_type> TH2D* projInternal(const eventlist_type&, const ArgumentPack&) const; 
 
     public:
     Projection2D( const Projection& _xAxis, const Projection& _yAxis ) : xAxis( _xAxis ), yAxis( _yAxis ) {}
 
     TH2D* plot(const std::string& prefix="") const;
+    template <class eventlist_type, class... ARGS> TH2D* operator()(const eventlist_type& evts, const ARGS... args) const 
+    {
+      return projInternal(evts, ArgumentPack(args...) ); 
+    } 
 
     std::pair<double, double> operator()( const Event& evt ) const;
   };

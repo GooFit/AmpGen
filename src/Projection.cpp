@@ -96,6 +96,26 @@ template <> TH1D* Projection::projInternal( const EventList& events, const Argum
   return axis;
 }
 
+template <> TH2D* Projection2D::projInternal( const EventList& events, const ArgumentPack& args) const 
+{ 
+  auto selection      = args.getArg<PlotOptions::Selection>().val;
+  auto weightFunction = args.getArg<WeightFunction>().val;
+  bool autowrite     = args.get<PlotOptions::AutoWrite>() != nullptr;
+  std::string prefix  = args.getArg<PlotOptions::Prefix>(std::string(""));
+  auto axis           = plot(prefix);
+  axis->SetLineColor(args.getArg<PlotOptions::LineColor>(kBlack).val); 
+  axis->SetMarkerSize(0);
+  for( auto& evt : events )
+  {
+    if( selection != nullptr && !selection(evt) ) continue;
+    auto [pos_x, pos_y] = operator()(evt);
+    axis->Fill( pos_x, pos_y, evt.weight() * ( weightFunction == nullptr ? 1 : weightFunction(evt) / evt.genPdf() ) );
+  }
+  if( selection != nullptr ) INFO("Filter efficiency = " << axis->GetEntries() << " / " << events.size() );
+  if( autowrite ) axis->Write();
+  return axis;
+}
+
 template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(const EventList& events, const Projection::keyedFunctors& weightFunction, const ArgumentPack& args) const
 {
   std::vector<TH1D*> hists; 
@@ -145,6 +165,25 @@ template <> TH1D* Projection::projInternal( const EventListSIMD& events, const A
     if( selection != nullptr && !selection(evt) ) continue;
     auto pos = operator()(evt);
     plt->Fill( pos, evt.weight() * ( weightFunction == nullptr ? 1 : weightFunction(evt) / evt.genPdf() ) );
+  }
+  if( autowrite ) plt->Write();
+  return plt;
+}
+
+template <> TH2D* Projection2D::projInternal( const EventListSIMD& events, const ArgumentPack& args ) const 
+{
+  auto selection      = args.getArg<PlotOptions::Selection>().val;
+  auto weightFunction = args.getArg<WeightFunction>().val;
+  bool autowrite     = args.get<PlotOptions::AutoWrite>() != nullptr;
+  std::string prefix  = args.getArg<PlotOptions::Prefix>(std::string(""));
+  auto plt = plot(prefix);
+  plt->SetLineColor(args.getArg<PlotOptions::LineColor>(kBlack).val); 
+  plt->SetMarkerSize(0);
+  for( const auto evt : events )
+  {
+    if( selection != nullptr && !selection(evt) ) continue;
+    auto [pos_x, pos_y] = operator()(evt);
+    plt->Fill( pos_x, pos_y, evt.weight() * ( weightFunction == nullptr ? 1 : weightFunction(evt) / evt.genPdf() ) );
   }
   if( autowrite ) plt->Write();
   return plt;

@@ -269,7 +269,7 @@ namespace AmpGen
 
       /// Check if lineshape contains a substring 
       bool lineshapeContains( const std::vector<std::string>& container ) const {
-        for( auto& st : container ) if ( m_lineshape.find(st) ) return true; 
+        for( auto& st : container ) if ( m_lineshape.find(st) != std::string::npos ) return true; 
         return false;
       } 
       /// Calculate the transition matrix for this decay 

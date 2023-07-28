@@ -75,7 +75,10 @@ template <unsigned N> void fill_event(Event& event,
     node = static_cast<const DecayChainStack<N>*>(phsp[weight_distribution(rndm)]); 
     rt = node->proposal( rndm ); 
     nTrial++;
-    if( nTrial > 100000 ) ERROR("Tried 100000 and still no dice (pun intentional)" << " " << std::get<0>(rt) ); 
+    if( nTrial > 1000 ) {
+      ERROR("Tried " << nTrial << " and still no dice (pun intentional)" << " " << std::get<0>(rt) ); 
+      node->debug(rndm); 
+    }
   } while( std::get<0>(rt) < rndm->Uniform() * wmax ); 
   node->fill_from_state(event.address(), std::get<1>(rt), rndm );
 

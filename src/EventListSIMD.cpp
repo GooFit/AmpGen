@@ -67,8 +67,13 @@ void EventListSIMD::loadFromTree( TTree* tree, const ArgumentPack& args )
   ProfileClock read_time; 
   if( m_eventType.size() == 0 ){
     auto tokens = split( tree->GetTitle(), ' ');
-    if( tokens.size() != 1 ) setEventType( EventType( tokens ) ); 
-    INFO("Attempted automatic deduction of eventType: " << m_eventType );
+    bool is_TD = false; 
+    for( auto br : *tree->GetListOfBranches() )
+    {
+      if( std::string( br->GetName() ).find("_decayTime") != std::string::npos) is_TD = true; 
+    }
+    if( tokens.size() != 1 ) setEventType( EventType( tokens, is_TD ) ); 
+    INFO("Attempted automatic deduction of eventType: " << m_eventType << ", TD = " << is_TD );
   } 
   auto filter       = args.getArg<Filter>(std::string("")).val;
   auto getGenPdf    = args.getArg<GetGenPdf>(true).val;

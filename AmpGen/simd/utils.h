@@ -3,6 +3,7 @@
 
 #include <array>
 #include <complex>
+#include "AmpGen/Complex.h"
 
 #define INSTRUCTION_SET_SCALAR   0 
 #define INSTRUCTION_SET_AVX2f    1 
@@ -48,12 +49,14 @@ namespace AmpGen {
 
     template <typename T> struct is_vector_type : std::false_type {}; 
     template <typename T> struct size           { static constexpr unsigned value = 1; } ;
+    template <typename T> struct is_complex_type : std::false_type {}; 
+    template <typename T> struct is_complex_type<AmpGen::Complex<T>> : std::true_type {}; 
+
     #if INSTRUCTION_SET != 0 
         template <>        struct is_vector_type <complex_v> : std::true_type {}; 
         template <>        struct is_vector_type <real_v  >  : std::true_type {}; 
         template <>        struct size           <complex_v>{ static constexpr unsigned value = real_v::size; }; 
-        template <>        struct size           <real_v>   { static constexpr unsigned value = real_v::size; };
-    
+        template <>        struct size           <real_v>   { static constexpr unsigned value = real_v::size; }; 
     #endif
     #if INSTRUCTION_SET == INSTRUCTION_SET_ARM128d
         template <>        struct size           <AVX::int_v>   { static constexpr unsigned value = 2; };
@@ -101,9 +104,10 @@ namespace AmpGen {
     template <typename T> auto make_complex( T&& re, T&& im ) { return std::complex<T>(re,im); }
     template <unsigned p=0, typename vtype> auto get( vtype v )
     { 
-      if constexpr (  is_vector_type<vtype>::value ) return v.at(p); 
-      if constexpr ( std::is_same<vtype, complex_v>::value ) return std::complex( get<p>(v.real()), get<p>(v.imag()) );
-      if constexpr ( !is_vector_type<vtype>::value ) return v; 
+      if constexpr (  is_complex_type<vtype>::value ) return std::complex( get<p>(v.real() ), get<p>(v.imag() ) );
+      else if constexpr (  is_vector_type<vtype>::value ) return v.at(p); 
+      else if constexpr ( std::is_same<vtype, complex_v>::value ) return std::complex( get<p>(v.real()), get<p>(v.imag()) );
+      else if constexpr ( !is_vector_type<vtype>::value ) return v; 
     }
     template < typename vtype> auto at( vtype v, const unsigned p=0 )
     {

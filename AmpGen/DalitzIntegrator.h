@@ -12,6 +12,8 @@
 #include "AmpGen/simd/utils.h"
 #include "AmpGen/NumericalIntegration.h"
 #include "AmpGen/ProfileClock.h"
+
+class TGraph; 
 class TH1D;
 class TH2D;
 
@@ -29,7 +31,6 @@ namespace AmpGen
     public:
 
       typedef std::pair<real_v, real_v> sqCo;
-
       DalitzIntegrator( const double& s0, const double& s1, const double& s2, const double& s3);
 
       template <typename FCN> double integrateDP( FCN&& fcn, const double& s) const;
@@ -47,13 +48,15 @@ namespace AmpGen
         #if ENABLE_AVX 
         return select( x > 0. , sqrt(x) , real_v(0.) ); 
         #else 
-          return x > 0 ? sqrt(x) : 0;
+          return x > 0 ? std::sqrt(x) : 0;
         #endif
       }
       void setEvent(const sqCo& x, real_v* event, const double& s) const;
       
       void debug() const; 
       void setEvent(const sqCo& x, real_v* event) const;
+       
+      
       void set(const double& s0, const double& s1, const double& s2, const double& s3);
       void setMin();
       void setMother(const double& s);
@@ -66,6 +69,8 @@ namespace AmpGen
       
       sqCo getCoordinates( const Event& evt ) const;
 
+
+      TGraph* makeBoundaryGraph( const Projection2D& ) const; 
     private:
       double    m_min;
       double    m_max;

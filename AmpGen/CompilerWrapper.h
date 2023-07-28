@@ -25,7 +25,7 @@ namespace AmpGen
     void addHeader(const std::string& include ) { m_includes.push_back(include); } 
   
   private:
-    std::vector<std::string> m_includes = {"AmpGen/Complex.h","cmath"}; 
+    std::vector<std::string> m_includes = {"AmpGen/Complex.h","cmath", "vector"}; 
     bool                     m_verbose;
     std::string              m_cxx;
     std::string generateFilename();

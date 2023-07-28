@@ -15,6 +15,14 @@
 #include "TH2.h"
 #include "TRandom.h"
 #include "TRandom3.h"
+#include "TGraph.h"
+#include <math.h>
+
+#if ENABLE_AVX
+#define SQRT sqrt
+#else 
+#define SQRT std::sqrt
+#endif
 
 using namespace AmpGen;
 DalitzIntegrator::DalitzIntegrator( const double& s0, const double& s1, const double& s2, const double& s3 )
@@ -57,8 +65,8 @@ void DalitzIntegrator::setEvent( const sqCo& x, real_v* event ) const
 {
   auto mAB = getMAB( x );
   auto pA  = safe_sqrt(0.25*mAB*mAB - 0.5*(m_s1 + m_s2) + (m_s1-m_s2)*(m_s1-m_s2)/(4.*mAB*mAB));
-  auto eA  = sqrt(pA*pA + m_s1);
-  auto eB  = sqrt(pA*pA + m_s2);
+  auto eA  = SQRT(pA*pA + m_s1);
+  auto eB  = SQRT(pA*pA + m_s2);
   auto eC  = ( m_s0 - m_s3 - mAB * mAB ) / ( 2. * mAB );
   auto pC  = safe_sqrt( eC * eC - m_s3 );
   event[2]  = pA;
@@ -102,7 +110,7 @@ real_v DalitzIntegrator::J( const sqCo& coords, const double& s ) const
   auto mAB         = getMAB( coords, s);
   auto max         = std::sqrt(s)    - std::sqrt(m_s3);
   auto min         = std::sqrt(m_s1) + std::sqrt(m_s2);
-  auto pA          = sqrt( mAB*mAB/4. - (m_s1+m_s2)/2. + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB) );
+  auto pA          = SQRT( mAB*mAB/4. - (m_s1+m_s2)/2. + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB) );
   auto eC          = ( m_s0 - m_s3 - mAB * mAB ) / (2*mAB);
   auto pC          = safe_sqrt( eC * eC - m_s3 );
   auto mPrime_     = coords.first;
@@ -123,11 +131,11 @@ real_v DalitzIntegrator::getMAB( const sqCo& coords, const double& s ) const
 void DalitzIntegrator::setEvent(const sqCo& x, real_v* event, const double& s) const
 {
   auto mAB = getMAB( x, s );
-  auto pA  = sqrt( mAB*mAB/4. - (m_s1+m_s2)/2. + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB) );
-  auto eA  = sqrt( pA * pA + m_s1 );
-  auto eB  = sqrt( pA * pA + m_s2 );
+  auto pA  = SQRT( mAB*mAB/4. - (m_s1+m_s2)/2. + (m_s1-m_s2)*(m_s1-m_s2)/(4*mAB*mAB) );
+  auto eA  = SQRT( pA * pA + m_s1 );
+  auto eB  = SQRT( pA * pA + m_s2 );
   auto eC  = ( m_s0 - m_s3 - mAB * mAB ) / ( 2 * mAB );
-  auto pC  = sqrt( eC * eC - m_s3 );
+  auto pC  = SQRT( eC * eC - m_s3 );
   event[2]   = pA;
   event[3]   = eA;
   event[6]   = -pA;
@@ -183,4 +191,54 @@ TH2D* DalitzIntegrator::makePlot( const std::function<double(const double*)>& fc
   return plot;
 }
 */
+
+TGraph* DalitzIntegrator::makeBoundaryGraph(const Projection2D& projection ) const 
+{
+  AmpGen::Event event(12); 
+  auto setEventScalar = [this, &event](const double& f , const double& g  ) mutable 
+  {
+    sqCo x( f, g ); 
+    auto mAB = this->getMAB( x );
+    auto pA  = this->safe_sqrt(0.25*mAB*mAB - 0.5*(this->m_s1 + this->m_s2) + 
+        (this->m_s1-this->m_s2)*(this->m_s1-this->m_s2)/(4.*mAB*mAB));
+    auto eA  = SQRT(pA*pA + m_s1);
+    auto eB  = SQRT(pA*pA + m_s2);
+    auto eC  = ( this->m_s0 - this->m_s3 - mAB * mAB ) / ( 2. * mAB );
+    auto pC  = safe_sqrt( eC * eC - this->m_s3 );
+    event[2]  = utils::get<0>(pA);
+    event[3]  = utils::get<0>(eA);
+    event[6]  = utils::get<0>(-pA);
+    event[7]  = utils::get<0>(eB);
+    event[9]  = utils::get<0>(pC * sin(M_PI * x.second));
+    event[10] = utils::get<0>(pC * cos(M_PI * x.second));
+    event[11] = utils::get<0>(eC);
+  };
+  TGraph* gr = new TGraph(); 
+  double eps = 1e-4;
+  for( double x = eps; x < 1-eps; x+=0.005)
+  {
+    setEventScalar( x, eps); 
+    auto [px,py] = projection(event); 
+    gr->SetPoint( gr->GetN(), px, py); 
+  }
+  for( double x = eps; x < 1-eps; x+=0.005)
+  {
+    setEventScalar( 1 -eps,x); 
+    auto [px,py] = projection(event); 
+    gr->SetPoint( gr->GetN(), px, py); 
+  }
+  for( double x = eps; x < 1-eps; x+=0.005)
+  {
+    setEventScalar( 1-x, 1-eps); 
+    auto [px,py] = projection(event); 
+    gr->SetPoint( gr->GetN(), px, py); 
+  }
+  for( double x = eps; x < 1-eps; x+=0.005)
+  {
+    setEventScalar( eps, 1-x); 
+    auto [px,py] = projection(event); 
+    gr->SetPoint( gr->GetN(), px, py); 
+  }
+  return gr; 
+}
 

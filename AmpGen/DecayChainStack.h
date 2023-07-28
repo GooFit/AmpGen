@@ -42,23 +42,30 @@ namespace AmpGen {
       Node(Type type = Type::Flat, const unsigned& l=0, const unsigned& r=0) : type(type), l(l), r(r) {};
       void print() const 
       {
-        INFO( type << " " << l << " " << r << " " << range.first << " " << range.second << " " << phi_range.first << " " << phi_range.second << " " << bwMass << " " << bwWidth << 
-            " [" << vectorToString( lfs, ",") << "], [" << vectorToString( rfs, ",") << "]" 
-            ); 
+        std::string type_string = "";
+        switch( type )
+        {
+          case Type::BW          : type_string = "BW         "; break; 
+          case Type::Flat        : type_string = "Flat       "; break; 
+          case Type::Stable      : type_string = "Stable     "; break; 
+          case Type::QuasiStable : type_string = "QuasiStable"; break; 
+        };
+        INFO( type_string << " decay indices: [" << l << ", " << r << "], range : [" << range.first << ", " << range.second << "] "  
+            ", [" << vectorToString( lfs, ",") << "], [" << vectorToString( rfs, ",") << "]" ); 
       }
       template <typename T>
-      T operator()( const T& s ) const 
-      {
-        switch( type ) {
-          case Type::BW          : 
-            return  ( bwMass* bwWidth ) /( (phi_range.second-phi_range.first )*  ( (s - bwMass*bwMass)*(s-bwMass*bwMass) + bwMass*bwMass*bwWidth*bwWidth) );
+        T operator()( const T& s ) const 
+        {
+          switch( type ) {
+            case Type::BW          : 
+              return  ( bwMass* bwWidth ) /( (phi_range.second-phi_range.first )*  ( (s - bwMass*bwMass)*(s-bwMass*bwMass) + bwMass*bwMass*bwWidth*bwWidth) );
 
-          case Type::Flat        : return 1/(range.second - range.first); 
-          case Type::Stable      : return 1; 
-          case Type::QuasiStable : return 1; 
-        };
-        return 0; 
-      }
+            case Type::Flat        : return 1/(range.second - range.first); 
+            case Type::Stable      : return 1; 
+            case Type::QuasiStable : return 1; 
+          };
+          return 0; 
+        }
 
       double s_nom() const 
       {
@@ -94,6 +101,7 @@ namespace AmpGen {
         auto props = particle->props();
         bwWidth = props->width();
         bwMass = props->mass();
+        INFO("Setting particle: " << particle->name() << " " << particle->isStable() << " " << particle->isQuasiStable() << " " << particle->lineshapeContains({"FormFactor", "None","TD"})  );  
         if( particle->isStable() ) type = Type::Stable; 
         else if( particle->isQuasiStable() ) type = Type::QuasiStable; 
         else if( particle->lineshapeContains({"FormFactor", "None","TD"}) ) type == Type::Flat; 
@@ -102,7 +110,18 @@ namespace AmpGen {
           phi_range.first  = atan((range.first  - bwMass*bwMass)/(bwMass*bwWidth));
           phi_range.second = atan((range.second - bwMass*bwMass)/(bwMass*bwWidth));
         }
-  //      else type = Type::Flat;
+      }
+      void setRange( const double& min, const double& max ) 
+      {
+        if( type == Type::BW or type == Type::Flat ) 
+        {
+          range = std::make_pair(min, max);
+          if( type == Type::BW )
+          {
+            phi_range.first  = atan((range.first  - bwMass*bwMass)/(bwMass*bwWidth));
+            phi_range.second = atan((range.second - bwMass*bwMass)/(bwMass*bwWidth));
+          }
+        }
       }
       bool operator==( const Node& other ) const 
       {
@@ -144,28 +163,43 @@ namespace AmpGen {
         }
         INFO( index << " " << *current ); 
         if( current->daughters().size() != 2 ) FATAL("Should be fixed..");
-        auto fs  = current->getFinalStateParticles();
+        auto fs  = current->quasiStableTree().daughters(); 
         auto min_mass = std::accumulate(fs.begin(), fs.end(), 0., [](double acc, auto& p){ return acc + p->mass(); } );
-        auto G = current->isQuasiStable() ? 0 : current->props()->mass() * current->props()->width() * 10;
+        auto G = current->isQuasiStable() ? 0 : current->props()->mass() * current->props()->width() * 10; 
         auto s0 = current->mass() * current->mass();
         auto d1_index = current->daughter(0)->index();
         auto d2_index = current->daughter(1)->index();
-        if( !current->daughter(0)->isStable() ){ d1_index = ++counter + N ; toDo.emplace( current->daughter(0), d1_index-N); } 
-        if( !current->daughter(1)->isStable() ){ d2_index = ++counter + N ; toDo.emplace( current->daughter(1), d2_index-N); }   
+        if( !current->daughter(0)->isStable() ){ d1_index = ++counter + N; toDo.emplace( current->daughter(0), d1_index-N); } 
+        if( !current->daughter(1)->isStable() ){ d2_index = ++counter + N; toDo.emplace( current->daughter(1), d2_index-N); }   
         m_nodes[index] = Node(Node::Type::Flat, d1_index, d2_index);
         if( index == 0 or current->isQuasiStable() ) m_nodes[index].range = std::make_pair(s0 - G, s0 + G ); 
         else m_nodes[index].range = std::make_pair( pow(min_mass,2), pow(minMass + min_mass,2 ) );  
         m_nodes[index].set( &(*current) ); 
       }
+      if( NamedParameter<bool>("DecayChainStack::AggressiveOptimisation", false )  )
+      {
+        WARNING("Using aggressive optimisation of phase space, can cause problems for relative normalisation of different decay topologies"); 
+        /// this optimisation 'cuts' the phase space of the a decay at the maximal extent of its sibling, i.e. reduces 
+        /// the physically allowed region somewhat. 
+        /// To be checked: this probably changes the normalisation of different topologies so shouldn't be switched on by default 
+        /// But probably works for single topology cases ... 
+        for( auto& n : m_nodes ) 
+        {
+          if( n.l > N && n.r > N ){
+            m_nodes[n.l-N].setRange( m_nodes[n.l-N].range.first, n.range.second + m_nodes[n.r-N].range.first - 2 * std::sqrt( n.range.second * m_nodes[n.r-N].range.first ) ); 
+            m_nodes[n.r-N].setRange( m_nodes[n.r-N].range.first, n.range.second + m_nodes[n.l-N].range.first - 2 * std::sqrt( n.range.second * m_nodes[n.l-N].range.first ) ); 
+          }
+        } 
+      }
       auto concat = [](auto v1, const auto& v2 ){ v1.insert( v1.end(), v2.begin(), v2.end() ); return v1; }; 
       for(auto n = m_nodes.rbegin(); n != m_nodes.rend(); ++n ){
         auto s1 = n->l < N ? m_m0[n->l]*m_m0[n->l] : m_nodes[n->l - N].range.first; 
         auto s2 = n->r < N ? m_m0[n->r]*m_m0[n->r] : m_nodes[n->r - N].range.first;
-        
+
         auto rho = rho_2(n->range.second, s1, s2 );
-        INFO(m_nodes.size() - ( n-m_nodes.rbegin()) + N -1  << " " << rho << " " << n->l << " " << n->r << " " << n->range.first << " " << n->range.second << " " << n->type <<
-            " s(max): " << n->range.second << 
-            " s1(min): " << s1  << " s2(min): " << s2 );
+        // INFO(m_nodes.size() - ( n-m_nodes.rbegin()) + N -1  << " " << rho << " " << n->l << " " << n->r << " " << n->range.first << " " << n->range.second << " " << n->type <<
+        //     " s(max): " << n->range.second << 
+        //     " s1(min): " << s1  << " s2(min): " << s2 );
         m_rhoMax *= rho; 
         n->lfs   = n->l < N ? SmallVector<unsigned, N>{n->l} : concat( m_nodes[n->l - N].lfs, m_nodes[n->l - N].rfs);
         n->rfs   = n->r < N ? SmallVector<unsigned, N>{n->r} : concat( m_nodes[n->r - N].lfs, m_nodes[n->r - N].rfs);
@@ -182,48 +216,48 @@ namespace AmpGen {
       return op && this->m_m0 == op->m_m0 && this->m_nodes == op->m_nodes; 
     }
     /*
-    double genPdf(const double* event) const
-    {
-      double g = 1; 
-      for( const auto& node : m_nodes ){
-        //INFO( "s(" << vectorToString( node.lfs, ",") << "," << vectorToString(node.rfs,",") << ") = " << s(event, node.lfs, node.rfs) ); 
-        g *= node(s(event, node.lfs, node.rfs));
-      }
-      return g;    
+       double genPdf(const double* event) const
+       {
+       double g = 1; 
+       for( const auto& node : m_nodes ){
+    //INFO( "s(" << vectorToString( node.lfs, ",") << "," << vectorToString(node.rfs,",") << ") = " << s(event, node.lfs, node.rfs) ); 
+    g *= node(s(event, node.lfs, node.rfs));
+    }
+    return g;    
     }
     */
     template <typename T>
-    T genPdf(const T* event) const
-    {
-      T g = 1; 
-      for( const auto& node : m_nodes ){
-        //INFO( "s(" << vectorToString( node.lfs, ",") << "," << vectorToString(node.rfs,",") << ") = " << s(event, node.lfs, node.rfs) ); 
-        g *= node(s(event, node.lfs, node.rfs));
+      T genPdf(const T* event) const
+      {
+        T g = 1; 
+        for( const auto& node : m_nodes ){
+          //INFO( "s(" << vectorToString( node.lfs, ",") << "," << vectorToString(node.rfs,",") << ") = " << s(event, node.lfs, node.rfs) ); 
+          g *= node(s(event, node.lfs, node.rfs));
+        }
+        return g;    
       }
-      return g;    
-    }
     template <typename T> 
-    T s(const T* event, 
-        const SmallVector<unsigned, N>& lfs, 
-        const SmallVector<unsigned, N>& rfs) const 
-    {
-      std::array<T,4> P = {0.}; 
-      for( const auto& it : lfs )
+      T s(const T* event, 
+          const SmallVector<unsigned, N>& lfs, 
+          const SmallVector<unsigned, N>& rfs) const 
       {
-        P[0] += event[4*it + 0 ];
-        P[1] += event[4*it + 1 ];
-        P[2] += event[4*it + 2 ];
-        P[3] += event[4*it + 3 ];
+        std::array<T,4> P = {0.}; 
+        for( const auto& it : lfs )
+        {
+          P[0] += event[4*it + 0 ];
+          P[1] += event[4*it + 1 ];
+          P[2] += event[4*it + 2 ];
+          P[3] += event[4*it + 3 ];
+        }
+        for( const auto& it : rfs )
+        {
+          P[0] += event[4*it + 0 ];
+          P[1] += event[4*it + 1 ];
+          P[2] += event[4*it + 2 ];
+          P[3] += event[4*it + 3 ];
+        }
+        return P[3] * P[3] - P[0] * P[0] - P[1] * P[1] - P[2] * P[2];  
       }
-      for( const auto& it : rfs )
-      {
-        P[0] += event[4*it + 0 ];
-        P[1] += event[4*it + 1 ];
-        P[2] += event[4*it + 2 ];
-        P[3] += event[4*it + 3 ];
-      }
-      return P[3] * P[3] - P[0] * P[0] - P[1] * P[1] - P[2] * P[2];  
-    }
 
     double rho_2( const double& s0, const double& s1, const double& s2 ) const 
     {
@@ -262,6 +296,23 @@ namespace AmpGen {
       weight = std::sqrt( weight ); 
       return rt; 
     }
+    void debug( TRandom3* rndm ) const 
+    {
+      std::pair<double, std::array<double, 2*N-1>> rt; 
+      auto& [weight, state ] = rt; 
+      for( unsigned int i = 0 ; i != N ; ++i ) state[i] = m_m0[i] * m_m0[i]; 
+      weight = 1; 
+      for( int i = m_nodes.size()-1 ; i >= 0; --i ){
+        state[i + N]   = m_nodes[i](rndm);
+        const auto& s  = state[i+N];
+        const auto& sl = state[m_nodes[i].l];
+        const auto& sr = state[m_nodes[i].r];
+        double v = rho_2(s, sl, sr) * ( s > sl + sr + 2 * std::sqrt(sl*sr) ); 
+        INFO( "Node[" << i << "] w = " << v << "s[" << m_nodes[i].l << " " << m_nodes[i].r << "] = " << s << " [ sl=  " << sl << " sr= " << sr << "]" ); 
+        weight  = v < 0 ? 0 : v * weight; 
+      }
+      weight = std::sqrt( weight ); 
+    }
 
     void fill_from_state( double* event, const std::array<double, 2*N-1>& state, TRandom3* rndm ) const 
     {
@@ -281,10 +332,10 @@ namespace AmpGen {
         const auto vgl =  p / std::sqrt(sl); 
         const auto gr  = std::sqrt( 1 + p*p/sr);  
         const auto vgr =  p / std::sqrt(sr); 
-        
+
         if( n->lfs.size == 1 ) set( event + 4 * n->lfs[0], p*nx, p*ny, p*nz, std::sqrt( sl + p*p ) );  
         else for( const auto& l : n->lfs ) boost(event + 4 *l,  nx , ny,  nz, gl, vgl );
-        
+
         if( n->rfs.size == 1 ) set( event + 4 *n->rfs[0], -p*nx, -p*ny, -p*nz, std::sqrt( sr + p*p ) );        
         else for( const auto& l : n->rfs ) boost(event + 4 *l, -nx, -ny, -nz, gr, vgr ); 
       }
@@ -304,7 +355,7 @@ namespace AmpGen {
       return event; 
     }
   };
-  
+
   DecayChainStackBase* make_decay_chain_stack( const Particle& particle )
   {
     auto fs = particle.getFinalStateParticles();

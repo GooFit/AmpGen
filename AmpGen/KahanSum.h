@@ -23,7 +23,8 @@ namespace AmpGen {
           cor += select( abs(sum) >= abs(var), (sum-t)+var, (var-t) + sum ); 
         }
         else {
-          cor += abs(sum) >= abs(var) ?  (sum-t)+var :  (var-t) + sum; 
+         
+          cor += std::abs(sum) >= std::abs(var) ?  (sum-t)+var :  (var-t) + sum; 
         }
         sum = t;
         return *this; 
