@@ -143,7 +143,7 @@ std::string Tensor::coordinates_to_string( const std::vector<unsigned>& coordina
 
 unsigned Tensor::nElements() const
 {
-  return std::accumulate( m_dim.begin(), m_dim.end(), 1, [](auto& dim, auto& d){ return dim * ( d == 0 ? 1 : d ) ; } );  
+  return std::accumulate( m_dim.begin(), m_dim.end(), 1, [](const auto& dim, const auto& d){ return dim * ( d == 0 ? 1 : d ) ; } );  
 }
 const std::string Tensor::dimString() const 
 {
