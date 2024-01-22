@@ -155,7 +155,7 @@ and the corresponding probability density is proportional to $\mathcal{P}(\mathb
 
 The initial and/or final state(s) may also carry spin, in which case the spin states must also be summed. The transition matrix can be written in the isobar model as
 
-$\mathcal{T}_{if} = \sum_{k} g_{k} \mathcal{T}^{k}_{if}(\mathbf{x})$$,
+$$\mathcal{T}_{if} = \sum_{k} g_{k} \mathcal{T}^{k}_{if}(\mathbf{x})$$,
 
 where $i$ and $f$ label the initial and final states, respectively. As these states are in principal observables, the indices related to spin must be summed incoherently. The probability density function in this case is therefore given by
 
