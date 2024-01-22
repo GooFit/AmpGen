@@ -206,8 +206,8 @@ template <> std::tuple<std::vector<TH1D*>, THStack*> Projection::projInternal(co
     auto weights = weightFunction(evt);
     for( unsigned j = 0 ; j != weights.size(); ++j ) hists[j]->Fill( pos, evt.weight() * weights[j] / evt.genPdf() ); 
   }
-  std::sort( std::begin(hists), std::end(hists), [](auto& h1, auto& h2){ return h1->Integral() < h2->Integral() ; } );
-  double total = std::accumulate( std::begin(hists), std::end(hists), 0.0, [](double& t, auto& h){ return t + h->Integral() ; } ); 
+  std::sort( std::begin(hists), std::end(hists), [](const auto& h1, const auto& h2){ return h1->Integral() < h2->Integral() ; } );
+  double total = std::accumulate( std::begin(hists), std::end(hists), 0.0, [](const double& t, const auto& h){ return t + h->Integral() ; } ); 
   if( norm_sum != -1 )
   {
     if( total == 0 ) ERROR("Norm = " << total );
