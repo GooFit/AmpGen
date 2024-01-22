@@ -157,18 +157,19 @@ The initial and/or final state(s) may also carry spin, in which case the spin st
 ```math 
 \mathcal{T}_{if} = \sum_{k} g_{k} \mathcal{T}^{k}_{if}(\mathbf{x}),
 ```
-where $i$ and $f$ label the initial and final states, respectively. As these states are in principal observables, the indices related to spin must be summed incoherently. The probability density function in this case is therefore given by
+where $i$ and $f$ label the initial and final states, respectively. As these states are in principle observables, the indices related to spin must be summed incoherently. The probability density function in this case is therefore given by
 ```math 
 \mathcal{P}(\mathbf{x}) = \sum_{if} \hat{\rho}_{ij} T_{if}(\mathbf{x}) T^{*}_{jf}(\mathbf{x}),
 ```
-where $\hat{\rho}$ is the relevant density matrix for the initial state, which is given by 1 for a scalar initial state. For a spin-$\frac{1}{2}$ state, the density matrix can be parameterised in terms of a polarisation vector $p_i$ and the Pauli matrices $\sigma_i$, and is given by: 
-
-$\hat{\rho} = I + \sigma_i p_i$ 
-
+where $\hat{\rho}$ is the relevant density matrix for the initial state, which is given by 1 for a scalar initial state. 
+For a spin-$\frac{1}{2}$ state, the density matrix can be parameterised in terms of a polarisation vector $p_i$ and the Pauli matrices $\sigma_i$, and is given by: 
+```math
+\hat{\rho} = I + \sigma_i p_i 
+```
 For a spin-1 initial state, the density matrix is parameterised in terms of the Gell-Mann matrices, $\lambda_k$,  as 
-
-$\hat{\rho} = I + \lambda_k p_k$,
-
+```math
+\hat{\rho} = I + \lambda_k p_k,
+```
 where now the polarisation 'vector' $p_k$ has 8 components. 
 
 ##### IncoherentSum 
