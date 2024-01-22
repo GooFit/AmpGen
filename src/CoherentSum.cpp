@@ -17,6 +17,7 @@
 #include "AmpGen/Expression.h"
 #include "AmpGen/FitFraction.h"
 #include "AmpGen/MinuitParameter.h"
+#include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/Particle.h"
