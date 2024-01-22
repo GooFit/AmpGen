@@ -768,7 +768,7 @@ bool Particle::conservesParity( unsigned int L ) const
 
 std::string Particle::topologicalString() const
 {
-  return std::accumulate( m_daughters.begin(), m_daughters.end(), std::string(""), [](auto& s, auto& d){ return s+d->props()->J() ; } );
+  return std::accumulate( m_daughters.begin(), m_daughters.end(), std::string(""), [](const auto& s, const auto& d){ return s+d->props()->J() ; } );
 }
 
 const ParticleProperties* Particle::props() const { return m_props; }
