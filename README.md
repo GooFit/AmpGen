@@ -131,7 +131,7 @@ D0{K(1)(1270)+,pi-}                         0     1      0.1       0     0      
 K(1)(1270)+{rho(770)0{pi+,pi-},K+}          2     1      0         2     0      0
 K(1)(1270)+{K*(892)0{K+,pi-},pi+}           0     1      0.1       0     0      0.1
 ```
-The production/decay couplings of the <img src="https://render.githubusercontent.com/render/math?math=K_1(1270)^%2B"> resonance are now defined in terms of the coupling to the <img src="https://render.githubusercontent.com/render/math?math=\rho(770)^0 K^%2B"> channel, which can be useful in making comparisons between different production modes of a resonance. Additional care must be taken in such a case so as not to introduce redundant degrees of freedom.
+The production/decay couplings of the $K_1(1270)^+$ resonance are now defined in terms of the coupling to the $\rho(770)^0 K^+$ channel, which can be useful in making comparisons between different production modes of a resonance. Additional care must be taken in such a case so as not to introduce redundant degrees of freedom.
 
 Configuration can be split over multiple files by the using _Import_ keyword, for example, to import the parameters for the parameters associated with the isoscalar K-matrix, the line
 ```
@@ -145,37 +145,37 @@ can be added to options file. Multiple user configuration files can also be spec
 AmpGen supports several different types of probability density functions (PDFs), which are detailed in this section. 
 
 #####  CoherentSum 
-The most common type of PDF is the CoherentSum. In this case, the total amplitude is given by the sum of amplitudes, weighted by complex coefficients. At a position in the phase space <img src="https://render.githubusercontent.com/render/math?math=\mathbf{x}">, the transition amplitude <img src="https://render.githubusercontent.com/render/math?math=\mathcal{T}">  is given by:
+The most common type of PDF is the CoherentSum. In this case, the total amplitude is given by the sum of amplitudes, weighted by complex coefficients. At a position in the phase space $\mathbf{x}$, the transition amplitude $\mathcal{T}$  is given by:
 
-<img src="https://render.githubusercontent.com/render/math?math=\mathcal{T}(\mathbf{x}) = \sum_{k} g_k A_k (\mathbf{x})">
+$\mathcal{T}(\mathbf{x}) = \sum_{k} g_k A_k (\mathbf{x})$
 
-and the corresponding probability density is proportional to <img src="https://render.githubusercontent.com/render/math?math=\mathcal{P}(\mathbf{x})\propto \left|\mathcal{T}(\mathbf{x})\right|^2">. The CoherentSum is the default amplitude in many cases, and is used to describe the decay of a single, (pseudo)scalar particle to two or more (pseudo)scalar decay products. 
+and the corresponding probability density is proportional to $\mathcal{P}(\mathbf{x})\propto \left|\mathcal{T}(\mathbf{x})\right|^2$. The CoherentSum is the default amplitude in many cases, and is used to describe the decay of a single, (pseudo)scalar particle to two or more (pseudo)scalar decay products. 
 
 ##### PolarisedSum
 
 The initial and/or final state(s) may also carry spin, in which case the spin states must also be summed. The transition matrix can be written in the isobar model as
 
-<img src="https://render.githubusercontent.com/render/math?math=\mathcal{T}_{if} = \sum_k g_k \mathcal{T}^{k}_{if}(\mathbf{x})">,
+$\mathcal{T}_{if} = \sum_k g_k \mathcal{T}^{k}_{if}(\mathbf{x})$,
 
-where <img src="https://render.githubusercontent.com/render/math?math=i"> and <img src="https://render.githubusercontent.com/render/math?math=f"> label the initial and final states, respectively. As these states are in principal observables, the indices related to spin must be summed incoherently. The probability density function in this case is therefore given by
+where $i$ and $f$ label the initial and final states, respectively. As these states are in principal observables, the indices related to spin must be summed incoherently. The probability density function in this case is therefore given by
 
-<img src="https://render.githubusercontent.com/render/math?math=\mathcal{P}(\mathbf{x}) = \sum_{if} \hat{\rho}_{ij} T_{if}(\mathbf{x}) T^{*}_{jf}(\mathbf{x})  ">,
+$\mathcal{P}(\mathbf{x}) = \sum_{if} \hat{\rho}_{ij} T_{if}(\mathbf{x}) T^{*}_{jf}(\mathbf{x})  $,
 
-where <img src="https://render.githubusercontent.com/render/math?math=\hat{\rho}"> is the relevant density matrix for the initial state, which is given by 1 for a scalar initial state. For a spin-<img src="https://render.githubusercontent.com/render/math?math=\frac{1}{2}"> state, the density matrix can be parameterised in terms of a polarisation vector <img src="https://render.githubusercontent.com/render/math?math=p_i"> and the Pauli matrices <img src="https://render.githubusercontent.com/render/math?math=\sigma_i">, and is given by: 
+where $\hat{\rho}$ is the relevant density matrix for the initial state, which is given by 1 for a scalar initial state. For a spin-$\frac{1}{2}$ state, the density matrix can be parameterised in terms of a polarisation vector $p_i$ and the Pauli matrices $\sigma_i$, and is given by: 
 
-<img src="https://render.githubusercontent.com/render/math?math=\hat{\rho} = I %2B \sigma_i p_i"> 
+$\hat{\rho} = I + \sigma_i p_i$ 
 
-For a spin-1 initial state, the density matrix is parameterised in terms of the Gell-Mann matrices, <img src="https://render.githubusercontent.com/render/math?math=\lambda_k">,  as 
+For a spin-1 initial state, the density matrix is parameterised in terms of the Gell-Mann matrices, $\lambda_k$,  as 
 
-<img src="https://render.githubusercontent.com/render/math?math=\hat{\rho} = I %2B \lambda_k p_k">,
+$\hat{\rho} = I + \lambda_k p_k$,
 
-where now the polarisation 'vector' <img src="https://render.githubusercontent.com/render/math?math=p_k"> has 8 components. 
+where now the polarisation 'vector' $p_k$ has 8 components. 
 
 ##### IncoherentSum 
 
 An alternative model is the IncoherentSum, which may be useful to describe the probability density of a background contribution that contains incoherent sources with several different resonances. Generally, such models are only useful for relatively small backgrounds in relatively pure samples, as in general background contributions cannot be described with such a simple parameterisation. In this case, the probability is given by an incoherent sum of amplitudes: 
 
-<img src="https://render.githubusercontent.com/render/math?math=\mathcal{P}(\mathbf{x}) = \sum_k g_k^2 \left| A_k \right|^2 "> 
+$\mathcal{P}(\mathbf{x}) = \sum_k g_k^2 \left| A_k \right|^2 $ 
 
 ## Applications
 
@@ -208,7 +208,7 @@ The output includes a tree (DalitzEventList) of candidates with the full four-ve
 </p>
 
 
-Several models for different <img src="https://render.githubusercontent.com/render/math?math=D^0"> decays published by the LHCb collaboration are included in the options directory, in addition to several other decay modes to demonstrate different features. These options often do not include EventTypes so as they can be included as part of a larger decay chain if required. For example, to generate <img src="https://render.githubusercontent.com/render/math?math=10^6"> toy <img src="https://render.githubusercontent.com/render/math?math=D^0\to K^- \pi^%2B \pi^%2B \pi^-"> decays, the type of the events requested must also be specified: 
+Several models for different $D^0$ decays published by the LHCb collaboration are included in the options directory, in addition to several other decay modes to demonstrate different features. These options often do not include EventTypes so as they can be included as part of a larger decay chain if required. For example, to generate $10^6$ toy $D^0\to K^- \pi^+ \pi^+ \pi^-$ decays, the type of the events requested must also be specified: 
 
 ```shell
 AmpGen.exe options/D02Kpipipi.opt --EventType "D0 K- pi+ pi+ pi-" --nEvents 1000000
@@ -216,14 +216,14 @@ AmpGen.exe options/D02Kpipipi.opt --EventType "D0 K- pi+ pi+ pi-" --nEvents 1000
 
 AmpGen can also be used to only produce the source code that evaluates the amplitude, to be used by other generators such as EvtGen. 
 The source code is generated if the output extension is (cpp) rather than a root file. 
-The PDF in such cases is automatically normalised such that <img src="https://render.githubusercontent.com/render/math?math=\mathcal{P}_{\text{max}} < 1"> . 
+The PDF in such cases is automatically normalised such that $\mathcal{P}_{\text{max}} < 1$ . 
 The code can be generated and compiled into a shared library as follows
 ```shell
 AmpGen.exe MyOpts.opt --Output=MyModel.cpp --SourceOnly
 g++ -Ofast -shared -rdynamic --std=c++14 -fPIC MyModel.cpp -o MyModel.so
 ```
 Decays can also be specified entirely on the command line in order to quickly study the distributions of different decay modes, and to debug individual decay descriptors. 
-For example, to generate a sample of 10000  <img src="https://render.githubusercontent.com/render/math?math=\Lambda_b \to p K^{*-}">  decays, 
+For example, to generate a sample of 10000  $\Lambda_b \to p K^{*-}$  decays, 
 
 ```shell
 AmpGen.exe --Decay "Lambda(b)0{p+,K*(892)bar-{K-,pi0}}" --nEvents 10000 --Type PolarisedSum 
@@ -241,19 +241,19 @@ The flag `Type` is used to specify that the initial and/or final states includes
 
 #### Phase space generators
 
-Generating events consists of two phases. Firstly, the kinematics of candidates are generated according to some distribution, by default uniform in the phase space.  The target distribution, <img src="https://render.githubusercontent.com/render/math?math=\mathcal{P}(\mathbf{x})"> , is then obtained using the accept-reject method. A candidate generated at position <img src="https://render.githubusercontent.com/render/math?math=\mathbf{x}"> in the phase space is retained on the condition that 
+Generating events consists of two phases. Firstly, the kinematics of candidates are generated according to some distribution, by default uniform in the phase space.  The target distribution, $\mathcal{P}(\mathbf{x})$ , is then obtained using the accept-reject method. A candidate generated at position $\mathbf{x}$ in the phase space is retained on the condition that 
 
- <img src="https://render.githubusercontent.com/render/math?math=\mathcal{P}(\mathbf{x}) > \mathcal{P}_{\text{max}} \times \texttt{Uniform}(0,1) ">,
+ $\mathcal{P}(\mathbf{x}) > \mathcal{P}_{\text{max}} \times \texttt{Uniform}(0,1) $,
 
-where <img src="https://render.githubusercontent.com/render/math?math=\mathcal{P}_{\text{max}}"> is the largest possible value of <img src="https://render.githubusercontent.com/render/math?math=\mathcal{P}(\mathbf{x})"> , and <img src="https://render.githubusercontent.com/render/math?math=\texttt{Uniform}(0,1)"> is a random number uniformly drawn between 0 and 1. 
+where $\mathcal{P}_{\text{max}}$ is the largest possible value of $\mathcal{P}(\mathbf{x})$ , and $\texttt{Uniform}(0,1)$ is a random number uniformly drawn between 0 and 1. 
 
-​	The generation can be made more efficient by making the first step produce candidates that are distributed more closely to the full distribution than the uniform phase space. In particular, this is relevant for producing very narrow structures such as the <img src="https://render.githubusercontent.com/render/math?math=J/\psi"> resonance efficiently. To use this option, the flag `PhaseSpace` should be set to the value `TreePhaseSpace`. For example, to generate a sample of <img src="https://render.githubusercontent.com/render/math?math=10^6">  <img src="https://render.githubusercontent.com/render/math?math=\Lambda_b^0 \to J/\psi \left[\mu^%2B\mu^-\right]\Lambda(1405)^0 \left[p^%2B \pi^-\right]"> decays: 
+​	The generation can be made more efficient by making the first step produce candidates that are distributed more closely to the full distribution than the uniform phase space. In particular, this is relevant for producing very narrow structures such as the $J/\psi$ resonance efficiently. To use this option, the flag `PhaseSpace` should be set to the value `TreePhaseSpace`. For example, to generate a sample of $10^6$  $\Lambda_b^0 \to J/\psi \left[\mu^+\mu^-\right]\Lambda(1405)^0 \left[p^+ \pi^-\right]$ decays: 
 
 ```shell
 AmpGen.exe --Decay "Lambda(b)0{J/psi0{mu+,mu-},Lambda(1405)0{p+,pi-}}" --nEvents 1000000 --Type PolarisedSum --PhaseSpace TreePhaseSpace
 ```
 
-Two example projections are shown below, of the dimuon invariant mass with essentially no width, which would be virtually impossible to generate with a uniform distribution and the naive accept-reject method, and the combined mass of the dimuon with the proton from the <img src="https://render.githubusercontent.com/render/math?math=\Lambda(1405)^0"> decay:
+Two example projections are shown below, of the dimuon invariant mass with essentially no width, which would be virtually impossible to generate with a uniform distribution and the naive accept-reject method, and the combined mass of the dimuon with the proton from the $\Lambda(1405)^0$ decay:
 
 <p align="center">
 <div>
@@ -331,7 +331,7 @@ fcn2 = data.apply(model.FCN, axis=1)
 ```
 
 ### Particle Properties and Lineshape parameters
-The particles available and their default properties can be found in *options/mass\_width.csv* using the MC format of the 2008 PDG. Additional pseudoparticles, such as nonresonant states and terms for use in conjunction with K-matrices are defined by *options/MintDalitzSpecialParticles.csv*. Any additional user defined particles should be added here. For the default lineshape (the relavistic Breit-Wigner or BW), there are three parameters: The mass, the width and the Blatt-Weisskopf radius. These default to their PDG values, but can be overridden in the options file with parameters: *particleName*\_mass, *particleName*\_width, *particleName*\_radius. To vary the mass of the  <img src="https://render.githubusercontent.com/render/math?math=K_1(1270)^%2B"> meson, the line:
+The particles available and their default properties can be found in *options/mass\_width.csv* using the MC format of the 2008 PDG. Additional pseudoparticles, such as nonresonant states and terms for use in conjunction with K-matrices are defined by *options/MintDalitzSpecialParticles.csv*. Any additional user defined particles should be added here. For the default lineshape (the relavistic Breit-Wigner or BW), there are three parameters: The mass, the width and the Blatt-Weisskopf radius. These default to their PDG values, but can be overridden in the options file with parameters: *particleName*\_mass, *particleName*\_width, *particleName*\_radius. To vary the mass of the  $K_1(1270)^+$ meson, the line:
 ```
 K(1)(1270)+_mass 0 1.270 0.01
 ```
@@ -342,25 +342,25 @@ Other lineshapes may define other parameters, for example channel couplings or p
 
 Parameters can either be specified by three parameters, in the case of a scalar parameter such as a mass or a width, or with six parameters in the case of a complex parameter such as a coupling.
 Upper and lower bounds on parameters can also be set by specifying a parameter with five parameters or ten parameters for a scalar or complex, respectively.
-For example, if we wished to vary the mass of the <img src="https://render.githubusercontent.com/render/math?math=K_1(1270)^%2B"> meson in the above example, but restricting the allowed values in the range <img src="https://render.githubusercontent.com/render/math?math=[0.0,2.0]\,\mathrm{GeV}">:
+For example, if we wished to vary the mass of the $K_1(1270)^+$ meson in the above example, but restricting the allowed values in the range $[0.0,2.0]\,\mathrm{GeV}$:
 ```
 K(1)(1270)+_mass 0 1.27 0.01 0.0 2.0
 ```
 
 Parameters can also be related to each other via expressions,
-Suppose for example we have <img src="https://render.githubusercontent.com/render/math?math=K_1(1270)^%2B"> and <img src="https://render.githubusercontent.com/render/math?math=K_1(1270)^-"> in the same fit (for example, in <img src="https://render.githubusercontent.com/render/math?math=D^0 \to K^- K^%2B \pi^- \pi^%2B">)
-The properties of one can be allowed to vary, for example the <img src="https://render.githubusercontent.com/render/math?math=K_1(1270)^%2B">, and the other fixed to the same value, using:
+Suppose for example we have $K_1(1270)^+$ and $K_1(1270)^-$ in the same fit (for example, in $D^0 \to K^- K^+ \pi^- \pi^+$)
+The properties of one can be allowed to vary, for example the $K_1(1270)^+$, and the other fixed to the same value, using:
 ```
 K(1)(1270)+_mass 0 1.27 0.01 0.0 2.0
 K(1)(1270)bar-_mass = K(1)(1270)+_mass
 ```
 Parameter expressions are whitespace delimited due to the abundance of **odd** glyphs such as brackets and +/- in the names of parameters.
-Expressions support the binary operations <img src="https://render.githubusercontent.com/render/math?math=(%2B,-,/,* )">, as well as common unary functions such as sqrt, trigonometric functions etc.
+Expressions support the binary operations $(+,-,/,* )$, as well as common unary functions such as sqrt, trigonometric functions etc.
 
 ### Parameter Blinding 
 
 Parameters can blinded, that is, their actual values obscured from the user to avoid unintentional biasing of an analysis. 
-For example, suppose that a blind analysis of the <img src="https://render.githubusercontent.com/render/math?math=K_1(1270)^-"> mass were to be performed. The mass variable in the options file would be declared as 
+For example, suppose that a blind analysis of the $K_1(1270)^-$ mass were to be performed. The mass variable in the options file would be declared as 
 ```
 K(1)(1270)+_mass Blind 1.27 0.01 0.0 2.0 
 ```
@@ -386,7 +386,7 @@ The spin formalism for an individual decay chain can be specified by changing th
 ```
 D0[SpinFormalism=Canonical]{K*(892)bar0,rho(770)0}
 ```
-selects the S-wave of the <img src="https://render.githubusercontent.com/render/math?math=K^* \rho"> system. The user can also specify systems of helicity couplings in the canonical formalism, using the attribute _helAmp_. For example, suppose the transversity amplitudes were used rather than the canonical, then the user can specify
+selects the S-wave of the $K^* \rho$ system. The user can also specify systems of helicity couplings in the canonical formalism, using the attribute _helAmp_. For example, suppose the transversity amplitudes were used rather than the canonical, then the user can specify
 ```
 D0[SpinFormalism=Canonical;helAmp=Long]{K*(892)bar0,rho(770)0}
 D0[SpinFormalism=Canonical;helAmp=t1]{K*(892)bar0,rho(770)0}
@@ -408,12 +408,12 @@ t2 {
   -0.707106781 -1 -1
 }
 ```
-That is specified as sets of three numbers, firstly the coupling, and then the two particle helicities. So in this example, the longitudinal amplitude is the <img src="https://render.githubusercontent.com/render/math?math=00"> helicity state, while the two transverse amplitudes and the sum and difference of the two other helicity amplitudes.
+That is specified as sets of three numbers, firstly the coupling, and then the two particle helicities. So in this example, the longitudinal amplitude is the $00$ helicity state, while the two transverse amplitudes and the sum and difference of the two other helicity amplitudes.
 
 ### Quasiparticles
 
 Quasiparticles are fictional decaying particles that can be implemented in the decay chain for a variety of different purposes. The original use case was to group some amplitudes with the same quantum numbers with couplings that want to be factorised. 
-For example, for the <img src="https://render.githubusercontent.com/render/math?math=I=0"> <img src="https://render.githubusercontent.com/render/math?math=S">-wave, the K matrix description may be used. The coupling from the initial state may be written as 
+For example, for the $I=0$ $S$-wave, the K matrix description may be used. The coupling from the initial state may be written as 
 
 ```
 D0{K0S0,NonResS0} ...
