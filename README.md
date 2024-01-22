@@ -147,7 +147,7 @@ AmpGen supports several different types of probability density functions (PDFs),
 #####  CoherentSum 
 The most common type of PDF is the CoherentSum. In this case, the total amplitude is given by the sum of amplitudes, weighted by complex coefficients. At a position in the phase space $\mathbf{x}$, the transition amplitude $\mathcal{T}$  is given by:
 
-$\mathcal{T}(\mathbf{x}) = \sum_{k} g_k A_k (\mathbf{x})$
+$$\mathcal{T}(\mathbf{x}) = \sum_{k} g_k A_k (\mathbf{x})$$
 
 and the corresponding probability density is proportional to $\mathcal{P}(\mathbf{x})\propto \left|\mathcal{T}(\mathbf{x})\right|^2$. The CoherentSum is the default amplitude in many cases, and is used to describe the decay of a single, (pseudo)scalar particle to two or more (pseudo)scalar decay products. 
 
@@ -155,7 +155,7 @@ and the corresponding probability density is proportional to $\mathcal{P}(\mathb
 
 The initial and/or final state(s) may also carry spin, in which case the spin states must also be summed. The transition matrix can be written in the isobar model as
 
-$\mathcal{T}_{if} = \sum_k g_k \mathcal{T}^{k}_{if}(\mathbf{x})$,
+$\mathcal{T}_{if} = \sum_{k} g_{k} \mathcal{T}^{k}_{if}(\mathbf{x})$$,
 
 where $i$ and $f$ label the initial and final states, respectively. As these states are in principal observables, the indices related to spin must be summed incoherently. The probability density function in this case is therefore given by
 
