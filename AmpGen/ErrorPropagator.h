@@ -22,7 +22,6 @@ class TRandom3;
 namespace AmpGen
 {
   class MinuitParameterSet;
-  class Minimiser; 
   /** @class LinearErrorPropagator
    Propagates uncertainties on functors using either a MinuitParameterSet (thus assuming a diagonal covariance matrix) 
    or with a set of parameters and a covariance matrix (i.e. the product of a fit). 
@@ -37,8 +36,6 @@ namespace AmpGen
       explicit LinearErrorPropagator( const std::vector<MinuitParameter*>& params );
       ///< Constructor for LinearErrorPropagator, taking a MinuitParameterSet as argument, assumes a diagonal coviarance matrix using the uncertainties on parameters.
       explicit LinearErrorPropagator( const MinuitParameterSet& params );
-      ///< Constructor for LinearErrorPropagator, taking a Minimiser as argument, assumes a diagonal coviarance matrix using the uncertainties on parameters.
-      explicit LinearErrorPropagator( Minimiser* params );
       ///< Constructor for LinearErrorPropagator, taking a covariance matrix and a vector parameters
       LinearErrorPropagator( const TMatrixD& reducedCovarianceMatrix, const std::vector<MinuitParameter*>& params );
       
@@ -107,10 +104,12 @@ namespace AmpGen
   class NonlinearErrorPropagator 
   {
     public:
-      NonlinearErrorPropagator( Minimiser* );
+      NonlinearErrorPropagator( const std::function<double(void)>&, const TMatrixD&, const std::vector<MinuitParameter*>&);
       TMatrixD correlationMatrix( const std::vector<std::function<double(void)>>& functions, TRandom3* rnd, const unsigned& nSamples = 50000);
     private: 
-      Minimiser* m_mini {nullptr}; 
+      std::function<double(void)> m_fcn; 
+      TMatrixD                    m_cov; 
+      std::vector<MinuitParameter*> m_parameters;
   };
 
 } // namespace AmpGen

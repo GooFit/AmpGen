@@ -3,7 +3,6 @@
 #include <ostream>
 
 #include "AmpGen/MinuitParameterSet.h"
-#include "AmpGen/Minimiser.h"
 #include "TDecompChol.h"
 #include "TRandom3.h"
 #include "TMatrixD.h"
@@ -65,15 +64,6 @@ LinearErrorPropagator::LinearErrorPropagator( const std::vector<MinuitParameter*
   m_cov.ResizeTo( m_parameters.size(), m_parameters.size() );
   for( size_t i = 0 ; i < m_parameters.size(); ++i ) 
     m_cov(i,i) = m_parameters[i]->err() * m_parameters[i]->err();
-}
-
-LinearErrorPropagator::LinearErrorPropagator( Minimiser* mini )
-  : m_cov( mini->covMatrix() ) 
-{
-  for( auto& param : *mini->parSet() ){
-    if( !param->isFree() ) continue;
-    m_parameters.push_back( param );
-  }
 }
 
 LinearErrorPropagator::LinearErrorPropagator( const MinuitParameterSet& mps )
@@ -262,7 +252,12 @@ TMatrixD LinearErrorPropagator::correlationMatrix(const std::vector<std::functio
 
 const std::vector<MinuitParameter*>& LinearErrorPropagator::params() const { return m_parameters; }
 
-NonlinearErrorPropagator::NonlinearErrorPropagator( Minimiser* mini ) : m_mini(mini) {}
+NonlinearErrorPropagator::NonlinearErrorPropagator( const std::function<double(void)>& fcn, 
+                                                    const TMatrixD& cov, 
+                                                    const std::vector<MinuitParameter*>& parameters) : 
+ m_fcn(fcn),
+ m_cov(cov),
+ m_parameters(parameters) {} 
 
 template <typename target_t, typename proposal_t> 
 class MetropolisHastings {
@@ -301,16 +296,15 @@ TMatrixD NonlinearErrorPropagator::correlationMatrix( const std::vector<std::fun
   std::vector<double> function_averages; 
   for( auto& function : functions ) function_averages.push_back(  function() );
 
-  for ( auto& param : *m_mini->parSet() )
+  for ( auto& param : m_parameters )
   {
     if( param->isFree() ) parameters.emplace_back(param, param->mean());  
   }
-  double L0 = m_mini->FCN(); 
+  double L0 = m_fcn();
 
-  auto reducedCovariance = m_mini->covMatrix(); 
-  TMatrixD invCovariance     = reducedCovariance;
+  TMatrixD invCovariance     = m_cov;
   invCovariance.Invert(); 
-  TDecompChol decomposed( reducedCovariance );
+  TDecompChol decomposed( m_cov );
   decomposed.Decompose();
   auto decomposedCholesky = decomposed.GetU();
   for ( int i = 0; i < decomposedCholesky.GetNrows(); ++i ) {
@@ -346,7 +340,7 @@ TMatrixD NonlinearErrorPropagator::correlationMatrix( const std::vector<std::fun
   auto target_distribution = [&]( TVectorD& state )
   {
     for( unsigned int i = 0 ; i!= N; ++i ) parameters[i].first->setCurrentFitVal( state(i ) );
-    return exp( -0.5*(m_mini->FCN() -L0 ) );
+    return exp( -0.5*(m_fcn() -L0 ) );
   };
 
   TMatrixD rt( functions.size(), functions.size() );
