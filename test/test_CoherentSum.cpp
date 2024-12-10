@@ -35,6 +35,6 @@ BOOST_AUTO_TEST_CASE ( test_constructor )
 
   for( auto& event : events )
   { 
-    BOOST_TEST( eval(event) == test.getValNoCache(event), boost::test_tools::tolerance(1e-10) ); 
+    BOOST_TEST( eval(event) -test.getValNoCache(event) == 0., boost::test_tools::tolerance(1e-10) ); 
   }
 }
