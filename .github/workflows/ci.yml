@@ -36,7 +36,7 @@ jobs:
           activate-environment: my-env
           use-mamba: true
       - name: load cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: /usr/share/miniconda3/envs/my-env
           key:  ubuntu-latest-conda-${{ hashFiles('.github/etc/env.yml') }}-${{ env.CACHE_NUMBER }}
@@ -54,7 +54,9 @@ jobs:
       - name: Fit
         run: |
           ./build/bin/AmpGen options/example_kspipi.opt --nEvents 100000 --Output KsPiPi.root
-          ./build/bin/SignalOnlyFitter options/example_kspipi.opt --DataSample KsPiPi.root 
+          if [[ ${{matrix.enable_fitting}} == "ON" ]] ; then 
+            ./build/bin/SignalOnlyFitter options/example_kspipi.opt --DataSample KsPiPi.root 
+          fi
         env:
           CTEST_OUTPUT_ON_FAILURE: true
       - name: Unit tests

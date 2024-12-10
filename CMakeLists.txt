@@ -20,8 +20,6 @@ endif()
 include(${PROJECT_SOURCE_DIR}/cmake/FindAVX.cmake)
 CHECK_FOR_AVX()
 
-set(CMAKE_CXX_STANDARD "17"    CACHE STRING "CMAKE_CXX_STANDARD")
-
 if( AVX2_FOUND )
   set(USE_SIMD           "AVX2d" CACHE STRING "USE_SIMD")       # AVX instruction set + precision to use 
   set(USE_MVEC           TRUE    CACHE BOOL   "USE_MVEC")       # flag to use vector math library mvec 
@@ -43,6 +41,7 @@ set(EXEC_EXTENSION     "" CACHE STRING "EXEC_EXTENSION")
 set(PACKED_CMAKE_PREFIX_PATH "" CACHE STRING "PACKED_CMAKE_PREFIX_PATH")
 set(AMPGEN_CXX_FLAGS   "" CACHE STRING "") 
 set(EXTERNAL_MINUIT2   FALSE CACHE BOOL "EXTERNAL_MINUIT2")
+set(AMPGEN_CXX_STANDARD cxx_std_17 CACHE STRING "AMPGEN_CXX_STANDARD") 
 set(CMAKE_SHARED_LIBRARY_PREFIX "") # such that we can have libAmpGen as a target AND AmpGen i.e. the application
 
 if( NOT PACKED_CMAKE_PREFIX_PATH STREQUAL "" )
@@ -61,8 +60,6 @@ if( NOT ENABLE_FITTING )
   list(REMOVE_ITEM AMPGEN_HDR ${PROJECT_SOURCE_DIR}/AmpGen/FitResult.h)
 endif()
 
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY         "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY         "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY         "${CMAKE_BINARY_DIR}/bin")
@@ -82,6 +79,8 @@ configure_file ("${PROJECT_SOURCE_DIR}/AmpGen/Version.h.in" "${CMAKE_BINARY_DIR}
 
 add_library(lib${PROJECT_NAME} SHARED ${AMPGEN_SRC} ${AMPGEN_HDR})
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS lib${PROJECT_NAME})
+
+target_compile_features(lib${PROJECT_NAME} PUBLIC ${AMPGEN_CXX_STANDARD})
 
 if( USE_ROOT AND NOT DEFINED ROOT_LIBRARIES )
   if(DEFINED ENV{ROOTSYS})
@@ -263,6 +262,7 @@ foreach( file ${applications} )
   target_compile_options(${Executable}${EXEC_EXTENSION} PUBLIC -g3 -O3)
   target_link_libraries(${Executable}${EXEC_EXTENSION} PUBLIC libAmpGen  )
   target_include_directories(${Executable}${EXEC_EXTENSION} PRIVATE ${ROOT_INCLUDE_DIRS})
+  target_compile_features( ${Executable}${EXEC_EXTENSION} PUBLIC ${AMPGEN_CXX_STANDARD})
 endforeach()
 
 # symlink the options files (so as there is the mass_width etc.) to the build directory, and also the release notes 

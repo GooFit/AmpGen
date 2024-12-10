@@ -1,4 +1,4 @@
-find_package(Boost 1.67.0 COMPONENTS unit_test_framework)
+find_package(Boost 1.73.0 COMPONENTS unit_test_framework)
 
 if ( Boost_FOUND )
   include_directories (${Boost_INCLUDE_DIRS})
@@ -6,7 +6,7 @@ if ( Boost_FOUND )
   foreach(testSrc ${TEST_SRCS})
     get_filename_component(testName ${testSrc} NAME_WE)
     add_executable(${testName} ${testSrc})
-    target_compile_options(${testName} PRIVATE -Wno-deprecated-builtins -Wno-deprecated-declarations -Wno-unused-but-set-variable )
+    target_compile_options(${testName} PRIVATE -Wno-deprecated-declarations -Wno-unused-but-set-variable )
     set_target_properties(${testName} 
       PROPERTIES 
       RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_TEST_OUTPUT_DIRECTORY}" 
@@ -15,11 +15,12 @@ if ( Boost_FOUND )
       EXECUTABLE_OUTPUT_DIRECTORY      "${CMAKE_TEST_OUTPUT_DIRECTORY}" 
     )
     target_link_libraries(${testName} PRIVATE ${Boost_LIBRARIES} libAmpGen)
+    target_compile_features(${testName} PUBLIC ${AMPGEN_CXX_STANDARD})
     if( UNIX AND NOT APPLE )
       target_link_libraries( ${testName} PRIVATE rt)
     endif()
     add_test(NAME ${testName} WORKING_DIRECTORY ${CMAKE_TEST_OUTPUT_DIRECTORY} COMMAND ${CMAKE_TEST_OUTPUT_DIRECTORY}/${testName} ) 
   endforeach(testSrc)
 else()
-  message( WARNING "Warning: Boost (version >= 1.67.0) required to build unit tests\n")
+  message( WARNING "Warning: Boost (version >= 1.73.0) required to build unit tests\n")
 endif()
