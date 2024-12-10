@@ -36,6 +36,7 @@ BOOST_AUTO_TEST_CASE ( test_constructor, *utf::tolerance(1e-17) )
   for( auto& event : events )
   { 
     auto diff = eval(event) -test.getValNoCache(event);
-    BOOST_TEST(diff == decltype(diff)(0.), boost::test_tools::tolerance(1e-17) ); 
+    BOOST_TEST( std::fabs(diff.real()) < 1e-17 ); 
+    BOOST_TEST( std::fabs(diff.imag()) < 1e-17 ); 
   }
 }
