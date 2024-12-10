@@ -18,6 +18,7 @@ jobs:
     strategy:
       matrix:
         simd: [0, AVX2d]
+        enable_fitting : [ON, OFF]
     defaults:
       run:
         shell: bash -l {0}
@@ -45,7 +46,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Configure
-        run: cmake -S . -B build -DENABLE_INSTALL=0 -DUSE_SIMD=${{matrix.simd}}
+        run: cmake -S . -B build -DENABLE_INSTALL=0 -DUSE_SIMD=${{matrix.simd}} -DENABLE_FITTING=${{matrix.enable_fitting}} -DENABLE_TEST=${{matrix.enable_fitting}}
       - name: Build
         run: cmake --build build -j "$(getconf _NPROCESSORS_ONLN)"
       - name: Run
