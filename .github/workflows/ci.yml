@@ -28,10 +28,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           clean: false 
-      - name: Setup Mambaforge
+      - name: Setup MiniForge
         uses: conda-incubator/setup-miniconda@v3
         with:
-          miniforge-variant: Mambaforge
+          miniforge-variant: MiniForge3
           miniforge-version: latest
           activate-environment: my-env
           use-mamba: true
