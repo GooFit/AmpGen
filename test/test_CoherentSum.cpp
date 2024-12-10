@@ -18,7 +18,7 @@ namespace utf = boost::unit_test;
 #endif
 
 using namespace AmpGen;
-BOOST_AUTO_TEST_CASE ( test_constructor )
+BOOST_AUTO_TEST_CASE ( test_constructor, *utf::tolerance(1e-17) )
 {
   MinuitParameterSet mps;
   mps.add( "D0{K0S0,rho(770)0{pi+,pi-}}_Re", Flag::Fix, 1, 0); 
@@ -36,6 +36,6 @@ BOOST_AUTO_TEST_CASE ( test_constructor )
   for( auto& event : events )
   { 
     auto diff = eval(event) -test.getValNoCache(event);
-    BOOST_TEST(diff == 0., boost::test_tools::tolerance(1e-10) ); 
+    BOOST_TEST(diff == decltype(diff)(0.), boost::test_tools::tolerance(1e-17) ); 
   }
 }
