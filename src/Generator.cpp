@@ -3,11 +3,11 @@
 
 using namespace AmpGen;
 
-extern "C" void AmpGen::PyGenerate(const char* eventType, double* out, const unsigned int size)
+extern "C" void AmpGen::python__generate(const char* eventType, double* out, const unsigned int size)
 {
+  auto rndm = TRandom3(1); /// FIXME: SEED is hardcoded 
   EventType type( split( std::string(eventType),' ') ); 
-  INFO( type << " generating: " );
-  auto phsp = Generator<PhaseSpace>(type, new TRandom3() );
+  auto phsp = Generator<PhaseSpace>(type, &rndm );
   auto events = phsp.generate( size ); 
   for( size_t i = 0 ; i < events.size(); ++i ){
     for( size_t j = 0 ; j < events[i].size(); ++j)

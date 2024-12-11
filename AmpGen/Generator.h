@@ -198,6 +198,6 @@ namespace AmpGen
 
     Wrapper around the a phase space generator from a stringy event type to be used with python / numpy.
     */
-  extern "C" void PyGenerate( const char* eventType, double* out, const unsigned int size );
+  extern "C" void python__generate( const char* eventType, double* out, const unsigned int size );
 } // namespace AmpGen
 #endif

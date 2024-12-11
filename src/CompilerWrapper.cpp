@@ -57,12 +57,13 @@ void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, 
 {
   std::ofstream output( filename );
   preamble(output);
-  output << "using namespace AmpGen;\n"; 
-  if( expression.fcnSignature().find("AVX2d")        != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
-  else if( expression.fcnSignature().find("AVX2f")   != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
-  else if( expression.fcnSignature().find("AVX512d") != std::string::npos )  output << "#include \"AmpGen/simd/avx512d_types.h\"\n; using namespace AmpGen::AVX512d;\n;" ;
-  else if( expression.fcnSignature().find("AVX512")  != std::string::npos )  output << "#include \"AmpGen/simd/avx512_types.h\"\n; using namespace AmpGen::AVX512;\n;" ;
-  else if( expression.fcnSignature().find("ARM128d") != std::string::npos )  output << "#include \"AmpGen/simd/arm128d_types.h\"\n; using namespace AmpGen::ARM128d;\n;" ;
+  auto signature = expression.fcnSignature(); 
+  if( signature.find("Complex")        != std::string::npos ){  output << "#include \"AmpGen/Complex.h\"\n" ; output << "using namespace AmpGen;\n";  }
+  if( signature.find("AVX2d")        != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
+  else if( signature.find("AVX2f")   != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
+  else if( signature.find("AVX512d") != std::string::npos )  output << "#include \"AmpGen/simd/avx512d_types.h\"\n; using namespace AmpGen::AVX512d;\n;" ;
+  else if( signature.find("AVX512")  != std::string::npos )  output << "#include \"AmpGen/simd/avx512_types.h\"\n; using namespace AmpGen::AVX512;\n;" ;
+  else if( signature.find("ARM128d") != std::string::npos )  output << "#include \"AmpGen/simd/arm128d_types.h\"\n; using namespace AmpGen::ARM128d;\n;" ;
   output << expression << std::endl; 
   output.close();
 }

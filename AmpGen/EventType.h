@@ -82,6 +82,9 @@ namespace AmpGen
       std::pair<unsigned, unsigned> m_dim;              ///< Rank of the relevant transition matrix
       bool                      m_alt_part_names;       ///< alternative naming in ouput tree (e.g. Xi- pi+ pi+ becomes Xim pip0 pip1 rather than _1_Xi# _2_pi~ _3_pi~)
   };
+
+
+  extern "C" std::pair<unsigned,unsigned> python__EventType__dim( const char* eventType ); 
 } // namespace AmpGen
 
 #endif
