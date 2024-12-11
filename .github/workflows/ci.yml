@@ -76,7 +76,7 @@ jobs:
       - name: Upload Unit Test Results
         uses: actions/upload-artifact@v4
         with:
-          name: Results (${{ runner.os }})
+          name: Results (${{ runner.os }}, ${{matrix.simd}}, enable_fitting=${{matrix.enable_fitting}} )
           path: xml
 
   publish-test-results:
