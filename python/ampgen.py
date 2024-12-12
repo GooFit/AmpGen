@@ -86,26 +86,13 @@ class AmpGenModel:
                 elements.append( amp[dim*me+i][1] ) # imaginary part 
             rt[ self.labels[me] ] = elements 
         return rt  
-      
-def make_ampgen_model( options_file, src = "" ) :
-    if src == "" :
-        fid,src=mkstemp( suffix='.cpp')
-        lib=src.replace(".cpp",".so")
-        output_log=src.replace(".cpp",".log")
-        output_log_file=open(output_log, 'w')
-        print( f"Running command {cmd}")
 
-        cmd = ["AmpGen", options_file, f"--Output {src}"]
-        # result = subprocess.run(cmd, stdout=subprocess.STDOUT, stderr=subprocess.STDOUT, check=False, text=True) 
+def make_ampgen_model( options_file, src = "" ) :
+    if src == "" : src=mkstemp( suffix='.cpp')[1]
+    lib=src.replace(".cpp",".so")
+    if not os.path.isfile(lib) :
+        cmd = ["AmpGen", options_file, f"--Output {src}", "--Normalise=0", "--CompilerWrapper::Verbose=1"]
+        print( f"Running command {cmd}")
         subprocess.run(cmd, check=True, text=True)
-        return AmpGenModel( lib )
-    else :
-        lib=src.replace(".cpp",".so")
-        if not os.path.isfile(lib) :
-            output_log=src.replace(".cpp",".log")
-            output_log_file=open(output_log, 'w')
-            cmd = ["AmpGen", options_file, f"--Output {src}"]
-            print( f"Running command {cmd}")
-            subprocess.run(cmd, check=True, text=True)
-        return AmpGenModel(os.path.abspath(lib))
+    return AmpGenModel(os.path.abspath(lib))
 
