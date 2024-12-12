@@ -12,8 +12,8 @@ env:
 
 jobs:
 
-  build:
-    name: build
+  build-and-test:
+    name: build-and-test 
     runs-on: ubuntu-latest 
     strategy:
       matrix:
@@ -59,11 +59,6 @@ jobs:
           fi
         env:
           CTEST_OUTPUT_ON_FAILURE: true
-  test: 
-      name: test
-      runs-on: ubuntu-latest
-      needs: build
-      steps: 
       - name: Unit tests
         run: |
           mkdir xml 
@@ -105,7 +100,7 @@ jobs:
   publish-test-results:
     name: "Publish Unit Tests Results"
     runs-on: ubuntu-latest 
-    needs: test
+    needs: build-and-test
     # the build-and-test job might be skipped, we don't need to run this job then
     if: success() || failure()
 
