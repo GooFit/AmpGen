@@ -88,9 +88,9 @@ jobs:
           done
       - name: upload model test results
         if: always()
-         uses: pmeier/pytest-results-action@main
-         with:
-          path: *.xml
+        uses: pmeier/pytest-results-action@main
+        with:
+          path: xml
           summary: true
           fail-on-empty: true
           title: Model results (${{ runner.os }}, ${{matrix.simd}}, enable_fitting=${{matrix.enable_fitting}} )
