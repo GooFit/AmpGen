@@ -79,6 +79,35 @@ jobs:
           name: Results (${{ runner.os }}, ${{matrix.simd}}, enable_fitting=${{matrix.enable_fitting}} )
           path: xml
 
+      - name: Models tests 
+        run: | 
+        export PYTHONPATH=$PWD/python:$PYTHONPATH
+        for x in test/model/*.opt ; do
+          name=$(basename $x)
+          pytest -q test/python/test_model.py --model $x --junit-xml=${name}-${{matrix.simd}}-${{enable_fitting}-${{runner.os}}.xml
+        done
+      - name: upload model test results
+        if: always()
+         uses: pmeier/pytest-results-action@main
+         with:
+          # A list of JUnit XML files, directories containing the former, and wildcard
+          # patterns to process.
+          # See @actions/glob for supported patterns.
+          path: *.xml
+
+          # (Optional) Add a summary of the results at the top of the report
+          summary: true
+
+          # (Optional) Select which results should be included in the report.
+          # Follows the same syntax as `pytest -r`
+          display-options: fEX
+
+          # (Optional) Fail the workflow if no JUnit XML was found.
+          fail-on-empty: true
+
+          # (Optional) Title of the test results section in the workflow summary
+          title: Test results
+
   publish-test-results:
     name: "Publish Unit Tests Results"
     runs-on: ubuntu-latest 
