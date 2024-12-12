@@ -84,7 +84,7 @@ jobs:
           export PYTHONPATH=$PWD/python:$PYTHONPATH
           for x in test/model/*.opt ; do
             name=$(basename $x)
-            pytest -q test/python/test_model.py --model $x --junit-xml=${name}-${{matrix.simd}}-${{enable_fitting}-${{runner.os}}.xml
+            pytest -q test/python/test_model.py --model $x --junit-xml=${name}-${{matrix.simd}}-${{enable_fitting}}-${{runner.os}}.xml
           done
       - name: upload model test results
         if: always()
