@@ -75,16 +75,16 @@ template <class T> void generateSource(T& pdf, const std::string& sourceFile, Mi
   double safetyFactor = NamedParameter<double>("SafetyFactor", 3);
   int seed            = NamedParameter<int>   ("Seed"        , 1);
   size_t nEvents      = NamedParameter<size_t>("NormEvents"  , 1000000);
-  
-  TRandom3 rnd(seed);
-  unsigned d_i = pdf.eventType().dim().first;
-  Generator<PhaseSpace> phsp(pdf.eventType());
-  phsp.setRandom(&rnd);
-  EventList_t normEvents = phsp.generate(nEvents);
-  if constexpr( std::is_same<T, CoherentSum>::value ) pdf.prepare();
+ 
 
   double norm = 1; 
   if( normalise ){
+    TRandom3 rnd(seed);
+    unsigned d_i = pdf.eventType().dim().first;
+    Generator<PhaseSpace> phsp(pdf.eventType());
+    phsp.setRandom(&rnd);
+    EventList_t normEvents = phsp.generate(nEvents);
+    if constexpr( std::is_same<T, CoherentSum>::value ) pdf.prepare();
     double pMax = 0;
     for ( auto& evt : normEvents ) 
     {

@@ -95,4 +95,3 @@ def make_ampgen_model( options_file, src = "" ) :
         print( f"Running command {cmd}")
         subprocess.run(cmd, check=True, text=True)
     return AmpGenModel(os.path.abspath(lib))
-
