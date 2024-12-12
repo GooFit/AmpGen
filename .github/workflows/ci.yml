@@ -82,6 +82,8 @@ jobs:
       - name: Models tests 
         run: |
           export PYTHONPATH=$PWD/python:$PYTHONPATH
+          export PATH=$PATH:$PWD/build/bin
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/build/lib
           for x in test/model/*.opt ; do
             name=$(basename $x)
             pytest -q test/python/test_model.py --model $x --junit-xml=${name}-${{matrix.simd}}-${{matrix.enable_fitting}}-${{runner.os}}.xml
