@@ -92,7 +92,8 @@ jobs:
         if: always()
         uses: pmeier/pytest-results-action@main
         with:
-          path: xml
+          path: |
+            *.xml
           summary: true
           fail-on-empty: true
           title: Model results (${{ runner.os }}, ${{matrix.simd}}, enable_fitting=${{matrix.enable_fitting}} )
