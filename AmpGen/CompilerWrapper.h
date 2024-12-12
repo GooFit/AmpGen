@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map> 
 
 namespace AmpGen
 {
@@ -18,15 +19,18 @@ namespace AmpGen
     explicit CompilerWrapper( const bool& verbose=false);
     void generateSource( const CompiledExpressionBase& expression, const std::string& fname);
     bool compile( CompiledExpressionBase& expression, const std::string& fname=""); 
-    bool compile( std::vector<CompiledExpressionBase*>& expression, const std::string& fname=""); 
+    bool compile( std::vector<CompiledExpressionBase*>& expression, 
+                  const std::string& fname="",
+                  const std::map<std::string, std::string>& metadata_functions = {} ); 
     void compileSource(const std::string& fname, const std::string& oname );
     void setVerbose() { m_verbose = true ; } 
     void preamble(std::ostream& os ) const ; 
     void addHeader(const std::string& include ) { m_includes.push_back(include); } 
-  
+    void addPythonBindings(){ m_includePythonBindings = true ; }  
   private:
     std::vector<std::string> m_includes = {"complex", "cmath", "vector"}; 
     bool                     m_verbose;
+    bool                     m_includePythonBindings {true}; 
     std::string              m_cxx;
     std::string generateFilename();
     bool isClang() const; 

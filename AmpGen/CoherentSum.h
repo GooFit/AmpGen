@@ -101,7 +101,8 @@ namespace AmpGen
     std::function<real_t(const Event&)> evaluator(const EventList_type* = nullptr) const; 
     std::function<complex_t(const Event&)> amplitudeEvaluator(const EventList_type* = nullptr) const; 
     KeyedFunctors<double(Event)> componentEvaluator(const EventList_type* = nullptr) const; 
-    EventType eventType() const { return m_evtType; } 
+    EventType eventType() const { return m_eventType; } 
+    const auto& cache() const { return m_cache; } 
   protected:
     std::vector<MatrixElement> m_matrixElements;              ///< Vector of matrix elements
     Bilinears        m_normalisations;                        ///< Normalisation integrals
@@ -111,7 +112,7 @@ namespace AmpGen
     FunctionCache<EventList_type, complex_v, Alignment::AoS> m_cache; ///< Store of intermediate values for the PDF calculation 
 
     bool             m_ownEvents    = {false};                ///< Flag as to whether events are owned by this PDF or not  
-    EventType        m_evtType;                               ///< Final state for this amplitude
+    EventType        m_eventType;                               ///< Final state for this amplitude
     size_t           m_prepareCalls = {0};                    ///< Number of times prepare has been called
     size_t           m_lastPrint    = {0};                    ///< Last time verbose PDF info was printed
     size_t           m_printFreq    = {0};                    ///< Frequency to print verbose PDF info

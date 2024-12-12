@@ -30,6 +30,7 @@ namespace AmpGen
   }
   DECLARE_ARGUMENT(disableBatch, bool);
   DECLARE_ARGUMENT(includeParameters, bool); 
+  DECLARE_ARGUMENT(includePythonBindings, bool); 
 
   template <typename ret_type, typename... arg_types> class CompiledExpression; 
   template <typename ret_type, typename... arg_types>
@@ -75,6 +76,9 @@ namespace AmpGen
               DEBUG("Disabling bulk evaluation: did you do this on purpose?");
               m_disableBatch = true; 
             }
+            else if constexpr( std::is_convertible<decltype(arg), includePythonBindings>::value ){
+              m_includePythonBindings = true; 
+            }
             else if constexpr( std::is_convertible<decltype(arg), includeParameters>::value ) {
               m_includeParameters = true; 
             }
@@ -88,9 +92,17 @@ namespace AmpGen
             typedef typename std::remove_pointer<zeroType<arg_types...>>::type zt; 
             m_outputSize = detail::size_of<zt>::value;
             DEBUG( "one element: " << m_outputSize << type_string<zt>() );
-            if( is<TensorExpression>(expression) ) m_outputSize *= cast<TensorExpression>(expression).tensor().size();
           }
-          else m_outputSize = detail::size_of<ret_type>::value; 
+          else if constexpr( isVector<ret_type>::value ){
+            m_outputSize = detail::size_of<typename ret_type::value_type>::value;    
+          }
+          else {
+            m_outputSize = detail::size_of<ret_type>::value; 
+          }
+          if( is<TensorExpression>(expression) ){
+            m_outputSize *= cast<TensorExpression>(expression).tensor().size();
+            INFO( "nElements: " << cast<TensorExpression>(expression).tensor().size() << " " << m_outputSize << " " << detail::size_of<ret_type>::value );
+          }
         }
         
         CompiledExpression( const std::string& name = "" ) : CompiledExpressionBase( name ) { m_outputSize = detail::size_of<ret_type>::value; };

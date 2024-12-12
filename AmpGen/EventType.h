@@ -70,6 +70,8 @@ namespace AmpGen
       friend std::ostream& AmpGen::operator<<( std::ostream& os, const EventType& type );
       
       Event makeEvent() const; 
+
+      std::string constructor_string() const;  
     private:
       std::string               m_mother;               ///< name of decaying particle
       double                    m_motherMass;           ///< mass of decaying particle
@@ -84,7 +86,7 @@ namespace AmpGen
   };
 
 
-  extern "C" std::pair<unsigned,unsigned> python__EventType__dim( const char* eventType ); 
+  extern "C" unsigned python__EventType__dim( const char* eventType ); 
 } // namespace AmpGen
 
 #endif

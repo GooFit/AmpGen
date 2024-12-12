@@ -301,8 +301,14 @@ Event EventType::makeEvent() const
   return PhaseSpace( *this ).makeEvent(); 
 }
 
-extern "C" std::pair<unsigned, unsigned> AmpGen::python__EventType__dim(const char* eventType){
+std::string EventType::constructor_string() const 
+{
+  return mother() + " " + vectorToString(m_particleNames, " "); 
+}
+
+extern "C" unsigned AmpGen::python__EventType__dim(const char* eventType){
   
   EventType type( split( std::string(eventType),' ') );
-  return type.dim();  
+  auto dim = type.dim();
+  return (dim.first << 16) + dim.second;   
 }

@@ -31,8 +31,6 @@ using namespace AmpGen;
 // #pragma warning "No AMPGEN_CXX for JIT set"
 // #endif 
 
-// Cleaner Cleaner::instance instance;
-
 CompilerWrapper::CompilerWrapper( const bool& verbose ) :
   m_verbose(verbose),
   m_cxx(getenv("AMPGEN_CXX") != nullptr ? std::string( getenv( "AMPGEN_CXX" ) ) : "")
@@ -108,7 +106,7 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
 }
 
 
-bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions, const std::string& fname )
+bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions, const std::string& fname, const std::map<std::string, std::string>& metadata_functions )
 {
   bool print_all = m_verbose || NamedParameter<bool>("CompilerWrapper::Verbose",false);
   std::string cname = expandGlobals(fname);
@@ -117,10 +115,16 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
   if( print_all ) INFO("Generating source: " << cname );
   auto twall_begin  = std::chrono::high_resolution_clock::now();
   std::ofstream output( cname );
-  for ( auto& include : m_includes ) output << "#include <" << include << ">\n";
-  for ( auto& expression : expressions ) output << *expression << std::endl; 
+
+  for ( const auto& include : m_includes ) output << "#include <" << include << ">\n";
+  if( m_includePythonBindings ) output << "#include <cstring>\n"; 
+  for ( const auto& expression : expressions ) output << *expression << "\n"; 
+  for ( const auto& [k,v] : metadata_functions ) output << "extern \"C\" const char* " << k << "(){ return \"" << v << "\";}\n"; 
+
   output.close();
   compileSource( cname, oname );
+  
+  
   for( auto& expression : expressions ) expression->link( oname );
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();
