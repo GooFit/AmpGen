@@ -77,7 +77,7 @@ std::vector<FitFraction> IncoherentSum::fitFractions( const LinearErrorPropagato
   for ( unsigned int i = 0; i < m_matrixElements.size(); ++i ) 
     calc.emplace_back(m_matrixElements[i].decayDescriptor(), std::vector<size_t>({i}));
 
-  auto fractions = calc(m_evtType.mother(), linProp);
+  auto fractions = calc(m_eventType.mother(), linProp);
   for(auto& f : fractions) outputFractions.push_back(f); 
 
   for ( auto& p : outputFractions ) INFO(p);
