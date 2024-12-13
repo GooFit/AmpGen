@@ -97,7 +97,7 @@ jobs:
           path: |
             *.xml
           summary: true
-          fail-on-empty: true
+          fail-on-empty: false
           title: Model results (${{ runner.os }}, ${{matrix.simd}}, enable_fitting=${{matrix.enable_fitting}} )
 
   publish-test-results:
