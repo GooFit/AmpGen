@@ -1,0 +1,69 @@
+#####################################################
+# Normalisation model for B->Kpipigamma decays
+#####################################################
+# Contains an enhanced fraction of PHSP events (~15%), the remaining relative fractions are based on the analysis of LHCB Run 1 data
+# +1/-1 photon helicity amplitude fractions are 0.9 and 0.1 respectively
+
+EventType B+ K+ pi- pi+ gamma0
+
+Type PolarisedSum
+
+Particle::SpinBasis Weyl
+
+CouplingConstant::Coordinates  polar
+CouplingConstant::AngularUnits   rad
+
+#1+
+
+B+[vertex=rp]{K(1)(1270)+{K*(892)0{K+,pi-},pi+},gamma0}               2       1.000       0.000          2                 0.0         0.0
+
+B+[vertex=rp]{K(1)(1270)+[D]{K*(892)0{K+,pi-},pi+},gamma0}            0       1.072       0.000          0                 0.0         0.0
+
+B+[vertex=rp]{K(1)(1270)+{rho(770)0{pi+,pi-},K+},gamma0}              0       2.017       0.005          0                -0.910         0.1
+
+B+[vertex=rp]{K(1)(1270)+{K(0)*(1430)0{pi+,pi-},K+},gamma0}           0       0.564       0.005          0                -1.637         0.1
+
+B+[vertex=rp]{K(1)(1270)+{omega(782)0{pi+,pi-},K+},gamma0}            0       0.114      0.005          0                 0.302         0.1
+
+B+[vertex=rp]{K(1)(1400)+{K*(892)0{K+,pi-},pi+},gamma0}               0       0.609       0.005          0                -0.755         0.1
+
+
+# 1-
+
+B+[vertex=rm]{K*(1410)+{K*(892)0{K+,pi-},pi+},gamma0}                 0       0.716      0.005          0                 0.0         0.1
+
+B+[vertex=rm]{K*(1680)+{K*(892)0{K+,pi-},pi+},gamma0}                 0       0.268       0.005          0                 0.443         0.1
+
+B+[vertex=rm]{K*(1680)+{rho(770)0{pi+,pi-},K+},gamma0}                0       0.193       0.005          0                 1.403         0.1
+
+
+# 2+
+
+B+[vertex=rp]{K(2)*(1430)+{K*(892)0{K+,pi-},pi+},gamma0}             0        1.253       0.005          0                 0.0         0.1
+
+B+[vertex=rp]{K(2)*(1430)+{rho(770)0{pi+,pi-},K+},gamma0}            0        2.246       0.005          0                 1.798         0.1
+
+B+[vertex=rp]{K(2)*(1430)+{omega(782)0{pi+,pi-},K+},gamma0}          0        0.465       0.005          0                -2.353        0.1
+
+#2-
+
+B+[vertex=rm]{K(2)(1580)+{K*(892)0{K+,pi-},pi+},gamma0}               0        1.103          0.005          0                 2.883        0.1
+
+B+[vertex=rm]{K(2)(1580)+{rho(770)0{pi+,pi-},K+},gamma0}              0        0.874          0.005          0                 2.442         0.1
+
+B+[vertex=rm]{K(2)(1770)+{K*(892)0{K+,pi-},pi+},gamma0}               0        0.823         0.005           0                 0.0         0.1
+
+B+[vertex=rm]{K(2)(1770)+{rho(770)0{pi+,pi-},K+},gamma0}              0        0.191         0.005           0                 2.527         0.1
+
+B+[vertex=rm]{K(2)(1770)+{K(2)*(1430)0{K+,pi-},pi+},gamma0}           0        0.169          0.005          0                -2.060         0.1
+
+B+[vertex=rm]{K(2)(1770)+{f(2)(1270)0{pi+,pi-},K+},gamma0}            0        0.353          0.005          0                -0.174        0.1
+
+#phsp
+
+B+{K+,pi-,pi+,gamma0}                                      0        1.305           0.005          0                 0               0.1
+
+#photon polarisation parameter
+
+polFrac    0    0.90  0.005
+

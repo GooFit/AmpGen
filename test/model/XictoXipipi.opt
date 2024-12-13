@@ -1,0 +1,142 @@
+#####################################################
+# Preliminary LHCb model of Xic->Xipipi
+#####################################################
+# Do the 3 body decay in AmpGen and use PhaseSpace/S-Wave Xi and Lambda decays. This is not optimal, but there are good reasons to do so
+
+EventType                  Xi(c)+ Xi- pi+ pi+
+
+Type                       PolarisedSum
+Particle::SpinFormalism    Canonical
+Particle::DefaultModifier  BL
+
+# Xic initial polarization
+Px 2 0 0
+Py 2 0 0
+Pz 2 0 0
+
+####################
+### Xi pi system ###
+####################
+Xi(c)+[S]{XiPi0[GenericKmatrix]{Xi-,pi+},pi+}       2  1          0             2  0          0
+Xi(c)+[P]{XiPi0[GenericKmatrix]{Xi-,pi+},pi+}       0  -0.45851   0.035952      0  0.32882    0.046388
+Xi(c)+[P]{Xi(1530)0{Xi-,pi+},pi+}                   0  -0.28018   0.36337       0  -17.805    0.40153
+Xi(c)+[D]{Xi(1530)0{Xi-,pi+},pi+}                   0  2.2358     1.0246        0  3.3383     1.065
+Xi(c)+{Xi(1950)0{Xi-,pi+},pi+}                      0  13.291     0.97811       0  17.768     2.6647
+Xi(c)+[P]{Xi(2030)0{Xi-,pi+},pi+}                   0  -1.0414    0.14018       0  2.2928     0.11204
+Xi(c)+[D]{Xi(2030)0{Xi-,pi+},pi+}                   0  3.3283     2.0113        0  20.564     0.62598
+
+##########################################
+### masses and widths of BW resonances ###
+##########################################
+Xi(1530)0_mass   2  1.5334      3.9608e-05  # from Lc -> Xi K pi
+Xi(1530)0_width  2  0.010088    9.9967e-05  # from Lc -> Xi K pi
+Xi(1950)0_mass   0  2.3005      0.006272
+Xi(1950)0_width  0  0.052386    0.0090456
+Xi(2030)0_mass   0  2.0358      0.0011226
+Xi(2030)0_width  0  0.065737    0.0023236
+
+###############
+### Kmatrix ###
+###############
+### parameters
+NR_LK_LK                                                      0 510.6       2.2371
+NR_LK_SK                                                      0 -904.58     0.32179
+NR_LK_XiEta                                                   0 -175.7      0.67391
+NR_SK_SK                                                      0 373.79      1.0072
+NR_SK_XiEta                                                   0 282.27      0.14827
+NR_XiEta_XiEta                                                0 14.843      0.58728
+NR_XiPi_LK                                                    0 -139.04     0.29922
+NR_XiPi_SK                                                    0 372.97      0.62648
+NR_XiPi_XiEta                                                 0 -63.813     0.1282
+NR_XiPi_XiPi                                                  0 414.97      0.57554
+Xi1620_g_LK                                                   0 -111.18     0.010638
+Xi1620_g_SK                                                   0 -12.101     0.023929
+Xi1620_g_XiEta                                                0 55.002      0.0045717
+Xi1620_g_XiPi                                                 0 -14.417     0.0098292
+Xi1690_g_LK                                                   0 -23.003     0.0086228
+Xi1690_g_SK                                                   0 -2.802      0.0071241
+Xi1690_g_XiEta                                                0 11.851      0.0037218
+Xi1690_g_XiPi                                                 0 -4.0376     0.0039908
+XiPi0::a::1                                                   0 4.326       0.0031404
+XiPi0::a::3                                                   0 10.226      0.00085402
+XiPi0::a::4                                                   0 1.363       0.0036046
+XiPi0::a::6                                                   0 23.682      0.0016559
+XiPi0::pole::1::mass                                          0 1.9803      0.0017606
+XiPi0::pole::2::mass                                          0 1.6617      9.7773e-05
+XiPi0::s0                                                     0 -1.0905     0.0011833
+
+#### S-wave: kMatrix with non-resonant part and 2 poles
+XiPi0::kMatrix::channels {
+  XiPi0[phsp=CM]{Xi-,pi+}          #1 channels and poles are counted from 1
+  XiPi0[phsp=CM]{Xi0,pi0}          #2 add this explicitly because the mass splitting is significant, but set all couplings equal to Xi- pi+
+  XiPi0[phsp=CM]{Lambda0,Kbar0}    #3
+  XiPi0[phsp=CM]{Sigma+,K-}        #4
+  XiPi0[phsp=CM]{Sigma0,Kbar0}     #5 add this explicitly because the mass splitting is significant, but set all couplings equal to Sigma+ K-
+  XiPi0[phsp=CM]{Xi0,eta0}         #6
+}
+
+# isospin symmetry
+XiPi0::a::2 = XiPi0::a::1
+XiPi0::a::5 = XiPi0::a::4
+
+### background terms for kMatrix
+XiPi0::f1::1::1 = NR_XiPi_XiPi
+XiPi0::f1::1::2 = XiPi0::f1::1::1
+XiPi0::f1::1::3 = NR_XiPi_LK
+XiPi0::f1::1::4 = NR_XiPi_SK
+XiPi0::f1::1::5 = XiPi0::f1::1::4
+XiPi0::f1::1::6 = NR_XiPi_XiEta
+
+XiPi0::f1::2::1 = XiPi0::f1::1::2
+XiPi0::f1::2::2 = XiPi0::f1::1::1
+XiPi0::f1::2::3 = XiPi0::f1::1::3
+XiPi0::f1::2::4 = XiPi0::f1::1::4
+XiPi0::f1::2::5 = XiPi0::f1::1::5
+XiPi0::f1::2::6 = XiPi0::f1::1::6
+
+XiPi0::f1::3::1 = XiPi0::f1::1::3
+XiPi0::f1::3::2 = XiPi0::f1::2::3
+XiPi0::f1::3::3 = NR_LK_LK
+XiPi0::f1::3::4 = NR_LK_SK
+XiPi0::f1::3::5 = XiPi0::f1::3::4
+XiPi0::f1::3::6 = NR_LK_XiEta
+
+XiPi0::f1::4::1 = XiPi0::f1::1::4
+XiPi0::f1::4::2 = XiPi0::f1::2::4
+XiPi0::f1::4::3 = XiPi0::f1::3::4
+XiPi0::f1::4::4 = NR_SK_SK
+XiPi0::f1::4::5 = XiPi0::f1::4::4
+XiPi0::f1::4::6 = NR_SK_XiEta
+
+XiPi0::f1::5::1 = XiPi0::f1::1::5
+XiPi0::f1::5::2 = XiPi0::f1::2::5
+XiPi0::f1::5::3 = XiPi0::f1::3::5
+XiPi0::f1::5::4 = XiPi0::f1::4::5
+XiPi0::f1::5::5 = XiPi0::f1::4::4
+XiPi0::f1::5::6 = XiPi0::f1::4::6
+
+XiPi0::f1::6::1 = XiPi0::f1::1::6
+XiPi0::f1::6::2 = XiPi0::f1::2::6
+XiPi0::f1::6::3 = XiPi0::f1::3::6
+XiPi0::f1::6::4 = XiPi0::f1::4::6
+XiPi0::f1::6::5 = XiPi0::f1::5::6
+XiPi0::f1::6::6 = NR_XiEta_XiEta
+
+### kMatrix poles
+XiPi0::kMatrix::nPoles 2
+
+### First pole: Xi(1620)
+XiPi0::pole::1::g::1 = Xi1620_g_XiPi
+XiPi0::pole::1::g::2 = XiPi0::pole::1::g::1
+XiPi0::pole::1::g::3 = Xi1620_g_LK
+XiPi0::pole::1::g::4 = Xi1620_g_SK
+XiPi0::pole::1::g::5 = XiPi0::pole::1::g::4
+XiPi0::pole::1::g::6 = Xi1620_g_XiEta
+
+### Second pole: Xi(1690)
+XiPi0::pole::2::g::1 = Xi1690_g_XiPi
+XiPi0::pole::2::g::2 = XiPi0::pole::2::g::1
+XiPi0::pole::2::g::3 = Xi1690_g_LK
+XiPi0::pole::2::g::4 = Xi1690_g_SK
+XiPi0::pole::2::g::5 = XiPi0::pole::2::g::4
+XiPi0::pole::2::g::6 = Xi1690_g_XiEta

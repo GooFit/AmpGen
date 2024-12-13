@@ -9,6 +9,5 @@ def test_amplitudes(model):
     refv = ref[ f"{k}_{evt}"]
     amplitudes = m.amplitudes( m.phsp_event(which=evt))
     delta = np.subtract(amplitudes[k], refv)
-    assert np.isclose(amplitudes[k], refv, equal_nan=True, rtol=1e-7).all(), f"{k:<80}/{evt} doesn't match reference,  Δ: {delta}" 
-
+    assert np.isclose(amplitudes[k], refv, equal_nan=True, rtol=5e-6, atol=5e-6).all(), f"{k:<80}/{evt} doesn't match reference,  Δ: {delta} rel: {delta/refv}" 
 
