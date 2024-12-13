@@ -101,7 +101,6 @@ namespace AmpGen
           }
           if( is<TensorExpression>(expression) ){
             m_outputSize *= cast<TensorExpression>(expression).tensor().size();
-            INFO( "nElements: " << cast<TensorExpression>(expression).tensor().size() << " " << m_outputSize << " " << detail::size_of<ret_type>::value );
           }
         }
         

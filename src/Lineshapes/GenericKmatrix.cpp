@@ -51,7 +51,7 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix)
   std::vector<Particle> pchannels;
   ADD_DEBUG(s, dbexpressions );
   ADD_DEBUG(s0, dbexpressions );
-  INFO("Initialising K-matrix with [nChannels = " << nChannels << ", nPoles = " << nPoles << "]");
+  // INFO("Initialising K-matrix with [nChannels = " << nChannels << ", nPoles = " << nPoles << "]");
   //phase-space
   for( unsigned i = 0 ; i < channels.size(); i+=1 ){
     Particle p( channels[i] );
@@ -158,7 +158,7 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix)
     }
   }
   else if(pa_type==PA_TYPE::QVec){
-    INFO("Using Q-vector approach to build the production amplitude");
+    // INFO("Using Q-vector approach to build the production amplitude");
     Expression M;
     for(unsigned i = 0 ; i < nChannels; ++i) M = M + kMatrix[{i,0}] * propagator[{0,i}];
     return M ; // * phsps[0];
