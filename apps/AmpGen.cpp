@@ -79,6 +79,7 @@ template <class T> void generateSource(T& pdf, const std::string& sourceFile, Mi
 
   double norm = 1; 
   if( normalise ){
+    INFO("Normalising PDF"); 
     TRandom3 rnd(seed);
     unsigned d_i = pdf.eventType().dim().first;
     Generator<PhaseSpace> phsp(pdf.eventType());

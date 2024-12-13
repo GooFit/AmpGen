@@ -9,6 +9,7 @@
 #include <numeric>
 #include <ratio>
 #include <thread>
+#include <csignal>
 
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/ErrorPropagator.h"
@@ -45,6 +46,7 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   , m_prefix   (prefix)
       , m_mps(&mps) 
 {
+  bool autocompile = NamedParameter<bool>("AutoCompile", true); 
   auto rules = AmplitudeRules::create(mps);
   auto amplitudes      = rules->getMatchingRules( m_eventType, prefix);
   if( amplitudes.size() == 0 ){
@@ -56,19 +58,14 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , std::thread::hardware_concurrency(), "Number of threads to use" );
   ThreadPool tp(nThreads);
   auto head_rules = rules->rulesForDecay(m_eventType.mother(), m_prefix);
-  /*
-  for( const auto& rule : head_rules )
-  {
-    auto indices = findIndices(m_matrixElements, rule.particle().decayDescriptor() );
-    INFO( rule.particle() << " [" << vectorToString(indices, " ") << "]" ); 
-  }
-  */
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
-    tp.enqueue( [i, this, &mps, &amplitudes]() mutable {
+    auto task = [i, this, &mps, &amplitudes, autocompile]() mutable {
         this->m_matrixElements[i] = 
           MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_eventType.getEventFormat(), this->m_dbThis);  
-        CompilerWrapper().compile( this->m_matrixElements[i], this->m_objCache); 
-    } ); 
+        if(autocompile) CompilerWrapper().compile( this->m_matrixElements[i], this->m_objCache); 
+    };
+    if( autocompile ) tp.enqueue( task ); 
+    else task(); 
   }
 }
 
@@ -77,10 +74,11 @@ void CoherentSum::prepare()
   transferParameters(); 
   ProfileClock clockEval; 
   for (auto& t : m_matrixElements ) {
-    if( not t.isReady() )
+    if( not t.isReady() ){
+      raise(SIGSEGV);
       FATAL( t.decayDescriptor() << " not ready, fix me"); 
+    }
     t.prepare();
-    
     if ( m_prepareCalls != 0 && !t.hasExternalsChanged() ) continue;
     if ( m_events != nullptr ) m_cache.update(t);
     m_integrator.updateCache(t);

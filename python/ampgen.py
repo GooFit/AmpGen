@@ -91,7 +91,7 @@ def make_ampgen_model( options_file, src = "" ) :
     if src == "" : src=mkstemp( suffix='.cpp')[1]
     lib=src.replace(".cpp",".so")
     if not os.path.isfile(lib) :
-        cmd = ["AmpGen", options_file, f"--Output {src}", "--Normalise=0", "--CompilerWrapper::Verbose=1"]
+        cmd = ["AmpGen", options_file, f"--Output {src}", "--Normalise=0", "--CompilerWrapper::Verbose=1", "--AutoCompile=0"]
         print( f"Running command {cmd}")
         subprocess.run(cmd, check=True, text=True)
     return AmpGenModel(os.path.abspath(lib))
