@@ -59,6 +59,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
   , m_dim       (m_eventType.dim())
 {
   auto rules = AmplitudeRules::create(mps); 
+  bool autocompile = NamedParameter<bool>("AutoCompile", true); 
   std::string objCache = NamedParameter<std::string>("PolarisedSum::ObjectCache", ""    );
   spaceType stype      = NamedParameter<spaceType>(  "PolarisedSum::SpaceType"  , spaceType::spin);
   {
@@ -74,7 +75,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
     m_matrixElements.resize( protoAmps.size() );
     for(unsigned i = 0; i < m_matrixElements.size(); ++i)
     {
-      tp.enqueue( [i, p=protoAmps[i].first, c=protoAmps[i].second, polStates, &mps, ptr = this] () mutable {
+      tp.enqueue( [autocompile, i, p=protoAmps[i].first, c=protoAmps[i].second, polStates, &mps, ptr = this] () mutable {
         Tensor thisExpression(Tensor::dim(polStates.size()));
         DebugSymbols syms;      
         for(unsigned j = 0; j != polStates.size(); ++j){ 
@@ -85,7 +86,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
             CompiledExpression<void(complex_v*, const size_t*, const real_t*, const real_v*)>(
             TensorExpression(thisExpression), p.decayDescriptor(), &mps,
             ptr->m_eventType.getEventFormat(), ptr->m_debug ? syms : DebugSymbols() ) );
-        CompilerWrapper().compile( ptr->m_matrixElements[i] );
+        if( autocompile) CompilerWrapper().compile( ptr->m_matrixElements[i] );
       });
     }
   }
