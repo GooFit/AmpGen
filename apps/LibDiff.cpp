@@ -76,6 +76,7 @@ int main( int argc, char** argv )
   OptionsParser::getMe()->setQuiet();
   OptionsParser::setArgs( argc, argv );
   auto t = EventType(NamedParameter<std::string>("EventType","").getVector()); 
+  std::cout << "Testing difference beween two libraries..." << std::endl; 
   PhaseSpace phsp(t);
   auto event = phsp.makeEvent();
   auto event2 = phsp.makeEvent();
@@ -84,7 +85,8 @@ int main( int argc, char** argv )
   std::string type   = NamedParameter<std::string>("Type","CoherentSum");
   Counter total;
 
-  auto ftable = cmd("nm " + refLib + "| grep __wParams");
+  auto ftable = cmd("nm " + refLib + "| grep __wParams | grep -v .cold");
+  for(auto& line : ftable) std::cout << line << std::endl; 
   if( type == "CoherentSum"){
     auto f1  = DynamicFCN<complex_t(const double*, const int&)>(lib, "AMP");
     auto f2  = DynamicFCN<complex_t(const double*, const int&)>(refLib, "AMP");
@@ -100,8 +102,7 @@ int main( int argc, char** argv )
     }
   }
   if( type == "PolarisedSum"){
-    if( std::get<0>( t.dim() ) > 1 )
-    {
+    if( std::get<0>( t.dim() ) > 1 ){
       auto f1  = DynamicFCN<double(const double*, const int&, const double&, const double&, const double&)>(lib   , "FCN_extPol");
       auto f2  = DynamicFCN<double(const double*, const int&, const double&, const double&, const double&)>(refLib, "FCN_extPol");
       total += Counter(f1(event,+1,0,0,0), f2(event,+1,0,0,0), modelName + " fcn(x)" , 1e-6);

@@ -79,6 +79,7 @@ namespace AmpGen
     std::vector<std::string>                     m_additionalHeaders;
     bool                                         m_disableBatch = {false}; 
     bool                                         m_includeParameters = {false};         
+    bool                                         m_includePythonBindings = {false}; 
   private:
     void addDebug( std::ostream& stream ) const;
     void addDependentExpressions( std::ostream& stream, size_t& sizeOfStream ) const;

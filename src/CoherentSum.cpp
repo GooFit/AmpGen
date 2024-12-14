@@ -9,6 +9,7 @@
 #include <numeric>
 #include <ratio>
 #include <thread>
+#include <csignal>
 
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/ErrorPropagator.h"
@@ -37,7 +38,7 @@ using namespace AmpGen;
 CoherentSum::CoherentSum() = default; 
 
 CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
-  :   m_evtType  (type)
+  :   m_eventType  (type)
       , m_printFreq(NamedParameter<size_t>(     "CoherentSum::PrintFrequency", 100)  )
       , m_dbThis   (NamedParameter<bool>(       "CoherentSum::Debug"         , false))
       , m_verbosity(NamedParameter<bool>(       "CoherentSum::Verbosity"     , 0)    )
@@ -45,8 +46,9 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   , m_prefix   (prefix)
       , m_mps(&mps) 
 {
+  bool autocompile = NamedParameter<bool>("AutoCompile", true); 
   auto rules = AmplitudeRules::create(mps);
-  auto amplitudes      = rules->getMatchingRules( m_evtType, prefix);
+  auto amplitudes      = rules->getMatchingRules( m_eventType, prefix);
   if( amplitudes.size() == 0 ){
     WARNING("The defined amplitudes don't seem to be able to be able to generate eventType: " << type);
   }
@@ -55,20 +57,15 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() ); 
   size_t      nThreads = NamedParameter<size_t>     ("nCores"    , std::thread::hardware_concurrency(), "Number of threads to use" );
   ThreadPool tp(nThreads);
-  auto head_rules = rules->rulesForDecay(m_evtType.mother(), m_prefix);
-  /*
-  for( const auto& rule : head_rules )
-  {
-    auto indices = findIndices(m_matrixElements, rule.particle().decayDescriptor() );
-    INFO( rule.particle() << " [" << vectorToString(indices, " ") << "]" ); 
-  }
-  */
+  auto head_rules = rules->rulesForDecay(m_eventType.mother(), m_prefix);
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
-    tp.enqueue( [i, this, &mps, &amplitudes]() mutable {
+    auto task = [i, this, &mps, &amplitudes, autocompile]() mutable {
         this->m_matrixElements[i] = 
-          MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_evtType.getEventFormat(), this->m_dbThis);  
-        CompilerWrapper().compile( this->m_matrixElements[i], this->m_objCache); 
-    } ); 
+          MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_eventType.getEventFormat(), this->m_dbThis);  
+        if(autocompile) CompilerWrapper().compile( this->m_matrixElements[i], this->m_objCache); 
+    };
+    if( autocompile ) tp.enqueue( task ); 
+    else task(); 
   }
 }
 
@@ -77,10 +74,11 @@ void CoherentSum::prepare()
   transferParameters(); 
   ProfileClock clockEval; 
   for (auto& t : m_matrixElements ) {
-    if( not t.isReady() )
+    if( not t.isReady() ){
+      raise(SIGSEGV);
       FATAL( t.decayDescriptor() << " not ready, fix me"); 
+    }
     t.prepare();
-    
     if ( m_prepareCalls != 0 && !t.hasExternalsChanged() ) continue;
     if ( m_events != nullptr ) m_cache.update(t);
     m_integrator.updateCache(t);
@@ -152,7 +150,7 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
     FitFractionCalculator<CoherentSum> pCalc(this, findIndices(m_matrixElements, rule.first), recomputeIntegrals);
     for(auto& process : rule.second) 
     {
-      if(process.head() == m_evtType.mother() && process.prefix() != m_prefix) continue;
+      if(process.head() == m_eventType.mother() && process.prefix() != m_prefix) continue;
       auto numeratorIndices   = processIndex(m_matrixElements,process.name());
       if(numeratorIndices.size() == 0 || numeratorIndices == pCalc.normSet ) continue; 
       pCalc.emplace_back(process.name(), numeratorIndices);
@@ -161,8 +159,8 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
     auto fractions = pCalc(rule.first, linProp);
     std::transform( fractions.begin(), fractions.end(), std::back_inserter(outputFractions),[](auto& p){ return p;} );
   };
-  auto ffForHead = rules->rulesForDecay(m_evtType.mother(), m_prefix);
-  FitFractionCalculator<CoherentSum> iCalc(this, findIndices(m_matrixElements, m_evtType.mother()), recomputeIntegrals);
+  auto ffForHead = rules->rulesForDecay(m_eventType.mother(), m_prefix);
+  FitFractionCalculator<CoherentSum> iCalc(this, findIndices(m_matrixElements, m_eventType.mother()), recomputeIntegrals);
   for ( size_t i = 0; i < ffForHead.size(); ++i ) 
   {
     for ( size_t j = i + 1; j < ffForHead.size(); ++j ) 
@@ -172,7 +170,7 @@ std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& 
           processIndex(m_matrixElements, ffForHead[j].name()) );
     }
   }
-  std::vector<FitFraction> interferenceFractions = iCalc(m_evtType.mother()+"_interference",linProp);
+  std::vector<FitFraction> interferenceFractions = iCalc(m_eventType.mother()+"_interference",linProp);
   for(auto& f : interferenceFractions) outputFractions.push_back(f); 
   for(auto& p : outputFractions) INFO(p);
   return outputFractions;
@@ -187,18 +185,20 @@ void CoherentSum::generateSourceCode(const std::string& fname, const double& nor
   Expression pa    = Parameter("double(x1)",0,true);
   Expression amplitude;
   for( unsigned i = 0 ; i != size(); ++i ) rt[i] = m_matrixElements[i].expression(); 
-  functions.push_back( new CompiledExpression<std::vector<complex_t>( const real_t*, const real_t* )>(TensorExpression(rt), "all_amplitudes", m_evtType.getEventFormat(), includeParameters(), m_mps, disableBatch() ) );  
+  functions.push_back( new CompiledExpression<std::vector<complex_t>( const real_t*, const real_t* )>(TensorExpression(rt), "all_amplitudes", m_eventType.getEventFormat(), includeParameters(), m_mps, disableBatch(), includePythonBindings() ) );  
   auto ampTensor = Array( make_cse(Function("all_amplitudes_wParams", {event} )), -1 ); 
+  std::string matrixElementNames; 
   for( unsigned int i = 0 ; i < size(); ++i ){
     auto& p = m_matrixElements[i];
     Expression this_amplitude = p.coupling() * ampTensor[i];
     amplitude += ( p.decayTree.finalStateParity() == 1 ? 1 : pa ) * this_amplitude; 
-    functions.push_back( new CompiledExpression<complex_t( const real_t*)>( ampTensor[i], p.decayDescriptor() + "_wParams", m_evtType.getEventFormat(), disableBatch() ) );  
+    functions.push_back( new CompiledExpression<complex_t( const real_t*)>( ampTensor[i], p.decayDescriptor() + "_wParams", m_eventType.getEventFormat(), disableBatch() ) );  
+    matrixElementNames += m_matrixElements[i].name()  + ( i == m_matrixElements.size() - 1 ? "" : "\\n"); 
   }
   functions.push_back( new CompiledExpression<complex_t(const real_t*, const int&)>( amplitude  , "AMP", disableBatch() ) );
-  functions.push_back( new CompiledExpression<real_t(const real_t*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN", disableBatch() ) ); 
+  functions.push_back( new CompiledExpression<real_t(const real_t*, const int&)>(fcn::norm(amplitude) / normalisation, "FCN", disableBatch() , includePythonBindings() ) ); 
 
-  CompilerWrapper().compile( functions, fname );
+  CompilerWrapper().compile( functions, fname,{{"EventType", m_eventType.constructor_string()},{ "MatrixElements", matrixElementNames}}  );
 
   for( auto& function : functions ) delete function;  
 

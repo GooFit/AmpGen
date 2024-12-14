@@ -31,8 +31,6 @@ using namespace AmpGen;
 // #pragma warning "No AMPGEN_CXX for JIT set"
 // #endif 
 
-// Cleaner Cleaner::instance instance;
-
 CompilerWrapper::CompilerWrapper( const bool& verbose ) :
   m_verbose(verbose),
   m_cxx(getenv("AMPGEN_CXX") != nullptr ? std::string( getenv( "AMPGEN_CXX" ) ) : "")
@@ -57,12 +55,13 @@ void CompilerWrapper::generateSource( const CompiledExpressionBase& expression, 
 {
   std::ofstream output( filename );
   preamble(output);
-  output << "using namespace AmpGen;\n"; 
-  if( expression.fcnSignature().find("AVX2d")        != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
-  else if( expression.fcnSignature().find("AVX2f")   != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
-  else if( expression.fcnSignature().find("AVX512d") != std::string::npos )  output << "#include \"AmpGen/simd/avx512d_types.h\"\n; using namespace AmpGen::AVX512d;\n;" ;
-  else if( expression.fcnSignature().find("AVX512")  != std::string::npos )  output << "#include \"AmpGen/simd/avx512_types.h\"\n; using namespace AmpGen::AVX512;\n;" ;
-  else if( expression.fcnSignature().find("ARM128d") != std::string::npos )  output << "#include \"AmpGen/simd/arm128d_types.h\"\n; using namespace AmpGen::ARM128d;\n;" ;
+  auto signature = expression.fcnSignature(); 
+  if( signature.find("Complex")        != std::string::npos ){  output << "#include \"AmpGen/Complex.h\"\n" ; output << "using namespace AmpGen;\n";  }
+  if( signature.find("AVX2d")        != std::string::npos )  output << "#include \"AmpGen/simd/avx2d_types.h\"\n; using namespace AmpGen::AVX2d;\n" ;
+  else if( signature.find("AVX2f")   != std::string::npos )  output << "#include \"AmpGen/simd/avx2f_types.h\"\n; using namespace AmpGen::AVX2f;\n;" ;
+  else if( signature.find("AVX512d") != std::string::npos )  output << "#include \"AmpGen/simd/avx512d_types.h\"\n; using namespace AmpGen::AVX512d;\n;" ;
+  else if( signature.find("AVX512")  != std::string::npos )  output << "#include \"AmpGen/simd/avx512_types.h\"\n; using namespace AmpGen::AVX512;\n;" ;
+  else if( signature.find("ARM128d") != std::string::npos )  output << "#include \"AmpGen/simd/arm128d_types.h\"\n; using namespace AmpGen::ARM128d;\n;" ;
   output << expression << std::endl; 
   output.close();
 }
@@ -107,7 +106,7 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
 }
 
 
-bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions, const std::string& fname )
+bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions, const std::string& fname, const std::map<std::string, std::string>& metadata_functions )
 {
   bool print_all = m_verbose || NamedParameter<bool>("CompilerWrapper::Verbose",false);
   std::string cname = expandGlobals(fname);
@@ -116,10 +115,16 @@ bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions
   if( print_all ) INFO("Generating source: " << cname );
   auto twall_begin  = std::chrono::high_resolution_clock::now();
   std::ofstream output( cname );
-  for ( auto& include : m_includes ) output << "#include <" << include << ">\n";
-  for ( auto& expression : expressions ) output << *expression << std::endl; 
+
+  for ( const auto& include : m_includes ) output << "#include <" << include << ">\n";
+  if( m_includePythonBindings ) output << "#include <cstring>\n"; 
+  for ( const auto& expression : expressions ) output << *expression << "\n"; 
+  for ( const auto& [k,v] : metadata_functions ) output << "extern \"C\" const char* " << k << "(){ return \"" << v << "\";}\n"; 
+
   output.close();
   compileSource( cname, oname );
+  
+  
   for( auto& expression : expressions ) expression->link( oname );
   auto twall_end  = std::chrono::high_resolution_clock::now();
   double tWall    = std::chrono::duration<double, std::milli>( twall_end - twall_begin ).count();

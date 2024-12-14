@@ -1,0 +1,66 @@
+#####################################################
+### Preliminary Model of D0->pipipi0 from ongoing work 
+#######################################################
+
+
+EventType D0 pi+ pi- pi0
+
+CouplingConstant::Coordinates  polar
+CoherentSum::Verbosity         0
+
+Import $AMPGENROOT/options/kMatrix.opt
+
+
+D0{rho(770)+{pi+,pi0},pi-}                         2     1.000000    0.000100     2    0.000000     0.000100    
+D0{rho(770)0[GounarisSakurai]{pi+,pi-},pi0}        0    -0.577931    0.000008     0    0.290236     0.000012    
+D0{rho(770)-{pi-,pi0},pi+}                         0    -0.649664    0.000024     0    0.019827     0.000034    
+D0{rho(1450)+{pi+,pi0},pi-}                        0    -0.046132    0.000002     0    0.192406     0.000050    
+D0{rho(1450)0[GounarisSakurai]{pi+,pi-},pi0}       0    -0.058898    0.000002     0    -0.396699    0.000035    
+D0{rho(1450)-{pi-,pi0},pi+}                        0    -0.074415    0.000049     0    0.199032     0.000493    
+D0{rho(1700)+{pi+,pi0},pi-}                        0    0.126463     0.000005     0    -0.292779    0.000025    
+D0{rho(1700)0[GounarisSakurai]{pi+,pi-},pi0}       0    0.109737     0.000004     0    2.251914     0.000041    
+D0{rho(1700)-{pi-,pi0},pi+}                        0    -0.140921    0.000065     0    -1.277042    0.000481    
+D0{f(2)(1270)0{pi+,pi-},pi0}                       0    0.166100     0.000004     0    0.285251     0.000025    
+
+# Coupling from D0 to K0S0,pipi S-wave, can be arbitrarily fixed.
+D0{pi0,PiPi00}                                     2     0.200000     0.001000     2     0.001000     0.001000    
+# # P-vector couplings of the pipi S-wave to the K-matrix. 
+PiPi00[kMatrix.pole.0]{pi+,pi-}                    0    0.070087     0.000010     0    1.372042     0.000158    
+PiPi00[kMatrix.pole.1]{pi+,pi-}                    0    -0.069154    0.000003     0    -0.341834    0.000053    
+PiPi00[kMatrix.pole.2]{pi+,pi-}                    0    -0.284711    0.000066     0    0.644225     0.000264    
+PiPi00[kMatrix.pole.3]{pi+,pi-}                    0    -0.252814    0.000042     0    0.901860     0.000202    
+PiPi00[kMatrix.pole.4]{pi+,pi-}                    0    0.519164     0.000188     0    1.184420     0.000297    
+                                                               
+PiPi00[kMatrix.prod.0]{pi+,pi-}                    0    -0.064222    0.000019     0    1.065620     0.000245    
+PiPi00[kMatrix.prod.1]{pi+,pi-}                    0    -0.090032    0.000015     0    1.726022     0.000188    
+PiPi00[kMatrix.prod.2]{pi+,pi-}                    0    0.475968     0.000049     0    -0.761330    0.000121    
+PiPi00[kMatrix.prod.3]{pi+,pi-}                    0    0.040407     0.000029     0    0.682837     0.000577    
+PiPi00[kMatrix.prod.4]{pi+,pi-}                    0    -0.013483    0.000020     0    1.024537     0.001630    
+
+PiPi00_s0_prod                                     2    -0.170000    0.030000    
+
+# enforce CP symmetry in mass and width of K(0)
+
+rho(770)-_mass                                     0    0.774770     0.0001     0.774770     0.775450    
+rho(770)+_mass = rho(770)-_mass
+rho(770)0_mass = rho(770)-_mass
+rho(770)-_width                                    0    0.149300     0.0001     0.148300     0.149300    
+rho(770)+_width = rho(770)-_width
+rho(770)0_width = rho(770)-_width
+
+#
+#
+rho(1700)-_mass			      0 1.700123 0.001     1.70 1.74
+rho(1700)+_mass = rho(1700)-_mass
+rho(1700)0_mass = rho(1700)-_mass
+rho(1700)-_width		      0 0.347201 0.001 0.15   0.35
+rho(1700)+_width = rho(1700)-_width
+rho(1700)0_width = rho(1700)-_width
+
+rho(1450)-_mass			      0 1.445020 0.001     1.445 1.485
+rho(1450)+_mass = rho(1450)-_mass
+rho(1450)0_mass = rho(1450)-_mass
+rho(1450)-_width		      0 0.411255 0.001 0.340   0.460
+rho(1450)+_width = rho(1450)-_width
+rho(1450)0_width = rho(1450)-_width
+

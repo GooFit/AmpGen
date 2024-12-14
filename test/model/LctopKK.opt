@@ -1,0 +1,40 @@
+#####################################################
+# Preliminary LHCb model of Lc->pKK
+#####################################################
+
+EventType                  Lambda(c)+ p+ K- K+
+
+Particle::SpinFormalism    Canonical
+Particle::DefaultModifier  BL
+Particle::SpinBasis        Weyl
+Type                       PolarisedSum
+
+Lambda(1405)0_channels {
+  Lambda(1405)0{Sigma+,pi-} g::l1405::sigmaPi
+  Lambda(1405)0{p+,K-}      g::l1405::pK
+}
+
+Lambda(c)+{phi(1020)0{K+,K-},p+}                                                2              1              0              2              0              0
+Lambda(c)+[P1]{phi(1020)0{K+,K-},p+}                                            0              -0.118313      0.0156064      0              -0.0935408     0.0301011
+Lambda(c)+[P3]{phi(1020)0{K+,K-},p+}                                            0              0.456892       0.016204       0              -0.102784      0.0324099
+Lambda(c)+[D]{phi(1020)0{K+,K-},p+}                                             0              0.0296171      0.00548251     0              0.00450506     0.00931961
+
+Lambda(c)+{f(0)(980)0[Flatte]{K+,K-},p+}                                        0              0.072943       0.0019266      0              0.0061579      0.00500722
+Lambda(c)+[P]{f(0)(980)0[Flatte]{K+,K-},p+}                                     0              -0.0197823     0.00177323     0              0.00808515     0.0026241
+
+Lambda(c)+{Lambda(1405)0,K+}                                                    0              -0.345587      0.00908939     0              -0.0248309     0.0263001
+Lambda(c)+{Lambda(1520)0{p+,K-},K+}                                             0              0.0739727      0.0260924      0              -0.290423      0.0117977
+Lambda(c)+{Lambda(1600)0{p+,K-},K+}                                             0              0.0180729      0.00661597     0              -0.0124179     0.00572664
+Lambda(c)+{Lambda(1670)0{p+,K-},K+}                                             0              0.0658871      0.00634925     0              0.0214702      0.00488853
+Lambda(c)+[D]{Lambda(1520)0{p+,K-},K+}                                          0              0.0515621      0.0102119      0              -0.0510572     0.00995145
+Lambda(c)+[P]{Lambda(1405)0,K+}                                                 0              -0.0946037     0.0080104      0              -0.0364143     0.0114907
+Lambda(c)+[P]{Lambda(1600)0{p+,K-},K+}                                          0              0.0133427      0.00505933     0              -0.0559433     0.00431751
+Lambda(c)+[P]{Lambda(1670)0{p+,K-},K+}                                          0              0.0146784      0.00593632     0              0.0818064      0.00435121
+
+# Lambda(1405) parameters, guess the couplings to the different channels
+Lambda(1405)0_mass                                2              1.405          0.01
+Lambda(1405)0[CoupledChannel]{p+,K-}                                            2              1              0              2              0              0
+g::l1405::pK                                      2              12             0.1
+g::l1405::sigmaPi                                 2              12             0.1
+
+

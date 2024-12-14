@@ -13,7 +13,7 @@ env:
 jobs:
 
   build-and-test:
-    name: build-and-test
+    name: build-and-test 
     runs-on: ubuntu-latest 
     strategy:
       matrix:
@@ -59,7 +59,6 @@ jobs:
           fi
         env:
           CTEST_OUTPUT_ON_FAILURE: true
-
       - name: Unit tests
         run: |
           mkdir xml 
@@ -78,6 +77,28 @@ jobs:
         with:
           name: Results (${{ runner.os }}, ${{matrix.simd}}, enable_fitting=${{matrix.enable_fitting}} )
           path: xml
+
+      - name: Models tests 
+        run: |
+          if [[ ${{matrix.enable_fitting}} == "OFF" ]] ; then 
+            export AMPGENROOT=$PWD
+            export PYTHONPATH=$PWD/python:$PYTHONPATH
+            export PATH=$PATH:$PWD/build/bin
+            export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/build/lib 
+            for x in test/model/*.opt ; do
+              name=$(basename $x)
+              timeout -s SIGSEGV 60 pytest -sq test/python/test_model.py --model $x --junit-xml=${name}-${{matrix.simd}}-${{matrix.enable_fitting}}-${{runner.os}}.xml
+            done
+          fi
+      - name: upload model test results
+        if: always()
+        uses: pmeier/pytest-results-action@main
+        with:
+          path: |
+            *.xml
+          summary: true
+          fail-on-empty: false
+          title: Model results (${{ runner.os }}, ${{matrix.simd}}, enable_fitting=${{matrix.enable_fitting}} )
 
   publish-test-results:
     name: "Publish Unit Tests Results"

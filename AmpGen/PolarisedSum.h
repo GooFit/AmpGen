@@ -70,6 +70,7 @@ namespace AmpGen
       KeyedFunctors<double(Event)> componentEvaluator(const EventList_type* = nullptr) const;     
       EventType eventType() const{ return m_eventType; }
       ~PolarisedSum();
+      auto cache(){ return m_cache; } 
     private: 
       size_t                        m_nCalls      = {0};
       real_t                        m_norm        = {1};

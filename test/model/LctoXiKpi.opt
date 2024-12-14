@@ -1,0 +1,147 @@
+#####################################################
+# Preliminary LHCb model of Lc->XiKpi
+#####################################################
+# Do the 3 body decay in AmpGen and use PhaseSpace/S-Wave Xi and Lambda decays. This is not optimal, but there are good reasons to do so
+
+EventType                  Lambda(c)+ Xi- K+ pi+
+
+Type                       PolarisedSum
+Particle::SpinFormalism    Canonical
+Particle::DefaultModifier  BL
+
+# Lc initial polarization
+Px 2 0 0
+Py 2 0 0
+Pz 2 0 0
+
+####################
+### Xi pi system ###
+####################
+Lambda(c)+[S]{XiPi0[GenericKmatrix]{Xi-,pi+},K+}         2  1          0             2  0          0
+Lambda(c)+[P]{XiPi0[GenericKmatrix]{Xi-,pi+},K+}         0  2.9635     0.026985      0  -1.1517    0.061723
+Lambda(c)+[P]{Xi(1530)0{Xi-,pi+},K+}                     0  3.0643     0.76093       0  -17.506    0.20268
+Lambda(c)+[D]{Xi(1530)0{Xi-,pi+},K+}                     0  1.07       0.2005        0  -6.7426    0.11369
+
+###################
+### Xi K system ###
+###################
+Lambda(c)+[S]{LambdaEta0[GenericKmatrix]{Xi-,K+},pi+}    0 -28.228     0.71677       0 4.0127      1.2099
+Lambda(c)+[P]{LambdaEta0[GenericKmatrix]{Xi-,K+},pi+}    0 8.966       0.35549       0 -10.767     0.47913
+
+##########################################
+### masses and widths of BW resonances ###
+##########################################
+Xi(1530)0_mass   2 1.5334      3.9608e-05
+Xi(1530)0_width  2 0.010088    9.9967e-05
+
+###############
+### Kmatrix ###
+###############
+### parameters
+LambdaEta0::a::1                                         0  -1.7311    0.00067956
+LambdaEta0::a::2                                         0  -1.0282    0.00041562
+LambdaEta0::pole::1::mass                                0  0.0015383  0.67142
+LambdaEta0::s0                                           0  -2.0671    0.00081611
+Lst_g_LEtapr                                             0  -7.3901    0.0010685
+Lst_g_XiK                                                0  5.2345     0.00052356
+NR_LEtapr_LEtapr                                         0  -106.57    0.012641
+NR_LK_LK                                                 0  -97.994    0.14006
+NR_LK_SK                                                 0  -408.23    0.23914
+NR_SK_SK                                                 0  984.07     1.0998
+NR_XiK_LEtapr                                            0  73.033     0.0086842
+NR_XiK_XiK                                               0  -49.741    0.014563
+NR_XiPi_LK                                               0  222.4      0.12885
+NR_XiPi_SK                                               0  32.494     0.26905
+NR_XiPi_XiPi                                             0  -248.2     0.24681
+Xi1620_g_LK                                              0  -0.49763   0.00092266
+Xi1620_g_SK                                              0  13.803     0.0011766
+Xi1620_g_XiPi                                            0  -7.017     0.00062844
+Xi1690_g_LK                                              0  -0.67626   0.0019526
+Xi1690_g_SK                                              0  8.3967     0.0025233
+Xi1690_g_XiPi                                            0  -3.9773    0.0013361
+XiPi0::a::1                                              0  -0.69574   5.193e-05
+XiPi0::a::3                                              0  -0.99276   0.001433
+XiPi0::a::4                                              0  -0.36111   2.6878e-05
+XiPi0::pole::1::mass                                     0  1.4827     0.00055602
+XiPi0::pole::2::mass                                     0  1.6856     0.00025381
+XiPi0::s0                                                0  -1.1678    0.00048079
+
+### Kmatrix composition
+#### S-wave in Xi pi: 5 channels and 2 poles
+XiPi0::kMatrix::channels {
+  XiPi0[phsp=CM]{Xi-,pi+}          #1 channels and poles are counted from 1
+  XiPi0[phsp=CM]{Xi0,pi0}          #2 add this explicitly because the mass splitting is significant, but set all couplings equal to Xi- pi+
+  XiPi0[phsp=CM]{Lambda0,Kbar0}    #3
+  XiPi0[phsp=CM]{Sigma+,K-}        #4
+  XiPi0[phsp=CM]{Sigma0,Kbar0}     #5 add this explicitly because the mass splitting is significant, but set all couplings equal to Sigma+ K-
+}
+
+# isospin symmetry
+XiPi0::a::2 = XiPi0::a::1
+XiPi0::a::5 = XiPi0::a::4
+
+### background terms for kMatrix
+XiPi0::f1::1::1 = NR_XiPi_XiPi
+XiPi0::f1::1::2 = XiPi0::f1::1::1
+XiPi0::f1::1::3 = NR_XiPi_LK
+XiPi0::f1::1::4 = NR_XiPi_SK
+XiPi0::f1::1::5 = XiPi0::f1::1::4
+
+XiPi0::f1::2::1 = XiPi0::f1::1::2
+XiPi0::f1::2::2 = XiPi0::f1::1::1
+XiPi0::f1::2::3 = XiPi0::f1::1::3
+XiPi0::f1::2::4 = XiPi0::f1::1::4
+XiPi0::f1::2::5 = XiPi0::f1::1::5
+
+XiPi0::f1::3::1 = XiPi0::f1::1::3
+XiPi0::f1::3::2 = XiPi0::f1::2::3
+XiPi0::f1::3::3 = NR_LK_LK
+XiPi0::f1::3::4 = NR_LK_SK
+XiPi0::f1::3::5 = XiPi0::f1::3::4
+
+XiPi0::f1::4::1 = XiPi0::f1::1::4
+XiPi0::f1::4::2 = XiPi0::f1::2::4
+XiPi0::f1::4::3 = XiPi0::f1::3::4
+XiPi0::f1::4::4 = NR_SK_SK
+XiPi0::f1::4::5 = XiPi0::f1::4::4
+
+XiPi0::f1::5::1 = XiPi0::f1::1::5
+XiPi0::f1::5::2 = XiPi0::f1::2::5
+XiPi0::f1::5::3 = XiPi0::f1::3::5
+XiPi0::f1::5::4 = XiPi0::f1::4::5
+XiPi0::f1::5::5 = XiPi0::f1::4::4
+
+### kMatrix poles
+XiPi0::kMatrix::nPoles 2
+
+### First pole: call this "Xi(1620)"
+XiPi0::pole::1::g::1 = Xi1620_g_XiPi
+XiPi0::pole::1::g::2 = Xi1620_g_XiPi
+XiPi0::pole::1::g::3 = Xi1620_g_LK
+XiPi0::pole::1::g::4 = Xi1620_g_SK
+XiPi0::pole::1::g::5 = Xi1620_g_SK
+
+### Second pole: call this "Xi(1690)"
+XiPi0::pole::2::g::1 = Xi1690_g_XiPi
+XiPi0::pole::2::g::2 = Xi1690_g_XiPi
+XiPi0::pole::2::g::3 = Xi1690_g_LK
+XiPi0::pole::2::g::4 = Xi1690_g_SK
+XiPi0::pole::2::g::5 = Xi1690_g_SK
+
+#### S-wave in Xi K: 2 channels and 1 (unphysical) pole. It basically implements a slowly varying phase (i hope)
+# in principle there is also the isovector Lambda pi channel, but the fit doesn't like it at the moment, finds large interferences, and there are no relevant thresholds
+LambdaEta0::kMatrix::channels {
+  LambdaEta0[phsp=CM]{Xi-,K+}
+  LambdaEta0[phsp=CM]{Lambda0,eta'(958)0}
+}
+### background terms for kMatrix
+LambdaEta0::f1::1::1 = NR_XiK_XiK
+LambdaEta0::f1::1::2 = NR_XiK_LEtapr
+LambdaEta0::f1::2::1 = LambdaEta0::f1::1::2
+LambdaEta0::f1::2::2 = NR_LEtapr_LEtapr
+
+### kMatrix poles
+LambdaEta0::kMatrix::nPoles 1
+### we need at least one pole
+LambdaEta0::pole::1::g::1 = Lst_g_XiK
+LambdaEta0::pole::1::g::2 = Lst_g_LEtapr

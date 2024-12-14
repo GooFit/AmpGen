@@ -118,23 +118,34 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     addDependentExpressions( stream, sizeOfStream);
     stream << "  r[i] = " << m_obj.to_string(m_resolver.get()) << ";\n}\n";
   }
-
-  if( NamedParameter<bool>("IncludePythonBindings", false) == true && returnTypename().find("complex") != std::string::npos ){
-    stream << "extern \"C\" void " <<  progName() << "_c" << "(double *real, double *imag, " << fcnSignature() << "){\n";
-    unsigned counter = 0; 
-    stream << "  auto val = " << progName() << "("; 
-    for( unsigned int i = 0 ; i != types().size(); ++i ){   
-      stream <<  " x"+std::to_string(i) ;
-      if( i != types().size() - 1 ) stream << ", ";
-    }
-    stream << ") ;\n"; 
-    stream << "  *real = val.real();\n";
-    stream << "  *imag = val.imag();\n";
-    stream << "}\n";
-  }
-  if ( m_db.size() != 0 ) addDebug( stream );
+  if( m_db.size() != 0 ) addDebug( stream );
   if( !m_disableBatch ) compileBatch(stream);    
   if( m_includeParameters ) compileWithParameters( stream ); 
+  if( m_includePythonBindings){
+      auto argList = types(); 
+      unsigned counter=0;
+      auto fcn = [counter](const auto& str) mutable {return str + " x"+std::to_string(counter++); }; 
+      auto rt = returnTypename();
+      std::string return_type_value = "double* r0";
+      std::string src = "&tmp"; 
+      if( rt.find("vector") != std::string::npos )  src = "tmp.data()"; 
+      if( m_includeParameters ){
+        std::string fwd_args = "x0";
+        for( unsigned i = 1 ; i < argList.size()-1 ; ++i ) fwd_args += ", x"+std::to_string(i); 
+        stream << "extern \"C\" void " << AmpGen::programatic_name(name()) + "__py(" 
+                          << vectorToString(argList.begin(), argList.end()-1, ", ", fcn) + ","+return_type_value << "){"
+                          << "auto tmp = " <<  AmpGen::programatic_name(name()) + "_wParams("+ fwd_args + ");"
+                          << "std::memcpy( (void*)r0,  " << src << "  , " << returnTypeSize()  << ");}\n";
+      }
+      else {
+        std::string fwd_args = "x0";
+        for( unsigned i = 1 ; i < argList.size() ; ++i ) fwd_args += ", x"+std::to_string(i); 
+        stream << "extern \"C\" void " << AmpGen::programatic_name(name()) + "__py(" 
+                          << vectorToString(argList.begin(), argList.end(), ", ", fcn) + ","+return_type_value << "){"
+                          << "auto tmp = " <<  AmpGen::programatic_name(name()) + "("+ fwd_args + ");"
+                          << "std::memcpy( (void*)r0,  " << src << "  , " << returnTypeSize()  << ");}\n";
+      }
+  }
 }
 
 std::ostream& AmpGen::operator<<( std::ostream& os, const CompiledExpressionBase& expression )
@@ -210,19 +221,6 @@ void CompiledExpressionBase::compileBatch( std::ostream& stream ) const
   stream << "}\n}";
 }
 
-void CompiledExpressionBase::compileDetails( std::ostream& stream ) const
-{
-/*
-  stream << "extern \"C\" int " << progName() << "_pSize () {\n"
-    << "  return " << m_externals.size() << ";\n";
-  stream << "}\n";
-
-  stream << "extern \"C\" double " << progName() << "_pVal (int n) {\n";
-  for ( size_t i = 0; i < m_externals.size(); i++ )
-    stream << "  if(n == " << i << ") return  " << m_externals.at( i ) << ";\n";
-  stream << "  return 0;\n}\n";
-*/
-}
 
 void CompiledExpressionBase::compileWithParameters( std::ostream& stream ) const 
 {

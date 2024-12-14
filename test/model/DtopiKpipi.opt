@@ -1,0 +1,81 @@
+#####################################################
+# LHCb Model of D0->piKpipi from LHCb-PAPER-2017-040
+# https://arxiv.org/abs/1712.08609
+#####################################################
+
+EventType D0 K+ pi- pi- pi+
+
+Import $AMPGENROOT//options/kMatrix.opt
+
+K(1)(1270)+::Spline      40         0.6             3.0
+
+CouplingConstant::Coordinates  polar
+CouplingConstant::AngularUnits deg
+
+D0_radius                                                                    2              3.7559         0       
+D0{K*(892)0{K+,pi-},rho(770)0{pi+,pi-}}                                      0              0.205          0.019          0                -8.5         4.7  
+D0[P]{K*(892)0{K+,pi-},rho(770)0{pi+,pi-}}                                   0              0.390          0.002          0               -91.4         0.4 
+D0[D]{K*(892)0{K+,pi-},rho(770)0{pi+,pi-}}                                   2              1.000          0.000          2                 0.0         0.0 
+D0{rho(1450)0{pi+,pi-},K*(892)0{K+,pi-}}                                     0              0.541          0.042          0               -21.8         6.5      
+
+# There is an additional relative phase of 180 degrees here w.r.t
+# what is written in the paper, due to a slightly different convention 
+# in how the K(1) couplings have been defined. 
+D0{K(1)(1270)+,pi-}                                                          0              0.653          0.040          0                69.3         5.1     
+D0{K(1)(1400)+{K*(892)0{K+,pi-},pi+},pi-}                                    0              0.560          0.037          0                29.8         4.2
+D0{KPi40,PiPi40}                                                             2              1.000          0.000          2                 0.0         0.0  
+KPi40[FOCUS.Kpi]{K+,pi-}                                                     2              1.000          0.000          2                 0.0         0.0              
+KPi40[FOCUS.I32]{K+,pi-}                                                     0              0.686          0.010          0              -149.4         4.3
+PiPi40[kMatrix.pole.1]{pi+,pi-}                                              0              0.438          0.009          0              -132.4         6.5  
+PiPi40[kMatrix.prod.0]{pi+,pi-}                                              0              0.050          0.001          0                74.8         7.5 
+
+K(1)(1270)+[GSpline.EFF]{rho(770)0{pi+,pi-},K+}                                 2              1.000          0.000          2                 0.0         0.0              
+K(1)(1270)+[GSpline.EFF]{rho(1450)0{pi+,pi-},K+}                                2              2.016          0.026          2              -119.5         0.9      
+K(1)(1270)+[GSpline.EFF]{K*(892)0{K+,pi-},pi+}                                  2              0.388          0.007          2              7.4            1.1
+K(1)(1270)+[GSpline.EFF]{KPi20[FOCUS.Kpi]{K+,pi-},pi+}                          2              0.554          0.010          2                233.2        1.1
+K(1)(1270)+[D;GSpline.EFF]{K*(892)0{K+,pi-},pi+}                                2              0.769          0.021          2               160.7         1.6      
+K(1)(1270)+[GSpline.EFF]{omega(782)0{pi+,pi-},K+}                               2              0.146          0.005          2                 9.0         2.1
+K(1)(1270)+_mass                                                                2              1.28981        0.00056       
+K(1)(1270)+_radius                                                              2              1.70000        0.00000
+K(1)(1270)+_width                                                               2              0.11611        0.00165
+
+K(1)(1270)+::Spline::Gamma::0                     2              6.62044e-09    0              
+K(1)(1270)+::Spline::Gamma::1                     2              8.1034e-05     0              
+K(1)(1270)+::Spline::Gamma::2                     2              0.000601093    0              
+K(1)(1270)+::Spline::Gamma::3                     2              0.00199416     0              
+K(1)(1270)+::Spline::Gamma::4                     2              0.00478532     0              
+K(1)(1270)+::Spline::Gamma::5                     2              0.0097556      0              
+K(1)(1270)+::Spline::Gamma::6                     2              0.0184164      0              
+K(1)(1270)+::Spline::Gamma::7                     2              0.0348721      0              
+K(1)(1270)+::Spline::Gamma::8                     2              0.0672518      0              
+K(1)(1270)+::Spline::Gamma::9                     2              0.105115       0              
+K(1)(1270)+::Spline::Gamma::10                    2              0.142193       0              
+K(1)(1270)+::Spline::Gamma::11                    2              0.182565       0              
+K(1)(1270)+::Spline::Gamma::12                    2              0.231309       0              
+K(1)(1270)+::Spline::Gamma::13                    2              0.295139       0              
+K(1)(1270)+::Spline::Gamma::14                    2              0.383415       0              
+K(1)(1270)+::Spline::Gamma::15                    2              0.507206       0              
+K(1)(1270)+::Spline::Gamma::16                    2              0.673751       0              
+K(1)(1270)+::Spline::Gamma::17                    2              0.918665       0              
+K(1)(1270)+::Spline::Gamma::18                    2              1.18142        0              
+K(1)(1270)+::Spline::Gamma::19                    2              1.41125        0              
+K(1)(1270)+::Spline::Gamma::20                    2              1.61709        0              
+K(1)(1270)+::Spline::Gamma::21                    2              1.80236        0              
+K(1)(1270)+::Spline::Gamma::22                    2              1.97044        0              
+K(1)(1270)+::Spline::Gamma::23                    2              2.12449        0              
+K(1)(1270)+::Spline::Gamma::24                    2              2.26729        0              
+K(1)(1270)+::Spline::Gamma::25                    2              2.40124        0              
+K(1)(1270)+::Spline::Gamma::26                    2              2.52841        0              
+K(1)(1270)+::Spline::Gamma::27                    2              2.65063        0              
+K(1)(1270)+::Spline::Gamma::28                    2              2.76952        0              
+K(1)(1270)+::Spline::Gamma::29                    2              2.88658        0              
+K(1)(1270)+::Spline::Gamma::30                    2              3.0032         0              
+K(1)(1270)+::Spline::Gamma::31                    2              3.12073        0              
+K(1)(1270)+::Spline::Gamma::32                    2              3.24046        0              
+K(1)(1270)+::Spline::Gamma::33                    2              3.36373        0              
+K(1)(1270)+::Spline::Gamma::34                    2              3.49188        0              
+K(1)(1270)+::Spline::Gamma::35                    2              3.62634        0              
+K(1)(1270)+::Spline::Gamma::36                    2              3.76865        0              
+K(1)(1270)+::Spline::Gamma::37                    2              3.92048        0              
+K(1)(1270)+::Spline::Gamma::38                    2              4.08365        0              
+K(1)(1270)+::Spline::Gamma::39                    2              4.26015        0              

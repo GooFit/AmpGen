@@ -59,6 +59,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
   , m_dim       (m_eventType.dim())
 {
   auto rules = AmplitudeRules::create(mps); 
+  bool autocompile = NamedParameter<bool>("AutoCompile", true); 
   std::string objCache = NamedParameter<std::string>("PolarisedSum::ObjectCache", ""    );
   spaceType stype      = NamedParameter<spaceType>(  "PolarisedSum::SpaceType"  , spaceType::spin);
   {
@@ -74,7 +75,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
     m_matrixElements.resize( protoAmps.size() );
     for(unsigned i = 0; i < m_matrixElements.size(); ++i)
     {
-      tp.enqueue( [i, p=protoAmps[i].first, c=protoAmps[i].second, polStates, &mps, ptr = this] () mutable {
+      tp.enqueue( [autocompile, i, p=protoAmps[i].first, c=protoAmps[i].second, polStates, &mps, ptr = this] () mutable {
         Tensor thisExpression(Tensor::dim(polStates.size()));
         DebugSymbols syms;      
         for(unsigned j = 0; j != polStates.size(); ++j){ 
@@ -85,7 +86,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
             CompiledExpression<void(complex_v*, const size_t*, const real_t*, const real_v*)>(
             TensorExpression(thisExpression), p.decayDescriptor(), &mps,
             ptr->m_eventType.getEventFormat(), ptr->m_debug ? syms : DebugSymbols() ) );
-        CompilerWrapper().compile( ptr->m_matrixElements[i] );
+        if( autocompile) CompilerWrapper().compile( ptr->m_matrixElements[i] );
       });
     }
   }
@@ -345,12 +346,12 @@ void PolarisedSum::generateSourceCode(const std::string& fname, const double& no
     auto z = m_matrixElements[i].expression();
     for( int j = 0 ; j != size; ++j ) rt[i*size +j] = cast<TensorExpression>(z).tensor()[j]; 
   }
-  functions.push_back( new CompiledExpression<std::vector<complex_t>( const real_t*, const real_t* )>(TensorExpression(rt), "all_amplitudes", m_eventType.getEventFormat(), includeParameters(), m_mps, disableBatch() ) );  
+  functions.push_back( new CompiledExpression<std::vector<complex_t>( const real_t*, const real_t* )>(TensorExpression(rt), "all_amplitudes", m_eventType.getEventFormat(), includeParameters(), m_mps, disableBatch(), includePythonBindings() ) );  
 
   Expression event = Parameter("x0",0,true); 
   Tensor T_matrix( Tensor::Dim(m_dim.first, m_dim.second) ); 
   auto ampTensor = Array( make_cse( Function("all_amplitudes_wParams", {event}) ), -1); 
-  std::cout << "Calculating matrix element ... " << std::endl; 
+  std::string matrixElementNames; 
   for( unsigned int i = 0 ; i != m_matrixElements.size() ; ++i )
   {
     auto& p = m_matrixElements[i];
@@ -359,19 +360,20 @@ void PolarisedSum::generateSourceCode(const std::string& fname, const double& no
       T_matrix[j] += p.coupling() * ampTensor[i*size + j];
       this_amp[j] = ampTensor[i*size + j];
     }
-    functions.push_back( new CompiledExpression<std::vector<complex_t>( const real_t*)>( TensorExpression(this_amp), p.decayDescriptor() + "_wParams", m_eventType.getEventFormat(), disableBatch() ) );  
+    functions.push_back( new CompiledExpression<std::vector<complex_t>( const real_t*)>( TensorExpression(this_amp), p.decayDescriptor() + "_wParams", m_eventType.getEventFormat(), disableBatch(), includePythonBindings() ) );  
+    matrixElementNames += m_matrixElements[i].name()  + ( i == m_matrixElements.size() - 1 ? "" : "\\n"); 
   }
   
   T_matrix.st();
   auto amp        = probExpression(T_matrix, convertProxies(m_pVector, [](auto& proxy) -> Expression{ return double(proxy);} ), 
                                              convertProxies(m_pfVector, [](auto& proxy) -> Expression{ return double(proxy);} )); 
-  functions.push_back( new CompiledExpression<double(const double*,  const int&)>( amp / normalisation, "FCN", m_mps, disableBatch() ) ); 
+  functions.push_back( new CompiledExpression<double(const double*,  const int&)>( amp / normalisation, "FCN", m_mps, disableBatch(), includePythonBindings() ) ); 
 
   if( m_dim.first > 1 ) {
     auto amp_extPol = probExpression(T_matrix, {Parameter("x2",0,true), Parameter("x3",0,true), Parameter("x4",0,true)}, {} );  
     functions.push_back( new CompiledExpression<double(const double*, const int&, const double&, const double&, const double&)>(amp_extPol / normalisation, "FCN_extPol", m_mps, disableBatch() ) );
   }
-  CompilerWrapper().compile( functions, fname );
+  CompilerWrapper().compile( functions, fname,{{"EventType", m_eventType.constructor_string()},{ "MatrixElements", matrixElementNames}}  );
 
   for( auto& function : functions ) delete function ; 
 }
