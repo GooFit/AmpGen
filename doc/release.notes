@@ -1,4 +1,4 @@
-!=================== AmpGen v2r5 2023-05-12 ==================
+!=================== AmpGen v2r5 2024-12-14 ==================
  - New python bindings and model integration tests
  - New application [OptionsFromFitResult] to generate new options file from previous fit 
  - Fixes to debugger for SIMD builds
