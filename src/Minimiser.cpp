@@ -187,7 +187,6 @@ std::string minuitStatusString( ROOT::Minuit2::Minuit2Minimizer* mini )
 
 bool Minimiser::doFit()
 {
-//   auto m_monitoring = TFile::Open("debug.root","RECREATE");
   auto& t = *this; 
   ROOT::Math::Functor f(t, m_nParams );
   
@@ -204,36 +203,22 @@ bool Minimiser::doFit()
   if( dynamic_cast<Minuit2::Minuit2Minimizer*>(m_minimiser) != nullptr ) 
     dynamic_cast<Minuit2::Minuit2Minimizer* >(m_minimiser)->SetTraceObject( *this );
   m_minimiser->Minimize();
-  //TH2D* cor_matrix = new TH2D("cor_matrix","", m_nParams, -0.5, double(m_nParams)-0.5, m_nParams, -0.5, double(m_nParams)-0.5 );
   for (size_t i = 0; i < m_nParams; ++i ) {
     auto par = m_parSet->at( m_mapping[i] );
     double error = *( m_minimiser->Errors() + i );
     par->setResult( *( m_minimiser->X() + i ), error, error, error );
     for ( unsigned int j = 0; j < m_nParams; ++j ) {
       m_covMatrix[i + m_nParams * j] = m_minimiser->CovMatrix( i, j );
-    //  cor_matrix->SetBinContent(i+1,j+1, m_minimiser->CovMatrix( i, j ) / sqrt( m_minimiser->CovMatrix( i, i ) * m_minimiser->CovMatrix( j, j ) )  );
     }
   }
-  /* 
-  cor_matrix->Write();
-  
-  for( unsigned i = 0 ; i != m_nParams; ++i )
-  {
-    auto p = m_parSet->at( m_mapping[i] );
-    auto g = scan(p, p->mean() - 0.1 * p->err(), p->mean() + 0.1 * p->err(), p->err() / 1000.); 
-    std::cout << p->name() << std::endl; 
-    g->SetName( (p->name() + "_scan").c_str() );
-    g->Write();
-  }
-  */
   m_status = m_minimiser->Status();
   
-  // m_monitoring->Close();
-  // INFO("Minuit2Minimize: " << minuitStatusString(m_minimiser) << ", covariance matrix: " << covMatrixStatusString( m_minimiser ) ); 
-  INFO("Status = " << m_status ); 
-  INFO("FVAL   = " << FCN() );
-  INFO("Edm    = " << Edm() );
-  INFO("Nfcn   = " << m_minimiser->NCalls() );
+  if( m_printLevel != PrintLevel::Quiet ){
+    INFO("Status = " << m_status ); 
+    INFO("FVAL   = " << FCN() );
+    INFO("Edm    = " << Edm() );
+    INFO("Nfcn   = " << m_minimiser->NCalls() );
+  }
   if( m_status != 0 && m_printLevel != PrintLevel::VeryVerbose )
   {
     WARNING("Fit has not converged, some clues from Minuit2 may not be printed due to low verbosity level.");
@@ -365,6 +350,11 @@ void Minimiser::minos( MinuitParameter* parameter )
   parameter->setResult( v0, parameter->err(), low, high );
   
   for( int i = 0 ; i != m_nParams; ++i ) m_parSet->at( m_mapping[i] )->setCurrentFitVal( init_values[i] );
+  unsigned longest_parameter_name = 10;  
+  for(const auto& param : *m_parSet )
+  {
+    if( param->name().size() > longest_parameter_name ) longest_parameter_name = param->name().size() + 3; 
+  }
 
   if (parameter->isBlind())
   {
@@ -376,10 +366,10 @@ void Minimiser::minos( MinuitParameter* parameter )
   }
   else  
   {
-    INFO( parameter->name()   << 
-        parameter->mean()   << "  - " << 
-        parameter->errNeg() << " + " << 
-        parameter->errPos() );
+    INFO( std::setw(longest_parameter_name)
+            << parameter->name() << "     "  << std::right << std::setw(13) << parameter->mean() 
+            << " + "  << std::left  << std::setw(13) << parameter->errPos() 
+            << " - "  << std::left  << std::setw(13) << parameter->errNeg() );
   }
 }
 
