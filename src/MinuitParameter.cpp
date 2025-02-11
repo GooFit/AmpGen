@@ -55,7 +55,7 @@ void MinuitParameter::setStepInit( const double& si )
 }
 
 
-void MinuitParameter::setFree() { INFO("Setting parameter: " << m_name << " free" ) ; m_flag = Flag::Free; }
+void MinuitParameter::setFree() { DEBUG("Setting parameter: " << m_name << " free" ); m_flag = Flag::Free; }
 
 void MinuitParameter::setCurrentFitVal( double cfv ) { m_meanResult = cfv; }
 
