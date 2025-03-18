@@ -22,7 +22,6 @@
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Tensor.h"
 #include "AmpGen/Utilities.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Units.h"
 #include "AmpGen/Wigner.h"
 #include "AmpGen/Types.h"
@@ -206,7 +205,7 @@ void Particle::pdgLookup(bool quiet)
   m_parity                 = m_props->P();
   // if ( !isdigit( m_props->J()[0] ) ) ERROR( "Spin not recognised! : " << m_name << " J = " << m_props->J() );
   if( m_defaultModifier != "" && m_lineshape.find(".") == std::string::npos ){
-    m_lineshape = m_lineshape + "." + m_defaultModifier.getVal();
+    m_lineshape = m_lineshape + "." + std::string(m_defaultModifier);
   }
   bool isNR = m_name.find("NonRes") != std::string::npos; 
   bool isStrong = (quarks() == daughterQuarks() ) || isNR;
@@ -466,7 +465,10 @@ Expression Particle::getExpression( DebugSymbols* db, const std::vector<int>& st
       }
     }
     if ( includeSpin && m_spinFormalism == spinFormalism::Canonical ){
-      spinFactor = helicityAmplitude(*this, TransformSequence(), m_props->isBoson() ? polState() : double(polState())/2.0, db);
+      Helicity::Flags flags; 
+      flags.movingHead   = m_movingHead; 
+      flags.alignFrames  = m_alignFrames; 
+      spinFactor = helicityAmplitude(*this, TransformSequence(), m_props->isBoson() ? polState() : double(polState())/2.0, db,flags);
     }
     if( db != nullptr ){
       std::string finalStateString="";

@@ -13,6 +13,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/kMatrix.h"
 #include "AmpGen/Units.h"
+#include "AmpGen/NamedParameter.h" 
 
 using namespace AmpGen;
 using namespace std::complex_literals;

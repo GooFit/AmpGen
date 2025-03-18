@@ -36,8 +36,7 @@ namespace AmpGen
     std::string    m_helpString;   /// < The helper string for this parameter, printed if the flag --help is used. 
     std::vector<T> m_valueArray;   /// < The value (array) of this parameter. 
 
-    bool setFromOptionsParser()
-    {
+    bool setFromOptionsParser(){
       auto parser = OptionsParser::getMe();
       auto line = parser->find( m_name );
       if( line == parser->end() ) return false ; 
