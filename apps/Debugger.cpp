@@ -106,24 +106,24 @@ template <typename FCN> void debug( FCN& sig, EventList& accepted){
   sig.prepare();
   sig.debug( accepted[eventToDebug] );
   */
-  
-  INFO("Random boost:" );
-
-    randomBoost( accepted[eventToDebug],  new TRandom3(eventToDebug) ); 
-  accepted[eventToDebug].print();
-  sig.reset();
-  sig.setEvents(accepted);
-  sig.prepare();
-  sig.debug( accepted[eventToDebug] );
-  
   INFO("Random rotation:" ); 
-
+  auto old_event = accepted[eventToDebug]; 
   randomRotation( accepted[eventToDebug],  new TRandom3(eventToDebug) ); 
   accepted[eventToDebug].print();
   sig.reset();
   sig.setEvents(accepted);
   sig.prepare();
   sig.debug( accepted[eventToDebug] );
+  accepted[eventToDebug] = old_event; 
+  INFO("Random boost:" );
+
+  randomBoost( accepted[eventToDebug],  new TRandom3(eventToDebug) ); 
+  accepted[eventToDebug].print();
+  sig.reset();
+  sig.setEvents(accepted);
+  sig.prepare();
+  sig.debug( accepted[eventToDebug] );
+  
   
 }
 

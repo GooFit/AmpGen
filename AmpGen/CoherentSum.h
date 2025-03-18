@@ -106,19 +106,19 @@ namespace AmpGen
     EventType eventType() const { return m_eventType; } 
     const auto& cache() const { return m_cache; } 
   protected:
-    Property<unsigned>    m_printFreq    = {"CoherentSum::PrintFrequency",100, "Frequency to print verbose PDF info"};
-    Property<bool>        m_debug        = {"CoherentSum::Debug", false, "Flag to generate amplitude level debugging"}; 
-    Property<int>         m_verbose      = {"CoherentSum::Verbosity", 0, "Flag for verbose printing"}; 
-    Property<std::string> m_objCache     = {"CoherentSum::ObjectCache","", "Directory that contains (cached) amplitude objects"}; 
+    Property<unsigned>    m_printFreq    = {this, "CoherentSum::PrintFrequency", 100  , "Frequency to print verbose PDF info"};
+    Property<bool>        m_debug        = {this, "CoherentSum::Debug"         , false, "Flag to generate amplitude level debugging"}; 
+    Property<int>         m_verbose      = {this, "CoherentSum::Verbosity"     , 0    , "Flag for verbose printing"}; 
+    Property<std::string> m_objCache     = {this, "CoherentSum::ObjectCache"   , ""   , "Directory that contains (cached) amplitude objects"}; 
+
     std::vector<MatrixElement> m_matrixElements;              ///< Vector of matrix elements
-    Bilinears        m_normalisations;                        ///< Normalisation integrals
-     
+    Bilinears        m_normalisations;                        ///< Normalisation integrals 
     Integrator       m_integrator;                            ///< Tool to calculate integrals 
     const EventList_type*  m_events       = {nullptr};        ///< Data events to evaluate PDF on
     FunctionCache<EventList_type, complex_v, Alignment::AoS> m_cache; ///< Store of intermediate values for the PDF calculation 
 
     bool             m_ownEvents    = {false};                ///< Flag as to whether events are owned by this PDF or not  
-    EventType        m_eventType;                               ///< Final state for this amplitude
+    EventType        m_eventType;                             ///< Final state for this amplitude
     size_t           m_prepareCalls = {0};                    ///< Number of times prepare has been called
     size_t           m_lastPrint    = {0};                    ///< Last time verbose PDF info was printed
     MinuitProxy      m_weight       = {nullptr, 1};           ///< Weight (i.e. the normalised yield)

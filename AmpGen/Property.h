@@ -17,6 +17,9 @@
 #include "AmpGen/MetaUtils.h"
 
 namespace AmpGen {
+  /** Properties are configurable characteristics of objects that will at some point inherit from a base class 
+   *  
+   */
   template <typename value_t> 
     class Property {
       protected:
@@ -24,7 +27,7 @@ namespace AmpGen {
         std::string m_helpString; 
         value_t m_value; 
       public: 
-        Property( const std::string& name, const value_t& def=value_t(), const std::string& helpString="" ) : 
+        Property( void* /*parent*/, const std::string& name, const value_t& def=value_t(), const std::string& helpString="" ) : 
           m_name(name),
           m_helpString(helpString),
           m_value(def) {

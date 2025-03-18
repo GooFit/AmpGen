@@ -319,14 +319,16 @@ void PolarisedSum::updateNorms()
 void PolarisedSum::debug(const Event& evt)
 {
   std::vector<complex_v> all_cache;
-   
-  for(const auto& me : m_matrixElements)
-  {
+  for(const auto& me : m_matrixElements){
     std::vector<complex_v> this_cache; 
+    std::vector<complex_t> this_event; 
     auto indices = m_cache.find( me.name() ); 
-    for( const auto& index : indices ) 
-      this_cache.emplace_back( m_cache(evt.index() / utils::size<real_v>::value, index) ); 
-    INFO( me.decayDescriptor() << " " << me.coupling() << " " << vectorToString(this_cache, " ") );
+    for( const auto& index : indices ){ 
+      auto v = m_cache(evt.index()/utils::size<real_v>::value, index);
+      this_cache.emplace_back( v ); 
+      this_event.emplace_back( utils::at( v, evt.index() % utils::size<real_v>::value ) );   
+    }
+    INFO( me.decayDescriptor() << " " << me.coupling() << " " << vectorToString(this_event, " ") );
     if( m_debug ) me.debug( evt ); 
     for( auto& t : this_cache ) all_cache.emplace_back( t);
   }

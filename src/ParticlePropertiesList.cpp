@@ -7,7 +7,6 @@
 #include <string>
 
 #include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Units.h"
 
@@ -75,7 +74,6 @@ ParticlePropertiesList::ParticlePropertiesList( const std::string& fname_in )
     WARNING("Failed to load full PDG configuration, beware of unexpected behaviour");
   }
   makeMappings();
-  m_quasiStableThreshold = NamedParameter<double>( "ParticleProperties::qsThreshold", KeV ); /// limit is 1 keV
 }
 
 bool ParticlePropertiesList::readLatexLabels( const std::string& name )
@@ -214,4 +212,3 @@ void ParticlePropertiesList::addParticle( const std::vector<std::string>& tokens
   m_byName[name] = pp;
 }
 
-double ParticlePropertiesList::quasiStableThreshold() const { return m_quasiStableThreshold; }
