@@ -12,7 +12,6 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/ProgressBar.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/MetaUtils.h"
 
 namespace AmpGen

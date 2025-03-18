@@ -249,20 +249,16 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   Tensor pInParentFrame = parentFrame(particle.P());
   pInParentFrame.st();
   auto key = index_string(particle);
-  if( cachePtr->count(key) == 0 )
-  {
-    //INFO("Checking if is head: " << particle.isHead() << " " << particle.parent() ); 
+  if( cachePtr->count(key) == 0 ){
     bool is_head = particle.isHead();
-    if( ! is_head || flags.movingHead ) 
-    {
+    if( !is_head || flags.movingHead ) {
       (*cachePtr)[key] = TransformSequence(parentFrame, wickTransform(pInParentFrame, particle, sgn, db) );
     }
     else (*cachePtr)[key] = TransformSequence();
   }
   const TransformSequence& myFrame = (*cachePtr)[key];
 
-  if( particle.isStable() )
-  {
+  if( particle.isStable() ) {
     if( particle.props()->twoSpin() == 0 ) return Mz==0; // a scalar
     // polarisation spinor / vector etc. in the quantisation of the lab (i.e. along the z-axis or lab particle momentum)
     if( particle.props()->isPhoton() && (Mz == 0. or particle.polState() == 0 ) ){
@@ -270,17 +266,15 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
     }
     auto labPol = particle.externalSpinTensor(particle.polState(), db); 
     auto inverseMyTransform = myFrame.inverse();
-    if( particle.props()->twoSpin() == 1 ) // so a fermion 
-    {
-      if( flags.alignFrames ) return 2*Mz == particle.polState();
+    if( particle.props()->twoSpin() == 1 ) {
+      if( !flags.alignFrames ) return 2*Mz == particle.polState();
       auto mzSpinor = basisSpinor( 2*Mz, particle.props()->pdgID() );
       auto mzSpinorInLab   = inverseMyTransform( mzSpinor, Transform::Representation::Bispinor );
       mzSpinorInLab.st();
       ADD_DEBUG(Bar(mzSpinorInLab)(a)*labPol(a), db );
       return make_cse( Bar(mzSpinorInLab)(a)*labPol(a) );
     }
-    if( particle.props()->twoSpin() == 2 ) // so a spin-one boson
-    {
+    if( particle.props()->twoSpin() == 2 ){
       auto frameVector = basisVector(Mz);
       auto labVector   = inverseMyTransform( frameVector, Transform::Representation::Vector );   
       return dot( labVector.conjugate(), labPol );

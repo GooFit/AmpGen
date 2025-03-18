@@ -197,7 +197,7 @@ void Particle::pdgLookup(bool quiet)
     return;
   }
   if ( m_lineshape == "BW" || m_usesDefaultLineshape ) {
-    if ( m_name.find("NonRes") != std::string::npos || m_props->width() < ParticlePropertiesList::getMe()->quasiStableThreshold() ) m_lineshape = "FormFactor";
+    if ( m_name.find("NonRes") != std::string::npos || m_props->width() < m_stableThreshold ) m_lineshape = "FormFactor";
     if ( m_props->isPhoton() ) m_lineshape = "Photon";
     m_usesDefaultLineshape = true;
   } 
@@ -781,7 +781,7 @@ bool Particle::isStable() const { return m_daughters.size() == 0; }
 
 bool Particle::isQuasiStable() const
 {
-  return props()->width() < ParticlePropertiesList::getMe()->quasiStableThreshold() && name() != "gamma0";
+  return props()->width() < m_stableThreshold && name() != "gamma0";
 }
 unsigned Particle::L()  const { return m_orbital; }
 int Particle::polState() const { return m_polState; }
