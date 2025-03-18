@@ -7,6 +7,7 @@
 #include <vector>
 #include <initializer_list>
 #include "AmpGen/Event.h"
+#include "AmpGen/enum.h" 
 
 namespace AmpGen
 {
@@ -17,9 +18,10 @@ namespace AmpGen
    */
   class EventType; 
   std::ostream& operator<<( std::ostream& os, const EventType& type );
-
   class EventType
   {
+      enum class Observable {mass, mass2};   
+    // make_enum(observable, mass, mass2); 
     public:
       /// Default constructor
       EventType() = default;
@@ -61,7 +63,7 @@ namespace AmpGen
       void extendEventType( const std::string& branch );
 
       /// Functor to randomly symmetrise data of this event type, using the Fisher-Yates shuffle.
-      std::function<void( Event& )> symmetriser() const;
+      std::function<void( Event& )> symmetriser(unsigned seed=1) const;
       std::function<bool( Event&, const std::vector<int>& ids)> automaticOrdering() const;
 
       /// Calculates the number of spin indices associated with the initial and final state, i.e. the rank of the relevant transition matrix.

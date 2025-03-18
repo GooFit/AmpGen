@@ -9,7 +9,6 @@
 #include <complex>
 
 #include "AmpGen/DiracMatrices.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Units.h"
 

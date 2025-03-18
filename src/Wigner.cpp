@@ -108,9 +108,9 @@ TransformSequence AmpGen::wickTransform( const Tensor& P,
   auto pT = make_cse(  P[0]*P[0] + P[1] *P[1]  );
   auto pP = make_cse(  P[0]*P[0] + P[1] *P[1] + P[2] * P[2] ); 
 
-  Expression cos_theta = Ternary( pP > 1e-15, P[2] / fcn::sqrt( pP ), 1 ); 
-  Expression cos_phi   = Ternary( pT > 1e-15, P[0] / fcn::sqrt( pT ), 1 );
-  Expression sin_phi   = Ternary( pT > 1e-15, P[1] / fcn::sqrt( pT ), 0 ); 
+  Expression cos_theta = Ternary( pP > 1e-10, P[2] / fcn::sqrt( pP ), 1 ); 
+  Expression cos_phi   = Ternary( pT > 1e-10, P[0] / fcn::sqrt( pT ), 1 );
+  Expression sin_phi   = Ternary( pT > 1e-10, P[1] / fcn::sqrt( pT ), 0 ); 
     
   Transform rot  = ve == + 1 ? Transform( cos_theta,  sin_phi*x - cos_phi*y, Transform::Type::Rotate) :
                                Transform(-cos_theta, -sin_phi*x + cos_phi*y, Transform::Type::Rotate) ;

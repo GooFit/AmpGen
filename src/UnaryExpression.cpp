@@ -5,7 +5,6 @@
 #include <utility>
 
 #include "AmpGen/Expression.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Types.h"
 #include "AmpGen/ASTResolver.h"
 
