@@ -39,10 +39,6 @@ CoherentSum::CoherentSum() = default;
 
 CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, const std::string& prefix )
   :   m_eventType  (type)
-      , m_printFreq(NamedParameter<size_t>(     "CoherentSum::PrintFrequency", 100)  )
-      , m_dbThis   (NamedParameter<bool>(       "CoherentSum::Debug"         , false))
-      , m_verbosity(NamedParameter<bool>(       "CoherentSum::Verbosity"     , 0)    )
-  , m_objCache (NamedParameter<std::string>("CoherentSum::ObjectCache"   ,"")    )
   , m_prefix   (prefix)
       , m_mps(&mps) 
 {

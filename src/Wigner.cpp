@@ -230,8 +230,9 @@ std::string index_string(const Particle& particle)
 
 Expression AmpGen::helicityAmplitude(const Particle& particle, 
                                      const TransformSequence& parentFrame, 
-                                     const double& Mz, 
+                                     const double& Mz,
                                      DebugSymbols* db, 
+                                     const AmpGen::Helicity::Flags& flags,  
                                      int sgn,
                                      TransformCache* cachePtr )
 {  
@@ -242,7 +243,7 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
     return 1; 
   } 
   if( particle.daughters().size() == 1 ) 
-    return helicityAmplitude( *particle.daughter(0), parentFrame, Mz, db, sgn, cachePtr);
+    return helicityAmplitude( *particle.daughter(0), parentFrame, Mz, db, flags, sgn, cachePtr);
   Tensor::Index a,b,c; 
   // if( particle.props()->twoSpin() == 0 ) myFrame.clear();
   Tensor pInParentFrame = parentFrame(particle.P());
@@ -252,7 +253,7 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   {
     //INFO("Checking if is head: " << particle.isHead() << " " << particle.parent() ); 
     bool is_head = particle.isHead();
-    if( ! is_head || NamedParameter<bool>("helicityAmplitude::MovingParent", false) )
+    if( ! is_head || flags.movingHead ) 
     {
       (*cachePtr)[key] = TransformSequence(parentFrame, wickTransform(pInParentFrame, particle, sgn, db) );
     }
@@ -271,7 +272,7 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
     auto inverseMyTransform = myFrame.inverse();
     if( particle.props()->twoSpin() == 1 ) // so a fermion 
     {
-      if( NamedParameter<bool>("helicityAmplitude::NoSpinAlign", false ) ) return 2*Mz == particle.polState();
+      if( flags.alignFrames ) return 2*Mz == particle.polState();
       auto mzSpinor = basisSpinor( 2*Mz, particle.props()->pdgID() );
       auto mzSpinorInLab   = inverseMyTransform( mzSpinor, Transform::Representation::Bispinor );
       mzSpinorInLab.st();
@@ -322,8 +323,8 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
     if( (d1.props()->isPhoton() && coupling.m1 == 0.) || 
         (d2.props()->isPhoton() && coupling.m2 == 0.) ) continue;
     auto term = wigner_D(hco, particle.spin(), Mz, dm, db); 
-    auto h1   = helicityAmplitude(d1, myFrame, coupling.m1, db, +1, cachePtr);
-    auto h2   = helicityAmplitude(d2, myFrame, coupling.m2, db, -1, cachePtr);
+    auto h1   = helicityAmplitude(d1, myFrame, coupling.m1, db, flags, +1, cachePtr);
+    auto h2   = helicityAmplitude(d2, myFrame, coupling.m2, db, flags, -1, cachePtr);
     if( db != nullptr ){ 
       
       db->emplace_back( "coupling" , coupling.factor );

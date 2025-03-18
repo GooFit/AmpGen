@@ -8,7 +8,13 @@
 namespace AmpGen {
   class Particle;
   using TransformCache = std::map<std::string, TransformSequence>;
-
+  
+  namespace Helicity { 
+    struct Flags {
+      bool movingHead  = {true}; 
+      bool alignFrames = {true}; 
+    };
+  }
   Expression wigner_d( const Expression& cb, const double& j, const double& m, const double& n );
   Expression wigner_D( const std::pair<Expression, Expression>& P, const double& J, const double& lA, const double& lB, DebugSymbols* db);
   /** @ingroup Vertices function CG  
@@ -34,6 +40,7 @@ namespace AmpGen {
                                const TransformSequence& parentFrame, 
                                const double& Mz,    
                                DebugSymbols* db , 
+                               const Helicity::Flags& flags = Helicity::Flags(),
                                const int sgn=1, 
                                TransformCache* cacheptr = nullptr); 
   Tensor basisSpinor(const int& polState, const int& id);

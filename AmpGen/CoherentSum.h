@@ -23,6 +23,8 @@
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/Store.h"
 #include "AmpGen/KeyedFunctors.h"
+#include "AmpGen/Property.h" 
+
 namespace AmpGen
 {
   class LinearErrorPropagator;
@@ -104,6 +106,10 @@ namespace AmpGen
     EventType eventType() const { return m_eventType; } 
     const auto& cache() const { return m_cache; } 
   protected:
+    Property<unsigned>    m_printFreq    = {"CoherentSum::PrintFrequency",100, "Frequency to print verbose PDF info"};
+    Property<bool>        m_debug        = {"CoherentSum::Debug", false, "Flag to generate amplitude level debugging"}; 
+    Property<int>         m_verbose      = {"CoherentSum::Verbosity", 0, "Flag for verbose printing"}; 
+    Property<std::string> m_objCache     = {"CoherentSum::ObjectCache","", "Directory that contains (cached) amplitude objects"}; 
     std::vector<MatrixElement> m_matrixElements;              ///< Vector of matrix elements
     Bilinears        m_normalisations;                        ///< Normalisation integrals
      
@@ -115,13 +121,11 @@ namespace AmpGen
     EventType        m_eventType;                               ///< Final state for this amplitude
     size_t           m_prepareCalls = {0};                    ///< Number of times prepare has been called
     size_t           m_lastPrint    = {0};                    ///< Last time verbose PDF info was printed
-    size_t           m_printFreq    = {0};                    ///< Frequency to print verbose PDF info
     MinuitProxy      m_weight       = {nullptr, 1};           ///< Weight (i.e. the normalised yield)
     double           m_norm         = {1};                    ///< Normalisation integral
     bool             m_isConstant   = {false};                ///< Flag for a constant PDF
     bool             m_dbThis       = {false};                ///< Flag to generate amplitude level debugging
     bool             m_verbosity    = {false};                ///< Flag for verbose printing
-    std::string      m_objCache     = {""};                   ///< Directory that contains (cached) amplitude objects
     std::string      m_prefix       = {""};                   ///< Prefix for matrix elements
     const MinuitParameterSet* m_mps = {nullptr};
     void addMatrixElement( std::pair<Particle, TotalCoupling>& particleWithCoupling, const MinuitParameterSet& mps );

@@ -10,6 +10,7 @@
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/SmallVector.h"
 #include "AmpGen/Event.h"
+#include "AmpGen/NamedParameter.h" 
 #include <TRandom3.h>
 
 namespace AmpGen { 
