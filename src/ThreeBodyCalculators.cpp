@@ -28,7 +28,6 @@
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/Projection.h"
 #include "AmpGen/Tensor.h"
@@ -280,7 +279,6 @@ void ThreeBodyCalculator::makePlots(const double& mass, const size_t& x, const s
   sq.setMother( evtType.motherMass() );
   prepare();
   /*
-  int points = NamedParameter<int>( "nPoints", 50000000 );
   auto fcn = [&](const double* evt) { return std::real(fcs(evt)); };
   sq.makePlot( fcn, Projection2D( projection_operators[x], projection_operators[y] ), "s01_vs_s02", points )->Write();
   */

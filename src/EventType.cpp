@@ -213,7 +213,7 @@ std::ostream& AmpGen::operator<<( std::ostream& os, const EventType& type )
 
 unsigned EventType::dof() const { return 3 * size() - 7; }
 
-std::function<void( Event& )> EventType::symmetriser() const
+std::function<void( Event& )> EventType::symmetriser(unsigned seed) const
 {
   std::map<std::string, std::vector<unsigned>> particleOrdering;
   for ( unsigned i = 0; i < m_particleNames.size(); ++i )
@@ -221,8 +221,6 @@ std::function<void( Event& )> EventType::symmetriser() const
   std::vector<std::vector<unsigned>> shuffles;
   for ( auto& im : particleOrdering )
     if ( im.second.size() != 1 ) shuffles.push_back( im.second );
-
-  int seed      = NamedParameter<unsigned int>( "EventType::SymmetriserSeed", 12 );
   std::mt19937 rng( seed );
   for ( auto& shuffle : shuffles ) {
     std::string shuffle_string = "";
