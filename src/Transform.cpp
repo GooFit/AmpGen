@@ -57,11 +57,11 @@ Tensor Transform::make_bispinor_operator( const Tensor& A, const Tensor& B, cons
 Tensor Transform::rotate_spinor() const 
 {
   complex_t i (0,1);
-  return Identity(2) * fcn::sqrt(0.5*(1+m_arg)) - i * sigma_dot_p(m_k) * fcn::sqrt(0.5*(1-m_arg));
+  return Identity(2) * fcn::safe_sqrt(0.5*(1+m_arg)) - i * sigma_dot_p(m_k) * fcn::safe_sqrt(0.5*(1-m_arg));
 }
 Tensor Transform::boost_spinor() const 
 {
-  return Identity(2) * fcn::sqrt(0.5*(m_arg+1)) + sigma_dot_p(m_k)*fcn::sqrt(0.5*(m_arg-1));
+  return Identity(2) * fcn::safe_sqrt(0.5*(m_arg+1)) + sigma_dot_p(m_k)*fcn::safe_sqrt(0.5*(m_arg-1));
 }
 
 Tensor Transform::operator()(const Representation& repr)const
@@ -78,19 +78,19 @@ Tensor Transform::operator()(const Representation& repr)const
   }
   if( m_type == Type::Boost && repr == Representation::Bispinor )
   {
-    Tensor t1 = I2 * fcn::sqrt(0.5*(m_arg+1)); 
+    Tensor t1 = I2 * fcn::safe_sqrt(0.5*(m_arg+1)); 
     Tensor t2 = -sigma_dot_p(m_k) * fcn::sqrt(0.5*(m_arg-1));
     return make_bispinor_operator( t1, t2, t2, t1 );
   }
   if( m_type == Type::Rotate && repr == Representation::Vector )
   {
     auto K = J_dot_p(m_k); 
-    return I4(j,k) + fcn::sqrt(1 - m_arg*m_arg)*K(j,k) + (1 - m_arg) * K(j,m) * K(m,k);
+    return I4(j,k) + fcn::safe_sqrt(1 - m_arg*m_arg)*K(j,k) + (1 - m_arg) * K(j,m) * K(m,k);
   }
   if( m_type == Type::Boost && repr == Representation::Vector )
   {
     auto K = K_dot_p(m_k); 
-    return I4(j,k) - fcn::sqrt(m_arg*m_arg - 1)*K(j,k) + (m_arg - 1) * K(j,m) * K(m,k);
+    return I4(j,k) - fcn::safe_sqrt(m_arg*m_arg - 1)*K(j,k) + (m_arg - 1) * K(j,m) * K(m,k);
   }
   ERROR("Representation: " << repr << " " << m_type << " " << m_type << " not implemented");
   return Tensor();

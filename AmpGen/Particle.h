@@ -315,20 +315,20 @@ namespace AmpGen
       bool hasModifier( const std::string& modifier ) const; ///< Check if this particle has a given modifier
       std::string modifierString() const;                    ///< Re-generate modifier string used to create particle
       void sortDaughters();                                  ///< Recursively order the particle's decay products. 
-
+      
+      static constexpr std::string_view spin_basis_help = "Basis to use for calculating external polarisation tensors / spinors."
+                                                          "\n\033[3m Dirac \033[0m: [default] Quantises along the z-axis"
+                                                          "\n\033[3m Weyl \033[0m: Quantises along the direction of motion"; 
 
       Property<spinFormalism> m_spinFormalism  = {this, "Particle::SpinFormalism"  , spinFormalism::Covariant, 
             helpStringOptions("Formalism to use for spin calculations",  
                  std::make_pair("Covariant", "[default] Covariant Tensor, based on Rarita-Schwinger constraints on the allowed covariant wavefunctions.")
            ,    std::make_pair("Canonical", "Canonical formulation, based on rotational properties of wavefunctions, i.e. Wigner D-matrices and Clebsch-Gordan for (L,S) expansion.")  ) };
-      Property<spinBasis>     m_spinBasis      = {this, "Particle::SpinBasis", spinBasis::Dirac, 
-        helpStringOptions("Basis to use for calculating external polarisation tensors / spinors.",
-                      std::make_pair("Dirac", "[default] Quantises along the z-axis")
-                    , std::make_pair("Weyl", "Quantises along the direction of motion") )};
+      Property<spinBasis>     m_spinBasis       = {this, "Particle::SpinBasis", spinBasis::Dirac, spin_basis_help};
       Property<std::string>   m_defaultModifier = {this, "Particle::DefaultModifier","", "Default modifier to use for lineshapes, for example to use normalised vs unnormalised Blatt-Weisskopf factors."};
       Property<bool>          m_movingHead      = {this, "Particle::MovingHead", true, "Assume the head of the decay chain is not at rest, only applies in canonical formulation."}; 
       Property<bool>          m_alignFrames     = {this, "Particle::AlignFrames", true, "Align the helicity definition of all particles to a common frame, that of the head of the decay chain."}; 
-      Property<double>        m_stableThreshold = {this, "Particle::StableThreshold", KeV, "Lifetime threshold at which particle is considered stable (or quasistable)"}; /// limit is 1 keV
+      Property<double>        m_stableThreshold = {this, "Particle::StableThreshold", KeV, "Lifetime threshold at which particle is considered stable (or quasistable)"}; 
   };
   std::ostream& operator<<( std::ostream& os, const Particle& particle );
 } // namespace AmpGen
