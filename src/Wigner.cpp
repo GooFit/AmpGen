@@ -54,10 +54,10 @@ Expression AmpGen::wigner_d( const Expression& cb, const double& j, const double
   double ns_intpart = 0; 
   double frac_nc = modf( k_min -(m+n)/2.    , &nc_intpart );
   double frac_ns = modf( j + (m+n)/2. -k_min, &ns_intpart );
-  Expression fractional_part = 1 ; 
-  if( frac_nc == 0.5 && frac_ns != 0.5 )      fractional_part = fcn::sqrt(1+cb);
-  else if( frac_nc != 0.5 && frac_ns == 0.5 ) fractional_part = fcn::sqrt(1-cb);
-  else if( frac_nc == 0.5 && frac_ns == 0.5 ) fractional_part = fcn::sqrt(1-cb*cb);  
+  Expression fractional_part = 1 ;
+  if( frac_nc == 0.5 && frac_ns != 0.5 )      fractional_part = fcn::safe_sqrt(1+cb);
+  else if( frac_nc != 0.5 && frac_ns == 0.5 ) fractional_part = fcn::safe_sqrt(1-cb);
+  else if( frac_nc == 0.5 && frac_ns == 0.5 ) fractional_part = fcn::safe_sqrt(1-cb*cb);  
   for( double k = k_min; k <= k_max ; ++k )
   {
     double w_den  = fact(k) * fact(j+m-k)*fact(j+n-k) * fact(k-m-n);
@@ -97,6 +97,18 @@ double AmpGen::CG(
   return sqrt(norm) * sum ; 
 }
 
+/// spherical coordinates are paramterised as {z=cos(theta), e^(iphi)}, as this avoids any trigonometric functions
+
+std::tuple<Expression, Expression, Expression> angCoordinates(const Tensor& P, DebugSymbols* db)
+{
+  auto pT2 = make_cse(   P[0]*P[0] + P[1] *P[1]  );
+  auto pP2 = make_cse(   P[0]*P[0] + P[1] *P[1] + P[2] * P[2] );  
+  Expression cos_phi   = make_cse( Ternary( pT2 > 1e-9, P[0] / fcn::sqrt( pT2 ), 1 ) );
+  Expression sin_phi   = make_cse( Ternary( pT2 > 1e-9, P[1] / fcn::sqrt( pT2 ), 0 ) );  
+  Expression cos_theta = make_cse( Ternary( pP2 > 1e-9, P[2] / fcn::sqrt( pP2 ), 1 ) );   
+  return {cos_theta, cos_phi, sin_phi};
+} 
+
 TransformSequence AmpGen::wickTransform( const Tensor& P, 
     const Particle& particle,
     const int& ve,
@@ -104,14 +116,8 @@ TransformSequence AmpGen::wickTransform( const Tensor& P,
 {
   Tensor x({1,0,0}, Tensor::dim(3));
   Tensor y({0,1,0}, Tensor::dim(3));
-  Tensor z({0,0,1}, Tensor::dim(3));
-  auto pT = make_cse(  P[0]*P[0] + P[1] *P[1]  );
-  auto pP = make_cse(  P[0]*P[0] + P[1] *P[1] + P[2] * P[2] ); 
-
-  Expression cos_theta = Ternary( pP > 1e-10, P[2] / fcn::sqrt( pP ), 1 ); 
-  Expression cos_phi   = Ternary( pT > 1e-10, P[0] / fcn::sqrt( pT ), 1 );
-  Expression sin_phi   = Ternary( pT > 1e-10, P[1] / fcn::sqrt( pT ), 0 ); 
-    
+  Tensor z({0,0,1}, Tensor::dim(3)); 
+  auto [cos_theta, cos_phi, sin_phi] = angCoordinates(P, db); 
   Transform rot  = ve == + 1 ? Transform( cos_theta,  sin_phi*x - cos_phi*y, Transform::Type::Rotate) :
                                Transform(-cos_theta, -sin_phi*x + cos_phi*y, Transform::Type::Rotate) ;
 
@@ -127,16 +133,6 @@ TransformSequence AmpGen::wickTransform( const Tensor& P,
   return TransformSequence(sequence); 
 }
 
-/// spherical coordinates are paramterised as {z=cos(theta), e^(iphi)}, as this avoids any trigonometric functions
-
-std::pair<Expression, Expression> angCoordinates(const Tensor& P, DebugSymbols* db)
-{
-  Expression pz = make_cse( P[2] / sqrt( P[0]*P[0] + P[1] * P[1] + P[2]*P[2] ) );  
-  Expression pt2 = make_cse( P[0]*P[0] + P[1]*P[1] );
-  Expression px = P[0] / sqrt(pt2);
-  Expression py = P[1] / sqrt(pt2);
-  return {pz, make_cse(px + 1i*py)};
-} 
 
 Expression AmpGen::wigner_D(const std::pair<Expression, Expression>& P, 
     const double& J, 
@@ -310,7 +306,8 @@ Expression AmpGen::helicityAmplitude(const Particle& particle,
   } 
   Expression total = 0; 
   
-  auto hco = angCoordinates( myFrame(d1.P()) , db);
+  auto [ctheta,cphi,sphi] = angCoordinates( myFrame(d1.P()) , db);
+  auto hco = std::make_pair( ctheta, make_cse( cphi + 1i*sphi) ); 
   for( auto& coupling : recoupling_constants )
   {          
     auto dm = coupling.m1 - coupling.m2;

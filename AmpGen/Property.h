@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <map>
 #include <cstring>
+#include <string_view>
 
 #include "AmpGen/MsgService.h"
 #include "AmpGen/OptionsParser.h"
@@ -27,7 +28,7 @@ namespace AmpGen {
         std::string m_helpString; 
         value_t m_value; 
       public: 
-        Property( void* /*parent*/, const std::string& name, const value_t& def=value_t(), const std::string& helpString="" ) : 
+        Property( void* /*parent*/, const std::string& name, const value_t& def=value_t(), const std::string_view& helpString="" ) : 
           m_name(name),
           m_helpString(helpString),
           m_value(def) {
