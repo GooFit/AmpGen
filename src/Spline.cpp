@@ -44,20 +44,10 @@ SplineTransfer::~SplineTransfer()
 Expression AmpGen::getSpline( const std::string& name, const Expression& x, const std::string& arrayName,
     DebugSymbols* dbexpressions, const bool& continueSpline )
 {
-  double min, max, nBins( 0 );
-  auto spline_params = NamedParameter<double>( name + "::Spline").getVector();
-  if( spline_params.size() == 3 ){
-    nBins = size_t( spline_params[0] );
-    min   =         spline_params[1] ; 
-    max   =         spline_params[2];
-  }
-  else {
-    nBins = NamedParameter<double>( name + "::Spline::N"  , 0. );
-    min   = NamedParameter<double>( name + "::Spline::Min", 0. );
-    max   = NamedParameter<double>( name + "::Spline::Max", 0. );
-  }
   std::string spline_name = name + "::Spline::"+arrayName;
-  return Spline(spline_name, nBins, min, max)(x, dbexpressions);
+  using splineParam_t = std::tuple<unsigned, double, double>; 
+  splineParam_t       splineParam = Property<splineParam_t>{nullptr, name +"::Spline", std::make_tuple(0,0.,0.) }; 
+  return Spline(spline_name, std::get<0>(splineParam), std::get<1>(splineParam), std::get<2>(splineParam))(x, dbexpressions);
 }
 
 Expression Spline::eval(DebugSymbols* db) const 

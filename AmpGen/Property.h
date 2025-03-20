@@ -57,6 +57,9 @@ namespace AmpGen {
               if constexpr( isVector<value_t>::value ){
                 if( def != value_t() ) std::cout << " (default = {" << vectorToString(def,",") << "})";
               }
+              else if constexpr( isTuple<value_t>::value ){
+                if( def != value_t() ) std::cout << " (default = [" << tupleToString(def,",") << "])";
+              }
               else { 
                 if( def != value_t() ) std::cout << " (default = " << def << ")";
               }
@@ -81,6 +84,16 @@ namespace AmpGen {
                 return false; 
               }
             }
+          }
+          else if constexpr( isTuple<value_t>::value ){
+            for_each_with_counter(m_value, [this, vsl]( auto& f, unsigned i ){
+              bool status = true;
+              using basic_t = typename std::remove_const< typename std::remove_reference<decltype(f)>::type >::type;  
+              *const_cast<basic_t*>(&f) = lexical_cast<basic_t>( vsl[i], status ); 
+              if( !status ){
+                ERROR("Failed to parse token: " << vsl[i] << " for parameter: " << this->m_name ); 
+              }
+            }); 
           }
           else {
             if( vsl.size() != 2 ){

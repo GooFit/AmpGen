@@ -34,6 +34,13 @@ namespace AmpGen {
       ss << fcn(*(end-1));
       return ss.str();
     }
+    
+    template <typename tuple_t> 
+      std::string tupleToString( const tuple_t& tuple, const std::string& delim ){
+        std::stringstream ss;
+        for_each( tuple, [&ss,delim]( auto& item) { ss << item << delim; } );
+        return ss.str(); 
+      }
 
   template <typename container_type,
             typename vtype = typename container_type::value_type,
