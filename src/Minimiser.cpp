@@ -176,7 +176,6 @@ std::string minuitStatusString( ROOT::Minuit2::Minuit2Minimizer* mini )
 
 bool Minimiser::doFit()
 {
-//   auto m_monitoring = TFile::Open("debug.root","RECREATE");
   auto& t = *this; 
   ROOT::Math::Functor f(t, m_nParams );
   
@@ -202,10 +201,12 @@ bool Minimiser::doFit()
   }
   m_status = m_minimiser->Status();
   
-  INFO("Status = " << m_status ); 
-  INFO("FVAL   = " << FCN() );
-  INFO("Edm    = " << Edm() );
-  INFO("Nfcn   = " << m_minimiser->NCalls() );
+  if( m_printLevel != PrintLevel::Quiet ){
+    INFO("Status = " << m_status ); 
+    INFO("FVAL   = " << FCN() );
+    INFO("Edm    = " << Edm() );
+    INFO("Nfcn   = " << m_minimiser->NCalls() );
+  }
   if( m_status != 0 && m_printLevel != PrintLevel::VeryVerbose )
   {
     WARNING("Fit has not converged, some clues from Minuit2 may not be printed due to low verbosity level.");
@@ -336,6 +337,11 @@ void Minimiser::minos( MinuitParameter* parameter )
   parameter->setResult( v0, parameter->err(), low, high );
   
   for( int i = 0 ; i != m_nParams; ++i ) m_parSet->at( m_mapping[i] )->setCurrentFitVal( init_values[i] );
+  unsigned longest_parameter_name = 10;  
+  for(const auto& param : *m_parSet )
+  {
+    if( param->name().size() > longest_parameter_name ) longest_parameter_name = param->name().size() + 3; 
+  }
 
   if (parameter->isBlind())
   {
@@ -347,10 +353,10 @@ void Minimiser::minos( MinuitParameter* parameter )
   }
   else  
   {
-    INFO( parameter->name()   << 
-        parameter->mean()   << "  - " << 
-        parameter->errNeg() << " + " << 
-        parameter->errPos() );
+    INFO( std::setw(longest_parameter_name)
+            << parameter->name() << "     "  << std::right << std::setw(13) << parameter->mean() 
+            << " + "  << std::left  << std::setw(13) << parameter->errPos() 
+            << " - "  << std::left  << std::setw(13) << parameter->errNeg() );
   }
 }
 
