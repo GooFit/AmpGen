@@ -37,10 +37,11 @@ namespace AmpGen {
             DEBUG( *this );
           }
 
-        template <class G> bool operator==(const G& other) const { return m_value == other; }
-        template <class G> bool operator!=(const G& other) const { return m_value != other; }
+        template <typename T> bool operator==(const T& other) const { return m_value == other; }
+        template <typename T> bool operator!=(const T& other) const { return m_value != other; }
         operator value_t() const { return m_value; }
         operator value_t()       { return m_value; }
+        const value_t& value() const { return m_value; }
         const std::string& name() const { return m_name ; } 
         template <typename T> friend std::ostream& operator<<( std::ostream& os, const Property<T>& np );
         bool setFromStrings(const std::vector<std::string>& vsl ) {
@@ -114,6 +115,7 @@ namespace AmpGen {
     };
     template <typename T> std::ostream& operator<<( std::ostream& os, const Property<T>& np );
     template <typename ...T>  std::string helpStringOptions(const std::string& header, const T&... args);
+    template <typename T> bool operator==( const T& val, const Property<T>& prop ){ return val == prop.value(); }
 };
 
 template <typename T> std::ostream& AmpGen::operator<<( std::ostream& os, const AmpGen::Property<T>& np ) {

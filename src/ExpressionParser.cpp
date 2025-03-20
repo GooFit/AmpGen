@@ -14,8 +14,8 @@
 #include "AmpGen/MinuitExpression.h"
 #include "AmpGen/ASTResolver.h"
 #include "AmpGen/enum.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Tensor.h"
+#include "AmpGen/AmplitudeRules.h" 
 
 using namespace AmpGen;
 using namespace std::complex_literals; 
@@ -177,8 +177,9 @@ ExpressionParser::ExpressionParser()
   add_binary( "&&", [](const auto& A, const auto& B ) { return A && B; } );
   add_binary( "," , [](const auto& A, const auto& B ) { return ExpressionPack( A, B ); } );
  
-  coordinateType coord = NamedParameter<coordinateType>("CouplingConstant::Coordinates", coordinateType::cartesian);
-  angType degOrRad     = NamedParameter<angType>("CouplingConstant::AngularUnits", angType::rad);
+  Coupling c(nullptr, nullptr); 
+  coordinateType coord = c.coordinates(); 
+  angType degOrRad     = c.angularUnit(); 
   m_isCartesian = true; 
   if( coord == coordinateType::polar ) m_isCartesian = false; 
   else if ( coord != coordinateType::cartesian){

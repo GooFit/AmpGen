@@ -13,7 +13,6 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/Utilities.h"
-#include "AmpGen/NamedParameter.h"
 
 using namespace AmpGen;
 using namespace std::complex_literals; 
@@ -22,31 +21,24 @@ Coupling::Coupling(MinuitParameter* re, MinuitParameter* im) :
   m_re(re),
   m_im(im)
 {
-  auto tokens = split( re->name(), '_' );
-  if ( tokens.size() == 3 ) {
-    m_prefix = tokens[0];
-    m_name   = tokens[1];
-  } else if ( tokens.size() == 2 ) {
-    m_name   = tokens[0];
+  if( m_re != nullptr && m_im != nullptr ){
+    auto tokens = split( re->name(), '_' );
+    if ( tokens.size() == 3 ) {
+      m_prefix = tokens[0];
+      m_name   = tokens[1];
+    } else if ( tokens.size() == 2 ) {
+      m_name   = tokens[0];
+    }
+    else {
+      ERROR("Ill-formed decay descriptor: " << m_name );
+    }
+    m_particle = Particle(m_name);
   }
-  else {
-    ERROR("Ill-formed decay descriptor: " << m_name );
-  }
-  m_particle = Particle(m_name);
-  coordinateType coord = NamedParameter<coordinateType>("CouplingConstant::Coordinates", coordinateType::cartesian);
-  angType degOrRad     = NamedParameter<angType>("CouplingConstant::AngularUnits"      , angType::rad);
-  m_isCartesian = true; 
-
-  if( coord == coordinateType::polar ) m_isCartesian = false; 
-
-  if ( coord == coordinateType::Invalid){
+  if ( m_coord == coordinateType::Invalid)
     FATAL("Coordinates for coupling constants must be either cartesian or polar");
-  } 
-  if ( degOrRad == angType::deg) m_sf = M_PI / 180; 
-
-  if ( degOrRad == angType::Invalid ){
+  if ( m_angUnit == angType::Invalid )
     FATAL("TotalCoupling::AngularUnits must be either rad or deg");
-  } 
+  if ( m_angUnit == angType::deg) m_sf = M_PI / 180; 
 }
 
 Coupling::Coupling(MinuitExpression* expression) : 
@@ -126,12 +118,12 @@ TotalCoupling::TotalCoupling(const Coupling& pA)
 
 std::complex<double> Coupling::operator()() const 
 {
-  return m_expr != nullptr ? m_expr->getVal() : ( m_isCartesian ? complex_t( m_re->mean(), m_im->mean() ) : m_re->mean() * exp( 1i* m_sf * m_im->mean() ) ); 
+  return m_expr != nullptr ? m_expr->getVal() : ( (m_coord == coordinateType::cartesian) ? complex_t( m_re->mean(), m_im->mean() ) : m_re->mean() * exp( 1i* m_sf * m_im->mean() ) ); 
 }
 
 Expression Coupling::to_expression() const 
 {
-  return m_expr != nullptr ? m_expr->expression() : ( m_isCartesian ? ComplexParameter(Parameter(m_re->name()), Parameter(m_im->name())) : Parameter( m_re->name() ) * fcn::exp( 1i * m_sf * Parameter(m_im->name()) ) );
+  return m_expr != nullptr ? m_expr->expression() : ( (m_coord == coordinateType::cartesian) ? ComplexParameter(Parameter(m_re->name()), Parameter(m_im->name())) : Parameter( m_re->name() ) * fcn::exp( 1i * m_sf * Parameter(m_im->name()) ) );
 }
 
 std::complex<double> TotalCoupling::operator()() const

@@ -14,6 +14,7 @@
 #include "AmpGen/Event.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/ExpressionParser.h"
+#include "AmpGen/Property.h" 
 
 namespace AmpGen
 {
@@ -36,16 +37,18 @@ namespace AmpGen
       complex_t operator()() const; 
       Expression to_expression() const; 
       const Particle& particle() const { return m_particle ; }
-      bool isCartesian() const { return m_isCartesian; }
+      coordinateType coordinates() const { return m_coord; }
+      angType angularUnit() const { return m_angUnit; } 
     private:
-      std::string       m_prefix = {""};
-      std::string       m_name   = {""};
-      MinuitParameter*  m_re     = {nullptr};
-      MinuitParameter*  m_im     = {nullptr};
-      MinuitExpression* m_expr   = {nullptr};
+      std::string       m_prefix {""};
+      std::string       m_name   {""};
+      MinuitParameter*  m_re     {nullptr};
+      MinuitParameter*  m_im     {nullptr};
+      MinuitExpression* m_expr   {nullptr};
       Particle          m_particle;
-      bool              m_isCartesian = {true};
-      double            m_sf          = {1};
+      Property<coordinateType> m_coord  {this, "CouplingConstant::Coordinates", coordinateType::cartesian};
+      Property<angType>        m_angUnit{this, "CouplingConstant::AngularUnits", angType::rad}; 
+      double            m_sf            {1};
   };
   
   class TotalCoupling
