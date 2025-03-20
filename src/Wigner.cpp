@@ -18,7 +18,7 @@
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Vertex.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 
 using namespace AmpGen;
 using namespace AmpGen::fcn;
@@ -202,7 +202,7 @@ Tensor AmpGen::basisVector(const int& polState)
 
 std::vector<LS> userHelicityCouplings( const std::string& key ){
   std::vector<LS> couplings;  
-  auto things = NamedParameter<double>( key, 0).getVector();
+  std::vector<double> things = Property<std::vector<double>>(nullptr, key, {0.}); 
   if( things.size() % 3 != 0 ) ERROR("Wrong number of tokens");
   for( size_t i = 0 ; i < things.size(); i+=3 ){
     LS coupling; 

@@ -6,7 +6,7 @@
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Particle.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 #include "AmpGen/CoupledChannel.h"
 #include "AmpGen/Pade.h"
 #include "AmpGen/NumericalIntegration.h"
@@ -176,13 +176,12 @@ DEFINE_LINESHAPE( CoupledChannel )
   const Expression width        = Parameter( particleName + "_width", props->width() );
   const Expression radius       = Parameter( particleName + "_radius", props->radius() );
   const Expression I = Constant(0.,1.);
-  std::vector<std::string> channels = NamedParameter<std::string>( particleName + "_channels").getVector();  
+  std::vector<std::string> channels = Property<std::vector<std::string>>{nullptr, particleName + "_channels"}; 
   Expression totalWidth = 0; 
   Expression totalWidthAtPole = 0 ; 
   ADD_DEBUG( s , dbexpressions );
   for( size_t i = 0 ; i < channels.size(); i+=2 ){
     Particle p( channels[i] ); 
-    DEBUG( "Adding channel ... " << p.uniqueString() << " coupling = " << NamedParameter<std::string>( channels[i+1]  ) );
     Expression coupling = Parameter(channels[i+1], 0);
     totalWidth       += coupling * phaseSpace(s        , p, p.L());
     totalWidthAtPole += coupling * phaseSpace(mass*mass, p, p.L());    

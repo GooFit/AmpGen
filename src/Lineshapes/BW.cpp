@@ -87,10 +87,17 @@ DEFINE_LINESHAPE( SBW )
 {
   auto props        = ParticlePropertiesList::get( particleName );
   Expression mass   = Parameter( particleName + "_mass", props->mass() );
+  Expression radius = Parameter( particleName + "_radius", props->radius() );
   Expression width0 = Parameter( particleName + "_width", props->width() );
   const Expression kF = kFactor( mass, width0 ) ;
   const Expression BW = 1 / ( mass * mass - s - 1i*mass * width0 );
+  const Expression q2        = make_cse( Abs(Q2( s, s1, s2 ) ) ) ;
+  const Expression q20       = make_cse( Abs(Q2( mass * mass, s1, s2 )) );
+  Expression                              FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, 0, L ) );
+  if ( lineshapeModifier == "BL" )        FormFactor = sqrt( BlattWeisskopf( q2 * radius * radius, L ) );
+  if ( lineshapeModifier == "BELLE2018" ) FormFactor = sqrt( BlattWeisskopf_Norm( q2 * radius * radius, q20 * radius * radius, L ) );
+  if ( lineshapeModifier == "NFF")        FormFactor = 1; 
   ADD_DEBUG( kF, dbexpressions );
   ADD_DEBUG( BW, dbexpressions );
-  return kF * BW;
+  return FormFactor * kF * BW;
 }

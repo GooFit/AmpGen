@@ -10,7 +10,7 @@
 #include "AmpGen/Factory.h"
 #include "AmpGen/Lineshapes.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Tensor.h"
@@ -42,9 +42,9 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix)
   auto s             = p.massSq(); 
   auto props         = ParticlePropertiesList::get( particleName );
   Expression mass    = Parameter( particleName + "_mass", props->mass() );
-  unsigned nPoles    = NamedParameter<unsigned>(particleName+"::kMatrix::nPoles");
-  auto channels      = NamedParameter<std::string>(particleName+"::kMatrix::channels").getVector();
-  auto const pa_type = NamedParameter<PA_TYPE>(particleName+"::kMatrix::production_amplitude",PA_TYPE::PVec);
+  unsigned nPoles    = Property<unsigned>(nullptr, particleName+"::kMatrix::nPoles");
+  std::vector<std::string> channels      = Property<std::vector<std::string>>(nullptr, particleName+"::kMatrix::channels");
+  auto const pa_type = Property<PA_TYPE>(nullptr, particleName+"::kMatrix::production_amplitude",PA_TYPE::PVec);
   auto nChannels     = channels.size();
   auto s0            = mass*mass;
   std::vector<Expression> phsps, bw_phase_space;
@@ -55,7 +55,7 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix)
   //phase-space
   for( unsigned i = 0 ; i < channels.size(); i+=1 ){
     Particle p( channels[i] );
-    INFO( p.decayDescriptor() );
+    DEBUG( p.decayDescriptor() );
     phsps.emplace_back( phaseSpace(s, p, p.L() ) );
     bw_phase_space.emplace_back( phaseSpace(s0, p, p.L() ) );
     pchannels.emplace_back( p ); 
@@ -98,7 +98,7 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix)
       auto c1 = std::to_string(ch1);
       auto c2 = std::to_string(ch2);
       if( ch1 > ch2 ) std::swap(c1,c2);
-      std::string nrShape = NamedParameter<std::string>(particleName+"::"+c1+"::"+c2+"::nrShape", "flat");
+      std::string nrShape = Property<std::string>(nullptr, particleName+"::"+c1+"::"+c2+"::nrShape", "flat");
       Expression f1 = Parameter(particleName+"::f1::"+c1+"::"+c2, 0);
       if( nrShape == "flat") non_resonant[{ch1-1,ch2-1}] = f1;
       else if( nrShape == "pole"){

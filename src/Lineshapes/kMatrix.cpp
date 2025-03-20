@@ -13,7 +13,7 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/kMatrix.h"
 #include "AmpGen/Units.h"
-#include "AmpGen/NamedParameter.h" 
+#include "AmpGen/Property.h" 
 
 using namespace AmpGen;
 using namespace std::complex_literals;
@@ -103,7 +103,7 @@ DEFINE_LINESHAPE( kMatrix )
 
   std::vector<Parameter> fScatt = paramVector( "f_scatt", nChannels );
   std::vector<poleConfig> poleConfigs; 
-  bool addImaginaryMass = NamedParameter<bool>("kMatrix::fp", true );
+  bool addImaginaryMass = Property<bool>(nullptr, "kMatrix::fp", true );
   for ( unsigned int pole = 1; pole <= nPoles; ++pole ) {
     std::string stub = "IS_p" + std::to_string( pole ) + "_";
     Expression mass  = Parameter( stub + "mass" );
