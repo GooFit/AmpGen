@@ -8,6 +8,7 @@
 #include "AmpGen/MinuitExpression.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/ParticlePropertiesList.h"
+#include "AmpGen/AmplitudeRules.h" 
 
 using namespace AmpGen; 
 
@@ -15,7 +16,7 @@ using namespace AmpGen;
 void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
 {
   std::vector<MinuitParameter*> tmp;
-  std::string cartOrPolar = NamedParameter<std::string>("CouplingConstant::Coordinates" ,"cartesian");
+  auto coord = Coupling(nullptr, nullptr).coordinates(); 
   std::vector<std::string> forbidden = NamedParameter<std::string>("AddCPConjugate::Forbid").getVector();  
 
   for( auto& param : mps ){
@@ -57,8 +58,8 @@ void AmpGen::AddCPConjugate( MinuitParameterSet& mps )
       } 
       Particle test = Particle(test_particle).conj();
       if( ! test.props()->hasDistinctAnti() ) continue; 
-      if( cartOrPolar == "polar" )     sgn = reOrIm == "Re" ? test.CP() : 1; 
-      if( cartOrPolar == "cartesian" ) sgn = test.CP();
+      if( coord == coordinateType::polar )     sgn = reOrIm == "Re" ? test.CP() : 1; 
+      if( coord == coordinateType::cartesian ) sgn = test.CP();
       new_name = test.uniqueString() +"_"+reOrIm;
     }
     else if( tokens.size() == 2 ) {
