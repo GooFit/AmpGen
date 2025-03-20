@@ -18,7 +18,6 @@ ASTResolver::ASTResolver(const std::map<std::string, unsigned>& evtMap,
   m_mps(mps), 
   m_nParameters(0)
 {
-  m_enable_cuda                 = NamedParameter<bool>("UseCUDA",false);
   m_enable_compileTimeConstants = NamedParameter<bool>("ASTResolver::CompileTimeConstants", false);
   m_check_hashes                = NamedParameter<bool>("ASTResolver::CheckHashes", false );
 }
@@ -92,21 +91,7 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
   if( m_resolvedParameters.count(&parameter) != 0 || parameter.isResolved() ) return; 
   auto res = m_evtMap.find(parameter.name());
   if( res != m_evtMap.end() ){
-    if( m_enable_cuda ) {
-      size_t t = res->second; 
-      std::string it = ""; 
-      if( t % 3 == 0 ) it = ".x";
-      if( t % 3 == 1 ) it = ".y";
-      if( t % 3 == 2 ) it = ".z";
-      int stg = t/3;
-      std::string nTimesStg = "+"+std::to_string(stg) +"*N"; 
-      if( stg == 0 ) nTimesStg = "";
-      if( stg == 1 ) nTimesStg = "+N";
-      addResolvedParameter( &parameter, "x1[i"+nTimesStg+"]" +it );
-    }
-    else {
-      addResolvedParameter( &parameter, res->second ,1 );
-    }
+    addResolvedParameter( &parameter, res->second ,1 );
     return;
   }
   else if( m_mps != nullptr ){
