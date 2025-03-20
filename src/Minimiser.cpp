@@ -21,11 +21,9 @@
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/ProfileClock.h"
 
-#include <TH2D.h>
 using namespace AmpGen;
 using namespace ROOT;
 
@@ -89,7 +87,7 @@ double Minimiser::operator()( const double* xx )
   }
   double LL = m_theFunction() ;
   for ( auto& extendTerm : m_extendedTerms ) LL -= 2 * (*extendTerm)();
-  return LL - m_ll_zero;
+  return LL; 
 }
 
 double Minimiser::FCN() const { return m_theFunction(); } 
@@ -116,30 +114,21 @@ void Minimiser::gradientTest()
 
 void Minimiser::prepare()
 {
-  std::string minimiser = NamedParameter<std::string>("Minimiser::Minimiser", "Minuit2"); 
-  std::string algorithm = NamedParameter<std::string>( "Minimiser::Algorithm", "Migrad");
-  size_t maxCalls       = NamedParameter<size_t>( "Minimiser::MaxCalls"  , 100000);
-  double tolerance      = NamedParameter<double>( "Minimiser::Tolerance" , 1.0);
-  double precision      = NamedParameter<double>( "Minimiser::Precision" , 1e-15);
-  m_printLevel          = NamedParameter<PrintLevel>( "Minimiser::PrintLevel", PrintLevel::Info); 
-  unsigned printLevelMinuit2 = NamedParameter<unsigned>("Minimiser::Minuit2MinimizerPrintLevel", m_printLevel == PrintLevel::VeryVerbose ? 3 : 0 );
-  if( m_printLevel == PrintLevel::Invalid )
-  {
+  if( m_printLevel == PrintLevel::Invalid ){
     FATAL("Requested print level is not valid");
   }
-  m_normalise           = NamedParameter<bool>("Minimiser::Normalise",false);
   if ( m_minimiser != nullptr ) delete m_minimiser;
-  if( minimiser == "Minuit2")
-    m_minimiser = new Minuit2::Minuit2Minimizer( algorithm.c_str());
+  if( m_minimiserTool == "Minuit2")
+    m_minimiser = new Minuit2::Minuit2Minimizer( std::string(m_algorithm).c_str());
   else 
     m_minimiser = new TMinuitMinimizer( ROOT::Minuit::kMigrad );
   DEBUG( "Error definition = " << m_minimiser->ErrorDef() );
-  m_minimiser->SetMaxFunctionCalls( maxCalls );
+  m_minimiser->SetMaxFunctionCalls( m_maxCalls );
   m_minimiser->SetMaxIterations( 100000 );
-  m_minimiser->SetTolerance( tolerance );
-  m_minimiser->SetPrecision( precision );
+  m_minimiser->SetTolerance( m_tolerance );
+  m_minimiser->SetPrecision( m_precision );
   m_minimiser->SetStrategy( 2 );
-  m_minimiser->SetPrintLevel( printLevelMinuit2 ); // turn off minuit printing 
+  m_minimiser->SetPrintLevel( m_printLevelMinuit2 ); // turn off minuit printing 
   m_mapping.clear();
   m_covMatrix.clear();
 
@@ -194,7 +183,6 @@ bool Minimiser::doFit()
   if( m_fcnWithGrad == nullptr )  m_minimiser->SetFunction( f );
   else m_minimiser->SetFunction(*m_fcnWithGrad);  
 
-  if( m_normalise ) m_ll_zero = m_theFunction();
   for (size_t i = 0; i < m_mapping.size(); ++i ) {
     MinuitParameter* par = m_parSet->at( m_mapping[i] );
     m_minimiser->SetVariable( i, par->name(), par->mean(), par->stepInit() );
@@ -204,32 +192,16 @@ bool Minimiser::doFit()
   if( dynamic_cast<Minuit2::Minuit2Minimizer*>(m_minimiser) != nullptr ) 
     dynamic_cast<Minuit2::Minuit2Minimizer* >(m_minimiser)->SetTraceObject( *this );
   m_minimiser->Minimize();
-  //TH2D* cor_matrix = new TH2D("cor_matrix","", m_nParams, -0.5, double(m_nParams)-0.5, m_nParams, -0.5, double(m_nParams)-0.5 );
   for (size_t i = 0; i < m_nParams; ++i ) {
     auto par = m_parSet->at( m_mapping[i] );
     double error = *( m_minimiser->Errors() + i );
     par->setResult( *( m_minimiser->X() + i ), error, error, error );
     for ( unsigned int j = 0; j < m_nParams; ++j ) {
       m_covMatrix[i + m_nParams * j] = m_minimiser->CovMatrix( i, j );
-    //  cor_matrix->SetBinContent(i+1,j+1, m_minimiser->CovMatrix( i, j ) / sqrt( m_minimiser->CovMatrix( i, i ) * m_minimiser->CovMatrix( j, j ) )  );
     }
   }
-  /* 
-  cor_matrix->Write();
-  
-  for( unsigned i = 0 ; i != m_nParams; ++i )
-  {
-    auto p = m_parSet->at( m_mapping[i] );
-    auto g = scan(p, p->mean() - 0.1 * p->err(), p->mean() + 0.1 * p->err(), p->err() / 1000.); 
-    std::cout << p->name() << std::endl; 
-    g->SetName( (p->name() + "_scan").c_str() );
-    g->Write();
-  }
-  */
   m_status = m_minimiser->Status();
   
-  // m_monitoring->Close();
-  // INFO("Minuit2Minimize: " << minuitStatusString(m_minimiser) << ", covariance matrix: " << covMatrixStatusString( m_minimiser ) ); 
   INFO("Status = " << m_status ); 
   INFO("FVAL   = " << FCN() );
   INFO("Edm    = " << Edm() );
@@ -239,8 +211,7 @@ bool Minimiser::doFit()
     WARNING("Fit has not converged, some clues from Minuit2 may not be printed due to low verbosity level.");
     WARNING("Suggest using Minimiser::PrintLevel VeryVerbose or higher");
   }
-  bool runMinos = NamedParameter<bool>("Minimiser::RunMinos",false);
-  if(runMinos)
+  if(m_runMinos)
   {
     for( unsigned i = 0 ; i != m_nParams; ++i ){
       double low  = 0;
@@ -273,7 +244,7 @@ bool Minimiser::doFit()
       if( param->flag() == Flag::Free or
           param->flag() == Flag::Fix  or 
           param->flag() == Flag::Blind ){
-        if( runMinos ) INFO( std::setw(longest_parameter_name)
+        if( m_runMinos ) INFO( std::setw(longest_parameter_name)
             << param->name() << "     " << std::setw(5) << to_string<Flag>(param->flag())  
             << std::right << std::setw(13) << mean << " ± "  
             << std::left  << std::setw(13) << (param->isFree() ?  param->err() : 0) 
@@ -385,14 +356,12 @@ void Minimiser::minos( MinuitParameter* parameter )
 
 void Minimiser::setPrintLevel( const PrintLevel& printLevel)
 { 
-  m_printLevel = printLevel; 
   if (m_printLevel == PrintLevel::VeryVerbose ){
     for (const auto& param : *m_parSet){
       if ( param->isBlind() ) FATAL("Minimiser::PrintLevel is == VeryVerbose, incompatible with having any Blind parameter");
     }
     m_minimiser->SetPrintLevel( 2 );
-  }
-  
+  } 
 }
 
 namespace AmpGen { 

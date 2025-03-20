@@ -46,6 +46,7 @@ namespace AmpGen {
       private: 
         void help(const value_t& def){
           std::string type = type_string<value_t>();
+          type = replaceAll(type, "AmpGen::", ""); /// remove namespaces
           if( type == "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >" ) type = "string";
           std::cout << " " << bold_on << std::left << std::setw(27) << m_name << bold_off << std::setw(20) << "[" + type + "]" ;
           auto tokens = split( m_helpString, '\n' );

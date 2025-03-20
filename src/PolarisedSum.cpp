@@ -12,7 +12,6 @@
 #include <thread>
 
 #include "AmpGen/CompilerWrapper.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Array.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/AmplitudeRules.h"
@@ -28,10 +27,8 @@
 #include "AmpGen/ThreadPool.h"
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/DiracMatrices.h"
-#include "AmpGen/Simplify.h"
-#include "AmpGen/enum.h"
 #include "AmpGen/simd/utils.h"
-#include "AmpGen/KahanSum.h"
+
 using namespace AmpGen;
 using namespace std::complex_literals; 
 
@@ -39,7 +36,6 @@ using namespace std::complex_literals;
 ENABLE_DEBUG( PolarisedSum )
 #endif
 
-namespace AmpGen { make_enum(spaceType, spin, flavour) }
 
 std::vector<Expression> convertProxies(const std::vector<MinuitProxy>& proxyVector, const std::function<Expression(const MinuitProxy&)>& transform)
 {
@@ -53,18 +49,13 @@ PolarisedSum::PolarisedSum(const EventType& type,
                            const std::vector<MinuitProxy>& pVector) 
   : m_mps       (&mps)
   , m_pVector   (pVector)
-  , m_verbosity (NamedParameter<bool>("PolarisedSum::Verbosity", 0     ))
-  , m_debug     (NamedParameter<bool>("PolarisedSum::Debug"    , false ))
   , m_eventType (type)
   , m_dim       (m_eventType.dim())
 {
   auto rules = AmplitudeRules::create(mps); 
-  bool autocompile = NamedParameter<bool>("AutoCompile", true); 
-  std::string objCache = NamedParameter<std::string>("PolarisedSum::ObjectCache", ""    );
-  spaceType stype      = NamedParameter<spaceType>(  "PolarisedSum::SpaceType"  , spaceType::spin);
   {
   ThreadPool tp(std::thread::hardware_concurrency() );
-  if( stype == spaceType::spin )
+  if( m_spaceType == spaceType::spin )
   {
     auto prodPols        = ParticleProperties::get(m_eventType.mother())->polarisations();
     std::vector<std::vector<int>> pols = { prodPols }; 
@@ -75,7 +66,7 @@ PolarisedSum::PolarisedSum(const EventType& type,
     m_matrixElements.resize( protoAmps.size() );
     for(unsigned i = 0; i < m_matrixElements.size(); ++i)
     {
-      tp.enqueue( [autocompile, i, p=protoAmps[i].first, c=protoAmps[i].second, polStates, &mps, ptr = this] () mutable {
+      tp.enqueue( [i, p=protoAmps[i].first, c=protoAmps[i].second, polStates, &mps, ptr = this] () mutable {
         Tensor thisExpression(Tensor::dim(polStates.size()));
         DebugSymbols syms;      
         for(unsigned j = 0; j != polStates.size(); ++j){ 
@@ -86,11 +77,11 @@ PolarisedSum::PolarisedSum(const EventType& type,
             CompiledExpression<void(complex_v*, const size_t*, const real_t*, const real_v*)>(
             TensorExpression(thisExpression), p.decayDescriptor(), &mps,
             ptr->m_eventType.getEventFormat(), ptr->m_debug ? syms : DebugSymbols() ) );
-        if( autocompile) CompilerWrapper().compile( ptr->m_matrixElements[i] );
+        if( ptr->m_autoCompile) CompilerWrapper().compile( ptr->m_matrixElements[i] );
       });
     }
   }
-  if ( stype == spaceType::flavour )
+  if ( m_spaceType == spaceType::flavour )
   {
     m_dim = {2,1};
     auto r1 = rules->getMatchingRules(m_eventType, m_prefix);
@@ -428,10 +419,7 @@ Expression PolarisedSum::probExpression(const Tensor& T_matrix, const std::vecto
   return Real(rt);  
 }
 
-std::vector<FitFraction> PolarisedSum::fitFractions(const LinearErrorPropagator& prop)
-{
-  bool recomputeIntegrals    = NamedParameter<bool>("PolarisedSum::RecomputeIntegrals", false );
-  bool interferenceFractions = NamedParameter<bool>("PolarisedSum::InterferenceFractions", false );
+std::vector<FitFraction> PolarisedSum::fitFractions(const LinearErrorPropagator& prop, bool recomputeIntegrals, bool interferenceFractions){
   std::vector<FitFraction> outputFractions; 
   const auto& rules = AmplitudeRules::get();
   for(const auto& [head, couplings] : rules->rules() ) 

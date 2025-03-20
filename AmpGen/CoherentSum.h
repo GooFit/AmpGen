@@ -91,10 +91,10 @@ namespace AmpGen
     real_v operator()(const real_v*, const unsigned) const; 
     real_t operator()(const Event& evt )             const { return m_weight*std::norm(getVal(evt))/m_norm; }
 
-    void debug( const Event& evt, const std::string& nameMustContain="");
-    void generateSourceCode( const std::string& fname, const double& normalisation = 1, bool add_mt = false );
+    void debug( const Event&, const std::string& = "");
+    void generateSourceCode( const std::string&, const double& = 1, bool = false );
 
-    std::vector<FitFraction> fitFractions( const LinearErrorPropagator& linProp );
+    std::vector<FitFraction> fitFractions( const LinearErrorPropagator&, bool=false );
     auto matrixElements() const { return m_matrixElements; }
 
     std::map<std::string, std::vector<unsigned int>> getGroupedAmplitudes();
@@ -106,10 +106,11 @@ namespace AmpGen
     EventType eventType() const { return m_eventType; } 
     const auto& cache() const { return m_cache; } 
   protected:
-    Property<unsigned>    m_printFreq    = {this, "CoherentSum::PrintFrequency", 100  , "Frequency to print verbose PDF info"};
-    Property<bool>        m_debug        = {this, "CoherentSum::Debug"         , false, "Flag to generate amplitude level debugging"}; 
-    Property<int>         m_verbose      = {this, "CoherentSum::Verbosity"     , 0    , "Flag for verbose printing"}; 
-    Property<std::string> m_objCache     = {this, "CoherentSum::ObjectCache"   , ""   , "Directory that contains (cached) amplitude objects"}; 
+    Property<unsigned>    m_printFreq    {this, "CoherentSum::PrintFrequency", 100  , "Frequency to print verbose PDF info"};
+    Property<bool>        m_debug        {this, "CoherentSum::Debug"         , false, "Flag to generate amplitude level debugging"}; 
+    Property<int>         m_verbose      {this, "CoherentSum::Verbosity"     , 0    , "Flag for verbose printing"}; 
+    Property<std::string> m_objCache     {this, "CoherentSum::ObjectCache"   , ""   , "Directory that contains (cached) amplitude objects"}; 
+    Property<bool>        m_autoCompile  {this, "AutoCompile"                , true , "Flag to build amplitude source code automatically"}; 
 
     std::vector<MatrixElement> m_matrixElements;              ///< Vector of matrix elements
     Bilinears        m_normalisations;                        ///< Normalisation integrals 
@@ -129,6 +130,7 @@ namespace AmpGen
     std::string      m_prefix       = {""};                   ///< Prefix for matrix elements
     const MinuitParameterSet* m_mps = {nullptr};
     void addMatrixElement( std::pair<Particle, TotalCoupling>& particleWithCoupling, const MinuitParameterSet& mps );
+    
   };
 } // namespace AmpGen
 

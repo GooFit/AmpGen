@@ -32,11 +32,6 @@ namespace AmpGen
     const_iterator end() const;
     std::vector<std::vector<std::string>> getInputOrdered() const; 
   private:
-    struct AllowedArgument { 
-      std::string m_name;
-      std::string m_helpString; 
-    }; 
-    std::vector<std::string>                          m_allowedArguments; 
     std::vector<std::string>                          m_orderedKeys; 
     std::map<std::string, std::vector<std::string>>   m_parsedLines; 
     std::map<std::string, std::function<void(std::vector<std::string>)> > m_keywords;
