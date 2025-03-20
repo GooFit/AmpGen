@@ -54,7 +54,12 @@ namespace AmpGen {
           for( size_t i = 0 ; i < tokens.size(); ++i){
             if( i == 0 ){
               std::cout << tokens[i];
-              if( def != value_t() ) std::cout << " (default = " << def << ")";
+              if constexpr( isVector<value_t>::value ){
+                if( def != value_t() ) std::cout << " (default = {" << vectorToString(def,",") << "})";
+              }
+              else { 
+                if( def != value_t() ) std::cout << " (default = " << def << ")";
+              }
               std::cout << std::endl;  
             }
             else std::cout << std::string(48,' ') << tokens[i] << std::endl; 
@@ -70,7 +75,7 @@ namespace AmpGen {
           if constexpr( isVector<value_t>::value ){
             m_value.resize( vsl.size() - 1 ); 
             for ( unsigned int i = 1; i < vsl.size(); i++ ) {
-              m_value[i-1] = lexical_cast<value_t::value_type>( vsl[i], status );
+              m_value[i-1] = lexical_cast<typename value_t::value_type>( vsl[i], status );
               if ( status == false ) {
                 ERROR( "Failed to parse token: " << vsl[i] << " for parameter: " << m_name );
                 return false; 

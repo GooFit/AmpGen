@@ -15,7 +15,6 @@
 #include <numeric>
 #include <filesystem>
 
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/CompiledExpressionBase.h"
@@ -31,8 +30,7 @@ using namespace AmpGen;
 // #pragma warning "No AMPGEN_CXX for JIT set"
 // #endif 
 
-CompilerWrapper::CompilerWrapper( const bool& verbose ) :
-  m_verbose(verbose),
+CompilerWrapper::CompilerWrapper() :
   m_cxx(getenv("AMPGEN_CXX") != nullptr ? std::string( getenv( "AMPGEN_CXX" ) ) : "")
 {
   if ( m_cxx == "" ) {
@@ -87,13 +85,12 @@ int64_t fileSize(const std::string& filename)
 
 bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::string& fname )
 {
-  bool print_all = m_verbose || NamedParameter<bool>("CompilerWrapper::Verbose",false);
+  bool print_all = m_verbose; 
   std::string name = fname; 
   if ( name == "" ) name = generateFilename();  
   std::string cname = name +"_"+std::to_string(expression.hash())+".cpp";
   std::string oname = std::filesystem::path(cname).replace_extension(m_extension);
-  if( NamedParameter<bool>("CompilerWrapper::ForceRebuild", false )  == false 
-      && fileSize(oname) != -1 && expression.link( oname )) return true;
+  if( !m_forceRebuild && fileSize(oname) != -1 && expression.link( oname )) return true;
   if( print_all ) INFO("Generating source: " << cname );
   auto twall_begin  = std::chrono::high_resolution_clock::now();
   generateSource( expression, cname );
@@ -108,7 +105,7 @@ bool CompilerWrapper::compile( CompiledExpressionBase& expression, const std::st
 
 bool CompilerWrapper::compile( std::vector<CompiledExpressionBase*>& expressions, const std::string& fname, const std::map<std::string, std::string>& metadata_functions )
 {
-  bool print_all = m_verbose || NamedParameter<bool>("CompilerWrapper::Verbose",false);
+  bool print_all = m_verbose; 
   std::string cname = expandGlobals(fname);
   if ( cname == "" ) cname = generateFilename();
   std::string oname = std::filesystem::path(cname).replace_extension(m_extension);
@@ -137,7 +134,7 @@ bool CompilerWrapper::isClang() const
   return m_cxx.find("clang") != std::string::npos || m_cxx.find("llvm-g++") != std::string::npos;
 }
 
-std::string get_cpp_version()
+std::string AmpGen::get_cpp_version()
 {
   if( __cplusplus >= 201703L ) return "c++17";
   if( __cplusplus >= 201402L ) return "c++14";
@@ -148,7 +145,7 @@ std::string get_cpp_version()
 void CompilerWrapper::compileSource( const std::string& fname, const std::string& oname )
 {
   using namespace std::chrono_literals;
-  std::vector<std::string> compile_flags = NamedParameter<std::string>("CompilerWrapper::Flags", {"-Ofast", "--std="+get_cpp_version()}); 
+  strings compile_flags = m_compileFlags; 
   compile_flags.push_back( std::string("-I") + AMPGENROOT) ;  
   #if INSTRUCTION_SET < 10
       compile_flags.push_back("-march=native");
@@ -182,8 +179,7 @@ void CompilerWrapper::compileSource( const std::string& fname, const std::string
   argp.push_back( fname.c_str() );
   argp.push_back( "-o");
   argp.push_back( oname.c_str() );
-
-  if(NamedParameter<bool>("CompilerWrapper::Verbose", false)) {
+  if(m_verbose ){
     std::string result = std::accumulate(std::begin(argp), std::end(argp),
       std::string(),
       [](const std::string& a, const char* b){return a + " " + b;});
