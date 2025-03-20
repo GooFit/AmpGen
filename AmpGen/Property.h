@@ -43,6 +43,41 @@ namespace AmpGen {
         operator value_t()       { return m_value; }
         const std::string& name() const { return m_name ; } 
         template <typename T> friend std::ostream& operator<<( std::ostream& os, const Property<T>& np );
+        bool setFromStrings(const std::vector<std::string>& vsl ) {
+          bool status = true;
+          if constexpr( isVector<value_t>::value ){
+            m_value.resize( vsl.size()  ); 
+            for ( unsigned int i = 0; i < vsl.size(); i++ ) {
+              m_value[i] = lexical_cast<typename value_t::value_type>( vsl[i], status );
+              if ( status == false ) {
+                ERROR( "Failed to parse token: " << vsl[i] << " for parameter: " << m_name );
+                return false; 
+              }
+            }
+          }
+          else if constexpr( isTuple<value_t>::value ){
+            for_each_with_counter(m_value, [this, vsl]( auto& f, unsigned i ){
+              bool status = true;
+              using basic_t = typename std::remove_const< typename std::remove_reference<decltype(f)>::type >::type;  
+              *const_cast<basic_t*>(&f) = lexical_cast<basic_t>( vsl[i], status ); 
+              if( !status ){
+                ERROR("Failed to parse token: " << vsl[i] << " for parameter: " << this->m_name ); 
+              }
+            }); 
+          }
+          else {
+            if( vsl.size() != 1 ){
+              ERROR("Constructing scalar quantity, only one argument expected, but " << vsl.size() -1 << " found"); 
+              return false; 
+            }
+            m_value = lexical_cast<value_t>( vsl[0], status );
+            if ( status == false ) {
+              ERROR( "Failed to parse token: " << vsl[0] << " for parameter: " << m_name );
+              return false; 
+            }
+          }
+          return status;
+        }
       private: 
         void help(const value_t& def){
           std::string type = type_string<value_t>();
@@ -72,41 +107,9 @@ namespace AmpGen {
           auto parser = OptionsParser::getMe();
           auto line = parser->find( m_name );
           if( line == parser->end() ) return false ; 
-          const std::vector<std::string>& vsl = line->second;
-          if ( vsl.size() < 2 ) return false; // first element is parameter name
-          bool status = true;
-          if constexpr( isVector<value_t>::value ){
-            m_value.resize( vsl.size() - 1 ); 
-            for ( unsigned int i = 1; i < vsl.size(); i++ ) {
-              m_value[i-1] = lexical_cast<typename value_t::value_type>( vsl[i], status );
-              if ( status == false ) {
-                ERROR( "Failed to parse token: " << vsl[i] << " for parameter: " << m_name );
-                return false; 
-              }
-            }
-          }
-          else if constexpr( isTuple<value_t>::value ){
-            for_each_with_counter(m_value, [this, vsl]( auto& f, unsigned i ){
-              bool status = true;
-              using basic_t = typename std::remove_const< typename std::remove_reference<decltype(f)>::type >::type;  
-              *const_cast<basic_t*>(&f) = lexical_cast<basic_t>( vsl[i], status ); 
-              if( !status ){
-                ERROR("Failed to parse token: " << vsl[i] << " for parameter: " << this->m_name ); 
-              }
-            }); 
-          }
-          else {
-            if( vsl.size() != 2 ){
-              ERROR("Constructing scalar quantity, only one argument expected, but " << vsl.size() -1 << " found"); 
-              return false; 
-            }
-            m_value = lexical_cast<value_t>( vsl[1], status );
-            if ( status == false ) {
-              ERROR( "Failed to parse token: " << vsl[1] << " for parameter: " << m_name );
-              return false; 
-            }
-          }
-          return true;
+          std::vector<std::string> vsl = line->second;
+          vsl.erase( vsl.begin() ); 
+          return setFromStrings(vsl); 
         }
     };
     template <typename T> std::ostream& operator<<( std::ostream& os, const Property<T>& np );
