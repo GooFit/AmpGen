@@ -15,12 +15,7 @@ using namespace AmpGen;
 ASTResolver::ASTResolver(const std::map<std::string, unsigned>& evtMap, 
     const MinuitParameterSet* mps ) : 
   m_evtMap(evtMap),
-  m_mps(mps), 
-  m_nParameters(0)
-{
-  m_enable_compileTimeConstants = NamedParameter<bool>("ASTResolver::CompileTimeConstants", false);
-  m_check_hashes                = NamedParameter<bool>("ASTResolver::CheckHashes", false );
-}
+  m_mps(mps) {}
 
 std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpressions( const Expression& expression )
 {
@@ -35,7 +30,7 @@ std::vector<std::pair<uint64_t,Expression>> ASTResolver::getOrderedSubExpression
     {
       uint64_t key = s->key(); 
       if( subTrees.count( key ) == 0 ) subTrees[ key ] = s->expression();
-      else if( m_check_hashes && t->to_string() != subTrees[key].to_string() )
+      else if( m_checkHashes && t->to_string() != subTrees[key].to_string() )
       {
         WARNING("Hash collision between in key = " << key << " other key = " << FNV1a_hash( subTrees[key].to_string() ) );
       }
@@ -97,7 +92,7 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
   else if( m_mps != nullptr ){
     auto it = m_mps->find(parameter.name());
     if( it != nullptr ){
-      if( m_enable_compileTimeConstants && it->flag() == Flag::CompileTimeConstant ){
+      if( m_enableCompileTimeConstants && it->flag() == Flag::CompileTimeConstant ){
         addResolvedParameter( &parameter, "("+std::to_string(it->mean()) +")" );
       }
       else addResolvedParameter( &parameter, addCacheFunction<ParameterTransfer>( parameter.name(), it )  );
@@ -105,7 +100,7 @@ template <> void ASTResolver::resolve<Parameter>( const Parameter& parameter )
     }
     DEBUG("Could not find parameter: " << parameter.name() << " amongst the MPS ");
   }
-  else if( m_enable_compileTimeConstants ){
+  else if( m_enableCompileTimeConstants ){
     addResolvedParameter( &parameter, std::to_string( parameter.defaultValue() ) );
     return;
   }

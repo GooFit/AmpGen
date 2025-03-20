@@ -13,7 +13,6 @@
 
 #include "AmpGen/EventType.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Projection.h"
@@ -33,7 +32,6 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
     throw std::runtime_error( "Not enough particles listed in particle names! Was it defined?" );
   }
   m_mother           = particleNames.at(0);
-  m_alt_part_names = NamedParameter<bool>("EventType::AlternativeParticleNames", false );
   
   auto motherProperties = ParticlePropertiesList::get( m_mother );
   if ( motherProperties != nullptr )
@@ -59,7 +57,7 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
       FATAL( "Particle not found: " << *m_particleNames.rbegin() );
       return;
     }
-    if(m_alt_part_names)
+    if(m_altParticleNames)
       m_particleNamesPickled.push_back( replaceAll( *m_particleNames.rbegin(), {{"+","p"},{"-","m"},{"(",""},{")",""}}));
     else
       m_particleNamesPickled.push_back( replaceAll( *m_particleNames.rbegin(), {{"+","~"},{"-","#"},{"(",""},{")",""}}));
@@ -79,11 +77,10 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
 std::map<std::string, unsigned> EventType::getEventFormat( const bool& outputNames ) const
 {
   std::map<std::string, unsigned> returnValue;
-  bool include_energy = NamedParameter<bool>("EventType::IncludeEnergy", true );
-  unsigned s = include_energy ? 4 : 3;
+  unsigned s = m_includeEnergy ? 4 : 3;
   for ( unsigned int ip = 0; ip < size(); ++ip ) {
     std::string parsed_name;
-    if(m_alt_part_names)
+    if(m_altParticleNames)
       //check if there are multiple identical particles
       if(std::count(m_particleNamesPickled.begin(),m_particleNamesPickled.end(),m_particleNamesPickled[ip]) > 1)
         //if yes, append an index
@@ -94,7 +91,7 @@ std::map<std::string, unsigned> EventType::getEventFormat( const bool& outputNam
     else
       parsed_name = "_" + std::to_string( ip + 1 ) + "_" + m_particleNamesPickled[ip];
     std::string stub = outputNames ? parsed_name : std::to_string( ip );
-    if( include_energy ) returnValue[stub + "_E"]  = s * ip + 3;
+    if( m_includeEnergy ) returnValue[stub + "_E"]  = s * ip + 3;
     returnValue[stub + "_Px"] = s * ip + 0;
     returnValue[stub + "_Py"] = s * ip + 1;
     returnValue[stub + "_Pz"] = s * ip + 2;
@@ -166,22 +163,20 @@ EventType EventType::conj( const bool& headOnly, const bool& dontConjHead ) cons
 
 std::vector<Projection> EventType::defaultProjections(const unsigned& nBins) const
 {
-  std::string defaultObservable  = NamedParameter<std::string>( "EventType::Observable", "mass2");
   std::vector<Projection> projections;
   for ( unsigned r = 2; r < size(); ++r ) { /// loop over sizes ///
     std::vector<std::vector<unsigned>>  combR = nCr( size(), r );
     std::transform( combR.begin(), combR.end(), std::back_inserter(projections),
-      [&](auto& index){ return this->projection(nBins, index, defaultObservable ); } );
+      [&](auto& index){ return this->projection(nBins, index, m_defaultObservable ); } );
   }
   return projections;
 }
 
 Projection EventType::projection(const unsigned& nBins, const std::vector<unsigned>& indices, const std::string& observable) const
 {
-  bool useRootLabelling = NamedParameter<bool>("EventType::UseRootTEX", false );
   auto mm               = minmax(indices);
-  std::string gevcccc   = useRootLabelling ? "GeV^{2}/c^{4}" : "\\mathrm{GeV}^{2}/c^{4}";
-  std::string gevcc     = useRootLabelling ? "GeV/c^{2}"     : "\\mathrm{GeV}/c^{2}";
+  std::string gevcccc   = m_useRootLabelling ? "GeV^{2}/c^{4}" : "\\mathrm{GeV}^{2}/c^{4}";
+  std::string gevcc     = m_useRootLabelling ? "GeV/c^{2}"     : "\\mathrm{GeV}/c^{2}";
   if( observable == "mass2" )
     return Projection( [indices]( const Event& evt ) { return evt.s( indices ); },
         "s" + vectorToString( indices ),
