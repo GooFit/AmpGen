@@ -29,7 +29,7 @@ namespace AmpGen
 
     */
   template <class T>
-  class NamedParameter 
+  class [[deprecated]] NamedParameter
   {
   protected:
     std::string    m_name;         /// < Name of this parameter

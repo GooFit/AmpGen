@@ -42,7 +42,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 
 namespace AmpGen
 {
@@ -60,7 +60,7 @@ namespace AmpGen
       std::mutex                        m_queue_mutex;
       std::condition_variable           m_condition;
       bool                              m_stop={false};
-      NamedParameter<bool>              m_enableThreadPool{"ThreadPool::Enable",true}; 
+      Property<bool>                    m_enableThreadPool{this, "ThreadPool::Enable",true}; 
   };
 
   template<typename F, typename... Args> auto ThreadPool::enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result_t<F,Args...>>

@@ -9,8 +9,8 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/SmallVector.h"
+#include "AmpGen/Property.h" 
 #include "AmpGen/Event.h"
-#include "AmpGen/NamedParameter.h" 
 #include <TRandom3.h>
 
 namespace AmpGen { 
@@ -25,6 +25,7 @@ namespace AmpGen {
       virtual double maxWeight() const = 0; 
       virtual unsigned NP()      const = 0; 
       virtual bool operator==( const DecayChainStackBase& other ) const = 0;  
+      Property<bool> m_aggressiveOptimisation{this, "DecayChainStack::AggressiveOptimisation", false}; 
   };
 
   template <unsigned N> class DecayChainStack : public DecayChainStackBase {
@@ -177,7 +178,7 @@ namespace AmpGen {
         else m_nodes[index].range = std::make_pair( pow(min_mass,2), pow(minMass + min_mass,2 ) );  
         m_nodes[index].set( &(*current) ); 
       }
-      if( NamedParameter<bool>("DecayChainStack::AggressiveOptimisation", false )  )
+      if( m_aggressiveOptimisation )
       {
         WARNING("Using aggressive optimisation of phase space, can cause problems for relative normalisation of different decay topologies"); 
         /// this optimisation 'cuts' the phase space of the a decay at the maximal extent of its sibling, i.e. reduces 
