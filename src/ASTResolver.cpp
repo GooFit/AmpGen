@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include "AmpGen/MinuitParameterSet.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Spline.h"
 #include "AmpGen/Array.h"
 #include "AmpGen/MinuitParameter.h"
