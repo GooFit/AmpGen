@@ -1,3 +1,5 @@
+#ifndef AMPGEN_ASTRESOLVER_H
+#define AMPGEN_ASTRESOLVER_H 
 #include <memory>
 #include <stddef.h>
 #include <iosfwd>
@@ -10,6 +12,7 @@
 #include <future>
 
 #include "AmpGen/Expression.h"
+#include "AmpGen/Property.h" 
 #include "AmpGen/CacheTransfer.h"
 #include "AmpGen/Spline.h"
 
@@ -41,10 +44,10 @@ namespace AmpGen {
         return m_nParameters - m_cacheFunctions[name]->size();
       }
       size_t nParams() const { return m_nParameters ; }       
-      bool enableCuda() const { return m_enable_cuda ; }
-      bool enableAVX()  const { return m_enable_avx; }
-      bool enableCompileConstants() const { return m_enable_compileTimeConstants ;} 
-      void setEnableAVX(){ m_enable_avx = true ; }
+      bool enableCuda() const { return false; }
+      bool enableAVX()  const { return m_enableAVX; }
+      bool enableCompileConstants() const { return m_enableCompileTimeConstants ;} 
+      void setEnableAVX(){ m_enableAVX = true ; }
       std::map<std::string, std::shared_ptr<CacheTransfer>> cacheFunctions() const;
       void addResolvedParameter(const IExpression* param, const std::string& thing);
       void addResolvedParameter(const IExpression* param, const size_t& address, const size_t& arg=0);
@@ -62,11 +65,10 @@ namespace AmpGen {
       std::map<std::string, std::string>                    m_parameterMapping;            /// Mapping of parameters to compile parameters
       const MinuitParameterSet*                             m_mps;                         /// Set of MinuitParameters 
       std::map<const IExpression*, const SubTree*>          m_tempTrees;                   /// temporary store of sub-trees for performing cse reduction 
-      unsigned int                                          m_nParameters;                 /// Number of parameters
-      bool                                                  m_enable_cuda                 {false}; /// flag to generate CUDA code <<experimental>>
-      bool                                                  m_enable_compileTimeConstants {false}; /// flag to enable compile time constants <<experimental>> 
-      bool                                                  m_enable_avx                  {false}; /// flag to generate code using AVX instructions <<experimental>>
-      bool                                                  m_check_hashes                {false}; /// flag to check that hashes are unique 
+      unsigned int                                          m_nParameters                {0};  /// Number of parameters
+      bool                                                  m_enableAVX                  {false}; /// Flag to check if requested expression outputs a vector register
+      Property<bool>                                        m_enableCompileTimeConstants {this, "ASTResolver::CompileTimeConstants", false}; /// flag to enable compile time constants <<experimental>> 
+      Property<bool>                                        m_checkHashes                {this, "ASTResolver::CheckHashes", false}; /// flag to check that hashes are unique 
   };
   
   template <> void ASTResolver::resolve<Parameter>( const Parameter& obj );
@@ -75,3 +77,5 @@ namespace AmpGen {
   template <> void ASTResolver::resolve<MinuitParameterLink>( const MinuitParameterLink& obj );  
   template <> void ASTResolver::resolve<LambdaExpression>( const LambdaExpression& obj);
 }
+
+#endif

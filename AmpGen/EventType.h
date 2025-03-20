@@ -8,6 +8,7 @@
 #include <initializer_list>
 #include "AmpGen/Event.h"
 #include "AmpGen/enum.h" 
+#include "AmpGen/Property.h" 
 
 namespace AmpGen
 {
@@ -84,7 +85,10 @@ namespace AmpGen
       bool                      m_timeDependent;        ///< Flag to include a decay time as the last element in the event vector
       std::vector<std::string>  m_eventTypeExtensions;  ///< extended event data
       std::pair<unsigned, unsigned> m_dim;              ///< Rank of the relevant transition matrix
-      bool                      m_alt_part_names;       ///< alternative naming in ouput tree (e.g. Xi- pi+ pi+ becomes Xim pip0 pip1 rather than _1_Xi# _2_pi~ _3_pi~)
+      Property<bool>            m_altParticleNames {this, "EventType::AlternativeParticleNames", true, "Alternative naming in ouput tree (e.g. Xi- pi+ pi+ becomes Xim pip0 pip1 rather than _1_Xi# _2_pi~ _3_pi~)"};
+      Property<bool>            m_includeEnergy    {this, "EventType::IncludeEnergy", true };
+      Property<std::string>     m_defaultObservable{this, "EventType::Observable", "mass2"};
+      Property<bool>            m_useRootLabelling {this, "EventType::UseROOTTeX", false, "Use ROOT variant of TeX for axis labels etc."}; 
   };
 
 

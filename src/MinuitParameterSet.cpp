@@ -13,7 +13,6 @@
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Particle.h"
