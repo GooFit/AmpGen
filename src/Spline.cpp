@@ -5,7 +5,6 @@
 
 #include "AmpGen/Spline.h"
 #include "AmpGen/ASTResolver.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/CompiledExpressionBase.h"
 #include "AmpGen/MsgService.h"
