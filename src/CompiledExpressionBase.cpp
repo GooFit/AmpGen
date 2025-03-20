@@ -6,7 +6,6 @@
 #include <ostream>
 
 #include "AmpGen/CacheTransfer.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/ThreadPool.h"
 #include "AmpGen/CompilerWrapper.h"
@@ -88,7 +87,6 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
 {
   if( m_db.size() !=0 ) stream << "#include<iostream>\n"; 
   stream << "extern \"C\" const char* " << progName() << "_name() {  return \"" << m_name << "\"; } \n";
-  bool enable_cuda = NamedParameter<bool>("UseCUDA",false);
   size_t sizeOfStream = 0;
   if( use_rto() )
   { 
@@ -107,16 +105,10 @@ void CompiledExpressionBase::to_stream( std::ostream& stream  ) const
     }
     stream << "}\n";
   }
-  else if( !enable_cuda ){
+  else {
     stream << "extern \"C\" " << returnTypename() << " " << progName() << "(" << fcnSignature() << "){\n";
     addDependentExpressions( stream , sizeOfStream );
     stream << "return " << returnTypename() << "(" << m_obj.to_string(m_resolver.get()) << ");\n}\n";
-  }
-  else {
-    stream << "__global__ void " << progName() << "( " << returnTypename() + "* r, const int N, " << fcnSignature() << "){\n"; 
-    stream <<  "  int i     = blockIdx.x * blockDim.x + threadIdx.x;\n";
-    addDependentExpressions( stream, sizeOfStream);
-    stream << "  r[i] = " << m_obj.to_string(m_resolver.get()) << ";\n}\n";
   }
   if( m_db.size() != 0 ) addDebug( stream );
   if( !m_disableBatch ) compileBatch(stream);    
