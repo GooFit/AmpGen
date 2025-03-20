@@ -9,7 +9,7 @@
 #include "AmpGen/Factory.h"
 #include "AmpGen/Lineshapes.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Tensor.h"
@@ -30,13 +30,13 @@ DEFINE_LINESHAPE( kMatrixSimple )
     ERROR( "Pole term not recognised: " << pTerm );
   }
 
-  size_t nPoles    = NamedParameter<size_t>( "kMatrix::nPoles", 2 );
-  size_t nChannels = NamedParameter<size_t>( "kMatrix::nChannels", 2 );
+  size_t nPoles    = Property<size_t>(nullptr, "kMatrix::nPoles", 2 );
+  size_t nChannels = Property<size_t>(nullptr, "kMatrix::nChannels", 2 );
 
   std::vector<Expression> phaseSpace;
   std::vector<std::pair<double, double>> masses;
   for ( unsigned int i = 1; i <= nChannels; ++i ) {
-    std::vector<std::string> particlesInThisChannel = NamedParameter<std::string>( "kMatrix::Channel::" + std::to_string(i) ).getVector();
+    std::vector<std::string> particlesInThisChannel = Property<std::vector<std::string>>(nullptr, "kMatrix::Channel::" + std::to_string(i) ); 
     if ( particlesInThisChannel.size() != 2 ) ERROR( "Only does two body channels for now" );
     double m1 = ParticlePropertiesList::get( particlesInThisChannel[0] )->mass();
     double m2 = ParticlePropertiesList::get( particlesInThisChannel[1] )->mass();

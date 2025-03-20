@@ -3,7 +3,7 @@
 #include "AmpGen/Expression.h"
 #include "AmpGen/Factory.h"
 #include "AmpGen/Lineshapes.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 
 using namespace AmpGen;
 
@@ -16,7 +16,7 @@ DEFINE_GENERIC_SHAPE( PolyNR )
   auto p02 = (p0.P() + p2.P());
   auto s01 = dot( p01, p01 );
   auto s02 = dot( p02, p02 );
-  size_t degree = NamedParameter<size_t>( lineshapeModifier + "::Degree" ) +1;
+  size_t degree = Property<size_t>(nullptr, lineshapeModifier + "::Degree",0) +1;
   std::vector< std::vector<Parameter> > C( degree, std::vector<Parameter>(degree) );
   
   for( size_t i = 0 ; i != degree ; ++i )
