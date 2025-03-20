@@ -7,12 +7,13 @@
 
 using namespace AmpGen;
 
-DEFINE_LINESHAPE( Poly )
+DEFINE_LINESHAPE(Poly)
 {
-  size_t degree = Property<size_t>(nullptr, lineshapeModifier + "::Degree",0 );
-  auto params   = parameterVector(lineshapeModifier + "_c", degree + 1);
+  size_t degree = Property<size_t>(nullptr, lineshapeModifier + "::Degree", 0);
+  auto params = parameterVector(lineshapeModifier + "_c", degree + 1);
   ADD_DEBUG(s, dbexpressions);
-  if( dbexpressions != nullptr ) for( size_t i=0;i<params.size();++i ) 
-    dbexpressions->emplace_back( lineshapeModifier +"_c"+std::to_string(i), params[i] );
+  if(dbexpressions != nullptr)
+    for(size_t i = 0; i < params.size(); ++i)
+      dbexpressions->emplace_back(lineshapeModifier + "_c" + std::to_string(i), params[i]);
   return pol(s, params);
 }

@@ -5,63 +5,51 @@
 #include "AmpGen/Particle.h"
 #include "AmpGen/Transform.h"
 
-namespace AmpGen {
+namespace AmpGen
+{
   class Particle;
   using TransformCache = std::map<std::string, TransformSequence>;
-  
-  namespace Helicity { 
-    struct Flags {
-      bool movingHead  = {true}; 
-      bool alignFrames = {true}; 
+
+  namespace Helicity
+  {
+    struct Flags
+    {
+      bool movingHead = {true};
+      bool alignFrames = {true};
     };
   }
-  Expression wigner_d( const Expression& cb, const double& j, const double& m, const double& n );
-  Expression wigner_D( const std::pair<Expression, Expression>& P, const double& J, const double& lA, const double& lB, DebugSymbols* db);
-  /** @ingroup Vertices function CG  
+  Expression wigner_d(const Expression &cb, const double &j, const double &m, const double &n);
+  Expression wigner_D(const std::pair<Expression, Expression> &P, const double &J, const double &lA, const double &lB, DebugSymbols *db);
+  /** @ingroup Vertices function CG
     Calculates the Clebsch-Gordan coefficient for (j1 m1 j2 m2 | J M), the expansion
-    coefficients in  
+    coefficients in
     */
-  double CG( const double& j1,
-      const double& m1,
-      const double& j2, 
-      const double& m2,
-      const double& J,
-      const double& M );
+  double CG(const double &j1, const double &m1, const double &j2, const double &m2, const double &J, const double &M);
 
-  /** @ingroup Vertices function wickTransform 
-    Generates a wick transform sequence that aligns tensor P (four-vector) to the +/- ve z-axis, then boosts to the rest frame. 
-    The mass may be seperately specified. The parameter ve specifies whether the initial Euler rotation is to the +/- z-axis. 
-    In the case where ve =-1, a second rotation is applied about the x-axis that aligns P to the +ve z-axis. 
+  /** @ingroup Vertices function wickTransform
+    Generates a wick transform sequence that aligns tensor P (four-vector) to the +/- ve z-axis, then boosts to the rest frame.
+    The mass may be seperately specified. The parameter ve specifies whether the initial Euler rotation is to the +/- z-axis.
+    In the case where ve =-1, a second rotation is applied about the x-axis that aligns P to the +ve z-axis.
     This ensures that singly and doubly primed helicity frames remain orthonormal.
     */
-  TransformSequence wickTransform(const Tensor& P, const Particle& p, const int& ve =1, DebugSymbols* db = nullptr );   
+  TransformSequence wickTransform(const Tensor &P, const Particle &p, const int &ve = 1, DebugSymbols *db = nullptr);
 
-  Expression helicityAmplitude(const Particle& particle, 
-                               const TransformSequence& parentFrame, 
-                               const double& Mz,    
-                               DebugSymbols* db , 
-                               const Helicity::Flags& flags = Helicity::Flags(),
-                               const int sgn=1, 
-                               TransformCache* cacheptr = nullptr); 
-  Tensor basisSpinor(const int& polState, const int& id);
-  Tensor basisVector(const int& polState);
+  Expression helicityAmplitude(const Particle &particle, const TransformSequence &parentFrame, const double &Mz, DebugSymbols *db,
+                               const Helicity::Flags &flags = Helicity::Flags(), const int sgn = 1, TransformCache *cacheptr = nullptr);
+  Tensor basisSpinor(const int &polState, const int &id);
+  Tensor basisVector(const int &polState);
 
-  struct LS {
+  struct LS
+  {
     double factor = {1};
-    double cg1    = {0};
-    double cg2    = {0};
-    double p      = {0}; 
-    double m1     = {0};
-    double m2     = {0};
+    double cg1 = {0};
+    double cg2 = {0};
+    double p = {0};
+    double m1 = {0};
+    double m2 = {0};
   };
 
-  std::vector<LS> calculate_recoupling_constants( 
-      const double& J, 
-      const double& M,
-      const double& L, 
-      const double& S,
-      const double& j1,
-      const double& j2 );
+  std::vector<LS> calculate_recoupling_constants(const double &J, const double &M, const double &L, const double &S, const double &j1, const double &j2);
 }
 
 #endif
