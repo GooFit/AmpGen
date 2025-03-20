@@ -10,74 +10,75 @@
 namespace AmpGen
 {
   class Minimiser;
-  class LinearErrorPropagator; 
+  class LinearErrorPropagator;
 
   class FitResult
   {
   public:
     ~FitResult(){};
-    FitResult(); 
-    explicit FitResult( const FitResult& other );
-    explicit FitResult( const std::string& filename );
-    explicit FitResult( const Minimiser& mini );
-    FitResult( MinuitParameterSet& mps, const TMatrixD& covMini );
+    FitResult();
+    explicit FitResult(const FitResult &other);
+    explicit FitResult(const std::string &filename);
+    explicit FitResult(const Minimiser &mini);
+    FitResult(MinuitParameterSet &mps, const TMatrixD &covMini);
 
-    void addObservable( const std::string& name, const double& F );
-    void addChi2( const double& chi2, const double& nBins );
-    void addFractions( const std::vector<FitFraction>& fractions );
-    void addFraction( const std::string& name, const double& frac, const double& err );
-    void setCov( const size_t& x, const size_t& y, const double& F );
-    void writeToFile( const std::string& fname );
+    void addObservable(const std::string &name, const double &F);
+    void addChi2(const double &chi2, const double &nBins);
+    void addFractions(const std::vector<FitFraction> &fractions);
+    void addFraction(const std::string &name, const double &frac, const double &err);
+    void setCov(const size_t &x, const size_t &y, const double &F);
+    void writeToFile(const std::string &fname);
     void clearFitFractions();
 
-    bool readFile( const std::string& fname );
+    bool readFile(const std::string &fname);
 
     double chi2() const;
-    double LL()   const;
-    double Edm()   const; 
-    double NCalls()   const;
-    double dof()  const;
-    double cov(const size_t& x, const size_t& y ) const;
-    double cov(const std::string& x, const std::string& y ) const; 
-    double correlation( const std::string& x, const std::string& y ) const;
-    
+    double LL() const;
+    double Edm() const;
+    double NCalls() const;
+    double dof() const;
+    double cov(const size_t &x, const size_t &y) const;
+    double cov(const std::string &x, const std::string &y) const;
+    double correlation(const std::string &x, const std::string &y) const;
+
     int status() const;
     int nParam() const;
-    int nBins()  const; 
+    int nBins() const;
 
     std::map<std::string, double> observables() const;
-    MinuitParameterSet* mps()   const;
+    MinuitParameterSet *mps() const;
 
-    std::vector<FitFraction> fitFractions()     const;
-    std::vector<MinuitParameter*> parameters()  const;
-    std::vector<MinuitParameter*> floating(const bool& extended = false) const;
+    std::vector<FitFraction> fitFractions() const;
+    std::vector<MinuitParameter *> parameters() const;
+    std::vector<MinuitParameter *> floating(const bool &extended = false) const;
     TMatrixD cov() const;
-    
+
     void print() const;
 
-    TMatrixD getReducedCovariance( const bool& extended = false ) const;
-    LinearErrorPropagator getErrorPropagator( const bool& extended = false ) const;
+    TMatrixD getReducedCovariance(const bool &extended = false) const;
+    LinearErrorPropagator getErrorPropagator(const bool &extended = false) const;
 
-    void writeOptions( const std::string& output, const std::string& input = "" ); 
-    void writeOptions( std::ostream&, const std::string& input = ""); 
+    void writeOptions(const std::string &output, const std::string &input = "");
+    void writeOptions(std::ostream &, const std::string &input = "");
+
   private:
-    MinuitParameterSet*                 m_mps    = {nullptr};
-    double                              m_chi2   = {0};
-    double                              m_LL     = {-999};
-    double                              m_Edm    = {-999}; 
-    double                              m_NCalls = {-999}; 
-    double                              m_nBins  = {0};
-    double                              m_nParam = {0};
-    int                                 m_status = {-1};
-    bool                                m_fitted = {false};
-    std::map<std::string, double>       m_observables;
-    std::vector<FitFraction>            m_fitFractions;
-    TMatrixD                            m_covarianceMatrix;
+    MinuitParameterSet *m_mps = {nullptr};
+    double m_chi2 = {0};
+    double m_LL = {-999};
+    double m_Edm = {-999};
+    double m_NCalls = {-999};
+    double m_nBins = {0};
+    double m_nParam = {0};
+    int m_status = {-1};
+    bool m_fitted = {false};
+    std::map<std::string, double> m_observables;
+    std::vector<FitFraction> m_fitFractions;
+    TMatrixD m_covarianceMatrix;
     std::map<std::string, unsigned int> m_covMapping;
 
-    void addToParameters( const std::string& line );
-    void addToObservables( const std::string& line );
-    void setFitQuality( const std::string& line );
+    void addToParameters(const std::string &line);
+    void addToObservables(const std::string &line);
+    void setFitQuality(const std::string &line);
   };
 } // namespace AmpGen
 

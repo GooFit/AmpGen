@@ -1,6 +1,7 @@
 
-namespace AmpGen {
-  class MinuitParameterSet; 
+namespace AmpGen
+{
+  class MinuitParameterSet;
 
-  void AddCPConjugate(MinuitParameterSet&);
+  void AddCPConjugate(MinuitParameterSet &);
 }

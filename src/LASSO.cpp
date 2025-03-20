@@ -13,19 +13,19 @@ using namespace AmpGen;
 
 double LASSO::operator()() const
 {
-  double sum( 0 );
-  for ( unsigned int i = 0; i < m_pdf->size(); ++i ) {
-    std::complex<double> c_i = (*m_pdf)[i].coefficient;
-    sum += std::sqrt( std::norm(c_i) * m_pdf->norm(i, i).real() );
-  }
+  double sum(0);
+  for(unsigned int i = 0; i < m_pdf->size(); ++i)
+    {
+      std::complex<double> c_i = (*m_pdf)[i].coefficient;
+      sum += std::sqrt(std::norm(c_i) * m_pdf->norm(i, i).real());
+    }
   return m_lambda * sum;
 }
 
-void LASSO::configure( const std::string& configString, 
-                       const MinuitParameterSet& mps )
+void LASSO::configure(const std::string &configString, const MinuitParameterSet &mps)
 {
-  auto tokens = split( configString, ' ' );
-  m_lambda    = stod( tokens[1] );
+  auto tokens = split(configString, ' ');
+  m_lambda = stod(tokens[1]);
 }
 
-REGISTER( ExtendLikelihoodBase, LASSO );
+REGISTER(ExtendLikelihoodBase, LASSO);

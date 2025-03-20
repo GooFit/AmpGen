@@ -17,123 +17,151 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/MetaUtils.h"
 
-namespace AmpGen {
-  /** Properties are configurable characteristics of objects that will at some point inherit from a base class 
-   *  
+namespace AmpGen
+{
+  /** Properties are configurable characteristics of objects that will at some point inherit from a base class
+   *
    */
-  template <typename value_t> 
-    class Property {
-      protected:
-        std::string m_name; 
-        std::string m_helpString; 
-        value_t m_value; 
-      public: 
-        Property( void* /*parent*/, const std::string& name, const value_t& def=value_t(), const std::string_view& helpString="" ) : 
-          m_name(name),
-          m_helpString(helpString),
-          m_value(def) {
-            setFromOptionsParser();
-            if ( OptionsParser::printHelp() ) help(def);
-            DEBUG( *this );
-          }
+  template <typename value_t> class Property
+  {
+  protected:
+    std::string m_name;
+    std::string m_helpString;
+    value_t m_value;
 
-        template <typename T> bool operator==(const T& other) const { return m_value == other; }
-        template <typename T> bool operator!=(const T& other) const { return m_value != other; }
-        operator value_t() const { return m_value; }
-        operator value_t()       { return m_value; }
-        const value_t& value() const { return m_value; }
-        const std::string& name() const { return m_name ; } 
-        template <typename T> friend std::ostream& operator<<( std::ostream& os, const Property<T>& np );
-        bool setFromStrings(const std::vector<std::string>& vsl ) {
-          bool status = true;
-          if constexpr( isVector<value_t>::value ){
-            m_value.resize( vsl.size()  ); 
-            for ( unsigned int i = 0; i < vsl.size(); i++ ) {
-              m_value[i] = lexical_cast<typename value_t::value_type>( vsl[i], status );
-              if ( status == false ) {
-                ERROR( "Failed to parse token: " << vsl[i] << " for parameter: " << m_name );
-                return false; 
-              }
+  public:
+    Property(void * /*parent*/, const std::string &name, const value_t &def = value_t(), const std::string_view &helpString = "")
+        : m_name(name), m_helpString(helpString), m_value(def)
+    {
+      setFromOptionsParser();
+      if(OptionsParser::printHelp())
+        help(def);
+      DEBUG(*this);
+    }
+
+    template <typename T> bool operator==(const T &other) const { return m_value == other; }
+    template <typename T> bool operator!=(const T &other) const { return m_value != other; }
+    operator value_t() const { return m_value; }
+    operator value_t() { return m_value; }
+    const value_t &value() const { return m_value; }
+    const std::string &name() const { return m_name; }
+    template <typename T> friend std::ostream &operator<<(std::ostream &os, const Property<T> &np);
+    bool setFromStrings(const std::vector<std::string> &vsl)
+    {
+      bool status = true;
+      if constexpr(isVector<value_t>::value)
+        {
+          m_value.resize(vsl.size());
+          for(unsigned int i = 0; i < vsl.size(); i++)
+            {
+              m_value[i] = lexical_cast<typename value_t::value_type>(vsl[i], status);
+              if(status == false)
+                {
+                  ERROR("Failed to parse token: " << vsl[i] << " for parameter: " << m_name);
+                  return false;
+                }
             }
-          }
-          else if constexpr( isTuple<value_t>::value ){
-            for_each_with_counter(m_value, [this, vsl]( auto& f, unsigned i ){
-              bool status = true;
-              using basic_t = typename std::remove_const< typename std::remove_reference<decltype(f)>::type >::type;  
-              *const_cast<basic_t*>(&f) = lexical_cast<basic_t>( vsl[i], status ); 
-              if( !status ){
-                ERROR("Failed to parse token: " << vsl[i] << " for parameter: " << this->m_name ); 
-              }
-            }); 
-          }
-          else {
-            if( vsl.size() != 1 ){
-              ERROR("Constructing scalar quantity, only one argument expected, but " << vsl.size() -1 << " found"); 
-              return false; 
-            }
-            m_value = lexical_cast<value_t>( vsl[0], status );
-            if ( status == false ) {
-              ERROR( "Failed to parse token: " << vsl[0] << " for parameter: " << m_name );
-              return false; 
-            }
-          }
-          return status;
         }
-      private: 
-        void help(const value_t& def){
-          std::string type = type_string<value_t>();
-          type = replaceAll(type, "AmpGen::", ""); /// remove namespaces
-          if( type == "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >" ) type = "string";
-          std::cout << " " << bold_on << std::left << std::setw(27) << m_name << bold_off << std::setw(20) << "[" + type + "]" ;
-          auto tokens = split( m_helpString, '\n' );
-          if( tokens.size() == 0 ) std::cout << std::endl; 
-          for( size_t i = 0 ; i < tokens.size(); ++i){
-            if( i == 0 ){
+      else if constexpr(isTuple<value_t>::value)
+        {
+          for_each_with_counter(m_value, [this, vsl](auto &f, unsigned i) {
+            bool status = true;
+            using basic_t = typename std::remove_const<typename std::remove_reference<decltype(f)>::type>::type;
+            *const_cast<basic_t *>(&f) = lexical_cast<basic_t>(vsl[i], status);
+            if(!status)
+              {
+                ERROR("Failed to parse token: " << vsl[i] << " for parameter: " << this->m_name);
+              }
+          });
+        }
+      else
+        {
+          if(vsl.size() != 1)
+            {
+              ERROR("Constructing scalar quantity, only one argument expected, but " << vsl.size() - 1 << " found");
+              return false;
+            }
+          m_value = lexical_cast<value_t>(vsl[0], status);
+          if(status == false)
+            {
+              ERROR("Failed to parse token: " << vsl[0] << " for parameter: " << m_name);
+              return false;
+            }
+        }
+      return status;
+    }
+
+  private:
+    void help(const value_t &def)
+    {
+      std::string type = type_string<value_t>();
+      type = replaceAll(type, "AmpGen::", ""); /// remove namespaces
+      if(type == "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >")
+        type = "string";
+      std::cout << " " << bold_on << std::left << std::setw(27) << m_name << bold_off << std::setw(20) << "[" + type + "]";
+      auto tokens = split(m_helpString, '\n');
+      if(tokens.size() == 0)
+        std::cout << std::endl;
+      for(size_t i = 0; i < tokens.size(); ++i)
+        {
+          if(i == 0)
+            {
               std::cout << tokens[i];
-              if constexpr( isVector<value_t>::value ){
-                if( def != value_t() ) std::cout << " (default = {" << vectorToString(def,",") << "})";
-              }
-              else if constexpr( isTuple<value_t>::value ){
-                if( def != value_t() ) std::cout << " (default = [" << tupleToString(def,",") << "])";
-              }
-              else { 
-                if( def != value_t() ) std::cout << " (default = " << def << ")";
-              }
-              std::cout << std::endl;  
+              if constexpr(isVector<value_t>::value)
+                {
+                  if(def != value_t())
+                    std::cout << " (default = {" << vectorToString(def, ",") << "})";
+                }
+              else if constexpr(isTuple<value_t>::value)
+                {
+                  if(def != value_t())
+                    std::cout << " (default = [" << tupleToString(def, ",") << "])";
+                }
+              else
+                {
+                  if(def != value_t())
+                    std::cout << " (default = " << def << ")";
+                }
+              std::cout << std::endl;
             }
-            else std::cout << std::string(48,' ') << tokens[i] << std::endl; 
-          }
+          else
+            std::cout << std::string(48, ' ') << tokens[i] << std::endl;
         }
-        bool setFromOptionsParser(){
-          auto parser = OptionsParser::getMe();
-          auto line = parser->find( m_name );
-          if( line == parser->end() ) return false ; 
-          std::vector<std::string> vsl = line->second;
-          vsl.erase( vsl.begin() ); 
-          return setFromStrings(vsl); 
-        }
-    };
-    template <typename T> std::ostream& operator<<( std::ostream& os, const Property<T>& np );
-    template <typename ...T>  std::string helpStringOptions(const std::string& header, const T&... args);
-    template <typename T> bool operator==( const T& val, const Property<T>& prop ){ return val == prop.value(); }
+    }
+    bool setFromOptionsParser()
+    {
+      auto parser = OptionsParser::getMe();
+      auto line = parser->find(m_name);
+      if(line == parser->end())
+        return false;
+      std::vector<std::string> vsl = line->second;
+      vsl.erase(vsl.begin());
+      return setFromStrings(vsl);
+    }
+  };
+  template <typename T> std::ostream &operator<<(std::ostream &os, const Property<T> &np);
+  template <typename... T> std::string helpStringOptions(const std::string &header, const T &... args);
+  template <typename T> bool operator==(const T &val, const Property<T> &prop) { return val == prop.value(); }
 };
 
-template <typename T> std::ostream& AmpGen::operator<<( std::ostream& os, const AmpGen::Property<T>& np ) {
+template <typename T> std::ostream &AmpGen::operator<<(std::ostream &os, const AmpGen::Property<T> &np)
+{
   os << np.name() << " = ";
-  if constexpr( ! isVector<T>::value ) os << np.m_value; 
-  else {
-    for( unsigned i{0} ; i != np.m_value.size() ; ++i ) os << np.m_value[i] << " ";
-  }
+  if constexpr(!isVector<T>::value)
+    os << np.m_value;
+  else
+    {
+      for(unsigned i{0}; i != np.m_value.size(); ++i)
+        os << np.m_value[i] << " ";
+    }
   return os;
 }
 
-template <typename ...T> std::string AmpGen::helpStringOptions(const std::string& header, const T&... args )
+template <typename... T> std::string AmpGen::helpStringOptions(const std::string &header, const T &... args)
 {
   std::stringstream rt;
   rt << header;
-  for_each( std::make_tuple(args...), [&rt](const auto& f) mutable {
-    rt << "\n\033[3m "  << f.first << "\033[0m: " << f.second; 
-  });
+  for_each(std::make_tuple(args...), [&rt](const auto &f) mutable { rt << "\n\033[3m " << f.first << "\033[0m: " << f.second; });
   return rt.str();
 }
 #endif
