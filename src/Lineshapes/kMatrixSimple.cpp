@@ -31,14 +31,14 @@ DEFINE_LINESHAPE(kMatrixSimple)
       ERROR("Pole term not recognised: " << pTerm);
     }
 
-  size_t nPoles = Property<size_t>(nullptr, "kMatrix::nPoles", 2);
-  size_t nChannels = Property<size_t>(nullptr, "kMatrix::nChannels", 2);
+  size_t nPoles = Property<size_t>(this, "kMatrix::nPoles", 2);
+  size_t nChannels = Property<size_t>(this, "kMatrix::nChannels", 2);
 
   std::vector<Expression> phaseSpace;
   std::vector<std::pair<double, double>> masses;
   for(unsigned int i = 1; i <= nChannels; ++i)
     {
-      std::vector<std::string> particlesInThisChannel = Property<std::vector<std::string>>(nullptr, "kMatrix::Channel::" + std::to_string(i));
+      std::vector<std::string> particlesInThisChannel = Property<std::vector<std::string>>(this, "kMatrix::Channel::" + std::to_string(i));
       if(particlesInThisChannel.size() != 2)
         ERROR("Only does two body channels for now");
       double m1 = ParticlePropertiesList::get(particlesInThisChannel[0])->mass();

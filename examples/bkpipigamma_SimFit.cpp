@@ -38,30 +38,27 @@ int main(int argc, char *argv[])
   using strings = std::vector<std::string>; 
   OptionsParser::setArgs(argc, argv);
 
-  const auto pEventType
-    = Property<strings>("EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"); 
+  Property<strings> pEventType    {nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"};
 
-  const auto datasets = Property<strings>(nullptr, "Datasets", {}, "List of data/simulated samples to fit, in the format \033[3m data[0] sim[0] data[1] sim[1] ... \033[0m. \nIf a simulated sample is specified FLAT, uniformly generated phase-space events are used for integrals "); 
+  Property<strings> datasets      {nullptr, "Datasets", {}, "List of data/simulated samples to fit, in the format \033[3m data[0] sim[0] data[1] sim[1] ... \033[0m. \nIf a simulated sample is specified FLAT, uniformly generated phase-space events are used for integrals "};
 
-  const std::string weightbr = Property<std::string>("Weight", "", "Name of the weights branch (sweights).");
+  Property<std::string> weightbr  {nullptr, "Weight", "", "Name of the weights branch (sweights)."};
 
-  auto databNames = Property<strings>("Data_Branches", {},
-                                                "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"); 
-  auto simbNames = Property<strings>(
-                     "Sim_Branches", {},
-                     "List of branch names in the integration sample, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"); 
+  Property<strings> databNames    {nullptr, "Data_Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"};
+  Property<strings> simbNames     {nullptr, "Sim_Branches", {}, "List of branch names in the integration sample, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"};
 
-  const std::string logFile = Property<std::string>("LogFile", "Fitter.log", "Name of the output log file");
 
-  const std::string plotFile = Property<std::string>("Plots", "", "Name of the output plot file");
+  Property<std::string> logFile   {nullptr, "LogFile", "Fitter.log", "Name of the output log file"};
 
-  const size_t seed = Property<size_t>("Seed", 0, "Random seed used");
+  Property<std::string> plotFile  {nullptr, "Plots", "", "Name of the output plot file"};
 
-  const bool perturb = Property<bool>("Perturb", 1, "Flag to randomise starting parameters.");
+  Property<size_t> seed           {nullptr, "Seed", 0, "Random seed used"};
+
+  Property<bool> perturb          {nullptr, "Perturb", 1, "Flag to randomise starting parameters."};
 
 #ifdef _OPENMP
-  size_t hwThreads = std::thread::hardware_concurrency();
-  size_t usThreads = Property<size_t>("nCores", hwThreads, "Number of cores to use (OpenMP only)");
+  unsigned hwThreads = std::thread::hardware_concurrency();
+  Property<unsigned> usThreads    {nullptr, "nCores", hwThreads, "Number of cores to use (OpenMP only)"};
   INFO("Using: " << usThreads << " / " << hwThreads << " threads");
   omp_set_num_threads(usThreads);
   omp_set_dynamic(0);

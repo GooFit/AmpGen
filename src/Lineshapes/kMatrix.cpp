@@ -103,7 +103,7 @@ DEFINE_LINESHAPE(kMatrix)
 
   std::vector<Parameter> fScatt = paramVector("f_scatt", nChannels);
   std::vector<poleConfig> poleConfigs;
-  bool addImaginaryMass = Property<bool>(nullptr, "kMatrix::fp", true);
+  bool addImaginaryMass = Property<bool>(this, "kMatrix::fp", true);
   for(unsigned int pole = 1; pole <= nPoles; ++pole)
     {
       std::string stub = "IS_p" + std::to_string(pole) + "_";

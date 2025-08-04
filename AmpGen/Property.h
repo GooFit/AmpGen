@@ -16,6 +16,7 @@
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/MetaUtils.h"
+#include "AmpGen/Configurable.h" 
 
 namespace AmpGen
 {
@@ -39,7 +40,21 @@ namespace AmpGen
         help(def);
       DEBUG(*this);
     }
-    Property(void * /*parent*/, const std::string &name, const value_t &def = value_t(), const std::string_view &helpString = "")
+    template <typename T>
+    Property(T* parent, const std::string &name, const value_t &def = value_t(), const std::string_view &helpString = "")
+        : m_name(name), m_helpString(helpString), m_value(def)
+    {
+      setFromOptionsParser();
+      if constexpr( std::has_virtual_destructor<T>::value and not std::is_const_v<T> ){
+        if(  parent != nullptr  and dynamic_cast<Configurable*>(parent ) ) 
+          dynamic_cast<Configurable*>(parent)->registerParameter( name ); 
+          // std::cout << name << " " << def << " " << helpString << std::endl;  
+      }
+      if(OptionsParser::printHelp())
+        help(def);
+      DEBUG(*this);
+    }
+    Property(const nullptr_t /*parent*/, const std::string &name, const value_t &def = value_t(), const std::string_view &helpString = "")
         : m_name(name), m_helpString(helpString), m_value(def)
     {
       setFromOptionsParser();
