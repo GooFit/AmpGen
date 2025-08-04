@@ -90,13 +90,15 @@ namespace AmpGen
 
   std::string numberWithError(const double &number, const double &error, const unsigned int &nDigits);
 
-  template <typename return_type> return_type lexical_cast(const std::string &word, bool &status)
+  template <typename return_type> return_type lexical_cast(const std::string &word, bool &status); 
+
+    /*
   {
     WARNING("Only use specialised versions of this template (word = " << word << ", type = " << AmpGen::type_string<return_type>() << ")  ");
     status = 0;
     return return_type();
   }
-
+  */
   template <class... ARGS> std::string mysprintf(const std::string &format, ARGS &&... args)
   {
     auto size = std::snprintf(nullptr, 0, format.c_str(), std::forward<ARGS>(args)...);
