@@ -131,7 +131,6 @@ namespace AmpGen
     MinuitProxy m_weight = {nullptr, 1}; ///< Weight (i.e. the normalised yield)
     double m_norm = {1};                 ///< Normalisation integral
     bool m_isConstant = {false};         ///< Flag for a constant PDF
-    bool m_dbThis = {false};             ///< Flag to generate amplitude level debugging
     bool m_verbosity = {false};          ///< Flag for verbose printing
     std::string m_prefix = {""};         ///< Prefix for matrix elements
     const MinuitParameterSet *m_mps = {nullptr};

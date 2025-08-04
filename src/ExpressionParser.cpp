@@ -271,7 +271,7 @@ std::string MinuitParameterLink::to_string(const ASTResolver *resolver) const
   if(as_expression != nullptr)
     return as_expression->expression().to_string(resolver);
 
-  if(resolver == nullptr)
+  if(resolver == nullptr and m_parameter != nullptr )
     return m_parameter->name();
   if(resolver->enableCompileConstants() && m_parameter != nullptr && m_parameter->flag() == Flag::CompileTimeConstant)
     return std::to_string(m_parameter->mean());
@@ -282,17 +282,21 @@ std::string MinuitParameterLink::name() const { return m_parameter->name(); }
 
 void MinuitParameterLink::resolve(ASTResolver &resolver) const
 {
-  auto as_expression = dynamic_cast<const MinuitExpression *>(this->m_parameter);
-  if(as_expression != nullptr)
-    return as_expression->expression().resolve(resolver);
-  if(m_parameter->flag() != Flag::CompileTimeConstant)
-    resolver.resolve(*this);
+  if( m_parameter != nullptr ) {
+    auto as_expression = dynamic_cast<const MinuitExpression *>(this->m_parameter);
+    if(as_expression != nullptr)
+      return as_expression->expression().resolve(resolver);
+    if(m_parameter->flag() != Flag::CompileTimeConstant)
+      resolver.resolve(*this);
+  }
 }
 
 complex_t MinuitParameterLink::operator()() const
 {
-  if(m_parameter == nullptr)
+  if(m_parameter == nullptr){
     ERROR("Parameter does not have end-point");
+    return complex_t(0.,0.);
+  }
   return m_parameter->mean();
 }
 

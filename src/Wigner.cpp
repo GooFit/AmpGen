@@ -228,11 +228,11 @@ std::string index_string(const Particle &particle)
 }
 
 Expression AmpGen::helicityAmplitude(const Particle &particle, const TransformSequence &parentFrame, const double &Mz, DebugSymbols *db,
-                                     const AmpGen::Helicity::Flags &flags, int sgn, TransformCache *cachePtr)
+                                     const AmpGen::Helicity::Flags &flags, int sgn, std::shared_ptr<TransformCache> cachePtr)
 {
   // INFO("Calling helicity amplitude for: " << particle);
   if(cachePtr == nullptr)
-    cachePtr = new TransformCache();
+    cachePtr = std::make_shared<TransformCache>();
   if(particle.daughters().size() > 2)
     {
       WARNING(particle << " has more than two decay products: helicity amplitude is "

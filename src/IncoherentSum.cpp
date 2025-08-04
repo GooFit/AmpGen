@@ -133,7 +133,7 @@ void IncoherentSum::debug(const Event &evt, const std::string &nameMustContain)
       INFO(std::setw(70) << me.decayTree.uniqueString() << " A = [ " << A[0].real() << " " << A[0].imag() << " ] g = [ " << me.coupling().real() << " "
                          << me.coupling().imag() << " ] " << m_cache(evt.index(), std::distance(&m_matrixElements[0], &me)) << me.decayTree.CP());
     }
-  if(m_dbThis)
+  if(m_debug)
     for(auto &me : m_matrixElements)
       me.debug(evt);
   INFO("A(x) = " << prob_unnormalised(evt) << " without cache: " << prob_unnormalisedNoCache(evt));

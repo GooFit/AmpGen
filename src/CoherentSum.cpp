@@ -55,7 +55,7 @@ CoherentSum::CoherentSum(const EventType &type, const MinuitParameterSet &mps, c
   for(size_t i = 0; i < m_matrixElements.size(); ++i)
     {
       auto task = [i, this, &mps, &amplitudes]() mutable {
-        this->m_matrixElements[i] = MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_eventType.getEventFormat(), this->m_dbThis);
+        this->m_matrixElements[i] = MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_eventType.getEventFormat(), this->m_debug);
         if(this->m_autoCompile)
           CompilerWrapper().compile(this->m_matrixElements[i], this->m_objCache);
       };
@@ -139,7 +139,7 @@ void CoherentSum::debug(const Event &evt, const std::string &nameMustContain)
       INFO(std::setw(70) << me.decayTree.uniqueString() << " A = [ " << A[0].real() << " " << A[0].imag() << " ] g = [ " << me.coupling().real() << " "
                          << me.coupling().imag() << " ] " << m_cache(evt.index(), std::distance(&m_matrixElements[0], &me)) << me.decayTree.CP());
     }
-  if(m_dbThis)
+  if(m_debug)
     for(auto &me : m_matrixElements)
       me.debug(evt);
   INFO("A(x) = " << getVal(evt) << " without cache: " << getValNoCache(evt));
