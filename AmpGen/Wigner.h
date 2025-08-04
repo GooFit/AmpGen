@@ -35,7 +35,7 @@ namespace AmpGen
   TransformSequence wickTransform(const Tensor &P, const Particle &p, const int &ve = 1, DebugSymbols *db = nullptr);
 
   Expression helicityAmplitude(const Particle &particle, const TransformSequence &parentFrame, const double &Mz, DebugSymbols *db,
-                               const Helicity::Flags &flags = Helicity::Flags(), const int sgn = 1, TransformCache *cacheptr = nullptr);
+                               const Helicity::Flags &flags = Helicity::Flags(), const int sgn = 1, std::shared_ptr<TransformCache> cacheptr = nullptr);
   Tensor basisSpinor(const int &polState, const int &id);
   Tensor basisVector(const int &polState);
 

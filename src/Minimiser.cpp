@@ -27,11 +27,6 @@
 using namespace AmpGen;
 using namespace ROOT;
 
-namespace AmpGen
-{
-  complete_enum(PrintLevel, Quiet, Info, Verbose, VeryVerbose);
-};
-
 unsigned int Minimiser::nPars() const { return m_nParams; }
 
 void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState &state)
@@ -374,12 +369,6 @@ void Minimiser::minos(MinuitParameter *parameter)
   double low{0}, high{0};
   int status = 0;
   std::vector<double> init_values(m_minimiser->X(), m_minimiser->X() + m_nParams);
-  bool paramHasLimits = parameter->minInit() != 0 or parameter->maxInit() != 0;
-  if(paramHasLimits != 0 && (v0 - parameter->err() < parameter->minInit()))
-    return;
-  if(paramHasLimits != 0 && (v0 + parameter->err() > parameter->maxInit()))
-    return;
-
   m_minimiser->GetMinosError(index, low, high, status);
   parameter->setResult(v0, parameter->err(), low, high);
 
@@ -406,6 +395,8 @@ void Minimiser::minos(MinuitParameter *parameter)
 
 void Minimiser::setPrintLevel(const PrintLevel &printLevel)
 {
+  m_printLevel.set(PrintLevel::Quiet); 
+  if( m_minimiser != nullptr ) m_minimiser->SetPrintLevel( int(printLevel) ); 
   if(m_printLevel == PrintLevel::VeryVerbose)
     {
       for(const auto &param : *m_parSet)

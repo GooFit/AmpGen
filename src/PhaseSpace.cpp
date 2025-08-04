@@ -40,7 +40,7 @@ void PhaseSpace::fill(double *output, unsigned width)
   std::array<double, kMAXP> invMas;
   rno[0] = 0;
   size_t n;
-  double wt = m_wtMax;
+  double wt; 
   do
     {
       wt = m_wtMax;

@@ -31,7 +31,9 @@ class TGraph;
 
 namespace AmpGen
 {
-  declare_enum(PrintLevel, Quiet, Info, Verbose, VeryVerbose) class ExtendLikelihoodBase;
+  make_enum(PrintLevel, Quiet, Info, Verbose, VeryVerbose) 
+  
+  class ExtendLikelihoodBase;
   class MinuitParameter;
   class MinuitParameterSet;
 

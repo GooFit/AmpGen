@@ -38,7 +38,7 @@ namespace AmpGen
         help(def);
       DEBUG(*this);
     }
-
+    void set(const value_t &val){ m_value = val; } 
     template <typename T> bool operator==(const T &other) const { return m_value == other; }
     template <typename T> bool operator!=(const T &other) const { return m_value != other; }
     operator value_t() const { return m_value; }

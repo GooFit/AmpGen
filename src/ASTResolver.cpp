@@ -84,8 +84,10 @@ template <> void ASTResolver::resolve<Spline>(const Spline &spline)
   auto splineTransfer = dynamic_cast<SplineTransfer *>(m_cacheFunctions[spline.m_name].get());
   if(m_mps == nullptr)
     ERROR("Fix me: Spline parameters must come from a ParameterSet");
-  for(unsigned int i = 0; i < spline.m_nKnots; ++i)
-    splineTransfer->set(i, m_mps->find(spline.m_name + "::" + std::to_string(i)));
+  else {
+    for(unsigned int i = 0; i < spline.m_nKnots; ++i)
+      splineTransfer->set(i, m_mps->find(spline.m_name + "::" + std::to_string(i)));
+  }
 }
 
 template <> void ASTResolver::resolve<Parameter>(const Parameter &parameter)
