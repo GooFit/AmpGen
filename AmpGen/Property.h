@@ -87,7 +87,8 @@ namespace AmpGen
         {
           if(vsl.size() != 1)
             {
-              ERROR("Constructing scalar quantity, only one argument expected, but " << vsl.size() - 1 << " found");
+              ERROR("Constructing parameter: " << m_name << " only one argument expected, but " << vsl.size() - 1 << " found");
+              for( auto const& v : vsl ) ERROR( v );
               return false;
             }
           m_value = lexical_cast<value_t>(vsl[0], status);

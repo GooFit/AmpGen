@@ -94,7 +94,7 @@ void OptionsParser::setCommandLineArgs(int argc, char **argv, const std::string 
         }
       if(key == "help")
         m_printHelp = true;
-      addArg(key + " " + val);
+      addArg({key, val});
     }
   if(m_printHelp)
     {
