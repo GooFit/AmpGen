@@ -31,7 +31,7 @@ namespace AmpGen
 
   public:
     // WARNING: NamedParameter style constructor will be depreciated at some point to allow for stricter typing
-    Property(const std::string &name, const value_t &def = value_t(), const std::string_view &helpString = "")
+    [[deprecated]] Property(const std::string &name, const value_t &def = value_t(), const std::string_view &helpString = "")
         : m_name(name), m_helpString(helpString), m_value(def)
     {
       setFromOptionsParser();
