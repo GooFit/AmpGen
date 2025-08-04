@@ -30,6 +30,15 @@ namespace AmpGen
     value_t m_value;
 
   public:
+    // WARNING: NamedParameter style constructor will be depreciated at some point to allow for stricter typing
+    Property(const std::string &name, const value_t &def = value_t(), const std::string_view &helpString = "")
+        : m_name(name), m_helpString(helpString), m_value(def)
+    {
+      setFromOptionsParser();
+      if(OptionsParser::printHelp())
+        help(def);
+      DEBUG(*this);
+    }
     Property(void * /*parent*/, const std::string &name, const value_t &def = value_t(), const std::string_view &helpString = "")
         : m_name(name), m_helpString(helpString), m_value(def)
     {
@@ -41,8 +50,8 @@ namespace AmpGen
     void set(const value_t &val){ m_value = val; } 
     template <typename T> bool operator==(const T &other) const { return m_value == other; }
     template <typename T> bool operator!=(const T &other) const { return m_value != other; }
-    operator value_t() const { return m_value; }
-    operator value_t() { return m_value; }
+    operator const value_t&() const { return m_value; }
+    operator       value_t&()       { return m_value; }
     const value_t &value() const { return m_value; }
     const std::string &name() const { return m_name; }
     template <typename T> friend std::ostream &operator<<(std::ostream &os, const Property<T> &np);

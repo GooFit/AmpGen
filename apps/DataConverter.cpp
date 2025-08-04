@@ -15,7 +15,7 @@
 #include "AmpGen/EventList.h"
 #include "AmpGen/EventType.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Projection.h"
 #include "AmpGen/TreeReader.h"
@@ -38,39 +38,39 @@ void invertParity(Event &event, const size_t &nParticles = 0)
 
 int main(int argc, char *argv[])
 {
+  using strings = std::vector<std::string>; 
   OptionsParser::setArgs(argc, argv);
-  std::string inputFilename = NamedParameter<std::string>("Input", "", "Input ROOT file(s)");
-  std::string treeName = NamedParameter<std::string>("Tree", "", "Input ROOT tree.");
-  std::string outputFilename = NamedParameter<std::string>("Output", "", "Output ROOT file");
-  std::string pdfLibrary = NamedParameter<std::string>("PdfLibrary", "", "PDF Library that used to generate this sample for MC reweighting (MC only)");
-  std::string motherID
-    = NamedParameter<std::string>("MotherIDBranch", "", "Name of branch that contains the ID of the parent, i.e. > 0 for particles, < 0 for antiparticles.");
-  std::string plotsName = NamedParameter<std::string>("Plots", "plots.root", "Output file for ROOT plots");
-  std::vector<std::string> particles = NamedParameter<std::string>("ParticleNames", std::vector<std::string>()).getVector();
-  std::vector<std::string> monitorBranches = NamedParameter<std::string>("Monitors", std::vector<std::string>()).getVector();
-  std::vector<std::string> branchFormat = NamedParameter<std::string>("BranchFormat", std::vector<std::string>()).getVector();
-  std::vector<std::string> friends = NamedParameter<std::string>("Friends", std::vector<std::string>()).getVector();
-  std::vector<std::string> idBranches = NamedParameter<std::string>("IdBranches", std::vector<std::string>()).getVector();
-  std::string units = NamedParameter<std::string>("Units", "MeV");
-  bool usePIDCalib = NamedParameter<bool>("usePIDCalib", false);
-  bool rejectMultipleCandidates = NamedParameter<bool>("rejectMultipleCandidates", true);
-  auto cuts = NamedParameter<std::string>("Cut", "").getVector();
-  EventType evtType(NamedParameter<std::string>("EventType").getVector());
+  Property<std::string> inputFilename   {nullptr, "Input" , "", "Input ROOT file(s)"};
+  Property<std::string> treeName        {nullptr, "Tree"  , "", "Input ROOT tree."};
+  Property<std::string> outputFilename  {nullptr, "Output", "", "Output ROOT file"};
+  Property<std::string> pdfLibrary      {nullptr, "PdfLibrary", "", "PDF Library that used to generate this sample for MC reweighting (MC only)"};
+  Property<std::string> motherID        {nullptr, "MotherIDBranch", "", "Name of branch that contains the ID of the parent, i.e. > 0 for particles, < 0 for antiparticles."};
+  Property<std::string> plotsName       {nullptr, "Plots", "plots.root", "Output file for ROOT plots"};
+  Property<strings> particles           {nullptr, "ParticleNames"}; 
+  Property<strings> monitorBranches     {nullptr, "Monitors"}; 
+  Property<strings> branchFormat        {nullptr, "BranchFormat"}; 
+  Property<strings> friends             {nullptr, "Friends"}; 
+  Property<strings> idBranches          {nullptr, "IdBranches", std::vector<std::string>()}; 
+  Property<std::string> units           {nullptr, "Units", "MeV"};
+  Property<bool> usePIDCalib            {nullptr, "usePIDCalib", false};
+  Property<bool> rejectMultipleCandidates {nullptr, "rejectMultipleCandidates", true};
+  Property<strings> cuts                {nullptr, "Cut"};
+  Property<strings> evtType_s           {nullptr, "EventType"}; 
+  EventType evtType(evtType_s);
 
   std::vector<std::string> branches;
-  for(auto &particle : particles)
-    for(auto &bf : branchFormat)
+  for(auto const& particle : particles.value())
+    for(auto const& bf : branchFormat.value())
       branches.push_back(mysprintf(bf, particle.c_str()));
 
   INFO("Reading file " << inputFilename);
   INFO("Outputting file: " << outputFilename);
-  TFile *f = TFile::Open(inputFilename.c_str(), "READ");
-  INFO("Reading tree " << treeName);
+  TFile *f = TFile::Open(inputFilename.value().c_str(), "READ");
+  INFO("Reading tree " << treeName.value());
 
-  TTree *in_tree = (TTree *)f->Get(treeName.c_str());
+  TTree *in_tree = (TTree *)f->Get(treeName.value().c_str());
   in_tree->SetBranchStatus("*", 1);
-  for(auto &frie : friends)
-    {
+  for(auto &frie : friends.value() ){
       auto tokens = split(frie, ':');
       in_tree->AddFriend(tokens[1].c_str(), tokens[0].c_str());
     }
@@ -82,14 +82,14 @@ int main(int argc, char *argv[])
   if(outputFilename == "")
     FATAL("No output specified in options");
   if(f == nullptr)
-    FATAL(inputFilename + " not found");
+    FATAL(inputFilename.value() + " not found");
   if(in_tree == nullptr)
-    FATAL(treeName + " not found");
+    FATAL(treeName.value() + " not found");
 
   INFO("Got tree " << inputFilename << ":" << treeName);
   std::string cut = "";
-  for(auto &i : cuts)
-    cut += i;
+  for(auto const& c : cuts.value())
+    cut += c;
   INFO("Using cut = " << cut);
 
   in_tree->Draw(">>elist", cut.c_str());
@@ -159,11 +159,11 @@ int main(int argc, char *argv[])
 
   if(motherID != "")
     {
-      bool neg = motherID[0] == '-';
+      bool neg = motherID.value()[0] == '-';
       INFO("Converting " << evtType.mother() << " " << eventsToTake.size() << " " << evts.size());
       TreeReader tr(in_tree);
       int id = 0;
-      tr.setBranch(neg ? motherID.substr(1, motherID.size() - 1) : motherID, &id);
+      tr.setBranch(neg ? motherID.value().substr(1, motherID.value().size() - 1) : motherID.value(), &id);
       for(unsigned int i = 0; i < eventsToTake.size(); ++i)
         {
           tr.getEntry(eventsToTake[i]);
@@ -177,16 +177,16 @@ int main(int argc, char *argv[])
   if(usePIDCalib)
     {
       INFO("Getting event weights from PID calib");
-      std::string stub_path = inputFilename.substr(0, inputFilename.find_last_of('/'));
+      std::string stub_path = inputFilename.value().substr(0, inputFilename.value().find_last_of('/'));
       INFO(stub_path);
       std::vector<TFile *> files;
       std::vector<TTree *> trees;
-      std::vector<Float_t> weights(particles.size(), 0);
-      for(unsigned int i = 0; i < particles.size(); ++i)
+      std::vector<Float_t> weights(particles.value().size(), 0);
+      for(unsigned int i = 0; i < particles.value().size(); ++i)
         {
-          files.push_back(TFile::Open((stub_path + "/pidCalib_" + particles[i] + "_repacked.root").c_str()));
+          files.push_back(TFile::Open((stub_path + "/pidCalib_" + particles.value()[i] + "_repacked.root").c_str()));
           trees.push_back((TTree *)(*files.rbegin())->Get("CalibTool_PIDCalibTree"));
-          (*trees.rbegin())->SetBranchAddress((particles[i] + "_PIDCalibEffWeight").c_str(), &(weights[i]));
+          (*trees.rbegin())->SetBranchAddress((particles.value()[i] + "_PIDCalibEffWeight").c_str(), &(weights[i]));
         }
       for(unsigned int i = 0; i < eventsToTake.size(); ++i)
         {
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
         }
     }
   INFO("Writing file: " << outputFilename);
-  TFile *outputFile = TFile::Open(outputFilename.c_str(), "RECREATE");
+  TFile *outputFile = TFile::Open(outputFilename.value().c_str(), "RECREATE");
   INFO("Made file :-> ");
 
   TTree *outputTree = evts.tree("DalitzEventList");
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 
   INFO("Closing file...");
   outputFile->Close();
-  TFile *outputPlotFile = TFile::Open(plotsName.c_str(), "RECREATE");
+  TFile *outputPlotFile = TFile::Open(plotsName.value().c_str(), "RECREATE");
   auto projections = evtType.defaultProjections();
   for(auto &p : projections)
     {

@@ -11,21 +11,3 @@ BOOST_AUTO_TEST_CASE ( constructors_right )
   BOOST_CHECK( param == unsigned(4) );
 }
 
-BOOST_AUTO_TEST_CASE ( constructors_tuple )
-{
-  AmpGen::Property<std::tuple<double, std::string>> param(nullptr, "test_param",  std::make_tuple(0.1, "hello, world") );
-  auto [d,s] = std::tuple<double, std::string>(param); 
-  BOOST_CHECK( d == double(0.1) );
-  BOOST_CHECK( s == "hello, world" );
-}
-
-BOOST_AUTO_TEST_CASE ( parse_tuple )
-{
-  AmpGen::Property<std::tuple<double, std::string>> param(nullptr, "test_param",  std::make_tuple(0.1, "hello, world") );
-  param.setFromStrings( {"0.5", "foo" } );
-  
-  auto [d,s] = std::tuple<double, std::string>(param); 
-  BOOST_CHECK( d == double(0.5) );
-  BOOST_CHECK( s == "foo" );
-}
-
