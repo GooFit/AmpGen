@@ -28,7 +28,7 @@ using EventList_type = AmpGen::EventList;
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 #include "AmpGen/SumPDF.h"
 #include "AmpGen/ThreeBodyCalculators.h"
 #include "AmpGen/Utilities.h"
@@ -115,28 +115,27 @@ void invertParity(Event &event, const size_t &nParticles = 0)
 
 int main(int argc, char *argv[])
 {
+  using strings = std::vector<std::string>; 
   gErrorIgnoreLevel = 1001;
 
   OptionsParser::setArgs(argc, argv);
 
-  const std::vector<std::string> dataFile = NamedParameter<std::string>("DataSample", "").getVector();
-  const std::string simFile = NamedParameter<std::string>("SimFile", "", "Name of file containing simulated sample for using in MC integration");
-  const std::string logFile = NamedParameter<std::string>("LogFile", "Fitter.log");
-  const std::string plotFile = NamedParameter<std::string>("Plots", "plots.root");
-  const std::string prefix = NamedParameter<std::string>("PlotPrefix", "");
-  const std::string idbranch = NamedParameter<std::string>("IDBranch", "");
-  const std::string mcidbranch = NamedParameter<std::string>("MCIDBranch", "");
-  const std::string weight_branch = NamedParameter<std::string>("WeightBranch", "", "Name of branch containing event weights.");
-  const std::string mc_weight_branch = NamedParameter<std::string>("MCWeightBranch", "", "Name of branch containing event weights.");
+  const std::vector<std::string> dataFile = Property<strings>(nullptr, "DataSample", {}); 
+  const std::string simFile = Property<std::string>(nullptr,"SimFile", "", "Name of file containing simulated sample for using in MC integration");
+  const std::string logFile = Property<std::string>(nullptr, "LogFile", "Fitter.log");
+  const std::string plotFile = Property<std::string>(nullptr, "Plots", "plots.root");
+  const std::string prefix = Property<std::string>(nullptr, "PlotPrefix", "");
+  const std::string idbranch = Property<std::string>(nullptr, "IDBranch", "");
+  const std::string mcidbranch = Property<std::string>(nullptr, "MCIDBranch", "");
+  const std::string weight_branch = Property<std::string>(nullptr, "WeightBranch", "", "Name of branch containing event weights.");
+  const std::string mc_weight_branch = Property<std::string>(nullptr, "MCWeightBranch", "", "Name of branch containing event weights.");
 
-  const auto nev_MC = NamedParameter<int>("NEventsMC", 8e6, "Number of MC events for normalization.");
-  auto bNames = NamedParameter<std::string>("Branches", std::vector<std::string>(),
-                                            "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m")
-                  .getVector();
-  auto MCbNames = NamedParameter<std::string>("MCBranches", std::vector<std::string>(),
-                                              "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m")
-                    .getVector();
-  auto pNames = NamedParameter<std::string>("EventType", "", "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m").getVector();
+  const auto nev_MC = Property<int>(nullptr, "NEventsMC", 8e6, "Number of MC events for normalization.");
+  auto bNames = Property<strings>(nullptr, "Branches", {},
+                                            "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"); 
+  auto MCbNames = Property<strings>(nullptr, "MCBranches", {},
+                                              "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"); 
+  auto pNames = Property<strings>(nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m");
 
 #if ENABLE_AVX
   if(!idbranch.empty() || !weight_branch.empty() || !mcidbranch.empty() || !mc_weight_branch.empty())
@@ -148,7 +147,7 @@ int main(int argc, char *argv[])
 
 #ifdef _OPENMP
   unsigned int concurentThreadsSupported = std::thread::hardware_concurrency();
-  unsigned int nThreads = NamedParameter<unsigned int>("nCores", concurentThreadsSupported);
+  unsigned int nThreads = Property<unsigned int>(nullptr, "nCores", concurentThreadsSupported);
   omp_set_num_threads(nThreads);
   INFO("Setting " << nThreads << " fixed threads for OpenMP");
   omp_set_dynamic(0);
@@ -158,8 +157,8 @@ int main(int argc, char *argv[])
      the parsed options. For historical reasons, this is referred to as loading it from a "Stream" */
   MinuitParameterSet MPS;
   MPS.loadFromStream();
-  TRandom3 rndm = TRandom3(NamedParameter<unsigned int>("Seed", 1));
-  if(NamedParameter<bool>("RandomizeStartingPoint", false))
+  TRandom3 rndm = TRandom3(Property<unsigned int>(nullptr, "Seed", 1));
+  if(Property<bool>(nullptr, "RandomizeStartingPoint", false))
     randomizeStartingPoint(MPS, rndm);
 
   /* An EventType specifies the initial and final state particles as a vector that will be described by the fit.

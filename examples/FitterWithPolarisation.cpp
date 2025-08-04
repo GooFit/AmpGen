@@ -18,7 +18,7 @@
 #include "AmpGen/Minimiser.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 #include "AmpGen/SumPDF.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Generator.h"
@@ -47,32 +47,31 @@ template <typename pdf_t> Particle getTopology(const pdf_t &pdf) { return pdf.ma
 
 template <typename PDF> FitResult *doFit(PDF &&pdf, EventList_type &data, EventList_type &mc, MinuitParameterSet &MPS);
 
+
 int main(int argc, char *argv[])
 {
+  using strings = std::vector<std::string>; 
   /* The user specified options must be loaded at the beginning of the programme,
      and these can be specified either at the command line or in an options file. */
   OptionsParser::setArgs(argc, argv);
 
   /* Parameters that have been parsed can be accessed anywhere in the program
-     using the NamedParameter<T> class. The name of the parameter is the first option,
+     using the Property<T> class. The name of the parameter is the first option,
      then the default value, and then the help string that will be printed if --h is specified
      as an option. */
-  std::string dataFile = NamedParameter<std::string>("DataSample", "", "Name of file containing data sample to fit.");
-  std::string logFile = NamedParameter<std::string>("LogFile", "Fitter.log", "Name of the output log file");
-  std::string plotFile = NamedParameter<std::string>("Plots", "plots.root", "Name of the output plot file");
-  std::string simFile = NamedParameter<std::string>("SgIntegratorFname", "", "Name of file containing simulated sample for using in MC integration");
-  auto bNames = NamedParameter<std::string>("Branches", std::vector<std::string>(),
-                                            "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m")
-                  .getVector();
-
-  auto pNames = NamedParameter<std::string>("EventType", "", "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m").getVector();
+  std::string dataFile = Property<std::string>(nullptr, "DataSample", "", "Name of file containing data sample to fit.");
+  std::string logFile = Property<std::string>(nullptr, "LogFile", "Fitter.log", "Name of the output log file");
+  std::string plotFile = Property<std::string>(nullptr, "Plots", "plots.root", "Name of the output plot file");
+  std::string simFile = Property<std::string>(nullptr, "SgIntegratorFname", "", "Name of file containing simulated sample for using in MC integration");
+  Property<strings> bNames {nullptr, "Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"}; 
+  Property<strings> pNames {nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"};
 
   if(dataFile == "")
     FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off);
-  if(pNames.size() == 0)
+  if(pNames.value().size() == 0)
     FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
 
-  size_t seed = NamedParameter<size_t>("Seed", 1, "Random seed used");
+  size_t seed = Property<size_t>(nullptr, "Seed", 1, "Random seed used");
 
   TRandom3 rndm;
   rndm.SetSeed(seed);
@@ -81,7 +80,7 @@ int main(int argc, char *argv[])
   INFO("LogFile: " << logFile << "; Plots: " << plotFile);
 
 #ifdef _OPENMP
-  size_t nThreads = NamedParameter<size_t>("nCores", 8, "Number of threads to use");
+  size_t nThreads = Property<size_t>(nullptr, "nCores", 8, "Number of threads to use");
   omp_set_num_threads(nThreads);
   INFO("Setting " << nThreads << " fixed threads for OpenMP");
   omp_set_dynamic(0);

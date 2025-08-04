@@ -2,7 +2,7 @@
 #include "AmpGen/DynamicFCN.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/OptionsParser.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 
 using namespace AmpGen;
 
@@ -81,17 +81,18 @@ Counter::Counter(const std::vector<complex_t> &a, const std::vector<complex_t> &
 
 int main(int argc, char **argv)
 {
+  using strings = std::vector<std::string>;
   std::string modelName = argv[1];
   OptionsParser::getMe()->setQuiet();
   OptionsParser::setArgs(argc, argv);
-  auto t = EventType(NamedParameter<std::string>("EventType", "").getVector());
+  auto t = EventType(Property<strings>(nullptr, "EventType"));
   std::cout << "Testing difference beween two libraries..." << std::endl;
   PhaseSpace phsp(t);
   auto event = phsp.makeEvent();
   auto event2 = phsp.makeEvent();
-  std::string lib = NamedParameter<std::string>("Lib", "");
-  std::string refLib = NamedParameter<std::string>("RefLib", "");
-  std::string type = NamedParameter<std::string>("Type", "CoherentSum");
+  std::string lib = Property<std::string>(nullptr, "Lib", "");
+  std::string refLib = Property<std::string>(nullptr, "RefLib", "");
+  std::string type = Property<std::string>(nullptr, "Type", "CoherentSum");
   Counter total;
 
   auto ftable = cmd("nm " + refLib + "| grep __wParams | grep -v .cold");

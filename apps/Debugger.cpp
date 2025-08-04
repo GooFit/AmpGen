@@ -1,4 +1,3 @@
-#include <TLorentzVector.h>
 #include <cmath>
 #include <complex>
 #include <fstream>
@@ -10,6 +9,9 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 
+#include <TLorentzVector.h>
+#include <TRandom3.h>
+
 #include "AmpGen/AmplitudeRules.h"
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/EventList.h"
@@ -20,23 +22,22 @@
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Utilities.h"
-#include "TRandom3.h"
 #include "AmpGen/AddCPConjugate.h"
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 #include "AmpGen/EventType.h"
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/IncoherentSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/Kinematics.h"
 #include "AmpGen/MinuitParameterSet.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 #include "AmpGen/PolarisedSum.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 using namespace AmpGen;
+using strings = std::vector<std::string>; 
 
 void invertParity(Event &event, const size_t &nParticles)
 {
@@ -133,35 +134,44 @@ int main(int argc, char **argv)
 {
   OptionsParser::setArgs(argc, argv);
 
-  int seed = NamedParameter<int>("Seed", 156);
-  TRandom3 *rndm = new TRandom3(seed);
 
   EventType eventType(
-    NamedParameter<std::string>("EventType", "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m").getVector(),
-    NamedParameter<bool>("GenerateTimeDependent", false, "Flag to include possible time dependence of the amplitude"));
+    Property<strings>(nullptr, "EventType", {}, "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"), 
+    Property<bool>(nullptr, "GenerateTimeDependent", false, "Flag to include possible time dependence of the amplitude"));
+  
+  int seed = Property<int>(nullptr, "Seed", 156);
+  std::string infile = Property<std::string>(nullptr, "InputFile", "");
+  std::string refFileOutput = Property<std::string>(nullptr, "RefFileOutput", "");
+  std::string input_units = Property<std::string>(nullptr, "Units", "GeV");
+  std::string type = Property<std::string>(nullptr, "Type", "CoherentSum");
+  
+  std::vector<double> event = Property<std::vector<double>>(nullptr, "Event", {}); 
+  bool conj = Property<bool>(nullptr, "conj", false); 
+  bool add_conj = Property<bool>(nullptr, "AddConj", false );  
 
-  bool verbose = NamedParameter<bool>("CoherentSum::Debug", 0) || NamedParameter<bool>("PolarisedSum::Debug", 0);
+  bool verbose = Property<bool>(nullptr, "CoherentSum::Debug", false) || Property<bool>(nullptr, "PolarisedSum::Debug", false); 
+
   INFO("Using verbose mode: " << verbose);
   AmpGen::MinuitParameterSet MPS;
   MPS.loadFromStream();
 
-  if(NamedParameter<bool>("conj", false) == true)
+  
+  TRandom3 *rndm = new TRandom3(seed);
+
+  if(conj)
     {
       eventType = eventType.conj();
       INFO(eventType);
       AddCPConjugate(MPS);
     }
-  if(NamedParameter<bool>("AddConj", false) == true && NamedParameter<bool>("conj", false) == false)
+  else if( add_conj)
     {
       AddCPConjugate(MPS);
     }
   INFO("EventType = " << eventType);
 
-  std::string infile = NamedParameter<std::string>("InputFile", "");
   EventList accepted = infile == "" ? EventList(eventType) : EventList(infile, eventType);
-  std::string refFileOutput = NamedParameter<std::string>("RefFileOutput", "");
 
-  std::string input_units = NamedParameter<std::string>("Units", "GeV");
   if(input_units == "MeV" && infile != "")
     accepted.transform([](auto &event) {
       for(unsigned i = 0; i < event.size(); ++i)
@@ -173,11 +183,9 @@ int main(int argc, char **argv)
       for(unsigned i = 0; i != 16; ++i)
         accepted[i].setIndex(i);
     }
-  std::vector<double> event = NamedParameter<double>("Event", 0).getVector();
-  if(event.size() != 1)
+  if(event.size() != 0)
     accepted[0].set(event.data());
 
-  std::string type = NamedParameter<std::string>("Type", "CoherentSum");
 
   if(type == "PolarisedSum")
     {

@@ -1,7 +1,7 @@
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/EventType.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 #include "AmpGen/Kinematics.h"
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/ProfileClock.h"
@@ -18,12 +18,13 @@
 
 using namespace AmpGen;
 using namespace std::complex_literals;
+using strings = std::vector<std::string>; 
 
 class FixedLibPdf
 {
 public:
   FixedLibPdf() = default;
-  FixedLibPdf(const EventType &type, MinuitParameterSet &) : FixedLibPdf(NamedParameter<std::string>(type.decayDescriptor() + "::lib").getVal())
+  FixedLibPdf(const EventType &type, MinuitParameterSet &) : FixedLibPdf(Property<std::string>(type.decayDescriptor() + "::lib"))
   {
     INFO("Constructing: " << type << " flib = " << type.decayDescriptor() + "::lib");
   }
@@ -147,7 +148,7 @@ private:
   PhaseSpace m_tagPhsp;
   PhaseSpace m_headPhsp;
   bool m_printed = {false};
-  bool m_ignoreQc = {NamedParameter<bool>("IgnoreQC", false)};
+  bool m_ignoreQc = {Property<bool>("IgnoreQC", false)};
   size_t m_blockSize = {1000000};
 
 public:
@@ -269,20 +270,17 @@ int main(int argc, char **argv)
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time = std::clock();
   size_t hwt = std::thread::hardware_concurrency();
-  size_t nThreads = NamedParameter<size_t>("nCores", hwt, "Number of threads to use");
-  double luminosity = NamedParameter<double>("Luminosity", 818.3, "Luminosity to generate. Defaults to CLEO-c integrated luminosity.");
+  size_t nThreads = Property<size_t>("nCores", hwt, "Number of threads to use");
+  double luminosity = Property<double>("Luminosity", 818.3, "Luminosity to generate. Defaults to CLEO-c integrated luminosity.");
   size_t nEvents
-    = NamedParameter<size_t>("nEvents", 0, "Can also generate a fixed number of events per tag, if unspecified use the CLEO-c integrated luminosity.");
-  size_t seed = NamedParameter<size_t>("Seed", 0, "Random seed to use.");
-  bool poissonYield = NamedParameter<bool>("PoissonYield", true, "Flag to include Poisson fluctuations in expected yields (only if nEvents is not specified)");
-  double crossSection = NamedParameter<double>("CrossSection", 3.26 * 1000, "Cross section for e⁺e⁻ → Ψ(3770) → DD'");
-  std::string output = NamedParameter<std::string>("Output", "ToyMC.root", "File containing output events");
-  auto pNames
-    = NamedParameter<std::string>("EventType", "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m").getVector();
-  auto tags = NamedParameter<std::string>("TagTypes", std::string(),
-                                          "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m.")
-                .getVector();
-
+    = Property<size_t>("nEvents", 0, "Can also generate a fixed number of events per tag, if unspecified use the CLEO-c integrated luminosity.");
+  size_t seed = Property<size_t>("Seed", 0, "Random seed to use.");
+  bool poissonYield = Property<bool>("PoissonYield", true, "Flag to include Poisson fluctuations in expected yields (only if nEvents is not specified)");
+  double crossSection = Property<double>("CrossSection", 3.26 * 1000, "Cross section for e⁺e⁻ → Ψ(3770) → DD'");
+  std::string output = Property<std::string>("Output", "ToyMC.root", "File containing output events");
+  auto pNames = Property<strings>("EventType", {}, "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"); 
+  auto tags   = Property<strings>("TagTypes", {},
+                                          "Vector of opposite side tags to generate, in the format \033[3m outputTreeName decayDescriptor \033[0m."); 
   gRandom = new TRandom3(seed);
 #ifdef _OPENMP
   omp_set_num_threads(nThreads);
@@ -300,13 +298,13 @@ int main(int argc, char **argv)
   else
     INFO("Generating " << nEvents << " per sample");
   ModelStore models(&MPS, yc);
-  for(auto &tag : tags)
+  for(auto &tag : tags.value())
     {
       auto tokens = split(tag, ' ');
       auto tagParticle = Particle(tokens[1], {}, false);
       EventType type = tagParticle.eventType();
       double yield_noQC = yc(luminosity, signalType, type, true);
-      std::string flib = NamedParameter<std::string>(type.decayDescriptor() + "::lib", "");
+      std::string flib = Property<std::string>(type.decayDescriptor() + "::lib", "");
       if(flib == "")
         {
           auto generator = Psi3770<CoherentSum, CoherentSum>(models, signalType, type);
@@ -385,7 +383,7 @@ void add_CP_conjugate(MinuitParameterSet &mps)
 
 std::map<std::string, double> DTYieldCalculator::getKeyed(const std::string &name)
 {
-  std::vector<std::string> things = AmpGen::NamedParameter<std::string>(name).getVector();
+  std::vector<std::string> things = AmpGen::Property<strings>(name); 
   std::map<std::string, double> branchingRatios;
   for(auto &thing : things)
     {
@@ -474,7 +472,7 @@ TTree *DTEventList::tree(const std::string &name)
       outputTree->Branch(("Tag_" + particleName(m_tagType, i) + "_ID").c_str(), &id_tag[i]);
       ids_tag[i] = ParticlePropertiesList::get(m_tagType[i])->pdgID();
     }
-  bool sym = NamedParameter<bool>("symmetrise", true);
+  bool sym = Property<bool>("symmetrise", true);
   for(auto &evt : *this)
     {
       bool swap = sym && (gRandom->Uniform() > 0.5);

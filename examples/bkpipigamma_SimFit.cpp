@@ -4,7 +4,7 @@
 #include "AmpGen/SumPDF.h"
 #include "AmpGen/FitResult.h"
 #include "AmpGen/Minimiser.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/SimPDF.h"
@@ -35,38 +35,33 @@ using namespace AmpGen;
 
 int main(int argc, char *argv[])
 {
+  using strings = std::vector<std::string>; 
   OptionsParser::setArgs(argc, argv);
 
   const auto pEventType
-    = NamedParameter<std::string>("EventType", std::vector<std::string>(), "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m")
-        .getVector();
+    = Property<strings>("EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"); 
 
-  const auto datasets = NamedParameter<std::string>("Datasets", "", "List of data/simulated samples to fit, in the format \
-      \033[3m data[0] sim[0] data[1] sim[1] ... \033[0m. \nIf a simulated sample is specified FLAT, uniformly generated phase-space events are used for integrals ")
-                          .getVector();
+  const auto datasets = Property<strings>(nullptr, "Datasets", {}, "List of data/simulated samples to fit, in the format \033[3m data[0] sim[0] data[1] sim[1] ... \033[0m. \nIf a simulated sample is specified FLAT, uniformly generated phase-space events are used for integrals "); 
 
-  const std::string weightbr = NamedParameter<std::string>("Weight", "", "Name of the weights branch (sweights).");
+  const std::string weightbr = Property<std::string>("Weight", "", "Name of the weights branch (sweights).");
 
-  auto databNames = NamedParameter<std::string>("Data_Branches", std::vector<std::string>(),
-                                                "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m")
-                      .getVector();
+  auto databNames = Property<strings>("Data_Branches", {},
+                                                "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"); 
+  auto simbNames = Property<strings>(
+                     "Sim_Branches", {},
+                     "List of branch names in the integration sample, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"); 
 
-  auto simbNames = NamedParameter<std::string>(
-                     "Sim_Branches", std::vector<std::string>(),
-                     "List of branch names in the integration sample, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m")
-                     .getVector();
+  const std::string logFile = Property<std::string>("LogFile", "Fitter.log", "Name of the output log file");
 
-  const std::string logFile = NamedParameter<std::string>("LogFile", "Fitter.log", "Name of the output log file");
+  const std::string plotFile = Property<std::string>("Plots", "", "Name of the output plot file");
 
-  const std::string plotFile = NamedParameter<std::string>("Plots", "", "Name of the output plot file");
+  const size_t seed = Property<size_t>("Seed", 0, "Random seed used");
 
-  const size_t seed = NamedParameter<size_t>("Seed", 0, "Random seed used");
-
-  const bool perturb = NamedParameter<bool>("Perturb", 1, "Flag to randomise starting parameters.");
+  const bool perturb = Property<bool>("Perturb", 1, "Flag to randomise starting parameters.");
 
 #ifdef _OPENMP
   size_t hwThreads = std::thread::hardware_concurrency();
-  size_t usThreads = NamedParameter<size_t>("nCores", hwThreads, "Number of cores to use (OpenMP only)");
+  size_t usThreads = Property<size_t>("nCores", hwThreads, "Number of cores to use (OpenMP only)");
   INFO("Using: " << usThreads << " / " << hwThreads << " threads");
   omp_set_num_threads(usThreads);
   omp_set_dynamic(0);
@@ -75,7 +70,7 @@ int main(int argc, char *argv[])
   INFO("Output : " << logFile << " plots = " << plotFile);
 
   // Check that we have an event type
-  if(pEventType.size() == 0)
+  if(pEventType.value().size() == 0)
     FATAL("Must specify event format as EventType \033[3m parent daughter1 daughter2 ... \033[0m in options");
 
   // Set the event type
@@ -85,19 +80,19 @@ int main(int argc, char *argv[])
   std::vector<EventList> data;
   std::vector<EventList> mcs;
 
-  for(size_t i = 0; i < datasets.size(); i += 2)
+  for(size_t i = 0; i < datasets.value().size(); i += 2)
     {
       if(weightbr == "")
         {
           // Load data sets without reading the weight branch;  (real data == no GenPdf to be read)
-          data.emplace_back(datasets[i], eventType, GetGenPdf(false), Branches(databNames));
+          data.emplace_back(datasets.value()[i], eventType, GetGenPdf(false), Branches(databNames));
         }
       else
         {
           // Load data sets reading the weight branch;  (real data == no GenPdf to be read)
-          data.emplace_back(datasets[i], eventType, GetGenPdf(false), Branches(databNames), WeightBranch(weightbr));
+          data.emplace_back(datasets.value()[i], eventType, GetGenPdf(false), Branches(databNames), WeightBranch(weightbr));
         }
-      if(datasets[i + 1] == "FLAT")
+      if(datasets.value()[i + 1] == "FLAT")
         {
           // Generate data sets for normalisation (NO ACCEPTANCE)
           mcs.emplace_back(Generator<>(eventType).generate(5e6));
@@ -106,7 +101,7 @@ int main(int argc, char *argv[])
       else
         {
           // Load simulated data sets for normalisation:
-          mcs.emplace_back(datasets[i + 1], eventType, GetGenPdf(true), Branches(simbNames));
+          mcs.emplace_back(datasets.value()[i + 1], eventType, GetGenPdf(true), Branches(simbNames));
         }
     }
   INFO("Data events: " << data.size());

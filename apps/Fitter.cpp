@@ -23,7 +23,7 @@
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 #include "AmpGen/SumPDF.h"
 #include "AmpGen/ThreeBodyCalculators.h"
 #include "AmpGen/Utilities.h"
@@ -46,10 +46,11 @@ using EventList_type = AmpGen::EventList;
 #include "TRandom3.h"
 
 using namespace AmpGen;
+using strings = std::vector<std::string>; 
 
 std::vector<ThreeBodyCalculator> threeBodyCalculators(MinuitParameterSet &mps)
 {
-  std::vector<std::string> threeBodiesToIntegrate = NamedParameter<std::string>("ThreeBodiesToIntegrate").getVector();
+  std::vector<std::string> threeBodiesToIntegrate = Property<strings>(nullptr, "ThreeBodiesToIntegrate");
   std::vector<ThreeBodyCalculator> calculators;
   for(auto &v : threeBodiesToIntegrate)
     calculators.emplace_back(v, mps);
@@ -73,7 +74,7 @@ void randomiseStartingPoint(MinuitParameterSet &MPS, TRandom3 &rand, bool Spline
 
 template <typename SIGPDF> void addExtendedTerms(Minimiser &mini, SIGPDF &pdf, MinuitParameterSet &mps)
 {
-  std::vector<std::string> llConfigs = NamedParameter<std::string>("LLExtend").getVector();
+  std::vector<std::string> llConfigs = Property<std::string>(nullptr, "LLExtend");
 
   for(const auto &ll_config : llConfigs)
     {
@@ -101,14 +102,16 @@ template <typename PDF> FitResult *doFit(PDF &&pdf, EventList &data, EventList &
   Minimiser mini(pdf, &MPS);
   // addExtendedTerms( mini, std::get<0>( pdf.pdfs() ), MPS );
   auto threeBodyShapes = threeBodyCalculators(MPS);
-  unsigned int updateWidth = NamedParameter<unsigned int>("UpdateWidth", 0);
+  unsigned int updateWidth = Property<unsigned>(nullptr, "UpdateWidth", 0);
+  unsigned int nIterations = Property<unsigned>(nullptr, "nIterations", 0);
+  std::vector<std::string> SlowParams = Property<strings>(nullptr, "Release"); 
+  bool makePlots = Property<bool>(nullptr, "MakePlots", true);
+  
   if(updateWidth)
     {
       for(auto &shape : threeBodyShapes)
         shape.updateRunningWidth(MPS);
     }
-  unsigned int nIterations = NamedParameter<unsigned int>("nIterations", 0);
-  std::vector<std::string> SlowParams = NamedParameter<std::string>("Release", "").getVector();
   std::vector<MinuitParameter *> slowParamPtrs;
   if(nIterations != 0)
     {
@@ -141,7 +144,6 @@ template <typename PDF> FitResult *doFit(PDF &&pdf, EventList &data, EventList &
     }
 
   FitResult *fr = new FitResult(mini);
-  bool makePlots = NamedParameter<bool>("MakePlots", true);
 
   if(makePlots)
     {
@@ -180,21 +182,26 @@ int main(int argc, char *argv[])
 {
   OptionsParser::setArgs(argc, argv);
 
-  const std::string dataFile = NamedParameter<std::string>("DataSample", "", "Name of file containing data sample to fit.");
-  const std::string mcFile = NamedParameter<std::string>("SimSample", "", "Name of file containing normalisation sample.");
-  const std::string fmcFile = NamedParameter<std::string>("FlatMC", "", "Name of file containing events for computing physics integrals");
-  const std::string logFile = NamedParameter<std::string>("LogFile", "Fitter.log", "Name of the output log file");
-  const std::string plotFile = NamedParameter<std::string>("Plots", "plots.root", "Name of the output plot file");
+  const std::string dataFile = Property<std::string>(nullptr, "DataSample", "", "Name of file containing data sample to fit.");
+  const std::string mcFile = Property<std::string>(nullptr, "SimSample", "", "Name of file containing normalisation sample.");
+  const std::string fmcFile = Property<std::string>(nullptr, "FlatMC", "", "Name of file containing events for computing physics integrals");
+  const std::string logFile = Property<std::string>(nullptr, "LogFile", "Fitter.log", "Name of the output log file");
+  const std::string plotFile = Property<std::string>(nullptr, "Plots", "plots.root", "Name of the output plot file");
 
-  [[maybe_unused]] const size_t nThreads = NamedParameter<size_t>("nCores", 8, "Number of threads to use");
+  [[maybe_unused]] const size_t nThreads = Property<size_t>(nullptr, "nCores", 8, "Number of threads to use");
 
-  const size_t NBins = NamedParameter<size_t>("nBins", 100, "Number of bins used for plotting.");
-  const bool perturb = NamedParameter<bool>("Perturb", 0, "Flag to randomise starting parameters.");
-  const size_t seed = NamedParameter<size_t>("Seed", 0, "Random seed used");
+  const size_t NBins = Property<size_t>(nullptr, "nBins", 100, "Number of bins used for plotting.");
+  const bool perturb = Property<bool>(nullptr, "Perturb", 0, "Flag to randomise starting parameters.");
+  const size_t seed = Property<size_t>(nullptr, "Seed", 0, "Random seed used");
 
   std::vector<std::string> evtType_particles
-    = NamedParameter<std::string>("EventType", "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m").getVector();
-
+    = Property<strings>(nullptr, "EventType", {}, "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"); 
+  
+  const std::string cut = Property<std::string>(nullptr, "Cut", "1");
+  const std::string simCut = Property<std::string>(nullptr, "SimCut", "1");
+  bool BAR = Property<bool>(nullptr, "Bar", false);
+  const std::string units = Property<std::string>(nullptr, "Units", "GeV"); 
+   
   INFO("Output : " << logFile << " plots = " << plotFile);
 
   TRandom3 rndm;
@@ -240,9 +247,6 @@ int main(int argc, char *argv[])
   bkg.setWeight(MPS["fComb"]);
   misID.setWeight(MPS["fMisID"]);
 
-  const std::string cut = NamedParameter<std::string>("Cut", "1");
-  const std::string simCut = NamedParameter<std::string>("SimCut", "1");
-  bool BAR = NamedParameter<bool>("Bar", false);
 
   EventList events(dataFile, !BAR ? evtType : evtType.conj(), Filter(cut));
   EventList eventsMC = mcFile == "" ? EventList(evtType) : EventList(mcFile, !BAR ? evtType : evtType.conj(), Filter(simCut));
@@ -251,7 +255,7 @@ int main(int argc, char *argv[])
     for(size_t x = 0; x < event.size(); ++x)
       event[x] /= 1000.;
   };
-  if(NamedParameter<std::string>("Units", "GeV").getVal() == "MeV")
+  if(units == "Mev")
     {
       INFO("Changing units from MeV -> GeV");
       events.transform(scale_transform);
