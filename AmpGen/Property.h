@@ -105,8 +105,10 @@ namespace AmpGen
     {
       std::string type = type_string<value_t>();
       type = replaceAll(type, "AmpGen::", ""); /// remove namespaces
-      if(type == "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >")
+      if( std::is_same_v<value_t, std::string> ) 
         type = "string";
+      if( std::is_same_v<value_t, std::vector<std::string>> ) 
+        type = "strings";
       std::cout << " " << bold_on << std::left << std::setw(27) << m_name << bold_off << std::setw(20) << "[" + type + "]";
       auto tokens = split(m_helpString, '\n');
       if(tokens.size() == 0)
