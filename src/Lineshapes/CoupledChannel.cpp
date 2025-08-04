@@ -189,7 +189,7 @@ DEFINE_LINESHAPE(CoupledChannel)
   const Expression width = Parameter(particleName + "_width", props->width());
   const Expression radius = Parameter(particleName + "_radius", props->radius());
   const Expression I = Constant(0., 1.);
-  std::vector<std::string> channels = Property<std::vector<std::string>>{nullptr, particleName + "_channels"};
+  std::vector<std::string> channels = Property<std::vector<std::string>>{this, particleName + "_channels"};
   Expression totalWidth = 0;
   Expression totalWidthAtPole = 0;
   ADD_DEBUG(s, dbexpressions);

@@ -55,19 +55,19 @@ int main(int argc, char *argv[])
      using the Property<T> class. The name of the parameter is the first option,
      then the default value, and then the help string that will be printed if --h is specified
      as an option. */
-  std::string dataFile = Property<std::string>("DataSample", "", "Name of file containing data sample to fit.");
-  std::string intFile = Property<std::string>("IntegrationSample", "", "Name of file containing events to use for MC integration.");
-  std::string logFile = Property<std::string>("LogFile", "Fitter.log", "Name of the output log file");
-  std::string plotFile = Property<std::string>("Plots", "plots.root", "Name of the output plot file");
+  std::string dataFile = Property<std::string>(nullptr, "DataSample", "", "Name of file containing data sample to fit.");
+  std::string intFile = Property<std::string> (nullptr, "IntegrationSample", "", "Name of file containing events to use for MC integration.");
+  std::string logFile = Property<std::string> (nullptr, "LogFile", "Fitter.log", "Name of the output log file");
+  std::string plotFile = Property<std::string>(nullptr, "Plots", "plots.root", "Name of the output plot file");
 
   auto bNames = Property<strings>(nullptr, "Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"); 
   auto pNames = Property<strings>(nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"); 
 
-  [[maybe_unused]] size_t nThreads = Property<size_t>("nCores", 8, "Number of threads to use");
-  size_t seed = Property<size_t>("Seed", 1, "Random seed used");
+  [[maybe_unused]] size_t nThreads = Property<size_t>(nullptr, "nCores", 8, "Number of threads to use");
+  size_t seed = Property<size_t>(nullptr, "Seed", 1, "Random seed used");
 
-  std::string outOptFile = Property<std::string>("OutputOptionFile", "", "Name of output option file updated with the best-fit parameters");
-  std::string inOptFile = Property<std::string>("InputOptionFile", "", "Name of input option file to use as template for OutputOptionFile");
+  std::string outOptFile = Property<std::string>(nullptr, "OutputOptionFile", "", "Name of output option file updated with the best-fit parameters");
+  std::string inOptFile = Property<std::string>(nullptr, "InputOptionFile", "", "Name of input option file to use as template for OutputOptionFile");
 
   if(dataFile == "")
     FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off);
@@ -168,7 +168,7 @@ template <typename likelihoodType> FitResult *doFit(likelihoodType &&likelihood,
   for(const auto &proj : projections)
     {
       proj(mc, evaluator, PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
-      if(Property<bool>("AllComponents", true))
+      if(Property<bool>(nullptr, "AllComponents", true))
         proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
       proj(data, PlotOptions::Prefix("Data"))->Write();
     }

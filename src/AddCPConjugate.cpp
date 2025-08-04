@@ -16,7 +16,7 @@ void AmpGen::AddCPConjugate(MinuitParameterSet &mps)
 {
   std::vector<MinuitParameter *> tmp;
   auto coord = Coupling(nullptr, nullptr).coordinates();
-  std::vector<std::string> forbidden = Property<std::vector<std::string>>(nullptr, "AddCPConjugate::Forbid");
+  std::vector<std::string> forbidden = {}; // Property<std::vector<std::string>>(nullptr, "AddCPConjugate::Forbid");
 
   for(auto &param : mps)
     {

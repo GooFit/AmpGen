@@ -9,7 +9,7 @@ using namespace AmpGen;
 
 DEFINE_LINESHAPE(Poly)
 {
-  size_t degree = Property<size_t>(nullptr, lineshapeModifier + "::Degree", 0);
+  size_t degree = Property<size_t>(this, lineshapeModifier + "::Degree", 0);
   auto params = parameterVector(lineshapeModifier + "_c", degree + 1);
   ADD_DEBUG(s, dbexpressions);
   if(dbexpressions != nullptr)

@@ -46,9 +46,9 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix)
   auto s = p.massSq();
   auto props = ParticlePropertiesList::get(particleName);
   Expression mass = Parameter(particleName + "_mass", props->mass());
-  unsigned nPoles = Property<unsigned>(nullptr, particleName + "::kMatrix::nPoles");
-  std::vector<std::string> channels = Property<std::vector<std::string>>(nullptr, particleName + "::kMatrix::channels");
-  auto const pa_type = Property<PA_TYPE>(nullptr, particleName + "::kMatrix::production_amplitude", PA_TYPE::PVec);
+  unsigned nPoles = Property<unsigned>(this, particleName + "::kMatrix::nPoles");
+  std::vector<std::string> channels = Property<std::vector<std::string>>(this, particleName + "::kMatrix::channels");
+  auto const pa_type = Property<PA_TYPE>(this, particleName + "::kMatrix::production_amplitude", PA_TYPE::PVec);
   auto nChannels = channels.size();
   auto s0 = mass * mass;
   std::vector<Expression> phsps, bw_phase_space;
@@ -113,7 +113,7 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix)
           auto c2 = std::to_string(ch2);
           if(ch1 > ch2)
             std::swap(c1, c2);
-          std::string nrShape = Property<std::string>(nullptr, particleName + "::" + c1 + "::" + c2 + "::nrShape", "flat");
+          std::string nrShape = Property<std::string>(this, particleName + "::" + c1 + "::" + c2 + "::nrShape", "flat");
           Expression f1 = Parameter(particleName + "::f1::" + c1 + "::" + c2, 0);
           if(nrShape == "flat")
             non_resonant[{ch1 - 1, ch2 - 1}] = f1;

@@ -43,29 +43,8 @@ using namespace AmpGen;
 
 namespace AmpGen
 {
-  make_enum(pdfTypes, CoherentSum, IncoherentSum, PolarisedSum, FixedLib) make_enum(phspTypes, PhaseSpace, RecursivePhaseSpace, TreePhaseSpace)
+  make_enum(pdfTypes, CoherentSum, IncoherentSum, PolarisedSum) make_enum(phspTypes, PhaseSpace, RecursivePhaseSpace, TreePhaseSpace)
 }
-
-struct FixedLibPDF
-{
-  void *lib = {nullptr};
-  DynamicFCN<double(const double *, int)> PDF;
-  void debug(const Event & /*event*/){};
-  void prepare(){};
-  void setEvents(AmpGen::EventList & /*evts*/){};
-  void setEvents(AmpGen::EventListSIMD & /*evts*/){};
-  double operator()(const AmpGen::Event &evt) const { return PDF(evt, 1); }
-  double operator()(const double *evt, const unsigned & /*index*/) { return PDF(evt, 1); }
-  FixedLibPDF(const std::string &lib)
-  {
-    void *handle = dlopen(lib.c_str(), RTLD_NOW);
-    if(handle == nullptr)
-      ERROR(dlerror());
-    PDF = DynamicFCN<double(const double *, int)>(handle, "FCN");
-  }
-  size_t size() { return 0; }
-  void reset(const bool &){};
-};
 
 template <class T> void generateSource(T &pdf, const std::string &sourceFile, MinuitParameterSet &mps)
 {
@@ -117,27 +96,15 @@ template <class T> void generateSource(T &pdf, const std::string &sourceFile, Mi
 
 template <typename pdf_t> Particle getTopology(const pdf_t &pdf)
 {
-  if constexpr(std::is_same<pdf_t, FixedLibPDF>::value)
-    {
-      FATAL("Cannot deduce decay topology from a compiled library, check generator options");
-    }
-  else
-    return pdf.matrixElements()[0].decayTree.quasiStableTree();
+  return pdf.matrixElements()[0].decayTree.quasiStableTree();
 }
 
 template <typename pdf_t> std::vector<Particle> getDecayChains(const pdf_t &pdf)
 {
-  if constexpr(std::is_same<pdf_t, FixedLibPDF>::value)
-    {
-      FATAL("Cannot deduce decay topology from a compiled library, check generator options");
-    }
-  else
-    {
-      std::vector<Particle> channels;
-      for(auto &chain : pdf.matrixElements())
-        channels.push_back(chain.decayTree);
-      return channels;
-    }
+  std::vector<Particle> channels;
+  for(auto &chain : pdf.matrixElements())
+    channels.push_back(chain.decayTree);
+  return channels;
 }
 
 template <typename pdf_t>
@@ -151,12 +118,7 @@ void generateEvents(EventList &events, pdf_t &pdf, const phspTypes &phsp_type, c
     generator.fillEventList(pdf, events, nEvents);
   };
 
-  if constexpr(std::is_same<pdf_t, FixedLibPDF>::value)
-    {
-      Generator<PhaseSpace> signalGenerator(events.eventType());
-      fill(signalGenerator);
-    }
-  else if(phsp_type == phspTypes::PhaseSpace)
+  if(phsp_type == phspTypes::PhaseSpace)
     {
       Generator<PhaseSpace> signalGenerator(events.eventType());
       fill(signalGenerator);
@@ -186,19 +148,19 @@ int main(int argc, char **argv)
       std::make_pair(phspTypes::TreePhaseSpace, "Divides the phase-space into a series of quasi two-body phase-spaces for efficiently generating narrow states.\0"),
       std::make_pair(phspTypes::RecursivePhaseSpace, "Includes possible quasi-stable particles and the phase spaces of their decay products, such as Λ baryons.\0"));
   
-  std::string pdfType_hs =  helpStringOptions("Type of PDF to use:", std::make_pair(pdfTypes::CoherentSum, "Describes decays of a (pseudo)scalar particle to N pseudoscalars"),
-                       std::make_pair(pdfTypes::PolarisedSum, "Describes the decay of a particle with spin to N particles carrying spin."),
-                       std::make_pair(pdfTypes::FixedLib, "PDF to describe a decay from a precompiled library, such as those provided to GAUSS."));
-  
+  std::string pdfType_hs =  helpStringOptions("Type of PDF to use:", 
+                       std::make_pair(pdfTypes::CoherentSum, "Describes decays of a (pseudo)scalar particle to N pseudoscalars"),
+                       std::make_pair(pdfTypes::IncoherentSum, "Describes background-like contribution to pseudoscalar decay processes."),
+                       std::make_pair(pdfTypes::PolarisedSum, "Describes the decay of a particle with spin to N particles carrying spin.") );
+
   Property<strings> eventType_s {nullptr, "EventType", {}, "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"};
-  Property<std::string> decay   {nullptr, "Decay", "", "Single decay written on the command line"};
+  Property<std::string> decay   {nullptr, "Decay", "", "Single decay written on the command line, overwrites all other options."};
   Property<size_t> nEvents      {nullptr, "nEvents", 1, "Total number of events to generate"};
   Property<size_t> blockSize    {nullptr, "BlockSize", 5000000, "Number of events to generate per block"};
   Property<int>    seed         {nullptr, "Seed", 0, "Random seed used in event Generation. Should always be set for pseudoexperiment generation."};
   Property<std::string> outfile {nullptr, "Output", "Generate_Output.root", "Name of output file"};
   Property<pdfTypes> pdfType    {nullptr, "Type", pdfTypes::CoherentSum, pdfType_hs};
   Property<phspTypes> phspType  {nullptr, "PhaseSpace", phspTypes::PhaseSpace, phspType_hs};
-  Property<std::string> lib     {nullptr, "Library", "", "Name of library to use for a fixed library generation"};
   Property<size_t>    nBins     {nullptr, "nBins", 100, "Number of bins for monitoring plots."};
   auto ext = *split(outfile, '.').rbegin();
   Property<bool> sourceOnly     {nullptr, "SourceOnly", ext == "root" ? false : true, "Flag to only generate the source code, but not produce any events"};
@@ -223,6 +185,10 @@ int main(int argc, char **argv)
   MPS.loadFromStream();
 
   EventType eventType;
+  
+  if(OptionsParser::printHelp())
+    return 0;
+  
   if(decay != "")
     {
       Particle p(decay);
@@ -238,8 +204,6 @@ int main(int argc, char **argv)
   if(conj || addCPConjugate)
     AddCPConjugate(MPS);
   
-  if(OptionsParser::printHelp())
-    return 0;
 
   INFO("Writing output: " << outfile);
 #ifdef _OPENMP
@@ -298,12 +262,6 @@ int main(int argc, char **argv)
         FATAL("Requested model has no amplitudes");
       generateEvents(accepted, pdf, phspType, nEvents, blockSize, &rand);
     }
-  /*
-  else if ( pdfType == pdfTypes::FixedLib ){
-    FixedLibPDF pdf(lib);
-    generateEvents( accepted, pdf, phspType, nEvents, blockSize, &rand, false );
-  }
-  */
   else
     {
       FATAL("Did not recognise configuration: " << pdfType);
