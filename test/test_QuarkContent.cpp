@@ -8,17 +8,15 @@ namespace utf = boost::unit_test;
 
 #include "AmpGen/QuarkContent.h"
 
-using namespace AmpGen; 
+using namespace AmpGen;
 
-BOOST_AUTO_TEST_CASE( test_QuarkState ) {
-
+BOOST_AUTO_TEST_CASE(test_QuarkState) {
   QuarkState uD("uD");
   QuarkState dU("dU");
-  
-  BOOST_CHECK( uD != dU );
+
+  BOOST_CHECK(uD != dU);
 
   auto vu = uD + dU;
 
-  BOOST_CHECK( vu.isVacuum());
-
+  BOOST_CHECK(vu.isVacuum());
 }

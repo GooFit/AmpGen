@@ -6,8 +6,7 @@
 
 using namespace AmpGen;
 
-DEFINE_LINESHAPE(Gaussian)
-{
+DEFINE_LINESHAPE(Gaussian) {
   Expression mu = Parameter(lineshapeModifier + "_mean");
   Expression sigma = Parameter(lineshapeModifier + "_sigma");
   const Expression d = s - mu;

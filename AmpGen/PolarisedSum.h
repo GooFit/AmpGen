@@ -21,17 +21,16 @@
 #include "AmpGen/Tensor.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/enum.h"
+#include "AmpGen/Configurable.h" 
 
-namespace AmpGen
-{
+namespace AmpGen {
   class LinearErrorPropagator;
   class MinuitParameterSet;
   class FitFraction;
   class MinuitProxy;
   make_enum(spaceType, spin, flavour);
 
-  class PolarisedSum
-  {
+  class PolarisedSum : public Configurable<PolarisedSum> {
   public:
 #if ENABLE_AVX
     using EventList_type = EventListSIMD;
@@ -40,13 +39,13 @@ namespace AmpGen
 #endif
 
     PolarisedSum() = default;
+    virtual ~PolarisedSum();
     PolarisedSum(const EventType &, MinuitParameterSet &, const std::vector<MinuitProxy> & = {});
     void prepare();
     void setEvents(EventList_type &);
     void setMC(EventList_type &);
 #if ENABLE_AVX
-    void setEvents(EventList &evts)
-    {
+    void setEvents(EventList &evts) {
       m_ownEvents = true;
       setEvents(*new EventList_type(evts));
     };
@@ -75,7 +74,6 @@ namespace AmpGen
     std::function<real_t(const Event &)> evaluator(const EventList_type * = nullptr) const;
     KeyedFunctors<double(Event)> componentEvaluator(const EventList_type * = nullptr) const;
     EventType eventType() const { return m_eventType; }
-    ~PolarisedSum();
     auto cache() { return m_cache; }
 
   private:
@@ -100,11 +98,7 @@ namespace AmpGen
     std::vector<MatrixElement> m_matrixElements;
     CompiledExpression<real_v(const real_t *, const complex_v *)> m_probExpression;
 
-    Property<bool> m_verbosity{this, "PolarisedSum::Verbosity", false};
-    Property<bool> m_debug{this, "PolarisedSum::Debug", false};
-    Property<std::string> m_objCache{this, "PolarisedSum::ObjectCache", ""};
     Property<spaceType> m_spaceType{this, "PolarisedSum::SpaceType", spaceType::spin};
-    Property<bool> m_autoCompile{this, "AutoCompile", true};
   };
 } // namespace AmpGen
 

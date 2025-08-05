@@ -5,15 +5,12 @@
 #include "AmpGen/Particle.h"
 #include "AmpGen/Transform.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class Particle;
   using TransformCache = std::map<std::string, TransformSequence>;
 
-  namespace Helicity
-  {
-    struct Flags
-    {
+  namespace Helicity {
+    struct Flags {
       bool movingHead = {true};
       bool alignFrames = {true};
     };
@@ -39,8 +36,7 @@ namespace AmpGen
   Tensor basisSpinor(const int &polState, const int &id);
   Tensor basisVector(const int &polState);
 
-  struct LS
-  {
+  struct LS {
     double factor = {1};
     double cg1 = {0};
     double cg2 = {0};

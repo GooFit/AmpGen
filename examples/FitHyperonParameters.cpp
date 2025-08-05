@@ -4,8 +4,7 @@
 
 using namespace AmpGen;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   OptionsParser::setArgs(argc, argv);
   MinuitParameterSet mps;
   mps.add("gRe", AmpGen::Flag::Free, 0, 0.1, -10, 10);

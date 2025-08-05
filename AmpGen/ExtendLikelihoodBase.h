@@ -4,14 +4,12 @@
 #include <string>
 #include <vector>
 
-namespace AmpGen
-{
+namespace AmpGen {
   class MinuitParameterSet;
   class MinuitParameter;
   class CoherentSum;
 
-  class ExtendLikelihoodBase
-  {
+  class ExtendLikelihoodBase {
   public:
     virtual ~ExtendLikelihoodBase() = default;
     virtual double operator()() const = 0;
@@ -19,8 +17,7 @@ namespace AmpGen
     virtual ExtendLikelihoodBase *create() = 0;
   };
 
-  class GaussianConstraint : public ExtendLikelihoodBase
-  {
+  class GaussianConstraint : public ExtendLikelihoodBase {
   public:
     double operator()() const override;
     GaussianConstraint() = default;
@@ -34,8 +31,7 @@ namespace AmpGen
     double m_sigma;
   };
 
-  class LASSO : public ExtendLikelihoodBase
-  {
+  class LASSO : public ExtendLikelihoodBase {
   public:
     double operator()() const override;
     LASSO(const CoherentSum *pdf = nullptr) : m_pdf(pdf){};

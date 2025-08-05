@@ -15,9 +15,9 @@
 #include "AmpGen/Property.h"
 #include "AmpGen/CacheTransfer.h"
 #include "AmpGen/Spline.h"
+#include "AmpGen/Property.h" 
 
-namespace AmpGen
-{
+namespace AmpGen {
   class MinuitParameter;
   class MinuitParameterSet;
   class MinuitParameterLink;
@@ -29,18 +29,15 @@ namespace AmpGen
       such as sub-trees, external parameters and the mapping between particle kinematics and the
       event vector.
   */
-  class ASTResolver
-  {
+  class ASTResolver {
   public:
     ASTResolver(const std::map<std::string, unsigned> &evtMap = {}, const MinuitParameterSet *mps = nullptr);
     std::vector<std::pair<uint64_t, Expression>> getOrderedSubExpressions(const Expression &expression);
 
     template <class TYPE> void resolve(const TYPE &obj) {}
-    template <class TYPE, class... ARGS> size_t addCacheFunction(const std::string &name, const ARGS &... args)
-    {
+    template <class TYPE, class... ARGS> size_t addCacheFunction(const std::string &name, const ARGS &... args) {
       auto it = m_cacheFunctions.find(name);
-      if(it != m_cacheFunctions.end())
-        return it->second->address();
+      if(it != m_cacheFunctions.end()) return it->second->address();
       m_cacheFunctions[name] = std::make_shared<TYPE>(m_nParameters, name, args...);
       m_nParameters += m_cacheFunctions[name]->size();
       return m_nParameters - m_cacheFunctions[name]->size();

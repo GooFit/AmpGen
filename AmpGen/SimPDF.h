@@ -3,22 +3,17 @@
 
 #include <tuple>
 
-namespace AmpGen
-{
-  class SimFit
-  {
+namespace AmpGen {
+  class SimFit {
   public:
     SimFit() = default;
-    double getVal()
-    {
+    double getVal() {
       double LL = 0;
-      for(auto &pdf : m_pdfs)
-        LL += pdf();
+      for(auto &pdf : m_pdfs) LL += pdf();
       return LL;
     }
 
-    template <class PDF> void add(PDF &pdf)
-    {
+    template <class PDF> void add(PDF &pdf) {
       INFO("Adding " << &pdf << " to sim fit");
       m_pdfs.emplace_back([&pdf]() -> double { return pdf.getVal(); });
     }

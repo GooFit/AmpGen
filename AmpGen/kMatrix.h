@@ -5,10 +5,8 @@
 #include "AmpGen/Tensor.h"
 #include "AmpGen/Lineshapes.h"
 
-namespace AmpGen
-{
-  namespace Lineshape
-  {
+namespace AmpGen {
+  namespace Lineshape {
     /** @ingroup Lineshapes class kMatrix
         @brief Anisovich-Sarantsev Isoscalar K-matrix from https://arxiv.org/abs/hep-ph/0204328
 
@@ -25,15 +23,13 @@ namespace AmpGen
     DECLARE_LINESHAPE(kMatrix);
   }
 
-  struct poleConfig
-  {
+  struct poleConfig {
     Expression s;
     std::vector<Expression> couplings;
     std::vector<Expression> bl_factors;
     poleConfig(const Expression &s, const std::vector<Expression> &c = {}) : s(s), couplings(c), bl_factors(c.size(), 1){};
 
-    void add(const Expression &coupling, const Expression &bl_factor = 1)
-    {
+    void add(const Expression &coupling, const Expression &bl_factor = 1) {
       couplings.push_back(coupling);
       bl_factors.push_back(bl_factor);
     }

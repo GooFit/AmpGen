@@ -9,16 +9,13 @@
 // Generator of discrete distributions,
 // based on https://github.com/DavidPal/discrete-distribution
 // But modified to work with TRandom
-namespace AmpGen
-{
-  class DiscreteDistribution
-  {
+namespace AmpGen {
+  class DiscreteDistribution {
   public:
     DiscreteDistribution() = default;
     DiscreteDistribution(const std::vector<double> &weights);
 
-    unsigned operator()(TRandom3 *generator) const
-    {
+    unsigned operator()(TRandom3 *generator) const {
       const double number = generator->Uniform();
       size_t index = floor(m_buckets.size() * number);
       const auto &bucket = m_buckets[index];

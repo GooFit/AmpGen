@@ -14,14 +14,12 @@
 #include "AmpGen/Types.h"
 #include "AmpGen/KeyedFunctors.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class Projection2D;
   class Event;
   class EventList;
 
-  class Projection
-  {
+  class Projection {
     using keyedFunctors = KeyedFunctors<double(Event)>;
 
   public:
@@ -29,18 +27,15 @@ namespace AmpGen
     template <class FCN>
     Projection(const FCN &fcn, const std::string &name, const std::string &xAxisTitle, const size_t &nBins, const double &min, const double &max,
                const std::string &units = "")
-        : Projection(std::function<double(const Event &)>(fcn), name, xAxisTitle, nBins, min, max, units)
-    {}
+        : Projection(std::function<double(const Event &)>(fcn), name, xAxisTitle, nBins, min, max, units) {}
     Projection(const std::function<double(const Event &)> &fcn, const std::string &name, const std::string &xAxisTitle, const size_t &nBins, const double &min,
                const double &max, const std::string &units = "");
     const std::string name() const;
-    template <class eventlist_type, class... ARGS> TH1D *operator()(const eventlist_type &evts, const ARGS... args) const
-    {
+    template <class eventlist_type, class... ARGS> TH1D *operator()(const eventlist_type &evts, const ARGS... args) const {
       return projInternal(evts, ArgumentPack(args...));
     }
     template <class eventlist_type, class... ARGS>
-    std::tuple<std::vector<TH1D *>, THStack *> operator()(const eventlist_type &evts, const keyedFunctors &weightFunction, const ARGS... args) const
-    {
+    std::tuple<std::vector<TH1D *>, THStack *> operator()(const eventlist_type &evts, const keyedFunctors &weightFunction, const ARGS... args) const {
       return projInternal(evts, weightFunction, ArgumentPack(args...));
     }
 
@@ -49,8 +44,7 @@ namespace AmpGen
     TH1D *plot(const std::string &prefix = "") const;
 
     std::function<int(const Event &evt)> binFunctor() const;
-    void setRange(const double &min, const double &max)
-    {
+    void setRange(const double &min, const double &max) {
       m_min = min;
       m_max = max;
       m_width = (m_max - m_min) / double(m_nBins);
@@ -71,8 +65,7 @@ namespace AmpGen
     double m_width = {0};
   };
 
-  class Projection2D
-  {
+  class Projection2D {
     friend class Projection;
     Projection xAxis;
     Projection yAxis;
@@ -82,15 +75,13 @@ namespace AmpGen
     Projection2D(const Projection &_xAxis, const Projection &_yAxis) : xAxis(_xAxis), yAxis(_yAxis) {}
 
     TH2D *plot(const std::string &prefix = "") const;
-    template <class eventlist_type, class... ARGS> TH2D *operator()(const eventlist_type &evts, const ARGS... args) const
-    {
+    template <class eventlist_type, class... ARGS> TH2D *operator()(const eventlist_type &evts, const ARGS... args) const {
       return projInternal(evts, ArgumentPack(args...));
     }
 
     std::pair<double, double> operator()(const Event &evt) const;
   };
-  namespace PlotOptions
-  {
+  namespace PlotOptions {
     DECLARE_ARGUMENT(LineColor, int);
     DECLARE_ARGUMENT(DrawStyle, std::string);
     DECLARE_ARGUMENT(Selection, std::function<bool(const Event &)>);

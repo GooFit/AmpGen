@@ -8,8 +8,7 @@
 #include <TLorentzVector.h>
 #include <TVector3.h>
 
-namespace AmpGen
-{
+namespace AmpGen {
   class Event;
 
   /** @defgroup Kin Kinematics
@@ -21,8 +20,7 @@ namespace AmpGen
   /** @ingroup Kin class HelicityCosine
      @brief Functor to compute the angle between set of particles {1} and {2} in the rest frame of set {3}.
    */
-  class HelicityCosine
-  {
+  class HelicityCosine {
   public:
     HelicityCosine(const std::vector<unsigned> &p1, const std::vector<unsigned> &p2, const std::vector<unsigned> &pR);
 
@@ -38,8 +36,7 @@ namespace AmpGen
   /** @ingroup Kin class MomentumTransfer
       @brief Functor to calculate the linear momemtum between particles {1} and {2} in the rest frame of {1} + {2}.
    */
-  class MomentumTransfer
-  {
+  class MomentumTransfer {
   public:
     MomentumTransfer(const std::vector<unsigned> &_p1, const std::vector<unsigned> &_p2);
     double operator()(const Event &evt) const;

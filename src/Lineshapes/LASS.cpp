@@ -10,8 +10,7 @@
 using namespace AmpGen;
 using namespace AmpGen::fcn;
 
-DEFINE_LINESHAPE(LASS)
-{
+DEFINE_LINESHAPE(LASS) {
   const auto props = ParticlePropertiesList::get(particleName);
   Expression mass = Parameter(particleName + "_mass", props->mass());
   Expression width0 = Parameter(particleName + "_width", props->width());
@@ -45,9 +44,7 @@ DEFINE_LINESHAPE(LASS)
   // component from Laura++, as a better implementation of the "gLASS" lineshape
   // the BW and NR amplitudes can be included separately with separate amplitudes and
 
-  if(lineshapeModifier == "BW")
-    return bw * nrPhaseShift;
-  if(lineshapeModifier == "NR")
-    return NR;
+  if(lineshapeModifier == "BW") return bw * nrPhaseShift;
+  if(lineshapeModifier == "NR") return NR;
   return NR + bw * nrPhaseShift;
 }

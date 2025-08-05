@@ -33,36 +33,30 @@ LGamma::operator Expression() const { return Expression(std::make_shared<LGamma>
 complex_t LGamma::operator()() const { return std::lgamma(std::abs(m_expression())); }
 std::string LGamma::to_string(const ASTResolver *resolver) const { return "std::lgamma(" + m_expression.to_string(resolver) + ")"; }
 
-std::string ISqrt::to_string(const ASTResolver *resolver) const
-{
+std::string ISqrt::to_string(const ASTResolver *resolver) const {
   return resolver != nullptr && resolver->enableCuda() ? "rsqrt(" + m_expression.to_string(resolver) + ")"
                                                        : "1./sqrt(" + m_expression.to_string(resolver) + ")";
 }
 
-std::string Abs::to_string(const ASTResolver *resolver) const
-{
+std::string Abs::to_string(const ASTResolver *resolver) const {
   return resolver != nullptr && resolver->enableAVX() ? "abs(" + m_expression.to_string(resolver) + ")" : "std::abs(" + m_expression.to_string(resolver) + ")";
 }
 
-std::string Conj::to_string(const ASTResolver *resolver) const
-{
+std::string Conj::to_string(const ASTResolver *resolver) const {
   return (resolver != nullptr && resolver->enableAVX() ? "conj(" : "std::conj(") + m_expression.to_string(resolver) + ")";
 }
 
-std::string Norm::to_string(const ASTResolver *resolver) const
-{
+std::string Norm::to_string(const ASTResolver *resolver) const {
   return resolver != nullptr && resolver->enableAVX() ? "norm(" + m_expression.to_string(resolver) + ")"
                                                       : "std::norm(" + m_expression.to_string(resolver) + ")";
 }
 
-std::string Real::to_string(const ASTResolver *resolver) const
-{
+std::string Real::to_string(const ASTResolver *resolver) const {
   return resolver != nullptr && resolver->enableAVX() ? "real(" + m_expression.to_string(resolver) + ")"
                                                       : "std::real(" + m_expression.to_string(resolver) + ")";
 }
 
-std::string Imag::to_string(const ASTResolver *resolver) const
-{
+std::string Imag::to_string(const ASTResolver *resolver) const {
   return resolver != nullptr && resolver->enableAVX() ? "imag(" + m_expression.to_string(resolver) + ")"
                                                       : "std::imag(" + m_expression.to_string(resolver) + ")";
 }

@@ -8,18 +8,14 @@ using namespace AmpGen;
 
 ProgressBar::ProgressBar(const size_t &width, const std::string &context) : m_width(width), m_lastPercent(-1), m_context(context) {}
 
-ProgressBar::~ProgressBar()
-{
-  if(!m_finished)
-    finish();
+ProgressBar::~ProgressBar() {
+  if(!m_finished) finish();
 }
 
-void ProgressBar::print(const double &percentage, const std::string &message)
-{
+void ProgressBar::print(const double &percentage, const std::string &message) {
   int lpad = int(percentage * m_width);
   int val = int(percentage * 100);
-  if(val == m_lastPercent)
-    return;
+  if(val == m_lastPercent) return;
   m_lastPercent = val;
   std::cout << "\r\033[2;34m" << std::left << std::setw(detail::FCNNAMELENGTH) << m_context << "  INFO         "
             << "\033[0m";
@@ -36,8 +32,7 @@ void ProgressBar::print(const double &percentage, const std::string &message)
   fflush(stdout);
 }
 
-void ProgressBar::finish()
-{
+void ProgressBar::finish() {
   print(1, m_lastMessage);
   std::cout << std::endl;
   m_finished = true;

@@ -44,9 +44,8 @@ using namespace AmpGen;
 
 template <typename PDF> FitResult *doFit(PDF &&pdf, EventList_type &data, EventList_type &mc, MinuitParameterSet &MPS);
 
-int main(int argc, char *argv[])
-{
-  using strings = std::vector<std::string>; 
+int main(int argc, char *argv[]) {
+  using strings = std::vector<std::string>;
   /* The user specified options must be loaded at the beginning of the programme,
      and these can be specified either at the command line or in an options file. */
   OptionsParser::setArgs(argc, argv);
@@ -60,9 +59,8 @@ int main(int argc, char *argv[])
   std::string logFile = Property<std::string>("LogFile", "Fitter.log", "Name of the output log file");
   std::string plotFile = Property<std::string>("Plots", "plots.root", "Name of the output plot file");
 
-  auto bNames = Property<strings>("Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"); 
-  auto pNames = Property<strings>("EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"); 
-
+  auto bNames = Property<strings>("Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m");
+  auto pNames = Property<strings>("EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m");
 
   [[maybe_unused]] size_t nThreads = Property<size_t>("nCores", 8, "Number of threads to use");
   size_t seed = Property<size_t>("Seed", 0, "Random seed used");
@@ -70,10 +68,8 @@ int main(int argc, char *argv[])
   std::string outOptFile = Property<std::string>("OutputOptionFile", "", "Name of output option file updated with the best-fit parameters");
   std::string inOptFile = Property<std::string>("InputOptionFile", "", "Name of input option file to use as template for OutputOptionFile");
 
-  if(dataFile == "")
-    FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off);
-  if(pNames.value().size() == 0)
-    FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
+  if(dataFile == "") FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off);
+  if(pNames.value().size() == 0) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
 
   TRandom3 rndm;
   rndm.SetSeed(seed);
@@ -131,14 +127,12 @@ int main(int argc, char *argv[])
 
   fr->addFractions(fitFractions);
   fr->writeToFile(logFile);
-  if(outOptFile != "")
-    fr->writeOptions(outOptFile, inOptFile);
+  if(outOptFile != "") fr->writeOptions(outOptFile, inOptFile);
 
   output->Close();
 }
 
-template <typename likelihoodType> FitResult *doFit(likelihoodType &&likelihood, EventList_type &data, EventList_type &mc, MinuitParameterSet &MPS)
-{
+template <typename likelihoodType> FitResult *doFit(likelihoodType &&likelihood, EventList_type &data, EventList_type &mc, MinuitParameterSet &MPS) {
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time = std::clock();
   /* Minimiser is a general interface to Minuit1/Minuit2,
@@ -168,13 +162,12 @@ template <typename likelihoodType> FitResult *doFit(likelihoodType &&likelihood,
   auto evaluator = likelihood.componentEvaluator(&mc);
   auto evaluator_per_component = std::get<0>(likelihood.pdfs()).componentEvaluator(&mc);
   auto projections = data.eventType().defaultProjections(100);
-  for(const auto &proj : projections)
-    {
-      proj(mc, evaluator, PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
-      if(Property<bool>("AllComponents", true))
-        proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
-      proj(data, PlotOptions::Prefix("Data"))->Write();
-    }
+  for(const auto &proj : projections) {
+    proj(mc, evaluator, PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
+    if(Property<bool>("AllComponents", true))
+      proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
+    proj(data, PlotOptions::Prefix("Data"))->Write();
+  }
 
   auto root_fr = mini.fitResult();
   auto x = new TFitResult(root_fr);

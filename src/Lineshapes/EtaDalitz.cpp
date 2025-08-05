@@ -10,8 +10,7 @@
 using namespace AmpGen;
 using namespace AmpGen::fcn;
 
-DEFINE_GENERIC_SHAPE(EtaDalitz)
-{
+DEFINE_GENERIC_SHAPE(EtaDalitz) {
   auto pp = *p.daughter("pi+");
   auto pm = *p.daughter("pi-");
   auto p0 = *p.daughter("pi0");
@@ -26,7 +25,6 @@ DEFINE_GENERIC_SHAPE(EtaDalitz)
   Expression z = 1.0 - 1.07 * y;
   Expression amp = Ternary(z > 0.0, sqrt(z), 1);
 
-  if(lineshapeModifier != "")
-    amp = amp * Lineshape::Factory::get(lineshapeModifier, p, dbexpressions);
+  if(lineshapeModifier != "") amp = amp * Lineshape::Factory::get(lineshapeModifier, p, dbexpressions);
   return amp;
 }

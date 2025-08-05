@@ -16,8 +16,7 @@
 #include "AmpGen/DiscreteDistribution.h"
 #include <TRandom3.h>
 
-namespace AmpGen
-{
+namespace AmpGen {
   class Particle;
   class Event;
   class DecayChainStackBase;
@@ -34,8 +33,7 @@ namespace AmpGen
     ideally feedback could be given from the generator phase to focus on the more efficient channels,
     i.e. those that have larger contributions to the full amplitude.
     */
-  class TreePhaseSpace
-  {
+  class TreePhaseSpace {
   public:
     explicit TreePhaseSpace(const EventType &type);
     TreePhaseSpace(const Particle &decayChain, const EventType &type, TRandom *rndm = nullptr);

@@ -10,17 +10,14 @@
 #include "AmpGen/EventListSIMD.h"
 #include "AmpGen/EventList.h"
 
-namespace AmpGen
-{
-  class Integrator
-  {
+namespace AmpGen {
+  class Integrator {
 #if ENABLE_AVX
     using EventList_t = EventListSIMD;
 #else
     using EventList_t = EventList;
 #endif
-    struct QueuedIntegral
-    {
+    struct QueuedIntegral {
       QueuedIntegral() = default;
       QueuedIntegral(complex_t *result, const unsigned &i, const unsigned &j) : result(result), i(i), j(j) {}
       complex_t *result = {nullptr};
@@ -31,21 +28,18 @@ namespace AmpGen
   public:
     Integrator() = default;
 
-    template <typename EventList_type, typename T> Integrator(const EventList_type *events, const std::vector<T> &expressions = {}) : m_events(events)
-    {
-      if(events == nullptr)
-        {
-          WARNING("No events specified, returning");
-          return;
-        }
+    template <typename EventList_type, typename T> Integrator(const EventList_type *events, const std::vector<T> &expressions = {}) : m_events(events) {
+      if(events == nullptr) {
+        WARNING("No events specified, returning");
+        return;
+      }
       m_cache.allocate(events, expressions);
       m_weight.resize(events->nBlocks());
       real_v norm_acc = 0.;
-      for(size_t i = 0; i < events->nBlocks(); ++i)
-        {
-          m_weight[i] = events->weight(i) / events->genPDF(i);
-          norm_acc += m_weight[i];
-        }
+      for(size_t i = 0; i < events->nBlocks(); ++i) {
+        m_weight[i] = events->weight(i) / events->genPDF(i);
+        norm_acc += m_weight[i];
+      }
       m_norm = utils::sum_elements(norm_acc);
     }
 
@@ -57,10 +51,8 @@ namespace AmpGen
     template <class T> unsigned getCacheIndex(const T &t) const { return m_cache.find(t.name())[0]; }
     double norm() const { return m_norm; }
 
-    template <class T> void updateCache(const T &expression)
-    {
-      if(isReady())
-        m_cache.update(expression);
+    template <class T> void updateCache(const T &expression) {
+      if(isReady()) m_cache.update(expression);
     }
     template <class T> const T *events() const { return static_cast<const T *>(m_events); }
 
@@ -77,8 +69,7 @@ namespace AmpGen
     void integrateBlock();
   };
 
-  class Bilinears
-  {
+  class Bilinears {
   private:
     size_t rows;
     size_t cols;
@@ -89,10 +80,8 @@ namespace AmpGen
   public:
     Bilinears(const size_t &r = 0, const size_t &c = 0);
     complex_t get(const size_t &x, const size_t &y) const;
-    complex_t get(const size_t &x, const size_t &y, Integrator *integ = nullptr, const size_t &kx = 0, const size_t &ky = 0)
-    {
-      if(integ != nullptr)
-        integ->queueIntegral(&norms[x * cols + y], kx, ky);
+    complex_t get(const size_t &x, const size_t &y, Integrator *integ = nullptr, const size_t &kx = 0, const size_t &ky = 0) {
+      if(integ != nullptr) integ->queueIntegral(&norms[x * cols + y], kx, ky);
       /// will return the wrong answer for now, but queues for later..
       return norms[x * cols + y];
     }

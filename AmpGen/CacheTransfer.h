@@ -7,14 +7,12 @@
 #include <functional>
 #include "AmpGen/MsgService.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class CompiledExpressionBase;
   class MinuitParameter;
   class LambdaExpression;
 
-  class CacheTransfer
-  {
+  class CacheTransfer {
   public:
     CacheTransfer(const size_t &address, const std::string &name, const double &value = 0, const size_t &size = 1);
     virtual ~CacheTransfer() = default;
@@ -38,8 +36,7 @@ namespace AmpGen
     std::string m_name = {""};
   };
 
-  class ParameterTransfer : public CacheTransfer
-  {
+  class ParameterTransfer : public CacheTransfer {
   public:
     ParameterTransfer(const size_t &address, const std::string &name, MinuitParameter *source);
     virtual ~ParameterTransfer() = default;
@@ -53,8 +50,7 @@ namespace AmpGen
   protected:
     MinuitParameter *m_source = {nullptr};
   };
-  class LambdaTransfer : public CacheTransfer
-  {
+  class LambdaTransfer : public CacheTransfer {
   public:
     LambdaTransfer(const size_t &address, const std::string &name, const LambdaExpression *source);
 

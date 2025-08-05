@@ -8,8 +8,7 @@
 #include <array>
 #include "AmpGen/Types.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   /** @class Event
       @brief Encapsulates the final state particles of a single event
 
@@ -17,8 +16,7 @@ namespace AmpGen
      kinematics, i.e. four-momenta, (ii). the weight of the given event/candidate, (iii). The probability that the event was generated with, in the case of a
      simulated event */
 
-  class Event
-  {
+  class Event {
   public:
     Event() = default;
     Event(const unsigned &N);

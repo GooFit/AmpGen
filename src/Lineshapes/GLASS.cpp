@@ -10,8 +10,7 @@
 using namespace AmpGen;
 using namespace AmpGen::fcn;
 
-DEFINE_LINESHAPE(GLASS)
-{
+DEFINE_LINESHAPE(GLASS) {
   const auto props = ParticlePropertiesList::get(particleName);
   const auto mass = Parameter(particleName + "_mass", props->mass());
   const auto width0 = Parameter(particleName + "_width", props->width());

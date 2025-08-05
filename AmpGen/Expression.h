@@ -41,8 +41,7 @@
 /// @ingroup ExpressionEngine macro ADD_DEBUG
 /// Make a (named) debugging expression and add to a set of DebugSymbols.
 #define ADD_DEBUG(X, Y)                                                                                                                                        \
-  if(Y != 0)                                                                                                                                                   \
-    Y->push_back(DebugSymbol(std::string(#X), X));
+  if(Y != 0) Y->push_back(DebugSymbol(std::string(#X), X));
 
 /// @ingroup ExpressionEngine macro DEFINE_CAST
 /// Define a cast from an expression implementation to the shared_ptr wrapper.
@@ -68,8 +67,7 @@
 /// @ingroup ExpressionEngine macro DECLARE_UNARY_OPERATOR
 /// Macro to declare a unary operator, \ref ExpressionEngine "see IUnaryExpression"
 #define DECLARE_UNARY_OPERATOR(X)                                                                                                                              \
-  class X : public IUnaryExpression                                                                                                                            \
-  {                                                                                                                                                            \
+  class X : public IUnaryExpression {                                                                                                                          \
   public:                                                                                                                                                      \
     explicit X(const Expression &other);                                                                                                                       \
     virtual std::string to_string(const ASTResolver *resolver = nullptr) const override;                                                                       \
@@ -81,8 +79,7 @@
 /// @ingroup ExpressionEngine macro DECLARE_BINARY_OPERATOR
 /// Macro to declare a binary operator, \ref ExpressionEngine "see IBinaryExpression"
 #define DECLARE_BINARY_OPERATOR(X)                                                                                                                             \
-  class X : public IBinaryExpression                                                                                                                           \
-  {                                                                                                                                                            \
+  class X : public IBinaryExpression {                                                                                                                         \
   public:                                                                                                                                                      \
     X(const Expression &l, const Expression &r);                                                                                                               \
     X(const Expression &expr);                                                                                                                                 \
@@ -105,8 +102,7 @@
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/Types.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class ASTResolver;
   class Expression;
   class Parameter;
@@ -117,8 +113,7 @@ namespace AmpGen
   /** @ingroup ExpressionEngine class IExpression
       @brief Virtual base class for other expression tree components. <br>
       Implementations must permit the following operations on nodes. */
-  class IExpression
-  {
+  class IExpression {
   public:
     /// Called to convert the Expression tree into source code.
     /// \return The source code as a string
@@ -137,8 +132,7 @@ namespace AmpGen
   /** @ingroup ExpressionEngine class Expression
       @brief Wrapper class for shared_ptrs to virtual expressions for use in conjunction with operators
       to build expression trees. */
-  class Expression
-  {
+  class Expression {
   public:
     Expression();
     Expression(const real_t &value);
@@ -161,12 +155,10 @@ namespace AmpGen
 
   /** @ingroup ExpressionEngine class Constant
       @brief Class to contain a constant (which can contain a complex value) */
-  class Constant : public IExpression
-  {
+  class Constant : public IExpression {
   public:
     template <typename T1, typename T2, typename = std::enable_if_t<std::is_constructible<complex_t, T1, T2>::value>>
-    Constant(const T1 &real, const T2 &imag = 0) : m_value(real, imag)
-    {}
+    Constant(const T1 &real, const T2 &imag = 0) : m_value(real, imag) {}
 
     Constant(const complex_t &value) : m_value(value) {}
     std::string to_string(const ASTResolver *resolver = nullptr) const override;
@@ -185,8 +177,7 @@ namespace AmpGen
    such as masses and widths, as well as the event buffer (i.e. kinematic quantities), which should be stored in
    two separated parameter packs. There is also limited support for handling more complex function parameters to functions,
    such as cache states, but this currently requires manually specifying the argument ordering. */
-  class Parameter : public IExpression
-  {
+  class Parameter : public IExpression {
   public:
     Parameter(const std::string &name = "", const double &defaultValue = 0, const bool &resolved = false);
     std::string to_string(const ASTResolver *resolver = nullptr) const override;
@@ -204,8 +195,7 @@ namespace AmpGen
     bool m_resolved;
   };
 
-  class ComplexParameter : public IExpression
-  {
+  class ComplexParameter : public IExpression {
   public:
     ComplexParameter(const Parameter &real, const Parameter &imag);
     std::string to_string(const ASTResolver *resolver = nullptr) const override;
@@ -220,8 +210,7 @@ namespace AmpGen
   /** @ingroup ExpressionEngine class LambdaExpression
       @brief Parameter that the value of which is given by some arbitrary C++ function
   */
-  class LambdaExpression : public IExpression
-  {
+  class LambdaExpression : public IExpression {
   public:
     template <typename function_type> LambdaExpression(const function_type &function) : m_function(function), m_name(type_string<function_type>()) {}
     std::string to_string(const ASTResolver *resolver = nullptr) const override;
@@ -239,8 +228,7 @@ namespace AmpGen
       \code{.cpp}
       return a ? b : c
       \endcode */
-  class Ternary : public IExpression
-  {
+  class Ternary : public IExpression {
   public:
     Ternary(const Expression &cond, const Expression &v1, const Expression &v2);
     std::string to_string(const ASTResolver *resolver = nullptr) const override;
@@ -255,8 +243,7 @@ namespace AmpGen
   };
 
   /// @ingroup ExpressionEngine class SubTree
-  struct SubTree : public IExpression
-  {
+  struct SubTree : public IExpression {
     SubTree(const Expression &other);
     std::string to_string(const ASTResolver *resolver = nullptr) const override;
     void resolve(ASTResolver &resolver) const override;
@@ -269,8 +256,7 @@ namespace AmpGen
     uint64_t m_key;
   };
 
-  struct Function : public IExpression
-  {
+  struct Function : public IExpression {
     Function(const std::string &name, const std::vector<Expression> &args);
     std::string to_string(const ASTResolver *resolver = nullptr) const override;
     void resolve(ASTResolver &resolver) const override;
@@ -282,8 +268,7 @@ namespace AmpGen
   /// @ingroup ExpressionEngine class ExpressionPack
   /// A group of expressions packed into a single expression
 
-  class ExpressionPack : public IExpression
-  {
+  class ExpressionPack : public IExpression {
   public:
     explicit ExpressionPack(const std::vector<Expression> &expressions) : m_expressions(expressions) {}
     ExpressionPack(const Expression &A, const Expression &B);
@@ -299,25 +284,19 @@ namespace AmpGen
 
   /// @ingroup ExpressionEngine class IBinaryExpression
   ///  Base class for binary expressions, i.e. those that take a pair of arguments (such as \f$+,-,\times,/\f$)
-  class IBinaryExpression : public IExpression
-  {
+  class IBinaryExpression : public IExpression {
   public:
     IBinaryExpression(const Expression &l, const Expression &r) : lval(l), rval(r){};
-    IBinaryExpression(const Expression &pack)
-    {
+    IBinaryExpression(const Expression &pack) {
       auto as_pack = static_cast<const ExpressionPack *>(pack.get());
-      if(as_pack != nullptr)
-        {
-          auto expr = as_pack->expressions();
-          if(expr.size() != 2)
-            FATAL("Wrong number of inputs");
-          lval = expr[0];
-          rval = expr[1];
-        }
-      else
-        {
-          FATAL("wrong number of inputs");
-        }
+      if(as_pack != nullptr) {
+        auto expr = as_pack->expressions();
+        if(expr.size() != 2) FATAL("Wrong number of inputs");
+        lval = expr[0];
+        rval = expr[1];
+      } else {
+        FATAL("wrong number of inputs");
+      }
     }
     void resolve(ASTResolver &resolver) const override;
     complex_t operator()() const override = 0;
@@ -381,8 +360,7 @@ namespace AmpGen
   DECLARE_BINARY_OPERATOR(ATan2);
   /// @ingroup ExpressionEngine class IUnaryExpression
   ///  Base class for unary expressions, i.e. those that take a single argument.
-  class IUnaryExpression : public IExpression
-  {
+  class IUnaryExpression : public IExpression {
   public:
     IUnaryExpression(const Expression &other) : m_expression(other){};
     void resolve(ASTResolver &resolver) const override;
@@ -483,8 +461,7 @@ namespace AmpGen
   Expression operator==(const double &A, const Expression &B);
 
   std::ostream &operator<<(std::ostream &os, const Expression &expression);
-  namespace fcn
-  {
+  namespace fcn {
     Expression sqrt(const Expression &expression);
     Expression safe_sqrt(const Expression &expression);
     Expression complex_sqrt(const Expression &expression);

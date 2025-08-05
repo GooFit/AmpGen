@@ -19,22 +19,17 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/MetaUtils.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   template <typename iterator_type, typename functor_type>
-  std::string vectorToString(iterator_type begin, iterator_type end, const std::string &delim, functor_type fcn)
-  {
+  std::string vectorToString(iterator_type begin, iterator_type end, const std::string &delim, functor_type fcn) {
     std::stringstream ss;
-    if(begin == end)
-      return "";
-    for(auto it = begin; it != end - 1; ++it)
-      ss << fcn(*it) << delim;
+    if(begin == end) return "";
+    for(auto it = begin; it != end - 1; ++it) ss << fcn(*it) << delim;
     ss << fcn(*(end - 1));
     return ss.str();
   }
 
-  template <typename tuple_t> std::string tupleToString(const tuple_t &tuple, const std::string &delim)
-  {
+  template <typename tuple_t> std::string tupleToString(const tuple_t &tuple, const std::string &delim) {
     std::stringstream ss;
     for_each(tuple, [&ss, delim](auto &item) { ss << item << delim; });
     return ss.str();
@@ -42,25 +37,20 @@ namespace AmpGen
 
   template <typename container_type, typename vtype = typename container_type::value_type, typename functor_type = std::function<vtype(const vtype &)>>
   std::string vectorToString(
-    const container_type &obj, const std::string &delim = "", const functor_type &f = [](const auto &arg) { return arg; })
-  {
+    const container_type &obj, const std::string &delim = "", const functor_type &f = [](const auto &arg) { return arg; }) {
     return vectorToString(std::begin(obj), std::end(obj), delim, f);
   }
 
-  template <typename T> std::vector<std::vector<T>> nCr(const T &n, const T &r)
-  {
+  template <typename T> std::vector<std::vector<T>> nCr(const T &n, const T &r) {
     std::vector<bool> mask(n);
     std::vector<std::vector<T>> combinations;
     std::fill(mask.begin() + r, mask.end(), true);
-    do
-      {
-        std::vector<T> perm;
-        for(T i = 0; i < n; ++i)
-          if(!mask[i])
-            perm.push_back(i);
-        combinations.push_back(perm);
-      }
-    while(std::next_permutation(mask.begin(), mask.end()));
+    do {
+      std::vector<T> perm;
+      for(T i = 0; i < n; ++i)
+        if(!mask[i]) perm.push_back(i);
+      combinations.push_back(perm);
+    } while(std::next_permutation(mask.begin(), mask.end()));
     return combinations;
   }
 
@@ -90,17 +80,16 @@ namespace AmpGen
 
   std::string numberWithError(const double &number, const double &error, const unsigned int &nDigits);
 
-  template <typename return_type> return_type lexical_cast(const std::string &word, bool &status); 
+  template <typename return_type> return_type lexical_cast(const std::string &word, bool &status);
 
-    /*
-  {
-    WARNING("Only use specialised versions of this template (word = " << word << ", type = " << AmpGen::type_string<return_type>() << ")  ");
-    status = 0;
-    return return_type();
-  }
-  */
-  template <class... ARGS> std::string mysprintf(const std::string &format, ARGS &&... args)
-  {
+  /*
+{
+  WARNING("Only use specialised versions of this template (word = " << word << ", type = " << AmpGen::type_string<return_type>() << ")  ");
+  status = 0;
+  return return_type();
+}
+*/
+  template <class... ARGS> std::string mysprintf(const std::string &format, ARGS &&... args) {
     auto size = std::snprintf(nullptr, 0, format.c_str(), std::forward<ARGS>(args)...);
     std::string output(size + 1, '\0');
     std::snprintf(&output[0], size + 1, format.c_str(), std::forward<ARGS>(args)...);
@@ -116,80 +105,65 @@ namespace AmpGen
   template <> unsigned long int lexical_cast(const std::string &word, bool &status);
   template <> long int lexical_cast(const std::string &word, bool &status);
 
-  template <typename functor_type> void processFile(const std::string &filename, functor_type &&toDo, const char ignoreLinesThatBeginWith = '#')
-  {
+  template <typename functor_type> void processFile(const std::string &filename, functor_type &&toDo, const char ignoreLinesThatBeginWith = '#') {
     std::string tmp;
     std::ifstream inFile(filename.c_str());
-    while(inFile.good())
-      {
-        std::getline(inFile, tmp);
-        tmp.erase(std::remove_if(tmp.begin(), tmp.end(), [](const char c) { return c == '\r'; }), tmp.end());
-        if(ignoreLinesThatBeginWith != '\0' && (tmp.size() == 0 || tmp[0] == ignoreLinesThatBeginWith))
-          continue;
-        toDo(tmp);
-      }
+    while(inFile.good()) {
+      std::getline(inFile, tmp);
+      tmp.erase(std::remove_if(tmp.begin(), tmp.end(), [](const char c) { return c == '\r'; }), tmp.end());
+      if(ignoreLinesThatBeginWith != '\0' && (tmp.size() == 0 || tmp[0] == ignoreLinesThatBeginWith)) continue;
+      toDo(tmp);
+    }
     inFile.close();
   }
 
   // calculate number of swaps required to reorder set, where swaps can have different exchange parities.
   std::pair<size_t, int> minSwaps(const std::vector<size_t> &indices, const std::vector<int> &exchangeParities);
 
-  template <class iterator, class comparator> void parallel_sort(iterator begin, iterator end, const comparator &comp, const size_t &grainsize)
-  {
+  template <class iterator, class comparator> void parallel_sort(iterator begin, iterator end, const comparator &comp, const size_t &grainsize) {
     const size_t len = end - begin;
     if(len < grainsize)
       std::sort(begin, end, comp);
-    else
-      {
-        const auto middle = begin + len / 2;
-        auto future = std::async(parallel_sort<iterator, comparator>, begin, middle, comp, grainsize);
-        parallel_sort(middle, end, comp, grainsize);
-        future.wait();
-        std::inplace_merge(begin, middle, end, comp);
-      }
+    else {
+      const auto middle = begin + len / 2;
+      auto future = std::async(parallel_sort<iterator, comparator>, begin, middle, comp, grainsize);
+      parallel_sort(middle, end, comp, grainsize);
+      future.wait();
+      std::inplace_merge(begin, middle, end, comp);
+    }
   }
 
   template <class iterator, class initial_value, class functor>
-  initial_value parallel_accumulate(iterator begin, iterator end, const initial_value &init, const functor &f)
-  {
+  initial_value parallel_accumulate(iterator begin, iterator end, const initial_value &init, const functor &f) {
     auto total = init;
     auto size = end - begin;
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+ : total)
 #endif
-    for(int it = 0; it < size; ++it)
-      {
-        total += f(*(begin + it));
-      }
+    for(int it = 0; it < size; ++it) { total += f(*(begin + it)); }
     return total;
   }
   template <typename return_type, typename contained_type>
-  std::function<return_type(const contained_type &)> arrayToFunctor(const std::vector<return_type> &values)
-  {
+  std::function<return_type(const contained_type &)> arrayToFunctor(const std::vector<return_type> &values) {
     return [values](const contained_type &event) -> return_type { return *(values.data() + event.index()); };
   }
 
-  template <typename T> std::vector<std::vector<T>> all_combinations(const std::vector<std::vector<T>> &elements)
-  {
+  template <typename T> std::vector<std::vector<T>> all_combinations(const std::vector<std::vector<T>> &elements) {
     int nc = 1;
-    for(const auto &s : elements)
-      nc *= s.size();
+    for(const auto &s : elements) nc *= s.size();
     std::vector<std::vector<T>> comb(nc, std::vector<T>(elements.size(), 0));
-    for(int i = 0; i != comb.size(); ++i)
-      {
-        int counter = i;
-        for(int j = elements.size() - 1; j >= 0; --j)
-          {
-            int t = counter % elements[j].size();
-            counter = (counter - t) / elements[j].size();
-            comb[i][j] = elements[j][t];
-          }
+    for(int i = 0; i != comb.size(); ++i) {
+      int counter = i;
+      for(int j = elements.size() - 1; j >= 0; --j) {
+        int t = counter % elements[j].size();
+        counter = (counter - t) / elements[j].size();
+        comb[i][j] = elements[j][t];
       }
+    }
     return comb;
   }
 
-  template <class iterator> void parallel_sort(iterator begin, iterator end, const size_t &grainsize)
-  {
+  template <class iterator> void parallel_sort(iterator begin, iterator end, const size_t &grainsize) {
     typedef typename std::iterator_traits<iterator>::value_type value_type;
     parallel_sort(begin, end, std::less<value_type>(), grainsize);
   }

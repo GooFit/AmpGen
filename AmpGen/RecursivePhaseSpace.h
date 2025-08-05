@@ -17,8 +17,7 @@
 
 class TRandom;
 
-namespace AmpGen
-{
+namespace AmpGen {
   class Particle;
   class Event;
   /** @class RecursivePhaseSpace
@@ -30,11 +29,9 @@ namespace AmpGen
       each of these steps. For each of the decays of a quasistable particle, the PhaseSpace
       generator is used, which is itself based heavily on TGenPhaseSpace.
   */
-  class RecursivePhaseSpace
-  {
+  class RecursivePhaseSpace {
   private:
-    struct Node
-    {
+    struct Node {
       std::string name = {""};
       int sink = {-1};
       std::shared_ptr<RecursivePhaseSpace> decayProds = {nullptr};

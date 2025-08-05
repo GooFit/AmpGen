@@ -9,8 +9,7 @@
 using namespace AmpGen;
 using namespace std::complex_literals;
 
-DEFINE_LINESHAPE(Isotensor)
-{
+DEFINE_LINESHAPE(Isotensor) {
   //// I=2 pipi scattering
   //// Implements https://journals.aps.org/prd/pdf/10.1103/PhysRevD.78.052001
   //// we fix inelasticity to be zero, which should hold up to ~ 1.5 GeV

@@ -18,56 +18,40 @@
 
 #define WARNINGLEVEL 1
 
-namespace AmpGen
-{
-  namespace detail
-  {
+namespace AmpGen {
+  namespace detail {
     constexpr static int FCNNAMELENGTH = 38;
 
-    inline std::string trimmedString(std::string thing, const unsigned int &length = FCNNAMELENGTH)
-    {
+    inline std::string trimmedString(std::string thing, const unsigned int &length = FCNNAMELENGTH) {
       size_t pos2 = 0;
-      do
-        {
-          pos2 = thing.find("AmpGen::");
-          if(pos2 != std::string::npos)
-            thing = thing.replace(pos2, 8, "");
-        }
-      while(pos2 != std::string::npos);
+      do {
+        pos2 = thing.find("AmpGen::");
+        if(pos2 != std::string::npos) thing = thing.replace(pos2, 8, "");
+      } while(pos2 != std::string::npos);
 
       pos2 = thing.find("std::");
-      if(pos2 != std::string::npos)
-        thing.replace(pos2, 5, "");
+      if(pos2 != std::string::npos) thing.replace(pos2, 5, "");
 
       pos2 = thing.find("virtual ");
-      if(pos2 != std::string::npos)
-        thing = thing.replace(pos2, 8, "");
+      if(pos2 != std::string::npos) thing = thing.replace(pos2, 8, "");
 
       size_t pos = thing.find("(");
 
-      if(pos != std::string::npos)
-        {
-          return pos < length ? thing.substr(0, pos) : thing.substr(0, length);
-        }
+      if(pos != std::string::npos) { return pos < length ? thing.substr(0, pos) : thing.substr(0, length); }
       return thing.size() < length ? thing : thing.substr(0, length) + "...";
     }
-    inline std::ostream &labelled_stream(const std::string &function_name)
-    {
+    inline std::ostream &labelled_stream(const std::string &function_name) {
       return std::cout << "\033[2;34m" << std::left << std::setw(FCNNAMELENGTH) << trimmedString(function_name) << "  INFO         "
                        << "\033[0m";
     }
-    template <typename T> struct debug_type : std::false_type
-    {};
+    template <typename T> struct debug_type : std::false_type {};
   }
 }
 
 #define ENABLE_DEBUG(X)                                                                                                                                        \
-  namespace AmpGen                                                                                                                                             \
-  {                                                                                                                                                            \
-    namespace detail                                                                                                                                           \
-    {                                                                                                                                                          \
-      template <> struct debug_type<X> : std::true_type                                                                                                        \
-      {};                                                                                                                                                      \
+  namespace AmpGen {                                                                                                                                           \
+    namespace detail {                                                                                                                                         \
+      template <> struct debug_type<X> : std::true_type {};                                                                                                    \
     }                                                                                                                                                          \
   }
 
@@ -84,12 +68,11 @@ namespace AmpGen
 #else
 #define DEBUG(X)                                                                                                                                               \
   {                                                                                                                                                            \
-    if constexpr(AmpGen::detail::debug_type<typename std::decay<decltype(*this)>::type>::value)                                                                \
-      {                                                                                                                                                        \
-        std::cout << "\033[2;32m" << std::left << std::setw(AmpGen::detail::FCNNAMELENGTH) << AmpGen::detail::trimmedString(__PRETTY_FUNCTION__)               \
-                  << "  DEBUG        "                                                                                                                         \
-                  << "\033[0m" << X << " " << std::endl;                                                                                                       \
-      }                                                                                                                                                        \
+    if constexpr(AmpGen::detail::debug_type<typename std::decay<decltype(*this)>::type>::value) {                                                              \
+      std::cout << "\033[2;32m" << std::left << std::setw(AmpGen::detail::FCNNAMELENGTH) << AmpGen::detail::trimmedString(__PRETTY_FUNCTION__)                 \
+                << "  DEBUG        "                                                                                                                           \
+                << "\033[0m" << X << " " << std::endl;                                                                                                         \
+    }                                                                                                                                                          \
   }
 #endif
 

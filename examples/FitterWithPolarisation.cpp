@@ -47,10 +47,8 @@ template <typename pdf_t> Particle getTopology(const pdf_t &pdf) { return pdf.ma
 
 template <typename PDF> FitResult *doFit(PDF &&pdf, EventList_type &data, EventList_type &mc, MinuitParameterSet &MPS);
 
-
-int main(int argc, char *argv[])
-{
-  using strings = std::vector<std::string>; 
+int main(int argc, char *argv[]) {
+  using strings = std::vector<std::string>;
   /* The user specified options must be loaded at the beginning of the programme,
      and these can be specified either at the command line or in an options file. */
   OptionsParser::setArgs(argc, argv);
@@ -63,13 +61,11 @@ int main(int argc, char *argv[])
   std::string logFile = Property<std::string>(nullptr, "LogFile", "Fitter.log", "Name of the output log file");
   std::string plotFile = Property<std::string>(nullptr, "Plots", "plots.root", "Name of the output plot file");
   std::string simFile = Property<std::string>(nullptr, "SgIntegratorFname", "", "Name of file containing simulated sample for using in MC integration");
-  Property<strings> bNames {nullptr, "Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"}; 
-  Property<strings> pNames {nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"};
+  Property<strings> bNames{nullptr, "Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"};
+  Property<strings> pNames{nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"};
 
-  if(dataFile == "")
-    FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off);
-  if(pNames.value().size() == 0)
-    FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
+  if(dataFile == "") FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off);
+  if(pNames.value().size() == 0) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
 
   size_t seed = Property<size_t>(nullptr, "Seed", 1, "Random seed used");
 
@@ -136,8 +132,7 @@ int main(int argc, char *argv[])
   output->Close();
 }
 
-template <typename PDF> FitResult *doFit(PDF &&pdf, EventList_type &data, EventList_type &mc, MinuitParameterSet &MPS)
-{
+template <typename PDF> FitResult *doFit(PDF &&pdf, EventList_type &data, EventList_type &mc, MinuitParameterSet &MPS) {
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time = std::clock();
 
@@ -167,12 +162,11 @@ template <typename PDF> FitResult *doFit(PDF &&pdf, EventList_type &data, EventL
   auto projections = data.eventType().defaultProjections(100);
 
   auto evaluator_per_component = std::get<0>(pdf.pdfs()).componentEvaluator();
-  for(const auto &proj : projections)
-    {
-      proj(mc, evaluator, PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
-      proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
-      proj(data, PlotOptions::Prefix("Data"))->Write();
-    }
+  for(const auto &proj : projections) {
+    proj(mc, evaluator, PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
+    proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
+    proj(data, PlotOptions::Prefix("Data"))->Write();
+  }
   fr->print();
   return fr;
 }

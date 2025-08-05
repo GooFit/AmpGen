@@ -2,10 +2,8 @@
 #include "AmpGen/Particle.h"
 #include "AmpGen/Lineshapes.h"
 
-namespace AmpGen
-{
-  namespace Lineshape
-  {
+namespace AmpGen {
+  namespace Lineshape {
     /** @ingroup Lineshapes class CoupledChannel
       @brief Description of a resonance that decays to multiple two and three-body final states. */
     DECLARE_LINESHAPE(CoupledChannel);

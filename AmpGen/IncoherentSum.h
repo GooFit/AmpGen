@@ -13,8 +13,7 @@
 #include "AmpGen/Event.h"
 #include "AmpGen/Types.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class EventType;
   class FitFraction;
   class LinearErrorPropagator;
@@ -31,8 +30,7 @@ namespace AmpGen
       and @f$\mathcal{A}_i(\psi)@f$ is the amplitude of the ith channel.
       I dont know whats going on?
       */
-  class IncoherentSum : public CoherentSum
-  {
+  class IncoherentSum : public CoherentSum {
   public:
     /** Constructs an incoherentSum from the type of event this is expected to describe,
        and a set of parameters that are expected to be able to describe it.

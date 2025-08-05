@@ -8,16 +8,16 @@
 #include <vector>
 #include <map>
 #include "AmpGen/Property.h"
+#include "AmpGen/Configurable.h" 
 
-namespace AmpGen
-{
+namespace AmpGen {
   class CompiledExpressionBase;
   std::string get_cpp_version();
 
-  class CompilerWrapper
-  {
+  class CompilerWrapper : public Configurable<CompilerWrapper> {
   public:
     explicit CompilerWrapper();
+    virtual ~CompilerWrapper() = default;
     void generateSource(const CompiledExpressionBase &expression, const std::string &fname);
     bool compile(CompiledExpressionBase &expression, const std::string &fname = "");
     bool compile(std::vector<CompiledExpressionBase *> &expression, const std::string &fname = "",
@@ -36,8 +36,8 @@ namespace AmpGen
     bool isClang() const;
     std::string m_extension{"so"};
     Property<strings> m_compileFlags{this, "CompilerWrapper::Flags", {"-Ofast", "--std=" + get_cpp_version()}};
-    Property<bool> m_verbose{this, "CompilerWrapper::Verbose", false};
     Property<bool> m_forceRebuild{this, "CompilerWrapper::ForceRebuild", false};
+    Property<bool> m_disable{this, "CompilerWrapper::Disable", false}; 
   };
 } // namespace AmpGen
 #endif

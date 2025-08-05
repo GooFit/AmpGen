@@ -5,8 +5,7 @@
 #include <dlfcn.h>
 #include <iostream>
 
-namespace AmpGen
-{
+namespace AmpGen {
   /**@class DynamicFCN
      @brief Wrapper to give templated interface to a function contained in a dynamically linked library.
     @tparam RETURN_TYPE type that this function returns
@@ -23,17 +22,13 @@ namespace AmpGen
 
   template <class RETURN_TYPE, class... IN_TYPES> class DynamicFCN;
 
-  template <class RETURN_TYPE, class... IN_TYPES> class DynamicFCN<RETURN_TYPE(IN_TYPES...)>
-  {
+  template <class RETURN_TYPE, class... IN_TYPES> class DynamicFCN<RETURN_TYPE(IN_TYPES...)> {
   private:
-    struct LibHandle
-    {
+    struct LibHandle {
       void *handle = {nullptr};
       LibHandle(void *handle) : handle(handle){};
-      ~LibHandle()
-      {
-        if(handle != nullptr)
-          dlclose(handle);
+      ~LibHandle() {
+        if(handle != nullptr) dlclose(handle);
       }
       operator void *() { return handle; }
     };
@@ -47,28 +42,24 @@ namespace AmpGen
     DynamicFCN(void *handle, const std::string &name) : m_handle(std::make_shared<LibHandle>(handle)) { set(handle, name); }
     ~DynamicFCN() {}
 
-    bool set(const std::string &lib, const std::string &name)
-    {
+    bool set(const std::string &lib, const std::string &name) {
       DEBUG("Linking handle: " << lib << ":" << name);
       m_handle = std::make_shared<LibHandle>(dlopen(lib.c_str(), RTLD_NOW));
-      if(!m_handle)
-        {
-          DEBUG(dlerror());
-          return false;
-        }
+      if(!m_handle) {
+        DEBUG(dlerror());
+        return false;
+      }
       return set(*m_handle, name);
     }
-    bool set(void *handle, const std::string &name, bool isFatal = false)
-    {
+    bool set(void *handle, const std::string &name, bool isFatal = false) {
       m_fcn = (RETURN_TYPE(*)(IN_TYPES...))dlsym(handle, name.c_str());
-      if(m_fcn == nullptr)
-        {
-          if(!isFatal)
-            ERROR("Failed to link: " << name << " error: " << dlerror());
-          else
-            FATAL("Failed to link: " << name << " error: " << dlerror());
-          return false;
-        }
+      if(m_fcn == nullptr) {
+        if(!isFatal)
+          ERROR("Failed to link: " << name << " error: " << dlerror());
+        else
+          FATAL("Failed to link: " << name << " error: " << dlerror());
+        return false;
+      }
       return true;
     }
     RETURN_TYPE operator()(IN_TYPES... input) const { return (*m_fcn)(input...); }

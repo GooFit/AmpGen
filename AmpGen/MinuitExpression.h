@@ -8,12 +8,10 @@
 #include "AmpGen/Expression.h"
 #include "AmpGen/MinuitParameter.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class MinuitParameterSet;
 
-  class MinuitExpression : public MinuitParameter
-  {
+  class MinuitExpression : public MinuitParameter {
   public:
     MinuitExpression(const std::vector<std::string> &tokens, MinuitParameterSet *mps);
     MinuitExpression(const std::string &name, const Expression &expression);
@@ -27,8 +25,7 @@ namespace AmpGen
     Expression m_expression;
   };
 
-  class MinuitParameterLink : public IExpression
-  {
+  class MinuitParameterLink : public IExpression {
   public:
     explicit MinuitParameterLink(MinuitParameter *param);
     std::string to_string(const ASTResolver *resolver = nullptr) const override;

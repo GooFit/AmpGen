@@ -5,8 +5,7 @@
 #include "AmpGen/Tensor.h"
 #include "AmpGen/DiracMatrices.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   Expression cosh(const Expression &x);
   Expression sinh(const Expression &x);
   Expression tanh(const Expression &x);
@@ -15,20 +14,10 @@ namespace AmpGen
   Expression asinh(const Expression &x);
   Expression atanh(const Expression &x);
 
-  class Transform
-  {
+  class Transform {
   public:
-    enum Type
-    {
-      Boost,
-      Rotate
-    };
-    enum Representation
-    {
-      Spinor,
-      Bispinor,
-      Vector
-    };
+    enum Type { Boost, Rotate };
+    enum Representation { Spinor, Bispinor, Vector };
 
     Transform(const Expression &arg, const Tensor &k, const Type &type);
     Transform inverse() const;
@@ -48,8 +37,7 @@ namespace AmpGen
     Type m_type;
   };
 
-  class TransformSequence
-  {
+  class TransformSequence {
   public:
     TransformSequence();
     TransformSequence(const Transform &transform);

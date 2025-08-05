@@ -10,22 +10,19 @@
 
 using namespace AmpGen;
 
-struct Moment
-{
+struct Moment {
   double x;
   double xx;
   double N;
   std::vector<double> values;
   Moment() : x(0), xx(0), N(0) {}
-  void add(const double &value)
-  {
+  void add(const double &value) {
     x += value;
     xx += value * value;
     N++;
     values.push_back(value);
   }
-  void rescale(const double &val)
-  {
+  void rescale(const double &val) {
     x *= val;
     xx *= (val * val);
   }
@@ -37,8 +34,7 @@ double Chi2Estimator::chi2() const { return m_chi2; }
 double Chi2Estimator::nBins() const { return m_nBins; }
 void Chi2Estimator::writeBinningToFile(const std::string &filename) { m_binning.serialize(filename); }
 
-void Chi2Estimator::doChi2(const EventList_type &dataEvents, const EventList_type &mcEvents, const std::function<double(const Event &)> &fcn)
-{
+void Chi2Estimator::doChi2(const EventList_type &dataEvents, const EventList_type &mcEvents, const std::function<double(const Event &)> &fcn) {
   std::vector<Moment> data(m_binning.size());
   std::vector<Moment> mc(m_binning.size());
 
@@ -46,34 +42,29 @@ void Chi2Estimator::doChi2(const EventList_type &dataEvents, const EventList_typ
   unsigned int j = 0;
   double total_data_weight = 0;
   double total_int_weight = 0;
-  for(const auto &d : dataEvents)
-    {
-      if(j % 1000000 == 0 && j != 0)
-        INFO("Binned " << j << " data events");
-      double w = d.weight();
-      data[m_binning.getBinNumber(d)].add(d.weight());
-      total_data_weight += w;
-      j++;
-    }
+  for(const auto &d : dataEvents) {
+    if(j % 1000000 == 0 && j != 0) INFO("Binned " << j << " data events");
+    double w = d.weight();
+    data[m_binning.getBinNumber(d)].add(d.weight());
+    total_data_weight += w;
+    j++;
+  }
   j = 0;
-  for(auto &evt : mcEvents)
-    {
-      if(j % 1000000 == 0 && j != 0)
-        INFO("Binned " << j << " sim. events");
-      double w = fcn(evt) * evt.weight() / evt.genPdf();
-      mc[m_binning.getBinNumber(evt)].add(w);
-      total_int_weight += w;
-      j++;
-    }
+  for(auto &evt : mcEvents) {
+    if(j % 1000000 == 0 && j != 0) INFO("Binned " << j << " sim. events");
+    double w = fcn(evt) * evt.weight() / evt.genPdf();
+    mc[m_binning.getBinNumber(evt)].add(w);
+    total_int_weight += w;
+    j++;
+  }
   double chi2 = 0;
 
-  for(unsigned int i = 0; i < m_binning.size(); ++i)
-    {
-      mc[i].rescale(total_data_weight / total_int_weight);
-      double delta = data[i].val() - mc[i].val();
-      double tChi2 = delta * delta / (data[i].var() + mc[i].var());
-      chi2 += tChi2;
-    }
+  for(unsigned int i = 0; i < m_binning.size(); ++i) {
+    mc[i].rescale(total_data_weight / total_int_weight);
+    double delta = data[i].val() - mc[i].val();
+    double tChi2 = delta * delta / (data[i].var() + mc[i].var());
+    chi2 += tChi2;
+  }
   m_chi2 = chi2;
   m_nBins = m_binning.size();
 }

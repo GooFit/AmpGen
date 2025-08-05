@@ -16,24 +16,19 @@
 
 #define ADD_DEBUG_TENSOR(X, Y)                                                                                                                                 \
   if(Y != nullptr)                                                                                                                                             \
-    for(unsigned i = 0; i < Tensor(X).size(); ++i)                                                                                                             \
-      Y->emplace_back(std::string(#X) + Tensor::coordinates_to_string(Tensor(X).coords(i)), Tensor(X)[i]);
+    for(unsigned i = 0; i < Tensor(X).size(); ++i) Y->emplace_back(std::string(#X) + Tensor::coordinates_to_string(Tensor(X).coords(i)), Tensor(X)[i]);
 
 #define ADD_DEBUG_TENSOR_NAMED(X, Y, Z)                                                                                                                        \
   if(Y != nullptr)                                                                                                                                             \
-    for(unsigned i = 0; i < X.size(); ++i)                                                                                                                     \
-      Y->emplace_back(Z + Tensor::coordinates_to_string(X.coords(i)), X[i]);
+    for(unsigned i = 0; i < X.size(); ++i) Y->emplace_back(Z + Tensor::coordinates_to_string(X.coords(i)), X[i]);
 
-namespace AmpGen
-{
+namespace AmpGen {
   class ASTResolver;
   class TensorProxy;
 
-  class Tensor
-  {
+  class Tensor {
   public:
-    class Index
-    {
+    class Index {
     private:
       std::shared_ptr<int> m_ptr;
       bool m_isUpper;
@@ -48,8 +43,7 @@ namespace AmpGen
       friend std::ostream &operator<<(std::ostream &out, const Index &index);
       uint64_t ptr() const { return uint64_t(m_ptr.get()); }
     };
-    struct Dim : public std::vector<unsigned>
-    {
+    struct Dim : public std::vector<unsigned> {
       Dim(unsigned a) : std::vector<unsigned>({a}) {}
       Dim(unsigned a, unsigned b) : std::vector<unsigned>({a, b}) {}
       Dim(unsigned a, unsigned b, unsigned c) : std::vector<unsigned>({a, b, c}) {}
@@ -61,18 +55,14 @@ namespace AmpGen
     explicit Tensor(const std::vector<unsigned> &dim);
     explicit Tensor(const Tensor::Dim &dim) : Tensor(std::vector<unsigned>(dim)){};
 
-    template <class TYPE> Tensor(const std::initializer_list<TYPE> &elements, const std::vector<unsigned> &dim) : m_dim(dim)
-    {
+    template <class TYPE> Tensor(const std::initializer_list<TYPE> &elements, const std::vector<unsigned> &dim) : m_dim(dim) {
       setupCoordinates();
-      for(auto &x : elements)
-        append(x);
+      for(auto &x : elements) append(x);
     }
 
-    template <class TYPE> Tensor(const std::vector<TYPE> &elements, const std::vector<unsigned> &dim) : m_dim(dim)
-    {
+    template <class TYPE> Tensor(const std::vector<TYPE> &elements, const std::vector<unsigned> &dim) : m_dim(dim) {
       setupCoordinates();
-      for(auto &x : elements)
-        append(x);
+      for(auto &x : elements) append(x);
     }
 
     /// Low level access of elements, either by coordinates or by index ///
@@ -139,8 +129,7 @@ namespace AmpGen
     static std::vector<unsigned> index_to_coordinates(const unsigned &index, const std::vector<unsigned> &dim);
     static unsigned coordinates_to_index(const std::vector<unsigned> &coords, const std::vector<unsigned> &dim);
     static std::string coordinates_to_string(const std::vector<unsigned> &coordinates);
-    template <class... ARGS> static std::vector<unsigned> dim(const ARGS &... args)
-    {
+    template <class... ARGS> static std::vector<unsigned> dim(const ARGS &... args) {
       std::vector<unsigned> rt;
       auto up = std::tuple<ARGS...>(args...);
       for_each(up, [&rt](const unsigned &f) { rt.emplace_back(f); });
@@ -161,8 +150,7 @@ namespace AmpGen
       instead is designed as an intermediate proxy object for performing
       tensor manipulations
    */
-  class TensorProxy
-  {
+  class TensorProxy {
   public:
     TensorProxy(const Tensor &tensor, const std::vector<Tensor::Index> &indices);
     std::vector<Tensor::Index> indices() const;
@@ -177,8 +165,7 @@ namespace AmpGen
     std::vector<Tensor::Index> m_indices;
   };
 
-  class TensorExpression : public IExpression
-  {
+  class TensorExpression : public IExpression {
   public:
     TensorExpression(const Tensor &tensor);
     std::string to_string(const ASTResolver *resolver) const override;

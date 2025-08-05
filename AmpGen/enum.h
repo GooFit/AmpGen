@@ -5,23 +5,17 @@
 #include <string.h>
 
 #define declare_enum(name, ...)                                                                                                                                \
-  enum class name                                                                                                                                              \
-  {                                                                                                                                                            \
-    __VA_ARGS__,                                                                                                                                               \
-    Invalid                                                                                                                                                    \
-  };                                                                                                                                                           \
+  enum class name { __VA_ARGS__, Invalid };                                                                                                                    \
   template <> name parse(const std::string &word);                                                                                                             \
   template <> std::string to_string(const name &enumItem);                                                                                                     \
-  std::ostream &operator<<(std::ostream &os, const name &np);
+  std::ostream &operator<<(std::ostream &os, const name &np)
 
 #define complete_enum(name, ...)                                                                                                                               \
-  template <> name parse(const std::string &word)                                                                                                              \
-  {                                                                                                                                                            \
+  template <> name parse(const std::string &word) {                                                                                                            \
     constexpr auto args = #__VA_ARGS__;                                                                                                                        \
     return AmpGen::detail::parse<name>(word, args);                                                                                                            \
   }                                                                                                                                                            \
-  template <> std::string to_string(const name &enumItem)                                                                                                      \
-  {                                                                                                                                                            \
+  template <> std::string to_string(const name &enumItem) {                                                                                                    \
     constexpr auto args = #__VA_ARGS__;                                                                                                                        \
     return AmpGen::detail::to_string<name>(enumItem, args);                                                                                                    \
   }                                                                                                                                                            \
@@ -29,85 +23,62 @@
   std::ostream &operator<<(std::ostream &os, const name &np) { return os << to_string<name>(np); }
 
 #define make_enum(name, ...)                                                                                                                                   \
-  enum class name                                                                                                                                              \
-  {                                                                                                                                                            \
-    __VA_ARGS__,                                                                                                                                               \
-    Invalid                                                                                                                                                    \
-  };                                                                                                                                                           \
-  template <> inline name parse(const std::string &word)                                                                                                              \
-  {                                                                                                                                                            \
+  enum class name { __VA_ARGS__, Invalid };                                                                                                                    \
+  template <> inline name parse(const std::string &word) {                                                                                                     \
     constexpr auto args = #__VA_ARGS__;                                                                                                                        \
     return AmpGen::detail::parse<name>(word, args);                                                                                                            \
   }                                                                                                                                                            \
-  template <> inline std::string to_string(const name &enumItem)                                                                                                      \
-  {                                                                                                                                                            \
+  template <> inline std::string to_string(const name &enumItem) {                                                                                             \
     constexpr auto args = #__VA_ARGS__;                                                                                                                        \
     return AmpGen::detail::to_string<name>(enumItem, args);                                                                                                    \
   }                                                                                                                                                            \
-  template <> inline name lexical_cast(const std::string &word, bool & /*status*/) { return parse<name>(word); }                                                      \
+  template <> inline name lexical_cast(const std::string &word, bool & /*status*/) { return parse<name>(word); }                                               \
   inline std::ostream &operator<<(std::ostream &os, const name &np) { return os << to_string<name>(np); }
 
-namespace AmpGen
-{
+namespace AmpGen {
   template <class T> T parse(const std::string &word) { return T(); }
   template <class T> std::string to_string(const T &enumItem) { return ""; }
 
-  namespace detail
-  {
-    template <class T> T parse(const std::string &word, const char *args)
-    {
+  namespace detail {
+    template <class T> T parse(const std::string &word, const char *args) {
       char *p;
       auto number = strtoul(word.c_str(), &p, 10);
-      if(*p == 0)
-        return T(number);
+      if(*p == 0) return T(number);
       unsigned counter = 0;
       unsigned begin = 0;
       unsigned end = 0;
       auto compare = [](const char *word, const char *otherWord, const unsigned &nChar) {
-        if(strlen(word) != nChar)
-          return false;
+        if(strlen(word) != nChar) return false;
         for(size_t x = 0; x != nChar; ++x)
-          if(word[x] != otherWord[x])
-            return false;
+          if(word[x] != otherWord[x]) return false;
         return true;
       };
       bool found = false;
-      while(args[begin] != '\0')
-        {
-          while(args[begin] == ' ')
-            begin++;
-          for(end = begin; args[end] != '\0'; end++)
-            if(args[end] == ',')
-              break;
-          if(compare(word.c_str(), args + begin, end - begin))
-            {
-              found = true;
-              break;
-            }
-          begin = end + 1;
-          counter++;
-          if(args[end] == '\0')
-            break;
+      while(args[begin] != '\0') {
+        while(args[begin] == ' ') begin++;
+        for(end = begin; args[end] != '\0'; end++)
+          if(args[end] == ',') break;
+        if(compare(word.c_str(), args + begin, end - begin)) {
+          found = true;
+          break;
         }
-      if(!found)
-        return T::Invalid;
+        begin = end + 1;
+        counter++;
+        if(args[end] == '\0') break;
+      }
+      if(!found) return T::Invalid;
       return T(counter);
     }
-    template <class T> std::string to_string(const T &enumItem, const char *args)
-    {
+    template <class T> std::string to_string(const T &enumItem, const char *args) {
       unsigned counter = 0;
       unsigned sBegin = 0;
       unsigned sLength = 0;
-      for(; args[sBegin] != '\0' && counter != unsigned(enumItem); sBegin++)
-        {
-          if(args[sBegin] == ',')
-            counter++;
-        }
-      while(args[sBegin] == ' ')
-        sBegin++;
+      for(; args[sBegin] != '\0' && counter != unsigned(enumItem); sBegin++) {
+        if(args[sBegin] == ',') counter++;
+      }
+      while(args[sBegin] == ' ') sBegin++;
       for(; args[sLength + sBegin] != '\0'; ++sLength)
-        if(args[sBegin + sLength] == ',')
-          break;
+        if(args[sBegin + sLength] == ',') break;
       return std::string(args).substr(sBegin, sLength);
     }
   }

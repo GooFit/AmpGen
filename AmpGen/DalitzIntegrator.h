@@ -17,8 +17,7 @@ class TGraph;
 class TH1D;
 class TH2D;
 
-namespace AmpGen
-{
+namespace AmpGen {
   class Event;
   class Projection2D;
   class Projection;
@@ -26,8 +25,7 @@ namespace AmpGen
    *  Class for doing 2D integrals using the Square Dalitz Plot (SQDP) method
    */
 
-  class DalitzIntegrator
-  {
+  class DalitzIntegrator {
   public:
     typedef std::pair<real_v, real_v> sqCo;
     DalitzIntegrator(const double &s0, const double &s1, const double &s2, const double &s3);
@@ -40,8 +38,7 @@ namespace AmpGen
     real_v J(const sqCo &coords, const double &s) const;
     double sqDp1(const Event &evt) const;
     double sqDp2(const Event &evt) const;
-    real_v safe_sqrt(const real_v &x) const
-    {
+    real_v safe_sqrt(const real_v &x) const {
 #if ENABLE_AVX
       return select(x > 0., sqrt(x), real_v(0.));
 #else
@@ -73,8 +70,7 @@ namespace AmpGen
     double m_s2;
     double m_s3;
   };
-  template <typename FCN> double DalitzIntegrator::integrateDP(FCN &&fcn, const double &s) const
-  {
+  template <typename FCN> double DalitzIntegrator::integrateDP(FCN &&fcn, const double &s) const {
 #if INSTRUCTION_SET != 0 && INSTRUCTION_SET != INSTRUCTION_SET_AVX2d
 #pragma message("WARNING: DalitzIntegrator only supports scalar or AVX2(d) instruction sets")
 #else

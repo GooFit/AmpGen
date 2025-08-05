@@ -11,16 +11,12 @@
 
 using namespace AmpGen;
 
-MomentumTransfer::MomentumTransfer(const std::vector<unsigned> &_p1, const std::vector<unsigned> &_p2) : p1(_p1), p2(_p2)
-{
-  for(auto &p : p1)
-    s.push_back(p);
-  for(auto &p : p2)
-    s.push_back(p);
+MomentumTransfer::MomentumTransfer(const std::vector<unsigned> &_p1, const std::vector<unsigned> &_p2) : p1(_p1), p2(_p2) {
+  for(auto &p : p1) s.push_back(p);
+  for(auto &p : p2) s.push_back(p);
 }
 
-double MomentumTransfer::operator()(const Event &evt) const
-{
+double MomentumTransfer::operator()(const Event &evt) const {
   double s0 = evt.s(s);
   double s1 = evt.s(p1);
   double s2 = evt.s(p2);
@@ -33,8 +29,7 @@ HelicityCosine::HelicityCosine(const std::vector<unsigned> &p1, const std::vecto
 HelicityCosine::HelicityCosine(const unsigned &i, const unsigned &j, const std::vector<unsigned> &pR) : _i(1, i), _j(1, j), _pR(pR) {}
 
 double HelicityCosine::operator()(std::vector<Event>::iterator evt) const { return (*this)(*evt); }
-double HelicityCosine::operator()(const Event &evt) const
-{
+double HelicityCosine::operator()(const Event &evt) const {
   TLorentzVector PR = pFromEvent(evt, _pR);
   TLorentzVector pi = pFromEvent(evt, _i);
   TLorentzVector pj = pFromEvent(evt, _j);
@@ -43,21 +38,18 @@ double HelicityCosine::operator()(const Event &evt) const
 
 TLorentzVector AmpGen::pFromEvent(const Event &evt, const unsigned &ref) { return TLorentzVector(evt.address(4 * ref)); }
 
-TLorentzVector AmpGen::pFromEvent(const Event &evt, const std::vector<unsigned> &ref)
-{
+TLorentzVector AmpGen::pFromEvent(const Event &evt, const std::vector<unsigned> &ref) {
   double px(0), py(0), pz(0), pE(0);
-  for(auto &r : ref)
-    {
-      px += evt[4 * r + 0];
-      py += evt[4 * r + 1];
-      pz += evt[4 * r + 2];
-      pE += evt[4 * r + 3];
-    }
+  for(auto &r : ref) {
+    px += evt[4 * r + 0];
+    py += evt[4 * r + 1];
+    pz += evt[4 * r + 2];
+    pE += evt[4 * r + 3];
+  }
   return TLorentzVector(px, py, pz, pE);
 }
 
-double AmpGen::acoplanarity(const Event &evt)
-{
+double AmpGen::acoplanarity(const Event &evt) {
   TLorentzVector p0 = pFromEvent(evt, 0);
   TLorentzVector p1 = pFromEvent(evt, 1);
   TLorentzVector p2 = pFromEvent(evt, 2);
@@ -72,13 +64,11 @@ double AmpGen::acoplanarity(const Event &evt)
   return acos(t1.Dot(t2));
 }
 
-double AmpGen::dotProduct(const TLorentzVector &p1, const TLorentzVector &p2, const TLorentzVector &pX)
-{
+double AmpGen::dotProduct(const TLorentzVector &p1, const TLorentzVector &p2, const TLorentzVector &pX) {
   return -p1.Dot(p2) + p1.Dot(pX) * p2.Dot(pX) / pX.Dot(pX);
 }
 
-double AmpGen::PHI(const Event &evt)
-{
+double AmpGen::PHI(const Event &evt) {
   TLorentzVector pA_4vec = pFromEvent(evt, 0);
   TLorentzVector pB_4vec = pFromEvent(evt, 1);
   TLorentzVector pC_4vec = pFromEvent(evt, 3);
@@ -101,8 +91,7 @@ double AmpGen::PHI(const Event &evt)
   return phi;
 }
 
-double AmpGen::phi(const Event &evt, int i, int j, int k, int w)
-{
+double AmpGen::phi(const Event &evt, int i, int j, int k, int w) {
   TLorentzVector pA_4vec = pFromEvent(evt, i);
   TLorentzVector pB_4vec = pFromEvent(evt, j);
   TLorentzVector pC_4vec = pFromEvent(evt, k);
@@ -125,49 +114,43 @@ double AmpGen::phi(const Event &evt, int i, int j, int k, int w)
   return phi;
 }
 
-void AmpGen::boost(Event &evt, const std::tuple<double, double, double> &n, const double &v)
-{
+void AmpGen::boost(Event &evt, const std::tuple<double, double, double> &n, const double &v) {
   double gamma = 1. / sqrt(1 - v * v);
   auto &[nx, ny, nz] = n;
   double norm = sqrt(nx * nx + ny * ny + nz * nz);
 
-  for(unsigned i = 0; i < evt.size() / 4; ++i)
-    {
-      double nv = evt[4 * i] * nx + evt[4 * i + 1] * ny + evt[4 * i + 2] * nz;
-      evt[4 * i + 0] += ((gamma - 1) * nv / norm + gamma * evt[4 * i + 3] * v) * nx / norm;
-      evt[4 * i + 1] += ((gamma - 1) * nv / norm + gamma * evt[4 * i + 3] * v) * ny / norm;
-      evt[4 * i + 2] += ((gamma - 1) * nv / norm + gamma * evt[4 * i + 3] * v) * nz / norm;
-      evt[4 * i + 3] = gamma * (evt[4 * i + 3] + v * nv / norm);
-    }
+  for(unsigned i = 0; i < evt.size() / 4; ++i) {
+    double nv = evt[4 * i] * nx + evt[4 * i + 1] * ny + evt[4 * i + 2] * nz;
+    evt[4 * i + 0] += ((gamma - 1) * nv / norm + gamma * evt[4 * i + 3] * v) * nx / norm;
+    evt[4 * i + 1] += ((gamma - 1) * nv / norm + gamma * evt[4 * i + 3] * v) * ny / norm;
+    evt[4 * i + 2] += ((gamma - 1) * nv / norm + gamma * evt[4 * i + 3] * v) * nz / norm;
+    evt[4 * i + 3] = gamma * (evt[4 * i + 3] + v * nv / norm);
+  }
 }
 
-void AmpGen::rotate(Event &evt, const std::tuple<double, double, double> &n, const double &v)
-{
+void AmpGen::rotate(Event &evt, const std::tuple<double, double, double> &n, const double &v) {
   auto &[nx, ny, nz] = n;
   double cv = cos(v);
   double sv = sin(v);
   double norm = sqrt(nx * nx + ny * ny + nz * nz);
-  for(unsigned i = 0; i < evt.size() / 4; ++i)
-    {
-      double ix = evt[4 * i + 0];
-      double iy = evt[4 * i + 1];
-      double iz = evt[4 * i + 2];
-      double k = (1 - cv) * (ix * nx + iy * ny + iz * nz);
-      evt[4 * i + 0] = cv * ix + sv * (iz * ny - iy * nz) / norm + k * nx / (norm * norm);
-      evt[4 * i + 1] = cv * iy + sv * (ix * nz - iz * nx) / norm + k * ny / (norm * norm);
-      evt[4 * i + 2] = cv * iz + sv * (iy * nx - ix * ny) / norm + k * nz / (norm * norm);
-    }
+  for(unsigned i = 0; i < evt.size() / 4; ++i) {
+    double ix = evt[4 * i + 0];
+    double iy = evt[4 * i + 1];
+    double iz = evt[4 * i + 2];
+    double k = (1 - cv) * (ix * nx + iy * ny + iz * nz);
+    evt[4 * i + 0] = cv * ix + sv * (iz * ny - iy * nz) / norm + k * nx / (norm * norm);
+    evt[4 * i + 1] = cv * iy + sv * (ix * nz - iz * nx) / norm + k * ny / (norm * norm);
+    evt[4 * i + 2] = cv * iz + sv * (iy * nx - ix * ny) / norm + k * nz / (norm * norm);
+  }
 }
 
-void AmpGen::rotateBasis(Event &evt, const TVector3 &p1, const TVector3 &p2, const TVector3 &p3)
-{
-  for(unsigned i = 0; i < evt.size() / 4; ++i)
-    {
-      double ex = evt[4 * i + 0];
-      double ey = evt[4 * i + 1];
-      double ez = evt[4 * i + 2];
-      evt[4 * i + 0] = (p1.x() * ex + p1.y() * ey + p1.z() * ez) / p1.Mag();
-      evt[4 * i + 1] = (p2.x() * ex + p2.y() * ey + p2.z() * ez) / p2.Mag();
-      evt[4 * i + 2] = (p3.x() * ex + p3.y() * ey + p3.z() * ez) / p3.Mag();
-    }
+void AmpGen::rotateBasis(Event &evt, const TVector3 &p1, const TVector3 &p2, const TVector3 &p3) {
+  for(unsigned i = 0; i < evt.size() / 4; ++i) {
+    double ex = evt[4 * i + 0];
+    double ey = evt[4 * i + 1];
+    double ez = evt[4 * i + 2];
+    evt[4 * i + 0] = (p1.x() * ex + p1.y() * ey + p1.z() * ez) / p1.Mag();
+    evt[4 * i + 1] = (p2.x() * ex + p2.y() * ey + p2.z() * ez) / p2.Mag();
+    evt[4 * i + 2] = (p3.x() * ex + p3.y() * ey + p3.z() * ez) / p3.Mag();
+  }
 }

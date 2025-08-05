@@ -7,13 +7,11 @@
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/Utilities.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class Minimiser;
   class LinearErrorPropagator;
 
-  class FitResult
-  {
+  class FitResult {
   public:
     ~FitResult(){};
     FitResult();

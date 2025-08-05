@@ -18,8 +18,7 @@
 
 class TRandom3;
 
-namespace AmpGen
-{
+namespace AmpGen {
   class MinuitParameterSet;
   /** @class LinearErrorPropagator
    Propagates uncertainties on functors using either a MinuitParameterSet (thus assuming a diagonal covariance matrix)
@@ -28,8 +27,7 @@ namespace AmpGen
    or for producing uncertainty bands in predictions on figures.
    Usage is
   */
-  class LinearErrorPropagator
-  {
+  class LinearErrorPropagator {
   public:
     ///< Constructor for LinearErrorPropagator taking a vector of free parameters, assumes a diagonal covariance matrix taking the parameter uncertainties.
     explicit LinearErrorPropagator(const std::vector<MinuitParameter *> &params);
@@ -69,8 +67,7 @@ namespace AmpGen
     TMatrixD m_cov;
     std::vector<MinuitParameter *> m_parameters;
 
-    template <class FCN> double derivative(FCN fcn, const size_t &i) const
-    {
+    template <class FCN> double derivative(FCN fcn, const size_t &i) const {
       double startingValue = m_parameters[i]->mean();
       m_parameters[i]->setCurrentFitVal(startingValue + std::sqrt(m_cov(i, i)));
       double plus_variation = fcn();
@@ -81,8 +78,7 @@ namespace AmpGen
     }
   };
 
-  class GaussErrorPropagator
-  {
+  class GaussErrorPropagator {
   public:
     GaussErrorPropagator(const TMatrixD &reducedCovariance, const std::vector<MinuitParameter *> &params, TRandom3 *rnd);
     void perturb();
@@ -96,8 +92,7 @@ namespace AmpGen
     TMatrixD m_decomposedCholesky;
   };
 
-  class NonlinearErrorPropagator
-  {
+  class NonlinearErrorPropagator {
   public:
     NonlinearErrorPropagator(const std::function<double(void)> &, const TMatrixD &, const std::vector<MinuitParameter *> &);
     TMatrixD correlationMatrix(const std::vector<std::function<double(void)>> &functions, TRandom3 *rnd, const unsigned &nSamples = 50000);

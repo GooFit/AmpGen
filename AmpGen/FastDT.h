@@ -20,18 +20,11 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Types.h"
 
-namespace AmpGen
-{
-  class FastDT
-  {
+namespace AmpGen {
+  class FastDT {
   public:
-    enum Strategy
-    {
-      best,
-      random
-    };
-    struct Node
-    {
+    enum Strategy { best, random };
+    struct Node {
       int index;
       int left;
       int right;

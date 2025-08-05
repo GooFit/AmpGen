@@ -7,12 +7,10 @@
 
 #include "AmpGen/MinuitParameter.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class MinuitExpression;
 
-  class MinuitParameterSet
-  {
+  class MinuitParameterSet {
   public:
     typedef std::vector<MinuitParameter *>::iterator iterator;
     typedef std::vector<MinuitParameter *>::const_iterator const_iterator;

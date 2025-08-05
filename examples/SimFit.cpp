@@ -29,13 +29,12 @@ using EventList_type = AmpGen::EventList;
 
 using namespace AmpGen;
 
-int main(int argc, char *argv[])
-{
-  using strings = std::vector<std::string>; 
+int main(int argc, char *argv[]) {
+  using strings = std::vector<std::string>;
   OptionsParser::setArgs(argc, argv);
 
   const auto datasets = Property<strings>("Datasets", {}, "List of data/simulated samples to fit, in the format \
-      \033[3m data[0] sim[0] data[1] sim[1] ... \033[0m. \nIf a simulated sample is specified FLAT, uniformly generated phase-space events are used for integrals "); 
+      \033[3m data[0] sim[0] data[1] sim[1] ... \033[0m. \nIf a simulated sample is specified FLAT, uniformly generated phase-space events are used for integrals ");
   const std::string logFile = Property<std::string>("LogFile", "Fitter.log", "Name of the output log file");
 
   const std::string plotFile = Property<std::string>("Plots", "plots.root", "Name of the output plot file");
@@ -55,14 +54,13 @@ int main(int argc, char *argv[])
 
   INFO("Output : " << logFile << " plots = " << plotFile);
 
-  for(size_t i = 0; i < datasets.value().size(); i += 2)
-    {
-      data.emplace_back(datasets.value()[i]);
-      if(datasets.value()[i + 1] == "FLAT")
-        mcs.emplace_back(Generator<>(data.rbegin()->eventType()).generate(1e6));
-      else
-        mcs.emplace_back(datasets.value()[i + 1], data.rbegin()->eventType(), GetGenPdf(true));
-    }
+  for(size_t i = 0; i < datasets.value().size(); i += 2) {
+    data.emplace_back(datasets.value()[i]);
+    if(datasets.value()[i + 1] == "FLAT")
+      mcs.emplace_back(Generator<>(data.rbegin()->eventType()).generate(1e6));
+    else
+      mcs.emplace_back(datasets.value()[i + 1], data.rbegin()->eventType(), GetGenPdf(true));
+  }
 
   std::vector<PolarisedSum> fcs(data.size());
   std::vector<SumPDF<EventList_type, PolarisedSum &>> pdfs;
@@ -72,30 +70,26 @@ int main(int argc, char *argv[])
   SimFit totalLL;
   MinuitParameterSet mps;
   mps.loadFromStream();
-  if(add_conj)
-    AddCPConjugate(mps);
-  for(size_t i = 0; i < data.size(); ++i)
-    {
-      fcs[i] = PolarisedSum(data[i].eventType(), mps);
-      pdfs.emplace_back(make_pdf<EventList_type>(fcs[i]));
-      pdfs[i].setEvents(data[i]);
-      auto &mc = mcs[i];
-      for_each(pdfs[i].pdfs(), [&mc](auto &pdf) { pdf.setMC(mc); });
-      totalLL.add(pdfs[i]);
-    }
+  if(add_conj) AddCPConjugate(mps);
+  for(size_t i = 0; i < data.size(); ++i) {
+    fcs[i] = PolarisedSum(data[i].eventType(), mps);
+    pdfs.emplace_back(make_pdf<EventList_type>(fcs[i]));
+    pdfs[i].setEvents(data[i]);
+    auto &mc = mcs[i];
+    for_each(pdfs[i].pdfs(), [&mc](auto &pdf) { pdf.setMC(mc); });
+    totalLL.add(pdfs[i]);
+  }
   Minimiser mini(totalLL, &mps);
   mini.doFit();
   FitResult(mini).writeToFile("Fitter.log");
   TFile *output_plots = TFile::Open(plotFile.c_str(), "RECREATE");
-  for(size_t i = 0; i < data.size(); ++i)
-    {
-      INFO("Making figures for sample: " << i << " ...");
-      for(auto proj : data[i].eventType().defaultProjections())
-        {
-          proj(data[i], PlotOptions::Prefix("Data" + std::to_string(i)), PlotOptions::AutoWrite());
-          proj(mcs[i], pdfs[i].componentEvaluator(&mcs[i]), PlotOptions::Prefix("pdf" + std::to_string(i)), PlotOptions::Norm(data.size()),
-               PlotOptions::AutoWrite());
-        }
+  for(size_t i = 0; i < data.size(); ++i) {
+    INFO("Making figures for sample: " << i << " ...");
+    for(auto proj : data[i].eventType().defaultProjections()) {
+      proj(data[i], PlotOptions::Prefix("Data" + std::to_string(i)), PlotOptions::AutoWrite());
+      proj(mcs[i], pdfs[i].componentEvaluator(&mcs[i]), PlotOptions::Prefix("pdf" + std::to_string(i)), PlotOptions::Norm(data.size()),
+           PlotOptions::AutoWrite());
     }
+  }
   output_plots->Close();
 }

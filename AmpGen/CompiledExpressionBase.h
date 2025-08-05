@@ -13,8 +13,7 @@
 
 #include "AmpGen/Expression.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class CacheTransfer;
 
   std::string programatic_name(std::string s);
@@ -28,8 +27,7 @@ namespace AmpGen
    *  without explicitly referring to their return type, which is specified by template parameter
    *  in the implementation CompiledExpression
    */
-  class CompiledExpressionBase
-  {
+  class CompiledExpressionBase {
   public:
     CompiledExpressionBase();
     CompiledExpressionBase(const std::string &name);

@@ -10,8 +10,7 @@
 using namespace AmpGen;
 using namespace AmpGen::fcn;
 
-DEFINE_LINESHAPE(NonRelBW)
-{
+DEFINE_LINESHAPE(NonRelBW) {
   auto props = ParticlePropertiesList::get(particleName);
   Expression mass = Parameter(particleName + "_mass", props->mass());
   Expression width = Parameter(particleName + "_width", props->width());
