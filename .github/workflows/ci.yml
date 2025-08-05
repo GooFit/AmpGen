@@ -87,7 +87,6 @@ jobs:
             export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/build/lib 
             for x in test/model/*.opt ; do
               name=$(basename $x)
-              AmpGen ${x} --Output ${name}.cpp --Normalise=0 --CompilerWrapper::Verbose=1 --AutoCompile=0
               timeout -s SIGSEGV 60 pytest -sq test/python/test_model.py --model $x --junit-xml=${name}-${{matrix.simd}}-${{matrix.enable_fitting}}-${{runner.os}}.xml
             done
           fi
