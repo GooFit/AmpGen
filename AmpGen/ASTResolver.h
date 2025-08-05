@@ -15,7 +15,6 @@
 #include "AmpGen/Property.h"
 #include "AmpGen/CacheTransfer.h"
 #include "AmpGen/Spline.h"
-#include "AmpGen/Property.h" 
 
 namespace AmpGen {
   class MinuitParameter;
@@ -45,7 +44,6 @@ namespace AmpGen {
     size_t nParams() const { return m_nParameters; }
     bool enableCuda() const { return false; }
     bool enableAVX() const { return m_enableAVX; }
-    bool enableCompileConstants() const { return m_enableCompileTimeConstants; }
     void setEnableAVX() { m_enableAVX = true; }
     std::map<std::string, std::shared_ptr<CacheTransfer>> cacheFunctions() const;
     void addResolvedParameter(const IExpression *param, const std::string &thing);
@@ -67,8 +65,6 @@ namespace AmpGen {
     std::map<const IExpression *, const SubTree *> m_tempTrees;             /// temporary store of sub-trees for performing cse reduction
     unsigned int m_nParameters{0};                                          /// Number of parameters
     bool m_enableAVX{false};                                                /// Flag to check if requested expression outputs a vector register
-    Property<bool> m_enableCompileTimeConstants{this, "ASTResolver::CompileTimeConstants", true}; /// flag to enable compile time constants <<experimental>>
-    Property<bool> m_checkHashes{this, "ASTResolver::CheckHashes", false};                         /// flag to check that hashes are unique
   };
 
   template <> void ASTResolver::resolve<Parameter>(const Parameter &obj);

@@ -222,7 +222,7 @@ std::string MinuitParameterLink::to_string(const ASTResolver *resolver) const {
   if(as_expression != nullptr) return as_expression->expression().to_string(resolver);
 
   if(resolver == nullptr and m_parameter != nullptr) return m_parameter->name();
-  if(resolver->enableCompileConstants() && m_parameter != nullptr && m_parameter->flag() == Flag::CompileTimeConstant)
+  if(m_parameter != nullptr && m_parameter->flag() == Flag::CompileTimeConstant)
     return std::to_string(m_parameter->mean());
   return resolver->resolvedParameter(this);
 }
