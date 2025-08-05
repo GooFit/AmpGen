@@ -155,7 +155,7 @@ ExpressionParser::ExpressionParser() {
   add_binary("&&", [](const auto &A, const auto &B) { return A && B; });
   add_binary(",", [](const auto &A, const auto &B) { return ExpressionPack(A, B); });
 
-  Coupling c(nullptr, nullptr);
+  CouplingConstant c(nullptr, nullptr);
   coordinateType coord = c.coordinates();
   angType degOrRad = c.angularUnit();
   m_isCartesian = true;

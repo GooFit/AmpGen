@@ -15,7 +15,7 @@ BOOST_AUTO_TEST_CASE(test_AmplitudeRule) {
   MinuitParameter re = MinuitParameter("D0{K*(892)bar0{K-,pi+},pi0}_Re", Flag::Free, 1., 0.);
   MinuitParameter im = MinuitParameter("D0{K*(892)bar0{K-,pi+},pi0}_Im", Flag::Free, 0., 0.);
 
-  Coupling test(&re, &im);
+  CouplingConstant test(&re, &im);
 
   BOOST_CHECK(test.name() == "D0{K*(892)bar0{K-,pi+},pi0}");
   BOOST_CHECK(test.head() == "D0");
