@@ -44,7 +44,6 @@ namespace AmpGen {
   */
   class CoherentSum : public Configurable<CoherentSum> {
   public:
-
 #if ENABLE_AVX
     using EventList_type = EventListSIMD;
 #else
@@ -109,7 +108,7 @@ namespace AmpGen {
     const auto &cache() const { return m_cache; }
 
   protected:
-//    Property<int> m_verbose{this, "CoherentSum::Verbose", 0, "Flag for verbose printing"};
+    //    Property<int> m_verbose{this, "CoherentSum::Verbose", 0, "Flag for verbose printing"};
 
     std::vector<MatrixElement> m_matrixElements;                      ///< Vector of matrix elements
     Bilinears m_normalisations;                                       ///< Normalisation integrals

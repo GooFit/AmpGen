@@ -14,7 +14,7 @@
 #include "AmpGen/EventType.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/DiscreteDistribution.h"
-#include "AmpGen/Configurable.h" 
+#include "AmpGen/Configurable.h"
 #include "AmpGen/Property.h"
 #include <TRandom3.h>
 
@@ -37,7 +37,7 @@ namespace AmpGen {
     */
   class TreePhaseSpace : public Configurable<TreePhaseSpace> {
   public:
-    TreePhaseSpace() = default; 
+    TreePhaseSpace() = default;
     explicit TreePhaseSpace(const EventType &type);
     TreePhaseSpace(const Particle &decayChain, const EventType &type, TRandom *rndm = nullptr);
     TreePhaseSpace(const std::vector<Particle> &decayChains, const EventType &type, TRandom *rndm = nullptr);

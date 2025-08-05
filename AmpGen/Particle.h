@@ -28,7 +28,7 @@ namespace stdx {
 #include "AmpGen/Property.h"
 #include "AmpGen/enum.h"
 #include "AmpGen/Units.h"
-#include "AmpGen/Configurable.h" 
+#include "AmpGen/Configurable.h"
 
 namespace AmpGen {
   /** @class Particle
@@ -99,7 +99,7 @@ namespace AmpGen {
 
   declare_enum(spinFormalism, Covariant, Canonical);
   declare_enum(spinBasis, Dirac, Weyl);
- 
+
   class Particle : public Configurable<Particle> {
   public:
     /// Default Constructor
@@ -126,7 +126,7 @@ namespace AmpGen {
     /// convention.
     Particle conj(bool invertHead = true, bool reorder = true);
 
-    virtual ~Particle() {} 
+    virtual ~Particle() {}
     /// CP conjugate this particle //
 
     void conjThis();

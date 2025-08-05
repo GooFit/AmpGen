@@ -10,7 +10,7 @@
 namespace AmpGen {
   class MinuitParameterSet;
   declare_enum(Flag, Free, Hide, Fix, CompileTimeConstant, Blind);
- 
+
   class MinuitParameter {
   public:
     MinuitParameter() = default;

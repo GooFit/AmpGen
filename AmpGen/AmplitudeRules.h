@@ -15,7 +15,7 @@
 #include "AmpGen/Particle.h"
 #include "AmpGen/ExpressionParser.h"
 #include "AmpGen/Property.h"
-#include "AmpGen/Configurable.h" 
+#include "AmpGen/Configurable.h"
 
 namespace AmpGen {
   class MinuitParameter;
@@ -24,8 +24,8 @@ namespace AmpGen {
 
   class CouplingConstant : public Configurable<CouplingConstant> {
   public:
-    CouplingConstant() = default; 
-    virtual ~CouplingConstant() = default; 
+    CouplingConstant() = default;
+    virtual ~CouplingConstant() = default;
 
     CouplingConstant(MinuitParameter *re, MinuitParameter *im);
     CouplingConstant(MinuitExpression *expression);
