@@ -3,7 +3,6 @@
 
 #include "AmpGen/AddCPConjugate.h"
 #include "AmpGen/MinuitParameterSet.h"
-#include "AmpGen/Property.h"
 #include "AmpGen/ExpressionParser.h"
 #include "AmpGen/MinuitExpression.h"
 #include "AmpGen/Particle.h"
@@ -12,10 +11,9 @@
 
 using namespace AmpGen;
 
-void AmpGen::AddCPConjugate(MinuitParameterSet &mps) {
+void AmpGen::AddCPConjugate(MinuitParameterSet &mps, const std::vector<std::string>& forbidden ) {
   std::vector<MinuitParameter *> tmp;
   auto coord = CouplingConstant(nullptr, nullptr).coordinates();
-  std::vector<std::string> forbidden = {}; // Property<std::vector<std::string>>(nullptr, "AddCPConjugate::Forbid");
 
   for(auto &param : mps) {
     const std::string name = param->name();

@@ -29,13 +29,6 @@ namespace AmpGen {
     value_t m_value;
 
   public:
-    // WARNING: NamedParameter style constructor will be depreciated at some point to allow for stricter typing
-    [[deprecated]] Property(const std::string &name, const value_t &def = value_t(), const std::string_view &helpString = "")
-        : m_name(name), m_helpString(helpString), m_value(def) {
-      setFromOptionsParser();
-      if(OptionsParser::printHelp()) help(def);
-      DEBUG(*this);
-    }
     template <typename T>
     Property(T *parent, const std::string &name, const value_t &def = value_t(), const std::string_view &helpString = "")
         : m_name(name), m_helpString(helpString), m_value(def) {
