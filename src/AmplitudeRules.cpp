@@ -17,7 +17,7 @@
 using namespace AmpGen;
 using namespace std::complex_literals;
 
-Coupling::Coupling(MinuitParameter *re, MinuitParameter *im) : m_re(re), m_im(im) {
+CouplingConstant::CouplingConstant(MinuitParameter *re, MinuitParameter *im) : m_re(re), m_im(im) {
   if(m_re != nullptr && m_im != nullptr) {
     auto tokens = split(re->name(), '_');
     if(tokens.size() == 3) {
@@ -35,7 +35,7 @@ Coupling::Coupling(MinuitParameter *re, MinuitParameter *im) : m_re(re), m_im(im
   if(m_angUnit == angType::deg) m_sf = M_PI / 180;
 }
 
-Coupling::Coupling(MinuitExpression *expression) : m_name(expression->name()), m_expr(expression), m_particle(m_name) {}
+CouplingConstant::CouplingConstant(MinuitExpression *expression) : m_name(expression->name()), m_expr(expression), m_particle(m_name) {}
 
 AmplitudeRules::AmplitudeRules(const MinuitParameterSet &mps) {
   for(auto &it_re : mps) {
@@ -48,37 +48,37 @@ AmplitudeRules::AmplitudeRules(const MinuitParameterSet &mps) {
         continue;
       }
       if(!Particle::isValidDecayDescriptor(name.substr(0, name.find("_Re")))) continue;
-      Coupling p(it_re, it_im);
+      CouplingConstant p(it_re, it_im);
       m_rules[p.head()].emplace_back(p);
     } else if(name.find("_Im") == std::string::npos) {
-      bool isCoupling = Particle::isValidDecayDescriptor(it_re->name());
-      if(!isCoupling) continue;
+      bool isCouplingConstant = Particle::isValidDecayDescriptor(it_re->name());
+      if(!isCouplingConstant) continue;
       MinuitExpression *expression = dynamic_cast<MinuitExpression *>(it_re);
       DEBUG("Constructing: " << expression << " " << it_re->name());
       if(expression != nullptr) {
-        Coupling p(expression);
+        CouplingConstant p(expression);
         m_rules[p.head()].emplace_back(p);
       }
     }
   }
 }
 
-TotalCoupling::TotalCoupling(const TotalCoupling &other, const Coupling &pA) : couplings(other.couplings) { couplings.emplace_back(pA); }
+TotalCoupling::TotalCoupling(const TotalCoupling &other, const CouplingConstant &pA) : couplings(other.couplings) { couplings.emplace_back(pA); }
 
 bool AmplitudeRules::hasDecay(const std::string &head) const { return m_rules.find(head) != m_rules.end(); }
 
-std::vector<Coupling> AmplitudeRules::rulesForDecay(const std::string &head, const std::string &prefix) const {
-  if(!hasDecay(head)) return std::vector<Coupling>();
+std::vector<CouplingConstant> AmplitudeRules::rulesForDecay(const std::string &head, const std::string &prefix) const {
+  if(!hasDecay(head)) return std::vector<CouplingConstant>();
   if(prefix == "") return m_rules.find(head)->second;
-  std::vector<Coupling> rt = m_rules.find(head)->second;
+  std::vector<CouplingConstant> rt = m_rules.find(head)->second;
   rt.erase(std::remove_if(std::begin(rt), std::end(rt), [&prefix](auto &p) { return p.prefix() != prefix; }), rt.end());
 
   return rt;
 }
 
-const std::map<std::string, std::vector<Coupling>> &AmplitudeRules::rules() const { return m_rules; }
+const std::map<std::string, std::vector<CouplingConstant>> &AmplitudeRules::rules() const { return m_rules; }
 
-EventType Coupling::eventType() const {
+EventType CouplingConstant::eventType() const {
   Particle particle(m_name);
   std::vector<std::string> particleNames = {particle.name()};
   std::vector<std::shared_ptr<Particle>> fs = particle.getFinalStateParticles();
@@ -87,14 +87,14 @@ EventType Coupling::eventType() const {
   return EventType(particleNames);
 }
 
-TotalCoupling::TotalCoupling(const Coupling &pA) { couplings.emplace_back(pA); }
+TotalCoupling::TotalCoupling(const CouplingConstant &pA) { couplings.emplace_back(pA); }
 
-std::complex<double> Coupling::operator()() const {
+std::complex<double> CouplingConstant::operator()() const {
   return m_expr != nullptr ? m_expr->getVal()
                            : ((m_coord == coordinateType::cartesian) ? complex_t(m_re->mean(), m_im->mean()) : m_re->mean() * exp(1i * m_sf * m_im->mean()));
 }
 
-Expression Coupling::to_expression() const {
+Expression CouplingConstant::to_expression() const {
   return m_expr != nullptr ? m_expr->expression()
                            : ((m_coord == coordinateType::cartesian) ? ComplexParameter(Parameter(m_re->name()), Parameter(m_im->name()))
                                                                      : Parameter(m_re->name()) * fcn::exp(1i * m_sf * Parameter(m_im->name())));
@@ -153,7 +153,7 @@ const AmplitudeRules *AmplitudeRules::get() {
   return gAmplitudeRules;
 }
 
-std::vector<std::pair<Particle, TotalCoupling>> AmplitudeRules::expand(const Coupling &coupling) const {
+std::vector<std::pair<Particle, TotalCoupling>> AmplitudeRules::expand(const CouplingConstant &coupling) const {
   std::vector<std::pair<Particle, TotalCoupling>> rt;
   rt.emplace_back(coupling.particle(), TotalCoupling(coupling));
   auto canDecay = [&](const auto &particle) { return this->hasDecay(particle->name()); };
@@ -185,5 +185,5 @@ std::vector<std::pair<Particle, TotalCoupling>> AmplitudeRules::expand(const Cou
 
 void AmplitudeRules::add_rule(const Particle &p, double coupling) { m_rules[p.name()].emplace_back(p, coupling); }
 
-Coupling::Coupling(const Particle &particle, double f)
+CouplingConstant::CouplingConstant(const Particle &particle, double f)
     : m_name(particle.decayDescriptor()), m_expr(new MinuitExpression(particle.decayDescriptor(), f)), m_particle(particle) {}

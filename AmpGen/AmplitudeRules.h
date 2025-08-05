@@ -15,17 +15,21 @@
 #include "AmpGen/Particle.h"
 #include "AmpGen/ExpressionParser.h"
 #include "AmpGen/Property.h"
+#include "AmpGen/Configurable.h" 
 
 namespace AmpGen {
   class MinuitParameter;
   class MinuitExpression;
   class MinuitParameterSet;
 
-  class Coupling {
+  class CouplingConstant : public Configurable<CouplingConstant> {
   public:
-    Coupling(MinuitParameter *re, MinuitParameter *im);
-    Coupling(MinuitExpression *expression);
-    Coupling(const Particle &particle, double f);
+    CouplingConstant() = default; 
+    virtual ~CouplingConstant() = default; 
+
+    CouplingConstant(MinuitParameter *re, MinuitParameter *im);
+    CouplingConstant(MinuitExpression *expression);
+    CouplingConstant(const Particle &particle, double f);
     std::string name() const { return m_name; }
     std::string head() const { return m_particle.name(); }
     std::string prefix() const { return m_prefix; }
@@ -53,20 +57,20 @@ namespace AmpGen {
   class TotalCoupling {
   public:
     TotalCoupling() = default;
-    TotalCoupling(const TotalCoupling &other, const Coupling &pA);
-    TotalCoupling(const Coupling &pA);
+    TotalCoupling(const TotalCoupling &other, const CouplingConstant &pA);
+    TotalCoupling(const CouplingConstant &pA);
     std::complex<double> operator()() const;
     Expression to_expression() const;
     void print() const;
-    Coupling operator[](const size_t &index) { return couplings[index]; }
+    CouplingConstant operator[](const size_t &index) { return couplings[index]; }
     bool isFixed() const;
     bool contains(const std::string &name) const;
     size_t size() const { return couplings.size(); }
-    std::vector<Coupling>::const_iterator begin() const { return couplings.begin(); }
-    std::vector<Coupling>::const_iterator end() const { return couplings.end(); }
+    std::vector<CouplingConstant>::const_iterator begin() const { return couplings.begin(); }
+    std::vector<CouplingConstant>::const_iterator end() const { return couplings.end(); }
 
   private:
-    std::vector<Coupling> couplings;
+    std::vector<CouplingConstant> couplings;
   };
 
   class AmplitudeRules {
@@ -75,17 +79,17 @@ namespace AmpGen {
     static AmplitudeRules *create(const MinuitParameterSet &mps);
     AmplitudeRules() = default;
     AmplitudeRules(const MinuitParameterSet &mps);
-    std::vector<Coupling> rulesForDecay(const std::string &head, const std::string &prefix = "") const;
+    std::vector<CouplingConstant> rulesForDecay(const std::string &head, const std::string &prefix = "") const;
     bool hasDecay(const std::string &head) const;
-    const std::map<std::string, std::vector<Coupling>> &rules() const;
+    const std::map<std::string, std::vector<CouplingConstant>> &rules() const;
     std::vector<std::pair<Particle, TotalCoupling>> getMatchingRules(const EventType &type, const std::string &prefix = "");
-    std::vector<Coupling> processesThatProduce(const Particle &particle) const;
+    std::vector<CouplingConstant> processesThatProduce(const Particle &particle) const;
 
-    std::vector<std::pair<Particle, TotalCoupling>> expand(const Coupling &coupling) const;
+    std::vector<std::pair<Particle, TotalCoupling>> expand(const CouplingConstant &coupling) const;
     void add_rule(const Particle &p, double coupling);
 
   private:
-    std::map<std::string, std::vector<Coupling>> m_rules;
+    std::map<std::string, std::vector<CouplingConstant>> m_rules;
     static AmplitudeRules *gAmplitudeRules;
   };
 
