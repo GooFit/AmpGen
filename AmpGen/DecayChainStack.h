@@ -9,7 +9,6 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/SmallVector.h"
-#include "AmpGen/Property.h"
 #include "AmpGen/Event.h"
 #include <TRandom3.h>
 
@@ -23,7 +22,6 @@ namespace AmpGen {
     virtual double maxWeight() const = 0;
     virtual unsigned NP() const = 0;
     virtual bool operator==(const DecayChainStackBase &other) const = 0;
-    Property<bool> m_aggressiveOptimisation{this, "DecayChainStack::AggressiveOptimisation", false};
   };
 
   template <unsigned N> class DecayChainStack : public DecayChainStackBase {
@@ -125,7 +123,7 @@ namespace AmpGen {
     double m_rhoMax = 1;
 
   public:
-    DecayChainStack(const Particle &particle) {
+    DecayChainStack(const Particle &particle, bool aggressiveOptimisation) {
       auto fs = particle.getFinalStateParticles();
       double minMass = particle.mass();
       for(int i = 0; i != N; ++i) {
@@ -167,7 +165,7 @@ namespace AmpGen {
           m_nodes[index].range = std::make_pair(pow(min_mass, 2), pow(minMass + min_mass, 2));
         m_nodes[index].set(&(*current));
       }
-      if(m_aggressiveOptimisation) {
+      if(aggressiveOptimisation) {
         WARNING("Using aggressive optimisation of phase space, can cause problems for relative normalisation of different decay topologies");
         /// this optimisation 'cuts' the phase space of the a decay at the maximal extent of its sibling, i.e. reduces
         /// the physically allowed region somewhat.
@@ -336,19 +334,19 @@ namespace AmpGen {
     }
   };
 
-  DecayChainStackBase *make_decay_chain_stack(const Particle &particle) {
+  DecayChainStackBase *make_decay_chain_stack(const Particle &particle, bool aggressiveOptimisation=false) {
     auto fs = particle.getFinalStateParticles();
     switch(fs.size()) {
-    case(1): return new DecayChainStack<1>(particle);
-    case(2): return new DecayChainStack<2>(particle);
-    case(3): return new DecayChainStack<3>(particle);
-    case(4): return new DecayChainStack<4>(particle);
-    case(5): return new DecayChainStack<5>(particle);
-    case(6): return new DecayChainStack<6>(particle);
-    case(7): return new DecayChainStack<7>(particle);
-    case(8): return new DecayChainStack<8>(particle);
-    case(9): return new DecayChainStack<9>(particle);
-    case(10): return new DecayChainStack<10>(particle);
+    case(1): return new DecayChainStack<1>(particle, aggressiveOptimisation);
+    case(2): return new DecayChainStack<2>(particle, aggressiveOptimisation);
+    case(3): return new DecayChainStack<3>(particle, aggressiveOptimisation);
+    case(4): return new DecayChainStack<4>(particle, aggressiveOptimisation);
+    case(5): return new DecayChainStack<5>(particle, aggressiveOptimisation);
+    case(6): return new DecayChainStack<6>(particle, aggressiveOptimisation);
+    case(7): return new DecayChainStack<7>(particle, aggressiveOptimisation);
+    case(8): return new DecayChainStack<8>(particle, aggressiveOptimisation);
+    case(9): return new DecayChainStack<9>(particle, aggressiveOptimisation);
+    case(10): return new DecayChainStack<10>(particle, aggressiveOptimisation);
     }
     return nullptr;
   }

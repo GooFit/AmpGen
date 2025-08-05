@@ -23,11 +23,14 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/ProfileClock.h"
+#include "AmpGen/OptionsParser.h" 
 
 using namespace AmpGen;
 using namespace ROOT;
 
 unsigned int Minimiser::nPars() const { return m_nParams; }
+
+REGISTER_CONFIGURABLE(Minimiser); 
 
 void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState &state) {
   if(m_printLevel == PrintLevel::Quiet) return;

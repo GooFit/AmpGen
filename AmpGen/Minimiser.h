@@ -13,11 +13,12 @@
 #include <Minuit2/MinimumState.h>
 #include <Minuit2/MnTraceObject.h>
 #include <Math/IFunction.h>
+
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/enum.h"
 #include "AmpGen/Property.h"
-#include <TFile.h>
-#include <TGraph.h>
+#include "AmpGen/Configurable.h"
+
 /** @cond PRIVATE */
 namespace ROOT {
   namespace Minuit2 {
@@ -34,28 +35,30 @@ namespace AmpGen {
   class MinuitParameter;
   class MinuitParameterSet;
 
-  class Minimiser : public ROOT::Minuit2::MnTraceObject {
+  class Minimiser : public Configurable<Minimiser>, ROOT::Minuit2::MnTraceObject {
   private:
-    def_has_function(getVal) def_has_function(grad)
+    def_has_function(getVal);
+    def_has_function(grad);
 
-      public : template <typename TYPE>
-               void setFunction(TYPE &fcn) {
+      public : 
+    
+    Minimiser() = default; 
+    ~Minimiser() = default;
+
+    template <typename TYPE> void setFunction(TYPE &fcn) {
       if constexpr(has_getVal<TYPE>::value)
         m_theFunction = [&fcn]() { return fcn.getVal(); };
       else {
         m_theFunction = fcn;
       }
-
       if constexpr(std::is_convertible<TYPE *, ROOT::Math::IGradientFunctionMultiDimTempl<double> *>::value) m_fcnWithGrad = &fcn;
     }
-
     template <typename TYPE> Minimiser(TYPE &fitFunction, MinuitParameterSet *mps) : m_parSet(mps) {
       setFunction(fitFunction);
       prepare();
     }
 
     Minimiser(std::function<double(void)> &fitFunction, MinuitParameterSet *mps) : m_parSet(mps), m_theFunction(fitFunction) { prepare(); }
-    ~Minimiser() = default;
 
     unsigned int nPars() const;
     void prepare();

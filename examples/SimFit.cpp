@@ -33,20 +33,20 @@ int main(int argc, char *argv[]) {
   using strings = std::vector<std::string>;
   OptionsParser::setArgs(argc, argv);
 
-  const auto datasets = Property<strings>("Datasets", {}, "List of data/simulated samples to fit, in the format \
+  const auto datasets = Property<strings>(nullptr, "Datasets", {}, "List of data/simulated samples to fit, in the format \
       \033[3m data[0] sim[0] data[1] sim[1] ... \033[0m. \nIf a simulated sample is specified FLAT, uniformly generated phase-space events are used for integrals ");
-  const std::string logFile = Property<std::string>("LogFile", "Fitter.log", "Name of the output log file");
+  const std::string logFile = Property<std::string>(nullptr, "LogFile", "Fitter.log", "Name of the output log file");
 
-  const std::string plotFile = Property<std::string>("Plots", "plots.root", "Name of the output plot file");
+  const std::string plotFile = Property<std::string>(nullptr, "Plots", "plots.root", "Name of the output plot file");
 
-  const bool add_conj = Property<bool>("AddConj", false);
+  const bool add_conj = Property<bool>(nullptr, "AddConj", false);
 
   std::vector<EventList_type> data;
   std::vector<EventList_type> mcs;
 
 #ifdef _OPENMP
   size_t hwThreads = std::thread::hardware_concurrency();
-  size_t usThreads = Property<size_t>("nCores", hwThreads, "Number of cores to use (OpenMP only)");
+  size_t usThreads = Property<size_t>(nullptr, "nCores", hwThreads, "Number of cores to use (OpenMP only)");
   INFO("Using: " << usThreads << " / " << hwThreads << " threads");
   omp_set_num_threads(usThreads);
   omp_set_dynamic(0);

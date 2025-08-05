@@ -12,7 +12,6 @@
 #include <future>
 
 #include "AmpGen/Expression.h"
-#include "AmpGen/Property.h"
 #include "AmpGen/CacheTransfer.h"
 #include "AmpGen/Spline.h"
 
