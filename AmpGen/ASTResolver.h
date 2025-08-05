@@ -67,7 +67,7 @@ namespace AmpGen {
     std::map<const IExpression *, const SubTree *> m_tempTrees;             /// temporary store of sub-trees for performing cse reduction
     unsigned int m_nParameters{0};                                          /// Number of parameters
     bool m_enableAVX{false};                                                /// Flag to check if requested expression outputs a vector register
-    Property<bool> m_enableCompileTimeConstants{this, "ASTResolver::CompileTimeConstants", false}; /// flag to enable compile time constants <<experimental>>
+    Property<bool> m_enableCompileTimeConstants{this, "ASTResolver::CompileTimeConstants", true}; /// flag to enable compile time constants <<experimental>>
     Property<bool> m_checkHashes{this, "ASTResolver::CheckHashes", false};                         /// flag to check that hashes are unique
   };
 
