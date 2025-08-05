@@ -34,7 +34,7 @@ namespace AmpGen {
         : m_name(name), m_helpString(helpString), m_value(def) {
       setFromOptionsParser();
       if constexpr(std::has_virtual_destructor<T>::value and not std::is_const_v<T>) {
-        if(parent != nullptr and dynamic_cast<ConfigurableBase *>(parent)) dynamic_cast<ConfigurableBase*>(parent)->registerParameter(name);
+        if(parent != nullptr and dynamic_cast<ConfigurableBase *>(parent)) dynamic_cast<ConfigurableBase *>(parent)->registerParameter(name);
         // std::cout << name << " " << def << " " << helpString << std::endl;
       }
       if(OptionsParser::printHelp()) help(def);

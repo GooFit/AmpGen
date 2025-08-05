@@ -40,9 +40,8 @@ namespace AmpGen {
     def_has_function(getVal);
     def_has_function(grad);
 
-      public : 
-    
-    Minimiser() = default; 
+  public:
+    Minimiser() = default;
     ~Minimiser() = default;
 
     template <typename TYPE> void setFunction(TYPE &fcn) {

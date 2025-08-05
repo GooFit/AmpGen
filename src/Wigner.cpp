@@ -170,13 +170,13 @@ Tensor AmpGen::basisVector(const int &polState) {
 
 std::vector<LS> userHelicityCouplings(const std::string &key) {
   std::vector<LS> couplings;
-  std::vector<double> things = Property<std::vector<double>>(nullptr, key, {0.});
-  if(things.size() % 3 != 0) ERROR("Wrong number of tokens");
-  for(size_t i = 0; i < things.size(); i += 3) {
+  std::vector<double> tokens = Property<std::vector<double>>(nullptr, key, {0.});
+  if(tokens.size() % 3 != 0) ERROR("Wrong number of tokens");
+  for(size_t i = 0; i < tokens.size(); i += 3) {
     LS coupling;
-    coupling.factor = things[i + 0];
-    coupling.m1 = things[i + 1];
-    coupling.m2 = things[i + 2];
+    coupling.factor = tokens[i + 0];
+    coupling.m1 = tokens[i + 1];
+    coupling.m2 = tokens[i + 2];
     couplings.push_back(coupling);
   }
   if(couplings.size() == 0) { FATAL("No helicity amplitude specified by: " << key); }

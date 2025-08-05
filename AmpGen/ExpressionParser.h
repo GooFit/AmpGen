@@ -22,8 +22,7 @@ namespace AmpGen {
   declare_enum(coordinateType, cartesian, polar);
   declare_enum(angType, deg, rad);
 
-    template <typename arg_type>
-    void set_tuple_from_expression(arg_type &arg, const Expression &expr) {
+  template <typename arg_type> void set_tuple_from_expression(arg_type &arg, const Expression &expr) {
     if constexpr(std::is_same<arg_type, Expression>::value) {
       arg = expr;
     } else if constexpr(std::is_same<arg_type, std::string>::value) {

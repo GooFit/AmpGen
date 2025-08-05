@@ -8,7 +8,7 @@
 #include <vector>
 #include <map>
 #include "AmpGen/Property.h"
-#include "AmpGen/Configurable.h" 
+#include "AmpGen/Configurable.h"
 
 namespace AmpGen {
   class CompiledExpressionBase;
@@ -37,7 +37,7 @@ namespace AmpGen {
     std::string m_extension{"so"};
     Property<strings> m_compileFlags{this, "CompilerWrapper::Flags", {"-Ofast", "--std=" + get_cpp_version()}};
     Property<bool> m_forceRebuild{this, "CompilerWrapper::ForceRebuild", false};
-    Property<bool> m_disable{this, "CompilerWrapper::Disable", false}; 
+    Property<bool> m_disable{this, "CompilerWrapper::Disable", false};
   };
 } // namespace AmpGen
 #endif

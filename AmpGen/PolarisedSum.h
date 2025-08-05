@@ -21,7 +21,7 @@
 #include "AmpGen/Tensor.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/enum.h"
-#include "AmpGen/Configurable.h" 
+#include "AmpGen/Configurable.h"
 
 namespace AmpGen {
   class LinearErrorPropagator;

@@ -334,7 +334,7 @@ namespace AmpGen {
     }
   };
 
-  DecayChainStackBase *make_decay_chain_stack(const Particle &particle, bool aggressiveOptimisation=false) {
+  DecayChainStackBase *make_decay_chain_stack(const Particle &particle, bool aggressiveOptimisation = false) {
     auto fs = particle.getFinalStateParticles();
     switch(fs.size()) {
     case(1): return new DecayChainStack<1>(particle, aggressiveOptimisation);

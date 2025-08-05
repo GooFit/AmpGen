@@ -9,7 +9,7 @@
 #include "AmpGen/Event.h"
 #include "AmpGen/enum.h"
 #include "AmpGen/Property.h"
-#include "AmpGen/Configurable.h" 
+#include "AmpGen/Configurable.h"
 
 namespace AmpGen {
   class Projection;
@@ -17,10 +17,9 @@ namespace AmpGen {
      Deals with final state configuration of events,
      specifically dealing with the ordering of particles in trees.
    */
-  class EventType; 
+  class EventType;
   std::ostream &operator<<(std::ostream &os, const EventType &type);
   class EventType : public Configurable<EventType> {
-  
   public:
     /// Default constructor
     EventType() = default;
@@ -53,7 +52,7 @@ namespace AmpGen {
     std::string decayDescriptor() const;
     std::string label(const unsigned &index, bool isRoot = true) const;
     std::string label(const std::vector<unsigned> &index, bool isRoot = true) const;
-    std::vector<Projection> defaultProjections(const unsigned &nBins = 100, const std::string& var = "mass2") const;
+    std::vector<Projection> defaultProjections(const unsigned &nBins = 100, const std::string &var = "mass2") const;
     Projection projection(const unsigned &nBins, const std::vector<unsigned> &indices, const std::string &observable = "mass2") const;
 
     bool operator==(const EventType &other) const;
