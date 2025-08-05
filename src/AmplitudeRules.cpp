@@ -13,9 +13,12 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/Utilities.h"
+#include "AmpGen/OptionsParser.h" 
 
 using namespace AmpGen;
 using namespace std::complex_literals;
+
+REGISTER_CONFIGURABLE( CouplingConstant ); 
 
 CouplingConstant::CouplingConstant(MinuitParameter *re, MinuitParameter *im) : m_re(re), m_im(im) {
   if(m_re != nullptr && m_im != nullptr) {
