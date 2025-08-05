@@ -6,11 +6,15 @@
 #include "AmpGen/Event.h"
 #include "AmpGen/DecayChainStack.h"
 #include "AmpGen/simd/utils.h"
+#include "AmpGen/OptionsParser.h" 
+
 #include "TRandom3.h"
 #include <numeric>
 #include <random>
 
 using namespace AmpGen;
+
+REGISTER_CONFIGURABLE(TreePhaseSpace); 
 
 TreePhaseSpace::TreePhaseSpace(const Particle &decayChain, const EventType &type, TRandom *rndm)
     : m_rand(rndm == nullptr ? (TRandom3 *)gRandom : (TRandom3 *)rndm), m_type(type) {
@@ -18,7 +22,7 @@ TreePhaseSpace::TreePhaseSpace(const Particle &decayChain, const EventType &type
   for(auto &ordering : orderings) {
     Particle p = decayChain;
     p.setOrdering(ordering);
-    m_gen.push_back(make_decay_chain_stack(p));
+    m_gen.push_back(make_decay_chain_stack(p, m_aggressiveOptimisation));
   }
   initialise_weights();
   setRandom(m_rand);
@@ -31,7 +35,7 @@ TreePhaseSpace::TreePhaseSpace(const std::vector<Particle> &decayChains, const E
     DEBUG("Adding tree: " << p);
     for(auto &ordering : orderings) {
       p.setOrdering(ordering);
-      auto s = make_decay_chain_stack(p);
+      auto s = make_decay_chain_stack(p, m_aggressiveOptimisation);
       bool any_of_fast = std::any_of(this->m_gen.begin(), this->m_gen.end(), [s](const auto it) { return *it == *s; });
       if(any_of_fast) { continue; }
       this->m_gen.push_back(s);

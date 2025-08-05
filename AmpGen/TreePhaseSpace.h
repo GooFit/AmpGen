@@ -14,6 +14,8 @@
 #include "AmpGen/EventType.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/DiscreteDistribution.h"
+#include "AmpGen/Configurable.h" 
+#include "AmpGen/Property.h"
 #include <TRandom3.h>
 
 namespace AmpGen {
@@ -33,8 +35,9 @@ namespace AmpGen {
     ideally feedback could be given from the generator phase to focus on the more efficient channels,
     i.e. those that have larger contributions to the full amplitude.
     */
-  class TreePhaseSpace {
+  class TreePhaseSpace : public Configurable<TreePhaseSpace> {
   public:
+    TreePhaseSpace() = default; 
     explicit TreePhaseSpace(const EventType &type);
     TreePhaseSpace(const Particle &decayChain, const EventType &type, TRandom *rndm = nullptr);
     TreePhaseSpace(const std::vector<Particle> &decayChains, const EventType &type, TRandom *rndm = nullptr);
@@ -55,6 +58,7 @@ namespace AmpGen {
     DiscreteDistribution m_dice;
     std::vector<unsigned> m_generatorRecord;
     double m_wmax{0};
+    Property<bool> m_aggressiveOptimisation{this, "TreePhaseSpace::AggressiveOptimisation", false};
   };
 } // namespace AmpGen
 

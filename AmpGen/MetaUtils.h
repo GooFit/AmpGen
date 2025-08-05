@@ -92,7 +92,7 @@ namespace AmpGen {
     template <typename U> static auto test(int) -> decltype(std::declval<U>().function_name() == 1, std::true_type());                                         \
     template <typename> static std::false_type test(...);                                                                                                      \
     static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;                                                                   \
-  };
+  }
 
   template <typename... T> struct is_functor : std::false_type {};
 
