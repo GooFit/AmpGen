@@ -9,6 +9,7 @@
 #include "AmpGen/Event.h"
 #include "AmpGen/enum.h"
 #include "AmpGen/Property.h"
+#include "AmpGen/Configurable.h" 
 
 namespace AmpGen {
   class Projection;
@@ -16,11 +17,10 @@ namespace AmpGen {
      Deals with final state configuration of events,
      specifically dealing with the ordering of particles in trees.
    */
-  class EventType;
+  class EventType; 
   std::ostream &operator<<(std::ostream &os, const EventType &type);
-  class EventType {
-    enum class Observable { mass, mass2 };
-    // make_enum(observable, mass, mass2);
+  class EventType : public Configurable<EventType> {
+  
   public:
     /// Default constructor
     EventType() = default;
@@ -53,7 +53,7 @@ namespace AmpGen {
     std::string decayDescriptor() const;
     std::string label(const unsigned &index, bool isRoot = true) const;
     std::string label(const std::vector<unsigned> &index, bool isRoot = true) const;
-    std::vector<Projection> defaultProjections(const unsigned &nBins = 100) const;
+    std::vector<Projection> defaultProjections(const unsigned &nBins = 100, const std::string& var = "mass2") const;
     Projection projection(const unsigned &nBins, const std::vector<unsigned> &indices, const std::string &observable = "mass2") const;
 
     bool operator==(const EventType &other) const;
@@ -88,8 +88,6 @@ namespace AmpGen {
                                       "Alternative naming in ouput tree (e.g. Xi- pi+ pi+ becomes Xim pip0 pip1 rather than _1_Xi# _2_pi~ _3_pi~)"};
     Property<bool> m_includeEnergy{this, "EventType::IncludeEnergy", true, "Include energy as part of the event (otherwise calculate from assumed mass)"};
     // TO DO: these are actually related to the plotting only
-    Property<std::string> m_defaultObservable{this, "EventType::Observable", "mass2", "Default variable for projections, Options: mass, mass2"};
-    Property<bool> m_useRootLabelling{this, "EventType::UseROOTTeX", false, "Use ROOT variant of TeX for axis labels etc."};
   };
 
   extern "C" unsigned python__EventType__dim(const char *eventType);

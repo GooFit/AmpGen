@@ -23,6 +23,8 @@
 #include "AmpGen/PhaseSpace.h"
 using namespace AmpGen;
 
+REGISTER_CONFIGURABLE(EventType); 
+
 EventType::EventType(const std::vector<std::string> &particleNames, const bool &isTD) : m_timeDependent(isTD) {
   if(OptionsParser::printHelp()) return;
 
@@ -143,20 +145,20 @@ EventType EventType::conj(const bool &headOnly, const bool &dontConjHead) const 
   return EventType(type, m_timeDependent);
 }
 
-std::vector<Projection> EventType::defaultProjections(const unsigned &nBins) const {
+std::vector<Projection> EventType::defaultProjections(const unsigned &nBins, const std::string& observable) const {
   std::vector<Projection> projections;
   for(unsigned r = 2; r < size(); ++r) { /// loop over sizes ///
     std::vector<std::vector<unsigned>> combR = nCr(size(), r);
     std::transform(combR.begin(), combR.end(), std::back_inserter(projections),
-                   [&](auto &index) { return this->projection(nBins, index, m_defaultObservable); });
+                   [&](auto &index) { return this->projection(nBins, index, observable); });
   }
   return projections;
 }
 
 Projection EventType::projection(const unsigned &nBins, const std::vector<unsigned> &indices, const std::string &observable) const {
   auto mm = minmax(indices);
-  std::string gevcccc = m_useRootLabelling ? "GeV^{2}/c^{4}" : "\\mathrm{GeV}^{2}/c^{4}";
-  std::string gevcc = m_useRootLabelling ? "GeV/c^{2}" : "\\mathrm{GeV}/c^{2}";
+  std::string gevcccc = "\\mathrm{GeV}^{2}/c^{4}";
+  std::string gevcc   = "\\mathrm{GeV}/c^{2}";
   if(observable == "mass2")
     return Projection([indices](const Event &evt) { return evt.s(indices); }, "s" + vectorToString(indices), "s_{" + label(indices) + "}", nBins,
                       (mm.first * mm.first - 0.05), (mm.second * mm.second + 0.05), gevcccc);
