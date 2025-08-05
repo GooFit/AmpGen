@@ -27,11 +27,9 @@
 #include "AmpGen/simd/utils.h"
 #include "AmpGen/Store.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class CompiledExpressionBase;
-  class EventListSIMD
-  {
+  class EventListSIMD {
   private:
     Store<real_v, Alignment::AoS> m_data{};
     std::vector<real_v> m_weights{};
@@ -42,18 +40,14 @@ namespace AmpGen
     typedef Event value_type;
     EventListSIMD() = default;
     EventListSIMD(const EventType &type);
-    template <class... ARGS> EventListSIMD(const std::string &fname, const EventType &evtType, const ARGS &... args) : EventListSIMD(evtType)
-    {
+    template <class... ARGS> EventListSIMD(const std::string &fname, const EventType &evtType, const ARGS &... args) : EventListSIMD(evtType) {
       loadFromFile(fname, ArgumentPack(args...));
     }
     template <class... ARGS> EventListSIMD(const std::string &fname, const ARGS &... args) : EventListSIMD() { loadFromFile(fname, ArgumentPack(args...)); }
-    template <class... ARGS> EventListSIMD(const std::vector<std::string> &fname, const EventType &evtType, const ARGS &... args) : EventListSIMD(evtType)
-    {
-      for(auto &f : fname)
-        loadFromFile(f, ArgumentPack(args...));
+    template <class... ARGS> EventListSIMD(const std::vector<std::string> &fname, const EventType &evtType, const ARGS &... args) : EventListSIMD(evtType) {
+      for(auto &f : fname) loadFromFile(f, ArgumentPack(args...));
     }
-    template <class... ARGS> EventListSIMD(TTree *tree, const EventType &evtType, const ARGS &... args) : EventListSIMD(evtType)
-    {
+    template <class... ARGS> EventListSIMD(TTree *tree, const EventType &evtType, const ARGS &... args) : EventListSIMD(evtType) {
       loadFromTree(tree, ArgumentPack(args...));
     }
     EventListSIMD(const EventList &other);
@@ -66,14 +60,12 @@ namespace AmpGen
     real_v weight(const unsigned &p) const { return m_weights[p]; }
     real_v genPDF(const unsigned &p) const { return m_genPDF[p]; }
     const auto nFields() const { return m_data.nFields(); }
-    void setWeight(const unsigned &block, const real_v &w, const real_v &g = 1.f)
-    {
+    void setWeight(const unsigned &block, const real_v &w, const real_v &g = 1.f) {
       m_weights[block] = w;
       m_genPDF[block] = g;
     }
     void setGenPDF(const unsigned &block, const real_v &g) { m_genPDF[block] = g; }
-    void resize(const unsigned nEvents)
-    {
+    void resize(const unsigned nEvents) {
       m_data = Store<real_v, Alignment::AoS>(nEvents, m_eventType.eventSize());
       m_weights.resize(aligned_size(), 1.f);
       m_genPDF.resize(aligned_size(), 1.f);
@@ -103,42 +95,34 @@ namespace AmpGen
     TH2D *makeProjection(const Projection2D &projection, const ArgumentPack &args = ArgumentPack()) const;
     std::vector<TH1D *> makeProjections(const std::vector<Projection> &projections, const ArgumentPack &args);
 
-    template <class... ARGS> std::vector<TH1D *> makeDefaultProjections(const ARGS &... args)
-    {
+    template <class... ARGS> std::vector<TH1D *> makeDefaultProjections(const ARGS &... args) {
       auto argPack = ArgumentPack(args...);
       size_t nBins = argPack.getArg<PlotOptions::Bins>(100);
       auto proj = eventType().defaultProjections(nBins);
       return makeProjections(proj, argPack);
     }
 
-    template <typename... ARGS> std::vector<TH1D *> makeProjections(const std::vector<Projection> &projections, const ARGS &... args)
-    {
+    template <typename... ARGS> std::vector<TH1D *> makeProjections(const std::vector<Projection> &projections, const ARGS &... args) {
       return makeProjections(projections, ArgumentPack(args...));
     }
 
     template <typename... ARGS, typename = std::enable_if_t<!std::is_same<zeroType<ARGS...>, ArgumentPack>::value>>
-    TH1D *makeProjection(const Projection &projection, const ARGS &... args) const
-    {
+    TH1D *makeProjection(const Projection &projection, const ARGS &... args) const {
       return makeProjection(projection, ArgumentPack(args...));
     }
 
     template <typename... ARGS, typename = std::enable_if_t<!std::is_same<zeroType<ARGS...>, ArgumentPack>::value>>
-    TH2D *makeProjection(const Projection2D &projection, const ARGS &... args)
-    {
+    TH2D *makeProjection(const Projection2D &projection, const ARGS &... args) {
       return makeProjection(projection, ArgumentPack(args...));
     }
 
-    template <typename functor> EventListSIMD &transform(functor &&fcn)
-    {
-      for(auto &event : *this)
-        fcn(event);
+    template <typename functor> EventListSIMD &transform(functor &&fcn) {
+      for(auto &event : *this) fcn(event);
       return *this;
     }
-    static std::vector<real_v> makeEvent(const Event &event)
-    {
+    static std::vector<real_v> makeEvent(const Event &event) {
       std::vector<real_v> rt(event.size());
-      for(unsigned i = 0; i != event.size(); ++i)
-        rt[i] = event[i];
+      for(unsigned i = 0; i != event.size(); ++i) rt[i] = event[i];
       return rt;
     }
   };

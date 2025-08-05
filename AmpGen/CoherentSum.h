@@ -25,8 +25,7 @@
 #include "AmpGen/KeyedFunctors.h"
 #include "AmpGen/Property.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class LinearErrorPropagator;
   class MinuitParameterSet;
   class FitFraction;
@@ -43,9 +42,9 @@ namespace AmpGen
       where @f$\mathcal{P}(\psi)@f$ is the probability, @f$g_i@f$ is the coupling to an isobar channel,
       and @f$\mathcal{A}_i(\psi)@f$ is the amplitude of the ith channel.
   */
-  class CoherentSum : public Configurable 
-  {
+  class CoherentSum : public Configurable<CoherentSum> {
   public:
+
 #if ENABLE_AVX
     using EventList_type = EventListSIMD;
 #else
@@ -79,14 +78,12 @@ namespace AmpGen
     void setEvents(const EventList_type &list);
     void setMC(const EventList_type &sim);
 #if ENABLE_AVX
-    void setEvents(const EventList &list)
-    {
+    void setEvents(const EventList &list) {
       WARNING("Setting events from a AoS container, will need to make a copy");
       m_ownEvents = true;
       setEvents(*(new EventListSIMD(list)));
     }
-    void setMC(const EventList &list)
-    {
+    void setMC(const EventList &list) {
       WARNING("Setting integration events from a AoS container, will need to make a copy");
       setMC(*(new EventListSIMD(list)));
     }
@@ -112,11 +109,7 @@ namespace AmpGen
     const auto &cache() const { return m_cache; }
 
   protected:
-    Property<unsigned> m_printFreq{this, "CoherentSum::PrintFrequency", 100, "Frequency to print verbose PDF info"};
-    Property<bool> m_debug{this, "CoherentSum::Debug", false, "Flag to generate amplitude level debugging"};
-    Property<int> m_verbose{this, "CoherentSum::Verbosity", 0, "Flag for verbose printing"};
-    Property<std::string> m_objCache{this, "CoherentSum::ObjectCache", "", "Directory that contains (cached) amplitude objects"};
-    Property<bool> m_autoCompile{this, "AutoCompile", true, "Flag to build amplitude source code automatically"};
+//    Property<int> m_verbose{this, "CoherentSum::Verbose", 0, "Flag for verbose printing"};
 
     std::vector<MatrixElement> m_matrixElements;                      ///< Vector of matrix elements
     Bilinears m_normalisations;                                       ///< Normalisation integrals

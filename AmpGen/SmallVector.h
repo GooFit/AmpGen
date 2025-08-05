@@ -1,9 +1,7 @@
 #include <array>
 
-namespace AmpGen
-{
-  template <typename type, unsigned max_size> struct SmallVector
-  {
+namespace AmpGen {
+  template <typename type, unsigned max_size> struct SmallVector {
     typedef type value_type;
 
     std::array<type, max_size> store = {0};
@@ -15,12 +13,8 @@ namespace AmpGen
     value_type &operator[](unsigned i) { return store[i]; }
     const value_type &operator[](unsigned i) const { return store[i]; }
     void push_back(const value_type &thing) { store[size++] = thing; }
-    template <typename iterator_type, typename other_iterator_type> void insert(iterator_type mbegin, other_iterator_type ibegin, other_iterator_type iend)
-    {
-      for(auto it = ibegin; it != iend; ++it)
-        {
-          *(mbegin + (it - ibegin)) = *it;
-        }
+    template <typename iterator_type, typename other_iterator_type> void insert(iterator_type mbegin, other_iterator_type ibegin, other_iterator_type iend) {
+      for(auto it = ibegin; it != iend; ++it) { *(mbegin + (it - ibegin)) = *it; }
       size += (iend - ibegin);
     }
     SmallVector() = default;

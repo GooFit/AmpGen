@@ -22,8 +22,7 @@ DEFINE_BINARY_OPERATOR(GreaterThanEqualTo)
 DEFINE_BINARY_OPERATOR(LessThanEqualTo)
 DEFINE_BINARY_OPERATOR(Or)
 
-template <class condition> std::string bracketed(const Expression &expression, condition &&use_brackets, const ASTResolver *resolver = nullptr)
-{
+template <class condition> std::string bracketed(const Expression &expression, condition &&use_brackets, const ASTResolver *resolver = nullptr) {
   return use_brackets(expression) ? "(" + expression.to_string(resolver) + ")" : expression.to_string(resolver);
 }
 
@@ -44,22 +43,19 @@ complex_t ATan2::operator()() const { return atan2(std::real(lval()), std::real(
 
 std::string Sum::to_string(const ASTResolver *resolver) const { return lval.to_string(resolver) + " + " + rval.to_string(resolver); }
 
-std::string Sub::to_string(const ASTResolver *resolver) const
-{
+std::string Sub::to_string(const ASTResolver *resolver) const {
   return lval.to_string(resolver) + "-"
          + bracketed(
            rval, [](auto &expression) { return is<Sum>(expression) || is<Sub>(expression); }, resolver);
 }
 std::string Equal::to_string(const ASTResolver *resolver) const { return "(" + lval.to_string(resolver) + " == " + rval.to_string(resolver) + ")"; }
 
-std::string Product::to_string(const ASTResolver *resolver) const
-{
+std::string Product::to_string(const ASTResolver *resolver) const {
   auto use_brackets = [](auto &expression) { return is<Sum>(expression) || is<Sub>(expression); };
   return bracketed(lval, use_brackets, resolver) + "*" + bracketed(rval, use_brackets, resolver);
 }
 
-std::string Divide::to_string(const ASTResolver *resolver) const
-{
+std::string Divide::to_string(const ASTResolver *resolver) const {
   // auto use_brackets = [](auto& expression){ return is<Sum>(expression) ||
   // is<Sub>(expression); }; auto use_brackets_r = [](auto& expression){ return
   // is<IBinaryExpression>(expression) ; };
@@ -78,8 +74,7 @@ std::string Pow::to_string(const ASTResolver *resolver) const { return "pow(" + 
 std::string Fmod::to_string(const ASTResolver *resolver) const { return "fmod(" + lval.to_string(resolver) + "," + rval.to_string(resolver) + ")"; }
 std::string ATan2::to_string(const ASTResolver *resolver) const { return "atan2(" + lval.to_string(resolver) + "," + rval.to_string(resolver) + ")"; }
 
-void IBinaryExpression::resolve(ASTResolver &resolver) const
-{
+void IBinaryExpression::resolve(ASTResolver &resolver) const {
   lval.resolve(resolver);
   rval.resolve(resolver);
 }

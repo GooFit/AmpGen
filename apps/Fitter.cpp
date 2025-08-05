@@ -46,54 +46,42 @@ using EventList_type = AmpGen::EventList;
 #include "TRandom3.h"
 
 using namespace AmpGen;
-using strings = std::vector<std::string>; 
+using strings = std::vector<std::string>;
 
-std::vector<ThreeBodyCalculator> threeBodyCalculators(MinuitParameterSet &mps)
-{
+std::vector<ThreeBodyCalculator> threeBodyCalculators(MinuitParameterSet &mps) {
   std::vector<std::string> threeBodiesToIntegrate = Property<strings>(nullptr, "ThreeBodiesToIntegrate");
   std::vector<ThreeBodyCalculator> calculators;
-  for(auto &v : threeBodiesToIntegrate)
-    calculators.emplace_back(v, mps);
+  for(auto &v : threeBodiesToIntegrate) calculators.emplace_back(v, mps);
   return calculators;
 }
 
-void randomiseStartingPoint(MinuitParameterSet &MPS, TRandom3 &rand, bool SplineOnly = false)
-{
+void randomiseStartingPoint(MinuitParameterSet &MPS, TRandom3 &rand, bool SplineOnly = false) {
   double range = 5;
-  for(auto &param : MPS)
-    {
-      if(!param->isFree() == 0)
-        continue;
-      if(SplineOnly && param->name().find("::Spline::") == std::string::npos)
-        continue;
-      range = param->maxInit() - param->minInit();
-      param->setInit(range * rand.Rndm() + param->meanInit());
-      std::cout << *param << std::endl;
-    }
+  for(auto &param : MPS) {
+    if(!param->isFree() == 0) continue;
+    if(SplineOnly && param->name().find("::Spline::") == std::string::npos) continue;
+    range = param->maxInit() - param->minInit();
+    param->setInit(range * rand.Rndm() + param->meanInit());
+    std::cout << *param << std::endl;
+  }
 }
 
-template <typename SIGPDF> void addExtendedTerms(Minimiser &mini, SIGPDF &pdf, MinuitParameterSet &mps)
-{
+template <typename SIGPDF> void addExtendedTerms(Minimiser &mini, SIGPDF &pdf, MinuitParameterSet &mps) {
   std::vector<std::string> llConfigs = Property<std::string>(nullptr, "LLExtend");
 
-  for(const auto &ll_config : llConfigs)
-    {
-      auto ll_name = split(ll_config, ' ')[0];
-      auto ll_term = Factory<ExtendLikelihoodBase>::get(ll_name);
-      if(ll_term != nullptr)
-        {
-          ll_term->configure(ll_config, pdf, mps);
-          mini.addExtendedTerm(ll_term);
-        }
-      else
-        {
-          ERROR("LL term : " << ll_name << " not recognised");
-        }
+  for(const auto &ll_config : llConfigs) {
+    auto ll_name = split(ll_config, ' ')[0];
+    auto ll_term = Factory<ExtendLikelihoodBase>::get(ll_name);
+    if(ll_term != nullptr) {
+      ll_term->configure(ll_config, pdf, mps);
+      mini.addExtendedTerm(ll_term);
+    } else {
+      ERROR("LL term : " << ll_name << " not recognised");
     }
+  }
 }
 
-template <typename PDF> FitResult *doFit(PDF &&pdf, EventList &data, EventList &mc, MinuitParameterSet &MPS)
-{
+template <typename PDF> FitResult *doFit(PDF &&pdf, EventList &data, EventList &mc, MinuitParameterSet &MPS) {
   INFO("Type = " << type_string<PDF>());
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time = std::clock();
@@ -104,68 +92,55 @@ template <typename PDF> FitResult *doFit(PDF &&pdf, EventList &data, EventList &
   auto threeBodyShapes = threeBodyCalculators(MPS);
   unsigned int updateWidth = Property<unsigned>(nullptr, "UpdateWidth", 0);
   unsigned int nIterations = Property<unsigned>(nullptr, "nIterations", 0);
-  std::vector<std::string> SlowParams = Property<strings>(nullptr, "Release"); 
+  std::vector<std::string> SlowParams = Property<strings>(nullptr, "Release");
   bool makePlots = Property<bool>(nullptr, "MakePlots", true);
-  
-  if(updateWidth)
-    {
-      for(auto &shape : threeBodyShapes)
-        shape.updateRunningWidth(MPS);
-    }
+
+  if(updateWidth) {
+    for(auto &shape : threeBodyShapes) shape.updateRunningWidth(MPS);
+  }
   std::vector<MinuitParameter *> slowParamPtrs;
-  if(nIterations != 0)
-    {
-      for(auto &param : SlowParams)
-        {
-          auto it = MPS.find(param);
-          if(it != nullptr)
-            {
-              slowParamPtrs.push_back(it);
-              it->fix();
-            }
-          else
-            {
-              WARNING("Trying to release non-existent parameter: " << param);
-            }
-        }
+  if(nIterations != 0) {
+    for(auto &param : SlowParams) {
+      auto it = MPS.find(param);
+      if(it != nullptr) {
+        slowParamPtrs.push_back(it);
+        it->fix();
+      } else {
+        WARNING("Trying to release non-existent parameter: " << param);
+      }
     }
+  }
   INFO("Fitting PDF with " << pdf.nPDFs() << " components, iterating "
                            << " " << nIterations + 1 << " times");
-  for(unsigned int iteration = 0; iteration < nIterations + 1; ++iteration)
-    {
-      mini.doFit();
-      if(iteration == 0 && nIterations != 0)
-        {
-          for(auto &shape : threeBodyShapes)
-            shape.updateRunningWidth(MPS);
-          for(auto &param : slowParamPtrs)
-            param->setFree(); /// release the parameter ///
-        }
+  for(unsigned int iteration = 0; iteration < nIterations + 1; ++iteration) {
+    mini.doFit();
+    if(iteration == 0 && nIterations != 0) {
+      for(auto &shape : threeBodyShapes) shape.updateRunningWidth(MPS);
+      for(auto &param : slowParamPtrs) param->setFree(); /// release the parameter ///
     }
+  }
 
   FitResult *fr = new FitResult(mini);
 
-  if(makePlots)
-    {
-      auto ep = fr->getErrorPropagator();
+  if(makePlots) {
+    auto ep = fr->getErrorPropagator();
 
-      unsigned int counter = 1;
-      for_each(pdf.pdfs(), [&](auto &f) {
-        auto tStartIntegral2 = std::chrono::high_resolution_clock::now();
-        auto mc_plot3
-          = mc.makeProjections(mc.eventType().defaultProjections(100), WeightFunction(f), PlotOptions::Prefix("tMC_Category" + std::to_string(counter)));
-        auto tEndIntegral2 = std::chrono::high_resolution_clock::now();
-        double t2 = std::chrono::duration<double, std::milli>(tEndIntegral2 - tStartIntegral2).count();
-        INFO("Time for plots = " << t2);
+    unsigned int counter = 1;
+    for_each(pdf.pdfs(), [&](auto &f) {
+      auto tStartIntegral2 = std::chrono::high_resolution_clock::now();
+      auto mc_plot3
+        = mc.makeProjections(mc.eventType().defaultProjections(100), WeightFunction(f), PlotOptions::Prefix("tMC_Category" + std::to_string(counter)));
+      auto tEndIntegral2 = std::chrono::high_resolution_clock::now();
+      double t2 = std::chrono::duration<double, std::milli>(tEndIntegral2 - tStartIntegral2).count();
+      INFO("Time for plots = " << t2);
 
-        for(auto &plot : mc_plot3)
-          {
-            plot->Scale((data.integral() * f.getWeight()) / plot->Integral());
-            plot->Write();
-          }
-        counter++;
-      });
-    }
+      for(auto &plot : mc_plot3) {
+        plot->Scale((data.integral() * f.getWeight()) / plot->Integral());
+        plot->Write();
+      }
+      counter++;
+    });
+  }
   Chi2Estimator chi2(data, mc, pdf, MinEvents(15));
   fr->addChi2(chi2.chi2(), chi2.nBins());
 
@@ -178,8 +153,7 @@ template <typename PDF> FitResult *doFit(PDF &&pdf, EventList &data, EventList &
   return fr;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   OptionsParser::setArgs(argc, argv);
 
   const std::string dataFile = Property<std::string>(nullptr, "DataSample", "", "Name of file containing data sample to fit.");
@@ -195,13 +169,13 @@ int main(int argc, char *argv[])
   const size_t seed = Property<size_t>(nullptr, "Seed", 0, "Random seed used");
 
   std::vector<std::string> evtType_particles
-    = Property<strings>(nullptr, "EventType", {}, "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"); 
-  
+    = Property<strings>(nullptr, "EventType", {}, "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m");
+
   const std::string cut = Property<std::string>(nullptr, "Cut", "1");
   const std::string simCut = Property<std::string>(nullptr, "SimCut", "1");
   bool BAR = Property<bool>(nullptr, "Bar", false);
-  const std::string units = Property<std::string>(nullptr, "Units", "GeV"); 
-   
+  const std::string units = Property<std::string>(nullptr, "Units", "GeV");
+
   INFO("Output : " << logFile << " plots = " << plotFile);
 
   TRandom3 rndm;
@@ -216,23 +190,18 @@ int main(int argc, char *argv[])
 
   MinuitParameterSet MPS;
   MPS.loadFromStream();
-  if(dataFile == "")
-    {
-      ERROR("No input data selected");
-      return -1;
-    }
-  if(mcFile == "")
-    WARNING("No input simulation selected; using PHSP sample");
+  if(dataFile == "") {
+    ERROR("No input data selected");
+    return -1;
+  }
+  if(mcFile == "") WARNING("No input simulation selected; using PHSP sample");
 
-  if(perturb)
-    {
-      for(auto &param : MPS)
-        {
-          if(!param->isFree())
-            continue;
-          param->setCurrentFitVal(rndm.Gaus(param->mean(), param->err()));
-        }
+  if(perturb) {
+    for(auto &param : MPS) {
+      if(!param->isFree()) continue;
+      param->setCurrentFitVal(rndm.Gaus(param->mean(), param->err()));
     }
+  }
   EventType evtType(evtType_particles);
   INFO("Signal  = " << evtType << " OS = " << evtType.conj(true));
   CoherentSum sig(evtType, MPS);
@@ -247,28 +216,24 @@ int main(int argc, char *argv[])
   bkg.setWeight(MPS["fComb"]);
   misID.setWeight(MPS["fMisID"]);
 
-
   EventList events(dataFile, !BAR ? evtType : evtType.conj(), Filter(cut));
   EventList eventsMC = mcFile == "" ? EventList(evtType) : EventList(mcFile, !BAR ? evtType : evtType.conj(), Filter(simCut));
 
   auto scale_transform = [](auto &event) {
-    for(size_t x = 0; x < event.size(); ++x)
-      event[x] /= 1000.;
+    for(size_t x = 0; x < event.size(); ++x) event[x] /= 1000.;
   };
-  if(units == "Mev")
-    {
-      INFO("Changing units from MeV -> GeV");
-      events.transform(scale_transform);
-    }
+  if(units == "Mev") {
+    INFO("Changing units from MeV -> GeV");
+    events.transform(scale_transform);
+  }
   eventsMC.transform(scale_transform);
 
   INFO("Data events: " << events.size());
   INFO("MC events  : " << eventsMC.size());
-  if(mcFile == "")
-    {
-      eventsMC = Generator<>(evtType, &rndm).generate(5e6);
-      INFO("Generated: " << eventsMC.size() << " events for integrals");
-    }
+  if(mcFile == "") {
+    eventsMC = Generator<>(evtType, &rndm).generate(5e6);
+    INFO("Generated: " << eventsMC.size() << " events for integrals");
+  }
 
   sig.setMC(eventsMC);
   bkg.setMC(eventsMC);
@@ -290,11 +255,10 @@ int main(int argc, char *argv[])
   else if(MPS["fMisID"]->mean() != 0.0)
     fr = doFit(make_pdf(sig, bkg, misID), events, eventsMC, MPS);
 
-  if(fr == nullptr)
-    {
-      ERROR("Fit fails");
-      return -1;
-    }
+  if(fr == nullptr) {
+    ERROR("Fit fails");
+    return -1;
+  }
 
   INFO("Completed fit; calculating additional observables");
 
@@ -304,16 +268,14 @@ int main(int argc, char *argv[])
   //  sig.reset( true ); //// reset PDFs to ensure correct cache state
   //  sig.setMC( flatMC );
   //  sig.prepare();
-  if(MPS["fComb"]->mean() != 1)
-    fr->addFractions(sig.fitFractions(fr->getErrorPropagator()));
+  if(MPS["fComb"]->mean() != 1) fr->addFractions(sig.fitFractions(fr->getErrorPropagator()));
   //  else
   //    fr->addFractions( bkg.fitFractions( fr->getErrorPropagator() ) );
 
   fr->writeToFile(logFile);
   output->cd();
   auto plots = events.makeDefaultProjections(PlotOptions::Prefix("Data_"), PlotOptions::Bins(NBins));
-  for(auto &plot : plots)
-    plot->Write();
+  for(auto &plot : plots) plot->Write();
 
   output->Write();
   output->Close();

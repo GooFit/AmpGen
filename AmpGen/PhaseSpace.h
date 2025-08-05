@@ -9,8 +9,7 @@
 #include "AmpGen/Event.h"
 #include "AmpGen/EventType.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   /** @class PhaseSpace
       Phase-space generator taken from the ROOT routine, from Rene Brun and Valerio Filippini,
       which was originally based on the GENBOD routine of CERNLIB with
@@ -20,8 +19,7 @@ namespace AmpGen
    */
   class Particle;
 
-  class PhaseSpace
-  {
+  class PhaseSpace {
   public:
     PhaseSpace() = default;                                              ///< Empty constructor
     explicit PhaseSpace(const EventType &type, TRandom *rand = gRandom); ///< Construct a phase space generator from an EventType

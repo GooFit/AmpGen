@@ -11,8 +11,7 @@
 using namespace AmpGen;
 using namespace AmpGen::fcn;
 
-DEFINE_GENERIC_SHAPE(TD)
-{
+DEFINE_GENERIC_SHAPE(TD) {
   Expression tau = Parameter(p.name() + "_decayTime");
   ADD_DEBUG(tau, dbexpressions);
   ADD_DEBUG(p.props()->lifetime(), dbexpressions);

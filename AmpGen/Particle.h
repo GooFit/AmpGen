@@ -8,14 +8,12 @@
 // hack to include optional from https://codereview.stackexchange.com/questions/136350/seamlessly-migrating-experimental-optional-to-optional
 #if __cplusplus >= 201703L
 #include <optional>
-namespace stdx
-{
+namespace stdx {
   using namespace ::std;
 }
 #elif __cplusplus >= 201402L
 #include <experimental/optional>
-namespace stdx
-{
+namespace stdx {
   using namespace ::std;
   using namespace ::std::experimental;
 }
@@ -30,8 +28,9 @@ namespace stdx
 #include "AmpGen/Property.h"
 #include "AmpGen/enum.h"
 #include "AmpGen/Units.h"
-namespace AmpGen
-{
+#include "AmpGen/Configurable.h" 
+
+namespace AmpGen {
   /** @class Particle
       @brief Describes a particle, its decay process and subsequent decay products, which are also Particles.
 
@@ -98,10 +97,10 @@ namespace AmpGen
     and will instead be instantiated dynamically at runtime from a user supplied options file. */
   class ParticleProperties;
 
-  declare_enum(spinFormalism, Covariant, Canonical) declare_enum(spinBasis, Dirac, Weyl)
-
-    class Particle
-  {
+  declare_enum(spinFormalism, Covariant, Canonical);
+  declare_enum(spinBasis, Dirac, Weyl);
+ 
+  class Particle : public Configurable<Particle> {
   public:
     /// Default Constructor
     Particle();
@@ -127,6 +126,7 @@ namespace AmpGen
     /// convention.
     Particle conj(bool invertHead = true, bool reorder = true);
 
+    virtual ~Particle() {} 
     /// CP conjugate this particle //
 
     void conjThis();
@@ -274,11 +274,9 @@ namespace AmpGen
     Expression getExpression(DebugSymbols *db = nullptr, const std::vector<int> & = {});
 
     /// Check if lineshape contains a substring
-    bool lineshapeContains(const std::vector<std::string> &container) const
-    {
+    bool lineshapeContains(const std::vector<std::string> &container) const {
       for(auto &st : container)
-        if(m_lineshape.find(st) != std::string::npos)
-          return true;
+        if(m_lineshape.find(st) != std::string::npos) return true;
       return false;
     }
     /// Calculate the transition matrix for this decay
@@ -286,8 +284,7 @@ namespace AmpGen
     bool operator<(const Particle &other);
     bool operator>(const Particle &other);
 
-    enum MatchState
-    {
+    enum MatchState {
       None = (1 << 0),
       Exact = (1 << 1),
       PartialExpansion = (1 << 2),

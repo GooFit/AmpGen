@@ -19,8 +19,7 @@
 #include "AmpGen/Types.h"
 #include "AmpGen/EventList.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class Event;
 
   DECLARE_ARGUMENT(MaxDepth, size_t);
@@ -29,13 +28,11 @@ namespace AmpGen
   DECLARE_ARGUMENT(Functor, std::function<std::vector<real_t>(const Event &)>);
   DECLARE_ARGUMENT(File, std::string);
 
-  class BinDT
-  {
+  class BinDT {
   public:
     class EndNode;
 
-    class INode
-    {
+    class INode {
     public:
       INode() = default;
       virtual ~INode() = default;
@@ -44,8 +41,7 @@ namespace AmpGen
       virtual void visit(const std::function<void(INode *)> &visit_function) = 0;
       INode *m_parent = {nullptr};
     };
-    class EndNode : public INode
-    {
+    class EndNode : public INode {
     public:
       EndNode(const unsigned int &no, const unsigned int &binNumber = 999);
       const EndNode *operator()(const double *evt) const override;
@@ -61,8 +57,7 @@ namespace AmpGen
       unsigned int m_binNumber;
     };
 
-    class Decision : public INode
-    {
+    class Decision : public INode {
     public:
       Decision(const unsigned int &index, const double &value, std::shared_ptr<INode> left = nullptr, std::shared_ptr<INode> right = nullptr);
       const EndNode *operator()(const double *evt) const override;
@@ -82,13 +77,11 @@ namespace AmpGen
   public:
     template <class... ARGS> BinDT(const ARGS &... args) : BinDT(ArgumentPack(args...)) {}
     template <class... ARGS> BinDT(const std::vector<double *> &addr, const ARGS &... args) : BinDT(ArgumentPack(args...)) { m_top = makeNodes(addr); }
-    template <class... ARGS> BinDT(const EventList &events, const ARGS &... args) : BinDT(ArgumentPack(args...))
-    {
+    template <class... ARGS> BinDT(const EventList &events, const ARGS &... args) : BinDT(ArgumentPack(args...)) {
       m_top = makeNodes(events.begin(), events.end());
     }
     template <class iterator_type, class... ARGS>
-    BinDT(const iterator_type &begin, const iterator_type &end, const ARGS &... args) : BinDT(ArgumentPack(args...))
-    {
+    BinDT(const iterator_type &begin, const iterator_type &end, const ARGS &... args) : BinDT(ArgumentPack(args...)) {
       m_top = makeNodes(begin, end);
     }
     explicit BinDT(const ArgumentPack &args);
@@ -112,19 +105,16 @@ namespace AmpGen
 
     std::function<std::vector<double>(const Event &)> makeDefaultFunctors();
     void refreshQueue(const std::vector<double *> &, std::queue<unsigned> &, const unsigned &);
-    template <class iterator_type> std::shared_ptr<INode> makeNodes(const iterator_type &begin, const iterator_type &end)
-    {
+    template <class iterator_type> std::shared_ptr<INode> makeNodes(const iterator_type &begin, const iterator_type &end) {
       std::vector<double> data(m_dim * (end - begin));
       std::vector<double *> addresses(end - begin);
       size_t counter = 0;
-      for(auto evt = begin; evt != end; ++evt)
-        {
-          auto val = m_functors(*evt);
-          for(unsigned int i = 0; i < m_dim; ++i)
-            data[m_dim * counter + i] = val[i];
-          addresses[counter] = &(data[m_dim * counter]);
-          counter++;
-        }
+      for(auto evt = begin; evt != end; ++evt) {
+        auto val = m_functors(*evt);
+        for(unsigned int i = 0; i < m_dim; ++i) data[m_dim * counter + i] = val[i];
+        addresses[counter] = &(data[m_dim * counter]);
+        counter++;
+      }
       return makeNodes(addresses);
     }
     std::shared_ptr<INode> makeNodes(const std::vector<double *> &, std::queue<unsigned>, const unsigned &);

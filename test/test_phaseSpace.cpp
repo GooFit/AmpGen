@@ -21,16 +21,14 @@
 namespace tt = boost::test_tools;
 using namespace AmpGen;
 
-BOOST_AUTO_TEST_CASE( phaseSpace_threeBody )
-{
-  AmpGen::PhaseSpace phsp( AmpGen::EventType( {"Xi(c)+","Lambda0","K0","pi+"} ) , new TRandom3(15) );
+BOOST_AUTO_TEST_CASE(phaseSpace_threeBody) {
+  AmpGen::PhaseSpace phsp(AmpGen::EventType({"Xi(c)+", "Lambda0", "K0", "pi+"}), new TRandom3(15));
 
-  std::vector<double> test_event = {-0.235918, -0.242689, 0.278177, 1.19862,-0.300608, -0.0584944, -0.0117436, 0.584418, 0.536526, 0.301183, -0.266434, 0.684864} ;
-  
+  std::vector<double> test_event
+    = {-0.235918, -0.242689, 0.278177, 1.19862, -0.300608, -0.0584944, -0.0117436, 0.584418, 0.536526, 0.301183, -0.266434, 0.684864};
+
   auto new_event = phsp.makeEvent();
-//  auto new_event = phsp.generate();
+  //  auto new_event = phsp.generate();
 
-  for( int i = 0 ; i < 12 ; ++i )
-    BOOST_TEST( test_event[i] == new_event[i]  , boost::test_tools::tolerance(1e-5) );
+  for(int i = 0; i < 12; ++i) BOOST_TEST(test_event[i] == new_event[i], boost::test_tools::tolerance(1e-5));
 }
-

@@ -43,25 +43,20 @@ using EventList_type = AmpGen::EventList;
 
 using namespace AmpGen;
 
-void randomizeStartingPoint(MinuitParameterSet &mps, TRandom3 &rand)
-{
-  for(auto &param : mps)
-    {
-      if(!param->isFree() || param->name() == "Px" || param->name() == "Py" || param->name() == "Pz")
-        continue;
-      double min = param->minInit();
-      double max = param->maxInit();
-      double new_value = rand.Uniform(param->mean() - param->stepInit(), param->mean() + param->stepInit());
-      if(min != 0 && max != 0)
-        new_value = rand.Uniform(min, max);
-      param->setInit(new_value);
-      param->setCurrentFitVal(new_value);
-      INFO(param->name() << "  = " << param->mean() << " " << param->stepInit());
-    }
+void randomizeStartingPoint(MinuitParameterSet &mps, TRandom3 &rand) {
+  for(auto &param : mps) {
+    if(!param->isFree() || param->name() == "Px" || param->name() == "Py" || param->name() == "Pz") continue;
+    double min = param->minInit();
+    double max = param->maxInit();
+    double new_value = rand.Uniform(param->mean() - param->stepInit(), param->mean() + param->stepInit());
+    if(min != 0 && max != 0) new_value = rand.Uniform(min, max);
+    param->setInit(new_value);
+    param->setCurrentFitVal(new_value);
+    INFO(param->name() << "  = " << param->mean() << " " << param->stepInit());
+  }
 }
 
-template <typename PDF> FitResult *doFit(PDF &&pdf, EventList_type &data, EventList_type &mc, MinuitParameterSet &MPS)
-{
+template <typename PDF> FitResult *doFit(PDF &&pdf, EventList_type &data, EventList_type &mc, MinuitParameterSet &MPS) {
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time = std::clock();
 
@@ -103,25 +98,22 @@ template <typename PDF> FitResult *doFit(PDF &&pdf, EventList_type &data, EventL
   return fr;
 }
 
-void invertParity(Event &event, const size_t &nParticles = 0)
-{
-  for(size_t i = 0; i < nParticles; ++i)
-    {
-      event[4 * i + 0] = -event[4 * i + 0];
-      event[4 * i + 1] = -event[4 * i + 1];
-      event[4 * i + 2] = -event[4 * i + 2];
-    }
+void invertParity(Event &event, const size_t &nParticles = 0) {
+  for(size_t i = 0; i < nParticles; ++i) {
+    event[4 * i + 0] = -event[4 * i + 0];
+    event[4 * i + 1] = -event[4 * i + 1];
+    event[4 * i + 2] = -event[4 * i + 2];
+  }
 }
 
-int main(int argc, char *argv[])
-{
-  using strings = std::vector<std::string>; 
+int main(int argc, char *argv[]) {
+  using strings = std::vector<std::string>;
   gErrorIgnoreLevel = 1001;
 
   OptionsParser::setArgs(argc, argv);
 
-  const std::vector<std::string> dataFile = Property<strings>(nullptr, "DataSample", {}); 
-  const std::string simFile = Property<std::string>(nullptr,"SimFile", "", "Name of file containing simulated sample for using in MC integration");
+  const std::vector<std::string> dataFile = Property<strings>(nullptr, "DataSample", {});
+  const std::string simFile = Property<std::string>(nullptr, "SimFile", "", "Name of file containing simulated sample for using in MC integration");
   const std::string logFile = Property<std::string>(nullptr, "LogFile", "Fitter.log");
   const std::string plotFile = Property<std::string>(nullptr, "Plots", "plots.root");
   const std::string prefix = Property<std::string>(nullptr, "PlotPrefix", "");
@@ -131,18 +123,17 @@ int main(int argc, char *argv[])
   const std::string mc_weight_branch = Property<std::string>(nullptr, "MCWeightBranch", "", "Name of branch containing event weights.");
 
   const auto nev_MC = Property<int>(nullptr, "NEventsMC", 8e6, "Number of MC events for normalization.");
-  auto bNames = Property<strings>(nullptr, "Branches", {},
-                                            "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"); 
-  auto MCbNames = Property<strings>(nullptr, "MCBranches", {},
-                                              "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"); 
+  auto bNames
+    = Property<strings>(nullptr, "Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m");
+  auto MCbNames
+    = Property<strings>(nullptr, "MCBranches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m");
   auto pNames = Property<strings>(nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m");
 
 #if ENABLE_AVX
-  if(!idbranch.empty() || !weight_branch.empty() || !mcidbranch.empty() || !mc_weight_branch.empty())
-    {
-      ERROR("Vectorized version currently not supported when adding extra branches");
-      return 1;
-    }
+  if(!idbranch.empty() || !weight_branch.empty() || !mcidbranch.empty() || !mc_weight_branch.empty()) {
+    ERROR("Vectorized version currently not supported when adding extra branches");
+    return 1;
+  }
 #endif
 
 #ifdef _OPENMP
@@ -158,8 +149,7 @@ int main(int argc, char *argv[])
   MinuitParameterSet MPS;
   MPS.loadFromStream();
   TRandom3 rndm = TRandom3(Property<unsigned int>(nullptr, "Seed", 1));
-  if(Property<bool>(nullptr, "RandomizeStartingPoint", false))
-    randomizeStartingPoint(MPS, rndm);
+  if(Property<bool>(nullptr, "RandomizeStartingPoint", false)) randomizeStartingPoint(MPS, rndm);
 
   /* An EventType specifies the initial and final state particles as a vector that will be described by the fit.
      It is typically loaded from the interface parameter EventType. */
@@ -192,11 +182,10 @@ int main(int argc, char *argv[])
   std::iota(daughters_as_ints.begin(), daughters_as_ints.end(), 0u);
   auto frame_transform = [&daughters_as_ints, &n_final_state_particles](auto &event) {
     TVector3 pBeam(0, 0, 1);
-    if(event[event.size() - 1] < 0)
-      {
-        invertParity(event, n_final_state_particles);
-        pBeam = -pBeam;
-      }
+    if(event[event.size() - 1] < 0) {
+      invertParity(event, n_final_state_particles);
+      pBeam = -pBeam;
+    }
     TLorentzVector pP = pFromEvent(event, daughters_as_ints);
     // if( pP.P() < 10e-5) return;
     TVector3 pZ = pP.Vect();
@@ -205,31 +194,27 @@ int main(int argc, char *argv[])
   };
 
   for(auto &event : events)
-    if(event[event.size() - 1] < 0)
-      {
-        event.print();
-        break;
-      }
+    if(event[event.size() - 1] < 0) {
+      event.print();
+      break;
+    }
   events.transform(frame_transform);
   for(auto &event : events)
-    if(event[event.size() - 1] < 0)
-      { // E if there's no ID branch
-        event.print();
-        break;
-      }
+    if(event[event.size() - 1] < 0) { // E if there's no ID branch
+      event.print();
+      break;
+    }
   for(auto &event : eventsMC)
-    if(event[event.size() - 1] < 0)
-      {
-        event.print();
-        break;
-      }
+    if(event[event.size() - 1] < 0) {
+      event.print();
+      break;
+    }
   eventsMC.transform(frame_transform);
   for(auto &event : eventsMC)
-    if(event[event.size() - 1] < 0)
-      { // E if there's no ID branch
-        event.print();
-        break;
-      }
+    if(event[event.size() - 1] < 0) { // E if there's no ID branch
+      event.print();
+      break;
+    }
   sig.setMC(eventsMC);
   sig.setEvents(events);
 

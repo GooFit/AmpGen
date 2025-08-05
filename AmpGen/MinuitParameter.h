@@ -7,11 +7,11 @@
 #include <string>
 #include "AmpGen/enum.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class MinuitParameterSet;
-  declare_enum(Flag, Free, Hide, Fix, CompileTimeConstant, Blind) class MinuitParameter
-  {
+  declare_enum(Flag, Free, Hide, Fix, CompileTimeConstant, Blind);
+ 
+  class MinuitParameter {
   public:
     MinuitParameter() = default;
     MinuitParameter(const std::string &name, const Flag &flag, const double &mean, const double &step, const double &min = 0, const double &max = 0);
@@ -46,10 +46,8 @@ namespace AmpGen
     virtual double mean() const;
     virtual operator double() const { return m_meanResult; }
     virtual ~MinuitParameter() = default;
-    void setFromMinuitState(const double *x)
-    {
-      if(m_minuitIndex != -1)
-        m_meanResult = x[m_minuitIndex];
+    void setFromMinuitState(const double *x) {
+      if(m_minuitIndex != -1) m_meanResult = x[m_minuitIndex];
     }
     void setMinuitIndex(const int &index) { m_minuitIndex = index; }
     int index() const { return m_minuitIndex; }
@@ -70,13 +68,10 @@ namespace AmpGen
     int m_minuitIndex = {-1};
   };
 
-  class MinuitProxy
-  {
+  class MinuitProxy {
   public:
-    void update()
-    {
-      if(m_parameter != nullptr)
-        m_value = m_parameter->mean();
+    void update() {
+      if(m_parameter != nullptr) m_value = m_parameter->mean();
     }
     MinuitParameter *ptr() { return m_parameter; }
     operator double() const { return m_parameter == nullptr ? m_value : m_parameter->mean(); }

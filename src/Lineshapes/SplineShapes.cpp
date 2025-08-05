@@ -10,18 +10,13 @@
 
 using namespace AmpGen;
 
-DEFINE_LINESHAPE(DecaySpline)
-{
+DEFINE_LINESHAPE(DecaySpline) {
   const Expression q2 = Q2(s, s1, s2) / (GeV * GeV);
-  if(dbexpressions != nullptr)
-    {
-      ADD_DEBUG(q2, dbexpressions);
-    }
+  if(dbexpressions != nullptr) { ADD_DEBUG(q2, dbexpressions); }
   return getSpline(particleName, q2, "FF");
 }
 
-DEFINE_LINESHAPE(GSpline)
-{
+DEFINE_LINESHAPE(GSpline) {
   auto props = ParticlePropertiesList::get(particleName);
   Expression mass = Parameter(particleName + "_mass", props->mass()) * GeV;
   Expression radius = Parameter(particleName + "_radius", props->radius()) * GeV;
@@ -36,14 +31,9 @@ DEFINE_LINESHAPE(GSpline)
   bool useBL = lineshapeModifier.find("BL") != std::string::npos;
 
   Expression BF = fcn::sqrt(BlattWeisskopf_Norm(q2 * radius * radius, 0, L));
-  if(useBL)
-    BF = fcn::sqrt(BlattWeisskopf(q2 * radius * radius, L));
-  if(useEFF)
-    BF = fcn::exp(-q2 * radius * radius / 2.);
-  if(useGFF)
-    {
-      WARNING("Gaussian form factors in running width are depreciated (as they don't make much sense)");
-    }
+  if(useBL) BF = fcn::sqrt(BlattWeisskopf(q2 * radius * radius, L));
+  if(useEFF) BF = fcn::exp(-q2 * radius * radius / 2.);
+  if(useGFF) { WARNING("Gaussian form factors in running width are depreciated (as they don't make much sense)"); }
 
   const Expression width_shape = getSpline(particleName, sInGeV, "Gamma", dbexpressions, true);
   const Expression width_norm = getSpline(particleName, mass * mass, "Gamma", dbexpressions, true);
@@ -69,8 +59,7 @@ DEFINE_LINESHAPE(GSpline)
   return BW;
 }
 
-DEFINE_LINESHAPE(FormFactorSpline)
-{
+DEFINE_LINESHAPE(FormFactorSpline) {
   auto props = ParticlePropertiesList::get(particleName);
   Expression mass = Parameter(particleName + "_mass", props->mass());
   Expression radius = Parameter(particleName + "_radius", props->radius());
@@ -82,8 +71,7 @@ DEFINE_LINESHAPE(FormFactorSpline)
   return BW;
 }
 
-DEFINE_LINESHAPE(MIPWA)
-{
+DEFINE_LINESHAPE(MIPWA) {
   bool cont = lineshapeModifier.find("continue") != std::string::npos;
   Expression real = getSpline(particleName, s / (GeV * GeV), "Re", dbexpressions, cont);
   Expression imag = getSpline(particleName, s / (GeV * GeV), "Im", dbexpressions, cont);
@@ -94,8 +82,7 @@ DEFINE_LINESHAPE(MIPWA)
   return lineshapeModifier != "Polar" ? (real + J * imag) : real * (Cos(imag) + J * Sin(imag));
 }
 
-DEFINE_LINESHAPE(InelasticSpline)
-{
+DEFINE_LINESHAPE(InelasticSpline) {
   Expression inelasticity = getSpline(particleName, s / (GeV * GeV), "Eta", dbexpressions, true);
   Expression phaseShift = getSpline(particleName, s / (GeV * GeV), "Delta", dbexpressions, true);
   Expression J = Constant(0, 1);

@@ -6,19 +6,16 @@
 
 using namespace AmpGen;
 
-std::vector<std::string> cmd(const std::string &command)
-{
+std::vector<std::string> cmd(const std::string &command) {
   std::vector<std::string> output;
   FILE *proc = popen(command.c_str(), "r");
   char buf[4096];
-  while(!feof(proc) && fgets(buf, sizeof(buf), proc))
-    output.push_back(buf);
+  while(!feof(proc) && fgets(buf, sizeof(buf), proc)) output.push_back(buf);
   pclose(proc);
   return output;
 }
 
-struct Counter
-{
+struct Counter {
   int pass{0};
   int total{0};
   Counter() = default;
@@ -26,61 +23,49 @@ struct Counter
   Counter(const double &a, const double &b, const std::string &name, const double &tolerance);
   Counter(const complex_t &a, const complex_t &b, const std::string &name, const double &tolerance);
   Counter(const std::vector<complex_t> &a, const std::vector<complex_t> &b, const std::string &name, const double &tolerance);
-  void operator+=(const Counter &other)
-  {
+  void operator+=(const Counter &other) {
     this->pass += other.pass;
     this->total += other.total;
   }
 };
 
-Counter::Counter(const double &a, const double &b, const std::string &name, const double &tolerance)
-{
+Counter::Counter(const double &a, const double &b, const std::string &name, const double &tolerance) {
   double diff = std::abs(a - b);
   total = 1;
-  if(diff > std::abs(tolerance))
-    {
-      ERROR(name << " (" << a << " " << b << ") = " << diff << " > " << tolerance);
-      pass = 0;
-    }
-  else
+  if(diff > std::abs(tolerance)) {
+    ERROR(name << " (" << a << " " << b << ") = " << diff << " > " << tolerance);
+    pass = 0;
+  } else
     pass = 1;
   DEBUG(name << " (" << a << " " << b << ") = " << diff << " > " << tolerance);
 }
 
-Counter::Counter(const complex_t &a, const complex_t &b, const std::string &name, const double &tolerance)
-{
+Counter::Counter(const complex_t &a, const complex_t &b, const std::string &name, const double &tolerance) {
   double diff_re = std::abs(std::real(a) - std::real(b));
   double diff_im = std::abs(std::imag(a) - std::imag(b));
   total = 1;
-  if(diff_re > std::abs(tolerance) || diff_im > std::abs(tolerance))
-    {
-      ERROR(name << " (" << a << " " << b << ") = " << diff_re << ", " << diff_im << " > " << tolerance);
-      pass = 0;
-    }
-  else
+  if(diff_re > std::abs(tolerance) || diff_im > std::abs(tolerance)) {
+    ERROR(name << " (" << a << " " << b << ") = " << diff_re << ", " << diff_im << " > " << tolerance);
+    pass = 0;
+  } else
     pass = 1;
   DEBUG(name << " (" << a << " " << b << ") = " << diff_re << ", " << diff_im << " < " << tolerance);
 }
 
-Counter::Counter(const std::vector<complex_t> &a, const std::vector<complex_t> &b, const std::string &name, const double &tolerance)
-{
+Counter::Counter(const std::vector<complex_t> &a, const std::vector<complex_t> &b, const std::string &name, const double &tolerance) {
   total = a.size();
-  for(size_t i = 0; i < a.size(); ++i)
-    {
-      double diff_re = std::abs(std::real(a[i]) - std::real(b[i]));
-      double diff_im = std::abs(std::imag(a[i]) - std::imag(b[i]));
-      if(diff_re > std::abs(tolerance) || diff_im > std::abs(tolerance))
-        {
-          ERROR(name << " (" << a[i] << " " << b[i] << ") = " << diff_re << ", " << diff_im << " > " << tolerance);
-        }
-      else
-        pass++;
-      DEBUG(name << " (" << a[i] << " " << b[i] << ") = " << diff_re << ", " << diff_im << " > " << tolerance);
-    }
+  for(size_t i = 0; i < a.size(); ++i) {
+    double diff_re = std::abs(std::real(a[i]) - std::real(b[i]));
+    double diff_im = std::abs(std::imag(a[i]) - std::imag(b[i]));
+    if(diff_re > std::abs(tolerance) || diff_im > std::abs(tolerance)) {
+      ERROR(name << " (" << a[i] << " " << b[i] << ") = " << diff_re << ", " << diff_im << " > " << tolerance);
+    } else
+      pass++;
+    DEBUG(name << " (" << a[i] << " " << b[i] << ") = " << diff_re << ", " << diff_im << " > " << tolerance);
+  }
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   using strings = std::vector<std::string>;
   std::string modelName = argv[1];
   OptionsParser::getMe()->setQuiet();
@@ -96,48 +81,41 @@ int main(int argc, char **argv)
   Counter total;
 
   auto ftable = cmd("nm " + refLib + "| grep __wParams | grep -v .cold");
-  for(auto &line : ftable)
-    std::cout << line << std::endl;
-  if(type == "CoherentSum")
-    {
-      auto f1 = DynamicFCN<complex_t(const double *, const int &)>(lib, "AMP");
-      auto f2 = DynamicFCN<complex_t(const double *, const int &)>(refLib, "AMP");
-      total += Counter(f1(event, +1), f2(event, +1), modelName + " fcn(x)", 10e-6);
-      total += Counter(f1(event, -1), f2(event, -1), modelName + " fcn(Px)", 10e-6);
-      for(auto &line : ftable)
-        {
-          auto i = trim(split(line, ' ')[2]);
-          auto f = DynamicFCN<complex_t(const double *)>(lib, i);
-          auto g = DynamicFCN<complex_t(const double *)>(refLib, i);
-          if(!f.isLinked() || !g.isLinked())
-            total += false;
-          else
-            total += Counter(f(event), g(event), i, 10e-6);
-        }
+  for(auto &line : ftable) std::cout << line << std::endl;
+  if(type == "CoherentSum") {
+    auto f1 = DynamicFCN<complex_t(const double *, const int &)>(lib, "AMP");
+    auto f2 = DynamicFCN<complex_t(const double *, const int &)>(refLib, "AMP");
+    total += Counter(f1(event, +1), f2(event, +1), modelName + " fcn(x)", 10e-6);
+    total += Counter(f1(event, -1), f2(event, -1), modelName + " fcn(Px)", 10e-6);
+    for(auto &line : ftable) {
+      auto i = trim(split(line, ' ')[2]);
+      auto f = DynamicFCN<complex_t(const double *)>(lib, i);
+      auto g = DynamicFCN<complex_t(const double *)>(refLib, i);
+      if(!f.isLinked() || !g.isLinked())
+        total += false;
+      else
+        total += Counter(f(event), g(event), i, 10e-6);
     }
-  if(type == "PolarisedSum")
-    {
-      if(std::get<0>(t.dim()) > 1)
-        {
-          auto f1 = DynamicFCN<double(const double *, const int &, const double &, const double &, const double &)>(lib, "FCN_extPol");
-          auto f2 = DynamicFCN<double(const double *, const int &, const double &, const double &, const double &)>(refLib, "FCN_extPol");
-          total += Counter(f1(event, +1, 0, 0, 0), f2(event, +1, 0, 0, 0), modelName + " fcn(x)", 1e-6);
-          total += Counter(f1(event, -1, 0, 0, 0), f2(event, -1, 0, 0, 0), modelName + " fcn(Px)", 1e-6);
-        }
-      for(auto &line : ftable)
-        {
-          auto i = trim(split(line, ' ')[2]);
-          auto a1 = DynamicFCN<std::vector<complex_t>(const double *)>(lib, i);
-          auto a2 = DynamicFCN<std::vector<complex_t>(const double *)>(refLib, i);
-          if(!a1.isLinked() || !a2.isLinked())
-            total += false;
-          else
-            {
-              auto pass = Counter(a1(event), a2(event), i, 10e-6);
-              total += pass;
-            }
-        }
+  }
+  if(type == "PolarisedSum") {
+    if(std::get<0>(t.dim()) > 1) {
+      auto f1 = DynamicFCN<double(const double *, const int &, const double &, const double &, const double &)>(lib, "FCN_extPol");
+      auto f2 = DynamicFCN<double(const double *, const int &, const double &, const double &, const double &)>(refLib, "FCN_extPol");
+      total += Counter(f1(event, +1, 0, 0, 0), f2(event, +1, 0, 0, 0), modelName + " fcn(x)", 1e-6);
+      total += Counter(f1(event, -1, 0, 0, 0), f2(event, -1, 0, 0, 0), modelName + " fcn(Px)", 1e-6);
     }
+    for(auto &line : ftable) {
+      auto i = trim(split(line, ' ')[2]);
+      auto a1 = DynamicFCN<std::vector<complex_t>(const double *)>(lib, i);
+      auto a2 = DynamicFCN<std::vector<complex_t>(const double *)>(refLib, i);
+      if(!a1.isLinked() || !a2.isLinked())
+        total += false;
+      else {
+        auto pass = Counter(a1(event), a2(event), i, 10e-6);
+        total += pass;
+      }
+    }
+  }
   if(total.pass == total.total)
     INFO("Library: " << modelName << " matches [passed = " << total.pass << " / " << total.total << "]");
   else

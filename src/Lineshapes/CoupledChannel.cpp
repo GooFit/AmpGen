@@ -17,45 +17,30 @@ using namespace std::complex_literals;
 
 // ENABLE_DEBUG( Lineshape::CoupledChannel );
 
-template <typename T> struct complexified
-{
-  using value_t = std::complex<T>;
-};
-template <> struct complexified<Expression>
-{
-  using value_t = Expression;
-};
+template <typename T> struct complexified { using value_t = std::complex<T>; };
+template <> struct complexified<Expression> { using value_t = Expression; };
 
-template <typename T, typename T1, typename T2, typename T3> T H(const T1 &x, const T2 &y, const T3 &z)
-{
+template <typename T, typename T1, typename T2, typename T3> T H(const T1 &x, const T2 &y, const T3 &z) {
   auto k = (x * x + y * y + z * z - 2. * x * y - 2. * x * z - 2. * z * y);
-  if constexpr(std::is_same_v<T, Expression>)
-    {
-      return Ternary(Imag(sqrt(k)) > 0, sqrt(k), -sqrt(k));
-    }
-  else
-    {
-      return std::imag(sqrt(k)) > 0 ? sqrt(k) : -sqrt(k);
-    }
+  if constexpr(std::is_same_v<T, Expression>) {
+    return Ternary(Imag(sqrt(k)) > 0, sqrt(k), -sqrt(k));
+  } else {
+    return std::imag(sqrt(k)) > 0 ? sqrt(k) : -sqrt(k);
+  }
 }
 
-template <typename T, typename RT = typename complexified<T>::value_t> RT Hr(const T &x, const T &y, const T &z)
-{
+template <typename T, typename RT = typename complexified<T>::value_t> RT Hr(const T &x, const T &y, const T &z) {
   auto k = (x * x + y * y + z * z - 2. * x * y - 2. * x * z - 2. * z * y);
-  if constexpr(std::is_same_v<T, Expression>)
-    {
-      return complex_sqrt(k);
-    }
-  else
-    {
-      return k > 0 ? RT(sqrt(k), 0) : RT(0, sqrt(-k));
-    }
+  if constexpr(std::is_same_v<T, Expression>) {
+    return complex_sqrt(k);
+  } else {
+    return k > 0 ? RT(sqrt(k), 0) : RT(0, sqrt(-k));
+  }
 }
 
 Expression rho_twoBody(const Expression &s, const Expression &s1, const Expression &s2) { return Hr(s, s1, s2) / (16 * M_PI * s); }
 
-template <typename T> T rho_threeBody(const T &s, const Particle &resonance, const Particle &bachelor)
-{
+template <typename T> T rho_threeBody(const T &s, const Particle &resonance, const Particle &bachelor) {
   const ParticleProperties &is = *resonance.props();
   const ParticleProperties &p1 = *bachelor.props();
   const ParticleProperties &p2 = *resonance.daughter(0)->props();
@@ -75,10 +60,8 @@ template <typename T> T rho_threeBody(const T &s, const Particle &resonance, con
                  0);
 }
 
-namespace
-{
-  template <typename fcn_type> auto analytic_continuation(fcn_type &&functor, const double &s_thresh)
-  {
+namespace {
+  template <typename fcn_type> auto analytic_continuation(fcn_type &&functor, const double &s_thresh) {
     return [functor, s_thresh](const double &s) {
       double epsilon = 1e-9;
       auto real = (s - s_thresh) * integrate_1d_cauchy([=](const double &s) { return functor(s) / (s - s_thresh); }, s, s_thresh + epsilon, 100000) / M_PI;
@@ -86,18 +69,15 @@ namespace
     };
   }
 
-  template <typename fcn_type> auto real(fcn_type &&functor)
-  {
+  template <typename fcn_type> auto real(fcn_type &&functor) {
     return [functor](const double &s) { return std::real(functor(s)); };
   }
 
-  template <typename fcn_type> auto imag(fcn_type &&functor)
-  {
+  template <typename fcn_type> auto imag(fcn_type &&functor) {
     return [functor](const double &s) { return std::imag(functor(s)); };
   }
 
-  template <unsigned L, typename expression_type> expression_type blatt_weisskopf_sq(const expression_type &z)
-  {
+  template <unsigned L, typename expression_type> expression_type blatt_weisskopf_sq(const expression_type &z) {
     if constexpr(L == 0)
       return expression_type(1);
     else if constexpr(L == 1)
@@ -106,17 +86,15 @@ namespace
       return expression_type(13 * z * z / (z * z + 3 * z * 9));
     else if constexpr(L == 3)
       return expression_type(277 * z * z * z / (z * (z - 15) * (z - 15) + 9 * (2 * z - 5) * (2 * z - 5)));
-    else
-      {
-        std::cout << "error, blatt weisskopf not implemented for L> 3 (if you are trying to calculate dispersive corrections in such a case, good luck to ya"
-                  << std::endl;
-        return 0;
-      }
+    else {
+      std::cout << "error, blatt weisskopf not implemented for L> 3 (if you are trying to calculate dispersive corrections in such a case, good luck to ya"
+                << std::endl;
+      return 0;
+    }
   }
   template <typename T, typename T2> T q2(const T &s, const T2 &s1, const T2 &s2) { return 0.25 * (s - 2 * (s1 + s2) + (s1 - s2) * (s1 - s2) / s); }
 
-  template <unsigned N> Expression rho_pade(const Expression &s, const Particle &p)
-  {
+  template <unsigned N> Expression rho_pade(const Expression &s, const Particle &p) {
     double m1 = p.daughter(0)->props()->mass();
     double m2 = p.daughter(1)->props()->mass();
     double s_thresh = (m1 + m2) * (m1 + m2);
@@ -131,59 +109,44 @@ namespace
   }
 }
 
-Expression AmpGen::phaseSpace(const Expression &s, const Particle &p, const size_t &l)
-{
+Expression AmpGen::phaseSpace(const Expression &s, const Particle &p, const size_t &l) {
   auto fs = p.getFinalStateParticles();
-  if(fs.size() == 2)
-    {
-      auto s1 = p.daughter(0)->massSq();
-      auto s2 = p.daughter(1)->massSq();
-      auto k2 = make_cse(Q2(s, s1, s2));
-      const Expression k2p = Ternary(k2 > 0, k2, 0);
-      auto phsp_parameterisation = p.attribute("phsp");
-      if(!phsp_parameterisation)
-        {
-          const Expression radius = Parameter(p.name() + "_radius", p.props()->radius());
-          return rho_twoBody(s, s1, s2) * BlattWeisskopf(k2p * radius * radius, l);
-        }
-      else if(phsp_parameterisation == std::string("arXiv.0707.3596"))
-        {
-          INFO("Got AS parametrisation");
-          return 2 * complex_sqrt(k2 / s);
-        }
-      else if(phsp_parameterisation == std::string("CM"))
-        {
-          if(l == 1)
-            return rho_pade<1>(s, p);
-          if(l == 2)
-            return rho_pade<2>(s, p);
-          if(l == 3)
-            return rho_pade<3>(s, p);
-          auto m1 = p.daughter(0)->mass();
-          auto m2 = p.daughter(1)->mass();
-          Expression s1 = m1 * m1;
-          Expression s2 = m2 * m2;
-          Expression sT = (m1 + m2) * (m1 + m2);
-          Expression q2 = (s * s + s1 * s1 + s2 * s2 - 2 * s * s1 - 2 * s * s2 - 2 * s1 * s2) / (4 * s);
-          auto q = fcn::complex_sqrt(q2);
-          auto arg = (s1 + s2 - s + 2 * fcn::sqrt(s) * q) / (2 * m1 * m2);
-          return (2. * q * fcn::log(arg) / fcn::sqrt(s) - (s1 - s2) * (1. / s - 1. / sT) * fcn::log(m1 / m2)) / (16.i * M_PI * M_PI);
-        }
-      else
-        {
-          FATAL("Parametrisation: " << *phsp_parameterisation << " not found");
-        }
+  if(fs.size() == 2) {
+    auto s1 = p.daughter(0)->massSq();
+    auto s2 = p.daughter(1)->massSq();
+    auto k2 = make_cse(Q2(s, s1, s2));
+    const Expression k2p = Ternary(k2 > 0, k2, 0);
+    auto phsp_parameterisation = p.attribute("phsp");
+    if(!phsp_parameterisation) {
+      const Expression radius = Parameter(p.name() + "_radius", p.props()->radius());
+      return rho_twoBody(s, s1, s2) * BlattWeisskopf(k2p * radius * radius, l);
+    } else if(phsp_parameterisation == std::string("arXiv.0707.3596")) {
+      INFO("Got AS parametrisation");
+      return 2 * complex_sqrt(k2 / s);
+    } else if(phsp_parameterisation == std::string("CM")) {
+      if(l == 1) return rho_pade<1>(s, p);
+      if(l == 2) return rho_pade<2>(s, p);
+      if(l == 3) return rho_pade<3>(s, p);
+      auto m1 = p.daughter(0)->mass();
+      auto m2 = p.daughter(1)->mass();
+      Expression s1 = m1 * m1;
+      Expression s2 = m2 * m2;
+      Expression sT = (m1 + m2) * (m1 + m2);
+      Expression q2 = (s * s + s1 * s1 + s2 * s2 - 2 * s * s1 - 2 * s * s2 - 2 * s1 * s2) / (4 * s);
+      auto q = fcn::complex_sqrt(q2);
+      auto arg = (s1 + s2 - s + 2 * fcn::sqrt(s) * q) / (2 * m1 * m2);
+      return (2. * q * fcn::log(arg) / fcn::sqrt(s) - (s1 - s2) * (1. / s - 1. / sT) * fcn::log(m1 / m2)) / (16.i * M_PI * M_PI);
+    } else {
+      FATAL("Parametrisation: " << *phsp_parameterisation << " not found");
     }
-  if(fs.size() == 3 && !p.daughter(0)->isStable())
-    return rho_threeBody(s, *p.daughter(0), *p.daughter(1));
-  if(fs.size() == 3 && !p.daughter(1)->isStable())
-    return rho_threeBody(s, *p.daughter(1), *p.daughter(0));
+  }
+  if(fs.size() == 3 && !p.daughter(0)->isStable()) return rho_threeBody(s, *p.daughter(0), *p.daughter(1));
+  if(fs.size() == 3 && !p.daughter(1)->isStable()) return rho_threeBody(s, *p.daughter(1), *p.daughter(0));
   ERROR("Phase space only implemented for two and three body decays");
   return 0;
 }
 
-DEFINE_LINESHAPE(CoupledChannel)
-{
+DEFINE_LINESHAPE(CoupledChannel) {
   const auto props = ParticlePropertiesList::get(particleName);
   const Expression mass = Parameter(particleName + "_mass", props->mass());
   const Expression width = Parameter(particleName + "_width", props->width());
@@ -193,22 +156,20 @@ DEFINE_LINESHAPE(CoupledChannel)
   Expression totalWidth = 0;
   Expression totalWidthAtPole = 0;
   ADD_DEBUG(s, dbexpressions);
-  for(size_t i = 0; i < channels.size(); i += 2)
-    {
-      Particle p(channels[i]);
-      Expression coupling = Parameter(channels[i + 1], 0);
-      totalWidth += coupling * phaseSpace(s, p, p.L());
-      totalWidthAtPole += coupling * phaseSpace(mass * mass, p, p.L());
-      ADD_DEBUG(coupling, dbexpressions);
-      ADD_DEBUG(phaseSpace(s, p, p.L()), dbexpressions);
-      ADD_DEBUG(phaseSpace(mass * mass, p, p.L()), dbexpressions);
-    }
+  for(size_t i = 0; i < channels.size(); i += 2) {
+    Particle p(channels[i]);
+    Expression coupling = Parameter(channels[i + 1], 0);
+    totalWidth += coupling * phaseSpace(s, p, p.L());
+    totalWidthAtPole += coupling * phaseSpace(mass * mass, p, p.L());
+    ADD_DEBUG(coupling, dbexpressions);
+    ADD_DEBUG(phaseSpace(s, p, p.L()), dbexpressions);
+    ADD_DEBUG(phaseSpace(mass * mass, p, p.L()), dbexpressions);
+  }
   ADD_DEBUG(totalWidth, dbexpressions);
   ADD_DEBUG(totalWidthAtPole, dbexpressions);
   const Expression q2 = make_cse(fcn::abs(Q2(s, s1, s2)));
   Expression formFactor = fcn::sqrt(BlattWeisskopf_Norm(q2 * radius * radius, 0, L));
-  if(lineshapeModifier == "BL")
-    formFactor = fcn::sqrt(BlattWeisskopf(q2 * radius * radius, L));
+  if(lineshapeModifier == "BL") formFactor = fcn::sqrt(BlattWeisskopf(q2 * radius * radius, L));
   const Expression widthNorm = lineshapeModifier == "norm" ? width / totalWidthAtPole : 1;
   const Expression D = mass * mass - Constant(0, 1) * mass * totalWidth * widthNorm;
   const Expression BW = 1. / (D - s);

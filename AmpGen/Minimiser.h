@@ -19,45 +19,37 @@
 #include <TFile.h>
 #include <TGraph.h>
 /** @cond PRIVATE */
-namespace ROOT
-{
-  namespace Minuit2
-  {
+namespace ROOT {
+  namespace Minuit2 {
     class Minuit2Minimizer;
   }
 }
 class TGraph;
 /** @endcode */
 
-namespace AmpGen
-{
-  make_enum(PrintLevel, Quiet, Info, Verbose, VeryVerbose) 
-  
+namespace AmpGen {
+  make_enum(PrintLevel, Quiet, Info, Verbose, VeryVerbose);
+
   class ExtendLikelihoodBase;
   class MinuitParameter;
   class MinuitParameterSet;
 
-  class Minimiser : public ROOT::Minuit2::MnTraceObject
-  {
+  class Minimiser : public ROOT::Minuit2::MnTraceObject {
   private:
     def_has_function(getVal) def_has_function(grad)
 
       public : template <typename TYPE>
-               void setFunction(TYPE &fcn)
-    {
+               void setFunction(TYPE &fcn) {
       if constexpr(has_getVal<TYPE>::value)
         m_theFunction = [&fcn]() { return fcn.getVal(); };
-      else
-        {
-          m_theFunction = fcn;
-        }
+      else {
+        m_theFunction = fcn;
+      }
 
-      if constexpr(std::is_convertible<TYPE *, ROOT::Math::IGradientFunctionMultiDimTempl<double> *>::value)
-        m_fcnWithGrad = &fcn;
+      if constexpr(std::is_convertible<TYPE *, ROOT::Math::IGradientFunctionMultiDimTempl<double> *>::value) m_fcnWithGrad = &fcn;
     }
 
-    template <typename TYPE> Minimiser(TYPE &fitFunction, MinuitParameterSet *mps) : m_parSet(mps)
-    {
+    template <typename TYPE> Minimiser(TYPE &fitFunction, MinuitParameterSet *mps) : m_parSet(mps) {
       setFunction(fitFunction);
       prepare();
     }

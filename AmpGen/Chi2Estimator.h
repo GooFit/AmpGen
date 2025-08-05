@@ -13,13 +13,11 @@
 #include "AmpGen/EventList.h"
 #endif
 
-namespace AmpGen
-{
+namespace AmpGen {
   class EventType;
   class Event;
 
-  class Chi2Estimator
-  {
+  class Chi2Estimator {
 #if ENABLE_AVX
     typedef EventListSIMD EventList_type;
 #else
@@ -29,8 +27,7 @@ namespace AmpGen
     template <typename... argument_types>
     Chi2Estimator(const EventList_type &dataEvents, const EventList_type &mcEvents, const std::function<double(const Event &)> &fcn,
                   const argument_types &... args)
-        : m_binning(dataEvents.begin(), dataEvents.end(), ArgumentPack(args...))
-    {
+        : m_binning(dataEvents.begin(), dataEvents.end(), ArgumentPack(args...)) {
       doChi2(dataEvents, mcEvents, fcn);
     }
 

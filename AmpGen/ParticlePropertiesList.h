@@ -11,10 +11,8 @@
 
 #include "AmpGen/ParticleProperties.h"
 
-namespace AmpGen
-{
-  class ParticlePropertiesList
-  {
+namespace AmpGen {
+  class ParticlePropertiesList {
     static ParticlePropertiesList *ptr;
     std::map<int, std::pair<std::string, std::string>> m_latexLabels;
     std::string m_fname;

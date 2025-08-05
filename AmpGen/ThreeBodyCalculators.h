@@ -8,15 +8,12 @@
 
 class TGraph;
 
-namespace AmpGen
-{
+namespace AmpGen {
   class MinuitParameterSet;
 
-  class ThreeBodyCalculator
-  {
+  class ThreeBodyCalculator {
   private:
-    struct PartialWidth
-    {
+    struct PartialWidth {
       CoherentSum fcs;
       DalitzIntegrator integrator;
       CompiledExpression<complex_v(const real_t *, const real_v *)> totalWidth;

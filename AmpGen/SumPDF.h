@@ -11,8 +11,7 @@
 #include "AmpGen/simd/utils.h"
 #endif
 
-namespace AmpGen
-{
+namespace AmpGen {
   class EventList;
   class EventListSIMD;
   /** @class SumPDF
@@ -38,8 +37,7 @@ namespace AmpGen
       as a likelihood via function getVal().
       Typically constructed using either the make_pdf helper function or make_likelihood helper function.  */
 
-  template <class eventListType, class... pdfTypes> class SumPDF
-  {
+  template <class eventListType, class... pdfTypes> class SumPDF {
   private:
     typedef typename eventListType::value_type eventValueType; ///< The value type stored in the eventListType
     std::tuple<pdfTypes...> m_pdfs;                            ///< The tuple of probability density functions
@@ -54,59 +52,47 @@ namespace AmpGen
 
     /// Returns negative twice the log-likelihood for this PDF and the given dataset.
 
-    double getVal()
-    {
+    double getVal() {
       std::vector<real_v> tmp(m_events->nBlocks());
       fill_likelihood(tmp.data());
       KahanSum<real_v> sum;
-      for(unsigned block = 0; block != tmp.size(); ++block)
-        sum += tmp[block];
+      for(unsigned block = 0; block != tmp.size(); ++block) sum += tmp[block];
       auto rt = -2 * utils::sum_elements(sum());
       return rt;
     }
-    void fill_likelihood(real_v *output)
-    {
+    void fill_likelihood(real_v *output) {
       for_each(m_pdfs, [](auto &f) { f.prepare(); });
-      if constexpr(std::is_same<eventListType, EventList>::value)
-        {
+      if constexpr(std::is_same<eventListType, EventList>::value) {
 #pragma omp parallel for
-          for(unsigned int i = 0; i < m_events->size(); ++i)
-            {
-              auto prob = ((*this))((*m_events)[i]);
-              auto w = (*m_events)[i].weight();
-              output[i] = w * std::log(prob);
-            }
+        for(unsigned int i = 0; i < m_events->size(); ++i) {
+          auto prob = ((*this))((*m_events)[i]);
+          auto w = (*m_events)[i].weight();
+          output[i] = w * std::log(prob);
         }
+      }
 #if ENABLE_AVX
-      if constexpr(std::is_same<eventListType, EventListSIMD>::value)
-        {
+      if constexpr(std::is_same<eventListType, EventListSIMD>::value) {
 #pragma omp parallel for
-          for(unsigned block = 0; block < m_events->nBlocks(); ++block)
-            {
-              output[block] = m_events->weight(block) * AVX::log(this->operator()(nullptr, block));
-            }
-        }
+        for(unsigned block = 0; block < m_events->nBlocks(); ++block) { output[block] = m_events->weight(block) * AVX::log(this->operator()(nullptr, block)); }
+      }
 #endif
     }
 
     /// Returns the probability for the given event.
-    real_v operator()(const real_v *evt, const unsigned block)
-    {
+    real_v operator()(const real_v *evt, const unsigned block) {
       real_v prob = 0.;
       for_each(this->m_pdfs, [&prob, &evt, block](const auto &f) mutable { prob += f(evt, block); });
       return prob;
     }
     /// Returns the probability for the given event.
-    double operator()(const eventValueType &evt)
-    {
+    double operator()(const eventValueType &evt) {
       double prob = 0;
       for_each(this->m_pdfs, [&prob, &evt](const auto &f) mutable { prob += f(evt); });
       return prob;
     }
 
     /// Sets the events to be summed over in the likelihood
-    void setEvents(eventListType &events)
-    {
+    void setEvents(eventListType &events) {
       m_events = &events;
       for_each(m_pdfs, [&events](auto &f) { f.setEvents(events); });
     }
@@ -117,18 +103,15 @@ namespace AmpGen
     /// Returns the tuple of PDFs used by this function
     std::tuple<pdfTypes...> pdfs() const { return m_pdfs; }
 
-    std::function<double(const eventValueType &)> evaluator(const eventListType *events) const
-    {
+    std::function<double(const eventValueType &)> evaluator(const eventListType *events) const {
       std::vector<double> values(events->size());
       for_each(this->m_pdfs, [events, &values](const auto &pdf) mutable {
         auto eval = pdf.evaluator(events);
-        for(unsigned i = 0; i != events->size(); ++i)
-          values[i] += eval(events->at(i));
+        for(unsigned i = 0; i != events->size(); ++i) values[i] += eval(events->at(i));
       });
       return arrayToFunctor<double, typename eventListType::value_type>(values);
     }
-    KeyedFunctors<double(eventValueType)> componentEvaluator(const eventListType *events) const
-    {
+    KeyedFunctors<double(eventValueType)> componentEvaluator(const eventListType *events) const {
       KeyedFunctors<double(eventValueType)> view;
       for_each(this->m_pdfs, [&view, &events](const auto &pdf) mutable {
         auto eval = pdf.evaluator(events);
@@ -148,14 +131,12 @@ namespace AmpGen
     the data for the PDF.
     Therefore, named SumPDF, it is useful to use this function to get a likelihood for a PDF containing a single term (i.e. signal or background only).
     */
-  template <class eventListType = EventList, class... pdfTypes> auto make_pdf(pdfTypes &&... pdfs)
-  {
+  template <class eventListType = EventList, class... pdfTypes> auto make_pdf(pdfTypes &&... pdfs) {
     // return SumPDF<eventListType, pdfTypes...>( std::forward<pdfTypes>( pdfs )... );
     return SumPDF<eventListType, pdfTypes...>(pdfs...);
   }
 
-  template <class eventListType = EventList, class... pdfTypes> auto make_likelihood(eventListType &events, pdfTypes &&... pdfs)
-  {
+  template <class eventListType = EventList, class... pdfTypes> auto make_likelihood(eventListType &events, pdfTypes &&... pdfs) {
     auto rt = SumPDF<eventListType, pdfTypes...>(std::forward<pdfTypes>(pdfs)...);
     rt.setEvents(events);
     return rt;

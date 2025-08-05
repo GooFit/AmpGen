@@ -10,8 +10,7 @@
 #include "AmpGen/enum.h"
 #include "AmpGen/Property.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class Projection;
   /**@class EventType
      Deals with final state configuration of events,
@@ -19,13 +18,8 @@ namespace AmpGen
    */
   class EventType;
   std::ostream &operator<<(std::ostream &os, const EventType &type);
-  class EventType
-  {
-    enum class Observable
-    {
-      mass,
-      mass2
-    };
+  class EventType {
+    enum class Observable { mass, mass2 };
     // make_enum(observable, mass, mass2);
   public:
     /// Default constructor
@@ -94,7 +88,7 @@ namespace AmpGen
                                       "Alternative naming in ouput tree (e.g. Xi- pi+ pi+ becomes Xim pip0 pip1 rather than _1_Xi# _2_pi~ _3_pi~)"};
     Property<bool> m_includeEnergy{this, "EventType::IncludeEnergy", true, "Include energy as part of the event (otherwise calculate from assumed mass)"};
     // TO DO: these are actually related to the plotting only
-    Property<std::string> m_defaultObservable{this, "EventType::Observable", "mass2", "Default variable for projections, Options: mass, mass2" };
+    Property<std::string> m_defaultObservable{this, "EventType::Observable", "mass2", "Default variable for projections, Options: mass, mass2"};
     Property<bool> m_useRootLabelling{this, "EventType::UseROOTTeX", false, "Use ROOT variant of TeX for axis labels etc."};
   };
 

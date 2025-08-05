@@ -2,10 +2,8 @@
 #define AMPGEN_PROGRESSBAR_H
 
 #include <string>
-namespace AmpGen
-{
-  class ProgressBar
-  {
+namespace AmpGen {
+  class ProgressBar {
   public:
     ProgressBar(const size_t &width, const std::string &context);
     ~ProgressBar();

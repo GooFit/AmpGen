@@ -1,16 +1,20 @@
-#ifndef AMPGEN_CONFIGURABLE_H 
-#define AMPGEN_CONFIGURABLE_H 1 
-#include "AmpGen/MsgService.h" 
+#ifndef AMPGEN_CONFIGURABLE_H
+#define AMPGEN_CONFIGURABLE_H 1
+#include "AmpGen/MsgService.h"
+#include "AmpGen/Property.h"
+#include "AmpGen/MetaUtils.h" 
+#include "AmpGen/ConfigurableBase.h" 
 
-namespace AmpGen { 
-  class Configurable { 
+namespace AmpGen {
+
+  template <typename T>
+  class Configurable  : public ConfigurableBase {
+    static T *gImpl;  
     public: 
-      void registerParameter( const std::string& name ){
-        INFO("Registering: "<< name ); 
-        m_parameters.push_back( name ); 
-      }
-    private: 
-      std::vector<std::string> m_parameters; 
-  }; 
+    virtual ~Configurable() = default; 
+    protected: 
+    Property<bool> m_verbose {this, remove_namespace( type_string<T>() ) + "::Verbose", false,  "Enable verbose printing" }; 
+  
+  };
 }
-#endif 
+#endif

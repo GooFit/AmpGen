@@ -11,38 +11,30 @@
 #define REGISTER_WITH_KEY(BASE_CLASS, DERIVED_CLASS, KEY, KEY_TYPE)                                                                                            \
   KEY_TYPE DERIVED_CLASS::_id = AmpGen::Factory<BASE_CLASS, KEY_TYPE>::Register(KEY, new DERIVED_CLASS())
 
-namespace AmpGen
-{
+namespace AmpGen {
   /**@class Factory
    * Static factory to construct classes from a hierarchy based on a key (normally std::string)
    */
-  template <class TYPE, class KEY_TYPE = std::string> class Factory
-  {
+  template <class TYPE, class KEY_TYPE = std::string> class Factory {
   public:
     std::map<KEY_TYPE, TYPE *> m_terms;    ///< map of objected made by this factory
     static Factory<TYPE, KEY_TYPE> *gImpl; ///< pointer to static implementation
 
-    static Factory<TYPE, KEY_TYPE> *getMe()
-    {
-      if(!gImpl)
-        gImpl = new Factory<TYPE, KEY_TYPE>();
+    static Factory<TYPE, KEY_TYPE> *getMe() {
+      if(!gImpl) gImpl = new Factory<TYPE, KEY_TYPE>();
       return gImpl;
     }
-    static TYPE *get(const KEY_TYPE &type, const bool quiet = false)
-    {
+    static TYPE *get(const KEY_TYPE &type, const bool quiet = false) {
       auto ptrToStatic = getMe();
       auto raw_base = ptrToStatic->m_terms.find(type);
-      if(raw_base == ptrToStatic->m_terms.end())
-        {
-          if(!quiet)
-            ERROR(type << " not found in Factory<" << type_string<TYPE>() << type_string<KEY_TYPE>() << " >");
-          return nullptr;
-        }
+      if(raw_base == ptrToStatic->m_terms.end()) {
+        if(!quiet) ERROR(type << " not found in Factory<" << type_string<TYPE>() << type_string<KEY_TYPE>() << " >");
+        return nullptr;
+      }
       auto objectToReturn = raw_base->second->create();
       return objectToReturn;
     }
-    static KEY_TYPE Register(const KEY_TYPE &key, TYPE *object)
-    {
+    static KEY_TYPE Register(const KEY_TYPE &key, TYPE *object) {
       getMe()->m_terms[key] = object;
       return key;
     }

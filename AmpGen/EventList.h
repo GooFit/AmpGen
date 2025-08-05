@@ -24,15 +24,12 @@
 #include <omp.h>
 #endif
 
-namespace AmpGen
-{
-  namespace PlotOptions
-  {
+namespace AmpGen {
+  namespace PlotOptions {
     DECLARE_ARGUMENT(Bins, size_t);
   }
   class CompiledExpressionBase;
-  class EventList
-  {
+  class EventList {
   private:
     std::vector<Event> m_data = {};
     EventType m_eventType = {};
@@ -42,18 +39,14 @@ namespace AmpGen
     typedef Event value_type;
     EventList() = default;
     EventList(const EventType &type);
-    template <class... ARGS> EventList(const std::string &fname, const EventType &evtType, const ARGS &... args) : EventList(evtType)
-    {
+    template <class... ARGS> EventList(const std::string &fname, const EventType &evtType, const ARGS &... args) : EventList(evtType) {
       loadFromFile(fname, ArgumentPack(args...));
     }
     template <class... ARGS> EventList(const std::string &fname, const ARGS &... args) : EventList() { loadFromFile(fname, ArgumentPack(args...)); }
-    template <class... ARGS> EventList(const std::vector<std::string> &fname, const EventType &evtType, const ARGS &... args) : EventList(evtType)
-    {
-      for(auto &f : fname)
-        loadFromFile(f, ArgumentPack(args...));
+    template <class... ARGS> EventList(const std::vector<std::string> &fname, const EventType &evtType, const ARGS &... args) : EventList(evtType) {
+      for(auto &f : fname) loadFromFile(f, ArgumentPack(args...));
     }
-    template <class... ARGS> EventList(TTree *tree, const EventType &evtType, const ARGS &... args) : EventList(evtType)
-    {
+    template <class... ARGS> EventList(TTree *tree, const EventType &evtType, const ARGS &... args) : EventList(evtType) {
       loadFromTree(tree, ArgumentPack(args...));
     }
     const EventList &store() const { return *this; }
@@ -76,11 +69,9 @@ namespace AmpGen
     double *block(const unsigned pos) { return m_data[pos].address(); }
     real_t weight(const size_t &pos) const { return m_data[pos].weight(); }
     real_t genPDF(const size_t &pos) const { return m_data[pos].genPdf(); }
-    unsigned key(const std::string &key) const
-    {
+    unsigned key(const std::string &key) const {
       auto it = m_extensions.find(key);
-      if(it == m_extensions.end())
-        return m_data[0].size() - 1;
+      if(it == m_extensions.end()) return m_data[0].size() - 1;
       return it->second;
     }
     void reserve(const size_t &size);
@@ -94,8 +85,7 @@ namespace AmpGen
     void clear();
     void extend(const std::string &key, unsigned pos) { m_extensions[key] = pos; }
 
-    void setWeight(const unsigned int &pos, const double &w, const double &g = +1)
-    {
+    void setWeight(const unsigned int &pos, const double &w, const double &g = +1) {
       m_data[pos].setWeight(w);
       m_data[pos].setGenPdf(g);
     }
@@ -108,40 +98,33 @@ namespace AmpGen
     TH2D *makeProjection(const Projection2D &projection, const ArgumentPack &args = ArgumentPack()) const;
     std::vector<TH1D *> makeProjections(const std::vector<Projection> &projections, const ArgumentPack &args);
 
-    template <class... ARGS> std::vector<TH1D *> makeDefaultProjections(const ARGS &... args)
-    {
+    template <class... ARGS> std::vector<TH1D *> makeDefaultProjections(const ARGS &... args) {
       auto argPack = ArgumentPack(args...);
       size_t nBins = argPack.getArg<PlotOptions::Bins>(100);
       auto proj = eventType().defaultProjections(nBins);
       return makeProjections(proj, argPack);
     }
 
-    template <typename... ARGS> std::vector<TH1D *> makeProjections(const std::vector<Projection> &projections, const ARGS &... args)
-    {
+    template <typename... ARGS> std::vector<TH1D *> makeProjections(const std::vector<Projection> &projections, const ARGS &... args) {
       return makeProjections(projections, ArgumentPack(args...));
     }
 
     template <typename... ARGS, typename = std::enable_if_t<!std::is_same<zeroType<ARGS...>, ArgumentPack>::value>>
-    TH1D *makeProjection(const Projection &projection, const ARGS &... args) const
-    {
+    TH1D *makeProjection(const Projection &projection, const ARGS &... args) const {
       return makeProjection(projection, ArgumentPack(args...));
     }
 
     template <typename... ARGS, typename = std::enable_if_t<!std::is_same<zeroType<ARGS...>, ArgumentPack>::value>>
-    TH2D *makeProjection(const Projection2D &projection, const ARGS &... args)
-    {
+    TH2D *makeProjection(const Projection2D &projection, const ARGS &... args) {
       return makeProjection(projection, ArgumentPack(args...));
     }
 
-    template <typename functor> EventList &transform(functor &&fcn)
-    {
-      for(auto &event : m_data)
-        fcn(event);
+    template <typename functor> EventList &transform(functor &&fcn) {
+      for(auto &event : m_data) fcn(event);
       return *this;
     }
 
-    template <typename functor> void filter(functor &&fcn)
-    {
+    template <typename functor> void filter(functor &&fcn) {
       unsigned currentSize = size();
       m_data.erase(std::remove_if(m_data.begin(), m_data.end(), fcn), m_data.end());
       INFO("Filter retains " << size() << " / " << currentSize << " events");

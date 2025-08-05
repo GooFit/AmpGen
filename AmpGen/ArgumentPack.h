@@ -7,11 +7,9 @@
 #include <string>
 #include <vector>
 
-namespace AmpGen
-{
+namespace AmpGen {
 #define DECLARE_ARGUMENT(X, Y)                                                                                                                                 \
-  struct X : public AmpGen::Argument<Y>                                                                                                                        \
-  {                                                                                                                                                            \
+  struct X : public AmpGen::Argument<Y> {                                                                                                                      \
     template <class Z> explicit X(Z val = Z()) : AmpGen::Argument<Y>(val) {}                                                                                   \
     X() : AmpGen::Argument<Y>() {}                                                                                                                             \
   }
@@ -21,8 +19,7 @@ namespace AmpGen
       that they can be stored into an argument pack. Relies on runtime polymorphism
       and should be kept away from any code that has to be fast.
     */
-  struct IArgument
-  {
+  struct IArgument {
     virtual ~IArgument() = default;
   };
 
@@ -52,8 +49,7 @@ namespace AmpGen
       \endcode
       @tparam TYPE Type of the argument, such as a string, a number, a bool etc.
   */
-  template <typename TYPE> struct Argument : public IArgument
-  {
+  template <typename TYPE> struct Argument : public IArgument {
     template <typename T> explicit Argument(T x) : val(x) {}
     Argument() = default;
     operator TYPE() const { return val; }
@@ -66,26 +62,20 @@ namespace AmpGen
       then be unpacked in the call site of the function where the named arguments
       are required, as per the description in Argument.
   */
-  class ArgumentPack
-  {
+  class ArgumentPack {
   public:
-    template <typename... ARGS> explicit ArgumentPack(const ARGS &... args)
-    {
+    template <typename... ARGS> explicit ArgumentPack(const ARGS &... args) {
       std::tuple<ARGS...> argTuple(args...);
       for_each(argTuple, [this](const auto &f) { this->addArgument(f); });
     }
-    template <typename arg_type> arg_type *get() const
-    {
-      for(const auto &param : m_parameters)
-        {
-          auto ptr = dynamic_cast<arg_type *>(param.get());
-          if(ptr != nullptr)
-            return ptr;
-        }
+    template <typename arg_type> arg_type *get() const {
+      for(const auto &param : m_parameters) {
+        auto ptr = dynamic_cast<arg_type *>(param.get());
+        if(ptr != nullptr) return ptr;
+      }
       return nullptr;
     }
-    template <typename arg_type, typename default_arg_type = arg_type> arg_type getArg(const default_arg_type &default_argument = default_arg_type()) const
-    {
+    template <typename arg_type, typename default_arg_type = arg_type> arg_type getArg(const default_arg_type &default_argument = default_arg_type()) const {
       auto p = get<arg_type>();
       return p == nullptr ? arg_type(default_argument) : *p;
     }

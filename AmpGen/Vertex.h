@@ -24,8 +24,7 @@
  * Macro to declare a vertex
  */
 #define DECLARE_VERTEX(NAME)                                                                                                                                   \
-  struct NAME : public Base                                                                                                                                    \
-  {                                                                                                                                                            \
+  struct NAME : public Base {                                                                                                                                  \
     NAME() { DEBUG("Constructing vertex"); }                                                                                                                   \
     virtual Tensor operator()(const Tensor &P, const Tensor &Q, const Tensor &V1, const Tensor &V2, DebugSymbols *db = 0) override;                            \
     static std::string _id;                                                                                                                                    \
@@ -35,22 +34,19 @@
   REGISTER_WITH_KEY(Vertex::Base, Vertex::VERTEX, #VERTEX, std::string);                                                                                       \
   Tensor Vertex::VERTEX::operator()(const Tensor &P, const Tensor &Q, const Tensor &V1, const Tensor &V2, DebugSymbols *db)
 
-namespace AmpGen
-{
+namespace AmpGen {
   /** @ingroup Vertices namespace Vertex
       Namespace that contains the base class for vertices, Vertex::Base, as well as the implementations
       of specific spin couplings and some helper functions such as the orbital operators.
     */
-  namespace Vertex
-  {
+  namespace Vertex {
     /** @ingroup Vertices class Base
         @brief Base class for all spin vertices.
       Virtual base class from which all the other vertices derive, in essence this is
        just a named function pointer that can create a pointer to itself, i.e. such
        that it can be constructed using a Factory.
      */
-    struct Base
-    {
+    struct Base {
       /** Calculate the generalised current for this decay process, as a function of:
          @param P The momentum of the decaying particle
          @param Q The momentum transfer between the two decay products
@@ -200,8 +196,7 @@ namespace AmpGen
     DECLARE_VERTEX(S_TV_rp);
     DECLARE_VERTEX(S_TV_rm);
 
-    class Factory : public AmpGen::Factory<Vertex::Base>
-    {
+    class Factory : public AmpGen::Factory<Vertex::Base> {
     public:
       static Tensor getSpinFactor(const Tensor &P, const Tensor &Q, const Tensor &V1, const Tensor &V2, const std::string &name, DebugSymbols *db = nullptr);
       static Tensor getSpinFactorNBody(const std::vector<std::pair<Tensor, Tensor>> &tensors, const unsigned int &mL, DebugSymbols *db = nullptr);

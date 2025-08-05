@@ -16,14 +16,12 @@
 #include "AmpGen/ExpressionParser.h"
 #include "AmpGen/Property.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class MinuitParameter;
   class MinuitExpression;
   class MinuitParameterSet;
 
-  class Coupling
-  {
+  class Coupling {
   public:
     Coupling(MinuitParameter *re, MinuitParameter *im);
     Coupling(MinuitExpression *expression);
@@ -52,8 +50,7 @@ namespace AmpGen
     double m_sf{1};
   };
 
-  class TotalCoupling
-  {
+  class TotalCoupling {
   public:
     TotalCoupling() = default;
     TotalCoupling(const TotalCoupling &other, const Coupling &pA);
@@ -72,8 +69,7 @@ namespace AmpGen
     std::vector<Coupling> couplings;
   };
 
-  class AmplitudeRules
-  {
+  class AmplitudeRules {
   public:
     static const AmplitudeRules *get();
     static AmplitudeRules *create(const MinuitParameterSet &mps);

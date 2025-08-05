@@ -10,8 +10,7 @@ using namespace AmpGen;
 
 Array::Array(const Expression &top, const int &size, const Expression &address) : m_top(top), m_address(address), m_size(size) {}
 
-std::string Array::to_string(const ASTResolver *resolver) const
-{
+std::string Array::to_string(const ASTResolver *resolver) const {
   auto head = m_top.to_string(resolver);
   std::string offset = "";
   if(m_size != -1)
@@ -21,16 +20,14 @@ std::string Array::to_string(const ASTResolver *resolver) const
   else
     offset = m_address.to_string(resolver);
 
-  if(resolver != nullptr && resolver->enableAVX())
-    return " gather( &(" + head + "), " + offset + ")";
+  if(resolver != nullptr && resolver->enableAVX()) return " gather( &(" + head + "), " + offset + ")";
   if(head.find("[") == std::string::npos)
     return head + "[int(" + offset + ")]";
   else
     return " * ( & (" + head + ") + int(" + offset + ") )";
 }
 
-void Array::resolve(ASTResolver &resolver) const
-{
+void Array::resolve(ASTResolver &resolver) const {
   m_top.resolve(resolver);
   m_address.resolve(resolver);
 }

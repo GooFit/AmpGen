@@ -7,15 +7,12 @@
 
 #include "AmpGen/Expression.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   Expression Simplify(const Expression &expression);
 
-  class NormalOrderedExpression
-  {
+  class NormalOrderedExpression {
   public:
-    struct Term
-    {
+    struct Term {
       std::complex<double> m_prefactor;
       std::vector<std::pair<Expression, std::string>> m_terms;
       Expression m_divisor;

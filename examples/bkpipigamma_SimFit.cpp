@@ -33,32 +33,38 @@ using EventList_type = AmpGen::EventList;
 
 using namespace AmpGen;
 
-int main(int argc, char *argv[])
-{
-  using strings = std::vector<std::string>; 
+int main(int argc, char *argv[]) {
+  using strings = std::vector<std::string>;
   OptionsParser::setArgs(argc, argv);
 
-  Property<strings> pEventType    {nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"};
+  Property<strings> pEventType{nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"};
 
-  Property<strings> datasets      {nullptr, "Datasets", {}, "List of data/simulated samples to fit, in the format \033[3m data[0] sim[0] data[1] sim[1] ... \033[0m. \nIf a simulated sample is specified FLAT, uniformly generated phase-space events are used for integrals "};
+  Property<strings> datasets{nullptr,
+                             "Datasets",
+                             {},
+                             "List of data/simulated samples to fit, in the format \033[3m data[0] sim[0] data[1] sim[1] ... \033[0m. \nIf a simulated sample "
+                             "is specified FLAT, uniformly generated phase-space events are used for integrals "};
 
-  Property<std::string> weightbr  {nullptr, "Weight", "", "Name of the weights branch (sweights)."};
+  Property<std::string> weightbr{nullptr, "Weight", "", "Name of the weights branch (sweights)."};
 
-  Property<strings> databNames    {nullptr, "Data_Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"};
-  Property<strings> simbNames     {nullptr, "Sim_Branches", {}, "List of branch names in the integration sample, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"};
+  Property<strings> databNames{
+    nullptr, "Data_Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"};
+  Property<strings> simbNames{nullptr,
+                              "Sim_Branches",
+                              {},
+                              "List of branch names in the integration sample, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"};
 
+  Property<std::string> logFile{nullptr, "LogFile", "Fitter.log", "Name of the output log file"};
 
-  Property<std::string> logFile   {nullptr, "LogFile", "Fitter.log", "Name of the output log file"};
+  Property<std::string> plotFile{nullptr, "Plots", "", "Name of the output plot file"};
 
-  Property<std::string> plotFile  {nullptr, "Plots", "", "Name of the output plot file"};
+  Property<size_t> seed{nullptr, "Seed", 0, "Random seed used"};
 
-  Property<size_t> seed           {nullptr, "Seed", 0, "Random seed used"};
-
-  Property<bool> perturb          {nullptr, "Perturb", 1, "Flag to randomise starting parameters."};
+  Property<bool> perturb{nullptr, "Perturb", 1, "Flag to randomise starting parameters."};
 
 #ifdef _OPENMP
   unsigned hwThreads = std::thread::hardware_concurrency();
-  Property<unsigned> usThreads    {nullptr, "nCores", hwThreads, "Number of cores to use (OpenMP only)"};
+  Property<unsigned> usThreads{nullptr, "nCores", hwThreads, "Number of cores to use (OpenMP only)"};
   INFO("Using: " << usThreads << " / " << hwThreads << " threads");
   omp_set_num_threads(usThreads);
   omp_set_dynamic(0);
@@ -67,8 +73,7 @@ int main(int argc, char *argv[])
   INFO("Output : " << logFile << " plots = " << plotFile);
 
   // Check that we have an event type
-  if(pEventType.value().size() == 0)
-    FATAL("Must specify event format as EventType \033[3m parent daughter1 daughter2 ... \033[0m in options");
+  if(pEventType.value().size() == 0) FATAL("Must specify event format as EventType \033[3m parent daughter1 daughter2 ... \033[0m in options");
 
   // Set the event type
   const EventType eventType = EventType(pEventType);
@@ -77,30 +82,23 @@ int main(int argc, char *argv[])
   std::vector<EventList> data;
   std::vector<EventList> mcs;
 
-  for(size_t i = 0; i < datasets.value().size(); i += 2)
-    {
-      if(weightbr == "")
-        {
-          // Load data sets without reading the weight branch;  (real data == no GenPdf to be read)
-          data.emplace_back(datasets.value()[i], eventType, GetGenPdf(false), Branches(databNames));
-        }
-      else
-        {
-          // Load data sets reading the weight branch;  (real data == no GenPdf to be read)
-          data.emplace_back(datasets.value()[i], eventType, GetGenPdf(false), Branches(databNames), WeightBranch(weightbr));
-        }
-      if(datasets.value()[i + 1] == "FLAT")
-        {
-          // Generate data sets for normalisation (NO ACCEPTANCE)
-          mcs.emplace_back(Generator<>(eventType).generate(5e6));
-          INFO("Generated: 5e6 events for integrals");
-        }
-      else
-        {
-          // Load simulated data sets for normalisation:
-          mcs.emplace_back(datasets.value()[i + 1], eventType, GetGenPdf(true), Branches(simbNames));
-        }
+  for(size_t i = 0; i < datasets.value().size(); i += 2) {
+    if(weightbr == "") {
+      // Load data sets without reading the weight branch;  (real data == no GenPdf to be read)
+      data.emplace_back(datasets.value()[i], eventType, GetGenPdf(false), Branches(databNames));
+    } else {
+      // Load data sets reading the weight branch;  (real data == no GenPdf to be read)
+      data.emplace_back(datasets.value()[i], eventType, GetGenPdf(false), Branches(databNames), WeightBranch(weightbr));
     }
+    if(datasets.value()[i + 1] == "FLAT") {
+      // Generate data sets for normalisation (NO ACCEPTANCE)
+      mcs.emplace_back(Generator<>(eventType).generate(5e6));
+      INFO("Generated: 5e6 events for integrals");
+    } else {
+      // Load simulated data sets for normalisation:
+      mcs.emplace_back(datasets.value()[i + 1], eventType, GetGenPdf(true), Branches(simbNames));
+    }
+  }
   INFO("Data events: " << data.size());
   INFO("MC events  : " << mcs.size());
 
@@ -119,33 +117,28 @@ int main(int argc, char *argv[])
   TRandom3 rndm;
   rndm.SetSeed(seed);
   gRandom = &rndm;
-  for(auto &param : mps)
-    {
-      // for lambda gamma:  uniformly distributed in [0,1]
-      if(param->isBlind())
-        {
-          param->setCurrentFitVal(rndm.Rndm());
-          continue;
-        }
-      // for the rest, perturb with a gaussian, (mean+/-  3*error)
-      if(perturb)
-        {
-          if(!param->isFree())
-            continue;
-          param->setCurrentFitVal(rndm.Gaus(param->mean(), 3. * param->err()));
-        }
+  for(auto &param : mps) {
+    // for lambda gamma:  uniformly distributed in [0,1]
+    if(param->isBlind()) {
+      param->setCurrentFitVal(rndm.Rndm());
+      continue;
     }
+    // for the rest, perturb with a gaussian, (mean+/-  3*error)
+    if(perturb) {
+      if(!param->isFree()) continue;
+      param->setCurrentFitVal(rndm.Gaus(param->mean(), 3. * param->err()));
+    }
+  }
 
   // Load data in Sim PDF
-  for(size_t i = 0; i < data.size(); ++i)
-    {
-      fcs[i] = PolarisedSum(eventType, mps);
-      pdfs.emplace_back(make_pdf(fcs[i]));
-      pdfs[i].setEvents(data[i]);
-      auto &mc = mcs[i];
-      for_each(pdfs[i].pdfs(), [&mc](auto &pdf) { pdf.setMC(mc); });
-      totalLL.add(pdfs[i]);
-    }
+  for(size_t i = 0; i < data.size(); ++i) {
+    fcs[i] = PolarisedSum(eventType, mps);
+    pdfs.emplace_back(make_pdf(fcs[i]));
+    pdfs[i].setEvents(data[i]);
+    auto &mc = mcs[i];
+    for_each(pdfs[i].pdfs(), [&mc](auto &pdf) { pdf.setMC(mc); });
+    totalLL.add(pdfs[i]);
+  }
 
   // Declare the minimiser:
   Minimiser mini(totalLL, &mps);

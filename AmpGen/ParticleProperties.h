@@ -9,8 +9,7 @@
 #include "AmpGen/QuarkContent.h"
 #include "AmpGen/Units.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   /** @class ParticleProperties
     @brief Class that contains the PDG properties (mass, width, charges, etc.) for a single particle species,
 
@@ -22,8 +21,7 @@ namespace AmpGen
     See that more details.
     */
 
-  class ParticleProperties
-  {
+  class ParticleProperties {
   public:
     explicit ParticleProperties(const std::string &pdg_string = ""); ///< Constructor from a string formatted by the PDG convention.
     double mass() const { return m_mass * MeV; }                     ///< Returns mass of particle in MeV
@@ -60,8 +58,7 @@ namespace AmpGen
     const QuarkContent &quarkContent() const { return m_quarkContent; } ///< Returns the particle's quark content
 
     void setLabel(const std::string &label) { m_texName = label; } ///< Set the LaTeX label of the particle
-    void setName(const std::string &name)
-    {
+    void setName(const std::string &name) {
       m_customName = true;
       m_name = name;
     } ///< Set the name of the particle

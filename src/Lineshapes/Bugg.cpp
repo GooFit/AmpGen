@@ -9,8 +9,7 @@
 
 using namespace AmpGen;
 
-Expression rho(const Expression &s, const Expression &s0)
-{
+Expression rho(const Expression &s, const Expression &s0) {
   Expression a2 = 1.0 - (4 * s0) / s;
   return Ternary(a2 > 0, a2, Constant(0));
 }
@@ -21,20 +20,17 @@ Expression q(const Expression &s, const Expression &s0) { return Ternary(s > 4 *
 
 Expression rho_4pi(const Expression &s, const Expression &lambda, const Expression &s0) { return 1. / (1 + Exp(lambda * (s0 - s))); }
 
-Expression Buggj1(const Expression &s, const Expression &m0)
-{
+Expression Buggj1(const Expression &s, const Expression &m0) {
   Expression rho_pipi = Sqrt(rho(s, m0 * m0));
   Expression addTerm = Ternary(rho_pipi > 0., rho_pipi * Log((1. - rho_pipi) / (1. + rho_pipi)), 0.);
   return (2. + addTerm) / M_PI;
 }
 
-Expression Gamma_4pi(const Expression &s, const Expression &m0, const Expression &M, const Expression &g_4pi, const Expression &lambda, const Expression &s0)
-{
+Expression Gamma_4pi(const Expression &s, const Expression &m0, const Expression &M, const Expression &g_4pi, const Expression &lambda, const Expression &s0) {
   return Ternary(s > 16. * m0 * m0, g_4pi * rho_4pi(s, lambda, s0) / rho_4pi(M * M, lambda, s0), 0.);
 }
 
-DEFINE_LINESHAPE(Bugg)
-{
+DEFINE_LINESHAPE(Bugg) {
   Expression M = Parameter("Bugg::M", 0.935);
   Expression b1 = Parameter("Bugg::b1", 1.302);
   Expression b2 = Parameter("Bugg::b2", 0.340);

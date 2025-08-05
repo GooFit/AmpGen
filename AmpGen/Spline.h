@@ -15,14 +15,12 @@
 #include "AmpGen/CacheTransfer.h"
 #include "AmpGen/Types.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class ASTResolver;
   class CompiledExpressionBase;
   class MinuitParameter;
 
-  class SplineTransfer : public CacheTransfer
-  {
+  class SplineTransfer : public CacheTransfer {
   public:
     //      SplineTransfer();
     SplineTransfer(const size_t &address, const std::string &name, const unsigned int &N, const double &min, const double &max);
@@ -47,8 +45,7 @@ namespace AmpGen
     double m_max;
   };
 
-  class Spline : public IExpression
-  {
+  class Spline : public IExpression {
   public:
     Spline(const std::string &name, const size_t &nKnots, const double &min, const double &max);
 

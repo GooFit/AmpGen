@@ -42,8 +42,7 @@
   */
 
 #define DECLARE_LINESHAPE(X)                                                                                                                                   \
-  class X : public AmpGen::Lineshape::Base                                                                                                                     \
-  {                                                                                                                                                            \
+  class X : public AmpGen::Lineshape::Base {                                                                                                                   \
     static std::string _id;                                                                                                                                    \
                                                                                                                                                                \
   public:                                                                                                                                                      \
@@ -55,8 +54,7 @@
 
 #define DEFINE_LINESHAPE(X)                                                                                                                                    \
   REGISTER_WITH_KEY(Lineshape::Base, Lineshape::X, #X, std::string);                                                                                           \
-  AmpGen::Expression Lineshape::X::get(const AmpGen::Particle &p, const std::string &lineshapeModifier, AmpGen::DebugSymbols *dbexpressions) const             \
-  {                                                                                                                                                            \
+  AmpGen::Expression Lineshape::X::get(const AmpGen::Particle &p, const std::string &lineshapeModifier, AmpGen::DebugSymbols *dbexpressions) const {           \
     return get(p.massSq(), p.daughter(0)->massSq(), p.daughter(1)->massSq(), p.name(), p.L(), lineshapeModifier, dbexpressions);                               \
   }                                                                                                                                                            \
   AmpGen::Expression Lineshape::X::get(const AmpGen::Expression &s, const AmpGen::Expression &s1, const AmpGen::Expression &s2,                                \
@@ -67,14 +65,12 @@
   REGISTER_WITH_KEY(Lineshape::Base, Lineshape::X, #X, std::string);                                                                                           \
   AmpGen::Expression Lineshape::X::get(const AmpGen::Expression &s, const AmpGen::Expression &s1, const AmpGen::Expression &s2,                                \
                                        const std::string &particleName, const unsigned int &L, const std::string &lineshapeModifier,                           \
-                                       AmpGen::DebugSymbols *dbexpressions) const                                                                              \
-  {                                                                                                                                                            \
+                                       AmpGen::DebugSymbols *dbexpressions) const {                                                                            \
     return 0;                                                                                                                                                  \
   }                                                                                                                                                            \
   AmpGen::Expression Lineshape::X::get(const AmpGen::Particle &p, const std::string &lineshapeModifier, AmpGen::DebugSymbols *dbexpressions) const
 
-namespace AmpGen
-{
+namespace AmpGen {
   class Particle; // forward definitions
 
   /** @ingroup Lineshapes namespace Lineshape
@@ -82,10 +78,8 @@ namespace AmpGen
      amplitude.
    */
 
-  namespace Lineshape
-  {
-    class Base
-    {
+  namespace Lineshape {
+    class Base {
     public:
       virtual ~Base() = default;
       virtual Expression get(const Expression &s, const Expression &s1, const Expression &s2, const std::string &particleName, const unsigned &L,
@@ -94,8 +88,7 @@ namespace AmpGen
       Base *create() { return this; }
     };
 
-    class Factory : public AmpGen::Factory<Lineshape::Base>
-    {
+    class Factory : public AmpGen::Factory<Lineshape::Base> {
     public:
       static Expression get(const std::string &lineshape, const Expression &s, const Expression &s1, const Expression &s2, const std::string &particleName,
                             const unsigned &L, std::vector<std::pair<std::string, Expression>> *dbexpressions = nullptr);

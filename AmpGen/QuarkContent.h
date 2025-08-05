@@ -6,10 +6,8 @@
 #include <map>
 #include <vector>
 
-namespace AmpGen
-{
-  class QuarkState
-  {
+namespace AmpGen {
+  class QuarkState {
   private:
     static std::array<char, 6> gNames;
     static std::map<char, int> gPositions;
@@ -33,8 +31,7 @@ namespace AmpGen
     int operator[](const size_t &index) const;
   };
 
-  class QuarkContent
-  {
+  class QuarkContent {
   private:
     std::vector<QuarkState> m_quarks;
 

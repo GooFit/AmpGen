@@ -15,8 +15,7 @@
 
 using namespace AmpGen;
 
-DEFINE_LINESHAPE(FOCUS)
-{
+DEFINE_LINESHAPE(FOCUS) {
   const Expression I = Constant(0, 1);
   const Expression sInGeV = s / (GeV * GeV);
   const double mK = ParticlePropertiesList::get("K+")->mass();
@@ -76,9 +75,8 @@ DEFINE_LINESHAPE(FOCUS)
     return K12 / del;
   else if(lineshapeModifier == "I32")
     return T32;
-  else
-    {
-      ERROR("P-vector component : " << lineshapeModifier << " is not recognised");
-      return 1;
-    }
+  else {
+    ERROR("P-vector component : " << lineshapeModifier << " is not recognised");
+    return 1;
+  }
 }

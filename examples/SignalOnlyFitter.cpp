@@ -44,9 +44,8 @@ using namespace AmpGen;
 
 template <typename PDF> FitResult *doFit(PDF &&pdf, EventList_type &data, EventList_type &mc, MinuitParameterSet &MPS);
 
-int main(int argc, char *argv[])
-{
-  using strings = std::vector<std::string>; 
+int main(int argc, char *argv[]) {
+  using strings = std::vector<std::string>;
   /* The user specified options must be loaded at the beginning of the programme,
      and these can be specified either at the command line or in an options file. */
   OptionsParser::setArgs(argc, argv);
@@ -56,12 +55,13 @@ int main(int argc, char *argv[])
      then the default value, and then the help string that will be printed if --h is specified
      as an option. */
   std::string dataFile = Property<std::string>(nullptr, "DataSample", "", "Name of file containing data sample to fit.");
-  std::string intFile = Property<std::string> (nullptr, "IntegrationSample", "", "Name of file containing events to use for MC integration.");
-  std::string logFile = Property<std::string> (nullptr, "LogFile", "Fitter.log", "Name of the output log file");
+  std::string intFile = Property<std::string>(nullptr, "IntegrationSample", "", "Name of file containing events to use for MC integration.");
+  std::string logFile = Property<std::string>(nullptr, "LogFile", "Fitter.log", "Name of the output log file");
   std::string plotFile = Property<std::string>(nullptr, "Plots", "plots.root", "Name of the output plot file");
 
-  auto bNames = Property<strings>(nullptr, "Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"); 
-  auto pNames = Property<strings>(nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"); 
+  auto bNames
+    = Property<strings>(nullptr, "Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m");
+  auto pNames = Property<strings>(nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m");
 
   [[maybe_unused]] size_t nThreads = Property<size_t>(nullptr, "nCores", 8, "Number of threads to use");
   size_t seed = Property<size_t>(nullptr, "Seed", 1, "Random seed used");
@@ -69,10 +69,8 @@ int main(int argc, char *argv[])
   std::string outOptFile = Property<std::string>(nullptr, "OutputOptionFile", "", "Name of output option file updated with the best-fit parameters");
   std::string inOptFile = Property<std::string>(nullptr, "InputOptionFile", "", "Name of input option file to use as template for OutputOptionFile");
 
-  if(dataFile == "")
-    FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off);
-  if(pNames.value().size() == 0)
-    FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
+  if(dataFile == "") FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off);
+  if(pNames.value().size() == 0) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);
 
   TRandom3 rndm;
   rndm.SetSeed(seed);
@@ -130,14 +128,12 @@ int main(int argc, char *argv[])
 
   fr->addFractions(fitFractions);
   fr->writeToFile(logFile);
-  if(outOptFile != "")
-    fr->writeOptions(outOptFile, inOptFile);
+  if(outOptFile != "") fr->writeOptions(outOptFile, inOptFile);
   INFO("Writing file..");
   output->Close();
 }
 
-template <typename likelihoodType> FitResult *doFit(likelihoodType &&likelihood, EventList_type &data, EventList_type &mc, MinuitParameterSet &MPS)
-{
+template <typename likelihoodType> FitResult *doFit(likelihoodType &&likelihood, EventList_type &data, EventList_type &mc, MinuitParameterSet &MPS) {
   auto time_wall = std::chrono::high_resolution_clock::now();
   auto time = std::clock();
   /* Minimiser is a general interface to Minuit1/Minuit2,
@@ -165,13 +161,12 @@ template <typename likelihoodType> FitResult *doFit(likelihoodType &&likelihood,
   auto evaluator = likelihood.componentEvaluator(&mc);
   auto evaluator_per_component = std::get<0>(likelihood.pdfs()).componentEvaluator(&mc);
   auto projections = data.eventType().defaultProjections(100);
-  for(const auto &proj : projections)
-    {
-      proj(mc, evaluator, PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
-      if(Property<bool>(nullptr, "AllComponents", true))
-        proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
-      proj(data, PlotOptions::Prefix("Data"))->Write();
-    }
+  for(const auto &proj : projections) {
+    proj(mc, evaluator, PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
+    if(Property<bool>(nullptr, "AllComponents", true))
+      proj(mc, evaluator_per_component, PlotOptions::Prefix("amp"), PlotOptions::Norm(data.size()), PlotOptions::AutoWrite());
+    proj(data, PlotOptions::Prefix("Data"))->Write();
+  }
   auto root_fr = mini.fitResult();
   auto x = new TFitResult(root_fr);
   x->SetName("FitResult");
