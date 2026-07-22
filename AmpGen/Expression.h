@@ -105,7 +105,7 @@
 namespace AmpGen {
   class ASTResolver;
   class Expression;
-  class Parameter;
+  class Variable;
 
   typedef std::pair<std::string, Expression> DebugSymbol;
   typedef std::vector<DebugSymbol> DebugSymbols;
@@ -177,9 +177,9 @@ namespace AmpGen {
    such as masses and widths, as well as the event buffer (i.e. kinematic quantities), which should be stored in
    two separated parameter packs. There is also limited support for handling more complex function parameters to functions,
    such as cache states, but this currently requires manually specifying the argument ordering. */
-  class Parameter : public IExpression {
+  class Variable : public IExpression {
   public:
-    Parameter(const std::string &name = "", const double &defaultValue = 0, const bool &resolved = false);
+    Variable(const std::string &name = "", const double &defaultValue = 0, const bool &resolved = false);
     std::string to_string(const ASTResolver *resolver = nullptr) const override;
     void resolve(ASTResolver &resolver) const override;
     virtual operator Expression() const;
@@ -195,17 +195,17 @@ namespace AmpGen {
     bool m_resolved;
   };
 
-  class ComplexParameter : public IExpression {
+  class ComplexVariable : public IExpression {
   public:
-    ComplexParameter(const Parameter &real, const Parameter &imag);
+    ComplexVariable(const Variable &real, const Variable &imag);
     std::string to_string(const ASTResolver *resolver = nullptr) const override;
     void resolve(ASTResolver &resolver) const override;
     operator Expression() const;
     complex_t operator()() const override;
 
   private:
-    Parameter m_real;
-    Parameter m_imag;
+    Variable m_real;
+    Variable m_imag;
   };
   /** @ingroup ExpressionEngine class LambdaExpression
       @brief Parameter that the value of which is given by some arbitrary C++ function
@@ -286,7 +286,7 @@ namespace AmpGen {
   ///  Base class for binary expressions, i.e. those that take a pair of arguments (such as \f$+,-,\times,/\f$)
   class IBinaryExpression : public IExpression {
   public:
-    IBinaryExpression(const Expression &l, const Expression &r) : lval(l), rval(r){};
+    IBinaryExpression(const Expression &l, const Expression &r) : lval(l), rval(r) {};
     IBinaryExpression(const Expression &pack) {
       auto as_pack = static_cast<const ExpressionPack *>(pack.get());
       if(as_pack != nullptr) {
@@ -362,7 +362,7 @@ namespace AmpGen {
   ///  Base class for unary expressions, i.e. those that take a single argument.
   class IUnaryExpression : public IExpression {
   public:
-    IUnaryExpression(const Expression &other) : m_expression(other){};
+    IUnaryExpression(const Expression &other) : m_expression(other) {};
     void resolve(ASTResolver &resolver) const override;
     complex_t operator()() const override = 0;
     virtual Expression d() const = 0;

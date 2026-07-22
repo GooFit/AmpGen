@@ -28,7 +28,7 @@
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/DiracMatrices.h"
 #include "AmpGen/simd/utils.h"
-#include "AmpGen/OptionsParser.h" 
+#include "AmpGen/OptionsParser.h"
 
 using namespace AmpGen;
 using namespace std::complex_literals;
@@ -97,21 +97,21 @@ PolarisedSum::PolarisedSum(const EventType &type, MinuitParameterSet &mps, const
   }
   if(m_pVector.size() == 0) {
     auto p = [this](const std::string &name) { return this->m_mps->addOrGet(name, Flag::Fix, 0, 0); };
-    if(m_dim.first == 1)
-      m_pVector = {};
-    else if(m_dim.first == 2)
+    // if(m_dim.first == 1)
+    //   m_pVector = {};
+    if(m_dim.first == 2)
       m_pVector = {p("Px"), p("Py"), p("Pz")};
     else if(m_dim.first == 3)
       m_pVector = {p("Px"), p("Py"), p("Pz"), p("Tyy"), p("Tzz"), p("Txy"), p("Txz"), p("Tyz")};
   }
   m_polParam = mps.find("polFrac");
-  if(m_polParam != nullptr) m_pfVector = {m_polParam};
+  if(m_polParam.isValid()) m_pfVector = {m_polParam};
 
   for(size_t i = 0; i < m_dim.second * m_dim.first * m_dim.first; ++i) m_norms.emplace_back(m_matrixElements.size(), m_matrixElements.size());
 
   DebugSymbols db;
-  auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector, [](auto &p) { return Parameter(p->name()); }),
-                             convertProxies(m_pfVector, [](auto &p) { return Parameter(p->name()); }), m_verbose ? &db : nullptr);
+  auto prob = probExpression(transitionMatrix(), convertProxies(m_pVector, [](auto &p) { return Variable(p->name()); }),
+                             convertProxies(m_pfVector, [](auto &p) { return Variable(p->name()); }), m_verbose ? &db : nullptr);
   m_probExpression = make_expression<real_v, real_t, complex_v>(prob, "prob_unnormalised", m_mps, this->m_verbose ? db : DebugSymbols());
 }
 
@@ -216,7 +216,7 @@ Tensor PolarisedSum::transitionMatrix() const {
     auto coupling = me.coupling.to_expression();
     // INFO( me.decayDescriptor() << " " << coupling );
     auto cacheIndex = totalSize;
-    for(size_t i = 0; i < size; ++i) { expressions[i] = expressions[i] + coupling * Parameter("x1[" + std::to_string(cacheIndex + i) + "]", 0, true); }
+    for(size_t i = 0; i < size; ++i) { expressions[i] = expressions[i] + coupling * Variable("x1[" + std::to_string(cacheIndex + i) + "]", 0, true); }
     totalSize += size;
   }
   Tensor T_matrix(expressions, {m_dim.first, m_dim.second});
@@ -314,7 +314,7 @@ void PolarisedSum::generateSourceCode(const std::string &fname, const double &no
   functions.push_back(new CompiledExpression<std::vector<complex_t>(const real_t *, const real_t *)>(
     TensorExpression(rt), "all_amplitudes", m_eventType.getEventFormat(), includeParameters(), m_mps, disableBatch(), includePythonBindings()));
 
-  Expression event = Parameter("x0", 0, true);
+  Expression event = Variable("x0", 0, true);
   Tensor T_matrix(Tensor::Dim(m_dim.first, m_dim.second));
   auto ampTensor = Array(make_cse(Function("all_amplitudes_wParams", {event})), -1);
   std::string matrixElementNames;
@@ -336,7 +336,7 @@ void PolarisedSum::generateSourceCode(const std::string &fname, const double &no
   functions.push_back(new CompiledExpression<double(const double *, const int &)>(amp / normalisation, "FCN", m_mps, disableBatch(), includePythonBindings()));
 
   if(m_dim.first > 1) {
-    auto amp_extPol = probExpression(T_matrix, {Parameter("x2", 0, true), Parameter("x3", 0, true), Parameter("x4", 0, true)}, {});
+    auto amp_extPol = probExpression(T_matrix, {Variable("x2", 0, true), Variable("x3", 0, true), Variable("x4", 0, true)}, {});
     functions.push_back(new CompiledExpression<double(const double *, const int &, const double &, const double &, const double &)>(
       amp_extPol / normalisation, "FCN_extPol", m_mps, disableBatch()));
   }

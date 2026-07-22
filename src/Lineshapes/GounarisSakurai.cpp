@@ -26,9 +26,9 @@ Expression logTerm(const Expression &s) {
 
 DEFINE_LINESHAPE(GounarisSakurai) {
   auto props = ParticlePropertiesList::get(particleName);
-  Expression mass = Parameter(particleName + "_mass", props->mass());
-  Expression radius = Parameter(particleName + "_radius", props->radius());
-  Expression width0 = Parameter(particleName + "_width", props->width());
+  Expression mass = Variable(particleName + "_mass", props->mass());
+  Expression radius = Variable(particleName + "_radius", props->radius());
+  Expression width0 = Variable(particleName + "_width", props->width());
 
   Expression s0 = mass * mass;
 

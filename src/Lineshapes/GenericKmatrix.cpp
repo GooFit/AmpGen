@@ -39,7 +39,7 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix) {
   auto particleName = p.name();
   auto s = p.massSq();
   auto props = ParticlePropertiesList::get(particleName);
-  Expression mass = Parameter(particleName + "_mass", props->mass());
+  Expression mass = Variable(particleName + "_mass", props->mass());
   unsigned nPoles = Property<unsigned>(this, particleName + "::kMatrix::nPoles");
   std::vector<std::string> channels = Property<std::vector<std::string>>(this, particleName + "::kMatrix::channels");
   auto const pa_type = Property<PA_TYPE>(this, particleName + "::kMatrix::production_amplitude", PA_TYPE::PVec);
@@ -64,14 +64,14 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix) {
   std::vector<poleConfig> poleConfigs;
   for(unsigned pole = 1; pole <= nPoles; ++pole) {
     std::string stub = particleName + "::pole::" + std::to_string(pole);
-    Expression mass = Parameter(stub + "::mass");
+    Expression mass = Variable(stub + "::mass");
     DEBUG("Will link to parameter: " << stub + "::mass");
     poleConfig thisPole(mass * mass);
     if(dbexpressions != nullptr) dbexpressions->emplace_back(stub + "::mass", mass);
     Expression bw_width = 0;
     Expression bw_width0 = 0;
     for(unsigned channel = 1; channel <= nChannels; ++channel) {
-      Expression g = Parameter(stub + "::g::" + std::to_string(channel));
+      Expression g = Variable(stub + "::g::" + std::to_string(channel));
       DEBUG("Will link to parameter: " << stub + "::g::" + std::to_string(channel));
       thisPole.add(g, 1);
       if(dbexpressions != nullptr) dbexpressions->emplace_back(stub + "::g::" + std::to_string(channel), g);
@@ -80,7 +80,7 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix) {
     }
     if(dbexpressions != nullptr) {
       for(unsigned channel = 1; channel <= nChannels; ++channel) {
-        Expression g = Parameter(stub + "::g::" + std::to_string(channel));
+        Expression g = Variable(stub + "::g::" + std::to_string(channel));
         Expression BR = g * g * bw_phase_space[channel - 1] / (mass * bw_width0);
         ADD_DEBUG(BR, dbexpressions);
       }
@@ -97,12 +97,12 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix) {
       auto c2 = std::to_string(ch2);
       if(ch1 > ch2) std::swap(c1, c2);
       std::string nrShape = Property<std::string>(this, particleName + "::" + c1 + "::" + c2 + "::nrShape", "flat");
-      Expression f1 = Parameter(particleName + "::f1::" + c1 + "::" + c2, 0);
+      Expression f1 = Variable(particleName + "::f1::" + c1 + "::" + c2, 0);
       if(nrShape == "flat")
         non_resonant[{ch1 - 1, ch2 - 1}] = f1;
       else if(nrShape == "pole") {
-        Expression f2 = Parameter(particleName + "::f2::" + c1 + "::" + c2, 0);
-        Expression s0 = Parameter(particleName + "::s0::" + c1 + "::" + c2, 0);
+        Expression f2 = Variable(particleName + "::f2::" + c1 + "::" + c2, 0);
+        Expression s0 = Variable(particleName + "::s0::" + c1 + "::" + c2, 0);
         non_resonant[{ch1 - 1, ch2 - 1}] = (f1 + f2 * sqrt(s)) / (s - s0);
       } else
         WARNING("Unknown shape: " << nrShape);
@@ -122,10 +122,10 @@ DEFINE_GENERIC_SHAPE(GenericKmatrix) {
   // communication)
   if(pa_type == PA_TYPE::PVec) {
     std::vector<Expression> P(nChannels, 0), a(nChannels, 0), phi(nChannels, 0); // the P-vector, a and phi coefficients
-    Expression s_0 = Parameter(particleName + "::s0");
+    Expression s_0 = Variable(particleName + "::s0");
     Expression F_0 = 0; // the object we'll return later: the production amplitude in the 0th channel
     // get the coefficients first
-    for(unsigned k = 0; k < nChannels; ++k) a[k] = Parameter(particleName + "::a::" + std::to_string(k + 1));
+    for(unsigned k = 0; k < nChannels; ++k) a[k] = Variable(particleName + "::a::" + std::to_string(k + 1));
     // now start loop to calculate the production amplitude
     for(unsigned k = 0; k < nChannels; ++k) {
       for(unsigned alpha = 0; alpha < nPoles; ++alpha) {

@@ -16,9 +16,9 @@
 #include "AmpGen/ExpressionParser.h"
 #include "AmpGen/Property.h"
 #include "AmpGen/Configurable.h"
+#include "AmpGen/MinuitParameter.h"
 
 namespace AmpGen {
-  class MinuitParameter;
   class MinuitExpression;
   class MinuitParameterSet;
 
@@ -27,15 +27,15 @@ namespace AmpGen {
     CouplingConstant() = default;
     virtual ~CouplingConstant() = default;
 
-    CouplingConstant(MinuitParameter *re, MinuitParameter *im);
+    CouplingConstant(MinuitProxy re, MinuitProxy im);
     CouplingConstant(MinuitExpression *expression);
     CouplingConstant(const Particle &particle, double f);
     std::string name() const { return m_name; }
     std::string head() const { return m_particle.name(); }
     std::string prefix() const { return m_prefix; }
     EventType eventType() const;
-    MinuitParameter *x() const { return m_re; }
-    MinuitParameter *y() const { return m_im; }
+    MinuitProxy x() const { return m_re; }
+    MinuitProxy y() const { return m_im; }
     complex_t operator()() const;
     Expression to_expression() const;
     const Particle &particle() const { return m_particle; }
@@ -45,8 +45,8 @@ namespace AmpGen {
   private:
     std::string m_prefix{""};
     std::string m_name{""};
-    MinuitParameter *m_re{nullptr};
-    MinuitParameter *m_im{nullptr};
+    MinuitProxy m_re{nullptr};
+    MinuitProxy m_im{nullptr};
     MinuitExpression *m_expr{nullptr};
     Particle m_particle;
     Property<coordinateType> m_coord{this, "CouplingConstant::Coordinates", coordinateType::cartesian};

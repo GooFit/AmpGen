@@ -20,8 +20,6 @@
 using namespace AmpGen;
 using namespace std::complex_literals;
 
-DEFINE_CAST(MinuitParameterLink)
-
 namespace AmpGen {
   complete_enum(coordinateType, cartesian, polar) complete_enum(angType, deg, rad)
 }
@@ -167,9 +165,7 @@ ExpressionParser::ExpressionParser() {
   }
   if(degOrRad == angType::deg)
     m_sf = M_PI / 180;
-  else if(degOrRad != angType::rad) {
-    FATAL("CouplingConstant::AngularUnits must be either rad or deg");
-  }
+  else if(degOrRad != angType::rad) { FATAL("CouplingConstant::AngularUnits must be either rad or deg"); }
 }
 
 Expression
@@ -177,10 +173,10 @@ ExpressionParser::parse(std::vector<std::string>::const_iterator begin, std::vec
   auto parsed = getMe()->parseTokens(begin, end, mps);
   ASTResolver resolver({}, mps);
   parsed.resolve(resolver);
-  if(resolver.unresolvedParameters().size() != 0) {
+  if(resolver.unresolvedVariables().size() != 0) {
     auto expr = vectorToString(begin, end, " ", [](const auto &str) { return str; });
     ERROR("Expression: " << expr << " contains unknown parameters:");
-    for(const auto &parameter : resolver.unresolvedParameters()) ERROR(parameter.name());
+    for(const auto &parameter : resolver.unresolvedVariables()) ERROR(parameter.name());
   }
   return parsed;
 }
@@ -200,49 +196,17 @@ Expression ExpressionParser::processEndPoint(const std::string &name, const Minu
   if(name == "e") return std::exp(1);
   if(name == "I" || name == "i") return complex_t(0, 1);
   if(mps != nullptr) {
-    auto it = mps->find(name);
-    if(it != nullptr)
-      return MinuitParameterLink(it);
-    else if(mps->find(name + "_Re") != nullptr && mps->find(name + "_Im") != nullptr) {
+    MinuitProxy it = mps->find(name);
+    if(it.isValid())
+      return ExpressionParameter(it);
+    else if(mps->find(name + "_Re").isValid() && mps->find(name + "_Im").isValid()) {
       if(m_isCartesian)
-        return MinuitParameterLink(mps->find(name + "_Re")) + 1i * MinuitParameterLink(mps->find(name + "_Im"));
+        return ExpressionParameter(mps->find(name + "_Re")) + 1i * ExpressionParameter(mps->find(name + "_Im"));
       else
-        return MinuitParameterLink(mps->find(name + "_Re")) * fcn::exp(m_sf * 1i * MinuitParameterLink(mps->find(name + "_Im")));
+        return ExpressionParameter(mps->find(name + "_Re")) * fcn::exp(m_sf * 1i * ExpressionParameter(mps->find(name + "_Im")));
     } else {
       DEBUG("Token not understood: " << name << " [map size = " << mps->size() << "]");
     }
   }
-  return Parameter(name);
+  return Variable(name);
 }
-
-MinuitParameterLink::MinuitParameterLink(MinuitParameter *param) : m_parameter(param) {}
-
-std::string MinuitParameterLink::to_string(const ASTResolver *resolver) const {
-  auto as_expression = dynamic_cast<const MinuitExpression *>(this->m_parameter);
-  if(as_expression != nullptr) return as_expression->expression().to_string(resolver);
-
-  if(resolver == nullptr and m_parameter != nullptr) return m_parameter->name();
-  if(m_parameter != nullptr && m_parameter->flag() == Flag::CompileTimeConstant)
-    return std::to_string(m_parameter->mean());
-  return resolver->resolvedParameter(this);
-}
-
-std::string MinuitParameterLink::name() const { return m_parameter->name(); }
-
-void MinuitParameterLink::resolve(ASTResolver &resolver) const {
-  if(m_parameter != nullptr) {
-    auto as_expression = dynamic_cast<const MinuitExpression *>(this->m_parameter);
-    if(as_expression != nullptr) return as_expression->expression().resolve(resolver);
-    if(m_parameter->flag() != Flag::CompileTimeConstant) resolver.resolve(*this);
-  }
-}
-
-complex_t MinuitParameterLink::operator()() const {
-  if(m_parameter == nullptr) {
-    ERROR("Parameter does not have end-point");
-    return complex_t(0., 0.);
-  }
-  return m_parameter->mean();
-}
-
-const MinuitParameter &MinuitParameterLink::param() const { return *m_parameter; }

@@ -23,11 +23,11 @@ using namespace std::complex_literals;
 
 DEFINE_CAST(Constant)
 DEFINE_CAST(ExpressionPack)
-DEFINE_CAST(Parameter)
+DEFINE_CAST(Variable)
 DEFINE_CAST(SubTree)
 DEFINE_CAST(Ternary)
 DEFINE_CAST(Function)
-DEFINE_CAST(ComplexParameter)
+DEFINE_CAST(ComplexVariable)
 DEFINE_CAST(LambdaExpression)
 
 Expression::Expression(const std::shared_ptr<IExpression> &expression) : m_expression(expression) {}
@@ -147,12 +147,12 @@ Expression AmpGen::operator||(const Expression &A, const Expression &B) { return
 Expression AmpGen::operator<=(const Expression &A, const Expression &B) { return LessThanEqualTo(A, B); }
 Expression AmpGen::operator>=(const Expression &A, const Expression &B) { return GreaterThanEqualTo(A, B); }
 
-Parameter::Parameter(const std::string &name, const double &defaultValue, const bool &resolved)
+Variable::Variable(const std::string &name, const double &defaultValue, const bool &resolved)
     : m_name(name), m_defaultValue(defaultValue), m_resolved(resolved) {}
 
-std::string Parameter::to_string(const ASTResolver *resolver) const {
+std::string Variable::to_string(const ASTResolver *resolver) const {
   if(m_resolved || resolver == nullptr) { return m_name; }
-  return resolver->resolvedParameter(this);
+  return resolver->resolvedVariable(this);
 }
 
 Expression AmpGen::operator<(const Expression &A, const Expression &B) { return Expression(LessThan(A, B)); }
@@ -186,7 +186,7 @@ void Expression::resolve(ASTResolver &resolver) const { m_expression->resolve(re
 
 void Constant::resolve(ASTResolver &resolver) const {}
 
-void Parameter::resolve(ASTResolver &resolver) const {
+void Variable::resolve(ASTResolver &resolver) const {
   if(!m_resolved) resolver.resolve(*this);
 }
 
@@ -220,7 +220,7 @@ std::string SubTree::to_string(const ASTResolver * /*resolver*/) const { return 
 void SubTree::resolve(ASTResolver &resolver) const { resolver.resolve(*this); }
 
 Expression AmpGen::make_cse(const Expression &A, bool simplify) {
-  if(is<Constant>(A) || is<Parameter>(A) || is<SubTree>(A)) return A;
+  if(is<Constant>(A) || is<Variable>(A) || is<SubTree>(A)) return A;
   SubTree cse = SubTree(A);
   if(!simplify) return Expression(cse);
   auto ordered = Expression(NormalOrderedExpression(A));
@@ -243,7 +243,7 @@ Expression AmpGen::fcn::asin(const Expression &expression) { return simplify_con
 Expression AmpGen::fcn::atan(const Expression &expression) { return simplify_constant_unary<ATan>(expression); }
 Expression AmpGen::fcn::atan2(const Expression &y, const Expression &x) { return ATan2(y, x); }
 
-Expression AmpGen::fcn::conj(const Expression &expression) { return is<Parameter>(expression) ? expression : simplify_constant_unary<Conj>(expression); }
+Expression AmpGen::fcn::conj(const Expression &expression) { return is<Variable>(expression) ? expression : simplify_constant_unary<Conj>(expression); }
 Expression AmpGen::fcn::norm(const Expression &expression) { return simplify_constant_unary<Norm>(expression); }
 Expression AmpGen::fcn::exp(const Expression &expression) { return simplify_constant_unary<Exp>(expression); }
 Expression AmpGen::fcn::log(const Expression &expression) { return simplify_constant_unary<Log>(expression); }
@@ -277,23 +277,23 @@ Expression AmpGen::fcn::fpow(const Expression &x, const int &n) {
   return rt;
 }
 
-ComplexParameter::ComplexParameter(const Parameter &real, const Parameter &imag) : m_real(real), m_imag(imag) {}
+ComplexVariable::ComplexVariable(const Variable &real, const Variable &imag) : m_real(real), m_imag(imag) {}
 
-std::string ComplexParameter::to_string(const ASTResolver *resolver) const {
+std::string ComplexVariable::to_string(const ASTResolver *resolver) const {
   std::string complex_type = type_string<complex_t>();
   if(resolver != nullptr && (resolver->enableCuda() || resolver->enableAVX())) complex_type = type_string<complex_v>();
   return complex_type + "(" + m_real.to_string(resolver) + ", " + m_imag.to_string(resolver) + ")";
 }
 
-void ComplexParameter::resolve(ASTResolver &resolver) const {
+void ComplexVariable::resolve(ASTResolver &resolver) const {
   m_real.resolve(resolver);
   m_imag.resolve(resolver);
 }
 
-complex_t ComplexParameter::operator()() const { return m_real() + 1i * m_imag(); }
+complex_t ComplexVariable::operator()() const { return m_real() + 1i * m_imag(); }
 
 std::string LambdaExpression::to_string(const ASTResolver *resolver) const {
-  return resolver == nullptr ? programatic_name(m_name) : resolver->resolvedParameter(this);
+  return resolver == nullptr ? programatic_name(m_name) : resolver->resolvedVariable(this);
 }
 
 complex_t LambdaExpression::operator()() const { return m_function(); }

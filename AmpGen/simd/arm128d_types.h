@@ -57,7 +57,7 @@ namespace AmpGen {
       inline real_v operator/=(const real_v &rhs);
     };
     struct int_v {
-      int_v(uint64x2_t &&data) : data(data){};
+      int_v(uint64x2_t &&data) : data(data) {};
       uint64x2_t data;
       operator uint64x2_t() const { return data; }
     };

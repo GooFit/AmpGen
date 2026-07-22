@@ -39,14 +39,14 @@ namespace AmpGen {
     typedef Event value_type;
     EventList() = default;
     EventList(const EventType &type);
-    template <class... ARGS> EventList(const std::string &fname, const EventType &evtType, const ARGS &... args) : EventList(evtType) {
+    template <class... ARGS> EventList(const std::string &fname, const EventType &evtType, const ARGS &...args) : EventList(evtType) {
       loadFromFile(fname, ArgumentPack(args...));
     }
-    template <class... ARGS> EventList(const std::string &fname, const ARGS &... args) : EventList() { loadFromFile(fname, ArgumentPack(args...)); }
-    template <class... ARGS> EventList(const std::vector<std::string> &fname, const EventType &evtType, const ARGS &... args) : EventList(evtType) {
+    template <class... ARGS> EventList(const std::string &fname, const ARGS &...args) : EventList() { loadFromFile(fname, ArgumentPack(args...)); }
+    template <class... ARGS> EventList(const std::vector<std::string> &fname, const EventType &evtType, const ARGS &...args) : EventList(evtType) {
       for(auto &f : fname) loadFromFile(f, ArgumentPack(args...));
     }
-    template <class... ARGS> EventList(TTree *tree, const EventType &evtType, const ARGS &... args) : EventList(evtType) {
+    template <class... ARGS> EventList(TTree *tree, const EventType &evtType, const ARGS &...args) : EventList(evtType) {
       loadFromTree(tree, ArgumentPack(args...));
     }
     const EventList &store() const { return *this; }
@@ -98,24 +98,24 @@ namespace AmpGen {
     TH2D *makeProjection(const Projection2D &projection, const ArgumentPack &args = ArgumentPack()) const;
     std::vector<TH1D *> makeProjections(const std::vector<Projection> &projections, const ArgumentPack &args);
 
-    template <class... ARGS> std::vector<TH1D *> makeDefaultProjections(const ARGS &... args) {
+    template <class... ARGS> std::vector<TH1D *> makeDefaultProjections(const ARGS &...args) {
       auto argPack = ArgumentPack(args...);
       size_t nBins = argPack.getArg<PlotOptions::Bins>(100);
       auto proj = eventType().defaultProjections(nBins);
       return makeProjections(proj, argPack);
     }
 
-    template <typename... ARGS> std::vector<TH1D *> makeProjections(const std::vector<Projection> &projections, const ARGS &... args) {
+    template <typename... ARGS> std::vector<TH1D *> makeProjections(const std::vector<Projection> &projections, const ARGS &...args) {
       return makeProjections(projections, ArgumentPack(args...));
     }
 
     template <typename... ARGS, typename = std::enable_if_t<!std::is_same<zeroType<ARGS...>, ArgumentPack>::value>>
-    TH1D *makeProjection(const Projection &projection, const ARGS &... args) const {
+    TH1D *makeProjection(const Projection &projection, const ARGS &...args) const {
       return makeProjection(projection, ArgumentPack(args...));
     }
 
     template <typename... ARGS, typename = std::enable_if_t<!std::is_same<zeroType<ARGS...>, ArgumentPack>::value>>
-    TH2D *makeProjection(const Projection2D &projection, const ARGS &... args) {
+    TH2D *makeProjection(const Projection2D &projection, const ARGS &...args) {
       return makeProjection(projection, ArgumentPack(args...));
     }
 

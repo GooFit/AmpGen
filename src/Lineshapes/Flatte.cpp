@@ -15,8 +15,8 @@ Expression aSqrtTerm(const Expression &s, const Expression &m0) {
 Expression fSqrtTerm(const Expression &s, const Expression &m0) { return complex_sqrt(1.0 - 4 * m0 * m0 / s); }
 DEFINE_LINESHAPE(Flatte) {
   auto props = ParticlePropertiesList::get(particleName);
-  Expression mass = Parameter(particleName + "_mass", props->mass());
-  Expression radius = Parameter(particleName + "_radius", props->radius());
+  Expression mass = Variable(particleName + "_mass", props->mass());
+  Expression radius = Variable(particleName + "_radius", props->radius());
   Expression width = 0;
   double mKPlus = ParticlePropertiesList::get("K+")->mass();
   double mPiPlus = ParticlePropertiesList::get("pi+")->mass();
@@ -25,8 +25,8 @@ DEFINE_LINESHAPE(Flatte) {
   if(particleName == "f(0)(980)0") {
     double mPi0 = ParticlePropertiesList::get("pi0")->mass();
     double mK0 = ParticlePropertiesList::get("K0")->mass();
-    Expression gPi = Parameter("Flatte::gPi", 0.165);
-    Expression gK_by_gPi = Parameter("Flatte::gK_by_gPi", 4.21);
+    Expression gPi = Variable("Flatte::gPi", 0.165);
+    Expression gK_by_gPi = Variable("Flatte::gK_by_gPi", 4.21);
     Expression Gpipi = (1. / 3.) * fSqrtTerm(s, mPi0) + (2. / 3.) * fSqrtTerm(s, mPiPlus);
     Expression GKK = (1. / 2.) * fSqrtTerm(s, mK0) + (1. / 2.) * fSqrtTerm(s, mKPlus);
     if(lineshapeModifier == "CutKK") GKK = (1. / 2.) * aSqrtTerm(s, mK0) + (1. / 2.) * aSqrtTerm(s, mKPlus);
@@ -34,8 +34,8 @@ DEFINE_LINESHAPE(Flatte) {
     ADD_DEBUG(GKK, dbexpressions);
     width = gPi * (Gpipi + gK_by_gPi * GKK);
   } else if(particleName == "a(0)(980)0") {
-    Expression g2pieta = Parameter("Flatte::g2pieta", 0.175);
-    Expression g2KK_by_g2pieta = Parameter("Flatte::g2KK_by_g2pieta", 1.20);
+    Expression g2pieta = Variable("Flatte::g2pieta", 0.175);
+    Expression g2KK_by_g2pieta = Variable("Flatte::g2KK_by_g2pieta", 1.20);
     double M_pieta = (mPiPlus + mEta) * (mPiPlus + mEta);
     double P_pieta = (mPiPlus - mEta) * (mPiPlus - mEta);
     Expression Gpieta = sqrt((1 - P_pieta / s) * (1 - M_pieta / s));

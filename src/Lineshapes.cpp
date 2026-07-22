@@ -54,7 +54,7 @@ Expression AmpGen::BL(const Expression &s, const Expression &s0, const Expressio
 
 std::vector<Expression> AmpGen::parameterVector(const std::string &name, const size_t &nParam) {
   std::vector<Expression> returnVector;
-  for(size_t i = 0; i != nParam; ++i) returnVector.emplace_back(Parameter(name + std::to_string(i)));
+  for(size_t i = 0; i != nParam; ++i) returnVector.emplace_back(Variable(name + std::to_string(i)));
   return returnVector;
 }
 

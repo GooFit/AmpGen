@@ -130,12 +130,9 @@ EventListSIMD::EventListSIMD(const EventList &other) : EventListSIMD(other.event
   resize(other.size());
   for(unsigned block = 0; block != m_data.nBlocks(); block++) {
     for(unsigned j = 0; j != m_data.nFields(); ++j)
-      m_data(block, j) = utils::gather<real_v>(
-        other, [j](const auto &event) { return event[j]; }, block * real_v::size);
-    m_weights[block] = utils::gather<real_v>(
-      other, [](const auto &event) { return event.weight(); }, block * real_v::size, 0);
-    m_genPDF[block] = utils::gather<real_v>(
-      other, [](const auto &event) { return event.genPdf(); }, block * real_v::size, 1);
+      m_data(block, j) = utils::gather<real_v>(other, [j](const auto &event) { return event[j]; }, block * real_v::size);
+    m_weights[block] = utils::gather<real_v>(other, [](const auto &event) { return event.weight(); }, block * real_v::size, 0);
+    m_genPDF[block] = utils::gather<real_v>(other, [](const auto &event) { return event.genPdf(); }, block * real_v::size, 1);
   }
 }
 

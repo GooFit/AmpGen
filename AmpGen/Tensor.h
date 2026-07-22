@@ -53,7 +53,7 @@ namespace AmpGen {
     Tensor();
     explicit Tensor(const std::vector<Expression> &elements);
     explicit Tensor(const std::vector<unsigned> &dim);
-    explicit Tensor(const Tensor::Dim &dim) : Tensor(std::vector<unsigned>(dim)){};
+    explicit Tensor(const Tensor::Dim &dim) : Tensor(std::vector<unsigned>(dim)) {};
 
     template <class TYPE> Tensor(const std::initializer_list<TYPE> &elements, const std::vector<unsigned> &dim) : m_dim(dim) {
       setupCoordinates();
@@ -129,7 +129,7 @@ namespace AmpGen {
     static std::vector<unsigned> index_to_coordinates(const unsigned &index, const std::vector<unsigned> &dim);
     static unsigned coordinates_to_index(const std::vector<unsigned> &coords, const std::vector<unsigned> &dim);
     static std::string coordinates_to_string(const std::vector<unsigned> &coordinates);
-    template <class... ARGS> static std::vector<unsigned> dim(const ARGS &... args) {
+    template <class... ARGS> static std::vector<unsigned> dim(const ARGS &...args) {
       std::vector<unsigned> rt;
       auto up = std::tuple<ARGS...>(args...);
       for_each(up, [&rt](const unsigned &f) { rt.emplace_back(f); });

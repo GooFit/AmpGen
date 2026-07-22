@@ -17,8 +17,12 @@ using namespace std::complex_literals;
 
 // ENABLE_DEBUG( Lineshape::CoupledChannel );
 
-template <typename T> struct complexified { using value_t = std::complex<T>; };
-template <> struct complexified<Expression> { using value_t = Expression; };
+template <typename T> struct complexified {
+  using value_t = std::complex<T>;
+};
+template <> struct complexified<Expression> {
+  using value_t = Expression;
+};
 
 template <typename T, typename T1, typename T2, typename T3> T H(const T1 &x, const T2 &y, const T3 &z) {
   auto k = (x * x + y * y + z * z - 2. * x * y - 2. * x * z - 2. * z * y);
@@ -118,7 +122,7 @@ Expression AmpGen::phaseSpace(const Expression &s, const Particle &p, const size
     const Expression k2p = Ternary(k2 > 0, k2, 0);
     auto phsp_parameterisation = p.attribute("phsp");
     if(!phsp_parameterisation) {
-      const Expression radius = Parameter(p.name() + "_radius", p.props()->radius());
+      const Expression radius = Variable(p.name() + "_radius", p.props()->radius());
       return rho_twoBody(s, s1, s2) * BlattWeisskopf(k2p * radius * radius, l);
     } else if(phsp_parameterisation == std::string("arXiv.0707.3596")) {
       INFO("Got AS parametrisation");
@@ -148,9 +152,9 @@ Expression AmpGen::phaseSpace(const Expression &s, const Particle &p, const size
 
 DEFINE_LINESHAPE(CoupledChannel) {
   const auto props = ParticlePropertiesList::get(particleName);
-  const Expression mass = Parameter(particleName + "_mass", props->mass());
-  const Expression width = Parameter(particleName + "_width", props->width());
-  const Expression radius = Parameter(particleName + "_radius", props->radius());
+  const Expression mass = Variable(particleName + "_mass", props->mass());
+  const Expression width = Variable(particleName + "_width", props->width());
+  const Expression radius = Variable(particleName + "_radius", props->radius());
   const Expression I = Constant(0., 1.);
   std::vector<std::string> channels = Property<std::vector<std::string>>{this, particleName + "_channels"};
   Expression totalWidth = 0;
@@ -158,7 +162,7 @@ DEFINE_LINESHAPE(CoupledChannel) {
   ADD_DEBUG(s, dbexpressions);
   for(size_t i = 0; i < channels.size(); i += 2) {
     Particle p(channels[i]);
-    Expression coupling = Parameter(channels[i + 1], 0);
+    Expression coupling = Variable(channels[i + 1], 0);
     totalWidth += coupling * phaseSpace(s, p, p.L());
     totalWidthAtPole += coupling * phaseSpace(mass * mass, p, p.L());
     ADD_DEBUG(coupling, dbexpressions);

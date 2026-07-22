@@ -14,8 +14,8 @@ using namespace std::complex_literals;
 
 DEFINE_LINESHAPE(FormFactor) {
   auto props = ParticlePropertiesList::get(particleName);
-  Expression radius = Parameter(particleName + "_radius", props->radius());
-  Expression mass = Parameter(particleName + "_mass", props->mass());
+  Expression radius = Variable(particleName + "_radius", props->radius());
+  Expression mass = Variable(particleName + "_mass", props->mass());
   const Expression q2 = make_cse(Q2(s, s1, s2));
   const Expression q20 = make_cse(Q2(mass * mass, s1, s2));
   int Lp = L;
@@ -39,7 +39,7 @@ DEFINE_LINESHAPE(FormFactor) {
 
 DEFINE_LINESHAPE(ExpFF) {
   auto props = ParticlePropertiesList::get(particleName);
-  Expression radius = Parameter(particleName + "_radius", props->radius());
+  Expression radius = Variable(particleName + "_radius", props->radius());
   const Expression q2 = Q2(s, s1, s2);
   const Expression FormFactor = Exp(-q2 * radius * radius / 2.);
   if(L != 0) {
@@ -58,9 +58,9 @@ DEFINE_LINESHAPE(None) { return Constant(1); }
 DEFINE_LINESHAPE(BW) {
   auto s_cse = make_cse(s);
   auto props = ParticlePropertiesList::get(particleName);
-  const Expression &mass = Parameter(particleName + "_mass", props->mass());
-  const Expression &width0 = Parameter(particleName + "_width", props->width());
-  const Expression &radius = Parameter(particleName + "_radius", props->radius());
+  const Expression &mass = Variable(particleName + "_mass", props->mass());
+  const Expression &width0 = Variable(particleName + "_width", props->width());
+  const Expression &radius = Variable(particleName + "_radius", props->radius());
   const Expression q2 = make_cse(Abs(Q2(s_cse, s1, s2)));
   const Expression q20 = make_cse(Abs(Q2(mass * mass, s1, s2)));
   Expression FormFactor = sqrt(BlattWeisskopf_Norm(q2 * radius * radius, 0, L));
@@ -82,9 +82,9 @@ DEFINE_LINESHAPE(BW) {
 
 DEFINE_LINESHAPE(SBW) {
   auto props = ParticlePropertiesList::get(particleName);
-  Expression mass = Parameter(particleName + "_mass", props->mass());
-  Expression radius = Parameter(particleName + "_radius", props->radius());
-  Expression width0 = Parameter(particleName + "_width", props->width());
+  Expression mass = Variable(particleName + "_mass", props->mass());
+  Expression radius = Variable(particleName + "_radius", props->radius());
+  Expression width0 = Variable(particleName + "_width", props->width());
   const Expression kF = kFactor(mass, width0);
   const Expression BW = 1 / (mass * mass - s - 1i * mass * width0);
   const Expression q2 = make_cse(Abs(Q2(s, s1, s2)));

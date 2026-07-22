@@ -48,18 +48,26 @@ namespace AmpGen {
   using complex_v = AVX::complex_v;
   namespace utils {
     template <typename T> struct is_vector_type : std::false_type {};
-    template <typename T> struct size { static constexpr unsigned value = 1; };
+    template <typename T> struct size {
+      static constexpr unsigned value = 1;
+    };
     template <typename T> struct is_complex_type : std::false_type {};
     template <typename T> struct is_complex_type<AmpGen::Complex<T>> : std::true_type {};
 
 #if INSTRUCTION_SET != 0
     template <> struct is_vector_type<complex_v> : std::true_type {};
     template <> struct is_vector_type<real_v> : std::true_type {};
-    template <> struct size<complex_v> { static constexpr unsigned value = real_v::size; };
-    template <> struct size<real_v> { static constexpr unsigned value = real_v::size; };
+    template <> struct size<complex_v> {
+      static constexpr unsigned value = real_v::size;
+    };
+    template <> struct size<real_v> {
+      static constexpr unsigned value = real_v::size;
+    };
 #endif
 #if INSTRUCTION_SET == INSTRUCTION_SET_ARM128d
-    template <> struct size<AVX::int_v> { static constexpr unsigned value = 2; };
+    template <> struct size<AVX::int_v> {
+      static constexpr unsigned value = 2;
+    };
     template <> struct is_vector_type<AVX::int_v> : std::true_type {};
 #endif
     template <typename simd_type, typename container_type, typename functor_type>

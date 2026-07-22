@@ -32,12 +32,12 @@ public:
     INFO("Constructing from " << lib);
     amp = AmpGen::DynamicFCN<complex_t(const double *, const int &)>(handle, "AMP");
   }
-  void prepare(){};
-  void setEvents(AmpGen::EventList &){};
+  void prepare() {};
+  void setEvents(AmpGen::EventList &) {};
   double prob_unnormalised(const AmpGen::Event &evt) const { return std::norm(getValNoCache(evt)); }
   complex_t getValNoCache(const AmpGen::Event &evt) const { return amp(evt, +1); }
   size_t size() { return 0; }
-  void reset(const bool &){};
+  void reset(const bool &) {};
 
 private:
   AmpGen::DynamicFCN<complex_t(const double *, const int &)> amp;
@@ -47,8 +47,8 @@ struct DTEvent {
   AmpGen::Event signal;
   AmpGen::Event tag;
   double prob;
-  DTEvent() : signal(0, 0), tag(0, 0){};
-  DTEvent(const AmpGen::Event &signal, const AmpGen::Event &tag) : signal(signal), tag(tag){};
+  DTEvent() : signal(0, 0), tag(0, 0) {};
+  DTEvent(const AmpGen::Event &signal, const AmpGen::Event &tag) : signal(signal), tag(tag) {};
   void set(const AmpGen::Event &s1, const AmpGen::Event &s2) {
     signal.set(s1);
     tag.set(s2);
@@ -96,7 +96,7 @@ template <class PDF> struct normalised_pdf {
     for(size_t i = 0; i < normEvents.size(); ++i) n += std::norm(pdf.getValNoCache(normEvents[i]));
     auto it = mps.find(type.decayDescriptor() + "::strongPhase");
     norm = sqrt(yc.bf(type) / n);
-    if(it != nullptr) norm *= exp(1i * it->mean() * M_PI / 180.);
+    if(it.isValid()) norm *= exp(1i * it->mean() * M_PI / 180.);
     pc.stop();
     INFO(type << " Time to construct: " << pc << "[ms], norm = " << norm << " " << type_string<PDF>());
   }
@@ -317,7 +317,7 @@ void add_CP_conjugate(MinuitParameterSet &mps) {
         if(props != 0) new_name = props->anti().name() + "_" + tokens[1];
       }
     }
-    if(mps.find(new_name) == nullptr) { tmp.push_back(new MinuitParameter(new_name, Flag::Free, sgn * param->mean(), param->err(), 0, 0)); }
+    if(!mps.contains(new_name)) { tmp.push_back(new MinuitParameter(new_name, Flag::Free, sgn * param->mean(), param->err(), 0, 0)); }
   }
   for(auto &p : tmp) mps.add(p);
 }

@@ -6,10 +6,10 @@
 #include <string>
 #include <functional>
 #include "AmpGen/MsgService.h"
+#include "AmpGen/MinuitParameter.h"
 
 namespace AmpGen {
   class CompiledExpressionBase;
-  class MinuitParameter;
   class LambdaExpression;
 
   class CacheTransfer {
@@ -38,7 +38,7 @@ namespace AmpGen {
 
   class ParameterTransfer : public CacheTransfer {
   public:
-    ParameterTransfer(const size_t &address, const std::string &name, MinuitParameter *source);
+    ParameterTransfer(const size_t &address, const std::string &name, MinuitProxy source);
     virtual ~ParameterTransfer() = default;
 
     size_t size() const override { return 1; }
@@ -48,7 +48,7 @@ namespace AmpGen {
     virtual std::string name() const override;
 
   protected:
-    MinuitParameter *m_source = {nullptr};
+    MinuitProxy m_source;
   };
   class LambdaTransfer : public CacheTransfer {
   public:

@@ -9,32 +9,32 @@ namespace utf = boost::unit_test;
 #include "AmpGen/CompiledExpression.h"
 using namespace AmpGen;
 BOOST_AUTO_TEST_CASE(sum_to_string) {
-  AmpGen::Parameter A("A");
-  AmpGen::Parameter B("B");
+  AmpGen::Variable A("A");
+  AmpGen::Variable B("B");
   BOOST_CHECK((A + B).to_string() == "A + B");
 }
 
 BOOST_AUTO_TEST_CASE(sum_evaluate) {
-  AmpGen::Parameter A("A", 4);
-  AmpGen::Parameter B("B", 5);
+  AmpGen::Variable A("A", 4);
+  AmpGen::Variable B("B", 5);
   BOOST_CHECK((A + B)() == std::complex<double>(9, 0));
 }
 
 BOOST_AUTO_TEST_CASE(product_to_string) {
-  AmpGen::Parameter A("A");
-  AmpGen::Parameter B("B");
+  AmpGen::Variable A("A");
+  AmpGen::Variable B("B");
   BOOST_CHECK((A * B).to_string() == "A*B");
 }
 
 BOOST_AUTO_TEST_CASE(product_evaluate) {
-  AmpGen::Parameter A("A", 4);
-  AmpGen::Parameter B("B", 5);
+  AmpGen::Variable A("A", 4);
+  AmpGen::Variable B("B", 5);
   BOOST_CHECK((A * B)() == std::complex<double>(20, 0));
 }
 
 BOOST_AUTO_TEST_CASE(test_composite, *utf::tolerance(1e-6)) {
-  AmpGen::Parameter A("A", 4);
-  AmpGen::Parameter B("B", 5);
+  AmpGen::Variable A("A", 4);
+  AmpGen::Variable B("B", 5);
   double value = std::real((A * B / (AmpGen::fcn::cos(B) * AmpGen::fcn::sqrt(A)))());
   BOOST_TEST(value == (4 * 5 / (cos(5) * sqrt(4))), boost::test_tools::tolerance(1e-6));
 }

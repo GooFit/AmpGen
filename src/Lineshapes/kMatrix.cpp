@@ -21,7 +21,7 @@ using namespace std::complex_literals;
 Expression AmpGen::phsp_twoBody(const Expression &s, const double &m0, const double &m1) { return fcn::complex_sqrt(1.0 - (m0 + m1) * (m0 + m1) / s); }
 
 Expression AmpGen::phsp_fourPi(const Expression &s) {
-  // Parameterisation of the 4pi phase-space taken from Laura++ (https://laura.hepforge.org/  or Ref. https://arxiv.org/abs/1711.09854)
+  // Variableisation of the 4pi phase-space taken from Laura++ (https://laura.hepforge.org/  or Ref. https://arxiv.org/abs/1711.09854)
   double mPiPlus = 0.139570;
   Expression rho_4pi = pol(s, {0.00051, -0.01933, 0.13851, -0.20840, -0.29744, 0.13655, 1.07885});
   return Ternary(s > 1, phsp_twoBody(s, 2 * mPiPlus, 2 * mPiPlus), rho_4pi);
@@ -33,8 +33,8 @@ Expression AmpGen::phsp_FOCUS(const Expression &s, const double &m0, const doubl
   return fcn::complex_sqrt((1.0 - mp * mp / s) * (1.0 - mm * mm / s));
 }
 
-std::vector<Parameter> AmpGen::paramVector(const std::string &name, const unsigned int &nParam) {
-  std::vector<Parameter> returnVector;
+std::vector<Variable> AmpGen::paramVector(const std::string &name, const unsigned int &nParam) {
+  std::vector<Variable> returnVector;
   for(unsigned i = 0; i < nParam; ++i) returnVector.emplace_back(name + std::to_string(i));
   return returnVector;
 }
@@ -82,19 +82,19 @@ DEFINE_LINESHAPE(kMatrix) {
   double mEta = 0.547862;
   double mEtap = 0.967780;
 
-  Expression sA0 = Parameter("sA0", -0.15);
-  Expression sA = Parameter("sA", 1.0);
-  Expression s0_prod = Parameter(particleName + "_s0_prod", -0.07);
-  Expression s0_scatt = Parameter("s0_scatt", -3.92637);
+  Expression sA0 = Variable("sA0", -0.15);
+  Expression sA = Variable("sA", 1.0);
+  Expression s0_prod = Variable(particleName + "_s0_prod", -0.07);
+  Expression s0_scatt = Variable("s0_scatt", -3.92637);
 
-  std::vector<Parameter> fScatt = paramVector("f_scatt", nChannels);
+  std::vector<Variable> fScatt = paramVector("f_scatt", nChannels);
   std::vector<poleConfig> poleConfigs;
   bool addImaginaryMass = Property<bool>(this, "kMatrix::fp", true);
   for(unsigned int pole = 1; pole <= nPoles; ++pole) {
     std::string stub = "IS_p" + std::to_string(pole) + "_";
-    Expression mass = Parameter(stub + "mass");
+    Expression mass = Variable(stub + "mass");
     poleConfig p(mass * mass + addImaginaryMass * (1i) * (1.e-6)); /// add a tiny imaginary part to the mass to avoid floating point errors //
-    for(unsigned int ch = 0; ch < nChannels; ++ch) p.add(Parameter(stub + channels[ch]));
+    for(unsigned int ch = 0; ch < nChannels; ++ch) p.add(Variable(stub + channels[ch]));
     poleConfigs.push_back(p);
   }
 

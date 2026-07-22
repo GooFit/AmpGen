@@ -40,14 +40,14 @@ namespace AmpGen {
     typedef Event value_type;
     EventListSIMD() = default;
     EventListSIMD(const EventType &type);
-    template <class... ARGS> EventListSIMD(const std::string &fname, const EventType &evtType, const ARGS &... args) : EventListSIMD(evtType) {
+    template <class... ARGS> EventListSIMD(const std::string &fname, const EventType &evtType, const ARGS &...args) : EventListSIMD(evtType) {
       loadFromFile(fname, ArgumentPack(args...));
     }
-    template <class... ARGS> EventListSIMD(const std::string &fname, const ARGS &... args) : EventListSIMD() { loadFromFile(fname, ArgumentPack(args...)); }
-    template <class... ARGS> EventListSIMD(const std::vector<std::string> &fname, const EventType &evtType, const ARGS &... args) : EventListSIMD(evtType) {
+    template <class... ARGS> EventListSIMD(const std::string &fname, const ARGS &...args) : EventListSIMD() { loadFromFile(fname, ArgumentPack(args...)); }
+    template <class... ARGS> EventListSIMD(const std::vector<std::string> &fname, const EventType &evtType, const ARGS &...args) : EventListSIMD(evtType) {
       for(auto &f : fname) loadFromFile(f, ArgumentPack(args...));
     }
-    template <class... ARGS> EventListSIMD(TTree *tree, const EventType &evtType, const ARGS &... args) : EventListSIMD(evtType) {
+    template <class... ARGS> EventListSIMD(TTree *tree, const EventType &evtType, const ARGS &...args) : EventListSIMD(evtType) {
       loadFromTree(tree, ArgumentPack(args...));
     }
     EventListSIMD(const EventList &other);
@@ -95,24 +95,24 @@ namespace AmpGen {
     TH2D *makeProjection(const Projection2D &projection, const ArgumentPack &args = ArgumentPack()) const;
     std::vector<TH1D *> makeProjections(const std::vector<Projection> &projections, const ArgumentPack &args);
 
-    template <class... ARGS> std::vector<TH1D *> makeDefaultProjections(const ARGS &... args) {
+    template <class... ARGS> std::vector<TH1D *> makeDefaultProjections(const ARGS &...args) {
       auto argPack = ArgumentPack(args...);
       size_t nBins = argPack.getArg<PlotOptions::Bins>(100);
       auto proj = eventType().defaultProjections(nBins);
       return makeProjections(proj, argPack);
     }
 
-    template <typename... ARGS> std::vector<TH1D *> makeProjections(const std::vector<Projection> &projections, const ARGS &... args) {
+    template <typename... ARGS> std::vector<TH1D *> makeProjections(const std::vector<Projection> &projections, const ARGS &...args) {
       return makeProjections(projections, ArgumentPack(args...));
     }
 
     template <typename... ARGS, typename = std::enable_if_t<!std::is_same<zeroType<ARGS...>, ArgumentPack>::value>>
-    TH1D *makeProjection(const Projection &projection, const ARGS &... args) const {
+    TH1D *makeProjection(const Projection &projection, const ARGS &...args) const {
       return makeProjection(projection, ArgumentPack(args...));
     }
 
     template <typename... ARGS, typename = std::enable_if_t<!std::is_same<zeroType<ARGS...>, ArgumentPack>::value>>
-    TH2D *makeProjection(const Projection2D &projection, const ARGS &... args) {
+    TH2D *makeProjection(const Projection2D &projection, const ARGS &...args) {
       return makeProjection(projection, ArgumentPack(args...));
     }
 

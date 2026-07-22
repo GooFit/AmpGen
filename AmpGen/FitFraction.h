@@ -40,14 +40,14 @@ namespace AmpGen {
       std::string name;
       std::vector<size_t> i;
       std::vector<size_t> j;
-      fcalc(const std::string &name, const std::vector<size_t> &i) : name(name), i(i), j(i){};
-      fcalc(const std::string &name, const std::vector<size_t> &i, const std::vector<size_t> &j) : name(name), i(i), j(j){};
+      fcalc(const std::string &name, const std::vector<size_t> &i) : name(name), i(i), j(i) {};
+      fcalc(const std::string &name, const std::vector<size_t> &i, const std::vector<size_t> &j) : name(name), i(i), j(j) {};
     };
     pdf_type *pdf;
     std::vector<fcalc> calculators;
     std::vector<size_t> normSet;
     bool recalculateIntegrals;
-    template <class... ARGS> void emplace_back(ARGS &&... args) { calculators.emplace_back(args...); }
+    template <class... ARGS> void emplace_back(ARGS &&...args) { calculators.emplace_back(args...); }
 
     FitFractionCalculator(pdf_type *pdf, const std::vector<size_t> &normSet, const bool &recalculateIntegrals = false)
         : pdf(pdf), normSet(normSet), recalculateIntegrals(recalculateIntegrals) {}

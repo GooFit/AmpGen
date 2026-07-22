@@ -1,8 +1,6 @@
-#include "AmpGen/ConfigurableBase.h" 
-#include "AmpGen/Utilities.h" 
+#include "AmpGen/ConfigurableBase.h"
+#include "AmpGen/Utilities.h"
 
-using namespace AmpGen; 
+using namespace AmpGen;
 
-std::string ConfigurableBase::remove_namespace ( const std::string& name ){
-  return replaceAll( name, "AmpGen::", ""); 
-} 
+std::string ConfigurableBase::remove_namespace(const std::string &name) { return replaceAll(name, "AmpGen::", ""); }

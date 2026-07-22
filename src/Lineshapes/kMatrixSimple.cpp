@@ -45,10 +45,10 @@ DEFINE_LINESHAPE(kMatrixSimple) {
 
   for(unsigned int pole = 1; pole <= nPoles; ++pole) {
     std::string stub = "kMatrix::pole::" + std::to_string(pole);
-    Expression mass = Parameter((stub + "::mass"));
+    Expression mass = Variable((stub + "::mass"));
     poleConfig thisPole(mass * mass);
     for(unsigned int channel = 0; channel < nChannels; ++channel) {
-      Expression gPiPi = Parameter((stub + "::width::" + std::to_string(channel)));
+      Expression gPiPi = Variable((stub + "::width::" + std::to_string(channel)));
       Expression rho0 = phsp_twoBody(mass * mass, masses[channel].first, masses[channel].second);
       Expression g = gFromGamma(mass, gPiPi, rho0);
       thisPole.add(g);

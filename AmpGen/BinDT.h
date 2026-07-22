@@ -75,13 +75,13 @@ namespace AmpGen {
     };
 
   public:
-    template <class... ARGS> BinDT(const ARGS &... args) : BinDT(ArgumentPack(args...)) {}
-    template <class... ARGS> BinDT(const std::vector<double *> &addr, const ARGS &... args) : BinDT(ArgumentPack(args...)) { m_top = makeNodes(addr); }
-    template <class... ARGS> BinDT(const EventList &events, const ARGS &... args) : BinDT(ArgumentPack(args...)) {
+    template <class... ARGS> BinDT(const ARGS &...args) : BinDT(ArgumentPack(args...)) {}
+    template <class... ARGS> BinDT(const std::vector<double *> &addr, const ARGS &...args) : BinDT(ArgumentPack(args...)) { m_top = makeNodes(addr); }
+    template <class... ARGS> BinDT(const EventList &events, const ARGS &...args) : BinDT(ArgumentPack(args...)) {
       m_top = makeNodes(events.begin(), events.end());
     }
     template <class iterator_type, class... ARGS>
-    BinDT(const iterator_type &begin, const iterator_type &end, const ARGS &... args) : BinDT(ArgumentPack(args...)) {
+    BinDT(const iterator_type &begin, const iterator_type &end, const ARGS &...args) : BinDT(ArgumentPack(args...)) {
       m_top = makeNodes(begin, end);
     }
     explicit BinDT(const ArgumentPack &args);

@@ -36,8 +36,7 @@ namespace AmpGen {
   }
 
   template <typename container_type, typename vtype = typename container_type::value_type, typename functor_type = std::function<vtype(const vtype &)>>
-  std::string vectorToString(
-    const container_type &obj, const std::string &delim = "", const functor_type &f = [](const auto &arg) { return arg; }) {
+  std::string vectorToString(const container_type &obj, const std::string &delim = "", const functor_type &f = [](const auto &arg) { return arg; }) {
     return vectorToString(std::begin(obj), std::end(obj), delim, f);
   }
 
@@ -89,7 +88,7 @@ namespace AmpGen {
   return return_type();
 }
 */
-  template <class... ARGS> std::string mysprintf(const std::string &format, ARGS &&... args) {
+  template <class... ARGS> std::string mysprintf(const std::string &format, ARGS &&...args) {
     auto size = std::snprintf(nullptr, 0, format.c_str(), std::forward<ARGS>(args)...);
     std::string output(size + 1, '\0');
     std::snprintf(&output[0], size + 1, format.c_str(), std::forward<ARGS>(args)...);

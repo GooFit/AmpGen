@@ -24,8 +24,12 @@ namespace AmpGen {
      but in principal support also exists for computing coupled channel propagators
      (i.e. returning array types) */
   namespace detail {
-    template <typename T> struct size_of { static constexpr unsigned value = sizeof(T); };
-    template <> struct size_of<void> { static constexpr unsigned value = 0; };
+    template <typename T> struct size_of {
+      static constexpr unsigned value = sizeof(T);
+    };
+    template <> struct size_of<void> {
+      static constexpr unsigned value = 0;
+    };
   }
   DECLARE_ARGUMENT(disableBatch, bool);
   DECLARE_ARGUMENT(includeParameters, bool);
@@ -45,11 +49,11 @@ namespace AmpGen {
     unsigned m_outputSize = {0};
 
     template <typename... namedArgs>
-    CompiledExpression(const Expression &expression, const std::string &name, const namedArgs &... args) : CompiledExpressionBase(expression, name) {
+    CompiledExpression(const Expression &expression, const std::string &name, const namedArgs &...args) : CompiledExpressionBase(expression, name) {
       set(expression, name, args...);
     }
 
-    template <typename... namedArgs> void set(const Expression &expression, const std::string &name, const namedArgs &... args) {
+    template <typename... namedArgs> void set(const Expression &expression, const std::string &name, const namedArgs &...args) {
       m_obj = expression;
       m_name = name;
       const MinuitParameterSet *mps = nullptr;
@@ -132,7 +136,7 @@ namespace AmpGen {
     unsigned returnTypeSize() const override { return m_outputSize; }
 
     template <typename T> ret_type operator()(const T *event) const { return m_fcn(m_externals.data(), event); }
-    ret_type operator()(const arg_types &... args) const { return m_fcn(args...); }
+    ret_type operator()(const arg_types &...args) const { return m_fcn(args...); }
     template <typename... batch_arg_types> void batch(batch_arg_types... args) const { m_batchFcn(args...); }
 
     template <typename T> void debug(const T *event) const {
@@ -183,8 +187,7 @@ namespace AmpGen {
     return rt;
   }
   template <typename return_type, typename arg1 = double, typename arg2 = double, typename... arg_types>
-  CompiledExpression<return_type(const arg1 *, const arg2 *)>
-  make_expression(const Expression &expression, const std::string &name, const arg_types &... args) {
+  CompiledExpression<return_type(const arg1 *, const arg2 *)> make_expression(const Expression &expression, const std::string &name, const arg_types &...args) {
     CompiledExpression<return_type(const arg1 *, const arg2 *)> rt(expression, name, args...);
     rt.compile();
     rt.prepare();

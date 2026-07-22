@@ -11,7 +11,7 @@ using namespace AmpGen;
 
 BOOST_AUTO_TEST_CASE(test_BW) {
   double s = 1;
-  auto expression = Lineshape::BW().get(Parameter("x1[0]", s, true), 0.1, 0.1, "rho(770)0", 1, "");
+  auto expression = Lineshape::BW().get(Variable("x1[0]", s, true), 0.1, 0.1, "rho(770)0", 1, "");
   auto compiled_expression = make_expression<std::complex<double>>(expression, "expression");
   auto z = compiled_expression(&s);
 

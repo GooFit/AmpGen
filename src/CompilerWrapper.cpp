@@ -20,7 +20,7 @@
 #include "AmpGen/CompiledExpressionBase.h"
 #include "AmpGenVersion.h"
 #include "AmpGen/simd/utils.h"
-#include "AmpGen/OptionsParser.h" 
+#include "AmpGen/OptionsParser.h"
 
 using namespace AmpGen;
 // #ifdef AMPGEN_CXX
@@ -31,7 +31,7 @@ using namespace AmpGen;
 // #pragma warning "No AMPGEN_CXX for JIT set"
 // #endif
 
-REGISTER_CONFIGURABLE(CompilerWrapper); 
+REGISTER_CONFIGURABLE(CompilerWrapper);
 
 CompilerWrapper::CompilerWrapper() : m_cxx(getenv("AMPGEN_CXX") != nullptr ? std::string(getenv("AMPGEN_CXX")) : "") {
   if(m_cxx == "") {
@@ -92,7 +92,7 @@ int64_t fileSize(const std::string &filename) {
 }
 
 bool CompilerWrapper::compile(CompiledExpressionBase &expression, const std::string &fname) {
-  if( m_disable ) return false; 
+  if(m_disable) return false;
   std::string name = fname == "" ? generateFilename() : fname;
   std::string cname = name + "_" + std::to_string(expression.hash()) + ".cpp";
   std::string oname = std::filesystem::path(cname).replace_extension(m_extension);

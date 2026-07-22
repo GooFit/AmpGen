@@ -30,10 +30,10 @@ namespace AmpGen {
       int right;
       double cutValue;
       Node() = default;
-      Node(const int &index, const int &left, const int &right, const double &cutValue) : index(index), left(left), right(right), cutValue(cutValue){};
+      Node(const int &index, const int &left, const int &right, const double &cutValue) : index(index), left(left), right(right), cutValue(cutValue) {};
     };
     FastDT() = default;
-    template <typename... arg_types> FastDT(const arg_types &... args) : FastDT(ArgumentPack(args...)) {}
+    template <typename... arg_types> FastDT(const arg_types &...args) : FastDT(ArgumentPack(args...)) {}
     FastDT(const ArgumentPack &args);
     FastDT(const std::string &textFile);
     FastDT(std::ifstream &, const unsigned &);
@@ -57,7 +57,7 @@ namespace AmpGen {
     int makeNodes(std::vector<double *>, std::vector<double *>, std::vector<int>, const unsigned &);
     void refreshQueue(std::vector<double *> &evts, std::queue<unsigned> &indexQueue, const unsigned &depth);
     void serialise(std::ofstream &);
-    void setQueueOrdering(std::vector<unsigned> &){};
+    void setQueueOrdering(std::vector<unsigned> &) {};
     void readFromStream(std::ifstream &stream, const int &n_nodes);
   };
 }

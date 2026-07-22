@@ -202,7 +202,5 @@ void ParticleProperties::setProperty(const std::string &key, const std::string &
     m_charge = chargeFromString(value, status);
   else if(key == "quarks")
     m_quarkContent = QuarkContent(value);
-  else {
-    ERROR("Unrecognised key: " << key);
-  }
+  else { ERROR("Unrecognised key: " << key); }
 }

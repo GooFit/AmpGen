@@ -127,7 +127,7 @@ namespace AmpGen {
     }
   };
   template <typename T> std::ostream &operator<<(std::ostream &os, const NamedParameter<T> &np);
-  template <typename... T> std::string optionalHelpString(const std::string &header, const T &... args);
+  template <typename... T> std::string optionalHelpString(const std::string &header, const T &...args);
 }
 
 template <typename T> std::ostream &AmpGen::operator<<(std::ostream &os, const AmpGen::NamedParameter<T> &np) {
@@ -140,7 +140,7 @@ template <typename T> std::ostream &AmpGen::operator<<(std::ostream &os, const A
   return os;
 }
 
-template <typename... T> std::string AmpGen::optionalHelpString(const std::string &header, const T &... args) {
+template <typename... T> std::string AmpGen::optionalHelpString(const std::string &header, const T &...args) {
   std::stringstream rt;
   rt << header;
   for_each(std::make_tuple(args...), [&rt](const auto &f) mutable { rt << "\n\033[3m " << f.first << "\033[0m: " << f.second; });

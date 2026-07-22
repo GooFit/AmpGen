@@ -13,7 +13,7 @@ namespace AmpGen {
 
   class FitResult {
   public:
-    ~FitResult(){};
+    ~FitResult() {};
     FitResult();
     explicit FitResult(const FitResult &other);
     explicit FitResult(const std::string &filename);

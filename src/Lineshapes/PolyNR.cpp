@@ -16,12 +16,12 @@ DEFINE_GENERIC_SHAPE(PolyNR) {
   auto s01 = dot(p01, p01);
   auto s02 = dot(p02, p02);
   size_t degree = Property<size_t>(this, lineshapeModifier + "::Degree", 0) + 1;
-  std::vector<std::vector<Parameter>> C(degree, std::vector<Parameter>(degree));
+  std::vector<std::vector<Variable>> C(degree, std::vector<Variable>(degree));
 
   for(size_t i = 0; i != degree; ++i) {
     for(size_t j = 0; j != degree; ++j) {
       auto pname = lineshapeModifier + "_" + std::to_string(i) + "_" + std::to_string(j);
-      C[i][j] = Parameter(pname, 0);
+      C[i][j] = Variable(pname, 0);
       if(dbexpressions != nullptr) dbexpressions->emplace_back(pname, C[i][j]);
     }
   }

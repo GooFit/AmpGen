@@ -30,8 +30,7 @@ std::string AmpGen::programatic_name(std::string s) {
   std::replace(s.begin(), s.end(), '+', 'p');
   std::replace(s.begin(), s.end(), '-', 'm');
   std::replace(s.begin(), s.end(), '*', 's');
-  std::replace_if(
-    s.begin(), s.end(), [](auto &c) { return !std::isalnum(c); }, '_');
+  std::replace_if(s.begin(), s.end(), [](auto &c) { return !std::isalnum(c); }, '_');
   if(isdigit(s[0])) s = "f" + s;
   std::replace(s.begin(), s.end(), '\'', '_');
   return s;
@@ -109,15 +108,15 @@ void CompiledExpressionBase::to_stream(std::ostream &stream) const {
       for(unsigned i = 1; i < argList.size() - 1; ++i) fwd_args += ", x" + std::to_string(i);
       stream << "extern \"C\" void " << AmpGen::programatic_name(name()) + "__py("
              << vectorToString(argList.begin(), argList.end() - 1, ", ", fcn) + "," + return_type_value << "){"
-             << "auto tmp = " << AmpGen::programatic_name(name()) + "_wParams(" + fwd_args + ");"
-             << "std::memcpy( (void*)r0,  " << src << "  , " << returnTypeSize() << ");}\n";
+             << "auto tmp = " << AmpGen::programatic_name(name()) + "_wParams(" + fwd_args + ");" << "std::memcpy( (void*)r0,  " << src << "  , "
+             << returnTypeSize() << ");}\n";
     } else {
       std::string fwd_args = "x0";
       for(unsigned i = 1; i < argList.size(); ++i) fwd_args += ", x" + std::to_string(i);
       stream << "extern \"C\" void " << AmpGen::programatic_name(name()) + "__py("
              << vectorToString(argList.begin(), argList.end(), ", ", fcn) + "," + return_type_value << "){"
-             << "auto tmp = " << AmpGen::programatic_name(name()) + "(" + fwd_args + ");"
-             << "std::memcpy( (void*)r0,  " << src << "  , " << returnTypeSize() << ");}\n";
+             << "auto tmp = " << AmpGen::programatic_name(name()) + "(" + fwd_args + ");" << "std::memcpy( (void*)r0,  " << src << "  , " << returnTypeSize()
+             << ");}\n";
     }
   }
 }

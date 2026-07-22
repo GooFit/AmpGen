@@ -44,9 +44,7 @@ complex_t ATan2::operator()() const { return atan2(std::real(lval()), std::real(
 std::string Sum::to_string(const ASTResolver *resolver) const { return lval.to_string(resolver) + " + " + rval.to_string(resolver); }
 
 std::string Sub::to_string(const ASTResolver *resolver) const {
-  return lval.to_string(resolver) + "-"
-         + bracketed(
-           rval, [](auto &expression) { return is<Sum>(expression) || is<Sub>(expression); }, resolver);
+  return lval.to_string(resolver) + "-" + bracketed(rval, [](auto &expression) { return is<Sum>(expression) || is<Sub>(expression); }, resolver);
 }
 std::string Equal::to_string(const ASTResolver *resolver) const { return "(" + lval.to_string(resolver) + " == " + rval.to_string(resolver) + ")"; }
 

@@ -8,12 +8,12 @@
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/CompiledExpressionBase.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/Property.h" 
+#include "AmpGen/Property.h"
 
 using namespace AmpGen;
 
 Spline::Spline(const std::string &name, const size_t &nKnots, const double &min, const double &max)
-    : m_points(Parameter(name), 2 * nKnots), m_name(name), m_nKnots(nKnots), m_min(min), m_max(max) {}
+    : m_points(Variable(name), 2 * nKnots), m_name(name), m_nKnots(nKnots), m_min(min), m_max(max) {}
 
 Spline::Spline(const Spline &spline, const Expression &x, DebugSymbols *db)
     : m_points(spline.m_points), m_name(spline.m_name), m_nKnots(spline.m_nKnots), m_min(spline.m_min), m_max(spline.m_max), m_x(x), m_eval(eval(db)) {}

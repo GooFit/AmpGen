@@ -295,7 +295,7 @@ void FitResult::writeOptions(std::ostream &output_stream, const std::string &inp
   };
   auto try_add_real = [&](const auto &key) mutable {
     auto param = this->m_mps->find(key);
-    if(param == nullptr) return false;
+    if(!param.isValid()) return false;
     output_stream << mysprintf("%-50s", param->name().c_str()) << print_param(param) << "\n";
     keys.insert(key);
     return true;
@@ -303,7 +303,7 @@ void FitResult::writeOptions(std::ostream &output_stream, const std::string &inp
   auto try_add_complex = [&](const auto &key) mutable {
     auto param_re = this->m_mps->find(key + "_Re");
     auto param_im = this->m_mps->find(key + "_Im");
-    if(param_re == nullptr || param_im == nullptr) return false;
+    if(!param_re.isValid() || !param_im.isValid()) return false;
     output_stream << mysprintf("%-50s", key.c_str()) << print_param(param_re) << print_param(param_im) << "\n";
     keys.insert(key + "_Re");
     keys.insert(key + "_Im");
@@ -321,7 +321,7 @@ void FitResult::writeOptions(std::ostream &output_stream, const std::string &inp
           return;
         }
         auto key = tokens[0];
-        if((m_mps->find(key) or m_mps->find(key + "_Re") or m_mps->find(key + "_Im")) && tokens[1] != "=") {
+        if((m_mps->find(key).isValid() or m_mps->find(key + "_Re").isValid() or m_mps->find(key + "_Im").isValid()) && tokens[1] != "=") {
           success &= try_add_real(key) ? 1 : try_add_complex(key);
         } else
           output_stream << line << "\n";
