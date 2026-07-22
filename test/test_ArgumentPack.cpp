@@ -17,7 +17,7 @@ struct Mock {
     t1 = args.getArg<test_argument_double>().val;
     t2 = args.getArg<test_argument_string>("hello world").val;
   }
-  template <class... ARGS> Mock(const ARGS &... args) : Mock(AmpGen::ArgumentPack(args...)) {}
+  template <class... ARGS> Mock(const ARGS &...args) : Mock(AmpGen::ArgumentPack(args...)) {}
   double t1;
   std::string t2;
 };

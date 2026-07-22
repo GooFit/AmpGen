@@ -27,7 +27,7 @@ namespace AmpGen {
     Expression s;
     std::vector<Expression> couplings;
     std::vector<Expression> bl_factors;
-    poleConfig(const Expression &s, const std::vector<Expression> &c = {}) : s(s), couplings(c), bl_factors(c.size(), 1){};
+    poleConfig(const Expression &s, const std::vector<Expression> &c = {}) : s(s), couplings(c), bl_factors(c.size(), 1) {};
 
     void add(const Expression &coupling, const Expression &bl_factor = 1) {
       couplings.push_back(coupling);
@@ -44,7 +44,7 @@ namespace AmpGen {
   Expression phsp_FOCUS(const Expression &s, const double &m0, const double &m1);
   Expression gFromGamma(const Expression &m, const Expression &gamma, const Expression &rho);
 
-  std::vector<Parameter> paramVector(const std::string &name, const unsigned int &nParam);
+  std::vector<Variable> paramVector(const std::string &name, const unsigned int &nParam);
 
   Tensor getPropagator(const Tensor &kMatrix, const std::vector<Expression> &phaseSpace, DebugSymbols *db = nullptr);
 } // namespace AmpGen

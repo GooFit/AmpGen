@@ -18,9 +18,9 @@ DEFINE_LINESHAPE(DecaySpline) {
 
 DEFINE_LINESHAPE(GSpline) {
   auto props = ParticlePropertiesList::get(particleName);
-  Expression mass = Parameter(particleName + "_mass", props->mass()) * GeV;
-  Expression radius = Parameter(particleName + "_radius", props->radius()) * GeV;
-  Expression width0 = Parameter(particleName + "_width", props->width()) * GeV;
+  Expression mass = Variable(particleName + "_mass", props->mass()) * GeV;
+  Expression radius = Variable(particleName + "_radius", props->radius()) * GeV;
+  Expression width0 = Variable(particleName + "_width", props->width()) * GeV;
 
   const Expression q2 = fcn::abs(Q2(s, s1, s2));
   const Expression sInGeV = s / (GeV * GeV);
@@ -61,9 +61,9 @@ DEFINE_LINESHAPE(GSpline) {
 
 DEFINE_LINESHAPE(FormFactorSpline) {
   auto props = ParticlePropertiesList::get(particleName);
-  Expression mass = Parameter(particleName + "_mass", props->mass());
-  Expression radius = Parameter(particleName + "_radius", props->radius());
-  Expression width0 = Parameter(particleName + "_width", props->width());
+  Expression mass = Variable(particleName + "_mass", props->mass());
+  Expression radius = Variable(particleName + "_radius", props->radius());
+  Expression width0 = Variable(particleName + "_width", props->width());
   const Expression q2 = Abs(Q2(s, s1, s2));
   const Expression q20 = Abs(Q2(mass * mass, s1, s2));
   const Expression runningWidth = width(s, s1, s2, mass, width0, radius, L, dbexpressions);

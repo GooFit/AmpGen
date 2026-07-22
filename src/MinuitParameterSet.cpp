@@ -1,6 +1,3 @@
-// author: Jonas Rademacker (Jonas.Rademacker@bristol.ac.uk)
-// status:  Mon 9 Feb 2009 19:17:55 GMT
-
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -23,6 +20,15 @@ MinuitParameterSet::MinuitParameterSet() = default;
 
 MinuitParameterSet::MinuitParameterSet(const std::vector<MinuitParameter *> &params) {
   for(auto &param : params) add(param);
+}
+
+MinuitParameterSet *MinuitParameterSet::clone() const {
+  MinuitParameterSet *copy = new MinuitParameterSet();
+  for(const auto &param : m_parameters) {
+    copy->m_parameters.push_back(new MinuitParameter(param->clone()));
+    copy->m_keyAccess[param->name()] = *copy->m_parameters.rbegin();
+  }
+  return copy;
 }
 
 bool MinuitParameterSet::addToEnd(MinuitParameter *parPtr) {
@@ -68,21 +74,21 @@ void MinuitParameterSet::printVariable(std::ostream &os) const {
   }
 }
 
-MinuitParameter *MinuitParameterSet::operator[](const std::string &key) {
+MinuitProxy MinuitParameterSet::operator[](const std::string &key) {
   auto it = m_keyAccess.find(key);
   if(it == m_keyAccess.end()) { WARNING("Parameter: " << key << " not found"); }
   return it->second;
 }
 
-MinuitParameter *MinuitParameterSet::operator[](const std::string &key) const {
+MinuitProxy MinuitParameterSet::operator[](const std::string &key) const {
   auto it = m_keyAccess.find(key);
   if(it == m_keyAccess.end()) { WARNING("Parameter: " << key << " not found"); }
   return it->second;
 }
 
-MinuitParameter *MinuitParameterSet::operator[](const size_t &key) { return m_parameters[key]; }
+MinuitProxy MinuitParameterSet::operator[](const size_t &key) { return m_parameters[key]; }
 
-MinuitParameter *MinuitParameterSet::at(const std::string &key) {
+MinuitProxy MinuitParameterSet::at(const std::string &key) {
   if(m_keyAccess.count(key) == 0) {
     ERROR(key << " not found");
     return nullptr;
@@ -90,7 +96,7 @@ MinuitParameter *MinuitParameterSet::at(const std::string &key) {
     return m_keyAccess[key];
 }
 
-MinuitParameter *MinuitParameterSet::at(const size_t &index) const {
+MinuitProxy MinuitParameterSet::at(const size_t &index) const {
   if(index >= m_parameters.size()) ERROR("Attempting to access parameter " << index << " when only " << m_parameters.size() << " have been defined");
   return index < m_parameters.size() ? m_parameters[index] : nullptr;
 }
@@ -167,8 +173,8 @@ void MinuitParameterSet::loadFromStream() {
       if(props == nullptr or !props->hasDistinctAnti()) continue;
 
       auto conj_name = ParticlePropertiesList::get(-1 * props->pdgID(), true)->name() + +"_" + tokens[1];
-      if(find(conj_name) != nullptr) continue;
-      tmp.push_back(new MinuitExpression(conj_name, MinuitParameterLink(param)));
+      if(!find(conj_name).isValid()) continue;
+      tmp.push_back(new MinuitExpression(conj_name, ExpressionParameter(param)));
     }
   }
   for(auto &p : tmp) add(p);
@@ -181,10 +187,19 @@ void MinuitParameterSet::loadFromFile(const std::string &file) {
   });
 }
 
+void MinuitParameterSet::set(const double *x, const std::vector<unsigned> &mapping, const double *err) {
+  if(err == 0) {
+    for(unsigned i = 0; i != mapping.size(); ++i) m_parameters[mapping[i]]->setVal(*(x + i));
+  } else {
+    for(unsigned i = 0; i != mapping.size(); ++i) m_parameters[mapping[i]]->setResult(*(x + i), *(err + i), *(err + i), *(err + i));
+  }
+  for(auto &p : *this) p->broadcastToAll();
+}
+
 void MinuitParameterSet::set(const MinuitParameterSet &other) {
   for(auto &param : *this) {
     auto otherValue = other[param->name()];
-    if(otherValue != nullptr) param->setCurrentFitVal(otherValue->mean());
+    if(otherValue.isValid()) param->setCurrentFitVal(otherValue->mean());
   }
 }
 
@@ -194,22 +209,22 @@ void MinuitParameterSet::resetToInit() {
 
 bool MinuitParameterSet::rename(const std::string &name, const std::string &new_name) {
   auto it = find(name);
-  if(it == nullptr) {
+  if(!it.isValid()) {
     DEBUG("Parameter: " << name << " not found");
     return false;
   }
   if(name == new_name) return false;
-  if(find(new_name) != nullptr) {
+  if(find(new_name).isValid()) {
     DEBUG("New key for " << name << " =  " << new_name << " already exists");
     return false;
   }
   it->setName(new_name);
   m_keyAccess.erase(name);
-  m_keyAccess.emplace(new_name, it);
+  m_keyAccess.emplace(new_name, it.parameter());
   return true;
 }
 
-MinuitParameter *
+MinuitProxy
 MinuitParameterSet::addOrGet(const std::string &name, const Flag &flag, const double &mean, const double &sigma, const double &min, const double &max) {
   if(m_keyAccess.count(name) != 0) return m_keyAccess[name];
   return add(name, flag, mean, sigma, min, max);
@@ -222,9 +237,9 @@ MinuitParameterSet::iterator MinuitParameterSet::end() { return m_parameters.end
 MinuitParameterSet::const_iterator MinuitParameterSet::begin() const { return m_parameters.cbegin(); }
 MinuitParameterSet::const_iterator MinuitParameterSet::end() const { return m_parameters.cend(); }
 
-MinuitParameter *MinuitParameterSet::find(const std::string &key) const {
+MinuitProxy MinuitParameterSet::find(const std::string &key) const {
   auto it = m_keyAccess.find(key);
-  return it == m_keyAccess.end() ? nullptr : it->second;
+  return MinuitProxy(it == m_keyAccess.end() ? nullptr : it->second);
 }
 
 double MinuitParameterSet::operator()(const std::string &name) {
@@ -247,5 +262,7 @@ void MinuitParameterSet::setMapping(const std::vector<unsigned> &m) {
 }
 
 void MinuitParameterSet::setFromMinuitIndex(const unsigned index, double v) { m_parameters[index]->setCurrentFitVal(v); }
+
+bool MinuitParameterSet::contains(const std::string &key) const { return m_keyAccess.contains(key); }
 
 double MinuitParameterSet::getFromMinuitIndex(const unsigned index) { return m_parameters[index]->mean(); }

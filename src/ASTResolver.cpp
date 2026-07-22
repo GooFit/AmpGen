@@ -25,7 +25,7 @@ std::vector<std::pair<uint64_t, Expression>> ASTResolver::getOrderedSubExpressio
       uint64_t key = s->key();
       if(subTrees.count(key) == 0)
         subTrees[key] = s->expression();
-      else if( t->to_string() != subTrees[key].to_string()) {
+      else if(t->to_string() != subTrees[key].to_string()) {
         WARNING("Hash collision between in key = " << key << " other key = " << FNV1a_hash(subTrees[key].to_string()));
       }
     }
@@ -75,7 +75,7 @@ template <> void ASTResolver::resolve<Spline>(const Spline &spline) {
   }
 }
 
-template <> void ASTResolver::resolve<Parameter>(const Parameter &parameter) {
+template <> void ASTResolver::resolve<Variable>(const Variable &parameter) {
   DEBUG("Resolving: " << parameter.name() << " " << parameter.isResolved());
   if(m_resolvedParameters.count(&parameter) != 0 || parameter.isResolved()) return;
   auto res = m_evtMap.find(parameter.name());
@@ -84,8 +84,8 @@ template <> void ASTResolver::resolve<Parameter>(const Parameter &parameter) {
     return;
   } else if(m_mps != nullptr) {
     auto it = m_mps->find(parameter.name());
-    if(it != nullptr) {
-      if( it->flag() == Flag::CompileTimeConstant) {
+    if(it.parameter() != nullptr) {
+      if(it->flag() == Flag::CompileTimeConstant) {
         addResolvedParameter(&parameter, "(" + std::to_string(it->mean()) + ")");
       } else
         addResolvedParameter(&parameter, addCacheFunction<ParameterTransfer>(parameter.name(), it));
@@ -98,15 +98,15 @@ template <> void ASTResolver::resolve<Parameter>(const Parameter &parameter) {
   }
   auto address = addCacheFunction<CacheTransfer>(parameter.name(), parameter.defaultValue());
   addResolvedParameter(&parameter, address);
-  if(!parameter.isResolved()) m_unresolvedParameters.push_back(parameter);
+  if(!parameter.isResolved()) m_unresolvedVariables.push_back(parameter);
 }
 
-template <> void ASTResolver::resolve<MinuitParameterLink>(const MinuitParameterLink &parameter) {
+template <> void ASTResolver::resolve<ExpressionParameter>(const ExpressionParameter &parameter) {
   DEBUG("Resolving: " << parameter.name() << " " << m_resolvedParameters.count(&parameter));
   if(m_resolvedParameters.count(&parameter) != 0) return;
   if(m_mps == nullptr) return;
   auto it = m_mps->find(parameter.name());
-  if(it == nullptr) return;
+  if(!it.isValid()) return;
   addResolvedParameter(&parameter, addCacheFunction<ParameterTransfer>(parameter.name(), it));
 }
 
@@ -123,7 +123,7 @@ void ASTResolver::addResolvedParameter(const IExpression *param, const size_t &a
   m_resolvedParameters[param] = "x" + std::to_string(arg) + "[" + std::to_string(address) + "]";
 }
 
-std::string ASTResolver::resolvedParameter(const IExpression *param) const {
+std::string ASTResolver::resolvedVariable(const IExpression *param) const {
   auto it = m_resolvedParameters.find(param);
   if(it != m_resolvedParameters.end())
     return it->second;

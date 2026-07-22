@@ -13,7 +13,7 @@ namespace AmpGen {
     // Complex( const float&   re, const float& im) : re(re), im(im) {}
     Complex(const std::complex<double> &f) : re(f.real()), im(f.imag()) {}
     Complex(const std::complex<float> &f) : re(f.real()), im(f.imag()) {}
-    explicit Complex(const real_t &arg) : re(arg){};
+    explicit Complex(const real_t &arg) : re(arg) {};
     Complex(const real_t &re, const double &im) : re(re), im(im) {}
     // explicit Complex( const double& arg ) : re(arg) {};
     inline Complex operator+=(const Complex &rhs);

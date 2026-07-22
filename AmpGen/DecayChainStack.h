@@ -17,7 +17,7 @@ namespace AmpGen {
   public:
     DecayChainStackBase() = default;
     DecayChainStackBase(const Particle &particle);
-    virtual ~DecayChainStackBase(){};
+    virtual ~DecayChainStackBase() {};
     virtual Event makeEvent(TRandom3 *rndm) const = 0;
     virtual double maxWeight() const = 0;
     virtual unsigned NP() const = 0;
@@ -36,7 +36,7 @@ namespace AmpGen {
       double bwWidth = 0;
       SmallVector<unsigned, N> lfs;
       SmallVector<unsigned, N> rfs;
-      Node(Type type = Type::Flat, const unsigned &l = 0, const unsigned &r = 0) : type(type), l(l), r(r){};
+      Node(Type type = Type::Flat, const unsigned &l = 0, const unsigned &r = 0) : type(type), l(l), r(r) {};
       void print() const {
         std::string type_string = "";
         switch(type) {
@@ -321,7 +321,7 @@ namespace AmpGen {
     }
 
     virtual AmpGen::Event makeEvent(TRandom3 *rndm) const {
-      std::array<double, 2 *N - 1> state = {0};
+      std::array<double, 2 * N - 1> state = {0};
       double rho_v = 1;
       do {
         auto rt = proposal(rndm);

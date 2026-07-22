@@ -23,14 +23,14 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/ProfileClock.h"
-#include "AmpGen/OptionsParser.h" 
+#include "AmpGen/OptionsParser.h"
 
 using namespace AmpGen;
 using namespace ROOT;
 
 unsigned int Minimiser::nPars() const { return m_nParams; }
 
-REGISTER_CONFIGURABLE(Minimiser); 
+REGISTER_CONFIGURABLE(Minimiser);
 
 void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState &state) {
   if(m_printLevel == PrintLevel::Quiet) return;
@@ -51,6 +51,7 @@ void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState &state) {
     INFO(bold_on << "ID  Parameter                                          "
                     " Value         Step          Gradient"
                  << bold_off);
+    if(!state.HasParameters() or !state.HasCovariance()) return;
     for(size_t iii = 0; iii < m_mapping.size(); ++iii) {
       auto par = m_parSet->at(m_mapping[iii]);
       if(!(par->isFree() || par->isBlind())) continue;
@@ -73,6 +74,7 @@ void Minimiser::operator()(int i, const ROOT::Minuit2::MinimumState &state) {
 }
 
 double Minimiser::operator()(const double *xx) {
+  m_parSet->set(xx, m_mapping);
   for(size_t i = 0; i < m_mapping.size(); ++i) { m_parSet->at(m_mapping[i])->setCurrentFitVal(xx[i]); }
   double LL = m_theFunction();
   for(auto &extendTerm : m_extendedTerms) LL -= 2 * (*extendTerm)();
@@ -122,12 +124,12 @@ void Minimiser::prepare() {
           "blind parameters.");
   }
   for(size_t i = 0; i < m_parSet->size(); ++i) {
-    auto par = m_parSet->at(i);
+    MinuitProxy par = m_parSet->at(i);
     if(!(par->isFree() || par->isBlind())) continue;
     m_minimiser->SetVariable(m_mapping.size(), par->name(), par->mean(), par->stepInit());
     if(par->minInit() != 0 || par->maxInit() != 0) m_minimiser->SetVariableLimits(m_mapping.size(), par->minInit(), par->maxInit());
     m_mapping.push_back(i);
-    if(m_printLevel == PrintLevel::VeryVerbose) INFO(*par);
+    if(m_printLevel == PrintLevel::VeryVerbose) INFO(*par.parameter()); // parameter());
   }
   m_parSet->setMapping(m_mapping);
   m_nParams = m_mapping.size();
@@ -163,7 +165,7 @@ bool Minimiser::doFit() {
     m_minimiser->SetFunction(*m_fcnWithGrad);
 
   for(size_t i = 0; i < m_mapping.size(); ++i) {
-    MinuitParameter *par = m_parSet->at(m_mapping[i]);
+    MinuitProxy par = m_parSet->at(m_mapping[i]);
     m_minimiser->SetVariable(i, par->name(), par->mean(), par->stepInit());
     if(par->minInit() != 0 || par->maxInit() != 0) m_minimiser->SetVariableLimits(i, par->minInit(), par->maxInit());
   }
@@ -195,7 +197,7 @@ bool Minimiser::doFit() {
       int status = 0;
       m_minimiser->GetMinosError(i, low, high, status);
       auto param = m_parSet->at(m_mapping[i]);
-      param->setResult(*param, param->err(), low, high);
+      param->setResult(param->mean(), param->err(), low, high);
     }
   }
 

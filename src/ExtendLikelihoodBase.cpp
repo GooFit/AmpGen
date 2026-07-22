@@ -36,7 +36,7 @@ void GaussianConstraint::configure(const std::string &configString, const Minuit
     }
   }
   m_param = mps[name];
-  if(m_param == nullptr) { ERROR("Parameter - " << name << " not found in MPS"); }
+  if(m_param.parameter() == nullptr) { ERROR("Parameter - " << name << " not found in MPS"); }
 }
 
 REGISTER(ExtendLikelihoodBase, GaussianConstraint);

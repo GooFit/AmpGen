@@ -26,7 +26,7 @@ namespace AmpGen {
   private:
     struct LibHandle {
       void *handle = {nullptr};
-      LibHandle(void *handle) : handle(handle){};
+      LibHandle(void *handle) : handle(handle) {};
       ~LibHandle() {
         if(handle != nullptr) dlclose(handle);
       }
@@ -52,7 +52,7 @@ namespace AmpGen {
       return set(*m_handle, name);
     }
     bool set(void *handle, const std::string &name, bool isFatal = false) {
-      m_fcn = (RETURN_TYPE(*)(IN_TYPES...))dlsym(handle, name.c_str());
+      m_fcn = (RETURN_TYPE (*)(IN_TYPES...))dlsym(handle, name.c_str());
       if(m_fcn == nullptr) {
         if(!isFatal)
           ERROR("Failed to link: " << name << " error: " << dlerror());

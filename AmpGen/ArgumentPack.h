@@ -64,7 +64,7 @@ namespace AmpGen {
   */
   class ArgumentPack {
   public:
-    template <typename... ARGS> explicit ArgumentPack(const ARGS &... args) {
+    template <typename... ARGS> explicit ArgumentPack(const ARGS &...args) {
       std::tuple<ARGS...> argTuple(args...);
       for_each(argTuple, [this](const auto &f) { this->addArgument(f); });
     }

@@ -13,15 +13,15 @@
 #include "AmpGen/MsgService.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/Utilities.h"
-#include "AmpGen/OptionsParser.h" 
+#include "AmpGen/OptionsParser.h"
 
 using namespace AmpGen;
 using namespace std::complex_literals;
 
-REGISTER_CONFIGURABLE( CouplingConstant ); 
+REGISTER_CONFIGURABLE(CouplingConstant);
 
-CouplingConstant::CouplingConstant(MinuitParameter *re, MinuitParameter *im) : m_re(re), m_im(im) {
-  if(m_re != nullptr && m_im != nullptr) {
+CouplingConstant::CouplingConstant(MinuitProxy re, MinuitProxy im) : m_re(re), m_im(im) {
+  if(m_re.isValid() && m_im.isValid()) {
     auto tokens = split(re->name(), '_');
     if(tokens.size() == 3) {
       m_prefix = tokens[0];
@@ -46,7 +46,7 @@ AmplitudeRules::AmplitudeRules(const MinuitParameterSet &mps) {
     DEBUG("Attempting to parse: " << it_re->name());
     if(name.find("_Re") != std::string::npos) {
       auto it_im = mps.find(replaceAll(name, "_Re", "_Im"));
-      if(it_im == nullptr) {
+      if(!it_im.isValid()) {
         ERROR("Cannot find matching imaginary part / phase for: " << it_re->name());
         continue;
       }
@@ -99,8 +99,8 @@ std::complex<double> CouplingConstant::operator()() const {
 
 Expression CouplingConstant::to_expression() const {
   return m_expr != nullptr ? m_expr->expression()
-                           : ((m_coord == coordinateType::cartesian) ? ComplexParameter(Parameter(m_re->name()), Parameter(m_im->name()))
-                                                                     : Parameter(m_re->name()) * fcn::exp(1i * m_sf * Parameter(m_im->name())));
+                           : ((m_coord == coordinateType::cartesian) ? ComplexVariable(Variable(m_re->name()), Variable(m_im->name()))
+                                                                     : Variable(m_re->name()) * fcn::exp(1i * m_sf * Variable(m_im->name())));
 }
 
 std::complex<double> TotalCoupling::operator()() const {

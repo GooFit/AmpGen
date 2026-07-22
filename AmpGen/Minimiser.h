@@ -47,9 +47,7 @@ namespace AmpGen {
     template <typename TYPE> void setFunction(TYPE &fcn) {
       if constexpr(has_getVal<TYPE>::value)
         m_theFunction = [&fcn]() { return fcn.getVal(); };
-      else {
-        m_theFunction = fcn;
-      }
+      else { m_theFunction = fcn; }
       if constexpr(std::is_convertible<TYPE *, ROOT::Math::IGradientFunctionMultiDimTempl<double> *>::value) m_fcnWithGrad = &fcn;
     }
     template <typename TYPE> Minimiser(TYPE &fitFunction, MinuitParameterSet *mps) : m_parSet(mps) {

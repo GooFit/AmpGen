@@ -12,15 +12,15 @@ using namespace AmpGen::fcn;
 
 DEFINE_LINESHAPE(GLASS) {
   const auto props = ParticlePropertiesList::get(particleName);
-  const auto mass = Parameter(particleName + "_mass", props->mass());
-  const auto width0 = Parameter(particleName + "_width", props->width());
+  const auto mass = Variable(particleName + "_mass", props->mass());
+  const auto width0 = Variable(particleName + "_width", props->width());
   const auto s0 = mass * mass;
-  const auto a = Parameter(particleName + "::GLASS::a", 2.07);
-  const auto r = Parameter(particleName + "::GLASS::r", 3.32);
-  const auto phiR = Parameter(particleName + "::GLASS::phiR", 0.00);
-  const auto phiF = Parameter(particleName + "::GLASS::phiF", 0.00);
-  const auto R = Parameter(particleName + "::GLASS::R", 1.00);
-  const auto F = Parameter(particleName + "::GLASS::F", 1.00);
+  const auto a = Variable(particleName + "::GLASS::a", 2.07);
+  const auto r = Variable(particleName + "::GLASS::r", 3.32);
+  const auto phiR = Variable(particleName + "::GLASS::phiR", 0.00);
+  const auto phiF = Variable(particleName + "::GLASS::phiF", 0.00);
+  const auto R = Variable(particleName + "::GLASS::R", 1.00);
+  const auto F = Variable(particleName + "::GLASS::F", 1.00);
   const auto q2 = Q2(s, s1, s2);
   const auto q20 = Q2(s0, s1, s2);
   const auto q = safe_sqrt(q2);

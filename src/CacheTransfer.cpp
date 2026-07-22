@@ -18,7 +18,7 @@ void CacheTransfer::print() const { INFO(m_address << " " << m_value << " " << m
 
 void ParameterTransfer::transfer(CompiledExpressionBase *destination) { destination->setExternal(m_source->mean(), m_address); }
 
-ParameterTransfer::ParameterTransfer(const size_t &address, const std::string &name, MinuitParameter *source)
+ParameterTransfer::ParameterTransfer(const size_t &address, const std::string &name, MinuitProxy source)
     : CacheTransfer(address, name, source->mean(), 1), m_source(source) {}
 
 void ParameterTransfer::print() const { INFO("Source: " << m_source->name() << " address = " << m_address << " value = " << m_source->mean()); }

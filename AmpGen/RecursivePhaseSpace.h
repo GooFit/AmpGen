@@ -35,7 +35,7 @@ namespace AmpGen {
       std::string name = {""};
       int sink = {-1};
       std::shared_ptr<RecursivePhaseSpace> decayProds = {nullptr};
-      explicit Node(const std::string &_name) : name(_name){};
+      explicit Node(const std::string &_name) : name(_name) {};
     };
 
   public:
@@ -48,7 +48,7 @@ namespace AmpGen {
     Event makeEvent();
     size_t size() const;
     EventType eventType() const;
-    void debug(const Event & /*event*/){};
+    void debug(const Event & /*event*/) {};
 
   private:
     PhaseSpace m_phsp;

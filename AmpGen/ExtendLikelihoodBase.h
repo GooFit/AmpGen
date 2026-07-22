@@ -4,9 +4,10 @@
 #include <string>
 #include <vector>
 
+#include "AmpGen/MinuitParameter.h"
+
 namespace AmpGen {
   class MinuitParameterSet;
-  class MinuitParameter;
   class CoherentSum;
 
   class ExtendLikelihoodBase {
@@ -26,7 +27,7 @@ namespace AmpGen {
     static std::string _id;
 
   private:
-    MinuitParameter *m_param;
+    MinuitProxy m_param;
     double m_mean;
     double m_sigma;
   };
@@ -34,7 +35,7 @@ namespace AmpGen {
   class LASSO : public ExtendLikelihoodBase {
   public:
     double operator()() const override;
-    LASSO(const CoherentSum *pdf = nullptr) : m_pdf(pdf){};
+    LASSO(const CoherentSum *pdf = nullptr) : m_pdf(pdf) {};
     void configure(const std::string &configString, const MinuitParameterSet &mps) override;
     ExtendLikelihoodBase *create() override { return new LASSO(); }
     static std::string _id;

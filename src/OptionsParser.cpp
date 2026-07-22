@@ -7,7 +7,7 @@
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/ConfigurableBase.h" 
+#include "AmpGen/ConfigurableBase.h"
 
 using namespace AmpGen;
 
@@ -29,10 +29,7 @@ OptionsParser::OptionsParser() {
   };
 }
 
-void OptionsParser::addToConfigurables( const ConfigurableBase* obj )
-{
-  m_configurables.emplace_back(dynamic_cast<const ConfigurableBase*>(obj));
-}
+void OptionsParser::addToConfigurables(const ConfigurableBase *obj) { m_configurables.emplace_back(dynamic_cast<const ConfigurableBase *>(obj)); }
 
 OptionsParser *OptionsParser::getMe() {
   if(gOptionsParser == nullptr) gOptionsParser = new OptionsParser();
@@ -172,5 +169,5 @@ OptionsParser::const_iterator OptionsParser::begin() const { return m_parsedLine
 OptionsParser::const_iterator OptionsParser::end() const { return m_parsedLines.cend(); }
 
 void OptionsParser::print() const {
-  for( auto const& configurable : m_configurables ) configurable->print() ; 
+  for(auto const &configurable : m_configurables) configurable->print();
 }

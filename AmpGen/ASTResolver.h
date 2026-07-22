@@ -18,7 +18,7 @@
 namespace AmpGen {
   class MinuitParameter;
   class MinuitParameterSet;
-  class MinuitParameterLink;
+  class MinuitProxy;
 
   /** @ingroup ExpressionEngine class ASTResolver
       @brief (Internal) class to aide in the resolution of the dependencies of expression trees.
@@ -33,7 +33,7 @@ namespace AmpGen {
     std::vector<std::pair<uint64_t, Expression>> getOrderedSubExpressions(const Expression &expression);
 
     template <class TYPE> void resolve(const TYPE &obj) {}
-    template <class TYPE, class... ARGS> size_t addCacheFunction(const std::string &name, const ARGS &... args) {
+    template <class TYPE, class... ARGS> size_t addCacheFunction(const std::string &name, const ARGS &...args) {
       auto it = m_cacheFunctions.find(name);
       if(it != m_cacheFunctions.end()) return it->second->address();
       m_cacheFunctions[name] = std::make_shared<TYPE>(m_nParameters, name, args...);
@@ -47,15 +47,15 @@ namespace AmpGen {
     std::map<std::string, std::shared_ptr<CacheTransfer>> cacheFunctions() const;
     void addResolvedParameter(const IExpression *param, const std::string &thing);
     void addResolvedParameter(const IExpression *param, const size_t &address, const size_t &arg = 0);
-    std::string resolvedParameter(const IExpression *param) const;
+    std::string resolvedVariable(const IExpression *param) const;
 
     void clear();
 
     std::map<const IExpression *, std::string> parameters() const { return m_resolvedParameters; }
-    std::vector<Parameter> unresolvedParameters() const { return m_unresolvedParameters; }
+    std::vector<Variable> unresolvedVariables() const { return m_unresolvedVariables; }
 
   private:
-    std::vector<Parameter> m_unresolvedParameters;                          /// Parameters that cannot be resolved
+    std::vector<Variable> m_unresolvedVariables;                            /// Parameters that cannot be resolved
     std::map<const IExpression *, std::string> m_resolvedParameters;        /// Map of parameters that have been resolved
     std::map<std::string, std::shared_ptr<CacheTransfer>> m_cacheFunctions; /// Container of functions for calculating function cache
     std::map<std::string, unsigned> m_evtMap;                               /// Event specification
@@ -66,10 +66,10 @@ namespace AmpGen {
     bool m_enableAVX{false};                                                /// Flag to check if requested expression outputs a vector register
   };
 
-  template <> void ASTResolver::resolve<Parameter>(const Parameter &obj);
+  template <> void ASTResolver::resolve<Variable>(const Variable &obj);
   template <> void ASTResolver::resolve<SubTree>(const SubTree &obj);
   template <> void ASTResolver::resolve<Spline>(const Spline &obj);
-  template <> void ASTResolver::resolve<MinuitParameterLink>(const MinuitParameterLink &obj);
+  template <> void ASTResolver::resolve<MinuitProxy>(const MinuitProxy &obj);
   template <> void ASTResolver::resolve<LambdaExpression>(const LambdaExpression &obj);
 }
 

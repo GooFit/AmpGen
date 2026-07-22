@@ -29,7 +29,7 @@
 using namespace AmpGen;
 using namespace std::complex_literals;
 
-REGISTER_CONFIGURABLE(Particle); 
+REGISTER_CONFIGURABLE(Particle);
 
 Particle::Particle() = default;
 
@@ -159,9 +159,7 @@ void Particle::parseModifier(const std::string &mod) {
       auto tmp = lexical_cast<unsigned int>(mod, status); // this is if it is a number ///
       if(status)
         m_spinConfigurationNumber = tmp;
-      else {
-        m_spinConfigurationNumber = 10 + int(mod[0]);
-      }
+      else { m_spinConfigurationNumber = 10 + int(mod[0]); }
     }
   } else if(mod.size() == 2) {
     parseModifier(mod.substr(0, 1));
@@ -213,8 +211,7 @@ Tensor Particle::P() const {
   if(isStable()) {
     if(m_index != 999) {
       const std::string index = std::to_string(m_index);
-      Tensor rt(std::vector<Expression>({Parameter(index + "_Px"), Parameter(index + "_Py"), Parameter(index + "_Pz"), Parameter(index + "_E")}),
-                Tensor::dim(4));
+      Tensor rt(std::vector<Expression>({Variable(index + "_Px"), Variable(index + "_Py"), Variable(index + "_Pz"), Variable(index + "_E")}), Tensor::dim(4));
       //      rt[3] = fcn::sqrt( mass()*mass() + rt[0]*rt[0] + rt[1]*rt[1]
       //      + rt[2]*rt[2] ) ;
       return rt;
@@ -325,7 +322,7 @@ Particle Particle::quasiStableTree() const {
 }
 
 Expression Particle::propagator(DebugSymbols *db) const {
-  if(db != nullptr && !isStable()) db->emplace_back(uniqueString() + " lineshape", Parameter("NULL", 0, true));
+  if(db != nullptr && !isStable()) db->emplace_back(uniqueString() + " lineshape", Variable("NULL", 0, true));
   if(m_daughters.size() == 0) return 1;
 
   DEBUG("Getting lineshape " << m_name << " " << m_lineshape << " for " << m_name << " " << m_daughters.size());
@@ -380,7 +377,7 @@ Tensor Particle::transitionMatrix(DebugSymbols *db) {
 
 Expression Particle::getExpression(DebugSymbols *db, const std::vector<int> &state) {
   if(state.size() != 0) setPolarisationState(state);
-  if(db != nullptr && !isStable()) db->emplace_back(uniqueString(), Parameter("NULL", 0, true));
+  if(db != nullptr && !isStable()) db->emplace_back(uniqueString(), Variable("NULL", 0, true));
   Expression total = 0;
   Tensor::Index a;
   auto fsp = getFinalStateParticles();

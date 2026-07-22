@@ -98,11 +98,11 @@ template <typename PDF> FitResult *doFit(PDF &&pdf, EventList &data, EventList &
   if(updateWidth) {
     for(auto &shape : threeBodyShapes) shape.updateRunningWidth(MPS);
   }
-  std::vector<MinuitParameter *> slowParamPtrs;
+  std::vector<MinuitProxy> slowParamPtrs;
   if(nIterations != 0) {
     for(auto &param : SlowParams) {
       auto it = MPS.find(param);
-      if(it != nullptr) {
+      if(it.isValid()) {
         slowParamPtrs.push_back(it);
         it->fix();
       } else {

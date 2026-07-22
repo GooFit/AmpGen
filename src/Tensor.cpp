@@ -24,15 +24,11 @@ Tensor::Tensor(const std::vector<Expression> &elements) : m_dim(std::vector<unsi
 }
 
 Expression Tensor::get(const unsigned &co) {
-  if(co >= m_elements.size())
-    ERROR("Element (" + std::to_string(co) + " ) out of range (0"
-          << ", " << m_elements.size() << ")");
+  if(co >= m_elements.size()) ERROR("Element (" + std::to_string(co) + " ) out of range (0" << ", " << m_elements.size() << ")");
   return m_elements[m_symmetrisedCoordinates[co]];
 }
 Expression Tensor::get(const unsigned &co) const {
-  if(co >= m_elements.size())
-    ERROR("Element (" + std::to_string(co) + " ) out of range (0"
-          << ", " << m_elements.size() << ")");
+  if(co >= m_elements.size()) ERROR("Element (" + std::to_string(co) + " ) out of range (0" << ", " << m_elements.size() << ")");
   return m_elements[m_symmetrisedCoordinates[co]];
 }
 
@@ -53,7 +49,7 @@ int Tensor::metricSgn(const unsigned &index) const { return metricSgn(coords(ind
 void Tensor::append(const Expression &expression) { m_elements.emplace_back(expression); }
 void Tensor::append(const real_t &value) { m_elements.emplace_back(Constant(value)); }
 void Tensor::append(const complex_t &value) { m_elements.emplace_back(Constant(value)); }
-void Tensor::append(const std::string &value) { m_elements.emplace_back(Parameter(value)); }
+void Tensor::append(const std::string &value) { m_elements.emplace_back(Variable(value)); }
 
 void Tensor::setupCoordinates() {
   int st = std::accumulate(m_dim.begin(), m_dim.end(), 1, std::multiplies<int>());

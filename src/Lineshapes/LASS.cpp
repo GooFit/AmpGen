@@ -12,11 +12,11 @@ using namespace AmpGen::fcn;
 
 DEFINE_LINESHAPE(LASS) {
   const auto props = ParticlePropertiesList::get(particleName);
-  Expression mass = Parameter(particleName + "_mass", props->mass());
-  Expression width0 = Parameter(particleName + "_width", props->width());
+  Expression mass = Variable(particleName + "_mass", props->mass());
+  Expression width0 = Variable(particleName + "_width", props->width());
   Expression s0 = mass * mass;
-  Expression a = Parameter("LASS::a", 2.07);
-  Expression r = Parameter("LASS::r", 3.32);
+  Expression a = Variable("LASS::a", 2.07);
+  Expression r = Variable("LASS::r", 3.32);
   Expression q2 = Q2(s, s1, s2);
   Expression q20 = Q2(s0, s1, s2);
   Expression q = safe_sqrt(q2);

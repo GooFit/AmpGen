@@ -30,7 +30,7 @@ namespace AmpGen {
     bool m_normalise = {true};
 
   public:
-    template <typename... ARGS> explicit Generator(const ARGS &... args) : m_gps(args...) {
+    template <typename... ARGS> explicit Generator(const ARGS &...args) : m_gps(args...) {
       m_eventType = m_gps.eventType();
       if(m_rnd != gRandom) setRandom(m_rnd);
     }
@@ -159,12 +159,12 @@ namespace AmpGen {
 
   template <class FCN> class PDFWrapper {
   public:
-    void prepare(){};
-    void setEvents(AmpGen::EventList & /*evts*/){};
+    void prepare() {};
+    void setEvents(AmpGen::EventList & /*evts*/) {};
     double prob_unnormalised(const AmpGen::Event &evt) const { return m_fcn(evt); }
     explicit PDFWrapper(const FCN &fcn) : m_fcn(fcn) {}
     size_t size() const { return 0; }
-    void reset(const bool & /*flag*/ = false){};
+    void reset(const bool & /*flag*/ = false) {};
 
   private:
     FCN m_fcn;

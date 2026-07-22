@@ -83,7 +83,8 @@ namespace AmpGen {
     public:
       virtual ~Base() = default;
       virtual Expression get(const Expression &s, const Expression &s1, const Expression &s2, const std::string &particleName, const unsigned &L,
-                             const std::string &lineshapeModifier, DebugSymbols *dbexpressions = nullptr) const = 0;
+                             const std::string &lineshapeModifier, DebugSymbols *dbexpressions = nullptr) const
+        = 0;
       virtual Expression get(const AmpGen::Particle &p, const std::string &lineshapeModifier, AmpGen::DebugSymbols *dbexpressions = nullptr) const = 0;
       Base *create() { return this; }
     };

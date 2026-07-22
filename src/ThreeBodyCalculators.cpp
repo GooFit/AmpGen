@@ -1,7 +1,7 @@
 #include <Math/AllIntegrationTypes.h>
 #include <Math/IFunctionfwd.h>
 #include <Math/ParamFunctor.h>
-//#include <Math/GSLIntegrator.h>
+// #include <Math/GSLIntegrator.h>
 #include <Math/WrappedTF1.h>
 #include <TH2.h>
 #include <TF1.h>
@@ -177,7 +177,7 @@ void ThreeBodyCalculator::updateRunningWidth(MinuitParameterSet &mps, const doub
     double s = m_min + double(c) * m_step;
     double I = getWidth(s) / m_norm;
     const std::string knotName = m_name + "::Spline::Gamma::" + std::to_string(c);
-    if(mps.find(knotName) != nullptr) mps[knotName]->setCurrentFitVal(I);
+    if(mps.contains(knotName)) mps[knotName]->setCurrentFitVal(I);
     INFO(knotName << " = " << I);
   }
   pc.stop();

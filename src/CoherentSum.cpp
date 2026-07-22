@@ -28,7 +28,7 @@
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/simd/utils.h"
 #include "AmpGen/Array.h"
-#include "AmpGen/OptionsParser.h" 
+#include "AmpGen/OptionsParser.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -36,7 +36,7 @@
 
 using namespace AmpGen;
 
-REGISTER_CONFIGURABLE(CoherentSum); 
+REGISTER_CONFIGURABLE(CoherentSum);
 
 CoherentSum::CoherentSum() = default;
 
@@ -85,10 +85,9 @@ void CoherentSum::prepare() {
     WARNING("No simulated sample specified for " << this);
   clockIntegral.stop();
   if(m_verbosity && m_prepareCalls % 100 == 0) {
-    INFO("Time Performance: "
-         << "Eval = " << clockEval << " ms"
-         << ", Integral = " << clockIntegral << " ms"
-         << ", Total = " << clockEval + clockIntegral << " ms; normalisation = " << m_norm);
+    INFO("Time Performance: " << "Eval = " << clockEval << " ms"
+                              << ", Integral = " << clockIntegral << " ms"
+                              << ", Total = " << clockEval + clockIntegral << " ms; normalisation = " << m_norm);
     m_lastPrint = m_prepareCalls;
   }
   // for( int i = 0 ; i != m_cache.nFields(); ++i )
@@ -160,8 +159,8 @@ void CoherentSum::generateSourceCode(const std::string &fname, const double &nor
   std::vector<CompiledExpressionBase *> functions;
   transferParameters();
   Tensor rt(std::vector<unsigned>{unsigned(m_matrixElements.size())});
-  Expression event = Parameter("x0", 0, true);
-  Expression pa = Parameter("double(x1)", 0, true);
+  Expression event = Variable("x0", 0, true);
+  Expression pa = Variable("double(x1)", 0, true);
   Expression amplitude;
   for(unsigned i = 0; i != size(); ++i) rt[i] = m_matrixElements[i].expression();
   functions.push_back(new CompiledExpression<std::vector<complex_t>(const real_t *, const real_t *)>(

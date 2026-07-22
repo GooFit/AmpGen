@@ -40,7 +40,7 @@ namespace AmpGen {
       if(OptionsParser::printHelp()) help(def);
       DEBUG(*this);
     }
-    Property(const nullptr_t /*parent*/, const std::string &name, const value_t &def = value_t(), const std::string_view &helpString = "")
+    Property(const std::nullptr_t /*parent*/, const std::string &name, const value_t &def = value_t(), const std::string_view &helpString = "")
         : m_name(name), m_helpString(helpString), m_value(def) {
       setFromOptionsParser();
       if(OptionsParser::printHelp()) help(def);
@@ -121,7 +121,7 @@ namespace AmpGen {
     }
   };
   template <typename T> std::ostream &operator<<(std::ostream &os, const Property<T> &np);
-  template <typename... T> std::string helpStringOptions(const std::string &header, const T &... args);
+  template <typename... T> std::string helpStringOptions(const std::string &header, const T &...args);
   template <typename T> bool operator==(const T &val, const Property<T> &prop) { return val == prop.value(); }
 };
 
@@ -135,7 +135,7 @@ template <typename T> std::ostream &AmpGen::operator<<(std::ostream &os, const A
   return os;
 }
 
-template <typename... T> std::string AmpGen::helpStringOptions(const std::string &header, const T &... args) {
+template <typename... T> std::string AmpGen::helpStringOptions(const std::string &header, const T &...args) {
   std::stringstream rt;
   rt << header;
   for_each(std::make_tuple(args...), [&rt](const auto &f) mutable { rt << "\n\033[3m " << f.first << "\033[0m: " << f.second; });

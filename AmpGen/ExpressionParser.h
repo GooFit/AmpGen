@@ -26,7 +26,7 @@ namespace AmpGen {
     if constexpr(std::is_same<arg_type, Expression>::value) {
       arg = expr;
     } else if constexpr(std::is_same<arg_type, std::string>::value) {
-      arg = is<Parameter>(expr) ? cast<Parameter>(expr).name() : "ERROR";
+      arg = is<Variable>(expr) ? cast<Variable>(expr).name() : "ERROR";
     } else if constexpr(std::is_same<arg_type, int>::value) {
       arg = int(std::real(expr()));
     } else if constexpr(std::is_same<arg_type, double>::value) {

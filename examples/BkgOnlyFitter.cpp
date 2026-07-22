@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
   OptionsParser::setArgs(argc, argv);
 
   /* Parameters that have been parsed can be accessed anywhere in the program
-     using the Property<T> class. The parent class of the paramerer is the first option, 
+     using the Property<T> class. The parent class of the paramerer is the first option,
      the second the name of the parameter
      then the default value, and then the help string that will be printed if --h is specified
      as an option. */
@@ -60,14 +60,14 @@ int main(int argc, char *argv[]) {
   std::string logFile = Property<std::string>(nullptr, "LogFile", "Fitter.log", "Name of the output log file");
   std::string plotFile = Property<std::string>(nullptr, "Plots", "plots.root", "Name of the output plot file");
 
-  Property<strings> bNames {nullptr, "Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"};
-  Property<strings> pNames {nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"};
+  Property<strings> bNames{nullptr, "Branches", {}, "List of branch names, assumed to be \033[3m daughter1_px ... daughter1_E, daughter2_px ... \033[0m"};
+  Property<strings> pNames{nullptr, "EventType", {}, "EventType to fit, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"};
 
-  [[maybe_unused]] Property<unsigned> nThreads {nullptr, "nCores", 8, "Number of threads to use"};
-  Property<size_t> seed{nullptr,"Seed", 0, "Random seed used"};
+  [[maybe_unused]] Property<unsigned> nThreads{nullptr, "nCores", 8, "Number of threads to use"};
+  Property<size_t> seed{nullptr, "Seed", 0, "Random seed used"};
 
   std::string outOptFile = Property<std::string>(nullptr, "OutputOptionFile", "", "Name of output option file updated with the best-fit parameters");
-  std::string inOptFile  = Property<std::string>(nullptr, "InputOptionFile", "", "Name of input option file to use as template for OutputOptionFile");
+  std::string inOptFile = Property<std::string>(nullptr, "InputOptionFile", "", "Name of input option file to use as template for OutputOptionFile");
 
   if(dataFile == "") FATAL("Must specify input with option " << italic_on << "DataSample" << italic_off);
   if(pNames.value().size() == 0) FATAL("Must specify event type with option " << italic_on << " EventType" << italic_off);

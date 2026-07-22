@@ -5,6 +5,7 @@
 #include <stack>
 #include <tuple>
 #include "TRandom3.h"
+#include <math.h>
 
 // Generator of discrete distributions,
 // based on https://github.com/DavidPal/discrete-distribution
@@ -17,7 +18,7 @@ namespace AmpGen {
 
     unsigned operator()(TRandom3 *generator) const {
       const double number = generator->Uniform();
-      size_t index = floor(m_buckets.size() * number);
+      size_t index = std::floor(m_buckets.size() * number);
       const auto &bucket = m_buckets[index];
       return number < std::get<2>(bucket) ? std::get<0>(bucket) : std::get<1>(bucket);
     }

@@ -11,7 +11,7 @@
 
 using namespace AmpGen;
 
-void AmpGen::AddCPConjugate(MinuitParameterSet &mps, const std::vector<std::string>& forbidden ) {
+void AmpGen::AddCPConjugate(MinuitParameterSet &mps, const std::vector<std::string> &forbidden) {
   std::vector<MinuitParameter *> tmp;
   auto coord = CouplingConstant(nullptr, nullptr).coordinates();
 
@@ -22,7 +22,7 @@ void AmpGen::AddCPConjugate(MinuitParameterSet &mps, const std::vector<std::stri
       auto props = AmpGen::ParticlePropertiesList::get(name.substr(0, pos), true);
       if(props != 0) {
         std::string new_name = props->anti().name() + name.substr(pos);
-        tmp.push_back(new MinuitExpression(new_name, MinuitParameterLink(param)));
+        tmp.push_back(new MinuitExpression(new_name, ExpressionParameter(param)));
       }
       continue;
     }
@@ -33,7 +33,7 @@ void AmpGen::AddCPConjugate(MinuitParameterSet &mps, const std::vector<std::stri
       if(std::count(forbidden.begin(), forbidden.end(), particle.name()) == 0) {
         // DEBUG( particle.name() << "->" << particle );   [ to do: fix
         // DEBUG for free functions ]
-        tmp.push_back(new MinuitExpression(particle.conj().decayDescriptor(), fcn::conj(MinuitParameterLink(param))));
+        tmp.push_back(new MinuitExpression(particle.conj().decayDescriptor(), fcn::conj(ExpressionParameter(param))));
       } else {
         // DEBUG("Skipping: " << particle );
       }
@@ -59,7 +59,7 @@ void AmpGen::AddCPConjugate(MinuitParameterSet &mps, const std::vector<std::stri
       auto props = AmpGen::ParticlePropertiesList::get(pname, true);
       if(props != 0) new_name = props->anti().name() + "_" + tokens[1];
     }
-    tmp.push_back(new MinuitExpression(new_name, sgn * MinuitParameterLink(param)));
+    tmp.push_back(new MinuitExpression(new_name, sgn * MinuitProxy(param)));
   }
   for(auto &p : tmp) {
     if(mps.find(p->name()) == 0)

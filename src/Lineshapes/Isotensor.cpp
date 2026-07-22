@@ -15,10 +15,10 @@ DEFINE_LINESHAPE(Isotensor) {
   //// we fix inelasticity to be zero, which should hold up to ~ 1.5 GeV
 
   Expression mpi(0.139570);
-  Expression a = Parameter("Isotensor::a", 55.21) * M_PI / 180;
-  Expression b = Parameter("Isotensor::b", 0.853);
-  Expression c = Parameter("Isotensor::c", -0.959);
-  Expression d = Parameter("Isotensor::d", 0.314);
+  Expression a = Variable("Isotensor::a", 55.21) * M_PI / 180;
+  Expression b = Variable("Isotensor::b", 0.853);
+  Expression c = Variable("Isotensor::c", -0.959);
+  Expression d = Variable("Isotensor::d", 0.314);
   Expression polyTerm = pol(s, {1, b, c, d});
   Expression phaseShift = -2 * a * fcn::sqrt(s / 4 - mpi * mpi) / polyTerm;
   ADD_DEBUG(phaseShift, dbexpressions);

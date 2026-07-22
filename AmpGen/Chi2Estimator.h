@@ -26,7 +26,7 @@ namespace AmpGen {
   public:
     template <typename... argument_types>
     Chi2Estimator(const EventList_type &dataEvents, const EventList_type &mcEvents, const std::function<double(const Event &)> &fcn,
-                  const argument_types &... args)
+                  const argument_types &...args)
         : m_binning(dataEvents.begin(), dataEvents.end(), ArgumentPack(args...)) {
       doChi2(dataEvents, mcEvents, fcn);
     }

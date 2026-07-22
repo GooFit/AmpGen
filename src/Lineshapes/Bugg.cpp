@@ -31,22 +31,22 @@ Expression Gamma_4pi(const Expression &s, const Expression &m0, const Expression
 }
 
 DEFINE_LINESHAPE(Bugg) {
-  Expression M = Parameter("Bugg::M", 0.935);
-  Expression b1 = Parameter("Bugg::b1", 1.302);
-  Expression b2 = Parameter("Bugg::b2", 0.340);
-  Expression A = Parameter("Bugg::A", 2.426);
-  Expression g_4pi = Parameter("Bugg::g_4pi", 0.011);
-  Expression g_2K = Parameter("Bugg::g_2K", 0.6);
-  Expression g_2eta = Parameter("Bugg::g_2eta", 0.2);
-  Expression alpha = Parameter("Bugg::alpha", 1.3);
+  Expression M = Variable("Bugg::M", 0.935);
+  Expression b1 = Variable("Bugg::b1", 1.302);
+  Expression b2 = Variable("Bugg::b2", 0.340);
+  Expression A = Variable("Bugg::A", 2.426);
+  Expression g_4pi = Variable("Bugg::g_4pi", 0.011);
+  Expression g_2K = Variable("Bugg::g_2K", 0.6);
+  Expression g_2eta = Variable("Bugg::g_2eta", 0.2);
+  Expression alpha = Variable("Bugg::alpha", 1.3);
   Constant mPiPlus(0.139570);
   Constant mKPlus(0.493677);
   Constant mEta(0.547863);
   Expression J = Constant(0, 1);
 
-  Expression sA = Parameter("Bugg::sA", 0.41) * mPiPlus * mPiPlus;
-  Expression s0_4pi = Parameter("Bugg::s0_4pi", 7.082 / 2.845);
-  Expression lambda_4pi = Parameter("Bugg::lambda_4pi", 2.845);
+  Expression sA = Variable("Bugg::sA", 0.41) * mPiPlus * mPiPlus;
+  Expression s0_4pi = Variable("Bugg::s0_4pi", 7.082 / 2.845);
+  Expression lambda_4pi = Variable("Bugg::lambda_4pi", 2.845);
 
   Expression z = Buggj1(s, mPiPlus) - Buggj1(M * M, mPiPlus);
 

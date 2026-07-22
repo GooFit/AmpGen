@@ -25,7 +25,9 @@ namespace AmpGen {
   template <class TYPE> std::string type_string(const TYPE &) { return type_string<TYPE>(); }
 
   namespace detail {
-    template <typename T, typename... args> struct zeroType { typedef T type; };
+    template <typename T, typename... args> struct zeroType {
+      typedef T type;
+    };
   }
   template <int N, typename... args> using nthType = typename std::tuple_element<N, std::tuple<args...>>::type;
 
@@ -102,8 +104,12 @@ namespace AmpGen {
     static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
   };
 
-  template <int A, int B> struct get_power { static const int value = A * get_power<A, B - 1>::value; };
-  template <int A> struct get_power<A, 0> { static const int value = 1; };
+  template <int A, int B> struct get_power {
+    static const int value = A * get_power<A, B - 1>::value;
+  };
+  template <int A> struct get_power<A, 0> {
+    static const int value = 1;
+  };
 
 } // namespace AmpGen
 

@@ -6,7 +6,7 @@
 #include "AmpGen/Event.h"
 #include "AmpGen/DecayChainStack.h"
 #include "AmpGen/simd/utils.h"
-#include "AmpGen/OptionsParser.h" 
+#include "AmpGen/OptionsParser.h"
 
 #include "TRandom3.h"
 #include <numeric>
@@ -14,7 +14,7 @@
 
 using namespace AmpGen;
 
-REGISTER_CONFIGURABLE(TreePhaseSpace); 
+REGISTER_CONFIGURABLE(TreePhaseSpace);
 
 TreePhaseSpace::TreePhaseSpace(const Particle &decayChain, const EventType &type, TRandom *rndm)
     : m_rand(rndm == nullptr ? (TRandom3 *)gRandom : (TRandom3 *)rndm), m_type(type) {

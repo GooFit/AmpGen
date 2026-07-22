@@ -48,7 +48,7 @@ namespace AmpGen {
     SumPDF() = default;
 
     /// Constructor from a set of PDF functions
-    SumPDF(const pdfTypes &... pdfs) : m_pdfs(std::tuple<pdfTypes...>(pdfs...)) {}
+    SumPDF(const pdfTypes &...pdfs) : m_pdfs(std::tuple<pdfTypes...>(pdfs...)) {}
 
     /// Returns negative twice the log-likelihood for this PDF and the given dataset.
 
@@ -131,12 +131,12 @@ namespace AmpGen {
     the data for the PDF.
     Therefore, named SumPDF, it is useful to use this function to get a likelihood for a PDF containing a single term (i.e. signal or background only).
     */
-  template <class eventListType = EventList, class... pdfTypes> auto make_pdf(pdfTypes &&... pdfs) {
+  template <class eventListType = EventList, class... pdfTypes> auto make_pdf(pdfTypes &&...pdfs) {
     // return SumPDF<eventListType, pdfTypes...>( std::forward<pdfTypes>( pdfs )... );
     return SumPDF<eventListType, pdfTypes...>(pdfs...);
   }
 
-  template <class eventListType = EventList, class... pdfTypes> auto make_likelihood(eventListType &events, pdfTypes &&... pdfs) {
+  template <class eventListType = EventList, class... pdfTypes> auto make_likelihood(eventListType &events, pdfTypes &&...pdfs) {
     auto rt = SumPDF<eventListType, pdfTypes...>(std::forward<pdfTypes>(pdfs)...);
     rt.setEvents(events);
     return rt;

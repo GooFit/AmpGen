@@ -31,7 +31,7 @@ namespace AmpGen {
     Event makeEvent();                                                ///< Make an event in this phase space.
     EventType eventType() const;                                      ///< Returns the EventType that this phase space is generating
     void fill(double *output, unsigned stagger = 1);
-    void debug(const Event &){};
+    void debug(const Event &) {};
 
   private:
     size_t m_nt = {0};           ///< Number of particles in the final state
