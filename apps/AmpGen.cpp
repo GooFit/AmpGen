@@ -159,7 +159,6 @@ int main(int argc, char **argv) {
   MinuitParameterSet MPS;
   MPS.loadFromStream();
 
-  OptionsParser::getMe()->print();
   if(OptionsParser::printHelp()) return 0;
 
   EventType eventType;
