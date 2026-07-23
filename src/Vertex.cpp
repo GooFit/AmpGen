@@ -297,18 +297,19 @@ DEFINE_VERTEX(S_VV_rp) {
   // Implementation for B to Kres gamma with 1+ Kres spin-parity
   // Inputs: P = Pres+Pgamma; Q = Pres - Pgamma, V1 = PolVector_Kres, V2 =
   // polVector_gamma
+  /// warning: this is an old implementation that explicitly does not obey the Ward identity, but kept to avoid breaking tests for B->Kpipig
+  Tensor P1 = 0.5 * (P + Q); // Pkres
+  Tensor P2 = 0.5 * (P - Q); // Pgamma
+  auto pP = fcn::sqrt(P2[0] * P2[0] + P2[1] * P2[1] + P2[2] * P2[2]);
+  Tensor helOp = 1i * (SO3[0] * P2[0] + SO3[1] * P2[1] + SO3[2] * P2[2]) / pP; // helicity operator iL.p
+  Tensor helOpV2 = helOp(mu, nu) * V2(nu);
+  helOpV2.st();
+  Tensor dot1 = Tensor({dot(V2, V1) * dot(P1, P2)});
+  Tensor dot2 = Tensor({dot(V2, P1) * dot(V1, P2)});
+  Tensor prod = Tensor({LeviCivita()(-mu, -nu, -alpha, -beta) * helOpV2(mu) * V1(nu) * P1(alpha) * P2(beta)}, {1});
+  return -1i * prod + (dot1 - dot2);
+
   /*
-    Tensor P1 = 0.5 * (P + Q); // Pkres
-    Tensor P2 = 0.5 * (P - Q); // Pgamma
-    auto pP = fcn::sqrt(P2[0] * P2[0] + P2[1] * P2[1] + P2[2] * P2[2]);
-    Tensor helOp = 1i * (SO3[0] * P2[0] + SO3[1] * P2[1] + SO3[2] * P2[2]) / pP; // helicity operator iL.p
-    Tensor helOpV2 = helOp(mu, nu) * V2(nu);
-    helOpV2.st();
-    Tensor dot1 = Tensor({dot(V2, V1) * dot(P1, P2)});
-    Tensor dot2 = Tensor({dot(V2, P1) * dot(V1, P2)});
-    Tensor prod = Tensor({LeviCivita()(-mu, -nu, -alpha, -beta) * helOpV2(mu) * V1(nu) * P1(alpha) * P2(beta)}, {1});
-    return -1i * prod + (dot1 - dot2);
-  */
   Tensor P1 = 0.5 * (P + Q); // Pkres
   Tensor P2 = 0.5 * (P - Q); // Pgamma
   auto pP = fcn::sqrt(P2[0] * P2[0] + P2[1] * P2[1] + P2[2] * P2[2]);
@@ -322,6 +323,7 @@ DEFINE_VERTEX(S_VV_rp) {
   ADD_DEBUG_TENSOR(PrP, db);
   ADD_DEBUG_TENSOR(PlP, db);
   return prod + (dot1 - dot2);
+  */
 }
 
 DEFINE_VERTEX(S_VV_rm) {
