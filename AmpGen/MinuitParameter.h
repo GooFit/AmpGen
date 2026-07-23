@@ -121,12 +121,12 @@ namespace AmpGen {
     MinuitParameter *parameter() { return m_parameter; }
     const MinuitParameter *parameter() const { return m_parameter; }
     bool isValid() const { return m_parameter != nullptr; }
-    double m_value;
 
     friend class MinuitParameter;
 
   private:
     MinuitParameter *m_parameter{nullptr};
+    double m_value;
   };
 
   class ExpressionParameter : public IExpression {
