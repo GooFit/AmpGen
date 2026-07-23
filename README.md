@@ -28,8 +28,7 @@ git clone http://github.com/GooFit/AmpGen/ --recursive
 
 ##### Build requirements:
 * cmake >= 3.11.0
-* C++ compiler with CXX standard >= 14 (gcc >= 4.9.3, clang ~ 5).
-  Defaults to Cxx17 (enable cxx14 with cmake flag `-DCMAKE_CXX_STANDARD=14` )
+* C++ compiler with CXX standard >= 21
 * ROOT >= 6 with MathMore
   To (re)configure root with these options, use the additional command line options `-Dcxx14 -Dmathmore=ON` when configuring the installation of ROOT.
 
@@ -75,7 +74,7 @@ is to specifically specify the location of the build tool for AmpGen's JIT:
 A valid development environment is required to build the library on LXPLUS and similar. The easiest way to provide this is via cvmfs views where available, as this provides the necessary versions of gcc in addition to the ROOT libraries in a coherent manner, which can be used as
 
 ````
-source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_94python3 x86_64-centos7-gcc8-opt
+source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_107 x86_64-el9-gcc15-opt
 ````
 
 The LCG versions and binary tag may need to be updated over time.
