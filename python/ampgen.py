@@ -91,7 +91,11 @@ def make_ampgen_model( options_file, src = "" ) :
     if src == "" : src=mkstemp( suffix='.cpp')[1]
     lib=src.replace(".cpp",".so")
     if not os.path.isfile(lib) :
-        cmd = ["AmpGen", options_file, f"--Output {src}", "--Normalise=0", "--CompilerWrapper::Verbose=1", "--AutoCompile=0"]
-        print( f"Running command {cmd}")
-        subprocess.run(cmd, capture_output=True, check=True, text=True)
+        cmd = ["AmpGen", options_file, f"--Output={src}", "--Normalise=0", "--CompilerWrapper::Verbose=1", "--CompilerWrapper::Disable=1"]
+        print( f"Running command {cmd}")         
+        output = {}
+        try : 
+            output = subprocess.run(cmd, capture_output=True, check=True, text=True)
+        except subprocess.CalledProcessError as e:
+            print(e)  # Output: Command 'exit 1' returned non-zero exit status 1.
     return AmpGenModel(os.path.abspath(lib))

@@ -12,30 +12,29 @@
 #include "AmpGen/CompiledExpressionBase.h"
 #include "AmpGen/Types.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class ASTResolver;
 
   /** @ingroup ExpressionEngine class Array
       @brief Expression for a fixed size array of values.
       Expression for an array, i.e. a set of values with an index.
-      Can be used to return an expression from the array, which is resolved at (second) compile time. 
-      */  
-  class Array : public IExpression 
-  {
-    public:
-      Array( const Expression& top, const int& size, const Expression& address = 0 );
-      std::string to_string(const ASTResolver* resolver=nullptr) const override ;
-      void resolve( ASTResolver& resolver ) const override;
-      operator Expression(); 
-      complex_t operator()() const override;
-      Expression operator[]( const Expression& address ) const;
-      Expression top() const { return m_top ; } 
-      int size() const { return m_size; }
-    private:
-      Expression m_top; 
-      Expression m_address;
-      int   m_size; 
+      Can be used to return an expression from the array, which is resolved at (second) compile time.
+      */
+  class Array : public IExpression {
+  public:
+    Array(const Expression &top, const int &size, const Expression &address = 0);
+    std::string to_string(const ASTResolver *resolver = nullptr) const override;
+    void resolve(ASTResolver &resolver) const override;
+    operator Expression();
+    complex_t operator()() const override;
+    Expression operator[](const Expression &address) const;
+    Expression top() const { return m_top; }
+    int size() const { return m_size; }
+
+  private:
+    Expression m_top;
+    Expression m_address;
+    int m_size;
   };
 } // namespace AmpGen
 

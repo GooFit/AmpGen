@@ -1,6 +1,6 @@
 
 namespace AmpGen {
-  class MinuitParameterSet; 
+  class MinuitParameterSet;
 
-  void AddCPConjugate(MinuitParameterSet&);
+  void AddCPConjugate(MinuitParameterSet &, const std::vector<std::string> & = {});
 }

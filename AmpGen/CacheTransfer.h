@@ -6,65 +6,60 @@
 #include <string>
 #include <functional>
 #include "AmpGen/MsgService.h"
+#include "AmpGen/MinuitParameter.h"
 
-namespace AmpGen
-{
+namespace AmpGen {
   class CompiledExpressionBase;
-  class MinuitParameter;
-  class LambdaExpression; 
+  class LambdaExpression;
 
-  class CacheTransfer 
-  {
-    public:
-      CacheTransfer( const size_t& address, const std::string& name, const double& value=0, const size_t& size=1);
-      virtual ~CacheTransfer() = default;
+  class CacheTransfer {
+  public:
+    CacheTransfer(const size_t &address, const std::string &name, const double &value = 0, const size_t &size = 1);
+    virtual ~CacheTransfer() = default;
 
-      size_t address() const { return m_address ; }
+    size_t address() const { return m_address; }
 
-      virtual void transfer( CompiledExpressionBase* destination ); 
-      virtual void print()     const;
-      virtual size_t size()    const { return m_size ; }  
-      virtual std::string name() const { return m_name; } 
+    virtual void transfer(CompiledExpressionBase *destination);
+    virtual void print() const;
+    virtual size_t size() const { return m_size; }
+    virtual std::string name() const { return m_name; }
 
-      
-      CacheTransfer( const CacheTransfer&) = delete;
-      CacheTransfer& operator=(const CacheTransfer&) = delete; 
-      CacheTransfer& operator=(CacheTransfer&&) = delete; 
-      CacheTransfer( CacheTransfer&&) = delete; 
+    CacheTransfer(const CacheTransfer &) = delete;
+    CacheTransfer &operator=(const CacheTransfer &) = delete;
+    CacheTransfer &operator=(CacheTransfer &&) = delete;
+    CacheTransfer(CacheTransfer &&) = delete;
 
-    protected: 
-      size_t       m_address = {0};
-      size_t       m_size    = {0}; 
-      double       m_value   = {0};
-      std::string  m_name    = {""}; 
+  protected:
+    size_t m_address = {0};
+    size_t m_size = {0};
+    double m_value = {0};
+    std::string m_name = {""};
   };
 
-  class ParameterTransfer : public CacheTransfer
-  {
-    public:
-      ParameterTransfer( const size_t& address, const std::string& name, MinuitParameter* source );
-      virtual ~ParameterTransfer() = default;
+  class ParameterTransfer : public CacheTransfer {
+  public:
+    ParameterTransfer(const size_t &address, const std::string &name, MinuitProxy source);
+    virtual ~ParameterTransfer() = default;
 
-      size_t size()    const override { return 1 ; }  
+    size_t size() const override { return 1; }
 
-      void transfer( CompiledExpressionBase* destination ) override;
-      void print()     const override;
-      virtual std::string name() const override; 
+    void transfer(CompiledExpressionBase *destination) override;
+    void print() const override;
+    virtual std::string name() const override;
 
-    protected:
-      MinuitParameter* m_source = {nullptr};
+  protected:
+    MinuitProxy m_source;
   };
-  class LambdaTransfer : public CacheTransfer 
-  {
-    public: 
-      LambdaTransfer( const size_t& address, const std::string& name, const LambdaExpression* source );
+  class LambdaTransfer : public CacheTransfer {
+  public:
+    LambdaTransfer(const size_t &address, const std::string &name, const LambdaExpression *source);
 
-      size_t size()    const override { return 1 ; }  
+    size_t size() const override { return 1; }
 
-      void transfer( CompiledExpressionBase* destination ) override;
-      void print()     const override;
+    void transfer(CompiledExpressionBase *destination) override;
+    void print() const override;
 
-      std::function<double(void)> m_function;   
+    std::function<double(void)> m_function;
   };
 
 } // namespace AmpGen

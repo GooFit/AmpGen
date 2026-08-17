@@ -23,78 +23,50 @@
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/MinuitParameterSet.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/PolarisedSum.h"
 #include "AmpGen/OptionsParser.h"
 #include "AmpGen/TreePhaseSpace.h"
 #include "AmpGen/enum.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/AddCPConjugate.h"
+#include "AmpGen/Property.h"
+#include "AmpGen/ApplicationOptions.h"
 
 #if ENABLE_AVX
-  #include "AmpGen/EventListSIMD.h"
-  using EventList_t = AmpGen::EventListSIMD;
+#include "AmpGen/EventListSIMD.h"
+using EventList_t = AmpGen::EventListSIMD;
 #else
-  #include "AmpGen/EventList.h"
-  using EventList_t = AmpGen::EventList; 
+#include "AmpGen/EventList.h"
+using EventList_t = AmpGen::EventList;
 #endif
 
 using namespace AmpGen;
 
-namespace AmpGen { 
-  make_enum(pdfTypes, CoherentSum, IncoherentSum, PolarisedSum, FixedLib)
-  make_enum(phspTypes, PhaseSpace, RecursivePhaseSpace, TreePhaseSpace)
-}  
+namespace AmpGen {
+  make_enum(pdfTypes, CoherentSum, IncoherentSum, PolarisedSum) make_enum(phspTypes, PhaseSpace, RecursivePhaseSpace, TreePhaseSpace)
+}
 
-struct FixedLibPDF 
-{
-  void* lib = {nullptr};
-  DynamicFCN<double( const double*, int )> PDF;
-  void debug( const Event& /*event*/) {};
-  void prepare(){};
-  void setEvents( AmpGen::EventList& /*evts*/ ){};
-  void setEvents( AmpGen::EventListSIMD& /*evts*/ ){};
-  double operator()( const AmpGen::Event& evt ) const { return PDF( evt, 1 ); }
-  double operator()( const double* evt, const unsigned& /*index*/ )
-  {
-    return PDF(evt, 1 ); 
-  } 
-  FixedLibPDF( const std::string& lib )
-  {
-    void* handle = dlopen( lib.c_str(), RTLD_NOW );
-    if ( handle == nullptr ) ERROR( dlerror() );
-    PDF = DynamicFCN<double( const double*, int )>( handle, "FCN" );
-  }
-  size_t size() { return 0; }
-  void reset( const bool&  ){};
-};
+template <class T> void generateSource(T &pdf, const std::string &sourceFile, MinuitParameterSet &mps) {
+  bool normalise = Property<bool>(nullptr, "Normalise", true);
+  double safetyFactor = Property<double>(nullptr, "SafetyFactor", 3);
+  int seed = Property<int>(nullptr, "Seed", 1);
+  size_t nEvents = Property<size_t>(nullptr, "NormEvents", 1000000);
 
-template <class T> void generateSource(T& pdf, const std::string& sourceFile, MinuitParameterSet& mps)
-{
-  bool normalise      = NamedParameter<bool>  ("Normalise"   ,true);
-  double safetyFactor = NamedParameter<double>("SafetyFactor", 3);
-  int seed            = NamedParameter<int>   ("Seed"        , 1);
-  size_t nEvents      = NamedParameter<size_t>("NormEvents"  , 1000000);
- 
-
-  double norm = 1; 
-  if( normalise ){
-    INFO("Normalising PDF"); 
+  double norm = 1;
+  if(normalise) {
+    INFO("Normalising PDF");
     TRandom3 rnd(seed);
     unsigned d_i = pdf.eventType().dim().first;
     Generator<PhaseSpace> phsp(pdf.eventType());
     phsp.setRandom(&rnd);
     EventList_t normEvents = phsp.generate(nEvents);
-    if constexpr( std::is_same<T, CoherentSum>::value ) pdf.prepare();
+    if constexpr(std::is_same<T, CoherentSum>::value) pdf.prepare();
     double pMax = 0;
-    for ( auto& evt : normEvents ) 
-    {
-      if constexpr ( std::is_same<T, PolarisedSum>::value )
-      {
-        if( d_i > 1 )
-        {
-          double px, py, pz; 
-          rnd.Sphere(px,py,pz, rnd.Uniform(0,1));
+    for(auto &evt : normEvents) {
+      if constexpr(std::is_same<T, PolarisedSum>::value) {
+        if(d_i > 1) {
+          double px, py, pz;
+          rnd.Sphere(px, py, pz, rnd.Uniform(0, 1));
           mps["Px"]->setCurrentFitVal(px);
           mps["Py"]->setCurrentFitVal(py);
           mps["Pz"]->setCurrentFitVal(pz);
@@ -102,213 +74,159 @@ template <class T> void generateSource(T& pdf, const std::string& sourceFile, Mi
         }
       }
       double n = 0;
-      if constexpr ( std::is_same<T, CoherentSum>::value ) n = std::norm( pdf.getValNoCache(evt) );
-      if constexpr ( std::is_same<T, PolarisedSum>::value ) n = pdf.getValNoCache(evt);
-      if ( n > pMax ) pMax = n;
+      if constexpr(std::is_same<T, CoherentSum>::value) n = std::norm(pdf.getValNoCache(evt));
+      if constexpr(std::is_same<T, PolarisedSum>::value) n = pdf.getValNoCache(evt);
+      if(n > pMax) pMax = n;
     }
-    norm = pMax * safetyFactor ; 
-    INFO( "Making binary with " << pMax << " x safety factor = " << safetyFactor );
+    norm = pMax * safetyFactor;
+    INFO("Making binary with " << pMax << " x safety factor = " << safetyFactor);
   }
-  mps.resetToInit(); 
-  pdf.generateSourceCode( sourceFile, norm, true );
+  mps.resetToInit();
+  pdf.generateSourceCode(sourceFile, norm, true);
 }
 
+template <typename pdf_t> Particle getTopology(const pdf_t &pdf) { return pdf.matrixElements()[0].decayTree.quasiStableTree(); }
 
-template <typename pdf_t> Particle getTopology(const pdf_t& pdf)
-{
-  if constexpr( std::is_same<pdf_t, FixedLibPDF>::value )
-  {
-    FATAL("Cannot deduce decay topology from a compiled library, check generator options");
-  }
-  else return pdf.matrixElements()[0].decayTree.quasiStableTree();
+template <typename pdf_t> std::vector<Particle> getDecayChains(const pdf_t &pdf) {
+  std::vector<Particle> channels;
+  for(auto &chain : pdf.matrixElements()) channels.push_back(chain.decayTree);
+  return channels;
 }
 
-template <typename pdf_t> std::vector<Particle> getDecayChains( const pdf_t& pdf )
-{
-  if constexpr( std::is_same<pdf_t, FixedLibPDF>::value )
-  {
-    FATAL("Cannot deduce decay topology from a compiled library, check generator options");
-  }
-  else {
-    std::vector<Particle> channels; 
-    for( auto& chain : pdf.matrixElements() ) channels.push_back( chain.decayTree );
-    return channels;
-  }
-}
-
-
-template <typename pdf_t> void generateEvents( EventList& events
-                       , pdf_t& pdf 
-                       , const phspTypes& phsp_type
-                       , const size_t& nEvents
-                       , const size_t& blockSize
-                       , TRandom* rndm
-                       , const bool& normalise = true )
-{
-  auto fill = [&]( auto& generator ) mutable 
-  {
-    generator.setRandom(rndm); 
+template <typename pdf_t>
+void generateEvents(EventList &events, pdf_t &pdf, const phspTypes &phsp_type, const size_t &nEvents, const size_t &blockSize, TRandom *rndm,
+                    const bool &normalise = true) {
+  auto fill = [&](auto &generator) mutable {
+    generator.setRandom(rndm);
     generator.setBlockSize(blockSize);
     generator.setNormFlag(normalise);
-    generator.fillEventList(pdf, events, nEvents );
+    generator.fillEventList(pdf, events, nEvents);
   };
 
-  if constexpr( std::is_same<pdf_t, FixedLibPDF>::value )
-  {
-    Generator<PhaseSpace> signalGenerator(events.eventType()); 
-    fill( signalGenerator ); 
-  }
-  else if( phsp_type == phspTypes::PhaseSpace )
-  {
+  if(phsp_type == phspTypes::PhaseSpace) {
     Generator<PhaseSpace> signalGenerator(events.eventType());
-    fill( signalGenerator );
-  }
-  else if( phsp_type == phspTypes::RecursivePhaseSpace )
-  {
-    Generator<RecursivePhaseSpace> signalGenerator( getTopology(pdf), events.eventType());
-    fill( signalGenerator );
-  }
-  else if( phsp_type == phspTypes::TreePhaseSpace )
-  {
+    fill(signalGenerator);
+  } else if(phsp_type == phspTypes::RecursivePhaseSpace) {
+    Generator<RecursivePhaseSpace> signalGenerator(getTopology(pdf), events.eventType());
+    fill(signalGenerator);
+  } else if(phsp_type == phspTypes::TreePhaseSpace) {
     Generator<TreePhaseSpace> signalGenerator(getDecayChains(pdf), events.eventType());
-    fill( signalGenerator );
-  }
-  else {
+    fill(signalGenerator);
+  } else {
     FATAL("Phase space configuration: " << phsp_type << " is not supported");
   }
 }
 
+int main(int argc, char **argv) {
+  OptionsParser::setArgs(argc, argv);
+  ApplicationOptions options;
 
+  std::string phspType_hs = helpStringOptions(
+    "Phase-space generator to use:", std::make_pair(phspTypes::PhaseSpace, "Phase space generation based on Raubold-Lynch algorithm (recommended).\0"),
+    std::make_pair(phspTypes::TreePhaseSpace,
+                   "Divides the phase-space into a series of quasi two-body phase-spaces for efficiently generating narrow states.\0"),
+    std::make_pair(phspTypes::RecursivePhaseSpace,
+                   "Includes possible quasi-stable particles and the phase spaces of their decay products, such as Λ baryons.\0"));
 
-int main( int argc, char** argv )
-{
-  OptionsParser::setArgs( argc, argv );
+  std::string pdfType_hs
+    = helpStringOptions("Type of PDF to use:", std::make_pair(pdfTypes::CoherentSum, "Describes decays of a (pseudo)scalar particle to N pseudoscalars"),
+                        std::make_pair(pdfTypes::IncoherentSum, "Describes background-like contribution to pseudoscalar decay processes."),
+                        std::make_pair(pdfTypes::PolarisedSum, "Describes the decay of a particle with spin to N particles carrying spin."));
 
-  size_t nEvents      = NamedParameter<size_t>     ("nEvents"  , 1, "Total number of events to generate" );
-  size_t blockSize    = NamedParameter<size_t>     ("BlockSize", 5000000, "Number of events to generate per block" );
-  int seed            = NamedParameter<int>        ("Seed"     , 0, "Random seed used in event Generation. Should always be set for pseudoexperiment generation." );
-  std::string outfile = NamedParameter<std::string>("Output"   , "Generate_Output.root" , "Name of output file" ); 
-  auto pdfType        = NamedParameter<pdfTypes>( "Type", pdfTypes::CoherentSum, optionalHelpString("Type of PDF to use:", 
-      std::make_pair(pdfTypes::CoherentSum , "Describes decays of a (pseudo)scalar particle to N pseudoscalars")
-    , std::make_pair(pdfTypes::PolarisedSum, "Describes the decay of a particle with spin to N particles carrying spin.")
-    , std::make_pair(pdfTypes::FixedLib    , "PDF to describe a decay from a precompiled library, such as those provided to GAUSS.") ) ); 
-  auto phspType        = NamedParameter<phspTypes>( "PhaseSpace", phspTypes::PhaseSpace, optionalHelpString("Phase-space generator to use:", 
-      std::make_pair(phspTypes::PhaseSpace         , "Phase space generation based on Raubold-Lynch algorithm (recommended).\0")
-    , std::make_pair(phspTypes::TreePhaseSpace     , "Divides the phase-space into a series of quasi two-body phase-spaces for efficiently generating narrow states.\0")
-    , std::make_pair(phspTypes::RecursivePhaseSpace, "Includes possible quasi-stable particles and the phase spaces of their decay products, such as Λ baryons.\0") ) ); 
-  std::string lib     = NamedParameter<std::string>("Library","","Name of library to use for a fixed library generation");
-  size_t nBins        = NamedParameter<size_t>     ("nBins"     ,100, "Number of bins for monitoring plots." );
-  auto ext            = *split( outfile, '.').rbegin();
-  bool   sourceOnly   = NamedParameter<bool>       ("SourceOnly",  ext == "root" ? false : true, "Flag to only generate the source code, but not produce any events");
-  bool poissonVaryYield = NamedParameter<bool>     ("PoissonYield",false, "Vary the number of events generated by a poisson distribution"); 
+  Property<std::string> decay{nullptr, "Decay", "", "Single decay written on the command line, overwrites all other options."};
+  Property<size_t> nEvents{nullptr, "nEvents", 1, "Total number of events to generate"};
+  Property<size_t> blockSize{nullptr, "BlockSize", 5000000, "Number of events to generate per block"};
+  Property<pdfTypes> pdfType{nullptr, "Type", pdfTypes::CoherentSum, pdfType_hs};
+  Property<phspTypes> phspType{nullptr, "PhaseSpace", phspTypes::PhaseSpace, phspType_hs};
+  auto ext = *split(options.outfile, '.').rbegin();
+  bool sourceOnly = ext == "root" ? false : true;
+  Property<bool> poissonVaryYield{nullptr, "PoissonYield", false, "Vary the number of events generated by a poisson distribution"};
+  Property<bool> generateTD{nullptr, "GenerateTimeDependent", false, "Flag to include possible time dependence of the amplitude"};
+
+  Property<size_t> nBins{nullptr, "nBins", 100, "Number of bins for monitoring plots."};
+  Property<std::string> observable{nullptr, "Observable", "mass2", "Observable to use for making plots {mass, mass2}"};
+  Property<bool> make2DPlots{nullptr, "Make2Dplots", false, "Make two-dimensional projections."};
+
 #ifdef _OPENMP
-    unsigned int concurentThreadsSupported = std::thread::hardware_concurrency();
-    unsigned int nCores                    = NamedParameter<unsigned int>( "nCores", concurentThreadsSupported, "Number of cores to use (OpenMP only)" );
-    omp_set_num_threads( nCores );
-    omp_set_dynamic( 0 );
-  #endif
+  omp_set_num_threads(options.nCores);
+  omp_set_dynamic(0);
+#endif
 
   TRandom3 rand;
-  rand.SetSeed( seed + 934534 );
+  rand.SetSeed(options.seed + 934534);
 
-  if( poissonVaryYield ) nEvents = rand.Poisson( nEvents );
+  if(poissonVaryYield) nEvents.set(rand.Poisson(nEvents));
   MinuitParameterSet MPS;
   MPS.loadFromStream();
 
-  EventType eventType; 
-  std::string decay   = NamedParameter<std::string>("Decay","","Single decay written on the command line"); 
-  if( decay != "" )
-  {
+  if(OptionsParser::printHelp()) return 0;
+
+  EventType eventType;
+  if(decay != "") {
     Particle p(decay);
     eventType = p.eventType();
-    MPS.add(p.decayDescriptor()+"_Re", Flag::Fix, 1., 0);
-    MPS.add(p.decayDescriptor()+"_Im", Flag::Fix, 0., 0);
-  } 
-  else eventType = EventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
-                  NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
- 
-  bool conj = NamedParameter<bool>("Conj",false, "Flag to generate the CP conjugate amplitude under the assumption of CP conservation");
-  bool add_cp_conjugate = NamedParameter<bool>("AddConj",false, "Flag to add all of the CP conjugate amplitudes, under the assumption of CP conservation");
-  if ( conj ) eventType = eventType.conj();
-  if( conj || add_cp_conjugate )  AddCPConjugate(MPS);
+    MPS.add(p.decayDescriptor() + "_Re", Flag::Fix, 1., 0);
+    MPS.add(p.decayDescriptor() + "_Im", Flag::Fix, 0., 0);
+  } else
+    eventType = EventType(options.eventType_s, generateTD);
 
-  if( OptionsParser::printHelp() ) return 0; 
-  
-  INFO("Writing output: " << outfile );
-  #ifdef _OPENMP
-  INFO("Using: " << nCores  << " / " << concurentThreadsSupported  << " threads" );
-  #endif
+  if(options.conj) eventType = eventType.conj();
+  if(options.conj || options.addCPConjugate) AddCPConjugate(MPS, options.forbidCP);
 
-  auto [dim_i, dim_f] = eventType.dim(); 
-  if( (dim_i != 1 || dim_f != 1) && pdfType == pdfTypes::CoherentSum )
-  {
+  INFO("Writing output: " << options.outfile);
+
+  auto [dim_i, dim_f] = eventType.dim();
+  if((dim_i != 1 || dim_f != 1) && pdfType == pdfTypes::CoherentSum) {
     WARNING("Either the initial or final state involves a particle that carries spin, switching to use PolarisedSum");
-    pdfType = pdfTypes::PolarisedSum; 
+    pdfType.set(pdfTypes::PolarisedSum);
   }
 
-
-  if( sourceOnly )
-  {
-    if ( pdfType == pdfTypes::CoherentSum )
-    {
-      CoherentSum pdf( eventType, MPS);
-      generateSource(pdf, outfile, MPS);
+  if(sourceOnly) {
+    if(pdfType == pdfTypes::CoherentSum) {
+      CoherentSum pdf(eventType, MPS);
+      generateSource(pdf, options.outfile, MPS);
     }
-    if ( pdfType == pdfTypes::IncoherentSum )
-    {
-      CoherentSum pdf( eventType, MPS, "Inco");
-      generateSource(pdf, outfile, MPS);
-    }
-    else if ( pdfType == pdfTypes::PolarisedSum )
-    {
+    if(pdfType == pdfTypes::IncoherentSum) {
+      CoherentSum pdf(eventType, MPS, "Inco");
+      generateSource(pdf, options.outfile, MPS);
+    } else if(pdfType == pdfTypes::PolarisedSum) {
       PolarisedSum pdf(eventType, MPS);
-      generateSource(pdf, outfile, MPS);
+      generateSource(pdf, options.outfile, MPS);
     }
     return 0;
   }
-  INFO("Generating time-dependence? " << eventType.isTimeDependent() );
-  EventList accepted( eventType );
+  INFO("Generating time-dependence? " << eventType.isTimeDependent());
+  EventList accepted(eventType);
 
-  INFO("Generating events with type = " << eventType );
+  INFO("Generating events with type = " << eventType);
 
-  if ( pdfType == pdfTypes::CoherentSum ){
-    CoherentSum pdf( eventType, MPS);
-    if( pdf.size() == 0 ) FATAL("Requested model has no amplitudes") ;
-    generateEvents(accepted, pdf, phspType , nEvents, blockSize, &rand );
-  }
-  else if ( pdfType == pdfTypes::IncoherentSum ){
-    CoherentSum pdf( eventType, MPS, "Inco");
-    if( pdf.size() == 0 ) FATAL("Requested model has no amplitudes") ;
-    generateEvents(accepted, pdf, phspType , nEvents, blockSize, &rand );
-  }
-  else if ( pdfType == pdfTypes::PolarisedSum ){
+  if(pdfType == pdfTypes::CoherentSum) {
+    CoherentSum pdf(eventType, MPS);
+    if(pdf.size() == 0) FATAL("Requested model has no amplitudes");
+    generateEvents(accepted, pdf, phspType, nEvents, blockSize, &rand);
+  } else if(pdfType == pdfTypes::IncoherentSum) {
+    CoherentSum pdf(eventType, MPS, "Inco");
+    if(pdf.size() == 0) FATAL("Requested model has no amplitudes");
+    generateEvents(accepted, pdf, phspType, nEvents, blockSize, &rand);
+  } else if(pdfType == pdfTypes::PolarisedSum) {
     PolarisedSum pdf(eventType, MPS);
-    if( pdf.size() == 0 ) FATAL("Requested model has no amplitudes") ;
-    generateEvents( accepted, pdf, phspType, nEvents, blockSize, &rand );
+    if(pdf.size() == 0) FATAL("Requested model has no amplitudes");
+    generateEvents(accepted, pdf, phspType, nEvents, blockSize, &rand);
+  } else {
+    FATAL("Did not recognise configuration: " << pdfType);
   }
-  /*
-  else if ( pdfType == pdfTypes::FixedLib ){
-    FixedLibPDF pdf(lib);
-    generateEvents( accepted, pdf, phspType, nEvents, blockSize, &rand, false );
-  }
-  */
-  else {
-    FATAL("Did not recognise configuration: " << pdfType );
-  }
-  if( accepted.size() == 0 ) return -1;
-  TFile* f = TFile::Open( outfile.c_str(), "RECREATE" );
-  accepted.tree( "DalitzEventList" )->Write();
-  auto plots = accepted.makeDefaultProjections(PlotOptions::Bins(nBins), PlotOptions::LineColor(kBlack));
-  for ( auto& plot : plots ) plot->Write();
-  if( NamedParameter<bool>("plots_2d",true) == true ){
-    auto proj = eventType.defaultProjections(nBins);
-    for( size_t i = 0 ; i < proj.size(); ++i ){
-      for( size_t j = i+1 ; j < proj.size(); ++j ){ 
-        accepted.makeProjection( Projection2D(proj[i], proj[j]), PlotOptions::LineColor(kBlack) )->Write(); 
-      }
+  if(accepted.size() == 0) return -1;
+  TFile *f = TFile::Open(options.outfile.value().c_str(), "RECREATE");
+  accepted.tree("DalitzEventList")->Write();
+  auto proj = eventType.defaultProjections(nBins, observable);
+  auto plots = accepted.makeProjections(proj, PlotOptions::LineColor(kBlack));
+  for(auto &plot : plots) plot->Write();
+  if(make2DPlots) {
+    for(size_t i = 0; i < proj.size(); ++i) {
+      for(size_t j = i + 1; j < proj.size(); ++j) { accepted.makeProjection(Projection2D(proj[i], proj[j]), PlotOptions::LineColor(kBlack))->Write(); }
     }
-  } 
-  INFO( "Writing output file " );
+  }
+  INFO("Writing output file ");
 
   f->Close();
 }

@@ -42,43 +42,41 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 
-namespace AmpGen
-{
-  class ThreadPool
-  {
-    public:
-      explicit ThreadPool(const size_t& nt);
-      ~ThreadPool();
-      template<typename F, typename... Args> auto enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result_t<F, Args...>>;
-      void waitForStoppedThreads(); 
+namespace AmpGen {
+  class ThreadPool {
+  public:
+    explicit ThreadPool(const size_t &nt);
+    ~ThreadPool();
+    template <typename F, typename... Args> auto enqueue(F &&f, Args &&...args) -> std::future<typename std::invoke_result_t<F, Args...>>;
+    void waitForStoppedThreads();
 
-    private:
-      std::vector<std::thread>          m_workers;
-      std::queue<std::function<void()>> m_tasks;
-      std::mutex                        m_queue_mutex;
-      std::condition_variable           m_condition;
-      bool                              m_stop={false};
-      NamedParameter<bool>              m_enableThreadPool{"ThreadPool::Enable",true}; 
+  private:
+    std::vector<std::thread> m_workers;
+    std::queue<std::function<void()>> m_tasks;
+    std::mutex m_queue_mutex;
+    std::condition_variable m_condition;
+    bool m_stop = {false};
+    Property<bool> m_enableThreadPool{this, "ThreadPool::Enable", true};
   };
 
-  template<typename F, typename... Args> auto ThreadPool::enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result_t<F,Args...>>
-  {
+  template <typename F, typename... Args> auto ThreadPool::enqueue(F &&f, Args &&...args) -> std::future<typename std::invoke_result_t<F, Args...>> {
     using return_type = typename std::invoke_result_t<F, Args...>;
-    auto task = std::make_shared< std::packaged_task<return_type()> >( f, args... );
+    auto task = std::make_shared<std::packaged_task<return_type()>>(f, args...);
     std::future<return_type> res = task->get_future();
-    if(! m_enableThreadPool ) {  f(args...); return res; } 
-    else
-    {
+    if(!m_enableThreadPool) {
+      f(args...);
+      return res;
+    } else {
       {
         std::unique_lock<std::mutex> lock(m_queue_mutex);
         if(m_stop) throw std::runtime_error("enqueue on stopped ThreadPool");
-        m_tasks.emplace([task](){ (*task)(); });
+        m_tasks.emplace([task]() { (*task)(); });
       }
       m_condition.notify_one();
     }
-    return res; 
+    return res;
   }
-} //namespace AmpGen;
+} // namespace AmpGen;
 #endif

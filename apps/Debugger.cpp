@@ -1,4 +1,3 @@
-#include <TLorentzVector.h>
 #include <cmath>
 #include <complex>
 #include <fstream>
@@ -10,6 +9,9 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 
+#include <TLorentzVector.h>
+#include <TRandom3.h>
+
 #include "AmpGen/AmplitudeRules.h"
 #include "AmpGen/CompiledExpression.h"
 #include "AmpGen/EventList.h"
@@ -20,85 +22,80 @@
 #include "AmpGen/ParticleProperties.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Utilities.h"
-#include "TRandom3.h"
 #include "AmpGen/AddCPConjugate.h"
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 #include "AmpGen/EventType.h"
 #include "AmpGen/CoherentSum.h"
 #include "AmpGen/IncoherentSum.h"
 #include "AmpGen/Generator.h"
 #include "AmpGen/Kinematics.h"
 #include "AmpGen/MinuitParameterSet.h"
-#include "AmpGen/NamedParameter.h"
+#include "AmpGen/Property.h"
 #include "AmpGen/PolarisedSum.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 using namespace AmpGen;
+using strings = std::vector<std::string>;
 
-void invertParity( Event& event, const size_t& nParticles) {
-  for( size_t i = 0 ; i < nParticles; ++i )
-  {
-    event[4*i + 0] = -event[4*i+0];
-    event[4*i + 1] = -event[4*i+1];
-    event[4*i + 2] = -event[4*i+2];
+void invertParity(Event &event, const size_t &nParticles) {
+  for(size_t i = 0; i < nParticles; ++i) {
+    event[4 * i + 0] = -event[4 * i + 0];
+    event[4 * i + 1] = -event[4 * i + 1];
+    event[4 * i + 2] = -event[4 * i + 2];
   }
 }
 
-void randomBoost( Event& event, TRandom3* rndm ) {
-  auto v = std::make_tuple( rndm->Uniform(), rndm->Uniform(), rndm->Uniform() );
+void randomBoost(Event &event, TRandom3 *rndm) {
+  auto v = std::make_tuple(rndm->Uniform(), rndm->Uniform(), rndm->Uniform());
   auto beta = rndm->Uniform();
-  Event pol(4); 
-  pol[0] =  -0.104734; 
-  pol[1] =   -0.328773; 
-  pol[2] = 0.617203; 
-  pol[3] = 0.0; 
-  boost( pol, v, beta ); 
+  Event pol(4);
+  pol[0] = -0.104734;
+  pol[1] = -0.328773;
+  pol[2] = 0.617203;
+  pol[3] = 0.0;
+  boost(pol, v, beta);
   pol.print();
-  boost( event, v, beta); 
+  boost(event, v, beta);
 }
 
-void randomRotation( Event& event, TRandom3* rndm ) {
-  rotate( event, std::make_tuple( rndm->Uniform(), rndm->Uniform(), rndm->Uniform() ), rndm->Uniform() ); 
-}
+void randomRotation(Event &event, TRandom3 *rndm) { rotate(event, std::make_tuple(rndm->Uniform(), rndm->Uniform(), rndm->Uniform()), rndm->Uniform()); }
 
-template <typename fcn_type> void writeRefFile ( const std::string& filename, fcn_type& fcn, const EventList& events ){
+template <typename fcn_type> void writeRefFile(const std::string &filename, fcn_type &fcn, const EventList &events) {
   using json = nlohmann::json;
-  json output;   
-  for( unsigned i = 0 ; i != events.size(); ++i ){
-    output["event_"+std::to_string(i)] = events[i].data(); 
-    output["pdf_"+std::to_string(i)]   = fcn( events[i] );
-    for( const auto& elem : fcn.matrixElements() ){
-      auto indices = fcn.cache().find( elem.name() );
-      std::vector<double> this_cache; 
-      for( const auto& index : indices ){
-        auto v = utils::at( fcn.cache()( i / utils::size<real_v>::value, index ) , i % utils::size<real_v>::value );
-        this_cache.emplace_back( std::real(v) );
-        this_cache.emplace_back( std::imag(v) );
+  json output;
+  for(unsigned i = 0; i != events.size(); ++i) {
+    output["event_" + std::to_string(i)] = events[i].data();
+    output["pdf_" + std::to_string(i)] = fcn(events[i]);
+    for(const auto &elem : fcn.matrixElements()) {
+      auto indices = fcn.cache().find(elem.name());
+      std::vector<double> this_cache;
+      for(const auto &index : indices) {
+        auto v = utils::at(fcn.cache()(i / utils::size<real_v>::value, index), i % utils::size<real_v>::value);
+        this_cache.emplace_back(std::real(v));
+        this_cache.emplace_back(std::imag(v));
       }
-      output[elem.name() + "_"+std::to_string(i)] = this_cache; 
+      output[elem.name() + "_" + std::to_string(i)] = this_cache;
     }
   }
-  std::ofstream os(filename); 
-  os << output.dump(4) << std::endl; 
-  os.close();  
+  std::ofstream os(filename);
+  os << output.dump(4) << std::endl;
+  os.close();
 }
 
-template <typename FCN> void debug( FCN& sig, EventList& accepted){
+template <typename FCN> void debug(FCN &sig, EventList &accepted) {
   INFO("Debugging: ");
-  unsigned eventToDebug = 2;
-  sig.setEvents( accepted );
+  unsigned eventToDebug = 0;
+  sig.setEvents(accepted);
   sig.prepare();
   accepted[eventToDebug].print();
-  sig.debug( accepted[eventToDebug] );
-  
-  /*
-  INFO("Parity: " ); 
+  sig.debug(accepted[eventToDebug]);
 
-  for( unsigned int i = 0 ; i != accepted.size(); ++i ) 
+  /*
+  INFO("Parity: " );
+
+  for( unsigned int i = 0 ; i != accepted.size(); ++i )
     invertParity(accepted[i], accepted.eventType().size() );
   accepted[eventToDebug].print();
   sig.reset();
@@ -106,98 +103,92 @@ template <typename FCN> void debug( FCN& sig, EventList& accepted){
   sig.prepare();
   sig.debug( accepted[eventToDebug] );
   */
-  
-  INFO("Random boost:" );
-
-    randomBoost( accepted[eventToDebug],  new TRandom3(eventToDebug) ); 
+  INFO("Random rotation:");
+  auto old_event = accepted[eventToDebug];
+  randomRotation(accepted[eventToDebug], new TRandom3(eventToDebug));
   accepted[eventToDebug].print();
   sig.reset();
   sig.setEvents(accepted);
   sig.prepare();
-  sig.debug( accepted[eventToDebug] );
-  
-  INFO("Random rotation:" ); 
+  sig.debug(accepted[eventToDebug]);
+  accepted[eventToDebug] = old_event;
+  INFO("Random boost:");
 
-  randomRotation( accepted[eventToDebug],  new TRandom3(eventToDebug) ); 
+  randomBoost(accepted[eventToDebug], new TRandom3(eventToDebug));
   accepted[eventToDebug].print();
   sig.reset();
   sig.setEvents(accepted);
   sig.prepare();
-  sig.debug( accepted[eventToDebug] );
-  
+  sig.debug(accepted[eventToDebug]);
 }
 
-int main( int argc, char** argv )
-{
-  OptionsParser::setArgs( argc, argv );
+int main(int argc, char **argv) {
+  OptionsParser::setArgs(argc, argv);
 
-  int seed = NamedParameter<int>( "Seed", 156 );
-  TRandom3* rndm = new TRandom3( seed );
+  EventType eventType(Property<strings>(nullptr, "EventType", {}, "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m"),
+                      Property<bool>(nullptr, "GenerateTimeDependent", false, "Flag to include possible time dependence of the amplitude"));
 
-  EventType eventType( NamedParameter<std::string>( "EventType" , "", "EventType to generate, in the format: \033[3m parent daughter1 daughter2 ... \033[0m" ).getVector(),
-                       NamedParameter<bool>( "GenerateTimeDependent", false , "Flag to include possible time dependence of the amplitude") );
+  int seed = Property<int>(nullptr, "Seed", 156);
+  std::string infile = Property<std::string>(nullptr, "InputFile", "");
+  std::string refFileOutput = Property<std::string>(nullptr, "RefFileOutput", "");
+  std::string input_units = Property<std::string>(nullptr, "Units", "GeV");
+  std::string type = Property<std::string>(nullptr, "Type", "CoherentSum");
 
-  bool verbose = NamedParameter<bool>("CoherentSum::Debug", 0 ) || 
-                 NamedParameter<bool>("PolarisedSum::Debug", 0 );
-  INFO("Using verbose mode: " << verbose );
+  std::vector<double> event = Property<std::vector<double>>(nullptr, "Event", {});
+  bool conj = Property<bool>(nullptr, "conj", false);
+  bool add_conj = Property<bool>(nullptr, "AddConj", false);
+
+  bool verbose = Property<bool>(nullptr, "CoherentSum::Debug", false) || Property<bool>(nullptr, "PolarisedSum::Debug", false);
+
+  INFO("Using verbose mode: " << verbose);
   AmpGen::MinuitParameterSet MPS;
   MPS.loadFromStream();
 
-  if ( NamedParameter<bool>( "conj", false ) == true ) 
-  {
+  TRandom3 *rndm = new TRandom3(seed);
+
+  if(conj) {
     eventType = eventType.conj();
-    INFO( eventType );
+    INFO(eventType);
+    AddCPConjugate(MPS);
+  } else if(add_conj) {
     AddCPConjugate(MPS);
   }
-  if( NamedParameter<bool>( "AddConj", false) == true && NamedParameter<bool>( "conj", false ) == false )
-  {
-    AddCPConjugate(MPS); 
-  }
-  INFO( "EventType = " << eventType );
-  
-  std::string infile = NamedParameter<std::string>("InputFile","");
-  EventList accepted = infile == "" ? EventList( eventType ) : EventList( infile, eventType );
-  std::string refFileOutput = NamedParameter<std::string>("RefFileOutput",""); 
+  INFO("EventType = " << eventType);
 
-  std::string input_units = NamedParameter<std::string>("Units","GeV");
-  if( input_units == "MeV" && infile != "") accepted.transform([](auto& event){ for( unsigned i = 0;i< event.size();++i) event[i]/=1000; } );
-  if( infile == "" ){
+  EventList accepted = infile == "" ? EventList(eventType) : EventList(infile, eventType);
+
+  if(input_units == "MeV" && infile != "")
+    accepted.transform([](auto &event) {
+      for(unsigned i = 0; i < event.size(); ++i) event[i] /= 1000;
+    });
+  if(infile == "") {
     accepted = Generator<PhaseSpace>(eventType, rndm).generate(16);
-    for( unsigned i = 0 ; i != 16; ++i ) accepted[i].setIndex(i);
+    for(unsigned i = 0; i != 16; ++i) accepted[i].setIndex(i);
   }
-  std::vector<double> event = NamedParameter<double>("Event",0).getVector();
-  if( event.size() != 1 ) accepted[0].set( event.data() );
-  
-  std::string type = NamedParameter<std::string>("Type","CoherentSum");
+  if(event.size() != 0) accepted[0].set(event.data());
 
-  if( type == "PolarisedSum")
-  {
-    PolarisedSum sig( eventType, MPS );  
-    sig.setEvents( accepted );
+  if(type == "PolarisedSum") {
+    PolarisedSum sig(eventType, MPS);
+    sig.setEvents(accepted);
     sig.prepare();
-    if( refFileOutput != "" ) writeRefFile( refFileOutput, sig, accepted ); 
-    debug( sig, accepted);
-    sig.setMC(accepted);
-    INFO("norm = " << sig.norm() );   
-  }
-  else if( type == "CoherentSum" )
-  {
-    CoherentSum sig(eventType, MPS);
-    sig.setEvents(accepted); 
-    sig.prepare(); 
-    if( refFileOutput != "" ) writeRefFile( refFileOutput, sig, accepted ); 
+    if(refFileOutput != "") writeRefFile(refFileOutput, sig, accepted);
     debug(sig, accepted);
-    INFO( "A(x) = " << sig.getValNoCache( accepted[0] ) );
-  }
-  else if( type == "IncoherentSum" )
-  {
-    IncoherentSum sig(eventType, MPS,"Inco"); 
+    sig.setMC(accepted);
+    INFO("norm = " << sig.norm());
+  } else if(type == "CoherentSum") {
+    CoherentSum sig(eventType, MPS);
+    sig.setEvents(accepted);
+    sig.prepare();
+    if(refFileOutput != "") writeRefFile(refFileOutput, sig, accepted);
+    debug(sig, accepted);
+    INFO("A(x) = " << sig.getValNoCache(accepted[0]));
+  } else if(type == "IncoherentSum") {
+    IncoherentSum sig(eventType, MPS, "Inco");
     sig.setMC(accepted);
     sig.prepare();
-    debug(sig, accepted);  
-    INFO("norm = " << sig.norm() );   
-  }
-  else {
-    ERROR( "Type: " << type << " is not recognised");
+    debug(sig, accepted);
+    INFO("norm = " << sig.norm());
+  } else {
+    ERROR("Type: " << type << " is not recognised");
   }
 }

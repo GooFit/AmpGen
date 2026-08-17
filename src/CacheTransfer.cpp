@@ -9,55 +9,25 @@
 
 using namespace AmpGen;
 
-CacheTransfer::CacheTransfer( const size_t& address, const std::string& name, const double& value, const size_t& size ) : 
-  m_address(address), 
-  m_size(size),
-  m_value(value),
-  m_name(name)
-{
-} 
+CacheTransfer::CacheTransfer(const size_t &address, const std::string &name, const double &value, const size_t &size)
+    : m_address(address), m_size(size), m_value(value), m_name(name) {}
 
-void CacheTransfer::transfer( CompiledExpressionBase* destination )
-{ 
-  destination->setExternal(m_value, m_address);
-}
+void CacheTransfer::transfer(CompiledExpressionBase *destination) { destination->setExternal(m_value, m_address); }
 
-void CacheTransfer::print() const 
-{ 
-  INFO( m_address << " " << m_value << " " << m_name ) ; 
-}
+void CacheTransfer::print() const { INFO(m_address << " " << m_value << " " << m_name); }
 
-void ParameterTransfer::transfer( CompiledExpressionBase* destination )
-{
-  destination->setExternal( m_source->mean(), m_address );
-}
+void ParameterTransfer::transfer(CompiledExpressionBase *destination) { destination->setExternal(m_source->mean(), m_address); }
 
-ParameterTransfer::ParameterTransfer(const size_t& address, const std::string& name, MinuitParameter* source )
-  : CacheTransfer(address, name, source->mean(), 1), 
-    m_source( source )
-{
-}
+ParameterTransfer::ParameterTransfer(const size_t &address, const std::string &name, MinuitProxy source)
+    : CacheTransfer(address, name, source->mean(), 1), m_source(source) {}
 
-void ParameterTransfer::print() const 
-{ 
-  INFO( "Source: " << m_source->name() << " address = " << m_address << " value = " << m_source->mean() ); 
-}
+void ParameterTransfer::print() const { INFO("Source: " << m_source->name() << " address = " << m_address << " value = " << m_source->mean()); }
 
-std::string ParameterTransfer::name() const { return m_source->name(); } 
+std::string ParameterTransfer::name() const { return m_source->name(); }
 
-LambdaTransfer::LambdaTransfer(const size_t& address, const std::string& name, const LambdaExpression* source )
-  : CacheTransfer(address, name, source->m_function(), 1), 
-    m_function(source->m_function)
-{
-}
+LambdaTransfer::LambdaTransfer(const size_t &address, const std::string &name, const LambdaExpression *source)
+    : CacheTransfer(address, name, source->m_function(), 1), m_function(source->m_function) {}
 
-void LambdaTransfer::transfer( CompiledExpressionBase* destination )
-{
-  destination->setExternal( m_function(), m_address ); 
-}
+void LambdaTransfer::transfer(CompiledExpressionBase *destination) { destination->setExternal(m_function(), m_address); }
 
-void LambdaTransfer::print() const 
-{
-  INFO( m_name << " = " << m_function() << " address = " << m_address );
-}
-
+void LambdaTransfer::print() const { INFO(m_name << " = " << m_function() << " address = " << m_address); }

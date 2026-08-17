@@ -10,90 +10,88 @@
 #include "AmpGen/EventListSIMD.h"
 #include "AmpGen/EventList.h"
 
-namespace AmpGen
-{ 
-  class Integrator
-  {
-    #if ENABLE_AVX 
+namespace AmpGen {
+  class Integrator {
+#if ENABLE_AVX
     using EventList_t = EventListSIMD;
-    #else 
-    using EventList_t = EventList; 
-    #endif
-    struct QueuedIntegral 
-    {
-      QueuedIntegral() = default; 
-      QueuedIntegral(complex_t* result, const unsigned& i, const unsigned& j) 
-        : result(result), i(i), j(j) {}
-      complex_t* result = {nullptr};
+#else
+    using EventList_t = EventList;
+#endif
+    struct QueuedIntegral {
+      QueuedIntegral() = default;
+      QueuedIntegral(complex_t *result, const unsigned &i, const unsigned &j) : result(result), i(i), j(j) {}
+      complex_t *result = {nullptr};
       unsigned i = {0};
       unsigned j = {0};
     };
-    public:
-    Integrator() = default; 
 
-    template <typename EventList_type, typename T> Integrator( const EventList_type* events, const std::vector<T>& expressions ={}) : m_events(events)
-    {
-      if( events == nullptr ) {
+  public:
+    Integrator() = default;
+
+    template <typename EventList_type, typename T> Integrator(const EventList_type *events, const std::vector<T> &expressions = {}) : m_events(events) {
+      if(events == nullptr) {
         WARNING("No events specified, returning");
-        return; 
+        return;
       }
-      m_cache.allocate(events, expressions); 
-      m_weight.resize(events->nBlocks() );
+      m_cache.allocate(events, expressions);
+      m_weight.resize(events->nBlocks());
       real_v norm_acc = 0.;
-      for( size_t i = 0 ; i < events->nBlocks(); ++i )
-      {
+      for(size_t i = 0; i < events->nBlocks(); ++i) {
         m_weight[i] = events->weight(i) / events->genPDF(i);
-        norm_acc   += m_weight[i]; 
+        norm_acc += m_weight[i];
       }
       m_norm = utils::sum_elements(norm_acc);
     }
 
-    bool isReady()            const;
-    void queueIntegral( complex_t* result, const unsigned& i, const unsigned& j );
+    bool isReady() const;
+    void queueIntegral(complex_t *result, const unsigned &i, const unsigned &j);
     void flush();
-    
-    template <class return_type> return_type get( const unsigned& index, const unsigned& evt ) const ;
-    template <class T> unsigned getCacheIndex( const T& t ) const { return m_cache.find(t.name())[0] ; }
+
+    template <class return_type> return_type get(const unsigned &index, const unsigned &evt) const;
+    template <class T> unsigned getCacheIndex(const T &t) const { return m_cache.find(t.name())[0]; }
     double norm() const { return m_norm; }
 
-    template <class T> void updateCache(const T& expression){ if( isReady() ) m_cache.update(expression); }
-    template <class T> const T* events() const { return static_cast<const T*>(m_events); }
+    template <class T> void updateCache(const T &expression) {
+      if(isReady()) m_cache.update(expression);
+    }
+    template <class T> const T *events() const { return static_cast<const T *>(m_events); }
 
-    const auto& cache() const { return m_cache; }
-    private:
-    static constexpr size_t             N         = {8}; ///unroll factor
-    size_t                              m_counter = {0};  ///
-    std::array<QueuedIntegral, N>       m_integrals;
-    const void*                         m_events  = {nullptr};
-    std::vector<real_v>                 m_weight; 
-    FunctionCache<EventList_t, complex_v, Alignment::SoA>    m_cache;      
-    double                              m_norm    = {0};
+    const auto &cache() const { return m_cache; }
+
+  private:
+    static constexpr size_t N = {8}; /// unroll factor
+    size_t m_counter = {0};          ///
+    std::array<QueuedIntegral, N> m_integrals;
+    const void *m_events = {nullptr};
+    std::vector<real_v> m_weight;
+    FunctionCache<EventList_t, complex_v, Alignment::SoA> m_cache;
+    double m_norm = {0};
     void integrateBlock();
   };
-  
-  class Bilinears 
-  {
-    private: 
-      size_t rows;
-      size_t cols;
-      std::vector<complex_t> norms;
-      std::vector<bool> markAsZero; 
-      std::vector<bool> calculate;   
-    public:
-      Bilinears( const size_t& r = 0, const size_t& c = 0 );
-      complex_t get(const size_t& x, const size_t& y) const;
-      complex_t get(const size_t& x, const size_t& y, Integrator* integ = nullptr, const size_t& kx=0, const size_t& ky=0){
-        if( integ != nullptr ) integ->queueIntegral(&norms[x*cols+y], kx, ky );
-        /// will return the wrong answer for now, but queues for later.. 
-        return norms[x*cols+y];
-      }
-      void      set(const size_t& x, const size_t& y,  const complex_t& f );
-      void  setZero(const size_t& x, const size_t& y);
-      void resetCalculateFlags();
-      complex_t& operator()( const size_t& x, const size_t& y );
-      bool   isZero(const size_t& x, const size_t& y);
-      bool workToDo(const size_t& x, const size_t& y) const;
-      void   resize(const size_t& r, const size_t& c = 1 );
+
+  class Bilinears {
+  private:
+    size_t rows;
+    size_t cols;
+    std::vector<complex_t> norms;
+    std::vector<bool> markAsZero;
+    std::vector<bool> calculate;
+
+  public:
+    Bilinears(const size_t &r = 0, const size_t &c = 0);
+    complex_t get(const size_t &x, const size_t &y) const;
+    complex_t get(const size_t &x, const size_t &y, Integrator *integ = nullptr, const size_t &kx = 0, const size_t &ky = 0) {
+      if(integ != nullptr) integ->queueIntegral(&norms[x * cols + y], kx, ky);
+      /// will return the wrong answer for now, but queues for later..
+      return norms[x * cols + y];
+    }
+    void set(const size_t &x, const size_t &y, const complex_t &f);
+    void setZero(const size_t &x, const size_t &y);
+    void resetCalculateFlags();
+    complex_t &operator()(const size_t &x, const size_t &y);
+    bool isZero(const size_t &x, const size_t &y);
+    bool workToDo(const size_t &x, const size_t &y) const;
+    void resize(const size_t &r, const size_t &c = 1);
   };
 
 } // namespace AmpGen
