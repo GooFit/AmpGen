@@ -30,7 +30,7 @@ namespace AmpGen {
   class ASTResolver {
   public:
     ASTResolver(const std::map<std::string, unsigned> &evtMap = {}, const MinuitParameterSet *mps = nullptr);
-    std::vector<std::pair<uint64_t, Expression>> getOrderedSubExpressions(const Expression &expression);
+    std::vector<std::pair<unsigned, Expression>> getOrderedSubExpressions(const Expression &expression);
 
     template <class TYPE> void resolve(const TYPE &obj) {}
     template <class TYPE, class... ARGS> size_t addCacheFunction(const std::string &name, const ARGS &...args) {
@@ -61,7 +61,7 @@ namespace AmpGen {
     std::map<std::string, unsigned> m_evtMap;                               /// Event specification
     std::map<std::string, std::string> m_parameterMapping;                  /// Mapping of parameters to compile parameters
     const MinuitParameterSet *m_mps;                                        /// Set of MinuitParameters
-    std::map<const IExpression *, const SubTree *> m_tempTrees;             /// temporary store of sub-trees for performing cse reduction
+    std::unordered_map<unsigned, Expression> m_tempTrees;                   /// temporary store of sub-trees for performing cse reduction
     unsigned int m_nParameters{0};                                          /// Number of parameters
     bool m_enableAVX{false};                                                /// Flag to check if requested expression outputs a vector register
   };

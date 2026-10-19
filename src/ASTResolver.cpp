@@ -13,28 +13,21 @@ using namespace AmpGen;
 
 ASTResolver::ASTResolver(const std::map<std::string, unsigned> &evtMap, const MinuitParameterSet *mps) : m_evtMap(evtMap), m_mps(mps) {}
 
-std::vector<std::pair<uint64_t, Expression>> ASTResolver::getOrderedSubExpressions(const Expression &expression) {
+std::vector<std::pair<unsigned, Expression>> ASTResolver::getOrderedSubExpressions(const Expression &expression) {
   DEBUG("Calling solver on: " << expression);
-  std::vector<std::pair<uint64_t, Expression>> subexpressions;
   expression.resolve(*this);
-  std::map<uint64_t, size_t> used_functions;
-  std::map<uint64_t, Expression> subTrees;
+  std::vector<std::pair<unsigned, Expression>> subexpressions;
+  std::unordered_map<unsigned, size_t> used_functions;
+  std::map<unsigned, Expression> sub_trees; // the order here actually matters, although it is not entirely clear why
   do {
-    subTrees.clear();
-    for(auto &[t, s] : m_tempTrees) {
-      uint64_t key = s->key();
-      if(subTrees.count(key) == 0)
-        subTrees[key] = s->expression();
-      else if(t->to_string() != subTrees[key].to_string()) {
-        WARNING("Hash collision between in key = " << key << " other key = " << FNV1a_hash(subTrees[key].to_string()));
-      }
-    }
+    sub_trees.clear();
+    for(auto &[t, s] : m_tempTrees) { sub_trees[t] = cast<SubTree>(s).expression(); }
     m_tempTrees.clear();
-    for(auto &[key, expression] : subTrees) {
-      expression.resolve(*this);
+    for(auto &[key, sub_expression] : sub_trees) {
+      sub_expression.resolve(*this);
       auto stack_pos = used_functions.find(key);
       if(stack_pos == used_functions.end()) {
-        subexpressions.emplace_back(key, expression);
+        subexpressions.emplace_back(key, sub_expression);
         used_functions[key] = subexpressions.size() - 1;
         continue;
       }
@@ -47,18 +40,19 @@ std::vector<std::pair<uint64_t, Expression>> ASTResolver::getOrderedSubExpressio
       }
       used_functions[key] = subexpressions.size() - 1;
     }
-  } while(subTrees.size() != 0);
+  } while(sub_trees.size() != 0);
   std::reverse(subexpressions.begin(), subexpressions.end());
+
   return subexpressions;
 }
 
 template <> void ASTResolver::resolve<SubTree>(const SubTree &subTree) {
-  auto ptr = subTree.expression().get();
-  if(m_tempTrees.count(ptr) != 0)
-    return;
+  auto key = subTree.key();
+  if(m_tempTrees.count(key) != 0)
+    return; /// we already found this subtree, nothing to do
   else {
-    ptr->resolve(*this);
-    m_tempTrees[ptr] = &subTree;
+    subTree.expression().resolve(*this); // resolve the expression
+    m_tempTrees[key] = subTree;          // and a pointer to this subtree for future consumption
   }
 }
 

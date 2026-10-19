@@ -42,7 +42,7 @@ namespace AmpGen {
 
   public:
     Minimiser() = default;
-    ~Minimiser() = default;
+    ~Minimiser();
 
     template <typename TYPE> void setFunction(TYPE &fcn) {
       if constexpr(has_getVal<TYPE>::value)

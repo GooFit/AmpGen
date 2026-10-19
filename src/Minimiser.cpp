@@ -155,9 +155,20 @@ std::string minuitStatusString(ROOT::Minuit2::Minuit2Minimizer *mini) {
   return "unknown";
 }
 
+namespace AmpGen::detail {
+
+  /// this weird little struct is required as the ROOT::Math::Functor somewhere is d'toring
+  /// whatever you give it, preventing the use of the proper cleanup of the minimiser
+  struct Minimiser_bind {
+    Minimiser_bind(Minimiser *mini) : mini(mini) {}
+    inline double operator()(const double *xx) { return mini->operator()(xx); }
+    inline void operator()(int i, const ROOT::Minuit2::MinimumState &state) { return mini->operator()(i, state); }
+    Minimiser *mini{nullptr};
+  };
+};
+
 bool Minimiser::doFit() {
-  auto &t = *this;
-  ROOT::Math::Functor f(t, m_nParams);
+  ROOT::Math::Functor f(detail::Minimiser_bind(this), m_nParams);
 
   if(m_fcnWithGrad == nullptr)
     m_minimiser->SetFunction(f);
@@ -275,7 +286,7 @@ void Minimiser::addExtendedTerm(ExtendLikelihoodBase *m_term) { m_extendedTerms.
 void Minimiser::minos(MinuitParameter *parameter) {
   if(m_minimiser == nullptr) ERROR("No minimiser");
 
-  ROOT::Math::Functor f(*this, m_nParams);
+  ROOT::Math::Functor f(detail::Minimiser_bind(this), m_nParams);
   m_minimiser->SetFunction(f);
   dynamic_cast<Minuit2::Minuit2Minimizer *>(m_minimiser)->SetTraceObject(*this);
   unsigned int index = 0;
@@ -318,36 +329,34 @@ void Minimiser::setPrintLevel(const PrintLevel &printLevel) {
   }
 }
 
-namespace AmpGen {
-  namespace detail {
-    class FitResult : public ROOT::Fit::FitResult {
-    public:
-      FitResult(const unsigned nParams) : ROOT::Fit::FitResult() {
-        fCovMatrix.resize(nParams * (1 + nParams) / 2);
-        fErrors.resize(nParams);
-        fParams.resize(nParams);
-        fParNames.resize(nParams);
-      }
-      void set(ROOT::Math::Minimizer *mini, int status, double fcn) {
-        fNdf = NPar();
-        unsigned it = 0;
-        for(unsigned i = 0; i < fNdf; ++i)
-          for(unsigned j = 0; j <= i; ++j) fCovMatrix[it++] = mini->CovMatrix(i, j);
+namespace AmpGen::detail {
+  class FitResult : public ROOT::Fit::FitResult {
+  public:
+    FitResult(const unsigned nParams) : ROOT::Fit::FitResult() {
+      fCovMatrix.resize(nParams * (1 + nParams) / 2);
+      fErrors.resize(nParams);
+      fParams.resize(nParams);
+      fParNames.resize(nParams);
+    }
+    void set(ROOT::Math::Minimizer *mini, int status, double fcn) {
+      fNdf = NPar();
+      unsigned it = 0;
+      for(unsigned i = 0; i < fNdf; ++i)
+        for(unsigned j = 0; j <= i; ++j) fCovMatrix[it++] = mini->CovMatrix(i, j);
 
-        fCovStatus = mini->CovMatrixStatus();
-        fEdm = mini->Edm();
-        fVal = fcn;
-        fStatus = status;
-        fErrors.assign(mini->Errors(), mini->Errors() + NPar());
-        fParams.assign(mini->X(), mini->X() + NPar());
-        fNCalls = mini->NCalls();
-        fValid = fStatus == 0;
-      }
-      void setName(const unsigned int &index, const std::string &name) { fParNames[index] = name; }
-      void setAsymmError(const unsigned int &index, const double &low, const double &high) { fMinosErrors[index] = std::make_pair(low, high); }
-      void blind(const unsigned int &index, const double &offset) { fParams[index] += offset; }
-    };
-  }
+      fCovStatus = mini->CovMatrixStatus();
+      fEdm = mini->Edm();
+      fVal = fcn;
+      fStatus = status;
+      fErrors.assign(mini->Errors(), mini->Errors() + NPar());
+      fParams.assign(mini->X(), mini->X() + NPar());
+      fNCalls = mini->NCalls();
+      fValid = fStatus == 0;
+    }
+    void setName(const unsigned int &index, const std::string &name) { fParNames[index] = name; }
+    void setAsymmError(const unsigned int &index, const double &low, const double &high) { fMinosErrors[index] = std::make_pair(low, high); }
+    void blind(const unsigned int &index, const double &offset) { fParams[index] += offset; }
+  };
 }
 
 ROOT::Fit::FitResult Minimiser::fitResult() const {
@@ -361,4 +370,7 @@ ROOT::Fit::FitResult Minimiser::fitResult() const {
     if(p->isBlind()) fr.blind(i, m_parSet->at(p->name() + "_blind")->mean());
   }
   return ROOT::Fit::FitResult(fr);
+}
+Minimiser::~Minimiser() {
+  if(m_minimiser != nullptr) delete m_minimiser;
 }

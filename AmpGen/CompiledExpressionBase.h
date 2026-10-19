@@ -69,7 +69,7 @@ namespace AmpGen {
     std::string m_progName;
     DebugSymbols m_db;
     std::map<std::string, unsigned> m_evtMap;
-    std::vector<std::pair<uint64_t, Expression>> m_dependentSubexpressions;
+    std::vector<std::pair<unsigned, Expression>> m_dependentSubexpressions;
     std::vector<std::pair<uint64_t, Expression>> m_debugSubexpressions;
     std::vector<std::shared_ptr<CacheTransfer>> m_cacheTransfers;
     std::shared_ptr<ASTResolver> m_resolver = {nullptr};
