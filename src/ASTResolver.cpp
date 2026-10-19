@@ -13,20 +13,20 @@ using namespace AmpGen;
 
 ASTResolver::ASTResolver(const std::map<std::string, unsigned> &evtMap, const MinuitParameterSet *mps) : m_evtMap(evtMap), m_mps(mps) {}
 
-std::vector<std::pair<uint64_t, Expression>> ASTResolver::getOrderedSubExpressions(const Expression &expression) {
+std::vector<std::pair<unsigned, Expression>> ASTResolver::getOrderedSubExpressions(const Expression &expression) {
   DEBUG("Calling solver on: " << expression);
-  std::vector<std::pair<uint64_t, Expression>> subexpressions;
   expression.resolve(*this);
-  std::map<uint64_t, size_t> used_functions;
-  std::map<uint64_t, Expression> subTrees;
+  std::vector<std::pair<unsigned, Expression>> subexpressions;
+  std::unordered_map<unsigned, size_t> used_functions;
+  std::unordered_map<unsigned, Expression> subTrees;
   do {
     subTrees.clear();
-    for(auto &[t, s] : m_tempTrees) {
-      uint64_t key = s->key();
-      if(subTrees.count(key) == 0)
-        subTrees[key] = s->expression();
-      else if(t->to_string() != subTrees[key].to_string()) {
-        WARNING("Hash collision between in key = " << key << " other key = " << FNV1a_hash(subTrees[key].to_string()));
+    INFO( m_tempTrees.size() << " sub trees to process" ); 
+    for(auto &[k, s] : m_tempTrees) {
+      if(subTrees.count(k) == 0)
+        subTrees[k] = s->expression();
+      else if( s->to_string() != subTrees[k].to_string()) {
+        WARNING( "Key collision between two distinct expressions: " << s->to_string() << " " << subTrees[k].to_string() ); 
       }
     }
     m_tempTrees.clear();
@@ -49,16 +49,17 @@ std::vector<std::pair<uint64_t, Expression>> ASTResolver::getOrderedSubExpressio
     }
   } while(subTrees.size() != 0);
   std::reverse(subexpressions.begin(), subexpressions.end());
+  
   return subexpressions;
 }
 
 template <> void ASTResolver::resolve<SubTree>(const SubTree &subTree) {
-  auto ptr = subTree.expression().get();
-  if(m_tempTrees.count(ptr) != 0)
-    return;
+  auto key = subTree.key();
+  if(m_tempTrees.count(key) != 0)
+    return; /// we already found this subtree, nothing to do
   else {
-    ptr->resolve(*this);
-    m_tempTrees[ptr] = &subTree;
+    subTree.expression().resolve(*this); // resolve the expression
+    m_tempTrees[key] = &subTree;         // and a pointer to this subtree for future consumption
   }
 }
 
