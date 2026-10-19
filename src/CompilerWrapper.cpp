@@ -113,7 +113,7 @@ bool CompilerWrapper::compile(CompiledExpressionBase &expression, const std::str
 bool CompilerWrapper::compile(std::vector<CompiledExpressionBase *> &expressions, const std::string &fname,
                               const std::map<std::string, std::string> &metadata_functions) {
   std::string cname = fname == "" ? generateFilename() : fname;
-  std::string oname = std::filesystem::path(cname).replace_extension(m_extension);
+  std::string oname = std::filesystem::absolute(std::filesystem::path(cname)).replace_extension(m_extension);
   if(m_verbose) INFO("Generating source: " << cname);
   auto twall_begin = std::chrono::high_resolution_clock::now();
   std::ofstream output(cname);
@@ -125,7 +125,7 @@ bool CompilerWrapper::compile(std::vector<CompiledExpressionBase *> &expressions
 
   output.close();
   compileSource(cname, oname);
-
+  INFO( cname << " -> " << oname ); 
   for(auto &expression : expressions) expression->link(oname);
   auto twall_end = std::chrono::high_resolution_clock::now();
   double tWall = std::chrono::duration<double, std::milli>(twall_end - twall_begin).count();
