@@ -75,7 +75,7 @@ namespace AmpGen {
     void setPrintLevel(const PrintLevel &printLevel);
     void minos(MinuitParameter *param);
     ROOT::Fit::FitResult fitResult() const;
-    
+
   private:
     using GradFcn = ROOT::Math::IGradientFunctionMultiDimTempl<double>;
     std::vector<ExtendLikelihoodBase *> m_extendedTerms;
