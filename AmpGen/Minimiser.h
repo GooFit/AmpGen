@@ -15,6 +15,7 @@
 #include <Math/IFunction.h>
 #include "AmpGen/MetaUtils.h"
 #include "AmpGen/enum.h"
+#include "AmpGen/Property.h" 
 #include <TFile.h>
 #include <TGraph.h>
 /** @cond PRIVATE */
@@ -85,18 +86,26 @@ namespace AmpGen
     void minos( MinuitParameter* param );
     ROOT::Fit::FitResult fitResult() const; 
   private:
-    MinuitParameterSet*          m_parSet         = {nullptr};
-    std::function<double(void)>  m_theFunction    = {nullptr};
-    ROOT::Math::Minimizer*      m_minimiser = {nullptr};
-    std::vector<double>         m_covMatrix    = {0};
-    std::vector<unsigned>       m_mapping      = {};
-    int        m_status     = {0};
-    unsigned   m_nParams    = {0};
-    PrintLevel m_printLevel = {PrintLevel::Info};
-    double     m_ll_zero    = {0};
-    bool       m_normalise  = {false};
-    std::vector<ExtendLikelihoodBase*>                  m_extendedTerms;
-    ROOT::Math::IGradientFunctionMultiDimTempl<double>* m_fcnWithGrad = {nullptr};  
+    using GradFcn = ROOT::Math::IGradientFunctionMultiDimTempl<double>;
+    std::vector<ExtendLikelihoodBase*> m_extendedTerms;
+    GradFcn*                    m_fcnWithGrad {nullptr};  
+    MinuitParameterSet*         m_parSet      {nullptr};
+    std::function<double(void)> m_theFunction {nullptr};
+    ROOT::Math::Minimizer*      m_minimiser   {nullptr};
+    std::vector<double>         m_covMatrix   {0};
+    std::vector<unsigned>       m_mapping     {};
+    int        m_status                       {0};
+    unsigned   m_nParams                      {0};
+  
+    Property<std::string> m_minimiserTool {this, "Minimiser::Minimiser", "Minuit2"}; 
+    Property<std::string> m_algorithm     {this, "Minimiser::Algorithm", "Migrad"}; 
+    Property<unsigned>    m_maxCalls      {this, "Minimiser::MaxCalls", 100000}; 
+    Property<double>      m_tolerance     {this, "Minimiser::Tolerance", 1.0};  
+    Property<PrintLevel>  m_printLevel    {this, "Minimiser::PrintLevel", PrintLevel::Info};
+    Property<double>      m_precision     {this, "Minimiser::Precision" , 1e-15};
+    Property<unsigned>    m_printLevelMinuit2 {this, "Minimiser::Minuit2MinimizerPrintLevel", m_printLevel == PrintLevel::VeryVerbose ? 3u : 0u };
+    Property<bool>        m_runMinos      {this, "Minimiser::RunMinos",false};
+    
   };
 } // namespace AmpGen
 #endif

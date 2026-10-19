@@ -20,7 +20,6 @@
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/MinuitParameterSet.h"
 #include "AmpGen/MsgService.h"
-#include "AmpGen/NamedParameter.h"
 #include "AmpGen/Particle.h"
 #include "AmpGen/Utilities.h"
 #include "AmpGen/CompiledExpressionBase.h"
@@ -42,7 +41,6 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   , m_prefix   (prefix)
       , m_mps(&mps) 
 {
-  bool autocompile = NamedParameter<bool>("AutoCompile", true); 
   auto rules = AmplitudeRules::create(mps);
   auto amplitudes      = rules->getMatchingRules( m_eventType, prefix);
   if( amplitudes.size() == 0 ){
@@ -51,16 +49,15 @@ CoherentSum::CoherentSum( const EventType& type, const MinuitParameterSet& mps, 
   for( auto& amp : amplitudes ) INFO( prefix + amp.first.decayDescriptor() );
   m_matrixElements.resize( amplitudes.size() );
   m_normalisations.resize( m_matrixElements.size(), m_matrixElements.size() ); 
-  size_t      nThreads = NamedParameter<size_t>     ("nCores"    , std::thread::hardware_concurrency(), "Number of threads to use" );
-  ThreadPool tp(nThreads);
+  ThreadPool tp(std::thread::hardware_concurrency());
   auto head_rules = rules->rulesForDecay(m_eventType.mother(), m_prefix);
   for(size_t i = 0; i < m_matrixElements.size(); ++i){
-    auto task = [i, this, &mps, &amplitudes, autocompile]() mutable {
-        this->m_matrixElements[i] = 
-          MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_eventType.getEventFormat(), this->m_dbThis);  
-        if(autocompile) CompilerWrapper().compile( this->m_matrixElements[i], this->m_objCache); 
+    auto task = [i, this, &mps, &amplitudes]() mutable {
+      this->m_matrixElements[i] = 
+        MatrixElement(amplitudes[i].first, amplitudes[i].second, mps, this->m_eventType.getEventFormat(), this->m_dbThis);  
+      if(this->m_autoCompile) CompilerWrapper().compile( this->m_matrixElements[i], this->m_objCache); 
     };
-    if( autocompile ) tp.enqueue( task ); 
+    if( this->m_autoCompile ) tp.enqueue( task ); 
     else task(); 
   }
 }
@@ -92,7 +89,7 @@ void CoherentSum::prepare()
         << ", Integral = " << clockIntegral << " ms"
         << ", Total = "    << clockEval + clockIntegral << " ms; normalisation = "  << m_norm );
     m_lastPrint = m_prepareCalls;
-    
+
   }
   // for( int i = 0 ; i != m_cache.nFields(); ++i ) 
   //   INFO( m_matrixElements[i].name() << " " <<  std::setprecision(15) << m_cache(0, m_cache.find(m_matrixElements[i].name())[0] ));
@@ -135,10 +132,9 @@ void CoherentSum::debug( const Event& evt, const std::string& nameMustContain )
   INFO( "A(x) = " << getVal(evt) << " without cache: " << getValNoCache(evt) );
 }
 
-std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& linProp)
+std::vector<FitFraction> CoherentSum::fitFractions(const LinearErrorPropagator& linProp, bool recomputeIntegrals)
 {
   prepare();
-  bool recomputeIntegrals    = NamedParameter<bool>("CoherentSum::RecomputeIntegrals", false );
   std::vector<FitFraction> outputFractions;
   auto rules = AmplitudeRules::get();
   for(auto& rule : rules->rules() ) 
@@ -321,9 +317,9 @@ std::function<real_t(const Event&)> CoherentSum::evaluator(const EventList_type*
   for( auto& me : m_matrixElements ) store.update(me);
 
   std::vector<double> values( events->aligned_size() );
-  #ifdef _OPENMP
-  #pragma omp parallel for
-  #endif
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
   for( unsigned int block = 0 ; block < events->nBlocks(); ++block )
   {
     complex_v amp(0.,0.);
@@ -340,9 +336,9 @@ std::function<complex_t(const Event&)> CoherentSum::amplitudeEvaluator(const Eve
   FunctionCache<EventList_type, complex_v, Alignment::AoS> store(events, m_matrixElements);
   for( auto& me : m_matrixElements ) store.update( me );
   std::vector<complex_t> values( events->aligned_size() );
-  #ifdef _OPENMP
-  #pragma omp parallel for
-  #endif
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
   for( unsigned int block = 0 ; block < events->nBlocks(); ++block )
   {
     complex_v amp(0.,0.);

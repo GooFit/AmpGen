@@ -20,6 +20,7 @@
 #include "AmpGen/Expression.h"
 #include "AmpGen/Tensor.h"
 #include "AmpGen/MinuitParameter.h"
+#include "AmpGen/enum.h" 
 
 namespace AmpGen
 {
@@ -27,6 +28,7 @@ namespace AmpGen
   class MinuitParameterSet;
   class FitFraction;
   class MinuitProxy; 
+  make_enum(spaceType, spin, flavour); 
 
   class PolarisedSum
   {
@@ -61,7 +63,7 @@ namespace AmpGen
       real_t norm() const;
       complex_t norm(const size_t&, const size_t&, Integrator* = nullptr); 
       real_t getValNoCache(const Event&) const;
-      std::vector<FitFraction> fitFractions(const LinearErrorPropagator&);
+      std::vector<FitFraction> fitFractions(const LinearErrorPropagator&, bool=false,bool=false);
       std::vector<MatrixElement> matrixElements() const;
       void transferParameters(); 
       Tensor transitionMatrix() const;
@@ -83,8 +85,6 @@ namespace AmpGen
       MinuitParameter*              m_polParam    = {nullptr};
       std::vector<MinuitProxy>      m_pVector     = {};
       std::vector<MinuitProxy>      m_pfVector = {};  
-      bool                          m_verbosity   = {0};
-      bool                          m_debug       = {0};
       Integrator                    m_integrator;
       std::vector<Bilinears>        m_norms;
       EventType                     m_eventType;
@@ -93,8 +93,15 @@ namespace AmpGen
       std::vector<size_t>           m_integIndex; 
       std::pair<unsigned, unsigned> m_dim; 
       std::vector<MatrixElement>                                   m_matrixElements;  
-//      CompiledExpression<void(real_t*, const std::size_t*, const real_t*, const complex_v*)>  m_probExpression; 
       CompiledExpression<real_v(const real_t*, const complex_v*)>  m_probExpression; 
+      
+      
+      Property<bool>                m_verbosity   {this, "PolarisedSum::Verbosity", false }; 
+      Property<bool>                m_debug       {this, "PolarisedSum::Debug", false }; 
+      Property<std::string>         m_objCache    {this, "PolarisedSum::ObjectCache", ""};
+      Property<spaceType>           m_spaceType   {this, "PolarisedSum::SpaceType"  , spaceType::spin};
+      Property<bool>                m_autoCompile {this, "AutoCompile"  , true}; 
+
   };
 } // namespace AmpGen
 
