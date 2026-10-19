@@ -18,7 +18,7 @@ std::vector<std::pair<unsigned, Expression>> ASTResolver::getOrderedSubExpressio
   expression.resolve(*this);
   std::vector<std::pair<unsigned, Expression>> subexpressions;
   std::unordered_map<unsigned, size_t> used_functions;
-  std::unordered_map<unsigned, Expression> sub_trees;
+  std::map<unsigned, Expression> sub_trees; // the order here actually matters, although it is not entirely clear why
   do {
     sub_trees.clear();
     for(auto &[t, s] : m_tempTrees) {
