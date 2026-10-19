@@ -18,22 +18,15 @@ std::vector<std::pair<unsigned, Expression>> ASTResolver::getOrderedSubExpressio
   expression.resolve(*this);
   std::vector<std::pair<unsigned, Expression>> subexpressions;
   std::unordered_map<unsigned, size_t> used_functions;
-  std::unordered_map<unsigned, Expression> subTrees;
+  std::unordered_map<unsigned, const SubTree*> sub_trees;
   do {
-    subTrees.clear();
-    for(auto &[k, s] : m_tempTrees) {
-      if(subTrees.count(k) == 0)
-        subTrees[k] = s->expression();
-      else if( s->to_string() != subTrees[k].to_string()) {
-        WARNING( "Key collision between two distinct expressions: " << s->to_string() << " " << subTrees[k].to_string() ); 
-      }
-    }
+    sub_trees = m_tempTrees; 
     m_tempTrees.clear();
-    for(auto &[key, expression] : subTrees) {
-      expression.resolve(*this);
+    for(auto &[key, st] : sub_trees) {
+      st->expression().resolve(*this);
       auto stack_pos = used_functions.find(key);
       if(stack_pos == used_functions.end()) {
-        subexpressions.emplace_back(key, expression);
+        subexpressions.emplace_back(key, st->expression());
         used_functions[key] = subexpressions.size() - 1;
         continue;
       }
@@ -46,7 +39,7 @@ std::vector<std::pair<unsigned, Expression>> ASTResolver::getOrderedSubExpressio
       }
       used_functions[key] = subexpressions.size() - 1;
     }
-  } while(subTrees.size() != 0);
+  } while(sub_trees.size() != 0);
   std::reverse(subexpressions.begin(), subexpressions.end());
   
   return subexpressions;
