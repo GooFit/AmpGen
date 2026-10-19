@@ -18,15 +18,18 @@ std::vector<std::pair<unsigned, Expression>> ASTResolver::getOrderedSubExpressio
   expression.resolve(*this);
   std::vector<std::pair<unsigned, Expression>> subexpressions;
   std::unordered_map<unsigned, size_t> used_functions;
-  std::unordered_map<unsigned, const SubTree*> sub_trees;
+  std::unordered_map<unsigned, Expression> sub_trees;
   do {
-    sub_trees = m_tempTrees; 
+    sub_trees.clear();
+    for(auto &[t, s] : m_tempTrees) {
+      sub_trees[t] = cast<SubTree>(s).expression();
+    }
     m_tempTrees.clear();
-    for(auto &[key, st] : sub_trees) {
-      st->expression().resolve(*this);
+    for(auto &[key, sub_expression] : sub_trees) {
+      sub_expression.resolve(*this);
       auto stack_pos = used_functions.find(key);
       if(stack_pos == used_functions.end()) {
-        subexpressions.emplace_back(key, st->expression());
+        subexpressions.emplace_back(key, sub_expression);
         used_functions[key] = subexpressions.size() - 1;
         continue;
       }
@@ -51,7 +54,7 @@ template <> void ASTResolver::resolve<SubTree>(const SubTree &subTree) {
     return; /// we already found this subtree, nothing to do
   else {
     subTree.expression().resolve(*this); // resolve the expression
-    m_tempTrees[key] = &subTree;         // and a pointer to this subtree for future consumption
+    m_tempTrees[key] = subTree;         // and a pointer to this subtree for future consumption
   }
 }
 

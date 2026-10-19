@@ -61,7 +61,7 @@ namespace AmpGen {
     std::map<std::string, unsigned> m_evtMap;                               /// Event specification
     std::map<std::string, std::string> m_parameterMapping;                  /// Mapping of parameters to compile parameters
     const MinuitParameterSet *m_mps;                                        /// Set of MinuitParameters
-    std::unordered_map<unsigned, const SubTree *> m_tempTrees;              /// temporary store of sub-trees for performing cse reduction
+    std::unordered_map<unsigned, Expression> m_tempTrees;              /// temporary store of sub-trees for performing cse reduction
     unsigned int m_nParameters{0};                                          /// Number of parameters
     bool m_enableAVX{false};                                                /// Flag to check if requested expression outputs a vector register
   };
