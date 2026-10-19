@@ -125,7 +125,6 @@ bool CompilerWrapper::compile(std::vector<CompiledExpressionBase *> &expressions
 
   output.close();
   compileSource(cname, oname);
-  INFO( cname << " -> " << oname ); 
   for(auto &expression : expressions) expression->link(oname);
   auto twall_end = std::chrono::high_resolution_clock::now();
   double tWall = std::chrono::duration<double, std::milli>(twall_end - twall_begin).count();
