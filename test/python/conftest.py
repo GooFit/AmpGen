@@ -14,6 +14,9 @@ def pytest_generate_tests(metafunc):
     option_value = metafunc.config.option.model
     if 'model' in metafunc.fixturenames: 
         model = make_ampgen_model(option_value, src=Path(option_value).stem +".cpp") 
+        with open(Path(option_value).stem +".cpp") as file : 
+            for line in file.readlines() : 
+                print(line, end='')
         json_fname = os.getenv("AMPGENROOT") + "/test/ref/" + Path(option_value).stem + ".json"
         values = [] 
         for l in model.labels : 
