@@ -42,7 +42,7 @@ namespace AmpGen {
 
   public:
     Minimiser() = default;
-    ~Minimiser() = default;
+    ~Minimiser();
 
     template <typename TYPE> void setFunction(TYPE &fcn) {
       if constexpr(has_getVal<TYPE>::value)
@@ -75,7 +75,7 @@ namespace AmpGen {
     void setPrintLevel(const PrintLevel &printLevel);
     void minos(MinuitParameter *param);
     ROOT::Fit::FitResult fitResult() const;
-
+    
   private:
     using GradFcn = ROOT::Math::IGradientFunctionMultiDimTempl<double>;
     std::vector<ExtendLikelihoodBase *> m_extendedTerms;
