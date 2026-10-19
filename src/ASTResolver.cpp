@@ -21,7 +21,6 @@ std::vector<std::pair<unsigned, Expression>> ASTResolver::getOrderedSubExpressio
   std::unordered_map<unsigned, Expression> subTrees;
   do {
     subTrees.clear();
-    INFO( m_tempTrees.size() << " sub trees to process" ); 
     for(auto &[k, s] : m_tempTrees) {
       if(subTrees.count(k) == 0)
         subTrees[k] = s->expression();
