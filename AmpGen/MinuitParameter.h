@@ -57,8 +57,8 @@ namespace AmpGen {
     friend class MinuitParameterSet;
     friend class MinuitProxy;
 
-    void subscribe(MinuitProxy *sub) { m_subscribers.insert(sub); }
-    void unsubscribe(MinuitProxy *sub) { m_subscribers.erase(sub); }
+    void subscribe(MinuitProxy *sub);
+    void unsubscribe(MinuitProxy *sub);
     void print_proxies() const {
       std::cout << m_name << "proxies: ";
       for(auto &p : m_subscribers) std::cout << p << " ";
