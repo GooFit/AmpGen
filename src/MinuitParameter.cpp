@@ -12,6 +12,8 @@ namespace AmpGen {
   complete_enum(Flag, Free, Hide, Fix, CompileTimeConstant, Blind, Invalid)
 }
 
+std::mutex g_subscriber_mutex;
+
 MinuitParameter::MinuitParameter(const std::string &name, const Flag &fix, const double &mean, const double &step, const double &mi, const double &ma)
     : m_flag(fix), m_name(name), m_meanInit(mean), m_stepInit(step), m_minInit(mi), m_maxInit(ma) {
   DEBUG("Building parameter : " << name);
@@ -40,6 +42,14 @@ double MinuitParameter::err() const { return m_errResult; }
 bool MinuitParameter::isFixed() const { return m_flag == Flag::Fix || m_flag == Flag::CompileTimeConstant; }
 bool MinuitParameter::isFree() const { return m_flag == Flag::Free; }
 bool MinuitParameter::isBlind() const { return m_flag == Flag::Blind; }
+void MinuitParameter::subscribe(MinuitProxy *sub) {
+  const std::lock_guard<std::mutex> lock(g_subscriber_mutex);
+  m_subscribers.insert(sub);
+}
+void MinuitParameter::unsubscribe(MinuitProxy *sub) {
+  const std::lock_guard<std::mutex> lock(g_subscriber_mutex);
+  m_subscribers.erase(sub);
+}
 
 const std::string &MinuitParameter::name() const { return m_name; }
 
